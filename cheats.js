@@ -3637,13 +3637,13 @@ function rollAllObols() {
 }
 
 function rollPerfectObols(obolOrder, obolMap, characterClass) {
-  const primaryStat = [1, 2, 3].includes(characterClass)
+  const primaryStat = [1, 2, 3, 4, 5].includes(characterClass)
     ? "LUK"
-    : [31, 32, 33, 34, 36].includes(characterClass)
+    : [31, 32, 33, 34, 36, 40].includes(characterClass)
       ? "WIS"
-      : [7, 8, 9, 10, 12].includes(characterClass)
+      : [7, 8, 9, 10, 12, 14, 16].includes(characterClass)
         ? "STR"
-        : [19, 20, 21, 22, 25].includes(characterClass)
+        : [19, 20, 21, 22, 25, 29].includes(characterClass)
           ? "AGI"
           : "LUK";
   const preferredStat =
