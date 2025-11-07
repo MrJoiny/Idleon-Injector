@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 input = document.createElement('textarea');
                 input.value = JSON.stringify(value, null, 2);
                 input.rows = 3;
-                input.disabled = true; // Disable editing for unknown types
+                // input.disabled = true; // Disable editing for unknown types
             }
             input.id = `config-${fullKey}`;
             input.dataset.key = fullKey; // Store the full key path for gathering

@@ -147,11 +147,11 @@ async function main() {
     console.log("Interceptor setup finished.");
 
     const { Runtime, Page } = client;
-    const context = createCheatContext();
 
     console.log("Attaching Page.loadEventFired listener...");
     Page.loadEventFired(async () => {
       try {
+        const context = createCheatContext();
         await handlePageLoad(Runtime, Page, context, client, config, app);
       } catch (loadEventError) {
         console.error("Error during Page.loadEventFired handler:", loadEventError);

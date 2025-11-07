@@ -299,6 +299,9 @@ registerCheats({
         ["Lush Emerald Anniversary Pack", "bon_e"],
         ["Eternal Hunter Pack", "bon_f"],
         ["Gilded Treasure Pack", "bon_g"],
+        ["World 7 Pack", "bon_i"],
+        ["Squirell Pack", "bon_h"],
+        ["Mr.Piggy Pack", "bon_j"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
@@ -580,7 +583,6 @@ registerCheats({
   ],
 });
 
-
 // added by dreamx3 - 2
 // all w6 related proxy cheats
 registerCheats({
@@ -621,6 +623,24 @@ registerCheats({
     {
       name: "emperor",
       message: "unlimeted emperor tries",
+      configurable: { isObject: true },
+    },
+  ],
+});
+
+registerCheats({
+  name: "w7",
+  message: "all available w7 cheats",
+  canToggleSubcheats: true,
+  subcheats: [
+    {
+      name: "spelunk",
+      message: "spelunk cheats check config file",
+      configurable: { isObject: true },
+    },
+    {
+      name: "gallery",
+      message: "gallery cheats check config file",
       configurable: { isObject: true },
     },
   ],
@@ -1954,6 +1974,7 @@ async function setup() {
     setupTalentProxy.call(this);
     setupw5Proxies.call(this);
     setupw6Proxies.call(this);
+    setupw7Proxies.call(this);
     setupItemMiscProxy.call(this);
     setupMiscProxies.call(this);
     setupPlayerLoadProxy.call(this);
@@ -3418,6 +3439,24 @@ function setupw6Proxies() {
     return cheatState.w6.arcane && cheatConfig.w6.arcane.hasOwnProperty(argumentList[0])
       ? cheatConfig.w6.arcane[argumentList[0]](Reflect.apply(Arcane, this, argumentList))
       : Reflect.apply(Arcane, this, argumentList);
+  };
+}
+
+function setupw7Proxies() {
+  const actorEvents579 = events(579);
+
+  const Spelunk = actorEvents579._customBlock_Spelunk;
+  actorEvents579._customBlock_Spelunk = function (...argumentList) {
+    return cheatState.w7.spelunk && cheatConfig.w7.spelunk.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.spelunk[argumentList[0]](Reflect.apply(Spelunk, this, argumentList))
+      : Reflect.apply(Spelunk, this, argumentList);
+  };
+
+  const Gallery = actorEvents579._customBlock_Gallery;
+  actorEvents579._customBlock_Gallery = function (...argumentList) {
+    return cheatState.w7.gallery && cheatConfig.w7.gallery.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.gallery[argumentList[0]](Reflect.apply(Gallery, this, argumentList))
+      : Reflect.apply(Gallery, this, argumentList);
   };
 }
 
