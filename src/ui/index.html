@@ -5,85 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Idleon Cheat Injector UI</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <div class="header-text">
-                <h1>Idleon Cheat Injector</h1>
-                <p class="subtitle">Web UI for Legends of Idleon cheats</p>
-                <span class="version-badge">v1.2.0</span>
-            </div>
-        </header>
+    <h1>Idleon Cheat Injector</h1>
 
-        <main class="main-card">
-            <!-- Tab Buttons -->
-            <nav class="tab-container">
-                <button class="tab-button active" data-tab="cheats-tab">🎮 Cheats</button>
-                <button class="tab-button" data-tab="config-tab">⚙️ Config</button>
-                <button class="tab-button" data-tab="devtools-tab">🛠️ DevTools</button>
-            </nav>
-
-            <!-- Tab Content -->
-            <section id="tab-content">
-                <!-- Cheats Tab -->
-                <div id="cheats-tab" class="tab-pane active">
-                    <h2>Available Cheats</h2>
-                    <div id="filter-container">
-                        <input type="text" id="filter-input" placeholder="Filter cheats...">
-                    </div>
-                    <div id="cheat-buttons"></div>
-                    <p id="loading-cheats">Loading cheats...</p>
-                </div>
-
-                <!-- Config Tab -->
-                <div id="config-tab" class="tab-pane">
-                    <h2>Configuration</h2>
-                    <div class="config-sub-tab-container">
-                        <button class="config-sub-tab-button active" data-sub-tab="cheatconfig-pane">Cheat Config</button>
-                        <button class="config-sub-tab-button" data-sub-tab="startupcheats-pane">Startup Cheats</button>
-                    </div>
-                    <div id="config-sub-tab-content">
-                        <div id="cheatconfig-pane" class="config-sub-tab-pane active">
-                            <h3>Cheat Configuration <span class="help-icon" title="Edit advanced cheat options here.">?</span></h3>
-                            <div class="config-category-selector">
-                                <label for="cheatconfig-category-select">Select Category:</label>
-                                <select id="cheatconfig-category-select">
-                                    <option value="all">All</option>
-                                </select>
-                            </div>
-                            <div id="cheatconfig-options"></div>
-                            <p id="loading-cheatconfig" style="display: none;">Loading CheatConfig...</p>
-                        </div>
-                        <div id="startupcheats-pane" class="config-sub-tab-pane">
-                            <h3>Startup Cheats <span class="help-icon" title="Cheats to run automatically on game start.">?</span></h3>
-                            <div id="startupcheats-options"></div>
-                            <p id="loading-startupcheats" style="display: none;">Loading Startup Cheats...</p>
-                        </div>
-                    </div>
-                    <div class="config-actions">
-                        <button id="update-config-button">Apply Config</button>
-                        <button id="save-config-button">Save Config</button>
-                    </div>
-                </div>
-
-                <!-- DevTools Tab -->
-                <div id="devtools-tab" class="tab-pane">
-                    <h2>Embedded DevTools <span class="help-icon" title="Advanced: Inspect the game browser context.">?</span></h2>
-                    <iframe id="devtools-iframe" style="width: 100%; height: 600px; border: 1px solid #ccc;"></iframe>
-                    <p id="devtools-message">Loading DevTools URL...</p>
-                </div>
-            </section>
-            <div id="status-message"></div>
-        </main>
-
-        <footer class="app-footer">
-            <span>Made with ❤️ | <a href="https://github.com/MrJoiny/Idleon-Injector" target="_blank">GitHub</a></span>
-            <span class="footer-credits">Credits: iBelg, Creater0822, valleymon, Disputate, Shinaii and contributors</span>
-        </footer>
+    <!-- Tab Buttons -->
+    <div class="tab-container">
+        <button class="tab-button active" data-tab="cheats-tab">Cheats</button>
+        <button class="tab-button" data-tab="config-tab">Config</button>
+        <button class="tab-button" data-tab="devtools-tab">DevTools</button>
     </div>
+
+    <!-- Tab Content -->
+    <div id="tab-content">
+        <!-- Cheats Tab -->
+        <div id="cheats-tab" class="tab-pane active">
+            <h2>Available Cheats</h2>
+            <div id="filter-container">
+                 <input type="text" id="filter-input" placeholder="Filter cheats...">
+            </div>
+            <div id="cheat-buttons">
+                 <!-- Cheat buttons will be loaded here -->
+            </div>
+            <p id="loading-cheats">Loading cheats...</p>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config-tab" class="tab-pane">
+            <h2>Configuration</h2>
+
+            <!-- Config Sub-Tabs -->
+            <div class="config-sub-tab-container">
+                <button class="config-sub-tab-button active" data-sub-tab="cheatconfig-pane">Cheat Config</button>
+                <button class="config-sub-tab-button" data-sub-tab="startupcheats-pane">Startup Cheats</button>
+            </div>
+
+            <!-- Config Sub-Tab Content -->
+            <div id="config-sub-tab-content">
+                <div id="cheatconfig-pane" class="config-sub-tab-pane active">
+                    <h3>Cheat Configuration</h3>
+                    <div class="config-category-selector">
+                        <label for="cheatconfig-category-select">Select Category:</label>
+                        <select id="cheatconfig-category-select">
+                            <option value="all">All</option>
+                            <!-- Categories will be loaded here -->
+                        </select>
+                    </div>
+                    <div id="cheatconfig-options">
+                        <!-- CheatConfig options will be loaded here -->
+                    </div>
+                    <p id="loading-cheatconfig" style="display: none;">Loading CheatConfig...</p>
+                </div>
+                <div id="startupcheats-pane" class="config-sub-tab-pane">
+                    <h3>Startup Cheats</h3>
+                    <div id="startupcheats-options">
+                        <!-- StartupCheats options will be loaded here -->
+                    </div>
+                    <p id="loading-startupcheats" style="display: none;">Loading Startup Cheats...</p>
+                </div>
+            </div>
+            <p id="loading-config" style="display: none;">Loading configuration...</p> <!-- Keep general loading indicator? Maybe remove later -->
+
+            <div class="config-actions">
+                <button id="update-config-button">Use Config</button>
+                <button id="save-config-button">Save Config</button>
+            </div>
+        </div>
+
+        <!-- DevTools Tab -->
+        <div id="devtools-tab" class="tab-pane">
+             <h2>Embedded DevTools</h2>
+             <!-- Removed toggle button, DevTools are now always visible within this tab -->
+             <iframe id="devtools-iframe" style="width: 100%; height: 600px; border: 1px solid #ccc;"></iframe>
+             <p id="devtools-message">Loading DevTools URL...</p>
+        </div>
+    </div>
+
+    <div id="status-message"></div>
+
     <script src="script.js"></script>
 </body>
 </html>

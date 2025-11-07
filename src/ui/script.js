@@ -475,27 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemDiv = document.createElement('div');
         itemDiv.className = 'config-item';
+        // Add a data attribute for easier gathering, especially for top-level items
         itemDiv.dataset.configKey = fullKey;
 
-        // Collapsible logic
-        const header = document.createElement('div');
-        header.className = 'config-item-header';
-        const chevron = document.createElement('span');
-        chevron.className = 'config-chevron';
-        chevron.textContent = '▶';
         const label = document.createElement('label');
         label.textContent = key;
-        label.htmlFor = `config-${fullKey}`;
-        header.appendChild(chevron);
-        header.appendChild(label);
-        header.style.cursor = 'pointer';
-        header.tabIndex = 0;
-        itemDiv.appendChild(header);
-
-        // Content container (collapsible)
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'config-item-content';
-        contentDiv.style.display = 'none';
+        // Append label conditionally below
 
         // --- Special Handling for startupCheats ---
         if (fullKey === 'startupCheats' && Array.isArray(value)) {
@@ -522,12 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 listItem.appendChild(inputField);
 
                 const removeButton = document.createElement('button');
-                removeButton.textContent = '';
+                removeButton.textContent = 'Remove';
                 removeButton.className = 'remove-cheat-button';
                 removeButton.type = 'button';
-                removeButton.setAttribute('aria-label', 'Remove cheat');
-                removeButton.innerHTML = '';
-                // Icon will be added by CSS ::before
                 removeButton.addEventListener('click', () => listItem.remove());
                 listItem.appendChild(removeButton);
 
@@ -543,12 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const addArea = document.createElement('div');
             addArea.className = 'add-cheat-area';
             const addButton = document.createElement('button');
-            addButton.textContent = '';
+            addButton.textContent = '+ Add Cheat';
             addButton.className = 'add-cheat-button';
             addButton.type = 'button';
-            addButton.setAttribute('aria-label', 'Add cheat');
-            addButton.innerHTML = '';
-            // Icon will be added by CSS ::before
             const searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = 'Search cheats...';
@@ -558,13 +537,10 @@ document.addEventListener('DOMContentLoaded', () => {
             searchResults.className = 'cheat-search-results';
             searchResults.style.display = 'none';
             const cancelButton = document.createElement('button');
-            cancelButton.textContent = '';
+            cancelButton.textContent = 'Cancel';
             cancelButton.className = 'cancel-add-cheat-button';
             cancelButton.type = 'button';
-            cancelButton.setAttribute('aria-label', 'Cancel add cheat');
-            cancelButton.innerHTML = '';
             cancelButton.style.display = 'none';
-            // Icon will be added by CSS ::before
 
             addArea.appendChild(addButton);
             addArea.appendChild(searchInput);
@@ -626,18 +602,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             cheatsContainer.appendChild(addArea);
-            contentDiv.appendChild(cheatsContainer); // Append the editor container
+            itemDiv.appendChild(cheatsContainer); // Append the editor container
 
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
             // Render nested object (within cheatconfig)
+            itemDiv.appendChild(label); // Append label for nested objects
+            label.htmlFor = `config-${fullKey}-nested`;
             const nestedContainer = document.createElement('div');
             nestedContainer.className = 'config-nested';
             nestedContainer.id = `config-${fullKey}-nested`;
             // Call renderCategorizedOptions for nested objects - this should only happen within cheatconfig pane
             renderCategorizedOptions(value, fullKey, nestedContainer);
-            contentDiv.appendChild(nestedContainer);
+            itemDiv.appendChild(nestedContainer);
         } else {
             // Render standard input field (boolean, number, string, other non-handled types) - for cheatconfig items
+            itemDiv.appendChild(label); // Append label for standard inputs
+            label.htmlFor = `config-${fullKey}`;
             let input;
             if (typeof value === 'boolean') {
                 input = document.createElement('input');
@@ -652,43 +632,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.type = 'text';
                 input.value = value;
             } else {
+                // Handle null or other unexpected types as a disabled textarea
                 input = document.createElement('textarea');
                 input.value = JSON.stringify(value, null, 2);
                 input.rows = 3;
-                input.disabled = true; // Disable editing for unknown types
+                // input.disabled = true; // Disable editing for unknown types
             }
             input.id = `config-${fullKey}`;
             input.dataset.key = fullKey; // Store the full key path for gathering
-            contentDiv.appendChild(input);
+            itemDiv.appendChild(input);
         }
-        itemDiv.appendChild(contentDiv);
-
-        // Collapsible/accordion logic
-        // Only one open at a time at this nesting level
-        header.addEventListener('click', () => {
-            const parent = itemDiv.parentElement;
-            // Collapse all siblings
-            Array.from(parent.children).forEach(sibling => {
-                if (sibling !== itemDiv && sibling.classList.contains('config-item')) {
-                    const sibContent = sibling.querySelector('.config-item-content');
-                    const sibChevron = sibling.querySelector('.config-chevron');
-                    if (sibContent) sibContent.style.display = 'none';
-                    if (sibChevron) sibChevron.textContent = '▶';
-                }
-            });
-            // Toggle this one
-            if (contentDiv.style.display === 'none') {
-                contentDiv.style.display = '';
-                chevron.textContent = '▼';
-            } else {
-                contentDiv.style.display = 'none';
-                chevron.textContent = '▶';
-            }
-        });
-        // Start collapsed
-        contentDiv.style.display = 'none';
-        chevron.textContent = '▶';
-
         container.appendChild(itemDiv);
     }
 
