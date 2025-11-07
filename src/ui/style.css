@@ -1,737 +1,548 @@
-:root {
-    --color-bg: #181a20;
-    --color-card: rgba(36, 39, 54, 0.85);
-    --color-primary: #7f5af0;
-    --color-primary-hover: #6246ea;
-    --color-accent: #2cb67d;
-    --color-text: #f3f4f6;
-    --color-subtle: rgba(255,255,255,0.08);
-    --color-border: #23263a;
-    --color-success-bg: #2cb67d33;
-    --color-success-text: #2cb67d;
-    --color-error-bg: #ff547033;
-    --color-error-text: #ff5470;
-    --color-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    --glass-blur: blur(12px);
-    --transition: 0.25s cubic-bezier(.4,0,.2,1);
+body {
+    font-family: sans-serif;
+    padding: 20px;
+    background-color: #f4f4f4;
 }
 
-html, body {
-    font-family: 'Inter', 'Poppins', Arial, sans-serif;
-    background: linear-gradient(135deg, #23263a 0%, #181a20 100%);
-    color: var(--color-text);
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    transition: background var(--transition), color var(--transition);
+h1 {
+    text-align: center;
+    color: #333;
 }
 
-.app-container {
-    width: 100vw;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    background: none;
-    box-shadow: none;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+#cheat-list {
+    margin-top: 20px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.main-card {
-    background: var(--color-card);
-    border-radius: 0;
-    box-shadow: none;
-    padding: 0 0 32px 0;
-    margin: 0;
-    min-height: 100vh;
-    border: none;
-    backdrop-filter: none;
-    position: relative;
-    z-index: 1;
-}
-
-.app-header {
-    padding: 32px 32px 0 32px;
-    width: 100%;
-    box-sizing: border-box;
-}
-.header-icon img {
-    width: 56px;
-    height: 56px;
-    filter: drop-shadow(0 2px 8px #7f5af088);
-}
-.header-text h1 {
-    margin: 0;
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--color-primary);
-    letter-spacing: -1px;
-}
-.subtitle {
-    margin: 0;
-    font-size: 1.15rem;
-    color: var(--color-accent);
-    font-weight: 500;
-}
-.version-badge {
-    background: var(--color-accent);
-    color: #fff;
-    font-size: 0.95em;
-    border-radius: 10px;
-    padding: 3px 14px;
-    margin-left: 10px;
-    vertical-align: middle;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-#darkmode-toggle {
-    position: fixed;
-    top: 18px;
-    right: 24px;
-    margin: 0;
-    background: var(--color-card);
-    border: 2px solid var(--color-border);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    color: var(--color-primary);
-    cursor: pointer;
-    box-shadow: 0 2px 12px #0002;
-    transition: background var(--transition), color var(--transition), border var(--transition);
-    z-index: 1000;
-}
-#darkmode-toggle:hover {
-    background: var(--color-primary);
-    color: #fff;
-    border-color: var(--color-primary);
-}
-
-#tab-content {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 32px;
-}
-
-.tab-container {
-    padding: 0 32px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.tab-button {
-    background: var(--color-subtle);
-    color: var(--color-text);
-    border: none;
-    border-radius: 12px 12px 0 0;
-    padding: 16px 36px;
-    font-size: 1.15em;
-    font-weight: 700;
-    cursor: pointer;
-    margin-right: 2px;
-    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
-    box-shadow: 0 2px 8px #0001;
-    position: relative;
-    outline: none;
-}
-.tab-button.active {
-    background: var(--color-card);
-    color: var(--color-primary);
-    border-bottom: 2px solid var(--color-card);
-    z-index: 2;
-    box-shadow: 0 4px 16px #7f5af022;
-}
-.tab-button:hover {
-    background: var(--color-primary);
-    color: #fff;
-}
-
-.tab-pane {
-    display: none;
-    padding: 32px 0 0 0;
-    border-radius: 0 0 18px 18px;
-    background: none;
-    box-shadow: none;
-    opacity: 0;
-    transform: translateY(16px);
-    transition: opacity 0.4s var(--transition), transform 0.4s var(--transition);
-}
-.tab-pane.active {
-    display: block;
-    opacity: 1;
-    transform: translateY(0);
-}
-
+/* Filter Styles */
 #filter-container {
-    margin-bottom: 24px;
-    overflow-x: hidden;
-}
-#filter-input {
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    padding: 16px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 8px;
-    font-size: 1.1em;
-    background: var(--color-subtle);
-    color: var(--color-text);
-    transition: background var(--transition), color var(--transition), border var(--transition);
-    outline: none;
-}
-#filter-input:focus {
-    border-color: var(--color-primary);
-    background: rgba(127,90,240,0.08);
+    margin-bottom: 15px; /* Space below filter */
+    padding: 10px 0; /* Padding top/bottom */
 }
 
-#cheat-buttons {
-    margin-top: 12px;
-    overflow-x: hidden;
-}
-.cheat-category {
-    margin-bottom: 24px;
-    border-radius: 12px;
-    background: var(--color-subtle);
-    box-shadow: 0 2px 8px #0002;
-    overflow: hidden;
-    border: 1.5px solid var(--color-border);
-    transition: background var(--transition), box-shadow var(--transition);
-}
-.cheat-category summary {
-    padding: 18px 24px;
-    background: none;
-    font-weight: 700;
-    font-size: 1.15em;
-    color: var(--color-primary);
-    cursor: pointer;
-    outline: none;
-    border-bottom: 1.5px solid var(--color-border);
-    letter-spacing: 0.5px;
-    user-select: none;
-    transition: background var(--transition), color var(--transition);
-}
-.cheat-category[open] summary {
-    background: var(--color-card);
-    color: var(--color-accent);
-}
-.cheat-category-content {
-    padding: 18px 24px 10px 24px;
-    background: none;
-}
-.cheat-item-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    width: 100%;
-}
-.cheat-input {
-    flex-grow: 1;
+#filter-input {
+    width: 100%; /* Full width */
     padding: 10px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 1em;
-    min-width: 50px;
-    max-width: 220px;
-    background: var(--color-card);
-    color: var(--color-text);
-    transition: background var(--transition), color var(--transition), border var(--transition);
-}
-.cheat-item-container .cheat-button {
-    flex-shrink: 0;
-    width: auto;
-    padding: 10px 18px;
-    margin-bottom: 0;
-    border-radius: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in width */
     font-size: 1em;
 }
+
+/* End Filter Styles */
+
 .cheat-button {
     display: block;
     width: 100%;
-    padding: 14px;
-    margin-bottom: 12px;
-    background: var(--color-primary);
-    color: #fff;
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: #007bff;
+    color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 1.1em;
-    font-weight: 700;
     text-align: left;
-    transition: background var(--transition), box-shadow var(--transition);
-    box-shadow: 0 2px 8px #7f5af022;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
 }
+
 .cheat-button:hover {
-    background: var(--color-primary-hover);
-    box-shadow: 0 4px 16px #7f5af044;
+    background-color: #0056b3;
+}
+
+#status-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
 }
 
 .status-success {
-    background: var(--color-success-bg);
-    color: var(--color-success-text);
-    border: 1.5px solid var(--color-success-bg);
-}
-.status-error {
-    background: var(--color-error-bg);
-    color: var(--color-error-text);
-    border: 1.5px solid var(--color-error-bg);
-}
-#status-message {
-    margin-top: 24px;
-    padding: 14px;
-    border-radius: 8px;
-    font-weight: 700;
-    min-height: 28px;
-    font-size: 1.08em;
-    transition: background var(--transition), color var(--transition);
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
 }
 
-.config-sub-tab-container {
-    border-bottom: 1.5px solid var(--color-border);
-    margin-bottom: 24px;
-    padding-bottom: 7px;
-    display: flex;
-    gap: 4px;
+.status-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
 }
-.config-sub-tab-button {
-    padding: 10px 22px;
+
+/* DevTools Button Styles */
+#toggle-devtools-button {
+    padding: 10px 15px;
+    margin-bottom: 10px; /* Add some space below the button */
+    background-color: #6c757d; /* A neutral grey color */
+    color: white;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
-    border: 1.5px solid transparent;
-    border-bottom: none;
-    background: var(--color-subtle);
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+#toggle-devtools-button:hover {
+    background-color: #5a6268; /* Darken on hover */
+}
+
+/* Container adjustments */
+#devtools-container {
+    margin-bottom: 20px; /* Add space below the devtools section */
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#devtools-container h2 {
+    margin-top: 0; /* Remove default top margin for heading */
+    margin-bottom: 15px;
+}
+
+
+/* Styles for Cheat Categories */
+.cheat-category {
+    margin-bottom: 15px; /* Space between categories */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden; /* Contain borders */
+}
+
+.cheat-category summary {
+    padding: 10px 15px;
+    background-color: #e9ecef;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none; /* Remove focus outline */
+    border-bottom: 1px solid #ddd; /* Separator line */
+}
+
+.cheat-category[open] summary {
+    border-bottom: 1px solid #ddd; /* Keep separator when open */
+}
+
+.cheat-category summary:hover {
+    background-color: #dee2e6;
+}
+
+.cheat-category-content {
+    padding: 10px 15px 5px 15px; /* Padding inside the category */
+    background-color: #fff; /* White background for content */
+}
+
+/* Adjust button margin within categories */
+/* .cheat-category-content .cheat-button { */
+    /* This might be overridden by the container style below */
+/*    margin-bottom: 5px; */
+/* } */
+
+/* NEW STYLES for input fields */
+.cheat-item-container {
+    display: flex; /* Arrange input and button horizontally */
+    align-items: center; /* Vertically align items */
+    gap: 8px; /* Space between input and button */
+    margin-bottom: 8px; /* Space below each item */
+    width: 100%; /* Take full width */
+}
+
+.cheat-input {
+    flex-grow: 1; /* Allow input to take available space */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+    min-width: 50px; /* Ensure input doesn't become too small */
+    max-width: 200px;
+}
+
+.cheat-item-container .cheat-button {
+    flex-shrink: 0; /* Prevent button from shrinking */
+    width: auto; /* Override the default 100% width */
+    padding: 8px 12px; /* Adjust padding for potentially smaller button */
+    margin-bottom: 0; /* Remove bottom margin as container handles spacing */
+}
+
+/* --- Tab Styles --- */
+.tab-container {
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 15px;
+    cursor: pointer;
+    border: none;
+    background-color: #eee;
+    margin-right: 5px;
+    border-radius: 4px 4px 0 0;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.tab-button:hover {
+    background-color: #ddd;
+}
+
+.tab-button.active {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-bottom: 1px solid #fff; /* Connects with the active pane */
+    font-weight: bold;
+}
+
+.tab-pane {
+    display: none; /* Hide inactive tabs */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tab-pane.active {
+    display: block; /* Show active tab */
+}
+
+/* --- Config Sub-Tab Styles --- */
+.config-sub-tab-container {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    padding-bottom: 5px; /* Add a little space below buttons */
+}
+
+.config-sub-tab-button {
+    padding: 8px 12px;
+    cursor: pointer;
+    border: 1px solid transparent; /* Transparent border initially */
+    border-bottom: none; /* No bottom border initially */
+    background-color: #f8f9fa; /* Light background */
     margin-right: 3px;
-    border-radius: 10px 10px 0 0;
-    font-size: 1.08em;
-    font-weight: 700;
-    transition: background var(--transition), border-color var(--transition), color var(--transition);
+    border-radius: 4px 4px 0 0;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.config-sub-tab-button.active {
-    background: var(--color-card);
-    border-color: var(--color-border);
-    border-bottom: 1.5px solid var(--color-card);
-    color: var(--color-primary);
-    position: relative;
-    top: 1px;
-    z-index: 2;
-}
+
 .config-sub-tab-button:hover {
-    background: var(--color-primary);
-    color: #fff;
+    background-color: #e9ecef; /* Slightly darker on hover */
+}
+
+.config-sub-tab-button.active {
+    background-color: #fff; /* Same as pane background */
+    border-color: #ddd; /* Match pane border */
+    border-bottom: 1px solid #fff; /* Connect with the active pane */
+    font-weight: bold;
+    position: relative;
+    top: 1px; /* Align with pane border */
 }
 
 .config-sub-tab-pane {
-    display: none;
-    padding-top: 24px;
-}
-.config-sub-tab-pane.active {
-    display: block;
+    display: none; /* Hide inactive sub-panes */
+    padding-top: 15px; /* Add some space above content */
 }
 
-.config-category-selector label {
-    font-weight: 700;
-    margin-right: 10px;
-}
-#cheatconfig-category-select {
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-subtle);
-    color: var(--color-text);
-    font-size: 1.08em;
-    margin-bottom: 16px;
-    transition: background var(--transition), color var(--transition), border var(--transition);
+.config-sub-tab-pane.active {
+    display: block; /* Show active sub-pane */
 }
 
 .config-actions {
-    margin-top: 32px;
-    display: flex;
-    gap: 18px;
-    justify-content: flex-end;
-}
-#update-config-button, #save-config-button {
-    padding: 12px 28px;
-    border-radius: 8px;
-    border: none;
-    font-size: 1.08em;
-    font-weight: 700;
-    background: var(--color-primary);
-    color: #fff;
-    cursor: pointer;
-    transition: background var(--transition), box-shadow var(--transition);
-    box-shadow: 0 2px 8px #7f5af022;
-}
-#update-config-button:hover, #save-config-button:hover {
-    background: var(--color-primary-hover);
-    box-shadow: 0 4px 16px #7f5af044;
+    margin-top: 20px; /* Space above the action buttons */
+    padding-top: 15px;
+    border-top: 1px solid #eee; /* Separator line */
+    text-align: right; /* Align buttons to the right */
 }
 
-.app-footer {
-    padding: 32px 32px 16px 32px;
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    color: var(--color-accent);
-    font-size: 1.08em;
-    background: none;
-    letter-spacing: 0.2px;
-}
-.footer-credits {
-    display: block;
-    color: var(--color-border);
-    font-size: 0.98em;
-    margin-top: 6px;
-}
+/* --- Config Tab Specific Styles (Items within sub-tabs) --- */
+/* #config-options { */ /* This ID is no longer used */
+/*    margin-bottom: 20px; */
+/* } */
 
-.help-icon {
-    display: inline-block;
-    background: var(--color-accent);
-    color: #fff;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    text-align: center;
-    font-size: 1em;
-    font-weight: 800;
-    cursor: pointer;
-    margin-left: 8px;
-    line-height: 20px;
-    vertical-align: middle;
-    transition: background var(--transition);
-}
-.help-icon:hover {
-    background: var(--color-primary);
-}
-
-@media (max-width: 700px) {
-    .app-header, .app-footer, #tab-content, .tab-container {
-        padding: 0 8px;
-    }
-    .main-card {
-        padding: 12px 4px 12px 4px;
-    }
-    .app-header {
-        flex-direction: column;
-        gap: 10px;
-        padding: 12px 0 4px 0;
-    }
-    .tab-button, .config-sub-tab-button {
-        font-size: 1em;
-        padding: 8px 10px;
-    }
-    #darkmode-toggle {
-        top: 8px;
-        right: 8px;
-        width: 38px;
-        height: 38px;
-        font-size: 1.1em;
-    }
-}
-
-.app-container.dark-mode {
-    --color-bg: #181a1b;
-    --color-card: #23272f;
-    --color-primary: #60a5fa;
-    --color-primary-hover: #2563eb;
-    --color-accent: #a5b4fc;
-    --color-text: #f3f4f6;
-    --color-subtle: #23272f;
-    --color-border: #333;
-    --color-success-bg: #22332a;
-    --color-success-text: #a7f3d0;
-    --color-error-bg: #3b2323;
-    --color-error-text: #fca5a5;
-    --color-shadow: 0 2px 8px rgba(0,0,0,0.32);
+#cheatconfig-options, #startupcheats-options {
+    /* Add any specific container styles if needed */
 }
 
 .config-item {
-    background: var(--color-subtle);
-    border: 1.5px solid var(--color-border);
-    border-radius: 10px;
-    padding: 20px 18px 16px 18px;
-    margin-bottom: 22px;
-    box-shadow: 0 2px 8px #0001;
-    transition: box-shadow 0.2s, border 0.2s, background 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #eee;
 }
-.config-item:hover, .config-item:focus-within {
-    box-shadow: 0 4px 16px #7f5af044;
-    border-color: var(--color-primary);
-    background: rgba(127,90,240,0.06);
-}
+
 .config-item label {
-    font-weight: 700;
-    font-size: 1.08em;
-    margin-bottom: 6px;
-    color: var(--color-primary);
     display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
 }
+
 .config-item input[type="text"],
 .config-item input[type="number"],
 .config-item textarea {
     width: 100%;
-    font-size: 1.08em;
-    padding: 12px 14px;
-    border: 1.5px solid var(--color-border);
-    border-radius: 7px;
-    background: var(--color-card);
-    color: var(--color-text);
-    transition: border 0.2s, box-shadow 0.2s;
-    margin-bottom: 2px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     box-sizing: border-box;
-    resize: vertical;
-}
-.config-item input[type="text"]:focus,
-.config-item input[type="number"]:focus,
-.config-item textarea:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 2px 8px #7f5af022;
-    outline: none;
-}
-.config-item input[type="checkbox"] {
-    accent-color: var(--color-primary);
-    width: 22px;
-    height: 22px;
-    margin-right: 8px;
-    vertical-align: middle;
-    cursor: pointer;
-}
-.config-item-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 1.12em;
-    color: var(--color-primary);
-    cursor: pointer;
-    user-select: none;
-    padding: 0;
-    margin-bottom: 0;
-    border-radius: 7px;
-    transition: background 0.18s;
-}
-.config-item-header:hover, .config-item-header:focus {
-    background: rgba(127,90,240,0.08);
-}
-.config-chevron {
-    margin-right: 6px;
-    font-size: 1.1em;
-    transition: transform 0.2s;
-    display: inline-block;
-    width: 1.2em;
-    text-align: center;
-}
-.config-item-content {
-    overflow: hidden;
-    padding-top: 10px;
-    transition: max-height 0.25s cubic-bezier(.4,0,.2,1), padding 0.18s;
-}
-.config-item-content[style*="display: none"] {
-    max-height: 0 !important;
-    padding-top: 0 !important;
-}
-.config-item-content:not([style*="display: none"]) {
-    max-height: 1000px;
-}
-.config-nested {
-    margin-left: 18px;
-    padding-left: 16px;
-    border-left: 3px solid var(--color-primary);
-    margin-top: 10px;
-    background: none;
-}
-@media (max-width: 700px) {
-    .config-item {
-        padding: 12px 6px 10px 6px;
-    }
-    .config-nested {
-        margin-left: 6px;
-        padding-left: 8px;
-    }
+    font-size: 0.95em;
 }
 
-.add-cheat-button {
-  background: var(--color-success-bg);
-  color: var(--color-success-text);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 1.08em;
-  font-weight: 700;
-  cursor: pointer;
-  margin-right: 8px;
-  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
-  box-shadow: 0 2px 8px #2cb67d22;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.config-item select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.95em;
+    background-color: #fff; /* White background */
+    appearance: none; /* Remove default system appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Add a custom dropdown arrow */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 10px;
+    cursor: pointer;
 }
-.add-cheat-button::before {
-  content: '➕';
-  margin-right: 6px;
-  font-size: 1.1em;
+
+.config-item select:hover {
+    border-color: #888; /* Slightly darker border on hover */
 }
-.add-cheat-button:hover {
-  background: var(--color-accent);
-  color: #fff;
+
+.config-item select:focus {
+    outline: none; /* Remove default focus outline */
+    border-color: #007bff; /* Blue border on focus */
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+}
+
+.config-item input[type="checkbox"] {
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.config-nested {
+    margin-left: 20px;
+    padding-left: 15px;
+    border-left: 2px solid #f0f0f0;
+    margin-top: 10px;
+}
+
+#save-config-button {
+    padding: 10px 20px;
+    background-color: #28a745; /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+#save-config-button:hover {
+    background-color: #218838; /* Darker green */
+}
+
+#update-config-button {
+    padding: 10px 20px;
+    background-color: #1f93b6; /* blue */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+#update-config-button:hover {
+    background-color: #196e88; /* Darker blue */
+}
+
+
+/* --- DevTools Tab Specific Styles --- */
+#devtools-tab iframe {
+    /* Styles already set inline, but could be moved here */
+    width: 100%;
+    height: 600px;
+    border: 1px solid #ccc;
+}
+
+#devtools-tab p {
+    margin-top: 10px;
+    font-style: italic;
+    color: #666;
+}
+
+/* --- Startup Cheats Editor Styles --- */
+.startup-cheats-editor {
+    margin-top: 10px; /* Space above the editor */
+}
+
+.startup-cheats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px 0; /* Space below the list */
+}
+
+.startup-cheats-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between input and button */
+    margin-bottom: 5px; /* Space between list items */
+    padding: 5px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.startup-cheat-input {
+    flex-grow: 1; /* Take available space */
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.9em;
 }
 
 .remove-cheat-button {
-  background: var(--color-error-bg);
-  color: var(--color-error-text);
-  border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 1em;
-  font-weight: 700;
-  cursor: pointer;
-  margin-left: 8px;
-  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
-  box-shadow: 0 2px 8px #ff547022;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+    padding: 4px 8px;
+    background-color: #dc3545; /* Red */
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+    flex-shrink: 0; /* Prevent shrinking */
+    transition: background-color 0.2s ease;
 }
-.remove-cheat-button::before {
-  content: '❌';
-  margin-right: 4px;
-  font-size: 1.1em;
-}
+
 .remove-cheat-button:hover {
-  background: var(--color-error-text);
-  color: #fff;
-}
-
-.cancel-add-cheat-button {
-  background: var(--color-error-bg);
-  color: var(--color-error-text);
-  border: none;
-  border-radius: 8px;
-  padding: 6px 18px;
-  font-size: 1em;
-  font-weight: 700;
-  cursor: pointer;
-  margin-left: 8px;
-  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
-  box-shadow: 0 2px 8px #ff547022;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.cancel-add-cheat-button::before {
-  content: '✖️';
-  margin-right: 4px;
-  font-size: 1.1em;
-}
-.cancel-add-cheat-button:hover {
-  background: var(--color-error-text);
-  color: #fff;
-}
-
-.startup-cheats-editor {
-  background: var(--color-card);
-  border-radius: 10px;
-  padding: 28px 18px 18px 18px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px #0001;
-  min-height: 320px;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-.startup-cheats-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 12px 0;
-  max-width: 100%;
-}
-.startup-cheats-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.startup-cheat-input {
-  flex: 1 1 200px;
-  padding: 10px;
-  border: 1.5px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 1em;
-  background: var(--color-card);
-  color: var(--color-text);
-  transition: background var(--transition), color var(--transition), border var(--transition);
+    background-color: #c82333; /* Darker red */
 }
 
 .add-cheat-area {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-  position: relative; /* For absolute dropdown positioning */
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+}
+
+.add-cheat-button,
+.cancel-add-cheat-button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-right: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.add-cheat-button {
+    background-color: #28a745; /* Green */
+    color: white;
+}
+.add-cheat-button:hover {
+    background-color: #218838; /* Darker green */
+}
+
+.cancel-add-cheat-button {
+    background-color: #6c757d; /* Grey */
+    color: white;
+}
+.cancel-add-cheat-button:hover {
+    background-color: #5a6268; /* Darker grey */
+}
+
+
+.cheat-search-input {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.9em;
+    margin-right: 5px;
+    min-width: 200px; /* Give it some base width */
 }
 
 .cheat-search-results {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  background: var(--color-subtle);
-  border: 1.5px solid var(--color-border);
-  border-radius: 8px;
-  max-height: 220px;
-  overflow-y: auto;
-  box-shadow: 0 2px 8px #0002;
-  position: absolute;
-  z-index: 10;
-  left: 0;
-  top: calc(100% + 4px); /* Appear below the input */
-  min-width: 220px;
-  width: 100%;
-  max-width: 320px;
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 150px; /* Limit height */
+    overflow-y: auto; /* Add scroll if needed */
+    background-color: #fff;
+    position: absolute; /* Position relative to the container or body */
+    z-index: 10; /* Ensure it's above other elements */
+    width: calc(100% - 40px); /* Adjust width as needed, considering padding */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
 .cheat-search-results li {
-  padding: 10px 16px;
-  cursor: pointer;
-  font-size: 1em;
-  color: var(--color-text);
-  transition: background var(--transition), color var(--transition);
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
 }
+
+.cheat-search-results li:last-child {
+    border-bottom: none;
+}
+
 .cheat-search-results li:hover {
-  background: var(--color-primary);
-  color: #fff;
+    background-color: #f0f0f0;
 }
 
-.cheat-search-input {
-  padding: 10px;
-  border: 1.5px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 1em;
-  background: var(--color-card);
-  color: var(--color-text);
-  transition: background var(--transition), color var(--transition), border var(--transition);
-  min-width: 180px;
-  margin-right: 8px;
+/* Style for the Config tab dropdown */
+#cheatconfig-category-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.95em;
+    background-color: #fff; /* White background */
+    appearance: none; /* Remove default system appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Add a custom dropdown arrow */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 10px;
+    cursor: pointer;
 }
 
-.config-item-content {
-  overflow-x: auto;
-  max-width: 100%;
+#cheatconfig-category-select:hover {
+    border-color: #888; /* Slightly darker border on hover */
 }
-.config-nested {
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 8px;
+
+#cheatconfig-category-select:focus {
+    outline: none; /* Remove default focus outline */
+    border-color: #007bff; /* Blue border on focus */
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
 }
-@media (max-width: 700px) {
-  .config-nested {
-    max-height: 220px;
-    padding-right: 2px;
-  }
+
+/* Sticky Config Actions */
+#config-tab.active .config-actions {
+    position: sticky;
+    bottom: 20px; /* Adjust as needed */
+    right: 20px;  /* Adjust as needed */
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+    padding: 10px; /* Add some padding */
+    border-radius: 5px; /* Optional: rounded corners */
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Optional: subtle shadow */
+    z-index: 10; /* Ensure it stays on top */
+    /* Keep existing text-align: right */
+    /* Ensure buttons are aligned right within the sticky container */
+    margin-right: 20px; /* Add margin to align with the right edge of the tab content padding */
+    float: right; /* Make the container only as wide as its content and stick right */
+    width: fit-content; /* Adjust width to content */
+}
+
+/* Clearfix for the parent container if float is used */
+#config-tab.active::after {
+    content: "";
+    display: table;
+    clear: both;
 }
