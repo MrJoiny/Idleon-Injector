@@ -75,13 +75,3 @@
    npm run build
    npm run build-unix #(linux)
    ```
-
----
-
-## What's New?
-
-- **No more game directory requirement!**
-- **Automatic Windows/Steam and Linux/Proton support**
-- **Modern web UI** for all config and cheat management
-- Expanded config.js with the injection Regex, which you can freely edit.
----
