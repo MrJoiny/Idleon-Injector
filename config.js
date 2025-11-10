@@ -433,7 +433,7 @@ exports.cheatConfig = {
       POW: (t) => t * 2,
       StaminaMax: (t) => t * 2,
       StaminaRegenRate: (t) => t * 2,
-      // OverstimFillRate: (t) => t, // dont know looks like something usefull
+      OverstimFillRate: (t) => t * 2,
       AmberGain: (t) => t * 2,
       AmberDropChance: (t) => t * 2,
       AmberDropChance2nd: (t) => t * 2,
@@ -445,6 +445,14 @@ exports.cheatConfig = {
       // SpelunkingOreValue: (t) => t,
       // SpelunkingExpMulti: (t) => t,
       // SpelunkingAFKgains_PCTofALL: (t) => t,
+      ExaltDropChance: (t) => t * 2,
+      PrismaDropChance: (t) => t * 2,
+      MiscDropChance: (t) => t * 2,
+      GoldPieceDropChance: (t) => t * 2,
+      w7itemDropChance: (t) => t * 2,
+      blingbagDropChance: (t) => t * 2,
+      ShadowStrikeChance: (t) => t * 2,
+      // ShadowStrikeQTY: (t) => t,
 
       // i dont know what the most of the following things will do.
       // CavesUnlocked: (t) => t,
@@ -473,12 +481,6 @@ exports.cheatConfig = {
       // ShopUpgCost: (t) => t,
       // ShopUpgBuyable: (t) => t,
       // ShopUpgBonus: (t) => t,
-      // ExaltDropChance: (t) => t,
-      // PrismaDropChance: (t) => t,
-      // MiscDropChance: (t) => t,
-      // GoldPieceDropChance: (t) => t,
-      // w7itemDropChance: (t) => t,
-      // blingbagDropChance: (t) => t,
       // ElixirsOwned: (t) => t,
       // ElixirMaxDupes: (t) => t,
       // ElixirSlotsOwned: (t) => t,
@@ -496,8 +498,6 @@ exports.cheatConfig = {
       // OverstimBonus_PerLV: (t) => t,
       // OverstimBonus: (t) => t,
       // OverstimQtyREQ: (t) => t,
-      // ShadowStrikeChance: (t) => t,
-      // ShadowStrikeQTY: (t) => t,
       // NovaBlastHitChance: (t) => t,
       // SampleRedux: (t) => t,
       // ChapterBonus: (t) => t,
@@ -508,7 +508,7 @@ exports.cheatConfig = {
       // isBigFishUpgUnlocked: (t) => t,
       // BigFishUpgLVREQ: (t) => t,
     },
-    gallery:{
+    gallery: {
       GalleryBonusMulti: (t) => t * 2,
       InitializeTrophyBonuses: (t) => t,
       InitializeNametagBonuses: (t) => t,
@@ -524,6 +524,22 @@ exports.cheatConfig = {
       // NametagX_inTown: (t) => t,
       // NametagY_inTown: (t) => t,
     },
+    reef: {
+      ReefCost: (t) => 0,
+    },
+    clam: {
+      ClamPromochance: (t) => t * 2,
+      ClamBonuses: (t) => t * 2,
+      ClamPearlValue: (t) => t * 2,
+      // ClamPearl10x: (t) => t * 2,
+      Clam_BlackPearlValue: (t) => t * 2,
+      Clam_Cost: (t) => t / 2,
+      Clam_PearlUpgReq: (t) => t,
+      Clam_Mobs: (t) => t * 2,
+      // Clam_Respawn: (t) => t,
+      // ClamWorkBonus: (t) => t,
+      // Clamz_HP: (t) => t,
+    }
   },
   misc: {
     keychain: (t) => t,

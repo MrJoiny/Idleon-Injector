@@ -643,6 +643,16 @@ registerCheats({
       message: "gallery cheats check config file",
       configurable: { isObject: true },
     },
+    {
+      name: "reef",
+      message: "coral reef nullify cost",
+      configurable: { isObject: true},
+    },
+    {
+      name: "clam",
+      message: "clam cheats check config file",
+      configurable: { isObject: true},
+    },
   ],
 });
 
@@ -3457,6 +3467,21 @@ function setupw7Proxies() {
     return cheatState.w7.gallery && cheatConfig.w7.gallery.hasOwnProperty(argumentList[0])
       ? cheatConfig.w7.gallery[argumentList[0]](Reflect.apply(Gallery, this, argumentList))
       : Reflect.apply(Gallery, this, argumentList);
+  };
+
+  // clam and coral reef is inside thingies
+  const Clam = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.clam && cheatConfig.w7.clam.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.clam[argumentList[0]](Reflect.apply(Clam, this, argumentList))
+      : Reflect.apply(Clam, this, argumentList);
+  };
+
+  const Reef = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.reef && cheatConfig.w7.reef.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.reef[argumentList[0]](Reflect.apply(Reef, this, argumentList))
+      : Reflect.apply(Reef, this, argumentList);
   };
 }
 
