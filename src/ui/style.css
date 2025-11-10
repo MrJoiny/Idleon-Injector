@@ -1,35 +1,97 @@
+:root {
+    --bg-primary: #1a1d29;
+    --bg-secondary: #252936;
+    --bg-tertiary: #2d3142;
+    --bg-hover: #363b4e;
+    --accent-primary: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-secondary: #8b5cf6;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: #3f4458;
+    --success: #10b981;
+    --success-bg: #064e3b;
+    --error: #ef4444;
+    --error-bg: #7f1d1d;
+    --warning: #f59e0b;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: sans-serif;
-    padding: 20px;
-    background-color: #f4f4f4;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 0;
+    margin: 0;
+    background: linear-gradient(135deg, #1a1d29 0%, #252936 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
 }
 
 h1 {
     text-align: center;
-    color: #333;
+    color: var(--text-primary);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 2rem 0 1rem;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+}
+
+h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+h3 {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
 }
 
 #cheat-list {
     margin-top: 20px;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     padding: 15px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 /* Filter Styles */
 #filter-container {
-    margin-bottom: 15px; /* Space below filter */
-    padding: 10px 0; /* Padding top/bottom */
+    margin-bottom: 20px;
+    padding: 0;
 }
 
 #filter-input {
-    width: 100%; /* Full width */
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Include padding and border in width */
+    width: 100%;
+    padding: 12px 16px;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
     font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+#filter-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+#filter-input::placeholder {
+    color: var(--text-muted);
 }
 
 /* End Filter Styles */
@@ -37,452 +99,645 @@ h1 {
 .cheat-button {
     display: block;
     width: 100%;
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: #007bff;
+    padding: 12px 16px;
+    margin-bottom: 0;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-size: 0.95em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
 }
 
 .cheat-button:hover {
-    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.cheat-button:active {
+    transform: translateY(0);
 }
 
 #status-message {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-    font-weight: bold;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 400px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.95em;
+    box-shadow: 0 4px 20px var(--shadow);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .status-success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background-color: var(--success-bg);
+    color: var(--success);
+    border: 2px solid var(--success);
 }
 
 .status-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background-color: var(--error-bg);
+    color: var(--error);
+    border: 2px solid var(--error);
 }
 
 /* DevTools Button Styles */
 #toggle-devtools-button {
-    padding: 10px 15px;
-    margin-bottom: 10px; /* Add some space below the button */
-    background-color: #6c757d; /* A neutral grey color */
-    color: white;
-    border: none;
-    border-radius: 4px;
+    padding: 12px 20px;
+    margin-bottom: 15px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 #toggle-devtools-button:hover {
-    background-color: #5a6268; /* Darken on hover */
+    background-color: var(--bg-hover);
+    border-color: var(--accent-primary);
 }
 
 /* Container adjustments */
 #devtools-container {
-    margin-bottom: 20px; /* Add space below the devtools section */
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 #devtools-container h2 {
-    margin-top: 0; /* Remove default top margin for heading */
+    margin-top: 0;
     margin-bottom: 15px;
 }
 
 
 /* Styles for Cheat Categories */
 .cheat-category {
-    margin-bottom: 15px; /* Space between categories */
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow: hidden; /* Contain borders */
+    margin-bottom: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: var(--bg-secondary);
+    transition: all 0.3s ease;
+}
+
+.cheat-category:hover {
+    border-color: var(--accent-primary);
 }
 
 .cheat-category summary {
-    padding: 10px 15px;
-    background-color: #e9ecef;
-    font-weight: bold;
+    padding: 14px 18px;
+    background-color: var(--bg-tertiary);
+    font-weight: 600;
+    font-size: 1.05em;
     cursor: pointer;
-    outline: none; /* Remove focus outline */
-    border-bottom: 1px solid #ddd; /* Separator line */
+    outline: none;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    user-select: none;
 }
 
 .cheat-category[open] summary {
-    border-bottom: 1px solid #ddd; /* Keep separator when open */
+    background-color: var(--bg-hover);
+    border-bottom-color: var(--accent-primary);
 }
 
 .cheat-category summary:hover {
-    background-color: #dee2e6;
+    background-color: var(--bg-hover);
+    color: var(--accent-primary);
 }
 
 .cheat-category-content {
-    padding: 10px 15px 5px 15px; /* Padding inside the category */
-    background-color: #fff; /* White background for content */
+    padding: 12px;
+    background-color: var(--bg-secondary);
 }
-
-/* Adjust button margin within categories */
-/* .cheat-category-content .cheat-button { */
-    /* This might be overridden by the container style below */
-/*    margin-bottom: 5px; */
-/* } */
 
 /* NEW STYLES for input fields */
 .cheat-item-container {
-    display: flex; /* Arrange input and button horizontally */
-    align-items: center; /* Vertically align items */
-    gap: 8px; /* Space between input and button */
-    margin-bottom: 8px; /* Space below each item */
-    width: 100%; /* Take full width */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    width: 100%;
 }
 
 .cheat-input {
-    flex-grow: 1; /* Allow input to take available space */
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    flex-grow: 1;
+    padding: 10px 14px;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
     font-size: 0.9em;
-    min-width: 50px; /* Ensure input doesn't become too small */
+    min-width: 50px;
     max-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.cheat-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.cheat-input::placeholder {
+    color: var(--text-muted);
 }
 
 .cheat-item-container .cheat-button {
-    flex-shrink: 0; /* Prevent button from shrinking */
-    width: auto; /* Override the default 100% width */
-    padding: 8px 12px; /* Adjust padding for potentially smaller button */
-    margin-bottom: 0; /* Remove bottom margin as container handles spacing */
+    flex-shrink: 0;
+    width: auto;
+    padding: 10px 16px;
+    margin-bottom: 0;
 }
 
 /* --- Tab Styles --- */
 .tab-container {
-    border-bottom: 1px solid #ccc;
-    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    margin: 0 20px 20px;
+    display: flex;
+    gap: 8px;
 }
 
 .tab-button {
-    padding: 10px 15px;
+    padding: 12px 24px;
     cursor: pointer;
     border: none;
-    background-color: #eee;
-    margin-right: 5px;
-    border-radius: 4px 4px 0 0;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-radius: 8px 8px 0 0;
     font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .tab-button:hover {
-    background-color: #ddd;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .tab-button.active {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-bottom: 1px solid #fff; /* Connects with the active pane */
-    font-weight: bold;
+    background-color: var(--bg-secondary);
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
 }
 
 .tab-pane {
-    display: none; /* Hide inactive tabs */
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: none;
+    padding: 24px;
+    margin: 0 20px 20px;
+    border-radius: 12px;
+    background-color: var(--bg-secondary);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 .tab-pane.active {
-    display: block; /* Show active tab */
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* --- Config Sub-Tab Styles --- */
 .config-sub-tab-container {
-    border-bottom: 1px solid #ddd;
-    margin-bottom: 15px;
-    padding-bottom: 5px; /* Add a little space below buttons */
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 6px;
 }
 
 .config-sub-tab-button {
-    padding: 8px 12px;
+    padding: 10px 18px;
     cursor: pointer;
-    border: 1px solid transparent; /* Transparent border initially */
-    border-bottom: none; /* No bottom border initially */
-    background-color: #f8f9fa; /* Light background */
-    margin-right: 3px;
-    border-radius: 4px 4px 0 0;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px 6px 0 0;
     font-size: 0.95em;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .config-sub-tab-button:hover {
-    background-color: #e9ecef; /* Slightly darker on hover */
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .config-sub-tab-button.active {
-    background-color: #fff; /* Same as pane background */
-    border-color: #ddd; /* Match pane border */
-    border-bottom: 1px solid #fff; /* Connect with the active pane */
-    font-weight: bold;
-    position: relative;
-    top: 1px; /* Align with pane border */
+    background-color: var(--bg-tertiary);
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.config-sub-tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-primary);
 }
 
 .config-sub-tab-pane {
-    display: none; /* Hide inactive sub-panes */
-    padding-top: 15px; /* Add some space above content */
+    display: none;
+    padding-top: 15px;
 }
 
 .config-sub-tab-pane.active {
-    display: block; /* Show active sub-pane */
+    display: block;
+    animation: fadeIn 0.3s ease;
 }
 
 .config-actions {
-    margin-top: 20px; /* Space above the action buttons */
-    padding-top: 15px;
-    border-top: 1px solid #eee; /* Separator line */
-    text-align: right; /* Align buttons to the right */
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-color);
+    text-align: right;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
 }
 
 /* --- Config Tab Specific Styles (Items within sub-tabs) --- */
-/* #config-options { */ /* This ID is no longer used */
-/*    margin-bottom: 20px; */
-/* } */
-
 #cheatconfig-options, #startupcheats-options {
-    /* Add any specific container styles if needed */
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+#cheatconfig-options::-webkit-scrollbar,
+#startupcheats-options::-webkit-scrollbar {
+    width: 8px;
+}
+
+#cheatconfig-options::-webkit-scrollbar-track,
+#startupcheats-options::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+#cheatconfig-options::-webkit-scrollbar-thumb,
+#startupcheats-options::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+#cheatconfig-options::-webkit-scrollbar-thumb:hover,
+#startupcheats-options::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
 }
 
 .config-item {
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #eee;
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.config-item:hover {
+    border-color: var(--accent-primary);
 }
 
 .config-item label {
     display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #555;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: 0.95em;
 }
 
 .config-item input[type="text"],
 .config-item input[type="number"],
 .config-item textarea {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    padding: 10px 14px;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
     font-size: 0.95em;
+    transition: all 0.3s ease;
+}
+
+.config-item input[type="text"]:focus,
+.config-item input[type="number"]:focus,
+.config-item textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .config-item select {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    padding: 10px 14px;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
     font-size: 0.95em;
-    background-color: #fff; /* White background */
-    appearance: none; /* Remove default system appearance */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    /* Add a custom dropdown arrow */
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
     background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 10px 10px;
+    background-position: right 12px center;
+    background-size: 12px 12px;
     cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .config-item select:hover {
-    border-color: #888; /* Slightly darker border on hover */
+    border-color: var(--accent-primary);
 }
 
 .config-item select:focus {
-    outline: none; /* Remove default focus outline */
-    border-color: #007bff; /* Blue border on focus */
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .config-item input[type="checkbox"] {
-    margin-left: 5px;
-    vertical-align: middle;
+    width: 20px;
+    height: 20px;
+    margin-left: 0;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: var(--accent-primary);
 }
 
 .config-nested {
     margin-left: 20px;
-    padding-left: 15px;
-    border-left: 2px solid #f0f0f0;
-    margin-top: 10px;
+    padding-left: 20px;
+    border-left: 3px solid var(--accent-primary);
+    margin-top: 12px;
 }
 
 #save-config-button {
-    padding: 10px 20px;
-    background-color: #28a745; /* Green */
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--success), #059669);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 #save-config-button:hover {
-    background-color: #218838; /* Darker green */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+#save-config-button:active {
+    transform: translateY(0);
 }
 
 #update-config-button {
-    padding: 10px 20px;
-    background-color: #1f93b6; /* blue */
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
 }
 
 #update-config-button:hover {
-    background-color: #196e88; /* Darker blue */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.5);
+}
+
+#update-config-button:active {
+    transform: translateY(0);
 }
 
 
 /* --- DevTools Tab Specific Styles --- */
 #devtools-tab iframe {
-    /* Styles already set inline, but could be moved here */
     width: 100%;
     height: 600px;
-    border: 1px solid #ccc;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-tertiary);
 }
 
 #devtools-tab p {
-    margin-top: 10px;
+    margin-top: 12px;
     font-style: italic;
-    color: #666;
+    color: var(--text-secondary);
+    font-size: 0.95em;
 }
 
 /* --- Startup Cheats Editor Styles --- */
 .startup-cheats-editor {
-    margin-top: 10px; /* Space above the editor */
+    margin-top: 12px;
 }
 
 .startup-cheats-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 10px 0; /* Space below the list */
+    margin: 0 0 16px 0;
 }
 
 .startup-cheats-list li {
     display: flex;
     align-items: center;
-    gap: 8px; /* Space between input and button */
-    margin-bottom: 5px; /* Space between list items */
-    padding: 5px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    background-color: #f9f9f9;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-tertiary);
+    transition: all 0.3s ease;
+}
+
+.startup-cheats-list li:hover {
+    border-color: var(--accent-primary);
 }
 
 .startup-cheat-input {
-    flex-grow: 1; /* Take available space */
-    padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    flex-grow: 1;
+    padding: 10px 14px;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
     font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.startup-cheat-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .remove-cheat-button {
-    padding: 4px 8px;
-    background-color: #dc3545; /* Red */
+    padding: 8px 14px;
+    background: linear-gradient(135deg, var(--error), #dc2626);
     color: white;
     border: none;
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.8em;
-    flex-shrink: 0; /* Prevent shrinking */
-    transition: background-color 0.2s ease;
+    font-size: 0.85em;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
 .remove-cheat-button:hover {
-    background-color: #c82333; /* Darker red */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .add-cheat-area {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed #eee;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed var(--border-color);
 }
 
 .add-cheat-button,
 .cancel-add-cheat-button {
-    padding: 6px 12px;
+    padding: 10px 18px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 0.9em;
-    margin-right: 5px;
-    transition: background-color 0.2s ease;
+    font-weight: 500;
+    margin-right: 8px;
+    transition: all 0.3s ease;
 }
 
 .add-cheat-button {
-    background-color: #28a745; /* Green */
+    background: linear-gradient(135deg, var(--success), #059669);
     color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
+
 .add-cheat-button:hover {
-    background-color: #218838; /* Darker green */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
 }
 
 .cancel-add-cheat-button {
-    background-color: #6c757d; /* Grey */
-    color: white;
-}
-.cancel-add-cheat-button:hover {
-    background-color: #5a6268; /* Darker grey */
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
 }
 
+.cancel-add-cheat-button:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--accent-primary);
+}
 
 .cheat-search-input {
-    padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    padding: 10px 14px;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
     font-size: 0.9em;
-    margin-right: 5px;
-    min-width: 200px; /* Give it some base width */
+    margin-right: 8px;
+    min-width: 250px;
+    transition: all 0.3s ease;
+}
+
+.cheat-search-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .cheat-search-results {
     list-style: none;
     padding: 0;
-    margin: 5px 0 0 0;
-    border: 1px solid #ccc;
+    margin: 8px 0 0 0;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--bg-tertiary);
+    position: absolute;
+    z-index: 100;
+    width: calc(100% - 40px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.cheat-search-results::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cheat-search-results::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.cheat-search-results::-webkit-scrollbar-thumb {
+    background: var(--border-color);
     border-radius: 4px;
-    max-height: 150px; /* Limit height */
-    overflow-y: auto; /* Add scroll if needed */
-    background-color: #fff;
-    position: absolute; /* Position relative to the container or body */
-    z-index: 10; /* Ensure it's above other elements */
-    width: calc(100% - 40px); /* Adjust width as needed, considering padding */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.cheat-search-results::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
 }
 
 .cheat-search-results li {
-    padding: 8px 10px;
+    padding: 12px 14px;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
 }
 
 .cheat-search-results li:last-child {
@@ -490,59 +745,69 @@ h1 {
 }
 
 .cheat-search-results li:hover {
-    background-color: #f0f0f0;
+    background-color: var(--bg-hover);
+    color: var(--accent-primary);
 }
 
 /* Style for the Config tab dropdown */
+.config-category-selector {
+    margin-bottom: 20px;
+}
+
+.config-category-selector label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
 #cheatconfig-category-select {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    max-width: 300px;
+    padding: 10px 14px;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
     font-size: 0.95em;
-    background-color: #fff; /* White background */
-    appearance: none; /* Remove default system appearance */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    /* Add a custom dropdown arrow */
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
     background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 10px 10px;
+    background-position: right 12px center;
+    background-size: 12px 12px;
     cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 #cheatconfig-category-select:hover {
-    border-color: #888; /* Slightly darker border on hover */
+    border-color: var(--accent-primary);
 }
 
 #cheatconfig-category-select:focus {
-    outline: none; /* Remove default focus outline */
-    border-color: #007bff; /* Blue border on focus */
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 /* Sticky Config Actions */
 #config-tab.active .config-actions {
     position: sticky;
-    bottom: 20px; /* Adjust as needed */
-    right: 20px;  /* Adjust as needed */
-    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
-    padding: 10px; /* Add some padding */
-    border-radius: 5px; /* Optional: rounded corners */
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Optional: subtle shadow */
-    z-index: 10; /* Ensure it stays on top */
-    /* Keep existing text-align: right */
-    /* Ensure buttons are aligned right within the sticky container */
-    margin-right: 20px; /* Add margin to align with the right edge of the tab content padding */
-    float: right; /* Make the container only as wide as its content and stick right */
-    width: fit-content; /* Adjust width to content */
+    bottom: 0;
+    background: linear-gradient(to top, var(--bg-secondary) 80%, transparent);
+    padding: 20px 0 0;
+    z-index: 10;
 }
 
-/* Clearfix for the parent container if float is used */
-#config-tab.active::after {
-    content: "";
-    display: table;
-    clear: both;
+/* Loading indicators */
+#loading-cheats,
+#loading-cheatconfig,
+#loading-startupcheats,
+#loading-config {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
 }
