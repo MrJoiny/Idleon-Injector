@@ -3863,6 +3863,57 @@ function rollPerfectObols(obolOrder, obolMap, characterClass) {
  * Below here are mostly helper functions for the above
  */
 
+// Helper functions for Options List Account editor
+function getOptionsListAccount() {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
+      return bEngine.gameAttributes.h.OptionsListAccount;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting OptionsListAccount:', error);
+    return null;
+  }
+}
+
+function setOptionsListAccount(newArray) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h) {
+      bEngine.gameAttributes.h.OptionsListAccount = newArray;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error setting OptionsListAccount:', error);
+    return false;
+  }
+}
+
+function setOptionsListAccountIndex(index, value) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
+      bEngine.gameAttributes.h.OptionsListAccount[index] = value;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error setting OptionsListAccount index:', error);
+    return false;
+  }
+}
+
+function getOptionsListAccountIndex(index) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
+      return bEngine.gameAttributes.h.OptionsListAccount[index];
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting OptionsListAccount index:', error);
+    return null;
+  }
+}
+
 // Here you can add suggestions for the autocomplete
 async function getAutoCompleteSuggestions() {
   let choices = [];
