@@ -313,6 +313,7 @@ const minigameCheat = function (params) {
   setupGeneralInfoProxy.call(this);
   setupPoingProxy.call(this);
   setupHoopsMinigameProxy.call(this);
+  setupDartsMinigameProxy.call(this);
   setupMonumentProxy.call(this);
   cheatState.minigame[params[0]] = !cheatState.minigame[params[0]];
   return `${cheatState.minigame[params[0]] ? "Activated" : "Deactivated"} ${params[0]
@@ -329,6 +330,7 @@ registerCheats({
     { name: "choppin", message: "choppin minigame cheat", fn: minigameCheat },
     { name: "poing", message: "poing minigame cheat", fn: minigameCheat },
     { name: "hoops", message: "hoops minigame cheat", fn: minigameCheat },
+    { name: "darts", message: "darts minigame cheat", fn: minigameCheat },
     { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat }
   ],
 });
@@ -410,6 +412,18 @@ registerCheats({
     {
       name: "eventspins",
       message: "Infinite event spins",
+    },
+    {
+      name: "hoopshop",
+      message:
+        "hoopshop cost nullify",
+      configurable: { isObject: true },
+    },
+    {
+      name: "dartshop",
+      message:
+        "dartshop cost nullify",
+      configurable: { isObject: true },
     },
   ],
 });
@@ -642,6 +656,31 @@ registerCheats({
       name: "gallery",
       message: "gallery cheats check config file",
       configurable: { isObject: true },
+    },
+    {
+      name: "reef",
+      message: "coral reef nullify cost",
+      configurable: { isObject: true},
+    },
+    {
+      name: "clam",
+      message: "clam cheats check config file",
+      configurable: { isObject: true},
+    },
+    {
+      name: "coralkid",
+      message: "coral kid nullify cost",
+      configurable: { isObject: true},
+    },
+    {
+      name: "bigfish",
+      message: "big fish nullify cost",
+      configurable: { isObject: true},
+    },
+    {
+      name: "sneaksymbol",
+      message: "sneaksymbol 100% chance",
+      configurable: { isObject: true},
     },
   ],
 });
@@ -3081,6 +3120,21 @@ function setupw1StuffProxy() {
       : Reflect.apply(Owl, this, argumentList);
   };
 
+  // hoops and darts shop
+  const Hoopshop = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.wide.hoopshop && cheatConfig.wide.hoopshop.hasOwnProperty(argumentList[0])
+      ? cheatConfig.wide.hoopshop[argumentList[0]](Reflect.apply(Hoopshop, this, argumentList))
+      : Reflect.apply(Hoopshop, this, argumentList);
+  };
+
+  const Dartshop = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.wide.dartshop && cheatConfig.wide.dartshop.hasOwnProperty(argumentList[0])
+      ? cheatConfig.wide.dartshop[argumentList[0]](Reflect.apply(Dartshop, this, argumentList))
+      : Reflect.apply(Dartshop, this, argumentList);
+  };
+
   // Nullify anvil upgrade cost and duration
   const anvilProduceStats = events(189)._customBlock_AnvilProduceStats;
   events(189)._customBlock_AnvilProduceStats = function (...argumentsList) {
@@ -3458,6 +3512,42 @@ function setupw7Proxies() {
       ? cheatConfig.w7.gallery[argumentList[0]](Reflect.apply(Gallery, this, argumentList))
       : Reflect.apply(Gallery, this, argumentList);
   };
+
+  // clam and coral reef is inside thingies
+  const Clam = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.clam && cheatConfig.w7.clam.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.clam[argumentList[0]](Reflect.apply(Clam, this, argumentList))
+      : Reflect.apply(Clam, this, argumentList);
+  };
+
+  const Reef = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.reef && cheatConfig.w7.reef.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.reef[argumentList[0]](Reflect.apply(Reef, this, argumentList))
+      : Reflect.apply(Reef, this, argumentList);
+  };
+
+  const Coralkid = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.coralkid && cheatConfig.w7.coralkid.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.coralkid[argumentList[0]](Reflect.apply(Coralkid, this, argumentList))
+      : Reflect.apply(Coralkid, this, argumentList);
+  };
+
+  const Bigfish = actorEvents579._customBlock_Spelunk;
+  actorEvents579._customBlock_Spelunk = function (...argumentList) {
+    return cheatState.w7.bigfish && cheatConfig.w7.bigfish.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.bigfish[argumentList[0]](Reflect.apply(Bigfish, this, argumentList))
+      : Reflect.apply(Bigfish, this, argumentList);
+  };
+
+  const Sneaksymbol = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.sneaksymbol && cheatConfig.w7.sneaksymbol.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.sneaksymbol[argumentList[0]](Reflect.apply(Sneaksymbol, this, argumentList))
+      : Reflect.apply(Sneaksymbol, this, argumentList);
+  };
 }
 
 function setupArcadeProxies() {
@@ -3606,9 +3696,59 @@ function setupHoopsMinigameProxy() {
     const proxyHoops = new Proxy(originalGenInfo, handler);
     hoopsBehavior._GenINFO = proxyHoops;
 
-    console.log("Hoops minigame proxy applied successfully.");
   } catch (error) {
     console.error("Error setting up Hoops minigame proxy:", error);
+  }
+}
+
+function setupDartsMinigameProxy() {
+  try {
+    const dartsBehavior = bEngine
+      .getGameAttribute("PixelHelperActor")[21]
+      .behaviors.getBehavior("ActorEvents_510");
+
+    if (!dartsBehavior || typeof dartsBehavior._GenINFO === "undefined") {
+      console.error(
+        "Darts Minigame Proxy Setup Failed: Could not find ActorEvents_510 behavior or its _GenINFO property."
+      );
+      return;
+    }
+
+    // Darts minigame _GenINFO indices from code analysis
+    const DART_X = 138;          // Dart X position
+    const DART_Y = 139;          // Dart Y position  
+    const DART_ACTIVE = 137;     // Dart is flying (1=true, 0=false)
+    const BOARD_BOUNDS = { left: 916, right: 960, top: 89, bottom: 495 };
+    const BULLSEYE_Y = 292;      // Center Y position for perfect bullseye
+
+    const originalGenInfo = dartsBehavior._GenINFO;
+    const handler = {
+      get: function (target, property, receiver) {
+        if (cheatState.minigame.darts) {
+          const numericProperty = Number(property);
+          
+          // When dart is active and over the board, force perfect bullseye position
+          if (target[DART_ACTIVE] === 1) {
+            if (numericProperty === DART_X) {
+              // Center dart horizontally on board
+              return Math.floor((BOARD_BOUNDS.left + BOARD_BOUNDS.right) / 2);
+            }
+            if (numericProperty === DART_Y) {
+              // Force dart to bullseye Y coordinate
+              return BULLSEYE_Y;
+            }
+          }
+        }
+        
+        return Reflect.get(target, property, receiver);
+      },
+    };
+
+    const proxyDarts = new Proxy(originalGenInfo, handler);
+    dartsBehavior._GenINFO = proxyDarts;
+
+  } catch (error) {
+    console.error("Error setting up Darts minigame proxy:", error);
   }
 }
 
