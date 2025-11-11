@@ -37,6 +37,12 @@ exports.cheatConfig = {
     },
     arcade: {
       ArcadeCost: (t) => Math.min(t, 0),
+    },
+    dartshop: {
+      DartsUpgCost: (t) => 0,
+    },
+    hoopshop: {
+      HoopsUpgCost: (t) => 0,
     }
   },
   wipe: {
@@ -426,7 +432,6 @@ exports.cheatConfig = {
   },
   w7: {
     spelunk: {
-
       // one pow change is enough to boost no need to bost all
       // POW_base: (t) => t * 2,
       // POW_multi: (t) => t * 2,
@@ -515,7 +520,7 @@ exports.cheatConfig = {
       // PodiumsOwned: (t) => t,
       // PodiumsOwned_Lv2: (t) => t,
       // PodiumsOwned_Lv3: (t) => t,
-      // PodiumsOwned_Lv4: (t) => t,
+      PodiumsOwned_Lv4: (t) => 19, // 19 that is the current max of PodumsOwned
       // GalleryBonusSystemON: (t) => t,
       // PodiumX_inGallery: (t) => t,
       // PodiumY_inGallery: (t) => t,
@@ -539,7 +544,16 @@ exports.cheatConfig = {
       // Clam_Respawn: (t) => t,
       // ClamWorkBonus: (t) => t,
       // Clamz_HP: (t) => t,
-    }
+    },
+    coralkid: {
+      CoralKidUpgCost: (t) => 0,
+    },
+    bigfish: {
+      BigFishCost: (t) => 0,
+    },
+    sneaksymbol: {
+      SneakSymbolChanceBase: (t) => 1,
+    },
   },
   misc: {
     keychain: (t) => t,
