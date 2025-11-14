@@ -35,14 +35,193 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFullConfig = null; // Store the fetched config
     let configTabInitialized = false; // Flag to track if config tab has been loaded once
 
-    // Function to display status messages
-    function showStatus(message, isError = false) {
-        statusMessageDiv.textContent = message;
-        statusMessageDiv.className = isError ? 'status-error' : 'status-success';
-        setTimeout(() => {
-            statusMessageDiv.textContent = '';
-            statusMessageDiv.className = '';
-        }, 5000);
+    // Note: showStatus function is imported from utils.js
+
+    // --- Helper Functions for Cheat Loading ---
+
+    /**
+     * Fetch cheats and confirmation data from API
+     * @returns {Promise<{cheats: Array, needsConfirmation: Array}>}
+     */
+    async function fetchCheatsData() {
+        const [cheatsResponse, confirmationResponse] = await Promise.all([
+            fetch('/api/cheats'),
+            fetch('/api/needs-confirmation')
+        ]);
+
+        if (!cheatsResponse.ok) {
+            throw new Error(`HTTP error fetching cheats! status: ${cheatsResponse.status}`);
+        }
+
+        const cheats = await cheatsResponse.json();
+        const needsConfirmation = confirmationResponse.ok ? await confirmationResponse.json() : [];
+
+        return { cheats, needsConfirmation };
+    }
+
+    /**
+     * Group cheats by category based on their command structure
+     * @param {Array} cheats - Array of cheat objects or strings
+     * @returns {Object} Grouped cheats by category
+     */
+    function groupCheatsByCategory(cheats) {
+        const groupedCheats = {};
+        const categoryHeaders = new Set();
+
+        // Identify category headers (single-word commands)
+        cheats.forEach(cheat => {
+            const cheatValue = typeof cheat === 'object' ? cheat.value : cheat;
+            if (cheatValue && !cheatValue.includes(' ')) {
+                categoryHeaders.add(cheatValue);
+            }
+        });
+
+        // Group cheats by category
+        cheats.forEach(cheat => {
+            const cheatValue = typeof cheat === 'object' ? cheat.value : cheat;
+            const cheatName = typeof cheat === 'object' ? cheat.message : cheat;
+
+            if (!cheatValue) return;
+
+            const parts = cheatValue.split(' ');
+            let category = 'General';
+
+            if (parts.length > 1 && categoryHeaders.has(parts[0])) {
+                category = parts[0];
+            }
+
+            if (!groupedCheats[category]) {
+                groupedCheats[category] = [];
+            }
+
+            const baseCommand = cheatValue.split(' ')[0];
+            groupedCheats[category].push({
+                message: cheatName,
+                value: cheatValue,
+                baseCommand
+            });
+        });
+
+        return groupedCheats;
+    }
+
+    /**
+     * Create a cheat button with optional input field
+     * @param {Object} cheat - Cheat object with message and value
+     * @param {boolean} needsValue - Whether this cheat requires user input
+     * @returns {HTMLElement} Container with button and optional input
+     */
+    function createCheatButton(cheat, needsValue) {
+        const container = document.createElement('div');
+        container.className = 'cheat-item-container';
+
+        const button = document.createElement('button');
+        button.textContent = cheat.message;
+        button.className = 'cheat-button';
+        button.dataset.action = cheat.value;
+
+        let inputField = null;
+        if (needsValue) {
+            inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.className = 'cheat-input';
+            inputField.id = `input-${cheat.value.replace(/\s+/g, '-')}`;
+            inputField.placeholder = 'Value';
+            container.appendChild(inputField);
+        }
+
+        container.appendChild(button);
+
+        button.addEventListener('click', () => {
+            let actionToSend = cheat.value;
+            if (needsValue && inputField) {
+                const inputValue = inputField.value.trim();
+                if (inputValue) {
+                    actionToSend = `${cheat.value} ${inputValue}`;
+                } else {
+                    showStatus(`Warning: Value required for '${cheat.message}'.`, true);
+                    return;
+                }
+            }
+            executeCheatAction(actionToSend);
+        });
+
+        return container;
+    }
+
+    /**
+     * Render cheat categories and their buttons
+     * @param {Object} groupedCheats - Cheats grouped by category
+     * @param {Array} needsConfirmation - List of cheats requiring confirmation
+     */
+    function renderCheatCategories(groupedCheats, needsConfirmation) {
+        const sortedCategories = Object.keys(groupedCheats).sort();
+
+        sortedCategories.forEach(category => {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'cheat-category';
+
+            const categoryHeader = document.createElement('h3');
+            categoryHeader.textContent = category;
+            categoryHeader.className = 'category-header';
+            categoryDiv.appendChild(categoryHeader);
+
+            const categoryContent = document.createElement('div');
+            categoryContent.className = 'category-content';
+
+            groupedCheats[category].forEach(cheat => {
+                const needsValue = needsConfirmation.includes(cheat.baseCommand);
+                const cheatElement = createCheatButton(cheat, needsValue);
+                categoryContent.appendChild(cheatElement);
+            });
+
+            categoryDiv.appendChild(categoryContent);
+            cheatListDiv.appendChild(categoryDiv);
+        });
+    }
+
+    /**
+     * Setup filter functionality for cheats
+     */
+    function setupCheatFilter() {
+        if (!filterInput) return;
+
+        filterInput.addEventListener('input', (e) => {
+            const filterText = e.target.value.toLowerCase();
+            const allCategories = document.querySelectorAll('.cheat-category');
+
+            allCategories.forEach(categoryDiv => {
+                const categoryHeader = categoryDiv.querySelector('.category-header');
+                const categoryName = categoryHeader ? categoryHeader.textContent.toLowerCase() : '';
+                const buttons = categoryDiv.querySelectorAll('.cheat-button');
+                let hasVisibleButtons = false;
+
+                buttons.forEach(button => {
+                    const buttonText = button.textContent.toLowerCase();
+                    const action = button.dataset.action.toLowerCase();
+                    const matches = buttonText.includes(filterText) || action.includes(filterText);
+
+                    button.parentElement.style.display = matches ? '' : 'none';
+                    if (matches) hasVisibleButtons = true;
+                });
+
+                const categoryMatches = categoryName.includes(filterText);
+                categoryDiv.style.display = (hasVisibleButtons || categoryMatches) ? '' : 'none';
+            });
+        });
+    }
+
+    /**
+     * Handle errors during cheat loading
+     * @param {Error} error - The error that occurred
+     */
+    function handleCheatLoadError(error) {
+        console.error('Error loading cheats:', error);
+        if (loadingCheatsP) loadingCheatsP.style.display = 'none';
+        if (cheatListDiv) {
+            cheatListDiv.innerHTML = `<p style="color: red;">Error loading cheats: ${error.message}</p>`;
+        }
+        showStatus(`Error loading cheats: ${error.message}`, true);
     }
 
     // --- API Interaction Functions ---
@@ -54,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: action }),
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(data.details || data.error || `HTTP error! status: ${response.status}`);
             showStatus(`Executed '${action}': ${data.result || 'Success'}`);
             console.log(`[Action] Executed '${action}':`, data);
@@ -70,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/config');
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.details || errorData.error || `HTTP error! Status: ${response.status}`);
             }
             currentFullConfig = await response.json(); // Cache the config
@@ -87,7 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (availableCheatsForSearch.length > 0) return availableCheatsForSearch;
         try {
             const response = await fetch('/api/cheats');
-            if (!response.ok) throw new Error(`HTTP error fetching cheats! status: ${response.status}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error fetching cheats! status: ${response.status}`);
+            }
             availableCheatsForSearch = await response.json();
             console.log('[Config] Fetched available cheats for search:', availableCheatsForSearch);
             return availableCheatsForSearch;
@@ -105,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedConfig),
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(data.details || data.error || `HTTP error! Status: ${response.status}`);
             showStatus(data.message || 'Configuration updated in session successfully.');
             console.log('[Config] Session Update successful:', data);
@@ -123,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(configToSave),
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(data.details || data.error || `HTTP error! Status: ${response.status}`);
             showStatus(data.message || 'Configuration saved to file successfully.');
             console.log('[Config] Save to file successful:', data);
@@ -138,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/devtools-url');
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.details || errorData.error || `HTTP error! Status: ${response.status}`);
             }
             const data = await response.json();
@@ -153,97 +335,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI Rendering Functions ---
 
+    /**
+     * Main function to load and render all cheats
+     * Refactored to use smaller helper functions for better maintainability
+     */
     async function loadAndRenderCheats() {
-        // ... (loadAndRenderCheats function remains unchanged) ...
-        if (!cheatListDiv) return; // Don't run if the element isn't present
-        cheatListDiv.innerHTML = ''; // Clear previous buttons
-        if (loadingCheatsP) loadingCheatsP.style.display = 'block'; // Show loading message
+        if (!cheatListDiv) return;
+        
+        cheatListDiv.innerHTML = '';
+        if (loadingCheatsP) loadingCheatsP.style.display = 'block';
 
         try {
-            // Fetch both cheats and the list needing confirmation
-            const [cheatsResponse, confirmationResponse] = await Promise.all([
-                fetch('/api/cheats'),
-                fetch('/api/needs-confirmation') // Still needed for input fields on cheat buttons
-            ]);
-
-            if (loadingCheatsP) loadingCheatsP.style.display = 'none'; // Hide loading message
-
-            if (!cheatsResponse.ok) {
-                throw new Error(`HTTP error fetching cheats! status: ${cheatsResponse.status}`);
-            }
-            if (!confirmationResponse.ok) {
-                // Log error but don't necessarily block rendering
-                console.error(`HTTP error fetching confirmation list! status: ${confirmationResponse.status}`);
-                showStatus(`Warning: Could not load value requirement list. Input fields may not appear.`, true);
-            }
-
-            const cheats = await cheatsResponse.json(); // Expecting array of { message: "...", value: "..." }
-            cheatsNeedingConfirmation = confirmationResponse.ok ? await confirmationResponse.json() : []; // Store the list
-
-            cheatListDiv.innerHTML = ''; // Clear loading message
+            const { cheats, needsConfirmation } = await fetchCheatsData();
+            cheatsNeedingConfirmation = needsConfirmation;
+            
+            if (loadingCheatsP) loadingCheatsP.style.display = 'none';
 
             if (!cheats || cheats.length === 0) {
                 cheatListDiv.innerHTML = '<p>No cheats found or unable to load.</p>';
                 return;
             }
 
-            // --- Grouping Logic ---
-            const groupedCheats = {}; // Start empty, don't assume 'General' exists
-            const categoryHeaders = new Set();
             allCheatButtons = []; // Reset button list for filtering
-
-            // Identify single-word commands as category headers
-            cheats.forEach(cheat => {
-                const cheatValue = typeof cheat === 'object' ? cheat.value : cheat;
-                if (cheatValue && !cheatValue.includes(' ')) {
-                    categoryHeaders.add(cheatValue);
-                }
-            });
-
-            // Group cheats
-            cheats.forEach(cheat => {
-                const cheatValue = typeof cheat === 'object' ? cheat.value : cheat;
-                const cheatName = typeof cheat === 'object' ? cheat.message : cheat; // Use message for display
-
-                if (!cheatValue) return; // Skip if no value
-
-                const parts = cheatValue.split(' ');
-                let category = 'General';
-
-                if (parts.length > 1 && categoryHeaders.has(parts[0])) {
-                    category = parts[0];
-                }
-
-                if (!groupedCheats[category]) {
-                    groupedCheats[category] = [];
-                }
-                // Store the full cheat object for rendering
-                // Store the full cheat object for rendering
-                // Also store the base command (first word) for confirmation check
-                const baseCommand = cheatValue.split(' ')[0];
-                groupedCheats[category].push({ message: cheatName, value: cheatValue, baseCommand: baseCommand });
-            });
-
-
-            // --- Rendering Logic ---
+            const groupedCheats = groupCheatsByCategory(cheats);
+            
+            // Render categories
             const sortedCategories = Object.keys(groupedCheats).sort((a, b) => {
                 if (a === 'General') return 1; // Put General last
                 if (b === 'General') return -1;
-                return a.localeCompare(b); // Sort others alphabetically
+                return a.localeCompare(b);
             });
 
+            // Use DocumentFragment for batch DOM insertion
+            const fragment = document.createDocumentFragment();
+
             sortedCategories.forEach(category => {
-                if (groupedCheats[category].length === 0) return; // Skip empty categories
+                if (groupedCheats[category].length === 0) return;
 
                 const details = document.createElement('details');
                 details.className = 'cheat-category';
-                // Optionally open General by default, or specific categories
-                // if (category === 'General') {
-                //     details.open = true;
-                // }
 
                 const summary = document.createElement('summary');
-                // Capitalize first letter for display
                 summary.textContent = category.charAt(0).toUpperCase() + category.slice(1);
                 details.appendChild(summary);
 
@@ -251,99 +383,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 categoryContent.className = 'cheat-category-content';
 
                 groupedCheats[category].forEach(cheat => {
-                    const button = document.createElement('button');
-                    button.textContent = cheat.message; // Use the message for button text
-                    const container = document.createElement('div'); // Container for button and input
-                    container.className = 'cheat-item-container';
-
-                    button.className = 'cheat-button';
-                    button.dataset.action = cheat.value; // Store the action value
-
-                    // Check if this cheat (or its base command) needs confirmation/value
                     const needsValue = cheatsNeedingConfirmation.some(confirmCmd =>
                         cheat.value.startsWith(confirmCmd)
                     );
-
-                    let inputField = null;
-                    if (needsValue) {
-                        inputField = document.createElement('input');
-                        inputField.type = 'text';
-                        inputField.className = 'cheat-input';
-                        // Use a unique ID based on the action value for easy retrieval
-                        inputField.id = `input-${cheat.value.replace(/\s+/g, '-')}`; // Unique ID
-                        inputField.placeholder = 'Value';
-                        container.appendChild(inputField);
-                    }
-
-                    container.appendChild(button);
-
-                    button.addEventListener('click', () => {
-                        let actionToSend = cheat.value;
-                        if (needsValue && inputField) {
-                            const inputValue = inputField.value.trim();
-                            if (inputValue) {
-                                actionToSend = `${cheat.value} ${inputValue}`;
-                            } else {
-                                showStatus(`Warning: Value required for '${cheat.message}'. Executing without value.`, true);
-                                // Decide whether to proceed or return
-                                // return; // Uncomment to prevent execution without value
-                            }
-                        }
-                        executeCheatAction(actionToSend); // Use the renamed function
-                    });
-
-                    categoryContent.appendChild(container);
+                    const cheatElement = createCheatButton(cheat, needsValue);
+                    categoryContent.appendChild(cheatElement);
+                    allCheatButtons.push(cheatElement);
                 });
 
                 details.appendChild(categoryContent);
-                cheatListDiv.appendChild(details); // Append to the button container
-                // Store buttons for filtering
-                categoryContent.querySelectorAll('.cheat-item-container').forEach(item => allCheatButtons.push(item));
+                fragment.appendChild(details);
             });
 
-            // Add filter listener after buttons are created
-            if (filterInput && cheatListDiv) { // Ensure cheatListDiv is available
-                filterInput.addEventListener('input', (e) => {
-                    const filterText = e.target.value.toLowerCase();
-                    let visibleCategories = new Set(); // Keep track of categories with visible items
+            // Single DOM update
+            cheatListDiv.appendChild(fragment);
 
-                    // Filter individual cheat items
-                    allCheatButtons.forEach(itemContainer => {
-                        const button = itemContainer.querySelector('.cheat-button');
-                        const buttonText = button.textContent.toLowerCase();
-                        const categoryDetails = itemContainer.closest('.cheat-category'); // Find parent category
-
-                        if (buttonText.includes(filterText)) {
-                            itemContainer.style.display = ''; // Show item
-                            if (categoryDetails) {
-                                visibleCategories.add(categoryDetails); // Mark category as having visible items
-                            }
-                        } else {
-                            itemContainer.style.display = 'none'; // Hide item
-                        }
-                    });
-
-                    // Show/Hide entire category groups based on visible items
-                    const allCategories = cheatListDiv.querySelectorAll('.cheat-category');
-                    allCategories.forEach(categoryDetails => {
-                        if (visibleCategories.has(categoryDetails)) {
-                            categoryDetails.style.display = ''; // Show category group
-                        } else {
-                            categoryDetails.style.display = 'none'; // Hide category group
-                        }
-                    });
-                });
-            }
+            // Setup filter after rendering
+            setupCheatFilterForCategories();
 
         } catch (error) {
-            console.error('Error loading or processing cheats:', error);
-            if (cheatListDiv) {
-                cheatListDiv.innerHTML = `<p class="status-error">Error loading cheats: ${error.message}</p>`;
-            } else if (loadingCheatsP) {
-                loadingCheatsP.textContent = `Error loading cheats: ${error.message}`;
-                loadingCheatsP.className = 'status-error';
-            }
+            handleCheatLoadError(error);
         }
+    }
+
+    /**
+     * Setup filter for category-based cheat display
+     */
+    function setupCheatFilterForCategories() {
+        if (!filterInput || !cheatListDiv) return;
+
+        // Use debounced filter handler to improve performance
+        const debouncedFilter = debounce((e) => {
+            const filterText = e.target.value.toLowerCase();
+            const visibleCategories = new Set();
+
+            allCheatButtons.forEach(itemContainer => {
+                const button = itemContainer.querySelector('.cheat-button');
+                const buttonText = button.textContent.toLowerCase();
+                const categoryDetails = itemContainer.closest('.cheat-category');
+
+                if (buttonText.includes(filterText)) {
+                    itemContainer.style.display = '';
+                    if (categoryDetails) {
+                        visibleCategories.add(categoryDetails);
+                    }
+                } else {
+                    itemContainer.style.display = 'none';
+                }
+            });
+
+            const allCategories = cheatListDiv.querySelectorAll('.cheat-category');
+            allCategories.forEach(categoryDetails => {
+                categoryDetails.style.display = visibleCategories.has(categoryDetails) ? '' : 'none';
+            });
+        }, 300);
+
+        // Remove existing listener to prevent memory leaks
+        filterInput.removeEventListener('input', filterInput._cheatFilterHandler);
+        filterInput._cheatFilterHandler = debouncedFilter;
+        filterInput.addEventListener('input', debouncedFilter);
     }
 
 
@@ -389,8 +487,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     cheatConfigCategorySelect.appendChild(option);
                 });
 
-                // Add event listener for filtering
-                cheatConfigCategorySelect.removeEventListener('change', handleCheatConfigCategoryChange); // Remove previous listener if any
+                // Remove previous listener to prevent memory leaks
+                if (cheatConfigCategorySelect._categoryChangeHandler) {
+                    cheatConfigCategorySelect.removeEventListener('change', cheatConfigCategorySelect._categoryChangeHandler);
+                }
+                // Store reference for cleanup
+                cheatConfigCategorySelect._categoryChangeHandler = handleCheatConfigCategoryChange;
                 cheatConfigCategorySelect.addEventListener('change', handleCheatConfigCategoryChange);
             }
 
@@ -672,20 +774,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // REVISED: Helper function to gather config data from the UI
     async function gatherConfigFromUI() {
-        const latestConfig = await fetchConfig(); // Get the latest structure
-        if (!latestConfig) {
-            showStatus('Error: Could not fetch current config to gather data.', true);
-            return null;
-        }
+        try {
+            const latestConfig = await fetchConfig(); // Get the latest structure
+            if (!latestConfig) {
+                showStatus('Error: Could not fetch current config to gather data.', true);
+                return null;
+            }
 
-        // IMPORTANT: Create a deep copy to modify
-        // Ensure latestConfig is an object before stringifying
-        if (typeof latestConfig !== 'object' || latestConfig === null) {
-            console.error('[Config] Cannot gather UI data: Invalid latestConfig structure.', latestConfig);
-            showStatus('Error: Could not gather config data due to invalid base config.', true);
-            return null;
-        }
-        const updatedFullConfig = JSON.parse(JSON.stringify(latestConfig));
+            // IMPORTANT: Create a deep copy to modify
+            // Ensure latestConfig is an object before stringifying
+            if (typeof latestConfig !== 'object' || latestConfig === null) {
+                console.error('[Config] Cannot gather UI data: Invalid latestConfig structure.', latestConfig);
+                showStatus('Error: Could not gather config data due to invalid base config.', true);
+                return null;
+            }
+            const updatedFullConfig = JSON.parse(JSON.stringify(latestConfig));
 
         // Helper to set nested values
         function setNestedValue(obj, pathArray, value) {
@@ -765,8 +868,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 
-        console.log('[Config] Gathered data from UI:', updatedFullConfig);
-        return updatedFullConfig;
+            console.log('[Config] Gathered data from UI:', updatedFullConfig);
+            return updatedFullConfig;
+        } catch (error) {
+            console.error('[Config] Error gathering config from UI:', error);
+            showStatus('Error gathering configuration from UI', true);
+            return null;
+        }
     }
 
 

@@ -646,6 +646,7 @@ h3 {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 2px dashed var(--border-color);
+    position: relative;
 }
 
 .add-cheat-button,
@@ -710,7 +711,7 @@ h3 {
     overflow-y: auto;
     background-color: var(--bg-tertiary);
     position: absolute;
-    z-index: 100;
+    z-index: 1500;
     width: calc(100% - 40px);
     box-shadow: 0 4px 12px var(--shadow);
 }

@@ -215,9 +215,10 @@ function initOptionsAccount() {
         });
     }
 
-    // Filter input
+    // Filter input with debouncing
     if (filterInput) {
-        filterInput.addEventListener('input', filterOptions);
+        const debouncedFilter = debounce(filterOptions, 300);
+        filterInput.addEventListener('input', debouncedFilter);
     }
 
     // Options tab switching
@@ -245,7 +246,7 @@ async function loadOptionsAccount() {
     try {
         const response = await fetch('/api/options-account');
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
@@ -276,23 +277,35 @@ function renderOptionsAccount() {
 
     if (!documentedContainer || !rawContainer || !currentOptionsData) return;
 
-    documentedContainer.innerHTML = '';
-    rawContainer.innerHTML = '';
+    try {
+        // Use DocumentFragment for batch DOM insertion
+        const documentedFragment = document.createDocumentFragment();
+        const rawFragment = document.createDocumentFragment();
 
-    // Render documented options
-    currentOptionsData.forEach((value, index) => {
-        const schema = optionsListAccountSchema[index];
-        
-        if (schema) {
-            // Render in documented tab
-            const item = createOptionItem(index, value, schema, false);
-            documentedContainer.appendChild(item);
-        }
+        // Render documented options
+        currentOptionsData.forEach((value, index) => {
+            const schema = optionsListAccountSchema[index];
+            
+            if (schema) {
+                // Render in documented tab
+                const item = createOptionItem(index, value, schema, false);
+                documentedFragment.appendChild(item);
+            }
 
-        // Render in raw tab (all indices)
-        const rawItem = createOptionItem(index, value, schema, true);
-        rawContainer.appendChild(rawItem);
-    });
+            // Render in raw tab (all indices)
+            const rawItem = createOptionItem(index, value, schema, true);
+            rawFragment.appendChild(rawItem);
+        });
+
+        // Single DOM update per container
+        documentedContainer.innerHTML = '';
+        documentedContainer.appendChild(documentedFragment);
+        rawContainer.innerHTML = '';
+        rawContainer.appendChild(rawFragment);
+    } catch (error) {
+        console.error('Error rendering options:', error);
+        showStatus('Error rendering options', true);
+    }
 }
 
 function createOptionItem(index, value, schema, isRaw) {
@@ -403,35 +416,35 @@ async function applySingleOption(index, inputElement) {
     const originalType = inputElement.dataset.originalType;
     let newValue;
 
-    // Get the value from input
-    if (inputElement.type === 'checkbox') {
-        newValue = inputElement.checked;
-    } else {
-        const inputValue = inputElement.value.trim();
-        
-        // Preserve original type
-        if (originalType === 'number') {
-            newValue = parseFloat(inputValue);
-            if (isNaN(newValue)) {
-                showStatus(`Invalid number at index ${index}`, true);
-                return;
-            }
-        } else if (originalType === 'boolean') {
-            newValue = inputValue.toLowerCase() === 'true';
-        } else if (originalType === 'string') {
-            newValue = inputValue;
+    try {
+        // Get the value from input
+        if (inputElement.type === 'checkbox') {
+            newValue = inputElement.checked;
         } else {
-            // Try to parse as JSON for complex types
-            try {
-                newValue = JSON.parse(inputValue);
-            } catch {
+            const inputValue = inputElement.value.trim();
+            
+            // Preserve original type
+            if (originalType === 'number') {
+                newValue = parseFloat(inputValue);
+                if (isNaN(newValue)) {
+                    showStatus(`Invalid number at index ${index}`, true);
+                    return;
+                }
+            } else if (originalType === 'boolean') {
+                newValue = inputValue.toLowerCase() === 'true';
+            } else if (originalType === 'string') {
                 newValue = inputValue;
+            } else {
+                // Try to parse as JSON for complex types
+                try {
+                    newValue = JSON.parse(inputValue);
+                } catch {
+                    newValue = inputValue;
+                }
             }
         }
-    }
 
-    // Send to server
-    try {
+        // Send to server
         const response = await fetch('/api/options-account/index', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -439,7 +452,7 @@ async function applySingleOption(index, inputElement) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
@@ -467,41 +480,35 @@ async function applySingleOption(index, inputElement) {
 }
 
 function filterOptions() {
-    const filterInput = document.getElementById('options-filter');
-    if (!filterInput) return;
+    try {
+        const filterInput = document.getElementById('options-filter');
+        if (!filterInput) return;
 
-    const filterText = filterInput.value.toLowerCase().trim();
-    const allItems = document.querySelectorAll('.option-item');
+        const filterText = filterInput.value.toLowerCase().trim();
+        const allItems = document.querySelectorAll('.option-item');
 
-    allItems.forEach(item => {
-        if (!filterText) {
-            item.style.display = '';
-            return;
-        }
+        allItems.forEach(item => {
+            if (!filterText) {
+                item.style.display = '';
+                return;
+            }
 
-        const index = item.dataset.index;
-        const label = item.querySelector('.option-label')?.textContent.toLowerCase() || '';
-        const description = item.querySelector('.option-description')?.textContent.toLowerCase() || '';
+            const index = item.dataset.index;
+            const label = item.querySelector('.option-label')?.textContent.toLowerCase() || '';
+            const description = item.querySelector('.option-description')?.textContent.toLowerCase() || '';
 
-        if (index.includes(filterText) || label.includes(filterText) || description.includes(filterText)) {
-            item.style.display = '';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+            if (index.includes(filterText) || label.includes(filterText) || description.includes(filterText)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    } catch (error) {
+        console.error('Error filtering options:', error);
+        showStatus('Error filtering options', true);
+    }
 }
 
-function showStatus(message, isError = false) {
-    const statusDiv = document.getElementById('status-message');
-    if (!statusDiv) return;
-
-    statusDiv.textContent = message;
-    statusDiv.className = isError ? 'status-error' : 'status-success';
-    setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = '';
-    }, 5000);
-}
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
