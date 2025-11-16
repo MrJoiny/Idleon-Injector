@@ -16,7 +16,7 @@ let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
 let CListFuncDict = {}; // Dictionary of custom list entries
 
-let iframe; // Declare iframe globally, initialize later 
+let iframe; // Declare iframe globally, initialize later
 
 async function gameReady() {
   while (
