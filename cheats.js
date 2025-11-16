@@ -16,7 +16,7 @@ let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
 let CListFuncDict = {}; // Dictionary of custom list entries
 
-let iframe; // Declare iframe globally, initialize later
+let iframe; // Declare iframe globally, initialize later 
 
 async function gameReady() {
   while (
@@ -302,6 +302,7 @@ registerCheats({
         ["World 7 Pack", "bon_i"],
         ["Squirell Pack", "bon_h"],
         ["Mr.Piggy Pack", "bon_j"],
+        ["Autumn Pack", "bon_k"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
