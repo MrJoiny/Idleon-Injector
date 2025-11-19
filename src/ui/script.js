@@ -18,6 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingStartupCheatsP = document.getElementById('loading-startupcheats');
     const updateConfigButton = document.getElementById('update-config-button');
     const saveConfigButton = document.getElementById('save-config-button');
+
+    if (updateConfigButton) {
+        updateConfigButton.addEventListener('click', async () => {
+            const config = await gatherConfigFromUI();
+            if (config) {
+                await updateSessionConfig(config);
+            }
+        });
+    }
+
+    if (saveConfigButton) {
+        saveConfigButton.addEventListener('click', async () => {
+            const config = await gatherConfigFromUI();
+            if (config) {
+                await saveConfigFile(config);
+            }
+        });
+    }
     // Removed: configCategorySelect, configOptionsDiv, topLevelOptionsDiv, categorizedOptionsDiv, loadingConfigP (using specific ones now)
 
     // DevTools Tab Elements
@@ -341,14 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function loadAndRenderCheats() {
         if (!cheatListDiv) return;
-        
+
         cheatListDiv.innerHTML = '';
         if (loadingCheatsP) loadingCheatsP.style.display = 'block';
 
         try {
             const { cheats, needsConfirmation } = await fetchCheatsData();
             cheatsNeedingConfirmation = needsConfirmation;
-            
+
             if (loadingCheatsP) loadingCheatsP.style.display = 'none';
 
             if (!cheats || cheats.length === 0) {
@@ -358,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allCheatButtons = []; // Reset button list for filtering
             const groupedCheats = groupCheatsByCategory(cheats);
-            
+
             // Render categories
             const sortedCategories = Object.keys(groupedCheats).sort((a, b) => {
                 if (a === 'General') return 1; // Put General last
@@ -599,6 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Function to render a single cheat item
             function renderCheatItem(cheatCommand, index) {
                 const listItem = document.createElement('li');
+                listItem.className = 'cheat-item-row';
                 listItem.dataset.index = index;
 
                 const inputField = document.createElement('input');
@@ -609,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 listItem.appendChild(inputField);
 
                 const removeButton = document.createElement('button');
-                removeButton.textContent = 'Remove';
+                removeButton.textContent = '✕';
                 removeButton.className = 'remove-cheat-button';
                 removeButton.type = 'button';
                 removeButton.addEventListener('click', () => listItem.remove());
@@ -782,7 +801,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // IMPORTANT: Create a deep copy to modify
-            // Ensure latestConfig is an object before stringifying
             if (typeof latestConfig !== 'object' || latestConfig === null) {
                 console.error('[Config] Cannot gather UI data: Invalid latestConfig structure.', latestConfig);
                 showStatus('Error: Could not gather config data due to invalid base config.', true);
@@ -790,83 +808,62 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const updatedFullConfig = JSON.parse(JSON.stringify(latestConfig));
 
-        // Helper to set nested values
-        function setNestedValue(obj, pathArray, value) {
-            if (!obj || typeof obj !== 'object') {
-                console.error(`[SetNested] Invalid base object provided for path: ${pathArray.join('.')}`);
-                return; // Cannot set value on non-object
-            }
-            let current = obj;
-            for (let i = 0; i < pathArray.length - 1; i++) {
-                const key = pathArray[i];
-                if (!current[key] || typeof current[key] !== 'object') {
-                    console.warn(`Path ${pathArray.slice(0, i + 1).join('.')} does not exist or is not an object. Cannot set value for ${pathArray.join('.')}`);
-                    return; // Stop if path doesn't exist
+            // Helper to set nested values
+            function setNestedValue(obj, pathArray, value) {
+                if (!obj || typeof obj !== 'object') {
+                    console.error(`[SetNested] Invalid base object provided for path: ${pathArray.join('.')}`);
+                    return;
                 }
-                current = current[key];
-            }
-            if (current && typeof current === 'object') {
-                current[pathArray[pathArray.length - 1]] = value;
-            } else {
-                console.error(`Cannot set value for ${pathArray.join('.')}: parent path does not exist or is not an object.`);
-            }
-        }
-
-        // --- Gather Startup Cheats ---
-        if (startupCheatsOptionsDiv && updatedFullConfig.hasOwnProperty('startupCheats')) {
-            const cheatEditor = startupCheatsOptionsDiv.querySelector('.startup-cheats-editor'); // Should be only one
-            if (cheatEditor) {
-                const cheatInputs = cheatEditor.querySelectorAll('.startup-cheats-list .startup-cheat-input');
-                const newStartupCheats = [];
-                cheatInputs.forEach(input => {
-                    if (input.value.trim()) {
-                        newStartupCheats.push(input.value.trim());
+                let current = obj;
+                for (let i = 0; i < pathArray.length - 1; i++) {
+                    const key = pathArray[i];
+                    if (!current[key] || typeof current[key] !== 'object') {
+                        console.warn(`Path ${pathArray.slice(0, i + 1).join('.')} does not exist or is not an object.`);
+                        return;
                     }
-                });
-                updatedFullConfig.startupCheats = newStartupCheats; // Update the array
-            } else {
-                console.warn('[Config Gather] Startup cheats editor not found in its pane.');
-                // Decide if we should default to empty array or keep original
-                // updatedFullConfig.startupCheats = []; // Uncomment to default to empty if editor missing
+                    current = current[key];
+                }
+                current[pathArray[pathArray.length - 1]] = value;
             }
-        } else {
-            console.warn('[Config Gather] Startup cheats pane or startupCheats key missing in config.');
-        }
 
+            // --- Gather Startup Cheats ---
+            if (startupCheatsOptionsDiv && updatedFullConfig.hasOwnProperty('startupCheats')) {
+                const cheatEditor = startupCheatsOptionsDiv.querySelector('.startup-cheats-editor');
+                if (cheatEditor) {
+                    const cheatInputs = cheatEditor.querySelectorAll('.startup-cheats-list .startup-cheat-input');
+                    const newStartupCheats = [];
+                    cheatInputs.forEach(input => {
+                        if (input.value.trim()) {
+                            newStartupCheats.push(input.value.trim());
+                        }
+                    });
+                    updatedFullConfig.startupCheats = newStartupCheats;
+                }
+            }
 
-        // --- Gather CheatConfig Options ---
-        if (cheatConfigOptionsDiv && updatedFullConfig.hasOwnProperty('cheatConfig')) { // Use camelCase
-            // Ensure cheatConfig is an object before proceeding
-            if (typeof updatedFullConfig.cheatConfig !== 'object' || updatedFullConfig.cheatConfig === null) { // Use camelCase
-                console.error('[Config Gather] cheatConfig is not an object in the base config. Cannot gather data.'); // Use camelCase
-                updatedFullConfig.cheatConfig = {}; // Or handle as appropriate // Use camelCase
-            } else {
+            // --- Gather CheatConfig Options ---
+            if (cheatConfigOptionsDiv && updatedFullConfig.hasOwnProperty('cheatConfig')) {
+                if (typeof updatedFullConfig.cheatConfig !== 'object' || updatedFullConfig.cheatConfig === null) {
+                    updatedFullConfig.cheatConfig = {};
+                }
+
                 const configInputs = cheatConfigOptionsDiv.querySelectorAll('input[data-key], textarea[data-key]');
                 configInputs.forEach(input => {
                     const fullKeyPath = input.dataset.key.split('.');
-                    // Expecting keys like "cheatConfig.someKey.nestedKey" // Use camelCase
-                    if (fullKeyPath.length < 2 || fullKeyPath[0] !== 'cheatConfig') { // Use camelCase
-                        console.warn(`[Config Gather] Skipping input with unexpected key format: ${input.dataset.key}`);
-                        return;
-                    }
-                    const relativeKeyPath = fullKeyPath.slice(1); // Path relative to cheatConfig // Use camelCase
+                    if (fullKeyPath.length < 2 || fullKeyPath[0] !== 'cheatConfig') return;
 
+                    const relativeKeyPath = fullKeyPath.slice(1);
                     let value;
                     if (input.type === 'checkbox') value = input.checked;
-                    else if (input.type === 'number') value = parseFloat(input.value) || input.value; // Keep original if parse fails
+                    else if (input.type === 'number') value = parseFloat(input.value) || input.value;
                     else if (input.tagName === 'TEXTAREA') {
-                        try { value = JSON.parse(input.value); } catch { value = input.value; } // Attempt parse for JSON textareas
+                        try { value = JSON.parse(input.value); } catch { value = input.value; }
                     }
-                    else value = input.value; // Default is string
+                    else value = input.value;
 
-                    // Set the value within the cheatConfig object of the copied config // Use camelCase
-                    setNestedValue(updatedFullConfig.cheatConfig, relativeKeyPath, value); // Use camelCase
+                    setNestedValue(updatedFullConfig.cheatConfig, relativeKeyPath, value);
                 });
             }
-        } else {
-            console.warn('[Config Gather] Cheat config pane or cheatConfig key missing in config.'); // Use camelCase
-        }
-
 
             console.log('[Config] Gathered data from UI:', updatedFullConfig);
             return updatedFullConfig;
@@ -920,25 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // "Use Config" button listener
-    if (updateConfigButton) {
-        updateConfigButton.addEventListener('click', async () => {
-            const configData = await gatherConfigFromUI();
-            if (configData) {
-                updateSessionConfig(configData);
-            }
-        });
-    }
 
-    // "Save Config" button listener
-    if (saveConfigButton) {
-        saveConfigButton.addEventListener('click', async () => {
-            const configData = await gatherConfigFromUI();
-            if (configData) {
-                saveConfigFile(configData);
-            }
-        });
-    }
 
     // --- Initial Load ---
     loadAndRenderCheats(); // Load cheats immediately (default tab)
