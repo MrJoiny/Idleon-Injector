@@ -24,7 +24,7 @@ const { startCliInterface } = require('./modules/cli/cliInterface');
 
 function printHeader() {
   console.log('------------------------------------------------------------------------------------------');
-  console.log('InjectCheatUI v1.3.2');
+  console.log('InjectCheatUI v1.3.3');
   console.log('------------------------------------------------------------------------------------------');
   console.log('');
 }
