@@ -229,6 +229,97 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
+  // --- API Endpoint: Get Options List Account ---
+  app.get('/api/options-account', async (req, res) => {
+    try {
+      const optionsResult = await Runtime.evaluate({
+        expression: `getOptionsListAccount.call(${context})`,
+        awaitPromise: true,
+        returnByValue: true
+      });
+
+      if (optionsResult.exceptionDetails) {
+        console.error("API Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
+        res.status(500).json({
+          error: 'Failed to get OptionsListAccount from game',
+          details: optionsResult.exceptionDetails.text
+        });
+      } else {
+        const data = optionsResult.result.value;
+        if (data === null) {
+          res.status(500).json({ error: 'OptionsListAccount not found in game context' });
+        } else {
+          res.json({ data: data });
+        }
+      }
+    } catch (apiError) {
+      console.error("API Error in /api/options-account:", apiError);
+      res.status(500).json({
+        error: 'Internal server error while fetching OptionsListAccount',
+        details: apiError.message
+      });
+    }
+  });
+
+  // --- API Endpoint: Update Single Options List Account Index ---
+  app.post('/api/options-account/index', async (req, res) => {
+    const { index, value } = req.body;
+    
+    if (index === undefined || value === undefined) {
+      return res.status(400).json({
+        error: 'Missing required parameters: index and value'
+      });
+    }
+
+    if (typeof index !== 'number' || index < 0) {
+      return res.status(400).json({
+        error: 'Invalid index. Must be a non-negative number.'
+      });
+    }
+
+    try {
+      // Serialize the value properly based on its type
+      let serializedValue;
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // Use objToString for complex objects
+        serializedValue = objToString(value);
+      } else {
+        // Use JSON.stringify for primitives, arrays, and null
+        serializedValue = JSON.stringify(value);
+      }
+      
+      const updateExpression = `setOptionsListAccountIndex.call(${context}, ${index}, ${serializedValue})`;
+
+      const updateResult = await Runtime.evaluate({
+        expression: updateExpression,
+        awaitPromise: true,
+        allowUnsafeEvalBlockedByCSP: true
+      });
+
+      if (updateResult.exceptionDetails) {
+        console.error(`API Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
+        res.status(500).json({
+          error: `Failed to update OptionsListAccount[${index}] in game`,
+          details: updateResult.exceptionDetails.text
+        });
+      } else {
+        const success = updateResult.result.value;
+        if (success) {
+          console.log(`[Web UI] OptionsListAccount[${index}] updated to:`, value);
+          res.json({ message: `Index ${index} updated successfully`, value: value });
+        } else {
+          res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
+        }
+      }
+    } catch (apiError) {
+      console.error(`API Error in /api/options-account/index POST:`, apiError);
+      res.status(500).json({
+        error: 'Internal server error while updating OptionsListAccount index',
+        details: apiError.message
+      });
+    }
+  });
+
   // --- API Endpoint: Save configuration to file ---
   app.post('/api/config/save', async (req, res) => {
     const receivedFullConfig = req.body;
