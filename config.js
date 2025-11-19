@@ -458,6 +458,8 @@ exports.cheatConfig = {
       blingbagDropChance: (t) => t * 2,
       ShadowStrikeChance: (t) => t * 2,
       // ShadowStrikeQTY: (t) => t,
+      // GrandDiscoveries_Total: (t) => t,
+      GrandDiscoveries_FindChance: (t) => t * 2,
 
       // i dont know what the most of the following things will do.
       // CavesUnlocked: (t) => t,
@@ -512,6 +514,7 @@ exports.cheatConfig = {
       // BigFishCost: (t) => t,
       // isBigFishUpgUnlocked: (t) => t,
       // BigFishUpgLVREQ: (t) => t,
+      StaminaCostMulti: (t) => t,
     },
     gallery: {
       GalleryBonusMulti: (t) => t * 2,

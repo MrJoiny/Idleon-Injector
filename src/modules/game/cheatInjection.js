@@ -61,7 +61,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
 
   await Promise.all([Runtime.enable(), Page.enable(), Network.enable(), DOM.enable()]);
 
-  const eval = await Runtime.evaluate({ expression: cheats });
+  const evalResult = await Runtime.evaluate({ expression: cheats });
   console.log('Loaded cheats...');
 
   // Define the handler for intercepted requests. This runs for each matched script.
