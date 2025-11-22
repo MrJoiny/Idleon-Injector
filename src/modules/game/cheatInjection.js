@@ -61,8 +61,6 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
 
   await Promise.all([Runtime.enable(), Page.enable(), Network.enable(), DOM.enable()]);
 
-  const evalResult = await Runtime.evaluate({ expression: cheats });
-  console.log('Loaded cheats...');
 
   // Define the handler for intercepted requests. This runs for each matched script.
   Network.requestIntercepted(async ({ interceptionId, request }) => {
@@ -87,6 +85,15 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
       // Extract the variable name found by the regex.
       const AppVar = Array(AppMain.length).fill("");
       for (let i = 0; i < AppMain.length; i++) AppVar[i] = VarName.exec(AppMain[i])[0];
+
+      // Inject cheats directly into the current context
+      // This ensures cheats are loaded even after page reloads
+      console.log('Loaded cheats...');
+      await Runtime.evaluate({
+        expression: cheats,
+        awaitPromise: true,
+        allowUnsafeEvalBlockedByCSP: true
+      });
 
       let manipulatorResult = await Runtime.evaluate({ expression: 'getZJSManipulator()', awaitPromise: true });
       let newBody;
