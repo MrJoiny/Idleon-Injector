@@ -661,27 +661,27 @@ registerCheats({
     {
       name: "reef",
       message: "coral reef nullify cost",
-      configurable: { isObject: true},
+      configurable: { isObject: true },
     },
     {
       name: "clam",
       message: "clam cheats check config file",
-      configurable: { isObject: true},
+      configurable: { isObject: true },
     },
     {
       name: "coralkid",
       message: "coral kid nullify cost",
-      configurable: { isObject: true},
+      configurable: { isObject: true },
     },
     {
       name: "bigfish",
       message: "big fish nullify cost",
-      configurable: { isObject: true},
+      configurable: { isObject: true },
     },
     {
       name: "sneaksymbol",
       message: "sneaksymbol 100% chance",
-      configurable: { isObject: true},
+      configurable: { isObject: true },
     },
   ],
 });
@@ -2024,6 +2024,9 @@ async function setup() {
     setupHPProxy.call(this);
     setupCreateElementProxy.call(iframe);
 
+    // This stops the steamachieve34/35 bug. This function is in steam.js.
+    // The name is generated so it may well change between versions and need updating here
+    // changed for a solution not relying on the name.
     window[0].agIis = function () { };
 
     console.log('Registering "cheats" command...'); // Added for diagnostics
@@ -3727,7 +3730,7 @@ function setupDartsMinigameProxy() {
       get: function (target, property, receiver) {
         if (cheatState.minigame.darts) {
           const numericProperty = Number(property);
-          
+
           // When dart is active and over the board, force perfect bullseye position
           if (target[DART_ACTIVE] === 1) {
             if (numericProperty === DART_X) {
@@ -3740,7 +3743,7 @@ function setupDartsMinigameProxy() {
             }
           }
         }
-        
+
         return Reflect.get(target, property, receiver);
       },
     };
