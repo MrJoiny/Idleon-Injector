@@ -501,6 +501,8 @@ exports.cheatConfig = {
       // ShadowStrikeQTY: (t) => t,
       // GrandDiscoveries_Total: (t) => t,
       GrandDiscoveries_FindChance: (t) => t * 2,
+      RockPOWreq: (t) => t / 2,
+      RockHP: (t) => t / 2,
 
       // i dont know what the most of the following things will do.
       // CavesUnlocked: (t) => t,
@@ -520,8 +522,6 @@ exports.cheatConfig = {
       // BiggestHaulUnlocked: (t) => t,
       // BonusDMG: (t) => t,
       // RockTypeCreated: (t) => t,
-      // RockPOWreq: (t) => t,
-      // RockHP: (t) => t,
       // RockAmber: (t) => t,
       // StaminaBarWidth: (t) => t,
       // ShopUpgVisible: (t) => t,
