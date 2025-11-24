@@ -683,6 +683,11 @@ registerCheats({
       message: "sneaksymbol 100% chance",
       configurable: { isObject: true },
     },
+    {
+      name: "bubba",
+      message: "bubba cheats check config file",
+      configurable: { isObject: true },
+    },
   ],
 });
 
@@ -2027,7 +2032,15 @@ async function setup() {
     // This stops the steamachieve34/35 bug. This function is in steam.js.
     // The name is generated so it may well change between versions and need updating here
     // changed for a solution not relying on the name.
+    // this still crashes after a while playing the game 24.11.2025
     window[0].agIis = function () { };
+    // window[0].agIis = new Proxy(window[0].agIis, {
+    //   apply: function (target, thisArg, argumentsList) {
+    //     const n = argumentsList[0];
+    //     console.log(`agIis called with n: ${n}`);
+    //     return Reflect.apply(target, thisArg, argumentsList);
+    //   },
+    // });
 
     console.log('Registering "cheats" command...'); // Added for diagnostics
     registerCheat(
@@ -3502,6 +3515,13 @@ function setupw6Proxies() {
 
 function setupw7Proxies() {
   const actorEvents579 = events(579);
+
+  const BubbaStuff = actorEvents579._customBlock_Bubbastuff;
+  actorEvents579._customBlock_Bubbastuff = function (...argumentList) {
+    return cheatState.w7.bubba && cheatConfig.w7.bubba.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.bubba[argumentList[0]](Reflect.apply(BubbaStuff, this, argumentList))
+      : Reflect.apply(BubbaStuff, this, argumentList);
+  };
 
   const Spelunk = actorEvents579._customBlock_Spelunk;
   actorEvents579._customBlock_Spelunk = function (...argumentList) {
