@@ -104,7 +104,11 @@ async function startCliInterface(context, client, options = {}) {
         const response = await client.Target.getTargetInfo();
         const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
         try {
-          spawn(injectorConfig.chrome, ["--new-window", url])
+          const child = spawn(injectorConfig.chrome, ["--new-window", url]);
+          child.on('error', (err) => {
+            console.error('Failed to start chrome debugger process:', err);
+            console.error('Check if that is the right chrome path in the config file');
+          });
           console.log('Opened idleon chrome debugger');
         } catch (error) {
           console.error('Error opening chrome debugger:', error);
