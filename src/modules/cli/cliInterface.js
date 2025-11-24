@@ -103,8 +103,12 @@ async function startCliInterface(context, client, options = {}) {
       if (action === 'chromedebug') {
         const response = await client.Target.getTargetInfo();
         const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
-        spawn(injectorConfig.chrome, ["--new-window", url])
-        console.log('Opened idleon chrome debugger');
+        try {
+          spawn(injectorConfig.chrome, ["--new-window", url])
+          console.log('Opened idleon chrome debugger');
+        } catch (error) {
+          console.error('Error opening chrome debugger:', error);
+        }
       } else {
         // Execute the selected cheat command within the game's context
         const cheatResponse = await Runtime.evaluate({
