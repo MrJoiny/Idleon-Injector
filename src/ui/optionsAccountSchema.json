@@ -2423,10 +2423,9 @@
         "type": "number"
     },
     "443": {
-        "name": "Character Animation Sprite Foundation",
-        "description": "Foundation element in 447-444 resource allocation block + coordinated sprite reference system",
-        "type": "number",
-        "AI": true
+        "name": "Lavas Dev Streams watched (Tome)",
+        "description": "Number of streams watched",
+        "type": "number"
     },
     "444": {
         "name": "Sequential Sprite References System",
