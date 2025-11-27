@@ -50,6 +50,12 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
       ],
     }
   );
+
+  // Disable cache to ensure we always intercept the network request for the game script
+  // Might help for a specific case where the game script is cached and can't be intercepted.
+  // Not sure if it's helps.
+  await Network.setCacheDisabled({ cacheDisabled: true });
+
   // Disable Content Security Policy to allow injecting and executing modified/external scripts.
   await Page.setBypassCSP({ enabled: true });
   // Optionally forward console messages from the game window to this script's console.
