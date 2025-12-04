@@ -3226,11 +3226,19 @@ function setupw3StuffProxy() {
   }
 
   actorEvents345._customBlock_TowerStats = new Proxy(actorEvents345._customBlock_TowerStats, {
-    apply: function (originalFn, context, argumentsList) {
-      if (cheatState.w3.towerdamage && argumentsList[0] == "damage") {
-        return 100000;
+    apply: function (originalFn, context, argumentList) {
+      const stat = argumentList[0];
+      const base = Reflect.apply(originalFn, context, argumentList);
+
+      if (
+        cheatState.w3.towerdamage &&
+        stat === "damage" &&
+        typeof cheatConfig.w3.towerdamage === "function"
+      ) {
+        return cheatConfig.w3.towerdamage(base);
       }
-      return Reflect.apply(originalFn, context, argumentsList);
+
+      return base;
     },
   });
 }
