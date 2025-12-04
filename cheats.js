@@ -2761,22 +2761,28 @@ function setupArbitraryProxy() {
   };
 
   // Skill stats
+  let worshipSpeedScaling = false;
+
   const SkillStats = ActorEvents12._customBlock_SkillStats;
   ActorEvents12._customBlock_SkillStats = function (...argumentsList) {
     const t = argumentsList[0];
-    if (cheatState.w3.worshipspeed && t == "WorshipSpeed") return 5000; // 1000 worship%/h
+
+    // WorshipSpeed multiplier (config-driven), only once per chain
+    if (cheatState.w3.worshipspeed && t == "WorshipSpeed" && !worshipSpeedScaling) {
+      worshipSpeedScaling = true;
+      try {
+        const base = Reflect.apply(SkillStats, this, argumentsList);
+        return cheatConfig.w3.worshipspeed(base);
+      } finally {
+        worshipSpeedScaling = false;
+      }
+    }
+
+    // Efficiency multiplier for all skills (including worship-related ones)
     if (cheatState.multiply.efficiency && t.includes("Efficiency"))
       return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.efficiency;
-    return Reflect.apply(SkillStats, this, argumentsList);
-  };
 
-  const SkillStats2 = ActorEvents12._customBlock_skillstats2;
-  ActorEvents12._customBlock_skillstats2 = function (...argumentsList) {
-    const t = argumentsList[0];
-    if (cheatState.w3.worshipspeed && t == "WorshipSpeed") return 5000; // 1000 worship%/h
-    if (cheatState.multiply.efficiency && t.includes("Efficiency"))
-      return Reflect.apply(SkillStats2, this, argumentsList) * cheatConfig.multiply.efficiency;
-    return Reflect.apply(SkillStats2, this, argumentsList);
+    return Reflect.apply(SkillStats, this, argumentsList);
   };
 
   // Some arbitrary stuff
