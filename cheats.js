@@ -501,7 +501,7 @@ registerCheats({
     { name: "instabuild", message: "insta-build of buildings." },
     { name: "booktime", message: "book per second." },
     { name: "totalflags", message: "10 total flags." },
-    { name: "buildspd", message: "super build speed." },
+    { name: "buildspd", message: "multiply build speed." },
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
     { name: "trapping", message: "trapping duration nullification." },
@@ -3194,7 +3194,10 @@ function setupw3StuffProxy() {
     if (cheatState.w3.instabuild && t == "TowerBuildReq") return 0; // Instant build/upgrade
     if (cheatState.w3.booktime && t == "BookReqTime") return 1; // Book/second, holds shadow ban danger and could one day be replaced
     if (cheatState.w3.totalflags && t == "TotalFlags") return 10; // Total amnt of placeable flags
-    if (cheatState.w3.buildspd && t == "PlayerBuildSpd") return 1000000; // Buildrate
+    if (cheatState.w3.buildspd && t == "PlayerBuildSpd") { // multiply build rate (check config.js)
+      const originalValue = Reflect.apply(Workbench, this, argumentsList);
+      return cheatConfig.w3.buildspd(originalValue);
+    }
     if (cheatState.multiply.printer && t == "ExtraPrinting")
       return (
         (argumentsList[0] = "AdditionExtraPrinting"),
