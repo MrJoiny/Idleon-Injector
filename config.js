@@ -100,6 +100,9 @@ exports.cheatConfig = {
       // RooBonuse: (t) => t,
     },
   },
+  w3: {
+    buildspd: (t) => t * 10,
+  },
   w4: {
     fastforaging: (t) => 3e8,
     superpets: {
