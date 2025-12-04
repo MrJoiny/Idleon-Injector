@@ -495,20 +495,20 @@ registerCheats({
   canToggleSubcheats: true,
   subcheats: [
     { name: "mobdeath", message: "worship mobs insta-death." },
-    { name: "towerdamage", message: "super tower damage." },
+    { name: "towerdamage", message: "multiply tower damage." },
     { name: "flagreq", message: "flag unlock time nullification." },
     { name: "freebuildings", message: "free tower upgrades." },
     { name: "instabuild", message: "insta-build of buildings." },
     { name: "booktime", message: "book per second." },
     { name: "totalflags", message: "10 total flags." },
-    { name: "buildspd", message: "super build speed." },
+    { name: "buildspd", message: "multiply build speed." },
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
     { name: "trapping", message: "trapping duration nullification." },
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
     // { name: 'shrinehr', message: 'shrine lvl time reduction to 0.5h.' }, //too dangerous, causes super high shrine levels
-    { name: "worshipspeed", message: "worship charge superspeed" },
+    { name: "worshipspeed", message: "multiply worship charge speed" },
     { name: "freeworship", message: "nullification of worship charge cost" },
     { name: "globalshrines", message: "global shrines" },
     { name: "instantdreams", message: "Dream bar fills instantly" },
@@ -2761,23 +2761,16 @@ function setupArbitraryProxy() {
   };
 
   // Skill stats
-  const SkillStats = ActorEvents12._customBlock_SkillStats;
-  ActorEvents12._customBlock_SkillStats = function (...argumentsList) {
-    const t = argumentsList[0];
-    if (cheatState.w3.worshipspeed && t == "WorshipSpeed") return 5000; // 1000 worship%/h
-    if (cheatState.multiply.efficiency && t.includes("Efficiency"))
-      return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.efficiency;
-    return Reflect.apply(SkillStats, this, argumentsList);
-  };
-
-  const SkillStats2 = ActorEvents12._customBlock_skillstats2;
-  ActorEvents12._customBlock_skillstats2 = function (...argumentsList) {
-    const t = argumentsList[0];
-    if (cheatState.w3.worshipspeed && t == "WorshipSpeed") return 5000; // 1000 worship%/h
-    if (cheatState.multiply.efficiency && t.includes("Efficiency"))
-      return Reflect.apply(SkillStats2, this, argumentsList) * cheatConfig.multiply.efficiency;
-    return Reflect.apply(SkillStats2, this, argumentsList);
-  };
+	const SkillStats = ActorEvents12._customBlock_SkillStats;
+	ActorEvents12._customBlock_SkillStats = function (...argumentList) {
+		// Multiply efficiency
+		if (cheatState.multiply.efficiency && argumentList[0].includes("Efficiency"))
+			return Reflect.apply(SkillStats, this, argumentList) * cheatConfig.multiply.efficiency;
+		// Worship speed (and other w3 tweaks)
+		return cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(argumentList[0])
+			? cheatConfig.w3[argumentList[0]](Reflect.apply(SkillStats, this, argumentList))
+			: Reflect.apply(SkillStats, this, argumentList);
+	};
 
   // Some arbitrary stuff
   const Arbitrary = ActorEvents12._customBlock_ArbitraryCode;
@@ -3194,7 +3187,10 @@ function setupw3StuffProxy() {
     if (cheatState.w3.instabuild && t == "TowerBuildReq") return 0; // Instant build/upgrade
     if (cheatState.w3.booktime && t == "BookReqTime") return 1; // Book/second, holds shadow ban danger and could one day be replaced
     if (cheatState.w3.totalflags && t == "TotalFlags") return 10; // Total amnt of placeable flags
-    if (cheatState.w3.buildspd && t == "PlayerBuildSpd") return 1000000; // Buildrate
+    if (cheatState.w3.buildspd && t == "PlayerBuildSpd") { // multiply build rate (check config.js)
+      const originalValue = Reflect.apply(Workbench, this, argumentsList);
+      return cheatConfig.w3.buildspd(originalValue);
+    }
     if (cheatState.multiply.printer && t == "ExtraPrinting")
       return (
         (argumentsList[0] = "AdditionExtraPrinting"),
@@ -3230,13 +3226,17 @@ function setupw3StuffProxy() {
   }
 
   actorEvents345._customBlock_TowerStats = new Proxy(actorEvents345._customBlock_TowerStats, {
-    apply: function (originalFn, context, argumentsList) {
-      if (cheatState.w3.towerdamage && argumentsList[0] == "damage") {
-        return 100000;
+    apply: function (originalFn, context, argumentList) {
+      const stat = argumentList[0];
+      const base = Reflect.apply(originalFn, context, argumentList);
+
+      if (cheatState.w3.towerdamage && stat === "damage") {
+        return cheatConfig.w3.towerdamage(base);
       }
-      return Reflect.apply(originalFn, context, argumentsList);
+      return base;
     },
   });
+	
 }
 
 // w4 cheats
