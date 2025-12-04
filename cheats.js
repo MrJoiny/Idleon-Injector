@@ -3230,17 +3230,13 @@ function setupw3StuffProxy() {
       const stat = argumentList[0];
       const base = Reflect.apply(originalFn, context, argumentList);
 
-      if (
-        cheatState.w3.towerdamage &&
-        stat === "damage" &&
-        typeof cheatConfig.w3.towerdamage === "function"
-      ) {
+      if (cheatState.w3.towerdamage && stat === "damage") {
         return cheatConfig.w3.towerdamage(base);
       }
-
       return base;
     },
   });
+	
 }
 
 // w4 cheats
