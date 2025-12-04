@@ -495,7 +495,7 @@ registerCheats({
   canToggleSubcheats: true,
   subcheats: [
     { name: "mobdeath", message: "worship mobs insta-death." },
-    { name: "towerdamage", message: "super tower damage." },
+    { name: "towerdamage", message: "multiply tower damage." },
     { name: "flagreq", message: "flag unlock time nullification." },
     { name: "freebuildings", message: "free tower upgrades." },
     { name: "instabuild", message: "insta-build of buildings." },
@@ -508,7 +508,7 @@ registerCheats({
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
     // { name: 'shrinehr', message: 'shrine lvl time reduction to 0.5h.' }, //too dangerous, causes super high shrine levels
-    { name: "worshipspeed", message: "worship charge superspeed" },
+    { name: "worshipspeed", message: "multiply worship charge speed" },
     { name: "freeworship", message: "nullification of worship charge cost" },
     { name: "globalshrines", message: "global shrines" },
     { name: "instantdreams", message: "Dream bar fills instantly" },
