@@ -102,6 +102,7 @@ exports.cheatConfig = {
   },
   w3: {
     buildspd: (t) => t * 10,
+    worshipspeed: (t) => t * 10,
   },
   w4: {
     fastforaging: (t) => 3e8,
