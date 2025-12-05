@@ -109,6 +109,10 @@ function getCdpPort() {
  * @returns {number} The web server port number
  */
 function getWebPort() {
+  if (injectorConfig && injectorConfig.webPort) {
+    return injectorConfig.webPort;
+  }
+  console.log("Using fallback port: " + WEB_PORT);
   return WEB_PORT;
 }
 

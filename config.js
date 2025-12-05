@@ -616,5 +616,6 @@ exports.injectorConfig = {
   chrome: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   enableUI: true,
   onLinuxTimeout: 30000,
+  webPort: 8080,
   // gameExePath: "C:/Path/To/LegendsOfIdleon.exe", // Optional: set this to override EXE search on Windows
 };
