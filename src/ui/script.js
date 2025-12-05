@@ -882,20 +882,30 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => {
             const targetTabId = button.dataset.tab;
 
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabPanes.forEach(pane => pane.classList.remove('active'));
+            // Helper function to update DOM
+            const updateDOM = () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
 
-            button.classList.add('active');
-            const targetPane = document.getElementById(targetTabId);
-            if (targetPane) {
-                targetPane.classList.add('active');
+                button.classList.add('active');
+                const targetPane = document.getElementById(targetTabId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
 
-                // Load content for specific tabs only when they become active the first time
-                if (targetTabId === 'config-tab' && !configTabInitialized) {
-                    loadAndRenderConfig(); // Load config content on first view
-                } else if (targetTabId === 'devtools-tab' && !devtoolsLoaded) {
-                    loadDevTools(); // Load devtools on first view
+                    // Load content for specific tabs only when they become active the first time
+                    if (targetTabId === 'config-tab' && !configTabInitialized) {
+                        loadAndRenderConfig(); // Load config content on first view
+                    } else if (targetTabId === 'devtools-tab' && !devtoolsLoaded) {
+                        loadDevTools(); // Load devtools on first view
+                    }
                 }
+            };
+
+            // Use View Transitions API if available
+            if (document.startViewTransition) {
+                document.startViewTransition(() => updateDOM());
+            } else {
+                updateDOM();
             }
         });
     });
@@ -905,13 +915,21 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => {
             const targetPaneId = button.dataset.subTab;
 
-            configSubTabButtons.forEach(btn => btn.classList.remove('active'));
-            configSubTabPanes.forEach(pane => pane.classList.remove('active'));
+            const updateSubTabDOM = () => {
+                configSubTabButtons.forEach(btn => btn.classList.remove('active'));
+                configSubTabPanes.forEach(pane => pane.classList.remove('active'));
 
-            button.classList.add('active');
-            const targetPane = document.getElementById(targetPaneId);
-            if (targetPane) {
-                targetPane.classList.add('active');
+                button.classList.add('active');
+                const targetPane = document.getElementById(targetPaneId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            };
+
+            if (document.startViewTransition) {
+                document.startViewTransition(() => updateSubTabDOM());
+            } else {
+                updateSubTabDOM();
             }
         });
     });

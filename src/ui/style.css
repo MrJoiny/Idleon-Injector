@@ -168,7 +168,7 @@ h3 {
     backdrop-filter: blur(var(--blur-amount));
     border: 1px solid var(--border-glass);
     box-shadow: var(--shadow-lg);
-    animation: fadeIn 0.4s ease-out;
+    /* animation: fadeIn 0.4s ease-out; - Removed in favor of View Transitions */
 }
 
 .tab-pane.active {
@@ -531,7 +531,7 @@ button {
 
 .config-sub-tab-pane {
     display: none;
-    animation: fadeIn 0.3s ease;
+    /* animation: fadeIn 0.3s ease; - Removed in favor of View Transitions */
 }
 
 .config-sub-tab-pane.active {
