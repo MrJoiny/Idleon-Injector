@@ -12,6 +12,8 @@ const { setupIntercept, createCheatContext } = require('./modules/game/cheatInje
 const { createWebServer, startServer } = require('./modules/server/webServer');
 const { setupApiRoutes } = require('./modules/server/apiRoutes');
 const { startCliInterface } = require('./modules/cli/cliInterface');
+const { checkForUpdates } = require('./modules/updateChecker');
+const { version } = require('../package.json');
 
 let servicesStarted = false;
 
@@ -24,11 +26,20 @@ let servicesStarted = false;
  * 3. Providing both web UI and CLI interfaces for cheat management
  */
 
-function printHeader() {
+async function printHeader() {
   console.log('------------------------------------------------------------------------------------------');
-  console.log('InjectCheatUI v1.4.2');
+  console.log(`InjectCheatUI v${version}`);
   console.log('------------------------------------------------------------------------------------------');
   console.log('');
+
+  const update = await checkForUpdates(version);
+  if (update && update.updateAvailable) {
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.log(`! UPDATE AVAILABLE: v${update.latestVersion}`);
+    console.log(`! Download: ${update.url}`);
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.log('');
+  }
 }
 
 function printConfiguration(injectorConfig) {
@@ -56,10 +67,6 @@ function initializeConfiguration() {
   return { injectorConfig, startupCheats, cheatConfig, cdpPort, webPort };
 }
 
-printHeader();
-const config = initializeConfiguration();
-const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
-printConfiguration(config.injectorConfig);
 
 /**
  * Verifies the cheat context exists in the game's iframe and initializes the cheat system.
@@ -97,13 +104,16 @@ async function startWebServer(app, webPort) {
  * Handles the game page load event by initializing cheats and starting user interfaces.
  * This is triggered after the game's DOM is fully loaded and ready for cheat injection.
  */
-async function handlePageLoad(Runtime, Page, context, client, config, app) {
+async function handlePageLoad(gameContext, config, app) {
+  const { Runtime, Page, context, client } = gameContext;
   console.log("Page load event fired.");
 
   const cheatInitialized = await initializeCheatContext(Runtime, context);
   if (!cheatInitialized) return;
 
   if (!servicesStarted) {
+    servicesStarted = true;
+
     // Start web UI if enabled in configuration
     if (config.injectorConfig.enableUI) {
       setupApiRoutes(app, context, client, {
@@ -121,8 +131,6 @@ async function handlePageLoad(Runtime, Page, context, client, config, app) {
       injectorConfig: config.injectorConfig,
       cdpPort: config.cdpPort
     });
-
-    servicesStarted = true;
   }
 }
 
@@ -148,6 +156,11 @@ function handleError(error) {
 
 async function main() {
   try {
+    await printHeader();
+    const config = initializeConfiguration();
+    const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
+    printConfiguration(config.injectorConfig);
+
     const hook = await attachToGame();
     const client = await setupIntercept(hook, config.injectorConfig, config.startupCheats, config.cheatConfig, config.cdpPort);
     console.log("Interceptor setup finished.");
@@ -158,7 +171,7 @@ async function main() {
     Page.loadEventFired(async () => {
       try {
         const context = createCheatContext();
-        await handlePageLoad(Runtime, Page, context, client, config, app);
+        await handlePageLoad({ Runtime, Page, context, client }, config, app);
       } catch (loadEventError) {
         console.error("Error during Page.loadEventFired handler:", loadEventError);
       }
