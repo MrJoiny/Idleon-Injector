@@ -13,6 +13,8 @@ const { createWebServer, startServer } = require('./modules/server/webServer');
 const { setupApiRoutes } = require('./modules/server/apiRoutes');
 const { startCliInterface } = require('./modules/cli/cliInterface');
 
+let servicesStarted = false;
+
 /**
  * InjectCheatUI - Main application entry point
  * 
@@ -101,23 +103,27 @@ async function handlePageLoad(Runtime, Page, context, client, config, app) {
   const cheatInitialized = await initializeCheatContext(Runtime, context);
   if (!cheatInitialized) return;
 
-  // Start web UI if enabled in configuration
-  if (config.injectorConfig.enableUI) {
-    setupApiRoutes(app, context, client, {
-      cheatConfig: config.cheatConfig,
-      startupCheats: config.startupCheats,
+  if (!servicesStarted) {
+    // Start web UI if enabled in configuration
+    if (config.injectorConfig.enableUI) {
+      setupApiRoutes(app, context, client, {
+        cheatConfig: config.cheatConfig,
+        startupCheats: config.startupCheats,
+        injectorConfig: config.injectorConfig,
+        cdpPort: config.cdpPort
+      });
+
+      await startWebServer(app, config.webPort);
+    }
+
+    // Always start CLI interface for user interaction
+    await startCliInterface(context, client, {
       injectorConfig: config.injectorConfig,
       cdpPort: config.cdpPort
     });
 
-    await startWebServer(app, config.webPort);
+    servicesStarted = true;
   }
-
-  // Always start CLI interface for user interaction
-  await startCliInterface(context, client, {
-    injectorConfig: config.injectorConfig,
-    cdpPort: config.cdpPort
-  });
 }
 
 function handleError(error) {
@@ -159,6 +165,11 @@ async function main() {
     });
 
     console.log("Page load event listener attached.");
+
+    // Force a reload to ensure the script is intercepted, even if it loaded before we attached
+    // possible fix for iframe not found error
+    console.log("Reloading page to ensure cheat injection...");
+    await Page.reload({ ignoreCache: true });
   } catch (error) {
     handleError(error);
   }
