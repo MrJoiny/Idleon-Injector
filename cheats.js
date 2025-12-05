@@ -351,19 +351,7 @@ registerCheats({
   message: "all account-wide cheats",
   canToggleSubcheats: true,
   subcheats: [
-    {
-      name: "gembuylimit",
-      fn: function (params) {
-        if (Number.isInteger(Number(params[1]))) {
-          cheatConfig.wide.gembuylimit = Number(params[1]);
-          updateCListFuncDict();
-          return `Set max gem item purchases to ${cheatConfig.wide.gembuylimit}`;
-        } else {
-          return `Parameter must be an integer.`;
-        }
-      },
-      message: "set max gem item purchases",
-    },
+    { name: "gembuylimit", message: "set max gem item purchases" },
     { name: "mtx", message: "gem shop cost nullification" },
     { name: "post", message: "post cost nullification" },
     { name: "guild", message: "guild cost nullification" },
@@ -383,6 +371,7 @@ registerCheats({
       message: "buffs 1 hr candys in minutes",
       configurable: true,
     },
+    { name: "nodmg", message: "no damage numbers" },
     { name: "eventitems", message: "unlimited event item drops" },
     {
       name: "autoloot",
@@ -2125,6 +2114,7 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
+  setupGemshopProxy.call(this);
   setupArcadeProxies.call(this);
   setupBetterCogsProxy.call(this);
   setupTimeCandyProxy.call(this);
@@ -2159,6 +2149,7 @@ function setupAllProxies() {
   setupMonsterKillProxy.call(this);
   setupMonsterProxy.call(this);
   setupHPProxy.call(this);
+  setupNodmgProxy.call(this);
   setupCreateElementProxy.call(iframe);
 }
 
@@ -2177,6 +2168,7 @@ function setupFirebaseProxy() {
         // Recall proxies to make sure they are set up again 
         setupCListProxy.call(this);
         setupOptionsListAccountProxy.call(this);
+        setupGemshopProxy.call(this);
 
         return result;
       },
@@ -2184,6 +2176,51 @@ function setupFirebaseProxy() {
   }
 }
 
+function setupGemshopProxy() {
+  const mtxInfo = CList.MTXinfo;
+  if (mtxInfo) {
+    for (let i = 0; i < mtxInfo.length; i++) {
+      for (let j = 0; j < mtxInfo[i].length; j++)
+        for (let k = 0; k < mtxInfo[i][j].length; k++) {
+          const subArray = mtxInfo[i][j][k];
+          subArray._5 = subArray[5]; // gembuylimit
+          subArray._3 = subArray[3]; // mtxcost
+
+          Object.defineProperty(subArray, 5, {
+            get: function () {
+              // Check if the cheat is active in the state
+              if (cheatState.wide.gembuylimit) {
+                return Math.max(this._5, cheatConfig.wide.gembuylimit);
+              }
+              return this._5;
+            },
+            set: function (value) {
+              this._5 = value;
+              return true;
+            },
+            enumerable: true,
+            configurable: true,
+          });
+
+          Object.defineProperty(subArray, 3, {
+            get: function () {
+              // Check if the cheat is active in the state
+              if (cheatState.wide.mtx) {
+                return 0;
+              }
+              return this._3;
+            },
+            set: function (value) {
+              this._3 = value;
+              return true;
+            },
+            enumerable: true,
+            configurable: true,
+          });
+        }
+    }
+  }
+}
 
 function setupBehaviorScriptProxies() {
   // Proxy:
@@ -2447,6 +2484,18 @@ function setupTimeCandyProxy() {
     enumerable: true,
     configurable: true
   });
+}
+
+function setupNodmgProxy() {
+  const cRA = behavior.createRecycledActor;
+  behavior.createRecycledActor = function (id, ...args) {
+    if (cheatState.wide.nodmg) {
+      if (typeof id === "object") {
+        if (id.ID === 10) return null;
+      }
+    }
+    return cRA.apply(this, arguments);
+  };
 }
 
 function setupItemMoveProxy() {
@@ -3030,20 +3079,8 @@ function updateCListFuncDict() {
     AlchemyVialItemsPCT: new Array(CList.AlchemyVialItemsPCT.length).fill(99), // Vials unlock at rollin 1+
     SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
     RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
-    PrayerInfo: ChangeND(
-      2, // Nullify Prayer Curses and upgrade cost
-      ChangeND(2, "PrayerInfo", "0", [4, 6]),
-      "None._Even_curses_need_time_off_every_now_and_then.",
-      [2]
-    ),
-    MTXinfo: ChangeND(
-      4,
-      ChangeND(4, "MTXinfo", 0, [3, 7]),
-      function (t) {
-        return Math.max(t, cheatConfig.wide.gembuylimit);
-      },
-      [5]
-    ), // Nullify MTX cost
+    PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
+    // MTXinfo: ChangeND(4,ChangeND(4, "MTXinfo", 0, [3, 7]),function (t) {return Math.max(t, cheatConfig.wide.gembuylimit);},[5]), // Nullify MTX cost
     PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
     GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
     TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
@@ -3065,7 +3102,7 @@ function setupCListProxy() {
           (cheatState.w3.saltlick && key === "SaltLicks") ||
           (cheatState.w3.refinery && key === "RefineryInfo") ||
           (cheatState.w3.prayer && key === "PrayerInfo") ||
-          (cheatState.wide.mtx && key === "MTXinfo") ||
+          // (cheatState.wide.mtx && key === "MTXinfo") ||
           (cheatState.wide.post && key === "PostOfficePossibleOrders") ||
           (cheatState.wide.guild && key === "GuildGPtasks") ||
           (cheatState.wide.task && key === "TaskDescriptions") ||
@@ -4137,7 +4174,7 @@ async function getChoicesNeedingConfirmation() {
     "w4 mainframe",
     "w4 chipbonuses",
     "search",
-    "wide gembuylimit",
+    // "wide gembuylimit",
     "wide candytime",
     "gga",
     "multiply",
