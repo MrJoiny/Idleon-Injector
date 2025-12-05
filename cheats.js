@@ -252,7 +252,7 @@ registerCheats({
 // Gem Pack Cheats
 registerCheats({
   name: "buy",
-  message: "buy gem shop packs",
+  message: "buy gem shop packs, you get the items from the pack, but no gems and no pets",
   canToggleSubcheats: true,
   subcheats: [
     // Helper function to create bundle cheats
@@ -4062,11 +4062,11 @@ async function getAutoCompleteSuggestions() {
     if (!["error", "null", undefined, "ingameName"].includes(item)) {
       choices.push({
         name: "summoning " + item,
-        message: "summoning " + item, // Corrected variable
-        value: "summoning " + item,   // Corrected variable
+        message: "summoning " + item,
+        value: "summoning " + item,
       });
     }
-  }); // Corrected syntax: loop closes here
+  });
 
   // Process items if available
   if (items) {
@@ -4126,7 +4126,7 @@ async function getAutoCompleteSuggestions() {
     });
     return choices;
   }
-} // Added missing closing brace for getAutoCompleteSuggestions
+}
 
 // These choices won't execute immediately when you hit enter, they will allow you to add additional input such as a number if you like, then execute the second time you press enter
 // This is now also used to make a value field for the ui
