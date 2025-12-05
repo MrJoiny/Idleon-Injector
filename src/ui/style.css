@@ -87,6 +87,7 @@ h1 {
     margin: 1rem 0 2rem;
     background: linear-gradient(135deg, #fff 0%, var(--accent-primary) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
     letter-spacing: -1px;
@@ -210,6 +211,11 @@ textarea:focus {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px rgba(0, 243, 255, 0.1);
     background: rgba(0, 0, 0, 0.5);
+}
+
+#filter-container,
+.config-category-selector {
+    margin-bottom: 20px;
 }
 
 /* Buttons */

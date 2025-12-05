@@ -593,14 +593,31 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Check for nested object (category) - excluding arrays and null
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            const details = document.createElement('details');
+            details.className = 'cheat-category'; // Reuse cheat-category class for consistent styling
+            details.dataset.configKey = fullKey;
+
+            const summary = document.createElement('summary');
+            summary.textContent = key;
+            details.appendChild(summary);
+
+            const content = document.createElement('div');
+            content.className = 'cheat-category-content';
+
+            // Recursively render children
+            renderCategorizedOptions(value, fullKey, content);
+
+            details.appendChild(content);
+            container.appendChild(details);
+            return;
+        }
+
         const itemDiv = document.createElement('div');
         itemDiv.className = 'config-item';
         // Add a data attribute for easier gathering, especially for top-level items
         itemDiv.dataset.configKey = fullKey;
-
-        const label = document.createElement('label');
-        label.textContent = key;
-        // Append label conditionally below
 
         // --- Special Handling for startupCheats ---
         if (fullKey === 'startupCheats' && Array.isArray(value)) {
@@ -725,20 +742,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cheatsContainer.appendChild(addArea);
             itemDiv.appendChild(cheatsContainer); // Append the editor container
 
-        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-            // Render nested object (within cheatconfig)
-            itemDiv.appendChild(label); // Append label for nested objects
-            label.htmlFor = `config-${fullKey}-nested`;
-            const nestedContainer = document.createElement('div');
-            nestedContainer.className = 'config-nested';
-            nestedContainer.id = `config-${fullKey}-nested`;
-            // Call renderCategorizedOptions for nested objects - this should only happen within cheatconfig pane
-            renderCategorizedOptions(value, fullKey, nestedContainer);
-            itemDiv.appendChild(nestedContainer);
         } else {
             // Render standard input field (boolean, number, string, other non-handled types) - for cheatconfig items
+
+            const label = document.createElement('label');
+            label.textContent = key;
             itemDiv.appendChild(label); // Append label for standard inputs
             label.htmlFor = `config-${fullKey}`;
+
             let input;
             if (typeof value === 'boolean') {
                 input = document.createElement('input');
