@@ -38,7 +38,8 @@ function registerCommonVariables() {
   bEngine = this["com.stencyl.Engine"].engine;
   itemDefs = bEngine.getGameAttribute("ItemDefinitionsGET").h;
   monsterDefs = bEngine.getGameAttribute("MonsterDefinitionsGET").h;
-  CList = bEngine.getGameAttribute("CustomLists").h;
+  // CList = bEngine.getGameAttribute("CustomLists").h;
+  CList = bEngine.gameAttributes.h.CustomLists.h;
   behavior = this["com.stencyl.behavior.Script"];
   events = function (num) {
     return this["scripts.ActorEvents_" + num];
@@ -803,7 +804,7 @@ registerCheats({
       message:
         "Efaunt, Chaotic Efaunt, Dr Defecaus, Oak Tree and Copper are altered with insane stats",
       fn: function (params) {
-        const CardStuff = CList["CardStuff"];
+        const CardStuff = CList.CardStuff;
         const TargetCards = ["Boss2A", "Boss2B", "poopBig", "OakTree", "Copper"];
         for (const [key1, value1] of Object.entries(CardStuff))
           for (const [key2, value2] of Object.entries(value1))
@@ -937,7 +938,7 @@ registerCheats({
       message: "Saves the current values of items and cards",
       fn: function (params) {
         dictVals.itemDefs = JSON.parse(JSON.stringify(itemDefs));
-        dictVals.CardStuff = JSON.parse(JSON.stringify(CList["CardStuff"]));
+        dictVals.CardStuff = JSON.parse(JSON.stringify(CList.CardStuff));
         return `Saved the current values.`;
       },
     },
@@ -953,7 +954,7 @@ registerCheats({
       name: "card",
       message: "Restores original card values.",
       fn: function (params) {
-        CList["CardStuff"] = dictVals.CardStuff;
+        CList.CardStuff = dictVals.CardStuff;
         return `Restored original card values.`;
       },
     },
@@ -1242,8 +1243,8 @@ registerCheats({
             ? params.slice(1).join(" ").toLowerCase()
             : undefined;
         searchVals.push("Order, Id, Talent");
-        const talentDefs = CList["TalentIconNames"];
-        const Order = CList["TalentOrder"];
+        const talentDefs = CList.TalentIconNames;
+        const Order = CList.TalentOrder;
         for (let i = 0; i < Order.length; i++) {
           const valName = talentDefs[Order[i]].replace(/_/g, " ").toLowerCase();
           if (valName.includes(queryX)) searchVals.push(`${i} - ${Order[i]} - ${valName}`);
@@ -1263,7 +1264,7 @@ registerCheats({
             : undefined;
         const ItemVals = [[], []];
         searchVals.push("Tab, Id, ItemId, ItemName");
-        const ItemToCraftNAME = CList["ItemToCraftNAME"];
+        const ItemToCraftNAME = CList.ItemToCraftNAME;
         for (const [key, value] of Object.entries(itemDefs)) {
           const valName = value.h.displayName.replace(/_/g, " ").toLowerCase();
           if (valName.includes(queryX)) ItemVals.push([key, valName]);
@@ -1339,7 +1340,7 @@ const listFunction = function (params) {
     }
   } else if (params[0] == "card") {
     foundVals.push("Id, Entity, Value, Effect");
-    const CardStuff = CList["CardStuff"];
+    const CardStuff = CList.CardStuff;
     for (const [key1, value1] of Object.entries(CardStuff))
       for (const [key2, value2] of Object.entries(value1)) {
         if (monsterDefs[value2[0]])
@@ -1364,15 +1365,15 @@ const listFunction = function (params) {
       );
   } else if (params[0] == "talent") {
     foundVals.push("Order, Id, Name");
-    const Order = CList["TalentOrder"];
-    const talentDefs = CList["TalentIconNames"];
+    const Order = CList.TalentOrder;
+    const talentDefs = CList.TalentIconNames;
     for (i = 0; i < Order.length; i++)
       if (talentDefs[Order[i]] !== "_")
         foundVals.push(`${i}, ${Order[i]}, ${talentDefs[Order[i]]}`);
   } else if (params[0] == "ability") {
     foundVals.push("Order, Id, Name");
-    const Order = CList["TalentOrder"];
-    const talentDefs = CList["TalentIconNames"];
+    const Order = CList.TalentOrder;
+    const talentDefs = CList.TalentIconNames;
     const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
     for (i = 0; i < Order.length; i++)
       if (talentDefs[Order[i]] !== "_")
@@ -1381,7 +1382,7 @@ const listFunction = function (params) {
           foundVals.push(`${i}, ${Order[i]}, ${talentDefs[Order[i]]}`);
   } else if (params[0] == "smith") {
     foundVals.push("CraftId, Tab, ItemId, ItemName");
-    const ItemToCraftNAME = CList["ItemToCraftNAME"];
+    const ItemToCraftNAME = CList.ItemToCraftNAME;
     for (i = 0; i < ItemToCraftNAME.length; i++)
       for (j = 0; j < ItemToCraftNAME[i].length; j++) {
         let itemName = itemDefs[ItemToCraftNAME[i][j]].h.displayName
@@ -1565,7 +1566,7 @@ const wipeFunction = function (params) {
     return "The forge has been wiped. \nIf the game crashes, it should be fine after restart.";
   } else if (params[0] === "overpurchases") {
     bEngine.getGameAttribute("GemItemsPurchased");
-    let gemShopInfo = CList["MTXinfo"];
+    let gemShopInfo = CList.MTXinfo;
     let maxItems = [];
     gemShopInfo.forEach(function (tab) {
       tab.forEach(function (tabGroup) {
@@ -1638,7 +1639,7 @@ registerCheat(
 registerCheat(
   "abilitybar",
   function (params) {
-    const talentDefs = CList["TalentIconNames"];
+    const talentDefs = CList.TalentIconNames;
     const AttackLoadout = bEngine.getGameAttribute("AttackLoadout");
     // First parameter is the ability bar that ranges from 0 to 9.
     const abilitybar = params[0];
@@ -1992,42 +1993,12 @@ async function setup() {
   try { // Added try block for detailed error catching within setup
     await gameReady.call(this);
 
-    // setup proxies
-    setupArcadeProxies.call(this);
-    setupBetterCogsProxy.call(this);
-    setupTimeCandyProxy.call(this);
-    setupCurrenciesOwnedProxy.call(this);
-    setupArbitraryProxy.call(this);
-    setupStampCostProxy.call(this);
-    setupAFKRateProxy.call(this);
-    setupAlchProxy.call(this);
-    setupw1StuffProxy.call(this);
-    setupw2StuffProxy.call(this);
-    setupw3StuffProxy.call(this);
-    setupw4StuffProxy.call(this);
-    setupOptionsListAccountProxy.call(this);
-    setupCListProxy.call(this);
-    setupQuestProxy.call(this);
-    setupSmithProxy.call(this);
-    setupAbilityProxy.call(this);
-    setupValuesMapProxy.call(this);
-    setupCloudSaveProxy.call(this);
-    setupBehaviorScriptProxies.call(this);
-    setupItemMoveProxy.call(this);
-    setupItemsMenuProxy.call(this);
-    setupTrappingProxy.call(this);
-    setupTalentProxy.call(this);
-    setupw5Proxies.call(this);
-    setupw6Proxies.call(this);
-    setupw7Proxies.call(this);
-    setupItemMiscProxy.call(this);
-    setupMiscProxies.call(this);
-    setupPlayerLoadProxy.call(this);
-    setupAutoLootProxy.call(this);
-    setupMonsterKillProxy.call(this);
-    setupMonsterProxy.call(this);
-    setupHPProxy.call(this);
-    setupCreateElementProxy.call(iframe);
+    // setup firebase proxy which is needed,
+    // if we go into the character selection screen, 
+    // since that breaks a lot of proxies
+    setupFirebaseProxy.call(this);
+    // wrapped all the proxies in a function to make it easier to recall them
+    setupAllProxies.call(this);
 
     // This stops the steamachieve34/35 bug. This function is in steam.js.
     // The name is generated so it may well change between versions and need updating here
@@ -2152,6 +2123,67 @@ function runStartupCheats() {
   }, this);
   return rtn;
 }
+
+function setupAllProxies() {
+  setupArcadeProxies.call(this);
+  setupBetterCogsProxy.call(this);
+  setupTimeCandyProxy.call(this);
+  setupCurrenciesOwnedProxy.call(this);
+  setupArbitraryProxy.call(this);
+  setupStampCostProxy.call(this);
+  setupAFKRateProxy.call(this);
+  setupAlchProxy.call(this);
+  setupw1StuffProxy.call(this);
+  setupw2StuffProxy.call(this);
+  setupw3StuffProxy.call(this);
+  setupw4StuffProxy.call(this);
+  setupOptionsListAccountProxy.call(this);
+  setupCListProxy.call(this);
+  setupQuestProxy.call(this);
+  setupSmithProxy.call(this);
+  setupAbilityProxy.call(this);
+  setupValuesMapProxy.call(this);
+  setupCloudSaveProxy.call(this);
+  setupBehaviorScriptProxies.call(this);
+  setupItemMoveProxy.call(this);
+  setupItemsMenuProxy.call(this);
+  setupTrappingProxy.call(this);
+  setupTalentProxy.call(this);
+  setupw5Proxies.call(this);
+  setupw6Proxies.call(this);
+  setupw7Proxies.call(this);
+  setupItemMiscProxy.call(this);
+  setupMiscProxies.call(this);
+  setupPlayerLoadProxy.call(this);
+  setupAutoLootProxy.call(this);
+  setupMonsterKillProxy.call(this);
+  setupMonsterProxy.call(this);
+  setupHPProxy.call(this);
+  setupCreateElementProxy.call(iframe);
+}
+
+// with this proxy we catch the play button and recall the requested proxy functions
+// this is a fix for the cheats not working after going into the character selection screen
+// my guess is why the cheats fail after going into the character selection screen is because 
+// the game reloads the specific list, etc. and the proxies are not set up again
+function setupFirebaseProxy() {
+  if (this["FirebaseStorage"] && this["FirebaseStorage"].playButton) {
+    this["FirebaseStorage"].playButton = new Proxy(this["FirebaseStorage"].playButton, {
+      apply: (target, thisArg, argumentsList) => {
+        const result = Reflect.apply(target, thisArg, argumentsList);
+
+        // Register common variables again to make sure they are set up again
+        registerCommonVariables.call(this);
+        // Recall proxies to make sure they are set up again 
+        setupCListProxy.call(this);
+        setupOptionsListAccountProxy.call(this);
+
+        return result;
+      },
+    });
+  }
+}
+
 
 function setupBehaviorScriptProxies() {
   // Proxy:
@@ -2761,16 +2793,16 @@ function setupArbitraryProxy() {
   };
 
   // Skill stats
-	const SkillStats = ActorEvents12._customBlock_SkillStats;
-	ActorEvents12._customBlock_SkillStats = function (...argumentList) {
-		// Multiply efficiency
-		if (cheatState.multiply.efficiency && argumentList[0].includes("Efficiency"))
-			return Reflect.apply(SkillStats, this, argumentList) * cheatConfig.multiply.efficiency;
-		// Worship speed (and other w3 tweaks)
-		return cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(argumentList[0])
-			? cheatConfig.w3[argumentList[0]](Reflect.apply(SkillStats, this, argumentList))
-			: Reflect.apply(SkillStats, this, argumentList);
-	};
+  const SkillStats = ActorEvents12._customBlock_SkillStats;
+  ActorEvents12._customBlock_SkillStats = function (...argumentList) {
+    // Multiply efficiency
+    if (cheatState.multiply.efficiency && argumentList[0].includes("Efficiency"))
+      return Reflect.apply(SkillStats, this, argumentList) * cheatConfig.multiply.efficiency;
+    // Worship speed (and other w3 tweaks)
+    return cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w3[argumentList[0]](Reflect.apply(SkillStats, this, argumentList))
+      : Reflect.apply(SkillStats, this, argumentList);
+  };
 
   // Some arbitrary stuff
   const Arbitrary = ActorEvents12._customBlock_ArbitraryCode;
@@ -2975,7 +3007,7 @@ function setupAbilityProxy() {
 }
 // Nullify smithing cost
 function setupSmithProxy() {
-  const sizeref = CList["ItemToCraftEXP"];
+  const sizeref = CList.ItemToCraftEXP;
   const tCustomList = this["scripts.CustomLists"];
 
   const NewReqs = []; // This'll be the new Array where we write our stuff to
@@ -3236,7 +3268,7 @@ function setupw3StuffProxy() {
       return base;
     },
   });
-	
+
 }
 
 // w4 cheats
@@ -3887,7 +3919,7 @@ function rollPerfectObols(obolOrder, obolMap, characterClass) {
  * Below here are mostly helper functions for the above
  */
 
-// Helper functions for Options List Account editor
+// Helper functions for Options List Account editor for the webui
 function getOptionsListAccount() {
   try {
     if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
