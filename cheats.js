@@ -512,31 +512,38 @@ registerCheats({
   message: "all w4 cheats.",
   canToggleSubcheats: true,
   subcheats: [
-    { name: "battleslots", message: "all 6 battle slots." },
-    { name: "eggcap", message: "all egg slots." },
-    { name: "fenceyard", message: "all fenceyard slots." },
-    { name: "petchance", message: "100% new pet chance." },
-    { name: "genes", message: "0 gene upgrades." },
-    { name: "fasteggs", message: "fast incubation." },
-    { name: "fastforaging", message: "fast foraging." },
-    { name: "spiceclaim", message: "unlimited spice claims." },
-    { name: "petupgrades", message: "free pet upgrades." },
+    { name: "battleslots", message: "all 6 battle slots" },
+    { name: "eggcap", message: "all egg slots" },
+    { name: "fenceyard", message: "all fenceyard slots" },
+    { name: "petchance", message: "guaranteed new pet (100%)" },
+    { name: "petchancemult", message: "configurable pet chance (see config)" },
+    { name: "genes", message: "0 gene upgrades" },
+    { name: "instanteggs", message: "instant incubation" },
+    { name: "fasteggs", message: "faster incubation (see config)" },
+    { name: "fastforaging", message: "fast foraging" },
+    { name: "spiceclaim", message: "unlimited spice claims" },
+    { name: "petupgrades", message: "free pet upgrades" },
+    { name: "petupgradesmult", message: "cheaper pet upgrades (see config)" },
     {
       name: "petrng",
-      message: "max strength pets (for level and egg, with a tiny bit of randomness).",
+      message: "max strength pets (for level and egg, with a tiny bit of randomness)",
     },
     {
       name: "superpets",
-      message: "don't mess with these little guys, even if they look cute.",
+      message: "don't mess with these little guys, even if they look cute",
     },
-    { name: "labpx", message: "long lab connections." },
-    { name: "instameals", message: "speedy meal cooking." },
-    { name: "instarecipes", message: "speedy recipe crafting." },
-    { name: "luckychef", message: "new recipe guarantee." },
-    { name: "freekitchens", message: "free kitchens and upgrades." },
-    { name: "freeplates", message: "free dinner plate upgrades." },
-    { name: "arena", message: "unlimited arena entries." },
-    { name: "sigilspeed", message: "fast sigil research." },
+    { name: "labpx", message: "long lab connections" },
+    { name: "instameals", message: "speedy meal cooking" },
+    { name: "mealspeed", message: "configurable meal speed (see config)" },
+    { name: "instarecipes", message: "instant recipe crafting" },
+    { name: "recipespeed", message: "configurable recipe speed (see config)" },
+    { name: "luckychef", message: "new recipe guarantee" },
+    { name: "freekitchens", message: "free kitchens and upgrades" },
+    { name: "kitchensdiscount", message: "cheaper kitchens and upgrades (see config)" },
+    { name: "freeplates", message: "free dinner plate upgrades" },
+    { name: "platesdiscount", message: "cheaper dinner plate upgrades (see config)" },
+    { name: "arena", message: "unlimited arena entries" },
+    { name: "sigilspeed", message: "fast sigil research (see config)" },
     {
       name: "mainframe",
       message: "mainframe cheats check config file",
@@ -2701,6 +2708,19 @@ function setupOptionsListAccountProxy() {
     },
     enumerable: true,
   });
+  optionsListAccount._87 = optionsListAccount[87];
+  Object.defineProperty(optionsListAccount, 87, {
+    get: function () {
+      return this._87;
+    },
+    set: function (value) {
+      if (cheatState.w4.fasteggs && value > this._87)
+        value = this._87 + (value - this._87) * cheatConfig.w4.fasteggs;
+      this._87 = value;
+      return true;
+    },
+    enumerable: true,
+  });
   optionsListAccount._100 = optionsListAccount[100];
   Object.defineProperty(optionsListAccount, 100, {
     get: function () {
@@ -3316,29 +3336,44 @@ function setupw4StuffProxy() {
   actorEvents345._customBlock_Breeding = new Proxy(actorEvents345._customBlock_Breeding, {
     apply: function (originalFn, context, argumentsList) {
       const t = argumentsList[0];
+
       if (cheatState.w4.eggcap && t == "TotalEggCapacity") return 13; // 13 eggs
       if (cheatState.w4.fenceyard && t == "FenceYardSlots") return 27; // 27 fenceyard slots
       if (cheatState.w4.battleslots && t == "PetBattleSlots") return 6; // 6 battle slots
-      if (cheatState.w4.petchance && t == "TotalBreedChance") return 1; // 100% new pet chance
+
+      // 100% new pet / configurable pet chance
+      if (cheatState.w4.petchance && t == "TotalBreedChance") return 1;
+      if (cheatState.w4.petchancemult && t == "TotalBreedChance")
+        return cheatConfig.w4.petchancemult(Reflect.apply(originalFn, context, argumentsList));
+
       if (cheatState.w4.genes && t == "GeneticCost") return 0; // 0 gene upgrades
-      if (cheatState.w4.fasteggs && t == "TotalTimeForEgg") return 1; // fast eggs
-      if (cheatState.w4.petupgrades && t == "PetUpgCostREAL") return 0; // free pet upgrades
+
+      // instant eggs (old fasteggs)
+      if (cheatState.w4.instanteggs && t == "TotalTimeForEgg") return 1;
+
+      // free / cheaper pet upgrades
+      if (cheatState.w4.petupgrades && t == "PetUpgCostREAL") return 0;
+      if (cheatState.w4.petupgradesmult && t == "PetUpgCostREAL")
+        return cheatConfig.w4.petupgradesmult(Reflect.apply(originalFn, context, argumentsList));
+
       if (cheatState.w4.petrng && t == "PetQTYonBreed") {
-        cheatState["rng"] = "low";
+        cheatState.rng = "low";
         argumentsList[2] = 8;
-        var power = Reflect.apply(originalFn, context, argumentsList);
-        cheatState["rng"] = false;
+        const power = Reflect.apply(originalFn, context, argumentsList);
+        cheatState.rng = false;
         return Math.round(power * (1 + Math.random() * 0.2));
       } // max power pets
+
       return Reflect.apply(originalFn, context, argumentsList);
     },
   });
 
   const Lab = actorEvents345._customBlock_Labb;
   actorEvents345._customBlock_Labb = function (...argumentsList) {
-    if (cheatState.w4.labpx && (argumentsList[0] == "Dist" || argumentsList[0] == "BonusLineWidth"))
-      return 1000; // long lab connections
-    if (cheatState.w4.sigilspeed && argumentsList[0] == "SigilBonusSpeed") return 500; // 500 sigil speed
+    const t = argumentsList[0];
+    if (cheatState.w4.labpx && (t == "Dist" || t == "BonusLineWidth")) return 1000; // long lab connections
+    if (cheatState.w4.sigilspeed && t == "SigilBonusSpeed")
+      return cheatConfig.w4.sigilspeed(Reflect.apply(Lab, this, argumentsList)); // cfg
     return Reflect.apply(Lab, this, argumentsList);
   };
 
@@ -3352,44 +3387,45 @@ function setupw4StuffProxy() {
     return originalValue;
   };
 
-  actorEvents345._customBlock_CookingR = new Proxy(actorEvents345._customBlock_CookingR, {
-    apply: function (originalFn, context, argumentsList) {
-      const t = argumentsList[0];
-      if (cheatState.w4.instameals && t == "CookingReqToCook") return 1; // super fast food
-      if (cheatState.w4.instarecipes && t == "CookingFireREQ") return 1; // super fast recipes
-      if (cheatState.w4.luckychef && t == "CookingNewRecipeOdds")
-        return 4 == argumentsList[1]
-          ? 1
-          : 5 == argumentsList[1]
-            ? 0
-            : Reflect.apply(originalFn, context, argumentsList); // always cook a new recipe
-      if (
-        cheatState.w4.freekitchens &&
-        (t == "CookingNewKitchenCoinCost" || t == "CookingUpgSpiceCostQty")
-      )
-        return 0; // free kitchens and upgrades
-      if (cheatState.w4.freeplates && t == "CookingMenuMealCosts") return 0; //free dinner table upgrades
-      return Reflect.apply(originalFn, context, argumentsList);
-    },
-  });
-  // Rewrite the above function as an arrow function instead of a proxy
   const CookingR = actorEvents345._customBlock_CookingR;
   actorEvents345._customBlock_CookingR = function (...argumentsList) {
     const t = argumentsList[0];
+
+    // meals
     if (cheatState.w4.instameals && t == "CookingReqToCook") return 1; // super fast food
+    if (cheatState.w4.mealspeed && t == "CookingReqToCook")
+      return cheatConfig.w4.mealspeed(Reflect.apply(CookingR, this, argumentsList)); // cfg
+
+    // recipes
     if (cheatState.w4.instarecipes && t == "CookingFireREQ") return 1; // super fast recipes
+    if (cheatState.w4.recipespeed && t == "CookingFireREQ")
+      return cheatConfig.w4.recipespeed(Reflect.apply(CookingR, this, argumentsList)); // cfg
+
+    // lucky chef (vanilla behaviour, just rewritten)
     if (cheatState.w4.luckychef && t == "CookingNewRecipeOdds")
-      return 4 == argumentsList[1]
+      return argumentsList[1] == 4
         ? 1
-        : 5 == argumentsList[1]
+        : argumentsList[1] == 5
           ? 0
-          : Reflect.apply(CookingR, this, argumentsList); // always cook a new recipe
+          : Reflect.apply(CookingR, this, argumentsList);
+
+    // kitchens
     if (
       cheatState.w4.freekitchens &&
       (t == "CookingNewKitchenCoinCost" || t == "CookingUpgSpiceCostQty")
     )
-      return 0; // free kitchens and upgrades
-    if (cheatState.w4.freeplates && t == "CookingMenuMealCosts") return 0; //free dinner table upgrades
+      return 0;
+    if (
+      cheatState.w4.kitchensdiscount &&
+      (t == "CookingNewKitchenCoinCost" || t == "CookingUpgSpiceCostQty")
+    )
+      return cheatConfig.w4.kitchensdiscount(Reflect.apply(CookingR, this, argumentsList)); // cfg
+
+    // plates
+    if (cheatState.w4.freeplates && t == "CookingMenuMealCosts") return 0;
+    if (cheatState.w4.platesdiscount && t == "CookingMenuMealCosts")
+      return cheatConfig.w4.platesdiscount(Reflect.apply(CookingR, this, argumentsList)); // cfg
+
     return Reflect.apply(CookingR, this, argumentsList);
   };
 
