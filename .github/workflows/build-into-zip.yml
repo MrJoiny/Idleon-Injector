@@ -29,14 +29,12 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./src
 
       - name: Install pkg
         run: npm install -g pkg
 
       - name: Build Binary
         run: npm run ${{ matrix.build-command }}
-        working-directory: ./src
 
       - name: Create release package
         shell: bash
@@ -44,8 +42,6 @@ jobs:
           mkdir -p release-package
           # Copy all files and directories except release-package
           find . -maxdepth 1 -not -name '.' -not -name 'release-package' -exec cp -r {} release-package/ \;
-          # Move the binary from src to root of release package
-          mv release-package/src/${{ matrix.binary-name }} release-package/
 
       - name: Upload Release Package
         uses: actions/upload-artifact@v4
