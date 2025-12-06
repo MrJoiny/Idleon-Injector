@@ -115,6 +115,7 @@ exports.cheatConfig = {
     kitchensdiscount: (t) => t / 4, // kitchens & spice 4x cheaper
     platesdiscount:   (t) => t / 2, // plates 2x cheaper
     fastforaging: (t) => t * 4, // 4x foraging speed
+    luckychef: (t) => t * 2, // 2x higher "new recipe luck" in kitchen
     superpets: {
       BlockChance: (t) => t * 2, // 2x block chance when attacked
       TotalDMG: (t) => t * 4, // 4x pet damage
