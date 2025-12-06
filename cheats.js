@@ -904,6 +904,20 @@ registerCheats({
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
       },
     },
+	{
+      name: "money",
+      message: "Multiplies coin drops by the number given (use reasonably!)",
+      configurable: {
+        valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
+      },
+    },
+	{
+      name: "classexp",
+      message: "Multiplies class EXP by the number given (use reasonably!)",
+      configurable: {
+        valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
+      },
+    },
     {
       name: "printer",
       message: "Multiplies sample print by x, overrides lab/god bonus",
@@ -2853,18 +2867,25 @@ function setupArbitraryProxy() {
       : Reflect.apply(SkillStats, this, argumentList);
   };
 
-  // Some arbitrary stuff
   const Arbitrary = ActorEvents12._customBlock_ArbitraryCode;
   ActorEvents12._customBlock_ArbitraryCode = function (...argumentsList) {
     const t = argumentsList[0];
-    // if (cheatState.w1.statue && t.substring(0, 12) == "StatueExpReq") return 1; 	// This cheat works, but absolutely destroys your account
-    if (t == "CrystalSpawn" && cheatState.wide.crystal) return 1; // Crystal mob spawn rate 1
+
+    // Coin drop multiplier (MonsterCash)
+    if (cheatState.multiply.money && t == "MonsterCash") {
+      return Reflect.apply(Arbitrary, this, argumentsList) * cheatConfig.multiply.money;
+    }
+
+    // Existing cheats
+    // if (cheatState.w1.statue && t.substring(0, 12) == "Statue...") return 1;
+    if (t == "CrystalSpawn" && cheatState.wide.crystal) return 1; // Crystal mob spawn rate
     if (t == "GiantMob" && cheatState.wide.giant) return 1; // Giant mob spawn rate 1
     if (t == "FoodNOTconsume" && cheatState.godlike.food) return 100; // Food never consumed
     if (t == "HitChancePCT" && cheatState.godlike.hitchance) return 100; // 100% hit chance
 
     return Reflect.apply(Arbitrary, this, argumentsList);
   };
+
 
   const TotalStats = ActorEvents12._customBlock_TotalStats;
   ActorEvents12._customBlock_TotalStats = (...argumentsList) => {
@@ -2883,6 +2904,17 @@ function setupArbitraryProxy() {
     drops = drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
 
     return drops;
+  };
+  
+  const ExpMulti = ActorEvents12._customBlock_ExpMulti;
+  ActorEvents12._customBlock_ExpMulti = function (...argumentsList) {
+    const mode = argumentsList[0];
+    const base = Reflect.apply(ExpMulti, this, argumentsList);
+
+    // e == 0 is the main class EXP path
+    return cheatState.multiply.classexp && mode === 0
+      ? base * cheatConfig.multiply.classexp
+      : base;
   };
 }
 // A bunch of currency related cheats
