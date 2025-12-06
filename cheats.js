@@ -532,7 +532,7 @@ registerCheats({
     { name: "labpx", message: "long lab connections" },
     { name: "mealspeed", message: "configurable meal speed (see config)" },
     { name: "recipespeed", message: "configurable recipe speed (see config)" },
-    { name: "luckychef", message: "new recipe guarantee" },
+    { name: "luckychef", message: "new recipe chance (see config)" },
     { name: "kitchensdiscount", message: "cheaper kitchens and upgrades (see config)" },
     { name: "platesdiscount", message: "cheaper dinner plate upgrades (see config)" },
     { name: "arena", message: "unlimited arena entries" },
@@ -3361,22 +3361,18 @@ function setupw4StuffProxy() {
   actorEvents345._customBlock_CookingR = function (...argumentsList) {
     const t = argumentsList[0];
     if (cheatState.w4.mealspeed && t == "CookingReqToCook")
-      return cheatConfig.w4.mealspeed(Reflect.apply(CookingR, this, argumentsList)); // cfg
+      return cheatConfig.w4.mealspeed(Reflect.apply(CookingR, this, argumentsList));
     if (cheatState.w4.recipespeed && t == "CookingFireREQ")
-      return cheatConfig.w4.recipespeed(Reflect.apply(CookingR, this, argumentsList)); // cfg
-    if (cheatState.w4.luckychef && t == "CookingNewRecipeOdds")
-      return argumentsList[1] == 4
-        ? 1
-        : argumentsList[1] == 5
-          ? 0
-          : Reflect.apply(CookingR, this, argumentsList);
+      return cheatConfig.w4.recipespeed(Reflect.apply(CookingR, this, argumentsList));
+    if (cheatState.w4.luckychef && t == "CookingLUCK")
+      return cheatConfig.w4.luckychef(Reflect.apply(CookingR, this, argumentsList));
     if (
       cheatState.w4.kitchensdiscount &&
       (t == "CookingNewKitchenCoinCost" || t == "CookingUpgSpiceCostQty")
     )
-      return cheatConfig.w4.kitchensdiscount(Reflect.apply(CookingR, this, argumentsList)); // cfg
+      return cheatConfig.w4.kitchensdiscount(Reflect.apply(CookingR, this, argumentsList));
     if (cheatState.w4.platesdiscount && t == "CookingMenuMealCosts")
-      return cheatConfig.w4.platesdiscount(Reflect.apply(CookingR, this, argumentsList)); // cfg
+      return cheatConfig.w4.platesdiscount(Reflect.apply(CookingR, this, argumentsList));
     return Reflect.apply(CookingR, this, argumentsList);
   };
 
