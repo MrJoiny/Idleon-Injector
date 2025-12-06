@@ -106,10 +106,19 @@ exports.cheatConfig = {
     towerdamage: (t) => t * 10,
   },
   w4: {
-    fastforaging: (t) => 3e8,
+    fasteggs: (t) => t / 4, // 4x faster incubation (you can tweak)
+    petchance: (t) => t * 2,   // pet chance multiplier
+    petupgrades: (t) => t / 4, // pet upgrades 4x cheaper
+    sigilspeed: (t) => t * 10,     // 10x sigil research speed
+    mealspeed:   (t) => t / 4, // meals cook 4x faster
+    recipespeed: (t) => t / 4, // recipes craft 4x faster
+    kitchensdiscount: (t) => t / 4, // kitchens & spice 4x cheaper
+    platesdiscount:   (t) => t / 2, // plates 2x cheaper
+    fastforaging: (t) => t * 4, // 4x foraging speed
+    luckychef: (t) => t * 2, // 2x higher "new recipe luck" in kitchen
     superpets: {
-      BlockChance: (t) => 100,
-      TotalDMG: (t) => t * 5000,
+      BlockChance: (t) => t * 2, // 2x block chance when attacked
+      TotalDMG: (t) => t * 4, // 4x pet damage
     },
     mainframe: {
       0: (t) => 200, // Animal farm damage bonus (119 is all pets)
