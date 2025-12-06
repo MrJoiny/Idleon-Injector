@@ -492,10 +492,9 @@
         "type": "number"
     },
     "87": {
-        "name": "Character Code W",
-        "description": "Character encoding for keyboard input (W=87)",
+        "name": "W4 Breeding Egg Incubation Timer",
+        "description": "Elapsed egg incubation time in seconds; increases by 1 every second.",
         "type": "number",
-        "AI": true
     },
     "88": {
         "name": "W4 Arena Timer",
