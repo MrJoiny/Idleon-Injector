@@ -2701,19 +2701,6 @@ function setupOptionsListAccountProxy() {
     },
     enumerable: true,
   });
-  optionsListAccount._87 = optionsListAccount[87];
-  Object.defineProperty(optionsListAccount, 87, {
-    get: function () {
-      return this._87;
-    },
-    set: function (value) {
-      if (cheatState.w4.fasteggs && value > this._87)
-        value = this._87 + (value - this._87) * cheatConfig.w4.fasteggs;
-      this._87 = value;
-      return true;
-    },
-    enumerable: true,
-  });
   optionsListAccount._100 = optionsListAccount[100];
   Object.defineProperty(optionsListAccount, 100, {
     get: function () {
