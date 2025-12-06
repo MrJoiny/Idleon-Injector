@@ -75,3 +75,16 @@
    npm run build
    npm run build-unix #(linux)
    ```
+
+---
+
+## Credits
+
+- iBelg
+- Creater0822
+- valleymon
+- and everyone that contributed to this project
+
+<br/>
+
+[![Contributors](https://contrib.rocks/image?repo=MrJoiny/Idleon-Injector)](https://github.com/MrJoiny/Idleon-Injector/graphs/contributors)
