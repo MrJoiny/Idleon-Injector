@@ -66,7 +66,7 @@
    ```sh
    npm install -g pkg
    ```
-3. In the project folder (/src), run:
+3. In the project folder run:
    ```sh
    npm install
    ```
