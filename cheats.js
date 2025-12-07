@@ -484,20 +484,21 @@ registerCheats({
   canToggleSubcheats: true,
   subcheats: [
     { name: "mobdeath", message: "worship mobs insta-death." },
-    { name: "towerdamage", message: "multiply tower damage." },
+    { name: "towerdamage", message: "multiply tower damage (see config)" },
     { name: "flagreq", message: "flag unlock time nullification." },
     { name: "freebuildings", message: "free tower upgrades." },
     { name: "instabuild", message: "insta-build of buildings." },
     { name: "booktime", message: "book per second." },
     { name: "totalflags", message: "10 total flags." },
-    { name: "buildspd", message: "multiply build speed." },
+    { name: "buildspd", message: "multiply build speed (see config)" },
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
+	{ name: "refineryspeed", message: "reduces refinery time (see config)" },
     { name: "trapping", message: "trapping duration nullification." },
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
     // { name: 'shrinehr', message: 'shrine lvl time reduction to 0.5h.' }, //too dangerous, causes super high shrine levels
-    { name: "worshipspeed", message: "multiply worship charge speed" },
+    { name: "worshipspeed", message: "multiply worship charge speed (see config)" },
     { name: "freeworship", message: "nullification of worship charge cost" },
     { name: "globalshrines", message: "global shrines" },
     { name: "instantdreams", message: "Dream bar fills instantly" },
@@ -929,6 +930,14 @@ registerCheats({
       message: "Multiplies skill EXP by the number given (use reasonably!)",
       configurable: {
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
+      },
+    },
+    {
+      name: "shopstock",
+      message: "Multiplies town shop stock by the number given (works after daily reset)",
+      configurable: {
+        valueTransformer: (val) =>
+          !isNaN(val) ? new Function(`t => t * ${val}`)() : val,
       },
     },
     {
@@ -2868,12 +2877,27 @@ function setupArbitraryProxy() {
     return Reflect.apply(atkReach, this, argumentsList);
   };
 
-  // Free forge upgrades
-  const forgeupgr = ActorEvents12._customBlock_ForgeUpdateCosts;
-  ActorEvents12._customBlock_ForgeUpdateCosts = function (...argumentsList) {
-    if (cheatState.w1.forge) return 0;
-    return Reflect.apply(forgeupgr, this, argumentsList);
+  // Forge stat multipliers (speed & capacity)
+  const ForgeStats = ActorEvents12._customBlock_ForgeStats;
+  ActorEvents12._customBlock_ForgeStats = function (...argumentsList) {
+    const key = argumentsList[0];
+    const base = Reflect.apply(ForgeStats, this, argumentsList);
+
+    if (!cheatState.w1.forge || !cheatConfig.w1 || !cheatConfig.w1.forge) return base;
+
+    // 2 = forge speed (used by ForgeSpeeed)
+    if (key === 2 && typeof cheatConfig.w1.forge.speed === "function") {
+      return cheatConfig.w1.forge.speed(base);
+    }
+
+    // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
+    if (key === 1 && typeof cheatConfig.w1.forge.capacity === "function") {
+      return cheatConfig.w1.forge.capacity(base);
+    }
+
+    return base;
   };
+
 
   // Imperfect damage cap on too-OP broken players with overflowing damage
   const DamageDealt = ActorEvents12._customBlock_DamageDealed;
@@ -2918,18 +2942,32 @@ function setupArbitraryProxy() {
     // Crystal spawn multiplier
     if (t === "CrystalSpawn") {
       const base = Reflect.apply(Arbitrary, this, argumentsList);
-      if (cheatState.multiply.crystal) return base * cheatConfig.multiply.crystal; // new multiplier
+      if (cheatState.multiply.crystal) return base * cheatConfig.multiply.crystal;
       return base;
     }
 
     // Existing cheats
-    // if (cheatState.w1.statue && t.substring(0, 12) == "Statue...") return 1;
-    if (t === "GiantMob" && cheatState.wide.giant) return 1;             // Giant mob spawn rate
-    if (t === "FoodNOTconsume" && cheatState.godlike.food) return 100;   // Food never consumed
-    if (t === "HitChancePCT" && cheatState.godlike.hitchance) return 100; // 100% hit chance
+    if (t === "GiantMob" && cheatState.wide.giant) return 1;
+    if (t === "FoodNOTconsume" && cheatState.godlike.food) return 100;
+    if (t === "HitChancePCT" && cheatState.godlike.hitchance) return 100;
 
     return Reflect.apply(Arbitrary, this, argumentsList);
   };
+
+
+  // ShopQtyBonus multiplier via RunCodeOfTypeXforThingY 
+  const RunCodeOfTypeXforThingY = ActorEvents12._customBlock_RunCodeOfTypeXforThingY;
+  ActorEvents12._customBlock_RunCodeOfTypeXforThingY = function (...argumentsList) {
+    const codeType = argumentsList[0];
+
+    if (cheatState.multiply.shopstock && codeType === "ShopQtyBonus") {
+      const base = Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
+      return base * cheatConfig.multiply.shopstock;
+    }
+
+    return Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
+  };
+
 
 
   const TotalStats = ActorEvents12._customBlock_TotalStats;
@@ -2994,19 +3032,19 @@ function setupCurrenciesOwnedProxy() {
   const proxy = new Proxy(currencies, handler);
   bEngine.getGameAttribute("CurrenciesOwned").h = proxy;
 }
-// Nullify stamp upgrade cost
+
+// Stamp upgrade cost reduction
 function setupStampCostProxy() {
   events(124)._customBlock_StampCostss = new Proxy(events(124)._customBlock_StampCostss, {
     apply: function (originalFn, context, argumentsList) {
-      if (cheatState.w1.stampcost) {
-        const tab = argumentsList[0];
-        const index = argumentsList[1];
-        const currentStampLevel = bEngine.getGameAttribute("StampLevel")[tab][index];
-        const maxStampLevel = bEngine.getGameAttribute("StampLevelMAX")[tab][index];
-        if (currentStampLevel < maxStampLevel) return ["Money", 0];
-        return ["PremiumGem", 0];
-      }
-      return Reflect.apply(originalFn, context, argumentsList);
+      if (!cheatState.w1.stampcost)
+        return Reflect.apply(originalFn, context, argumentsList);
+
+      const result = Reflect.apply(originalFn, context, argumentsList);
+      const currency = result[0];
+      const cost = result[1];
+
+      return [currency, cheatConfig.w1.stampcost(cost)];
     },
   });
 }
@@ -3306,7 +3344,6 @@ function setupw1StuffProxy() {
     return Reflect.apply(anvilProduceStats, this, argumentsList);
   };
 
-
 }
 
 // w2 cheats
@@ -3383,6 +3420,19 @@ function setupw3StuffProxy() {
     },
   });
 
+  if (actorEvents345._customBlock_Refinery) {
+    const Refinery = actorEvents345._customBlock_Refinery;
+    actorEvents345._customBlock_Refinery = function (...argumentsList) {
+      const key = argumentsList[0];
+
+      if (cheatState.w3.refineryspeed && key === "CycleInitialTime") {
+        const baseTime = Reflect.apply(Refinery, this, argumentsList);
+        return cheatConfig.w3.refineryspeed(baseTime);
+      }
+
+      return Reflect.apply(Refinery, this, argumentsList);
+    };
+  }
 }
 
 // w4 cheats
