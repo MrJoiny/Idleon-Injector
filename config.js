@@ -121,10 +121,10 @@ exports.cheatConfig = {
     petchance: (t) => t * 2,   // pet chance multiplier
     petupgrades: (t) => t / 4, // pet upgrades 4x cheaper
     sigilspeed: (t) => t * 10,     // 10x sigil research speed
-    mealspeed:   (t) => t / 4, // meals cook 4x faster
+    mealspeed: (t) => t / 4, // meals cook 4x faster
     recipespeed: (t) => t / 4, // recipes craft 4x faster
     kitchensdiscount: (t) => t / 4, // kitchens & spice 4x cheaper
-    platesdiscount:   (t) => t / 2, // plates 2x cheaper
+    platesdiscount: (t) => t / 2, // plates 2x cheaper
     fastforaging: (t) => t * 4, // 4x foraging speed
     luckychef: (t) => t * 2, // 2x higher "new recipe luck" in kitchen
     superpets: {
@@ -259,6 +259,9 @@ exports.cheatConfig = {
       // 0: upgrade chance 1: reset chance 2: bit multiplier
       SnailStuff: (t, args) => { const fns = { 0: (t) => 1, 1: (t) => 0, 2: (t) => t }; return fns[args[1]] ? fns[args[1]](t) : 0; },
       SnailMail: false,
+      // new w7 update stuff
+      PaletteLuck: (t) => t * 2, // 2x palette luck
+      PaletteBonus: (t) => t * 2, // 2x palette bonus
     },
     divinity: {
       unlinks: true,
@@ -313,6 +316,11 @@ exports.cheatConfig = {
       // New bonuses 13.03.2024
       BolaiaStudyRate: (t) => t * 2, // 2x bolaia study rate
       JarProductionPerHR: (t) => t * 2, // 2x jar production rate
+      // new 07.12.2025
+      TempleTorchCost: (t) => t / 2, // 0.5x torch cost
+      JarCollectibleBonus: (t) => t * 2, // 2x jar collectible bonus
+      JarEnchantChance: (t) => t * 2, // 2x jar enchant chance
+      JarNewCollectibleChance: (t) => t * 2, // 2x jar new collectible chance
     },
     fixobj: false,
   },
@@ -329,6 +337,9 @@ exports.cheatConfig = {
       CropsBonusValue: (t) => t * 2, // how much each crop is worth (2x)
       CropsOnVine: (t) => t * 2, // 2 x Num of crops on each plant
       GrowthRate: (t) => t, // Growth rate multiplier (growth increase/sec)
+      // new w7 stuff
+      ExoticPurchasesAllowed: (t) => Math.max(8, t), // Exotic purchases allowed 8 are only available
+      ExoticLVQTY: (t) => t * 2, // Exotic LV QTY
     },
     ninja: {
       EmporiumCost: (t) => t / 5, // emporium cost are 5x cheaper

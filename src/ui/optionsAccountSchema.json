@@ -2248,10 +2248,9 @@
         "AI": true
     },
     "410": {
-        "name": "Loop Reset Counter",
-        "description": "Reset during game loop",
-        "type": "number",
-        "AI": true
+        "name": "Daily Spelunky Page reads",
+        "description": "Tracks daily Spelunky page reads",
+        "type": "number"
     },
     "411": {
         "name": "Gaming Mode Toggle",
@@ -2272,10 +2271,9 @@
         "AI": true
     },
     "414": {
-        "name": "Tower Building Claims",
-        "description": "Tracks tower/workbench building claims with SuperBit bonuses",
-        "type": "number",
-        "AI": true
+        "name": "Total Jeweled Cog Claims today",
+        "description": "Tracks total Jeweled Cog claims today",
+        "type": "number"
     },
     "415": {
         "name": "Acorn Shop Purchases",

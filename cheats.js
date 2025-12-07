@@ -503,6 +503,7 @@ registerCheats({
     { name: "globalshrines", message: "global shrines" },
     { name: "instantdreams", message: "Dream bar fills instantly" },
     { name: "bettercog", message: "Gives you a bit better cog chances" },
+    { name: "jeweledcogs", message: "Unlimited jeweled cogs (needs to be unlocked in gaming first)" },
   ],
 });
 
@@ -904,21 +905,21 @@ registerCheats({
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
       },
     },
-	{
+    {
       name: "money",
       message: "Multiplies coin drops by the number given (use reasonably!)",
       configurable: {
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
       },
     },
-	{
+    {
       name: "classexp",
       message: "Multiplies class EXP by the number given (use reasonably!)",
       configurable: {
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
       },
     },
-	{
+    {
       name: "crystal",
       message: "Multiplies crystal spawn rate by the number given (use reasonably!)",
       configurable: {
@@ -2818,6 +2819,20 @@ function setupOptionsListAccountProxy() {
     },
     enumerable: true,
   });
+
+  // unlimited jeweled cogs
+  optionsListAccount._414 = optionsListAccount[414];
+  Object.defineProperty(optionsListAccount, 414, {
+    get: function () {
+      if (cheatState.w3.jeweledcogs) this._414 = 0;
+      return this._414;
+    },
+    set: function (value) {
+      this._414 = value;
+      return true;
+    },
+    enumerable: true,
+  });
 }
 
 // Free revival cheat
@@ -2988,7 +3003,7 @@ function setupArbitraryProxy() {
 
     return drops;
   };
-  
+
   const ExpMulti = ActorEvents12._customBlock_ExpMulti;
   ActorEvents12._customBlock_ExpMulti = function (...argumentsList) {
     const mode = argumentsList[0];
