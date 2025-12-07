@@ -13,6 +13,8 @@ exports.cheatConfig = {
     drop: 1,
     money: 1,
     classexp: 1,
+    crystal: 1,
+    skillexp: 1,
     printer: 6,
     monsters: 1,
   },
