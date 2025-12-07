@@ -6,6 +6,7 @@
     "bin": "src/main.js",
     "scripts": {
         "start": "node src/main.js",
+        "validate": "node --check cheats.js config.js && node -e \"require('./src/ui/optionsAccountSchema.json')\"",
         "build": "pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
         "build-unix": "pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI"
     },
