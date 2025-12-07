@@ -119,6 +119,18 @@ const getDeepDiff = (current, defaultObj) => {
     return undefined; // Same, so omit from diff
   }
 
+  // Helper to normalize values for comparison (handles function strings vs actual functions)
+  const normalizeForComparison = (val) => {
+    if (typeof val === 'function') {
+      return val.toString();
+    }
+    if (typeof val === 'string' && /^(\(.*\)|[\w$]+)\s*=>/.test(val.trim())) {
+      // It's already a stringified arrow function
+      return val.trim();
+    }
+    return val;
+  };
+
   // It's an object, recurse
   const diff = {};
   for (const key in current) {
@@ -134,8 +146,20 @@ const getDeepDiff = (current, defaultObj) => {
         }
       } else {
         // Primitive, array, or function (serialized as string)
+        // Normalize both values to handle function-to-string comparisons
+        const normalizedCurrent = normalizeForComparison(currentVal);
+        const normalizedDefault = normalizeForComparison(defaultVal);
+
         // Use JSON.stringify for comparison to handle arrays and nested structures
-        if (JSON.stringify(currentVal) !== JSON.stringify(defaultVal)) {
+        // For function strings, compare directly since JSON.stringify would wrap them in quotes
+        const currentStr = typeof normalizedCurrent === 'string' && /^(\(.*\)|[\w$]+)\s*=>/.test(normalizedCurrent)
+          ? normalizedCurrent
+          : JSON.stringify(normalizedCurrent);
+        const defaultStr = typeof normalizedDefault === 'string' && /^(\(.*\)|[\w$]+)\s*=>/.test(normalizedDefault)
+          ? normalizedDefault
+          : JSON.stringify(normalizedDefault);
+
+        if (currentStr !== defaultStr) {
           diff[key] = currentVal;
         }
       }
