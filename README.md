@@ -83,6 +83,7 @@
 - iBelg
 - Creater0822
 - valleymon
+- sciomachist
 - and everyone that contributed to this project
 
 <br/>
