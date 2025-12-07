@@ -358,7 +358,6 @@ registerCheats({
     { name: "task", message: "task cost nullification" },
     { name: "quest", message: "quest item requirment nullification" },
     { name: "star", message: "star point requirement nullification" },
-    { name: "crystal", message: "100% crystal mob spawn rate" },
     { name: "giant", message: "100% giant mob spawn rate" },
     {
       name: "plunderous",
@@ -914,6 +913,20 @@ registerCheats({
 	{
       name: "classexp",
       message: "Multiplies class EXP by the number given (use reasonably!)",
+      configurable: {
+        valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
+      },
+    },
+	{
+      name: "crystal",
+      message: "Multiplies crystal spawn rate by the number given (use reasonably!)",
+      configurable: {
+        valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
+      },
+    },
+    {
+      name: "skillexp",
+      message: "Multiplies skill EXP by the number given (use reasonably!)",
       configurable: {
         valueTransformer: (val) => (!isNaN(val) ? new Function(`t => t * ${val}`)() : val),
       },
@@ -2872,14 +2885,25 @@ function setupArbitraryProxy() {
 
   // Skill stats
   const SkillStats = ActorEvents12._customBlock_SkillStats;
-  ActorEvents12._customBlock_SkillStats = function (...argumentList) {
-    // Multiply efficiency
-    if (cheatState.multiply.efficiency && argumentList[0].includes("Efficiency"))
-      return Reflect.apply(SkillStats, this, argumentList) * cheatConfig.multiply.efficiency;
-    // Worship speed (and other w3 tweaks)
-    return cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(argumentList[0])
-      ? cheatConfig.w3[argumentList[0]](Reflect.apply(SkillStats, this, argumentList))
-      : Reflect.apply(SkillStats, this, argumentList);
+  ActorEvents12._customBlock_SkillStats = function (...argumentsList) {
+    const t = argumentsList[0];
+
+    // Global skill EXP multiplier
+    if (cheatState.multiply.skillexp && t === "AllSkillxpMULTI") {
+      return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.skillexp;
+    }
+
+    // Worship speed (config-driven)
+    if (cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(t)) {
+      return cheatConfig.w3[t](Reflect.apply(SkillStats, this, argumentsList));
+    }
+
+    // Skill efficiency multiplier
+    if (cheatState.multiply.efficiency && t.includes("Efficiency")) {
+      return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.efficiency;
+    }
+
+    return Reflect.apply(SkillStats, this, argumentsList);
   };
 
   const Arbitrary = ActorEvents12._customBlock_ArbitraryCode;
@@ -2887,16 +2911,22 @@ function setupArbitraryProxy() {
     const t = argumentsList[0];
 
     // Coin drop multiplier (MonsterCash)
-    if (cheatState.multiply.money && t == "MonsterCash") {
+    if (cheatState.multiply.money && t === "MonsterCash") {
       return Reflect.apply(Arbitrary, this, argumentsList) * cheatConfig.multiply.money;
+    }
+
+    // Crystal spawn multiplier
+    if (t === "CrystalSpawn") {
+      const base = Reflect.apply(Arbitrary, this, argumentsList);
+      if (cheatState.multiply.crystal) return base * cheatConfig.multiply.crystal; // new multiplier
+      return base;
     }
 
     // Existing cheats
     // if (cheatState.w1.statue && t.substring(0, 12) == "Statue...") return 1;
-    if (t == "CrystalSpawn" && cheatState.wide.crystal) return 1; // Crystal mob spawn rate
-    if (t == "GiantMob" && cheatState.wide.giant) return 1; // Giant mob spawn rate 1
-    if (t == "FoodNOTconsume" && cheatState.godlike.food) return 100; // Food never consumed
-    if (t == "HitChancePCT" && cheatState.godlike.hitchance) return 100; // 100% hit chance
+    if (t === "GiantMob" && cheatState.wide.giant) return 1;             // Giant mob spawn rate
+    if (t === "FoodNOTconsume" && cheatState.godlike.food) return 100;   // Food never consumed
+    if (t === "HitChancePCT" && cheatState.godlike.hitchance) return 100; // 100% hit chance
 
     return Reflect.apply(Arbitrary, this, argumentsList);
   };
