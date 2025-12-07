@@ -4,6 +4,7 @@ const {
   getInjectorConfig,
   getStartupCheats,
   getCheatConfig,
+  getDefaultConfig,
   getCdpPort,
   getWebPort
 } = require('./modules/config/configManager');
@@ -62,10 +63,11 @@ function initializeConfiguration() {
   const injectorConfig = getInjectorConfig();
   const startupCheats = getStartupCheats();
   const cheatConfig = getCheatConfig();
+  const defaultConfig = getDefaultConfig();
   const cdpPort = getCdpPort();
   const webPort = getWebPort();
 
-  return { injectorConfig, startupCheats, cheatConfig, cdpPort, webPort };
+  return { injectorConfig, startupCheats, cheatConfig, defaultConfig, cdpPort, webPort };
 }
 
 
@@ -119,6 +121,7 @@ async function handlePageLoad(gameContext, config, app) {
     if (config.injectorConfig.enableUI) {
       setupApiRoutes(app, context, client, {
         cheatConfig: config.cheatConfig,
+        defaultConfig: config.defaultConfig,
         startupCheats: config.startupCheats,
         injectorConfig: config.injectorConfig,
         cdpPort: config.cdpPort

@@ -24,7 +24,7 @@ const { objToString, prepareConfigForJson, parseConfigFromJson } = require('../u
  */
 function setupApiRoutes(app, context, client, config) {
   const { Runtime } = client;
-  const { cheatConfig, startupCheats, injectorConfig, cdpPort } = config;
+  const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
 
   // --- API Endpoint: Get available cheats ---
   app.get('/api/cheats', async (req, res) => {
@@ -130,10 +130,18 @@ function setupApiRoutes(app, context, client, config) {
   app.get('/api/config', (req, res) => {
     try {
       const serializableCheatConfig = prepareConfigForJson(cheatConfig);
+
+      // Serialize the entire default config structure (cheatConfig, injectorConfig, startupCheats)
+      let serializableDefaultConfig = {};
+      if (defaultConfig) {
+        serializableDefaultConfig = prepareConfigForJson(defaultConfig);
+      }
+
       const fullConfigResponse = {
         startupCheats: startupCheats, // Send the raw startupCheats array
         cheatConfig: serializableCheatConfig, // Send the processed cheatConfig
         injectorConfig: injectorConfig, // Send the injectorConfig
+        defaultConfig: serializableDefaultConfig, // Send the processed default cheatConfig
       };
       res.json(fullConfigResponse);
     } catch (error) {

@@ -11,6 +11,7 @@ const os = require('os');
 
 // Configuration state - holds loaded configuration data in memory
 let config = null;
+let defaultConfig = null; // Store the original default configuration
 let injectorConfig = null;
 let startupCheats = null;
 let cheatConfig = null;
@@ -39,6 +40,9 @@ function loadConfiguration() {
     }
 
     config = require(configPath);
+
+    // Deep clone for defaultConfig to ensure it stays pristine
+    defaultConfig = _.cloneDeep(config);
 
     // Try to load custom configuration and merge
     try {
@@ -97,6 +101,17 @@ function getCheatConfig() {
 }
 
 /**
+ * Get the default configuration object (as defined in config.js)
+ * @returns {Object} The default configuration object
+ */
+function getDefaultConfig() {
+  if (!defaultConfig) {
+    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
+  }
+  return defaultConfig;
+}
+
+/**
  * Get the Chrome DevTools Protocol port
  * @returns {number} The CDP port number
  */
@@ -140,6 +155,8 @@ module.exports = {
   getInjectorConfig,
   getStartupCheats,
   getCheatConfig,
+  getCheatConfig,
+  getDefaultConfig,
   getCdpPort,
   getWebPort,
   isLinux,
