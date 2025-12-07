@@ -786,6 +786,75 @@ document.addEventListener('DOMContentLoaded', () => {
             input.id = `config-${fullKey}`;
             input.dataset.key = fullKey; // Store the full key path for gathering
             itemDiv.appendChild(input);
+
+            // --- DIFF HIGHLIGHTING LOGIC ---
+            // Only strictly check if we have a default config and this is NOT startupCheats (which is already handled above/ignored)
+            if (currentFullConfig && currentFullConfig.defaultConfig) {
+                // Traverse defaultConfig using the key structure
+                // fullKey could be "cheatConfig.Category.Key" or "injectorConfig.Key"
+                const keys = fullKey.split('.');
+                let defaultValue = currentFullConfig.defaultConfig;
+                let foundDefault = true;
+
+                for (const k of keys) {
+                    if (defaultValue && Object.prototype.hasOwnProperty.call(defaultValue, k)) {
+                        defaultValue = defaultValue[k];
+                    } else {
+                        foundDefault = false;
+                        break;
+                    }
+                }
+
+                if (foundDefault) {
+                    // Helper function to check and update the modified status
+                    const updateModifiedStatus = () => {
+                        // Get current value from input
+                        let currentValue;
+                        if (input.type === 'checkbox') {
+                            currentValue = input.checked;
+                        } else if (input.type === 'number') {
+                            currentValue = parseFloat(input.value);
+                        } else {
+                            currentValue = input.value;
+                        }
+
+                        // Check if different from default
+                        const isModified = currentValue !== defaultValue;
+
+                        // Update the modified-config class
+                        if (isModified) {
+                            if (!itemDiv.classList.contains('modified-config')) {
+                                itemDiv.classList.add('modified-config');
+
+                                // Add hint if not already present
+                                if (!itemDiv.querySelector('.default-value-hint')) {
+                                    const hint = document.createElement('div');
+                                    hint.className = 'default-value-hint';
+                                    let displayDefault = defaultValue;
+                                    if (typeof defaultValue === 'string') displayDefault = `"${defaultValue}"`;
+                                    hint.textContent = `Default: ${displayDefault}`;
+                                    itemDiv.appendChild(hint);
+                                }
+                            }
+                        } else {
+                            // Remove modified class and hint if value matches default
+                            itemDiv.classList.remove('modified-config');
+                            const existingHint = itemDiv.querySelector('.default-value-hint');
+                            if (existingHint) existingHint.remove();
+                        }
+                    };
+
+                    // Set initial status
+                    updateModifiedStatus();
+
+                    // Add change listener for dynamic updates
+                    input.addEventListener('change', updateModifiedStatus);
+                    // Also add input listener for real-time updates on text/number fields
+                    if (input.type !== 'checkbox') {
+                        input.addEventListener('input', updateModifiedStatus);
+                    }
+                }
+            }
         }
         container.appendChild(itemDiv);
     }
@@ -850,6 +919,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 current[pathArray[pathArray.length - 1]] = value;
             }
 
+            // Helper to get default value for type checking
+            function getDefaultValue(pathArray) {
+                if (!latestConfig.defaultConfig) return undefined;
+                let current = latestConfig.defaultConfig;
+                for (const key of pathArray) {
+                    if (current && Object.prototype.hasOwnProperty.call(current, key)) {
+                        current = current[key];
+                    } else {
+                        return undefined;
+                    }
+                }
+                return current;
+            }
+
             // --- Gather Startup Cheats ---
             if (startupCheatsOptionsDiv && updatedFullConfig.hasOwnProperty('startupCheats')) {
                 const cheatEditor = startupCheatsOptionsDiv.querySelector('.startup-cheats-editor');
@@ -875,14 +958,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     const fullKeyPath = input.dataset.key.split('.');
                     if (fullKeyPath.length < 2 || fullKeyPath[0] !== 'cheatConfig') return;
 
+                    // Look up default value to determine type
+                    // fullKeyPath ex: ['cheatConfig', 'Category', 'Key']
+                    // defaultConfig structure mirrors this exactly
+                    const defaultValue = getDefaultValue(fullKeyPath);
+
                     const relativeKeyPath = fullKeyPath.slice(1);
                     let value;
-                    if (input.type === 'checkbox') value = input.checked;
-                    else if (input.type === 'number') value = parseFloat(input.value);
-                    else if (input.tagName === 'TEXTAREA') {
+                    if (input.type === 'checkbox') {
+                        value = input.checked;
+                    } else if (input.type === 'number') {
+                        value = parseFloat(input.value);
+                    } else if (input.tagName === 'TEXTAREA') {
                         try { value = JSON.parse(input.value); } catch { value = input.value; }
+                    } else {
+                        // Text input - check if it should be a number based on default config
+                        value = input.value;
+                        if (typeof defaultValue === 'number') {
+                            const numValue = Number(value);
+                            // Only convert if it's a valid number and the field isn't empty
+                            if (!isNaN(numValue) && value.trim() !== '') {
+                                value = numValue;
+                            }
+                        }
                     }
-                    else value = input.value;
 
                     setNestedValue(updatedFullConfig.cheatConfig, relativeKeyPath, value);
                 });
@@ -898,20 +997,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     const fullKeyPath = input.dataset.key.split('.');
                     if (fullKeyPath.length < 2 || fullKeyPath[0] !== 'injectorConfig') return;
 
+                    const defaultValue = getDefaultValue(fullKeyPath);
                     const relativeKeyPath = fullKeyPath.slice(1);
                     let value;
-                    if (input.type === 'checkbox') value = input.checked;
-                    else if (input.type === 'number') value = parseFloat(input.value);
-                    else if (input.tagName === 'TEXTAREA') {
+                    if (input.type === 'checkbox') {
+                        value = input.checked;
+                    } else if (input.type === 'number') {
+                        value = parseFloat(input.value);
+                    } else if (input.tagName === 'TEXTAREA') {
                         try { value = JSON.parse(input.value); } catch { value = input.value; }
+                    } else {
+                        // Text input - check if it should be a number based on default config
+                        value = input.value;
+                        if (typeof defaultValue === 'number') {
+                            const numValue = Number(value);
+                            if (!isNaN(numValue) && value.trim() !== '') {
+                                value = numValue;
+                            }
+                        }
                     }
-                    else value = input.value;
 
                     setNestedValue(updatedFullConfig.injectorConfig, relativeKeyPath, value);
                 });
             }
 
             console.log('[Config] Gathered data from UI:', updatedFullConfig);
+
+            // Remove defaultConfig from the payload to avoid sending it back to the server
+            if (updatedFullConfig.defaultConfig) {
+                delete updatedFullConfig.defaultConfig;
+            }
+
             return updatedFullConfig;
         } catch (error) {
             console.error('[Config] Error gathering config from UI:', error);

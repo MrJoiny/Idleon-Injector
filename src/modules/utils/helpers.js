@@ -22,6 +22,8 @@ const objToString = (obj) => {
       v = v.toString();
     } else if (typeof v === 'boolean') {
       v = v;
+    } else if (typeof v === 'number') {
+      v = v;
     } else if (Array.isArray(v)) {
       v = JSON.stringify(v);
     } else if (typeof v === "object") {
@@ -93,8 +95,59 @@ const parseConfigFromJson = (obj) => {
   return result;
 };
 
+/**
+ * Recursively compares two objects and returns only the properties from `current`
+ * that differ from `defaultObj`. Used to save only user overrides to config.custom.js.
+ * @param {Object} current - The current full configuration object
+ * @param {Object} defaultObj - The default configuration object to compare against
+ * @returns {Object} An object containing only the properties that differ from defaults
+ */
+const getDeepDiff = (current, defaultObj) => {
+  if (current === null || current === undefined) {
+    return current;
+  }
+  if (defaultObj === null || defaultObj === undefined) {
+    // No default to compare against, return current as-is
+    return current;
+  }
+  if (typeof current !== 'object' || Array.isArray(current)) {
+    // For primitives and arrays, do a direct comparison
+    // Arrays are treated as atomic units - if different, return whole array
+    if (JSON.stringify(current) !== JSON.stringify(defaultObj)) {
+      return current;
+    }
+    return undefined; // Same, so omit from diff
+  }
+
+  // It's an object, recurse
+  const diff = {};
+  for (const key in current) {
+    if (Object.hasOwnProperty.call(current, key)) {
+      const currentVal = current[key];
+      const defaultVal = defaultObj ? defaultObj[key] : undefined;
+
+      if (typeof currentVal === 'object' && currentVal !== null && !Array.isArray(currentVal)) {
+        // Nested object
+        const nestedDiff = getDeepDiff(currentVal, defaultVal);
+        if (nestedDiff !== undefined && Object.keys(nestedDiff).length > 0) {
+          diff[key] = nestedDiff;
+        }
+      } else {
+        // Primitive, array, or function (serialized as string)
+        // Use JSON.stringify for comparison to handle arrays and nested structures
+        if (JSON.stringify(currentVal) !== JSON.stringify(defaultVal)) {
+          diff[key] = currentVal;
+        }
+      }
+    }
+  }
+
+  return Object.keys(diff).length > 0 ? diff : undefined;
+};
+
 module.exports = {
   objToString,
   prepareConfigForJson,
-  parseConfigFromJson
+  parseConfigFromJson,
+  getDeepDiff
 };

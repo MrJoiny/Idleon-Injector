@@ -775,3 +775,19 @@ button {
     align-items: center;
     flex-wrap: wrap;
 }
+
+/* Config Diff Highlighting */
+.modified-config {
+    border-left: 4px solid var(--accent-secondary);
+    border-color: var(--accent-secondary);
+    background: rgba(188, 19, 254, 0.05);
+    /* Very subtle purple tint */
+}
+
+.default-value-hint {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 500;
+}
