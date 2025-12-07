@@ -11,6 +11,8 @@ exports.cheatConfig = {
     efficiency: 1,
     afk: 1,
     drop: 1,
+    money: 1,
+    classexp: 1,
     printer: 6,
     monsters: 1,
   },
