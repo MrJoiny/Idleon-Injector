@@ -2199,10 +2199,10 @@ function setupGemshopProxy() {
           const subArray = mtxInfo[i][j][k];
           subArray._5 = subArray[5]; // gembuylimit
           subArray._3 = subArray[3]; // mtxcost
+          subArray._7 = subArray[7]; // per-purchase gem increment
 
           Object.defineProperty(subArray, 5, {
             get: function () {
-              // Check if the cheat is active in the state
               if (cheatState.wide.gembuylimit) {
                 return Math.max(this._5, cheatConfig.wide.gembuylimit);
               }
@@ -2218,7 +2218,6 @@ function setupGemshopProxy() {
 
           Object.defineProperty(subArray, 3, {
             get: function () {
-              // Check if the cheat is active in the state
               if (cheatState.wide.mtx) {
                 return 0;
               }
@@ -2231,10 +2230,26 @@ function setupGemshopProxy() {
             enumerable: true,
             configurable: true,
           });
+
+          Object.defineProperty(subArray, 7, {
+            get: function () {
+              if (cheatState.wide.mtx) {
+                return 0;
+              }
+              return this._7;
+            },
+            set: function (value) {
+              this._7 = value;
+              return true;
+            },
+            enumerable: true,
+            configurable: true,
+          });
         }
     }
   }
 }
+
 
 function setupBehaviorScriptProxies() {
   // Proxy:
