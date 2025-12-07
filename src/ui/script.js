@@ -14,8 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const cheatConfigOptionsDiv = document.getElementById('cheatconfig-options');
     const cheatConfigCategorySelect = document.getElementById('cheatconfig-category-select'); // Added dropdown select
     const startupCheatsOptionsDiv = document.getElementById('startupcheats-options');
+    const injectorConfigOptionsDiv = document.getElementById('injectorconfig-options');
     const loadingCheatConfigP = document.getElementById('loading-cheatconfig'); // Specific loading indicators
     const loadingStartupCheatsP = document.getElementById('loading-startupcheats');
+    const loadingInjectorConfigP = document.getElementById('loading-injectorconfig');
     const updateConfigButton = document.getElementById('update-config-button');
     const saveConfigButton = document.getElementById('save-config-button');
 
@@ -466,22 +468,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // REVISED: Function to load and render the configuration options into sub-tabs
     async function loadAndRenderConfig() {
         // Only run if the necessary elements exist and the tab hasn't been initialized
-        if (!cheatConfigOptionsDiv || !startupCheatsOptionsDiv || !loadingCheatConfigP || !loadingStartupCheatsP || configTabInitialized) {
+        if (!cheatConfigOptionsDiv || !startupCheatsOptionsDiv || !injectorConfigOptionsDiv || !loadingCheatConfigP || !loadingStartupCheatsP || !loadingInjectorConfigP || configTabInitialized) {
             // If elements are missing, log an error. If already initialized, just return.
-            if (!cheatConfigOptionsDiv || !startupCheatsOptionsDiv) console.error("Config sub-tab elements missing!");
+            if (!cheatConfigOptionsDiv || !startupCheatsOptionsDiv || !injectorConfigOptionsDiv) console.error("Config sub-tab elements missing!");
             return;
         }
 
         console.log("[Config] Initializing Config Tab Content...");
         loadingCheatConfigP.style.display = 'block';
         loadingStartupCheatsP.style.display = 'block';
+        loadingInjectorConfigP.style.display = 'block';
         cheatConfigOptionsDiv.innerHTML = '';
         startupCheatsOptionsDiv.innerHTML = '';
+        injectorConfigOptionsDiv.innerHTML = '';
 
         const config = await fetchConfig(); // Use cached or fetch anew
 
         loadingCheatConfigP.style.display = 'none';
         loadingStartupCheatsP.style.display = 'none';
+        loadingInjectorConfigP.style.display = 'none';
 
         if (!config) {
             cheatConfigOptionsDiv.innerHTML = '<p class="status-error">Failed to load configuration.</p>';
@@ -530,6 +535,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("[Config] 'startupCheats' key missing or not an array in fetched config:", config);
             // Optionally render an empty editor if the key exists but is wrong type/null
             // renderSingleOption('startupCheats', [], '', startupCheatsOptionsDiv);
+        }
+
+        // --- Render InjectorConfig ---
+        if (config.injectorConfig && typeof config.injectorConfig === 'object') {
+            renderCategorizedOptions(config.injectorConfig, 'injectorConfig', injectorConfigOptionsDiv);
+        } else {
+            injectorConfigOptionsDiv.innerHTML = '<p>No Injector Config found.</p>';
+            console.warn("[Config] 'injectorConfig' key missing or not an object in fetched config:", config);
         }
 
         configTabInitialized = true; // Mark as initialized
@@ -857,7 +870,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof updatedFullConfig.cheatConfig !== 'object' || updatedFullConfig.cheatConfig === null) {
                     updatedFullConfig.cheatConfig = {};
                 }
-
                 const configInputs = cheatConfigOptionsDiv.querySelectorAll('input[data-key], textarea[data-key]');
                 configInputs.forEach(input => {
                     const fullKeyPath = input.dataset.key.split('.');
@@ -866,13 +878,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     const relativeKeyPath = fullKeyPath.slice(1);
                     let value;
                     if (input.type === 'checkbox') value = input.checked;
-                    else if (input.type === 'number') value = parseFloat(input.value) || input.value;
+                    else if (input.type === 'number') value = parseFloat(input.value);
                     else if (input.tagName === 'TEXTAREA') {
                         try { value = JSON.parse(input.value); } catch { value = input.value; }
                     }
                     else value = input.value;
 
                     setNestedValue(updatedFullConfig.cheatConfig, relativeKeyPath, value);
+                });
+            }
+
+            // --- Gather InjectorConfig Options ---
+            if (injectorConfigOptionsDiv && updatedFullConfig.hasOwnProperty('injectorConfig')) {
+                if (typeof updatedFullConfig.injectorConfig !== 'object' || updatedFullConfig.injectorConfig === null) {
+                    updatedFullConfig.injectorConfig = {};
+                }
+                const injectorInputs = injectorConfigOptionsDiv.querySelectorAll('input[data-key], textarea[data-key]');
+                injectorInputs.forEach(input => {
+                    const fullKeyPath = input.dataset.key.split('.');
+                    if (fullKeyPath.length < 2 || fullKeyPath[0] !== 'injectorConfig') return;
+
+                    const relativeKeyPath = fullKeyPath.slice(1);
+                    let value;
+                    if (input.type === 'checkbox') value = input.checked;
+                    else if (input.type === 'number') value = parseFloat(input.value);
+                    else if (input.tagName === 'TEXTAREA') {
+                        try { value = JSON.parse(input.value); } catch { value = input.value; }
+                    }
+                    else value = input.value;
+
+                    setNestedValue(updatedFullConfig.injectorConfig, relativeKeyPath, value);
                 });
             }
 
