@@ -401,24 +401,27 @@ button {
 #status-message {
     position: fixed;
     bottom: 30px;
-    right: 30px;
+    left: 50%;
+    transform: translateX(-50%);
     padding: 16px 24px;
     border-radius: 12px;
     font-weight: 500;
     backdrop-filter: blur(10px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: none;
+    /* Hidden by default */
+    animation: slideInBottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes slideIn {
+@keyframes slideInBottom {
     from {
-        transform: translateX(100px);
+        transform: translateX(-50%) translateY(20px);
         opacity: 0;
     }
 
     to {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
     }
 }

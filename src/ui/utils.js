@@ -14,9 +14,12 @@ function showStatus(message, isError = false) {
 
     statusDiv.textContent = message;
     statusDiv.className = isError ? 'status-error' : 'status-success';
+    statusDiv.style.display = 'block'; // Show the message
+
     setTimeout(() => {
         statusDiv.textContent = '';
         statusDiv.className = '';
+        statusDiv.style.display = 'none'; // Hide when cleared
     }, 5000);
 }
 
