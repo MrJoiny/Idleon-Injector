@@ -237,11 +237,13 @@ exports.cheatConfig = {
       CloudDiscoverBonus: (t) => t * 2, // 2x cloud discover bonus
       ArtifactChance: (t) => t, // ! Caution changing this causes crashes. ! artifact discover bonus (lower is better)
       AncientChances: (t) => t / 5, // 5x ancient chance (lower is better)
-      EldritchChances: (t) => t, // eldritch chance (is lower is better?)
-      SovereignChances: (t) => t, // sovereign chance (is lower is better?)
+      EldritchChances: (t) => t / 5, // eldritch chance (is lower is better)
+      SovereignChances: (t) => t / 5, // sovereign chance (is lower is better)
+      OmnipotentChances: (t) => t / 5, // omnipotent chance (is lower is better)
       NewCaptBoatSlot: (t) => 0, // free boat and captain slots
       BuyCaptainCost: (t) => 0, // free captains
       ArtifactBonus: (t) => t, // bonus from the artifact, needs investigation as to what can be done here!
+
     },
     gaming: {
       FertilizerUpgCosts: (t) => 0, // fertilizer upgrade costs are free
