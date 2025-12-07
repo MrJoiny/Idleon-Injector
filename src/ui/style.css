@@ -794,3 +794,14 @@ button {
     font-style: italic;
     font-weight: 500;
 }
+
+/* Modified Category Highlighting */
+.modified-category {
+    border-color: var(--accent-secondary);
+    /* background: rgba(187, 19, 254, 0.005); */
+}
+
+.modified-category>summary {
+    color: var(--accent-secondary);
+    font-weight: 700;
+}

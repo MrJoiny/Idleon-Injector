@@ -548,6 +548,9 @@ document.addEventListener('DOMContentLoaded', () => {
         configTabInitialized = true; // Mark as initialized
         console.log("[Config] Config Tab Content Initialized.");
 
+        // Update all category statuses after initial render
+        updateAllCategoryStatuses();
+
     } // End of loadAndRenderConfig
 
     // Event handler for cheat config category dropdown change
@@ -574,6 +577,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             cheatConfigOptionsDiv.innerHTML = `<p>Category "${selectedCategory}" not found in config.</p>`;
         }
+
+        // Update category highlighting after re-rendering
+        updateAllCategoryStatuses();
     }
 
 
@@ -593,6 +599,41 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!Object.hasOwnProperty.call(categoryObj, key)) continue;
             renderSingleOption(key, categoryObj[key], parentKey, container);
         }
+    }
+
+
+    // Helper function to update parent category highlighting
+    function updateParentCategoryStatus(configItemElement) {
+        // Find the parent category (details element with class cheat-category)
+        const parentCategory = configItemElement.closest('.cheat-category');
+
+        if (!parentCategory) return; // No parent category found
+
+        // Check if any child config items within this category are modified
+        const modifiedChildren = parentCategory.querySelectorAll('.config-item.modified-config');
+
+        // Add or remove the modified-category class based on whether there are modified children
+        if (modifiedChildren.length > 0) {
+            parentCategory.classList.add('modified-category');
+        } else {
+            parentCategory.classList.remove('modified-category');
+        }
+    }
+
+    // Helper function to update all category statuses (called after initial render)
+    function updateAllCategoryStatuses() {
+        // Find all categories and update their status
+        const allCategories = document.querySelectorAll('.cheat-category');
+
+        allCategories.forEach(category => {
+            const modifiedChildren = category.querySelectorAll('.config-item.modified-config');
+
+            if (modifiedChildren.length > 0) {
+                category.classList.add('modified-category');
+            } else {
+                category.classList.remove('modified-category');
+            }
+        });
     }
 
 
@@ -814,12 +855,28 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentValue = input.checked;
                         } else if (input.type === 'number') {
                             currentValue = parseFloat(input.value);
+                        } else if (input.tagName === 'TEXTAREA') {
+                            // For textareas (arrays/objects), parse the JSON string for comparison
+                            try {
+                                currentValue = JSON.parse(input.value);
+                            } catch (e) {
+                                // If parsing fails, compare as string
+                                currentValue = input.value;
+                            }
                         } else {
                             currentValue = input.value;
                         }
 
                         // Check if different from default
-                        const isModified = currentValue !== defaultValue;
+                        // For arrays/objects, we need deep comparison
+                        let isModified;
+                        if (typeof defaultValue === 'object' && defaultValue !== null) {
+                            // Deep comparison for objects/arrays
+                            isModified = JSON.stringify(currentValue) !== JSON.stringify(defaultValue);
+                        } else {
+                            // Simple comparison for primitives
+                            isModified = currentValue !== defaultValue;
+                        }
 
                         // Update the modified-config class
                         if (isModified) {
@@ -830,8 +887,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!itemDiv.querySelector('.default-value-hint')) {
                                     const hint = document.createElement('div');
                                     hint.className = 'default-value-hint';
-                                    let displayDefault = defaultValue;
-                                    if (typeof defaultValue === 'string') displayDefault = `"${defaultValue}"`;
+                                    let displayDefault;
+                                    if (typeof defaultValue === 'string') {
+                                        displayDefault = `"${defaultValue}"`;
+                                    } else if (typeof defaultValue === 'object' && defaultValue !== null) {
+                                        // Use JSON.stringify for arrays/objects to show brackets
+                                        displayDefault = JSON.stringify(defaultValue);
+                                    } else {
+                                        displayDefault = defaultValue;
+                                    }
                                     hint.textContent = `Default: ${displayDefault}`;
                                     itemDiv.appendChild(hint);
                                 }
@@ -842,6 +906,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             const existingHint = itemDiv.querySelector('.default-value-hint');
                             if (existingHint) existingHint.remove();
                         }
+
+                        // Update parent category highlighting
+                        updateParentCategoryStatus(itemDiv);
                     };
 
                     // Set initial status
