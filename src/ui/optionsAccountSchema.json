@@ -2679,5 +2679,20 @@
         "name": "last opened clicker index",
         "description": "last opened clicker index (0-orion owl, 1-poppy kangaroo, 2-bubba seal)",
         "type": "number"
+    },
+    "490": {
+        "name": "Days in a row used Glimmerwick candle",
+        "description": "Days in a row used Glimmerwick candle, pity counter",
+        "type": "number"
+    },
+    "491": {
+        "name": "Received the reward from the Glimmerwick candle",
+        "description": "Received the reward from the Glimmerwick candle, 0=not received, 1=received",
+        "type": "number"
+    },
+    "492": {
+        "name": "Daily lock for Glimmerwick candle",
+        "description": "Is Glimmerwick usable today, 0=usable, 1=locked",
+        "type": "number"
     }
 }

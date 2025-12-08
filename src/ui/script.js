@@ -1039,13 +1039,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (input.tagName === 'TEXTAREA') {
                         try { value = JSON.parse(input.value); } catch { value = input.value; }
                     } else {
-                        // Text input - check if it should be a number based on default config
+                        // Text input - check if it should be parsed as JSON (arrays/objects) or a number
                         value = input.value;
-                        if (typeof defaultValue === 'number') {
+                        const trimmedValue = value.trim();
+
+                        // Try to parse as JSON if it looks like an array or object
+                        if (trimmedValue.startsWith('[') || trimmedValue.startsWith('{')) {
+                            try {
+                                value = JSON.parse(trimmedValue);
+                            } catch (e) {
+                                // If parsing fails, keep it as a string
+                                console.warn(`[Config] Failed to parse JSON for ${input.dataset.key}:`, e.message);
+                                value = input.value;
+                            }
+                        } else if (typeof defaultValue === 'number') {
+                            // Check if it should be a number based on default config
                             const numValue = Number(value);
                             // Only convert if it's a valid number and the field isn't empty
-                            if (!isNaN(numValue) && value.trim() !== '') {
+                            if (!isNaN(numValue) && trimmedValue !== '') {
                                 value = numValue;
+                            }
+                        } else if (Array.isArray(defaultValue)) {
+                            // If default is an array but value doesn't start with '[', try to parse anyway
+                            try {
+                                value = JSON.parse(trimmedValue);
+                            } catch (e) {
+                                // Keep as string if it can't be parsed
+                                console.warn(`[Config] Expected array for ${input.dataset.key}, but couldn't parse:`, trimmedValue);
                             }
                         }
                     }
@@ -1074,12 +1094,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (input.tagName === 'TEXTAREA') {
                         try { value = JSON.parse(input.value); } catch { value = input.value; }
                     } else {
-                        // Text input - check if it should be a number based on default config
+                        // Text input - check if it should be parsed as JSON (arrays/objects) or a number
                         value = input.value;
-                        if (typeof defaultValue === 'number') {
+                        const trimmedValue = value.trim();
+
+                        // Try to parse as JSON if it looks like an array or object
+                        if (trimmedValue.startsWith('[') || trimmedValue.startsWith('{')) {
+                            try {
+                                value = JSON.parse(trimmedValue);
+                            } catch (e) {
+                                // If parsing fails, keep it as a string
+                                console.warn(`[Config] Failed to parse JSON for ${input.dataset.key}:`, e.message);
+                                value = input.value;
+                            }
+                        } else if (typeof defaultValue === 'number') {
+                            // Check if it should be a number based on default config
                             const numValue = Number(value);
-                            if (!isNaN(numValue) && value.trim() !== '') {
+                            // Only convert if it's a valid number and the field isn't empty
+                            if (!isNaN(numValue) && trimmedValue !== '') {
                                 value = numValue;
+                            }
+                        } else if (Array.isArray(defaultValue)) {
+                            // If default is an array but value doesn't start with '[', try to parse anyway
+                            try {
+                                value = JSON.parse(trimmedValue);
+                            } catch (e) {
+                                // Keep as string if it can't be parsed
+                                console.warn(`[Config] Expected array for ${input.dataset.key}, but couldn't parse:`, trimmedValue);
                             }
                         }
                     }

@@ -15,6 +15,7 @@ let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
 let CListFuncDict = {}; // Dictionary of custom list entries
+let CListCached;
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -304,6 +305,7 @@ registerCheats({
         ["Squirell Pack", "bon_h"],
         ["Mr.Piggy Pack", "bon_j"],
         ["Autumn Pack", "bon_k"],
+        ["Bubba! Pack", "bon_l"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
@@ -351,7 +353,19 @@ registerCheats({
   message: "all account-wide cheats",
   canToggleSubcheats: true,
   subcheats: [
-    { name: "gembuylimit", message: "set max gem item purchases" },
+    {
+      name: "gembuylimit",
+      fn: function (params) {
+        if (Number.isInteger(Number(params[1]))) {
+          cheatConfig.wide.gembuylimit = Number(params[1]);
+          updateCListFuncDict();
+          return `Set max gem item purchases to ${cheatConfig.wide.gembuylimit}, restart to reset and only active with wide mtx`;
+        } else {
+          return `Parameter must be an integer.`;
+        }
+      },
+      message: "set max gem item purchases",
+    },
     { name: "mtx", message: "gem shop cost nullification" },
     { name: "post", message: "post cost nullification" },
     { name: "guild", message: "guild cost nullification" },
@@ -493,7 +507,7 @@ registerCheats({
     { name: "buildspd", message: "multiply build speed (see config)" },
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
-	{ name: "refineryspeed", message: "reduces refinery time (see config)" },
+    { name: "refineryspeed", message: "reduces refinery time (see config)" },
     { name: "trapping", message: "trapping duration nullification." },
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
@@ -1580,17 +1594,34 @@ const wipeFunction = function (params) {
     const wipedef = bEngine.getGameAttribute("InventoryOrder");
     for (const [index, element] of Object.entries(wipedef)) wipedef[index] = "Blank";
     return "The inventory has been wiped.";
-  } else if (params[0] == "chest") {
+  }
+  else if (params[0] === "invslot") {
+    const wipedef = bEngine.getGameAttribute("InventoryOrder");
+    if (!params[1]) return "Specify a slot number.";
+    if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
+    wipedef[params[1]] = "Blank";
+    return "Wipe inventory slot could result in a crash: Should be fine after restart.";
+  }
+  else if (params[0] == "chest") {
     const wipedef = bEngine.getGameAttribute("ChestOrder");
     for (const [index, element] of Object.entries(wipedef)) wipedef[index] = "Blank";
     return "Wipe chest could result in a crash: Should be fine after restart.";
-  } else if (params[0] === "forge") {
+  }
+  else if (params[0] == "chestslot") {
+    const wipedef = bEngine.getGameAttribute("ChestOrder");
+    if (!params[1]) return "Specify a slot number.";
+    if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
+    wipedef[params[1]] = "Blank";
+    return "Wipe chest slot could result in a crash: Should be fine after restart.";
+  }
+  else if (params[0] === "forge") {
     for (const [index, element] of Object.entries(bEngine.getGameAttribute("ForgeItemOrder"))) {
       bEngine.getGameAttribute("ForgeItemOrder")[index] = "Blank";
       bEngine.getGameAttribute("ForgeItemQuantity")[index] = 0;
     }
     return "The forge has been wiped. \nIf the game crashes, it should be fine after restart.";
-  } else if (params[0] === "overpurchases") {
+  }
+  else if (params[0] === "overpurchases") {
     bEngine.getGameAttribute("GemItemsPurchased");
     let gemShopInfo = CList.MTXinfo;
     let maxItems = [];
@@ -1637,7 +1668,9 @@ registerCheats({
   message: "Wipe certain stuff from your account. Use with caution!",
   subcheats: [
     { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
+    { name: "invslot", message: "Wipe your inventory slot.", fn: wipeFunction },
     { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
+    { name: "chestslot", message: "Wipe your chest slot.", fn: wipeFunction },
     { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
     {
       name: "overpurchases",
@@ -2151,7 +2184,6 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
-  setupGemshopProxy.call(this);
   setupArcadeProxies.call(this);
   setupBetterCogsProxy.call(this);
   setupTimeCandyProxy.call(this);
@@ -2205,71 +2237,10 @@ function setupFirebaseProxy() {
         // Recall proxies to make sure they are set up again 
         setupCListProxy.call(this);
         setupOptionsListAccountProxy.call(this);
-        setupGemshopProxy.call(this);
 
         return result;
       },
     });
-  }
-}
-
-function setupGemshopProxy() {
-  const mtxInfo = CList.MTXinfo;
-  if (mtxInfo) {
-    for (let i = 0; i < mtxInfo.length; i++) {
-      for (let j = 0; j < mtxInfo[i].length; j++)
-        for (let k = 0; k < mtxInfo[i][j].length; k++) {
-          const subArray = mtxInfo[i][j][k];
-          subArray._5 = subArray[5]; // gembuylimit
-          subArray._3 = subArray[3]; // mtxcost
-          subArray._7 = subArray[7]; // per-purchase gem increment
-
-          Object.defineProperty(subArray, 5, {
-            get: function () {
-              if (cheatState.wide.gembuylimit) {
-                return Math.max(this._5, cheatConfig.wide.gembuylimit);
-              }
-              return this._5;
-            },
-            set: function (value) {
-              this._5 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-
-          Object.defineProperty(subArray, 3, {
-            get: function () {
-              if (cheatState.wide.mtx) {
-                return 0;
-              }
-              return this._3;
-            },
-            set: function (value) {
-              this._3 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-
-          Object.defineProperty(subArray, 7, {
-            get: function () {
-              if (cheatState.wide.mtx) {
-                return 0;
-              }
-              return this._7;
-            },
-            set: function (value) {
-              this._7 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-        }
-    }
   }
 }
 
@@ -2442,12 +2413,18 @@ function setupCreateElementProxy() {
           cheatConfig.w1.companion.current = string(argumentsList[1]);
         }
         if (argumentsList[0] == "getCompanionInfoMe") {
-          return cheatConfig.w1.companion.companions;
+          if (!cheatConfig.w1.companion.companions) return Array.from({ length: CList.CompanionDB.length }, (_, i) => i);
+          let companions = cheatConfig.w1.companion.companions
+          if (typeof companions == "function") {
+            return companions()
+          }
+          return companions;
         }
         if (argumentsList[0] == "getCurrentCompanion") {
           return cheatConfig.w1.companion.current;
         }
-        return true;
+        // return true;
+        return Reflect.apply(originalFn, context, argumentsList);
       }
 
       if (cheatConfig.unban && argumentsList[0] == "cleanMarkedFiles") {
@@ -3210,7 +3187,8 @@ function updateCListFuncDict() {
     SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
     RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
     PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
-    // MTXinfo: ChangeND(4,ChangeND(4, "MTXinfo", 0, [3, 7]),function (t) {return Math.max(t, cheatConfig.wide.gembuylimit);},[5]), // Nullify MTX cost
+    MTXinfo: ChangeND(4, ChangeND(4, "MTXinfo", 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]), // Nullify MTX cost
+    // MTXinfo: ChangeND(4, "MTXinfo", 0, [3, 7]), // Nullify MTX cost
     PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
     GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
     TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
@@ -3221,7 +3199,11 @@ function updateCListFuncDict() {
 }
 
 function setupCListProxy() {
-  const originalCListValues = JSON.parse(JSON.stringify(CList));
+  if (!CListCached) {
+    CListCached = JSON.parse(JSON.stringify(CList));
+  }
+  const originalCListValues = CListCached;
+
   updateCListFuncDict();
 
   for (const [key, value] of Object.entries(CListFuncDict)) {
@@ -3232,7 +3214,7 @@ function setupCListProxy() {
           (cheatState.w3.saltlick && key === "SaltLicks") ||
           (cheatState.w3.refinery && key === "RefineryInfo") ||
           (cheatState.w3.prayer && key === "PrayerInfo") ||
-          // (cheatState.wide.mtx && key === "MTXinfo") ||
+          (cheatState.wide.mtx && key === "MTXinfo") ||
           (cheatState.wide.post && key === "PostOfficePossibleOrders") ||
           (cheatState.wide.guild && key === "GuildGPtasks") ||
           (cheatState.wide.task && key === "TaskDescriptions") ||
@@ -4299,7 +4281,7 @@ async function getChoicesNeedingConfirmation() {
     "w4 mainframe",
     "w4 chipbonuses",
     "search",
-    // "wide gembuylimit",
+    "wide gembuylimit",
     "wide candytime",
     "gga",
     "multiply",
@@ -4308,6 +4290,8 @@ async function getChoicesNeedingConfirmation() {
     "lvl",
     "qnty",
     "setalch",
+    "wipe invslot",
+    "wipe chestslot",
     // "keychain", why is this here?
   ];
 }

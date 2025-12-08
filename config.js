@@ -13,9 +13,9 @@ exports.cheatConfig = {
     drop: 1,
     money: 1,
     classexp: 1,
-	crystal: 1,
-	skillexp: 1,
-	shopstock: 1,
+    crystal: 1,
+    skillexp: 1,
+    shopstock: 1,
     printer: 6,
     monsters: 1,
   },
@@ -68,17 +68,16 @@ exports.cheatConfig = {
   w1: {
     anvil: {
       productionspeed: (t) => t * 4,
-	},
-	forge: {
+    },
+    forge: {
       speed: (t) => t * 4,
       capacity: (t) => t * 2,
     },
-	stampcost: (t) => t / 4, // 4x cheaper stamp upgrades
+    stampcost: (t) => t / 4, // 4x cheaper stamp upgrades
     companion: {
-      companions: [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-        20, 21, 22, 23, 24, 25, 26
-      ], // Set the companions you have unlocked (0=doot, down to 23=green mush)
+      // if comanions is not set in the config, it will always use all the available companions
+      // if you want to just have specific companions, you can set it to a function that returns an array of companion ids [1, 2, 3, ...]
+      companions: "", // let empty for all pets
       current: "11", //current companion - Glunko Supreme
     },
     owl: {
@@ -114,7 +113,7 @@ exports.cheatConfig = {
     buildspd: (t) => t * 10,
     WorshipSpeed: (t) => t * 10,
     towerdamage: (t) => t * 10,
-	refineryspeed: (t) => Math.max(1, Math.floor(t / 10)), // 10x faster refinery
+    refineryspeed: (t) => Math.max(1, Math.floor(t / 10)), // 10x faster refinery
   },
   w4: {
     fasteggs: (t) => t / 4, // 4x faster incubation (you can tweak)
