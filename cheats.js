@@ -2472,7 +2472,8 @@ function setupCreateElementProxy() {
         if (argumentsList[0] == "getCurrentCompanion") {
           return cheatConfig.w1.companion.current;
         }
-        return true;
+        // return true;
+        return Reflect.apply(originalFn, context, argumentsList);
       }
 
       if (cheatConfig.unban && argumentsList[0] == "cleanMarkedFiles") {
