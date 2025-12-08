@@ -15,6 +15,7 @@ let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
 let CListFuncDict = {}; // Dictionary of custom list entries
+let CListCached;
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -352,7 +353,19 @@ registerCheats({
   message: "all account-wide cheats",
   canToggleSubcheats: true,
   subcheats: [
-    { name: "gembuylimit", message: "set max gem item purchases" },
+    {
+      name: "gembuylimit",
+      fn: function (params) {
+        if (Number.isInteger(Number(params[1]))) {
+          cheatConfig.wide.gembuylimit = Number(params[1]);
+          updateCListFuncDict();
+          return `Set max gem item purchases to ${cheatConfig.wide.gembuylimit}, restart to reset and only active with wide mtx`;
+        } else {
+          return `Parameter must be an integer.`;
+        }
+      },
+      message: "set max gem item purchases",
+    },
     { name: "mtx", message: "gem shop cost nullification" },
     { name: "post", message: "post cost nullification" },
     { name: "guild", message: "guild cost nullification" },
@@ -2171,7 +2184,6 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
-  setupGemshopProxy.call(this);
   setupArcadeProxies.call(this);
   setupBetterCogsProxy.call(this);
   setupTimeCandyProxy.call(this);
@@ -2225,71 +2237,10 @@ function setupFirebaseProxy() {
         // Recall proxies to make sure they are set up again 
         setupCListProxy.call(this);
         setupOptionsListAccountProxy.call(this);
-        setupGemshopProxy.call(this);
 
         return result;
       },
     });
-  }
-}
-
-function setupGemshopProxy() {
-  const mtxInfo = CList.MTXinfo;
-  if (mtxInfo) {
-    for (let i = 0; i < mtxInfo.length; i++) {
-      for (let j = 0; j < mtxInfo[i].length; j++)
-        for (let k = 0; k < mtxInfo[i][j].length; k++) {
-          const subArray = mtxInfo[i][j][k];
-          subArray._5 = subArray[5]; // gembuylimit
-          subArray._3 = subArray[3]; // mtxcost
-          subArray._7 = subArray[7]; // per-purchase gem increment
-
-          Object.defineProperty(subArray, 5, {
-            get: function () {
-              if (cheatState.wide.gembuylimit) {
-                return Math.max(this._5, cheatConfig.wide.gembuylimit);
-              }
-              return this._5;
-            },
-            set: function (value) {
-              this._5 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-
-          Object.defineProperty(subArray, 3, {
-            get: function () {
-              if (cheatState.wide.mtx) {
-                return 0;
-              }
-              return this._3;
-            },
-            set: function (value) {
-              this._3 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-
-          Object.defineProperty(subArray, 7, {
-            get: function () {
-              if (cheatState.wide.mtx) {
-                return 0;
-              }
-              return this._7;
-            },
-            set: function (value) {
-              this._7 = value;
-              return true;
-            },
-            enumerable: true,
-            configurable: true,
-          });
-        }
-    }
   }
 }
 
@@ -3236,7 +3187,8 @@ function updateCListFuncDict() {
     SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
     RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
     PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
-    // MTXinfo: ChangeND(4,ChangeND(4, "MTXinfo", 0, [3, 7]),function (t) {return Math.max(t, cheatConfig.wide.gembuylimit);},[5]), // Nullify MTX cost
+    MTXinfo: ChangeND(4, ChangeND(4, "MTXinfo", 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]), // Nullify MTX cost
+    // MTXinfo: ChangeND(4, "MTXinfo", 0, [3, 7]), // Nullify MTX cost
     PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
     GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
     TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
@@ -3247,7 +3199,11 @@ function updateCListFuncDict() {
 }
 
 function setupCListProxy() {
-  const originalCListValues = JSON.parse(JSON.stringify(CList));
+  if (!CListCached) {
+    CListCached = JSON.parse(JSON.stringify(CList));
+  }
+  const originalCListValues = CListCached;
+
   updateCListFuncDict();
 
   for (const [key, value] of Object.entries(CListFuncDict)) {
@@ -3258,7 +3214,7 @@ function setupCListProxy() {
           (cheatState.w3.saltlick && key === "SaltLicks") ||
           (cheatState.w3.refinery && key === "RefineryInfo") ||
           (cheatState.w3.prayer && key === "PrayerInfo") ||
-          // (cheatState.wide.mtx && key === "MTXinfo") ||
+          (cheatState.wide.mtx && key === "MTXinfo") ||
           (cheatState.wide.post && key === "PostOfficePossibleOrders") ||
           (cheatState.wide.guild && key === "GuildGPtasks") ||
           (cheatState.wide.task && key === "TaskDescriptions") ||
@@ -4325,7 +4281,7 @@ async function getChoicesNeedingConfirmation() {
     "w4 mainframe",
     "w4 chipbonuses",
     "search",
-    // "wide gembuylimit",
+    "wide gembuylimit",
     "wide candytime",
     "gga",
     "multiply",
