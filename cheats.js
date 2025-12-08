@@ -304,6 +304,7 @@ registerCheats({
         ["Squirell Pack", "bon_h"],
         ["Mr.Piggy Pack", "bon_j"],
         ["Autumn Pack", "bon_k"],
+        ["Bubba! Pack", "bon_l"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
@@ -493,7 +494,7 @@ registerCheats({
     { name: "buildspd", message: "multiply build speed (see config)" },
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
-	{ name: "refineryspeed", message: "reduces refinery time (see config)" },
+    { name: "refineryspeed", message: "reduces refinery time (see config)" },
     { name: "trapping", message: "trapping duration nullification." },
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
@@ -1580,17 +1581,34 @@ const wipeFunction = function (params) {
     const wipedef = bEngine.getGameAttribute("InventoryOrder");
     for (const [index, element] of Object.entries(wipedef)) wipedef[index] = "Blank";
     return "The inventory has been wiped.";
-  } else if (params[0] == "chest") {
+  }
+  else if (params[0] === "invslot") {
+    const wipedef = bEngine.getGameAttribute("InventoryOrder");
+    if (!params[1]) return "Specify a slot number.";
+    if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
+    wipedef[params[1]] = "Blank";
+    return "Wipe inventory slot could result in a crash: Should be fine after restart.";
+  }
+  else if (params[0] == "chest") {
     const wipedef = bEngine.getGameAttribute("ChestOrder");
     for (const [index, element] of Object.entries(wipedef)) wipedef[index] = "Blank";
     return "Wipe chest could result in a crash: Should be fine after restart.";
-  } else if (params[0] === "forge") {
+  }
+  else if (params[0] == "chestslot") {
+    const wipedef = bEngine.getGameAttribute("ChestOrder");
+    if (!params[1]) return "Specify a slot number.";
+    if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
+    wipedef[params[1]] = "Blank";
+    return "Wipe chest slot could result in a crash: Should be fine after restart.";
+  }
+  else if (params[0] === "forge") {
     for (const [index, element] of Object.entries(bEngine.getGameAttribute("ForgeItemOrder"))) {
       bEngine.getGameAttribute("ForgeItemOrder")[index] = "Blank";
       bEngine.getGameAttribute("ForgeItemQuantity")[index] = 0;
     }
     return "The forge has been wiped. \nIf the game crashes, it should be fine after restart.";
-  } else if (params[0] === "overpurchases") {
+  }
+  else if (params[0] === "overpurchases") {
     bEngine.getGameAttribute("GemItemsPurchased");
     let gemShopInfo = CList.MTXinfo;
     let maxItems = [];
@@ -1637,7 +1655,9 @@ registerCheats({
   message: "Wipe certain stuff from your account. Use with caution!",
   subcheats: [
     { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
+    { name: "invslot", message: "Wipe your inventory slot.", fn: wipeFunction },
     { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
+    { name: "chestslot", message: "Wipe your chest slot.", fn: wipeFunction },
     { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
     {
       name: "overpurchases",
@@ -2442,7 +2462,12 @@ function setupCreateElementProxy() {
           cheatConfig.w1.companion.current = string(argumentsList[1]);
         }
         if (argumentsList[0] == "getCompanionInfoMe") {
-          return cheatConfig.w1.companion.companions;
+          if (!cheatConfig.w1.companion.companions) return Array.from({ length: CList.CompanionDB.length }, (_, i) => i);
+          let companions = cheatConfig.w1.companion.companions
+          if (typeof companions == "function") {
+            return companions()
+          }
+          return companions;
         }
         if (argumentsList[0] == "getCurrentCompanion") {
           return cheatConfig.w1.companion.current;
@@ -4308,6 +4333,8 @@ async function getChoicesNeedingConfirmation() {
     "lvl",
     "qnty",
     "setalch",
+    "wipe invslot",
+    "wipe chestslot",
     // "keychain", why is this here?
   ];
 }
