@@ -373,6 +373,7 @@ exports.cheatConfig = {
       EnemySpd: (t) => t, // set enemy unit speed
     },
     grimoire: {
+      GrimoireBoneQTYbase: (t) => t * 2,
       GrimoireUpgCost: (t) => t / 2, // grimoire upgrade costs are halfed, set this to 0 for free upgrades
       Grimoire_HP: (t) => t * 2,
       Grimoire_DMG: (t) => t * 2,
