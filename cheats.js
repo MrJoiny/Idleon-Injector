@@ -19,6 +19,8 @@ let CListCached;
 
 let iframe; // Declare iframe globally, initialize later
 
+const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
+
 async function gameReady() {
   while (
     !this["com.stencyl.Engine"] ||
@@ -359,10 +361,14 @@ registerCheats({
     {
       name: "gembuylimit",
       fn: function (params) {
+        if (cheatState.wide.gembuylimit && !params[1]) {
+          cheatState.wide.gembuylimit = false;
+          return `Disabled gembuylimit.`;
+        }
         if (Number.isInteger(Number(params[1]))) {
           cheatConfig.wide.gembuylimit = Number(params[1]);
-          updateCListFuncDict();
-          return `Set max gem item purchases to ${cheatConfig.wide.gembuylimit}, restart to reset and only active with wide mtx`;
+          cheatState.wide.gembuylimit = true;
+          return `Set max gem item purchases to ${cheatConfig.wide.gembuylimit}.`;
         } else {
           return `Parameter must be an integer.`;
         }
@@ -3184,52 +3190,116 @@ function setupSmithProxy() {
   tCustomList["ItemToCraftCostTYPE"] = proxy;
 }
 
-function updateCListFuncDict() {
-  CListFuncDict = {
-    AlchemyVialItemsPCT: new Array(CList.AlchemyVialItemsPCT.length).fill(99), // Vials unlock at rollin 1+
-    SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
-    RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
-    PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
-    MTXinfo: ChangeND(4, ChangeND(4, "MTXinfo", 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]), // Nullify MTX cost
-    // MTXinfo: ChangeND(4, "MTXinfo", 0, [3, 7]), // Nullify MTX cost
-    PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
-    GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
-    TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
-    SSignInfoUI: ChangeND(2, "SSignInfoUI", "0", [4]), // Nullify star sign unlock req
-    WorshipBASEinfos: ChangeND(2, "WorshipBASEinfos", 0, [6]), // Nullify worship cost					// Nullify worship cost
-  };
-  return CListFuncDict;
-}
+// see comment on setupCListProxy() not needed with that implementation
+// dont delete this function, might revert back to that implementation
+// function updateCListFuncDict() {
+//   CListFuncDict = {
+//     AlchemyVialItemsPCT: new Array(CList.AlchemyVialItemsPCT.length).fill(99), // Vials unlock at rollin 1+
+//     SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
+//     RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
+//     PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
+//     MTXinfo: ChangeND(4, ChangeND(4, "MTXinfo", 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]), // Nullify MTX cost
+//     // MTXinfo: ChangeND(4, "MTXinfo", 0, [3, 7]), // Nullify MTX cost
+//     PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
+//     GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
+//     TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
+//     SSignInfoUI: ChangeND(2, "SSignInfoUI", "0", [4]), // Nullify star sign unlock req
+//     WorshipBASEinfos: ChangeND(2, "WorshipBASEinfos", 0, [6]), // Nullify worship cost					// Nullify worship cost
+//   };
+//   return CListFuncDict;
+// }
 
+// new implementation like this could cause performance issues, need to evaluate that
+// its reevaluated every call instead of having a dict that is precalculated.
+// this is just done to have wide mtx and wide gembuylimit separately working.
 function setupCListProxy() {
   if (!CListCached) {
-    CListCached = JSON.parse(JSON.stringify(CList));
+    CListCached = deepCopy(CList);
   }
-  const originalCListValues = CListCached;
 
-  updateCListFuncDict();
-
-  for (const [key, value] of Object.entries(CListFuncDict)) {
-    Object.defineProperty(CList, key, {
+  function defineProxiedProperty(propName, getModifiedValue) {
+    Object.defineProperty(CList, propName, {
       get: function () {
-        if (
-          (cheatState.cauldron.vialrng && key === "AlchemyVialItemsPCT") ||
-          (cheatState.w3.saltlick && key === "SaltLicks") ||
-          (cheatState.w3.refinery && key === "RefineryInfo") ||
-          (cheatState.w3.prayer && key === "PrayerInfo") ||
-          (cheatState.wide.mtx && key === "MTXinfo") ||
-          (cheatState.wide.post && key === "PostOfficePossibleOrders") ||
-          (cheatState.wide.guild && key === "GuildGPtasks") ||
-          (cheatState.wide.task && key === "TaskDescriptions") ||
-          (cheatState.wide.star && key === "SSignInfoUI") ||
-          (cheatState.w3.freeworship && key === "WorshipBASEinfos")
-        )
-          return CListFuncDict[key];
-        return originalCListValues[key];
+        const modified = getModifiedValue.call(this);
+        return modified !== undefined ? modified : CListCached[propName];
       },
       enumerable: true,
     });
   }
+
+  // Vials unlock at rollin 1+
+  defineProxiedProperty("AlchemyVialItemsPCT", function () {
+    if (cheatState.cauldron.vialrng) {
+      return new Array(CListCached.AlchemyVialItemsPCT.length).fill(99);
+    }
+  });
+
+  // Nullify Saltlick upgrade cost
+  defineProxiedProperty("SaltLicks", function () {
+    if (cheatState.w3.saltlick) {
+      return ChangeND(2, deepCopy(CListCached.SaltLicks), "0", [2]);
+    }
+  });
+
+  // Nullify refinery cost
+  defineProxiedProperty("RefineryInfo", function () {
+    if (cheatState.w3.refinery) {
+      return ChangeND(2, deepCopy(CListCached.RefineryInfo), "0", [6, 7, 8, 9, 10, 11]);
+    }
+  });
+
+  // Nullify prayer requirements
+  defineProxiedProperty("PrayerInfo", function () {
+    if (cheatState.w3.prayer) {
+      return ChangeND(2, ChangeND(2, deepCopy(CListCached.PrayerInfo), "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]);
+    }
+  });
+
+  // Nullify MTX cost / Set gem buy limit
+  defineProxiedProperty("MTXinfo", function () {
+    if (cheatState.wide.mtx && cheatState.wide.gembuylimit) {
+      return ChangeND(4, ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
+    } else if (cheatState.wide.mtx) {
+      return ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]);
+    } else if (cheatState.wide.gembuylimit) {
+      return ChangeND(4, deepCopy(CListCached.MTXinfo), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
+    }
+  });
+
+  // Nullify post office order cost
+  defineProxiedProperty("PostOfficePossibleOrders", function () {
+    if (cheatState.wide.post) {
+      return ChangeND(4, deepCopy(CListCached.PostOfficePossibleOrders), "0", [1]);
+    }
+  });
+
+  // Nullify guild task requirements
+  defineProxiedProperty("GuildGPtasks", function () {
+    if (cheatState.wide.guild) {
+      return ChangeND(2, deepCopy(CListCached.GuildGPtasks), "0", [1]);
+    }
+  });
+
+  // Nullify task requirements
+  defineProxiedProperty("TaskDescriptions", function () {
+    if (cheatState.wide.task) {
+      return ChangeND(3, deepCopy(CListCached.TaskDescriptions), "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+    }
+  });
+
+  // Nullify star sign unlock req
+  defineProxiedProperty("SSignInfoUI", function () {
+    if (cheatState.wide.star) {
+      return ChangeND(2, deepCopy(CListCached.SSignInfoUI), "0", [4]);
+    }
+  });
+
+  // Nullify worship cost
+  defineProxiedProperty("WorshipBASEinfos", function () {
+    if (cheatState.w3.freeworship) {
+      return ChangeND(2, deepCopy(CListCached.WorshipBASEinfos), 0, [6]);
+    }
+  });
 }
 
 // The proxy that allows us to enable/disable quest item requirement nullifications whenever we like
