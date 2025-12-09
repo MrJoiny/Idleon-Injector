@@ -306,6 +306,9 @@ registerCheats({
         ["Mr.Piggy Pack", "bon_j"],
         ["Autumn Pack", "bon_k"],
         ["Bubba! Pack", "bon_l"],
+        ["Bunny Pack", "bon_m"],
+        ["Hedgehog Pack", "bon_n"],
+        ["Panda Pack", "bon_o"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
