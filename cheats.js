@@ -2022,11 +2022,15 @@ registerCheat(
 registerCheat(
   "chng",
   function (params) {
+    if (!cheatConfig.debug) {
+      return 'Debug is disabled in config.js (cheatConfig.debug = false). Enable it ONLY if you know what you are doing.';
+    }
+
     try {
       eval(params[0]);
       return `${params[0]}`;
     } catch (error) {
-      return `Error: ${err}`;
+      return `Error: ${error}`;
     }
   },
   "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead"
