@@ -497,6 +497,7 @@ registerCheats({
   subcheats: [
     { name: "boss", message: "unlimited boss attempts" },
     { name: "roo", message: "Enable Roo cheats, check config file", configurable: true },
+	{ name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
   ],
 });
 
@@ -2021,11 +2022,15 @@ registerCheat(
 registerCheat(
   "chng",
   function (params) {
+    if (!cheatConfig.chng_enabled) {
+      return 'chng command is currently disabled in config.js Enable it ONLY if you know what you are doing.';
+    }
+
     try {
       eval(params[0]);
       return `${params[0]}`;
     } catch (error) {
-      return `Error: ${err}`;
+      return `Error: ${error}`;
     }
   },
   "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead"
@@ -3343,6 +3348,7 @@ function setupQuestProxy() {
     });
   }
 }
+
 // Alchemy cheats
 function setupAlchProxy() {
   const p2w = bEngine.getGameAttribute("CauldronP2W");
@@ -3357,21 +3363,14 @@ function setupAlchProxy() {
     enumerable: true,
   });
 
-
-  events(189)._customBlock_CauldronStats = new Proxy(events(189)._customBlock_CauldronStats, {
-    apply: function (originalFn, context, argumentsList) {
-      const t = argumentsList[0];
-      if (cheatState.cauldron.bubblecost && t == "CauldronCosts") return 0; // Nullified cauldron cost
-      if (cheatState.cauldron.vialcost && t == "VialCosts") return 0; // Nullified vial cost
-      if (cheatState.cauldron.lvlreq && t == "CauldronLvsBrewREQ") return 0; // Nullified brew reqs
-      if (cheatState.cauldron.newbubble && t == "PctChanceNewBubble") return 1000000; // Big enough new bubble chance
-      if (cheatState.cauldron.re_speed && t == "ResearchSpeed") return 10000; // Instant research speed
-      if (cheatState.cauldron.liq_rate && t == "LiquidHRrate")
-        return cheatConfig.cauldron.liq_rate(t); // Quick liquid
-      return Reflect.apply(originalFn, context, argumentsList);
-    },
-  });
+  const Alchemy = events(189)._customBlock_CauldronStats;
+  events(189)._customBlock_CauldronStats = function (...argumentList) {
+    return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
+      : Reflect.apply(Alchemy, this, argumentList);
+  };
 }
+
 // w1 cheats
 // TODO: move all setups stuff that is in w1 in here, so it is sorted.
 function setupw1StuffProxy() {

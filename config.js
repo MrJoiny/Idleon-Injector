@@ -2,6 +2,13 @@ exports.startupCheats = [];
 
 exports.cheatConfig = {
   unban: true,
+
+  // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
+  // If this is true, chng command will become available.
+  // ONLY set this to true if you 100% know what you're doing and are OK with potentially bricking your account.
+  chng_enabled: false,
+  // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
+
   dungeon: {
     creditcap: 10000000, // lots of people breaking things by having too many credits
     flurbocap: 1000000,
@@ -108,6 +115,17 @@ exports.cheatConfig = {
       // RooMegafeather: (t) => t,
       // RooBonuse: (t) => t,
     },
+	alchemy: {
+		BubbleBonus: (t) => t, // bubble effects (t * 2 would be 2x effects from bubbles)
+		CauldronCosts: (t) => t, // cost to upgrade a bubble
+		ResearchSpeed: (t) => t * 4, // brewing speed
+		VialCosts: (t) => t / 2, // vials are 50% cheaper
+		VialBonus: (t) => t, // vial effects (t * 2 would be 2x effects from vials)
+		PctChanceNewBubble: (t) => t * 4, // 4x higher chance for a new bubble
+		CauldronLvsBrewREQ: (t) => t / 2, // upgrading cauldrons is 50% cheaper
+		LiquidCap: (t) => t * 2, // 2x liquid capacity
+		LiquidHRrate: (t) => t * 4, // 4x liquid speed
+	},
   },
   w3: {
     buildspd: (t) => t * 10,
