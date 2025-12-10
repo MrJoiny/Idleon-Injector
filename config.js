@@ -2,6 +2,13 @@ exports.startupCheats = [];
 
 exports.cheatConfig = {
   unban: true,
+
+  // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
+  // If this is true, debug commands will become available.
+  // ONLY set this to true if you 100% know what you're doing and are OK with potentially bricking your account.
+  debug: false,
+  // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
+
   dungeon: {
     creditcap: 10000000, // lots of people breaking things by having too many credits
     flurbocap: 1000000,
