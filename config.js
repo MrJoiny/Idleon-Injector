@@ -4,9 +4,9 @@ exports.cheatConfig = {
   unban: true,
 
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
-  // If this is true, debug commands will become available.
+  // If this is true, chng command will become available.
   // ONLY set this to true if you 100% know what you're doing and are OK with potentially bricking your account.
-  debug: false,
+  chng_enabled: false,
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
 
   dungeon: {
