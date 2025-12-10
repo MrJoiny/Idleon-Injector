@@ -2022,8 +2022,8 @@ registerCheat(
 registerCheat(
   "chng",
   function (params) {
-    if (!cheatConfig.debug) {
-      return 'Debug is disabled in config.js (cheatConfig.debug = false). Enable it ONLY if you know what you are doing.';
+    if (!cheatConfig.chng_enabled) {
+      return 'chng command is currently disabled in config.js Enable it ONLY if you know what you are doing.';
     }
 
     try {
