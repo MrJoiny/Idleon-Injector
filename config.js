@@ -108,6 +108,17 @@ exports.cheatConfig = {
       // RooMegafeather: (t) => t,
       // RooBonuse: (t) => t,
     },
+	alchemy: {
+		BubbleBonus: (t) => t, // bubble effects (t * 2 would be 2x effects from bubbles)
+		CauldronCosts: (t) => t, // cost to upgrade a bubble
+		ResearchSpeed: (t) => t * 4, // brewing speed
+		VialCosts: (t) => t / 2, // vials are 50% cheaper
+		VialBonus: (t) => t, // vial effects (t * 2 would be 2x effects from vials)
+		PctChanceNewBubble: (t) => t * 4, // 4x higher chance for a new bubble
+		CauldronLvsBrewREQ: (t) => t / 2, // upgrading cauldrons is 50% cheaper
+		LiquidCap: (t) => t * 2, // 2x liquid capacity
+		LiquidHRrate: (t) => t * 4, // 4x liquid speed
+	},
   },
   w3: {
     buildspd: (t) => t * 10,
