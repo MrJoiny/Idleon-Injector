@@ -14,7 +14,7 @@ let monsterDefs;
 let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
-let CListFuncDict = {}; // Dictionary of custom list entries
+// let CListFuncDict = {}; // Dictionary of custom list entries
 let CListCached;
 
 let iframe; // Declare iframe globally, initialize later
@@ -2244,11 +2244,13 @@ function setupFirebaseProxy() {
 
         // Register common variables again to make sure they are set up again
         registerCommonVariables.call(this);
-        // Recall proxies to make sure they are set up again 
+        // Recall proxies to make sure they are set up again
+        // current trend is stuff that is reloaded by the game like clist, itemdef, etc.
+        // not sure why the game reloads these. possible to deactivate the reload?
         setupCListProxy.call(this);
         setupOptionsListAccountProxy.call(this);
         setupTrappingProxy.call(this);
-
+        setupTimeCandyProxy.call(this);
         return result;
       },
     });
