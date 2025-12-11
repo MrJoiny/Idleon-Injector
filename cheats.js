@@ -29,10 +29,11 @@ async function gameReady() {
     !this["com.stencyl.Engine"].engine.sceneInitialized ||
     this["com.stencyl.Engine"].engine.behaviors.behaviors[0].script._CloudLoadComplete !== 1
   ) {
-    console.log("Waiting", this);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // disabled because of spamming console
+    // console.log("Waiting", this);
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 100));
   registerCommonVariables.call(this);
   return true;
 }
@@ -2246,6 +2247,7 @@ function setupFirebaseProxy() {
         // Recall proxies to make sure they are set up again 
         setupCListProxy.call(this);
         setupOptionsListAccountProxy.call(this);
+        setupTrappingProxy.call(this);
 
         return result;
       },
@@ -3129,26 +3131,42 @@ function setupHPProxy() {
   });
 }
 
-// Nullify trapping cost
+// new trapping cheat code, uses proxies to modify elapsed time of traps
+// we only need to get the database values, since the game is writing those values to the gga
+// so the gga values still access the database values
 function setupTrappingProxy() {
-  const _1second = events(189)._customBlock_1second;
-  events(189)._customBlock_1second = function (...argumentsList) {
-    if (cheatState.w3.trapping) {
-      let placedTraps = bEngine.getGameAttribute("PlacedTraps");
-      for (let i in placedTraps) {
-        if (placedTraps[i][0] !== -1) {
-          placedTraps[i][2] = placedTraps[i][6];
-        }
-      }
-      const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
-      for (let name in playerDatabase) {
-        for (let i in playerDatabase[name].h.PldTraps) {
-          playerDatabase[name].h.PldTraps[i][2] = playerDatabase[name].h.PldTraps[i][6];
-        }
-      }
+  const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
+  for (let name in playerDatabase) {
+    for (let PldTrap of playerDatabase[name].h.PldTraps) {
+      if (!PldTrap) continue;
+
+      let elapsed_time = PldTrap[2];
+
+      Object.defineProperty(PldTrap, 2, {
+        get: function () {
+          return elapsed_time;
+        },
+
+        set: function (value) {
+          if (cheatState.w3.trapping) {
+            if (value <= 0) {
+              elapsed_time = 0;
+            } else {
+              // debug to see if the cheat is working on afk time.
+              // the promise on waiting for the game is rdy was reduced to 0.1 sec, that was needed otherwise the game calculates
+              // the elapsed time too fast and the cheat didn't work for afk times.
+              // if ((value - elapsed_time) > 1) console.log("added value: ", cheatConfig.w3.trapping(value - elapsed_time));
+              elapsed_time = cheatConfig.w3.trapping(value - elapsed_time) + elapsed_time;
+            }
+          } else {
+            elapsed_time = value;
+          }
+        },
+        enumerable: true,
+        configurable: true,
+      });
     }
-    return Reflect.apply(_1second, this, argumentsList);
-  };
+  }
 }
 
 // Ability tweaking cheat
