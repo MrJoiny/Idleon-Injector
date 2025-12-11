@@ -655,6 +655,11 @@ registerCheats({
       message: "unlimeted emperor tries",
       configurable: { isObject: true },
     },
+    {
+      name: "endless",
+      message: "easy endless runs for summoning",
+      configurable: { isObject: true },
+    }
   ],
 });
 
@@ -3736,6 +3741,14 @@ function setupMiscProxies() {
 
 function setupw6Proxies() {
   const actorEvents579 = events(579);
+
+  const Endless = actorEvents579._customBlock_Summoning;
+  actorEvents579._customBlock_Summoning = function (...argumentList) {
+    if (cheatState.w6.endless && argumentList[0] === "EndlessModifierID") {
+      return 1; // it makes the mobs fast and win with one hit, dont know how it works tho just lucky find.
+    }
+    return Reflect.apply(Endless, this, argumentList);
+  };
 
   const Farming = actorEvents579._customBlock_FarmingStuffs;
   actorEvents579._customBlock_FarmingStuffs = function (...argumentList) {
