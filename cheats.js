@@ -498,7 +498,7 @@ registerCheats({
   subcheats: [
     { name: "boss", message: "unlimited boss attempts" },
     { name: "roo", message: "Enable Roo cheats, check config file", configurable: true },
-	{ name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
+    { name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
   ],
 });
 
@@ -519,7 +519,7 @@ registerCheats({
     { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
     { name: "refinery", message: "refinery cost nullification." },
     { name: "refineryspeed", message: "reduces refinery time (see config)" },
-    { name: "trapping", message: "trapping duration nullification." },
+    { name: "trapping", message: "multiply trapping time, make the traps faster by adding more time" },
     { name: "book", message: "always max lvl talent book." },
     { name: "prayer", message: "Prayer curse nullification." },
     // { name: 'shrinehr', message: 'shrine lvl time reduction to 0.5h.' }, //too dangerous, causes super high shrine levels
@@ -1684,9 +1684,9 @@ registerCheats({
   message: "Wipe certain stuff from your account. Use with caution!",
   subcheats: [
     { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
-    { name: "invslot", message: "Wipe your inventory slot.", fn: wipeFunction },
+    { name: "invslot", message: "Wipe your inventory slot uses array indexes 0 equals the first slot", fn: wipeFunction },
     { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
-    { name: "chestslot", message: "Wipe your chest slot.", fn: wipeFunction },
+    { name: "chestslot", message: "Wipe your chest slot uses array indexes 0 equals the first slot", fn: wipeFunction },
     { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
     {
       name: "overpurchases",
