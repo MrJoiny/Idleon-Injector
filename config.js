@@ -132,6 +132,7 @@ exports.cheatConfig = {
     WorshipSpeed: (t) => t * 10,
     towerdamage: (t) => t * 10,
     refineryspeed: (t) => Math.max(1, Math.floor(t / 10)), // 10x faster refinery
+    trapping: (t) => t * 10, // 10x faster trapping time
   },
   w4: {
     fasteggs: (t) => t / 4, // 4x faster incubation (you can tweak)
