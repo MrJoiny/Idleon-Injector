@@ -7,3 +7,5 @@ upx/
 
 InjectCheatsF5.exe
 InjectCheatsUI.exe
+config.custom.js
+package-lock.json

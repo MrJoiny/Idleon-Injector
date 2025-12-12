@@ -4219,6 +4219,127 @@ function getOptionsListAccountIndex(index) {
   }
 }
 
+/**
+ * Helper functions for Spelunk array editor
+ * Spelunk array contains multiple W7 systems:
+ * [0] - Lore Boss defeated
+ * [1] - Deepest layer explored
+ * [16] - Godfrey Gallery
+ * [17] - Nametags turned in
+ * ... and more
+ */
+
+// Get the entire Spelunk array
+function getSpelunk() {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && 
+        bEngine.gameAttributes.h.Spelunk) {
+      return bEngine.gameAttributes.h.Spelunk;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting Spelunk:', error);
+    return null;
+  }
+}
+
+// Set the entire Spelunk array
+function setSpelunk(newArray) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h) {
+      if (!Array.isArray(newArray)) {
+        console.error('Invalid data: must be an array');
+        return false;
+      }
+      bEngine.gameAttributes.h.Spelunk = newArray;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error setting Spelunk:', error);
+    return false;
+  }
+}
+
+// Get a specific index from Spelunk array
+// Example: getSpelunkIndex(16) returns the Gallery array
+function getSpelunkIndex(index) {
+  try {
+    const spelunk = getSpelunk();
+    if (spelunk && index >= 0 && index < spelunk.length) {
+      return spelunk[index];
+    }
+    console.error('Invalid index or Spelunk not found');
+    return null;
+  } catch (error) {
+    console.error('Error getting Spelunk index:', error);
+    return null;
+  }
+}
+
+// Set a specific index in Spelunk array
+// Example: setSpelunkIndex(16, newGalleryArray)
+function setSpelunkIndex(index, newValue) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && 
+        bEngine.gameAttributes.h.Spelunk) {
+      const spelunk = bEngine.gameAttributes.h.Spelunk;
+      if (index < 0 || index >= spelunk.length) {
+        console.error('Invalid index: must be between 0 and', spelunk.length - 1);
+        return false;
+      }
+      bEngine.gameAttributes.h.Spelunk[index] = newValue;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error setting Spelunk index:', error);
+    return false;
+  }
+}
+
+// Get a specific value from within a Spelunk sub-array
+// Example: getSpelunkValue(16, 0) returns the trophy in Gallery slot 0
+function getSpelunkValue(arrayIndex, valueIndex) {
+  try {
+    const subArray = getSpelunkIndex(arrayIndex);
+    if (subArray && Array.isArray(subArray) && valueIndex >= 0 && valueIndex < subArray.length) {
+      return subArray[valueIndex];
+    }
+    console.error('Invalid array index, value index, or not an array');
+    return null;
+  } catch (error) {
+    console.error('Error getting Spelunk value:', error);
+    return null;
+  }
+}
+
+// Set a specific value within a Spelunk sub-array
+// Example: setSpelunkValue(16, 0, -1) removes trophy from Gallery slot 0
+function setSpelunkValue(arrayIndex, valueIndex, newValue) {
+  try {
+    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && 
+        bEngine.gameAttributes.h.Spelunk) {
+      const subArray = getSpelunkIndex(arrayIndex);
+      if (!subArray || !Array.isArray(subArray)) {
+        console.error('Invalid array index or not an array');
+        return false;
+      }
+      if (valueIndex < 0 || valueIndex >= subArray.length) {
+        console.error('Invalid value index: must be between 0 and', subArray.length - 1);
+        return false;
+      }
+      bEngine.gameAttributes.h.Spelunk[arrayIndex][valueIndex] = newValue;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error setting Spelunk value:', error);
+    return false;
+  }
+}
+
+
 // Here you can add suggestions for the autocomplete
 async function getAutoCompleteSuggestions() {
   let choices = [];
