@@ -3243,93 +3243,166 @@ function setupSmithProxy() {
 // its reevaluated every call instead of having a dict that is precalculated.
 // this is just done to have wide mtx and wide gembuylimit separately working.
 function setupCListProxy() {
-  if (!CListCached) {
-    CListCached = deepCopy(CList);
-  }
+  // this stops the function from running multiple times, if already proxied
+  if (CList._isPatched) return;
+  CList._isPatched = true;
 
-  function defineProxiedProperty(propName, getModifiedValue) {
-    Object.defineProperty(CList, propName, {
+  // helper function for proxying
+  // maybe make it global for other cheats to use like vialattempt
+  function createProxy(targetObj, index, callback) {
+    const backupKey = "_" + index;
+
+    // hidden values ᓚᘏᗢ meow
+    Object.defineProperty(targetObj, backupKey, {
+      value: targetObj[index],
+      writable: true,
+      enumerable: false
+    });
+
+    Object.defineProperty(targetObj, index, {
       get: function () {
-        const modified = getModifiedValue.call(this);
-        return modified !== undefined ? modified : CListCached[propName];
+        return callback(this[backupKey]);
       },
       enumerable: true,
+      configurable: true,
     });
   }
 
-  // Vials unlock at rollin 1+
-  defineProxiedProperty("AlchemyVialItemsPCT", function () {
-    if (cheatState.cauldron.vialrng) {
-      return new Array(CListCached.AlchemyVialItemsPCT.length).fill(99);
-    }
-  });
+  // Nullify MTX cost / Set gem buy limit
+  const mtx = CList.MTXinfo;
+  const mtxIndex = [3, 7]
 
-  // Nullify Saltlick upgrade cost
-  defineProxiedProperty("SaltLicks", function () {
-    if (cheatState.w3.saltlick) {
-      return ChangeND(2, deepCopy(CListCached.SaltLicks), "0", [2]);
+  for (const i in mtx) {
+    for (const j in mtx[i]) {
+      for (const k in mtx[i][j]) {
+        const data = mtx[i][j][k];
+
+        // free mtx
+        mtxIndex.forEach(index => {
+          createProxy(data, index, (original) => {
+            if (cheatState.wide.mtx) return 0;
+            return original;
+          });
+        })
+
+        // gembuylimit
+        createProxy(data, 5, (original) => {
+          if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig.wide.gembuylimit);
+          return original;
+        })
+      }
     }
-  });
+  }
 
   // Nullify refinery cost
-  defineProxiedProperty("RefineryInfo", function () {
-    if (cheatState.w3.refinery) {
-      return ChangeND(2, deepCopy(CListCached.RefineryInfo), "0", [6, 7, 8, 9, 10, 11]);
-    }
-  });
+  const refinery = CList.RefineryInfo;
+  const refineryIndex = [6, 7, 8, 9, 10, 11]
+
+  for (const i in refinery) {
+    const data = refinery[i];
+    refineryIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.w3.refinery) return "0";
+        return original;
+      });
+    })
+  }
+
+  // Vials unlock at rollin 1+
+  const vials = CList.AlchemyVialItemsPCT;
+  createProxy(CList, "AlchemyVialItemsPCT", (original) => {
+    if (cheatState.cauldron.vialrng) return new Array(vials.length).fill(99);
+    return original;
+  })
+
+  // Nullify Saltlick upgrade cost
+  const saltlick = CList.SaltLicks;
+  for (const i in saltlick) {
+    const data = saltlick[i];
+    createProxy(data, 2, (original) => {
+      if (cheatState.w3.saltlick) return "0";
+      return original;
+    })
+  }
 
   // Nullify prayer requirements
-  defineProxiedProperty("PrayerInfo", function () {
-    if (cheatState.w3.prayer) {
-      return ChangeND(2, ChangeND(2, deepCopy(CListCached.PrayerInfo), "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]);
-    }
-  });
+  const prayer = CList.PrayerInfo;
+  for (const i in prayer) {
+    const data = prayer[i];
 
-  // Nullify MTX cost / Set gem buy limit
-  defineProxiedProperty("MTXinfo", function () {
-    if (cheatState.wide.mtx && cheatState.wide.gembuylimit) {
-      return ChangeND(4, ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
-    } else if (cheatState.wide.mtx) {
-      return ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]);
-    } else if (cheatState.wide.gembuylimit) {
-      return ChangeND(4, deepCopy(CListCached.MTXinfo), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
-    }
-  });
+    [4, 6].forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.w3.prayer) return "0";
+        return original;
+      })
+    })
+
+    createProxy(data, 2, (original) => {
+      if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then.";
+      return original;
+    })
+  }
 
   // Nullify post office order cost
-  defineProxiedProperty("PostOfficePossibleOrders", function () {
-    if (cheatState.wide.post) {
-      return ChangeND(4, deepCopy(CListCached.PostOfficePossibleOrders), "0", [1]);
+  const postoffice = CList.PostOfficePossibleOrders;
+  for (const i in postoffice) {
+    for (const j in postoffice[i]) {
+      for (const k in postoffice[i][j]) {
+        const data = postoffice[i][j][k];
+        createProxy(data, 1, (original) => {
+          if (cheatState.wide.post) return "0";
+          return original;
+        })
+      }
     }
-  });
+  }
 
   // Nullify guild task requirements
-  defineProxiedProperty("GuildGPtasks", function () {
-    if (cheatState.wide.guild) {
-      return ChangeND(2, deepCopy(CListCached.GuildGPtasks), "0", [1]);
-    }
-  });
+  const guild = CList.GuildGPtasks;
+  for (const i in guild) {
+    const data = guild[i];
+    createProxy(data, 1, (original) => {
+      if (cheatState.wide.guild) return "0";
+      return original;
+    })
+  }
 
   // Nullify task requirements
-  defineProxiedProperty("TaskDescriptions", function () {
-    if (cheatState.wide.task) {
-      return ChangeND(3, deepCopy(CListCached.TaskDescriptions), "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+  const task = CList.TaskDescriptions;
+  const taskIndex = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+  for (const i in task) {
+    for (const j in task[i]) {
+      const data = task[i][j];
+      taskIndex.forEach(index => {
+        createProxy(data, index, (original) => {
+          if (cheatState.wide.task) return "0";
+          return original;
+        })
+      })
     }
-  });
+  }
 
   // Nullify star sign unlock req
-  defineProxiedProperty("SSignInfoUI", function () {
-    if (cheatState.wide.star) {
-      return ChangeND(2, deepCopy(CListCached.SSignInfoUI), "0", [4]);
-    }
-  });
+  const star = CList.SSignInfoUI;
+  for (const i in star) {
+    const data = star[i];
+    createProxy(data, 4, (original) => {
+      if (cheatState.wide.star) return "0";
+      return original;
+    })
+  }
 
   // Nullify worship cost
-  defineProxiedProperty("WorshipBASEinfos", function () {
-    if (cheatState.w3.freeworship) {
-      return ChangeND(2, deepCopy(CListCached.WorshipBASEinfos), 0, [6]);
-    }
-  });
+  const worship = CList.WorshipBASEinfos;
+  for (const i in worship) {
+    const data = worship[i];
+    createProxy(data, 6, (original) => {
+      if (cheatState.w3.freeworship) return "0";
+      return original;
+    })
+  }
+
 }
 
 // The proxy that allows us to enable/disable quest item requirement nullifications whenever we like
@@ -3378,6 +3451,8 @@ function setupQuestProxy() {
 function setupAlchProxy() {
   const p2w = bEngine.getGameAttribute("CauldronP2W");
   p2w[5]._0 = p2w[5][0];
+  // broken on char select
+  // TODO: fix this!
   Object.defineProperty(p2w[5], 0, {
     get: function () {
       return cheatState.cauldron.vialattempt ? this[1] : this._0;
