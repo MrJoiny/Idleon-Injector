@@ -464,12 +464,6 @@ registerCheats({
   subcheats: [
     { name: "vialrng", message: "vial unlock upon rolling 1+" },
     { name: "vialattempt", message: "unlimited vial attempts" },
-    { name: "bubblecost", message: "bubble cost nullification" },
-    { name: "vialcost", message: "vial cost nullification" },
-    { name: "lvlreq", message: "lvl requirement nullification" },
-    { name: "newbubble", message: "new bubble chance 100%" },
-    { name: "re_speed", message: "super research speed" },
-    { name: "liq_rate", message: "super liquid speed", configurable: true },
   ],
 });
 
