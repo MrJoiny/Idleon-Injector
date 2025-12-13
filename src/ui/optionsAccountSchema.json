@@ -564,10 +564,9 @@
         "type": "number"
     },
     "100": {
-        "name": "Pet Maintenance Counter",
-        "description": "Daily counter for pet food/maintenance",
-        "type": "number",
-        "AI": true
+        "name": "W4 Spiceclaim counter",
+        "description": "Daily counter for pet spiceclaims, starts at 0 to 100 and locks after that",
+        "type": "number"
     },
     "101": {
         "name": "Killroy Crystals",
