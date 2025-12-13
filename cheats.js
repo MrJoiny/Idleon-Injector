@@ -14,8 +14,6 @@ let monsterDefs;
 let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
-// let CListFuncDict = {}; // Dictionary of custom list entries
-let CListCached;
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -987,8 +985,8 @@ registerCheats({
       name: "save",
       message: "Saves the current values of items and cards",
       fn: function (params) {
-        dictVals.itemDefs = JSON.parse(JSON.stringify(itemDefs));
-        dictVals.CardStuff = JSON.parse(JSON.stringify(CList.CardStuff));
+        dictVals.itemDefs = deepCopy(itemDefs);
+        dictVals.CardStuff = deepCopy(CList.CardStuff);
         return `Saved the current values.`;
       },
     },
@@ -2553,176 +2551,166 @@ function setupItemsMenuProxy() {
 
 // Unlock quick references
 function setupOptionsListAccountProxy() {
-  // Using defineProperties instead of Proxy
-  const optionsListAccount = bEngine.getGameAttribute("OptionsListAccount");
-  optionsListAccount._26 = optionsListAccount[26];
-  Object.defineProperty(optionsListAccount, 26, {
-    get: function () {
-      if (cheatConfig.unban) return 0;
-      return this._26;
+  const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
+
+  if (optionsListAccount._isPatched) return;
+  Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
+
+  // unban
+  createProxy(optionsListAccount, 26, {
+    get: function (original) {
+      if (cheatState.unban) return 0;
+      return original;
     },
-    set: function (value) {
-      if (cheatConfig.unban) return true;
-      this._26 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unban) return;
+      this[backupKey] = value
     },
-    enumerable: true,
-  });
-  optionsListAccount._29 = optionsListAccount[29];
-  Object.defineProperty(optionsListAccount, 29, {
-    get: function () {
-      if (cheatState.wide.eventitems) return 0;
-      return this._29;
-    },
-    set: function (value) {
-      if (cheatState.wide.eventitems) return true;
-      this._29 = value;
-      return true;
-    },
-    enumerable: true,
   });
 
-  optionsListAccount._33 = optionsListAccount[33];
-  Object.defineProperty(optionsListAccount, 33, {
-    get: function () {
+  // unlimited eventitems
+  createProxy(optionsListAccount, 29, {
+    get: function (original) {
+      if (cheatState.wide.eventitems) return 0;
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.wide.eventitems) return;
+      this[backupKey] = value
+    },
+  });
+
+  // unlimited minigames
+  createProxy(optionsListAccount, 33, {
+    get: function (original) {
       if (cheatState.minigames) return 1;
-      return this._33;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.minigames) return true;
-      this._33 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.minigames) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._34 = optionsListAccount[34];
-  Object.defineProperty(optionsListAccount, 34, {
-    get: function () {
+
+  // unlock quickref everywhere
+  createProxy(optionsListAccount, 34, {
+    get: function (original) {
       if (cheatState.unlock.quickref) return 0;
-      return this._34;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.unlock.quickref) return true;
-      this._34 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unlock.quickref) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._71 = optionsListAccount[71];
-  Object.defineProperty(optionsListAccount, 71, {
-    get: function () {
-      return this._71;
+
+  // set maximum dungeon creditcap, prevent account bricking
+  // 71 - total number of credits, for rank
+  createProxy(optionsListAccount, 71, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
+    set: function (value, backupKey) {
       value = Math.min(cheatConfig.dungeon.creditcap, value);
-      this._71 = value;
-      return true;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._72 = optionsListAccount[72];
-  Object.defineProperty(optionsListAccount, 72, {
-    get: function () {
-      return this._72;
+
+  // set maximum dungeon creditcap, prevent account bricking
+  // 72 - current amount of credits
+  createProxy(optionsListAccount, 72, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
+    set: function (value, backupKey) {
       value = Math.min(cheatConfig.dungeon.creditcap, value);
-      this._72 = value;
-      return true;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._73 = optionsListAccount[73];
-  Object.defineProperty(optionsListAccount, 73, {
-    get: function () {
-      return this._73;
+
+  // set maximum dungeon flurbocap, prevent account bricking
+  // 73 - current amount of flurbo
+  createProxy(optionsListAccount, 73, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
+    set: function (value, backupKey) {
       value = Math.min(cheatConfig.dungeon.flurbocap, value);
-      this._73 = value;
-      return true;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._100 = optionsListAccount[100];
-  Object.defineProperty(optionsListAccount, 100, {
-    get: function () {
+
+  // w4 unlimited spiceclaim
+  createProxy(optionsListAccount, 100, {
+    get: function (original) {
       if (cheatState.w4.spiceclaim) return 0;
-      return this._100;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.w4.spiceclaim) return true;
-      this._100 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w4.spiceclaim) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._169 = optionsListAccount[169];
-  Object.defineProperty(optionsListAccount, 169, {
-    get: function () {
+
+  // unlocks islands via string from config
+  createProxy(optionsListAccount, 169, {
+    get: function (original) {
       if (cheatState.unlock.islands) return cheatConfig.unlock.islands;
-      return this._169;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.unlock.islands) return true;
-      this._169 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unlock.islands) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._185 = optionsListAccount[185];
-  Object.defineProperty(optionsListAccount, 185, {
-    get: function () {
-      if (cheatState.w2.boss && this._185 == 10) this._185 = 0;
-      return this._185;
+
+  // boss attempts / not sure what it does and how it works
+  // sets to 0 if cheat is enabled and original is 10
+  createProxy(optionsListAccount, 185, {
+    get: function (original) {
+      if (cheatState.w2.boss && original == 10) original = 0;
+      return original;
     },
-    set: function (value) {
-      this._185 = value;
-      return true;
+    set: function (value, backupKey) {
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 
   // event spins
-  optionsListAccount._325 = optionsListAccount[325];
-  Object.defineProperty(optionsListAccount, 325, {
-    get: function () {
-      if (cheatState.wide.eventspins) this._325 = 10;
-      return this._325;
+  createProxy(optionsListAccount, 325, {
+    get: function (original) {
+      if (cheatState.wide.eventspins) return 10;
+      return original;
     },
-    set: function (value) {
-      this._325 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.wide.eventspins) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 
+
   // unlimited emperor runs 
-  optionsListAccount._370 = optionsListAccount[370];
-  Object.defineProperty(optionsListAccount, 370, {
-    get: function () {
-      if (cheatState.w6.emperor) this._370 = -10;
-      return this._370;
+  createProxy(optionsListAccount, 370, {
+    get: function (original) {
+      if (cheatState.w6.emperor) return -10;
+      return original;
     },
-    set: function (value) {
-      this._370 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w6.emperor) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 
   // unlimited jeweled cogs
-  optionsListAccount._414 = optionsListAccount[414];
-  Object.defineProperty(optionsListAccount, 414, {
-    get: function () {
-      if (cheatState.w3.jeweledcogs) this._414 = 0;
-      return this._414;
+  createProxy(optionsListAccount, 414, {
+    get: function (original) {
+      if (cheatState.w3.jeweledcogs) return 0;
+      return original;
     },
-    set: function (value) {
-      this._414 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w3.jeweledcogs) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 }
 
@@ -3075,7 +3063,7 @@ function setupTrappingProxy() {
 // Ability tweaking cheat
 function setupAbilityProxy() {
   const CustomMaps = this["scripts.CustomMaps"];
-  const atkMoveMap = JSON.parse(JSON.stringify(this["scripts.CustomMaps"].atkMoveMap.h));
+  const atkMoveMap = deepCopy(this["scripts.CustomMaps"].atkMoveMap.h);
   for (const [key, value] of Object.entries(atkMoveMap)) {
     value.h["cooldown"] = 0;
     value.h["castTime"] = 0.1;
@@ -3114,68 +3102,39 @@ function setupSmithProxy() {
 function setupCListProxy() {
   // this stops the function from running multiple times, if already proxied
   if (CList._isPatched) return;
-  CList._isPatched = true;
-
-  // helper function for proxying
-  // maybe make it global for other cheats to use like vialattempt
-  function createProxy(targetObj, index, callback) {
-    const backupKey = "_" + index;
-
-    // hidden values ᓚᘏᗢ meow
-    Object.defineProperty(targetObj, backupKey, {
-      value: targetObj[index],
-      writable: true,
-      enumerable: false
-    });
-
-    Object.defineProperty(targetObj, index, {
-      get: function () {
-        return callback(this[backupKey]);
-      },
-      enumerable: true,
-      configurable: true,
-    });
-  }
+  Object.defineProperty(CList, "_isPatched", { value: true, enumerable: false });
 
   // Nullify MTX cost / Set gem buy limit
-  const mtx = CList.MTXinfo;
   const mtxIndex = [3, 7]
+  const gembuylimitIndex = 5
 
-  for (const i in mtx) {
-    for (const j in mtx[i]) {
-      for (const k in mtx[i][j]) {
-        const data = mtx[i][j][k];
+  traverse(CList.MTXinfo, 3, (data) => {
+    // free mtx
+    mtxIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.wide.mtx) return 0;
+        return original;
+      });
+    })
 
-        // free mtx
-        mtxIndex.forEach(index => {
-          createProxy(data, index, (original) => {
-            if (cheatState.wide.mtx) return 0;
-            return original;
-          });
-        })
-
-        // gembuylimit
-        createProxy(data, 5, (original) => {
-          if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig.wide.gembuylimit);
-          return original;
-        })
-      }
-    }
-  }
+    // gembuylimit
+    createProxy(data, gembuylimitIndex, (original) => {
+      if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig.wide.gembuylimit);
+      return original;
+    })
+  })
 
   // Nullify refinery cost
-  const refinery = CList.RefineryInfo;
   const refineryIndex = [6, 7, 8, 9, 10, 11]
 
-  for (const i in refinery) {
-    const data = refinery[i];
+  traverse(CList.RefineryInfo, 1, (data) => {
     refineryIndex.forEach(index => {
       createProxy(data, index, (original) => {
         if (cheatState.w3.refinery) return "0";
         return original;
       });
     })
-  }
+  })
 
   // Vials unlock at rollin 1+
   const vials = CList.AlchemyVialItemsPCT;
@@ -3185,21 +3144,18 @@ function setupCListProxy() {
   })
 
   // Nullify Saltlick upgrade cost
-  const saltlick = CList.SaltLicks;
-  for (const i in saltlick) {
-    const data = saltlick[i];
+  traverse(CList.SaltLicks, 1, (data) => {
     createProxy(data, 2, (original) => {
       if (cheatState.w3.saltlick) return "0";
       return original;
     })
-  }
+  })
 
   // Nullify prayer requirements
-  const prayer = CList.PrayerInfo;
-  for (const i in prayer) {
-    const data = prayer[i];
+  const prayerIndex = [4, 6]
 
-    [4, 6].forEach(index => {
+  traverse(CList.PrayerInfo, 1, (data) => {
+    prayerIndex.forEach(index => {
       createProxy(data, index, (original) => {
         if (cheatState.w3.prayer) return "0";
         return original;
@@ -3210,75 +3166,60 @@ function setupCListProxy() {
       if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then.";
       return original;
     })
-  }
+  })
 
   // Nullify post office order cost
-  const postoffice = CList.PostOfficePossibleOrders;
-  for (const i in postoffice) {
-    for (const j in postoffice[i]) {
-      for (const k in postoffice[i][j]) {
-        const data = postoffice[i][j][k];
-        createProxy(data, 1, (original) => {
-          if (cheatState.wide.post) return "0";
-          return original;
-        })
-      }
-    }
-  }
+  traverse(CList.PostOfficePossibleOrders, 3, (data) => {
+    createProxy(data, 1, (original) => {
+      if (cheatState.wide.post) return "0";
+      return original;
+    })
+  })
+
 
   // Nullify guild task requirements
-  const guild = CList.GuildGPtasks;
-  for (const i in guild) {
-    const data = guild[i];
+  traverse(CList.GuildGPtasks, 1, (data) => {
     createProxy(data, 1, (original) => {
       if (cheatState.wide.guild) return "0";
       return original;
     })
-  }
+  })
 
   // Nullify task requirements
-  const task = CList.TaskDescriptions;
   const taskIndex = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-  for (const i in task) {
-    for (const j in task[i]) {
-      const data = task[i][j];
-      taskIndex.forEach(index => {
-        createProxy(data, index, (original) => {
-          if (cheatState.wide.task) return "0";
-          return original;
-        })
+  traverse(CList.TaskDescriptions, 2, (data) => {
+    taskIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.wide.task) return "0";
+        return original;
       })
-    }
-  }
+    })
+  })
 
   // Nullify star sign unlock req
-  const star = CList.SSignInfoUI;
-  for (const i in star) {
-    const data = star[i];
+  traverse(CList.SSignInfoUI, 1, (data) => {
     createProxy(data, 4, (original) => {
       if (cheatState.wide.star) return "0";
       return original;
     })
-  }
+  })
 
   // Nullify worship cost
-  const worship = CList.WorshipBASEinfos;
-  for (const i in worship) {
-    const data = worship[i];
+  traverse(CList.WorshipBASEinfos, 1, (data) => {
     createProxy(data, 6, (original) => {
       if (cheatState.w3.freeworship) return "0";
       return original;
     })
-  }
+  })
 
 }
 
 // The proxy that allows us to enable/disable quest item requirement nullifications whenever we like
 function setupQuestProxy() {
   const dialogueDefs = this["scripts.DialogueDefinitions"].dialogueDefs.h;
-  const dialogueDefsOriginal = JSON.parse(JSON.stringify(dialogueDefs));
-  const dialogueDefsUpdated = JSON.parse(JSON.stringify(dialogueDefs));
+  const dialogueDefsOriginal = deepCopy(dialogueDefs);
+  const dialogueDefsUpdated = deepCopy(dialogueDefs);
   for (const [key, value] of Object.entries(dialogueDefsUpdated)) // Go over all the quest-giving NPCs
     for (
       i = 0;
@@ -4125,19 +4066,6 @@ function getOptionsListAccount() {
   }
 }
 
-function setOptionsListAccount(newArray) {
-  try {
-    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h) {
-      bEngine.gameAttributes.h.OptionsListAccount = newArray;
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error setting OptionsListAccount:', error);
-    return false;
-  }
-}
-
 function setOptionsListAccountIndex(index, value) {
   try {
     if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
@@ -4394,6 +4322,63 @@ const keychainStatsMap = {
   skillspd: [3, "EquipmentKeychain23", "%_ALL_SKILL_SPEED", "2"],
   allstats: [3, "EquipmentKeychain24", "%_ALL_STATS", "4"],
 };
+
+/**
+ * Creates a proxy for a specific property on an object, allowing custom getter and setter logic.
+ * The original value is stored in a hidden property prefixed with an underscore.
+ *
+ * @param {object} targetObj - The object on which to create the proxy.
+ * @param {string | number} index - The name of the property to proxy.
+ * @param {function(any): any | {get?: function(any): any, set?: function(any, string): void}} callback -
+ *   A function to be used as a simple getter, or an object containing `get` and/or `set` methods
+ *   to define custom behavior for property access.
+ */
+function createProxy(targetObj, index, callback) {
+  const backupKey = "_" + index;
+
+  // hidden values ᓚᘏᗢ meow
+  Object.defineProperty(targetObj, backupKey, {
+    value: targetObj[index],
+    writable: true, enumerable: false
+  });
+
+  const isSimpleCallback = typeof callback === "function";
+
+  Object.defineProperty(targetObj, index, {
+    get: function () {
+      const original = this[backupKey];
+      if (isSimpleCallback) return callback(original);
+      if (callback.get) return callback.get.call(this, original);
+      return original
+    },
+
+    set: function (value) {
+      if (isSimpleCallback) return;
+      if (callback.set) return callback.set.call(this, value, backupKey);
+      this[backupKey] = value
+    },
+    enumerable: true, configurable: true,
+  });
+}
+
+/**
+ * Recursively traverses an object up to a specified depth, applying a worker function to each traversed object at the given depth.
+ *
+ * @param {object} obj - The object to traverse.
+ * @param {number} depth - The maximum depth to traverse. When depth reaches 0, the worker function is called.
+ * @param {function(object): void} worker - The function to call on objects at the specified depth.
+ */
+function traverse(obj, depth, worker) {
+  if (depth === 0) {
+    worker(obj);
+    return;
+  }
+  for (const key in obj) {
+    // Safety check to ensure we don't crash on nulls
+    if (obj[key]) traverse(obj[key], depth - 1, worker);
+  }
+}
+
 
 /****************************************************************************************************
   The help function for gga/ggk
