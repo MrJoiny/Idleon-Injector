@@ -805,3 +805,42 @@ button {
     color: var(--accent-secondary);
     font-weight: 700;
 }
+
+/* Performance: Hide AI items when parent has specific class */
+.hide-ai-mode .is-ai-option {
+    display: none !important;
+}
+
+/* Filter Logic */
+.option-item.filtered-out {
+    display: none !important;
+}
+
+/* Visual Feedback for Save */
+@keyframes flashGreen {
+    0% {
+        background-color: rgba(16, 185, 129, 0.3);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes flashRed {
+    0% {
+        background-color: rgba(239, 68, 68, 0.3);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.save-success {
+    animation: flashGreen 1s ease-out;
+}
+
+.save-error {
+    animation: flashRed 1s ease-out;
+}

@@ -2,251 +2,214 @@
 // Handles the Options List Account editor functionality
 // Special thanks to sciomachist for his great work in finding out a lot off stuff in the OLA
 
-// Import schema (will be loaded via script tag in HTML)
-let optionsListAccountSchema = null;
+import { fetchOptionsAccount, updateOptionAccountIndex } from './api.js';
+import { showStatus, debounce, setupTabs } from './utils.js';
+
+// Import schema (loaded via script tag in HTML index.html as global var, or fetch if dynamic)
+// Assuming it acts as a global lookup or fetched. Ideally, fetch it.
+let optionsListAccountSchema = {};
 
 // State
 let currentOptionsData = null;
 let optionsAccountWarningAccepted = false;
 
-function initOptionsAccount() {
-    const loadButton = document.getElementById('load-options-button');
-    const refreshButton = document.getElementById('refresh-options-button');
-    const filterInput = document.getElementById('options-filter');
-    const modal = document.getElementById('options-warning-modal');
-    const modalAccept = document.getElementById('modal-accept');
-    const modalCancel = document.getElementById('modal-cancel');
-    const optionsTabButtons = document.querySelectorAll('.options-tab-button');
-
-    // Show warning modal when load button is clicked
-    if (loadButton) {
-        loadButton.addEventListener('click', () => {
-            if (!optionsAccountWarningAccepted) {
-                modal.style.display = 'flex';
-            } else {
-                loadOptionsAccount();
-            }
-        });
+const DOM = {
+    loadBtn: document.getElementById('load-options-button'),
+    refreshBtn: document.getElementById('refresh-options-button'),
+    filterInput: document.getElementById('options-filter'),
+    hideAiCheckbox: document.getElementById('hide-ai-options'),
+    modal: document.getElementById('options-warning-modal'),
+    modalAccept: document.getElementById('modal-accept'),
+    modalCancel: document.getElementById('modal-cancel'),
+    containers: {
+        documented: document.getElementById('documented-options'),
+        raw: document.getElementById('raw-options'),
+        wrapper: document.getElementById('options-account-content'),
+        loading: document.getElementById('loading-options')
     }
+};
 
-    // Refresh button - reloads options without warning
-    if (refreshButton) {
-        refreshButton.addEventListener('click', () => {
-            loadOptionsAccount();
-        });
-    }
-
-    // Modal accept button
-    if (modalAccept) {
-        modalAccept.addEventListener('click', () => {
-            optionsAccountWarningAccepted = true;
-            modal.style.display = 'none';
-            loadOptionsAccount();
-        });
-    }
-
-    // Modal cancel button
-    if (modalCancel) {
-        modalCancel.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-    }
-
-    // Filter input with debouncing
-    if (filterInput) {
-        const debouncedFilter = debounce(filterOptions, 300);
-        filterInput.addEventListener('input', debouncedFilter);
-    }
-
-    // Hide AI Options Checkbox
-    const hideAiCheckbox = document.getElementById('hide-ai-options');
-    if (hideAiCheckbox) {
-        hideAiCheckbox.addEventListener('change', () => {
-            renderOptionsAccount();
-        });
-    }
-
-    // Options tab switching
-    optionsTabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.dataset.optionsTab;
-            optionsTabButtons.forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.options-tab-pane').forEach(pane => pane.classList.remove('active'));
-            button.classList.add('active');
-            document.getElementById(`${targetTab}-options`).classList.add('active');
-        });
+export function initOptionsAccount() {
+    setupTabs({
+        triggerSelector: '.options-tab-button',
+        contentSelector: '.options-tab-pane',
+        datasetProperty: 'optionsTab'
     });
+
+    setupEventListeners();
+    loadSchema(); // Start loading schema immediately in background
 }
 
-async function loadOptionsAccount() {
-    const loadingEl = document.getElementById('loading-options');
-    const contentEl = document.getElementById('options-account-content');
-    const loadButton = document.getElementById('load-options-button');
-    const refreshButton = document.getElementById('refresh-options-button');
-    const filterInput = document.getElementById('options-filter');
+function setupEventListeners() {
+    // 1. Modal / Load Logic
+    if (DOM.loadBtn) {
+        DOM.loadBtn.addEventListener('click', () => {
+            if (optionsAccountWarningAccepted) loadOptionsData();
+            else DOM.modal.style.display = 'flex';
+        });
+    }
 
-    if (loadingEl) loadingEl.style.display = 'block';
-    if (contentEl) contentEl.style.display = 'none';
+    if (DOM.refreshBtn) {
+        DOM.refreshBtn.addEventListener('click', loadOptionsData);
+    }
+
+    if (DOM.modalAccept) {
+        DOM.modalAccept.addEventListener('click', () => {
+            optionsAccountWarningAccepted = true;
+            DOM.modal.style.display = 'none';
+            loadOptionsData();
+        });
+    }
+
+    if (DOM.modalCancel) {
+        DOM.modalCancel.addEventListener('click', () => DOM.modal.style.display = 'none');
+    }
+
+    // 2. Filter Logic (Debounced)
+    if (DOM.filterInput) {
+        DOM.filterInput.addEventListener('input', debounce(handleFilter, 300));
+    }
+
+    // 3. Hide AI Logic (CSS Based - Performance Fix)
+    if (DOM.hideAiCheckbox) {
+        DOM.hideAiCheckbox.addEventListener('change', (e) => {
+            toggleAiOptions(e.target.checked);
+        });
+    }
+}
+
+async function loadSchema() {
+    try {
+        const res = await fetch('optionsAccountSchema.json');
+        if (res.ok) {
+            optionsListAccountSchema = await res.json();
+        }
+    } catch (e) {
+        console.warn("Schema not found, defaulting to raw view.", e);
+    }
+}
+
+async function loadOptionsData() {
+    DOM.containers.loading.style.display = 'block';
+    DOM.containers.wrapper.style.display = 'none';
 
     try {
-        // Load Schema if not already loaded
-        if (!optionsListAccountSchema) {
-            try {
-                const schemaResponse = await fetch('optionsAccountSchema.json');
-                if (schemaResponse.ok) {
-                    optionsListAccountSchema = await schemaResponse.json();
-                } else {
-                    console.error("Failed to load schema:", schemaResponse.status);
-                    // Fallback to empty object if schema fails to load, so we can still see raw data
-                    optionsListAccountSchema = {};
-                }
-            } catch (schemaError) {
-                console.error("Error fetching schema:", schemaError);
-                optionsListAccountSchema = {};
-            }
-        }
+        const result = await fetchOptionsAccount();
+        currentOptionsData = result.data; // Assuming API returns { data: [...] }
 
-        const response = await fetch('/api/options-account');
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
+        DOM.containers.loading.style.display = 'none';
+        DOM.containers.wrapper.style.display = 'block';
 
-        const result = await response.json();
-        currentOptionsData = result.data;
+        if (DOM.loadBtn) DOM.loadBtn.style.display = 'none';
+        if (DOM.refreshBtn) DOM.refreshBtn.style.display = 'inline-block';
+        if (DOM.filterInput) DOM.filterInput.style.display = 'inline-block';
 
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (contentEl) contentEl.style.display = 'block';
-        if (loadButton) loadButton.style.display = 'none';
-        if (refreshButton) refreshButton.style.display = 'inline-block';
-        if (filterInput) filterInput.style.display = 'inline-block';
-
-        renderOptionsAccount();
+        renderOptions();
         showStatus('Options loaded successfully');
     } catch (error) {
-        console.error('Error loading options:', error);
-        if (loadingEl) {
-            loadingEl.textContent = `Error: ${error.message}`;
-            loadingEl.style.color = 'var(--error)';
-        }
+        DOM.containers.loading.style.display = 'none';
         showStatus(`Error loading options: ${error.message}`, true);
     }
 }
 
-function renderOptionsAccount() {
-    const documentedContainer = document.getElementById('documented-options');
-    const rawContainer = document.getElementById('raw-options');
-    const hideAiCheckbox = document.getElementById('hide-ai-options');
-    const shouldHideAi = hideAiCheckbox ? hideAiCheckbox.checked : false;
+function renderOptions() {
+    if (!currentOptionsData) return;
 
-    if (!documentedContainer || !rawContainer || !currentOptionsData) return;
+    // Clear previous
+    DOM.containers.documented.innerHTML = '';
+    DOM.containers.raw.innerHTML = '';
 
-    try {
-        // Use DocumentFragment for batch DOM insertion
-        const documentedFragment = document.createDocumentFragment();
-        const rawFragment = document.createDocumentFragment();
+    const docFrag = document.createDocumentFragment();
+    const rawFrag = document.createDocumentFragment();
 
-        // Render documented options
-        currentOptionsData.forEach((value, index) => {
-            const schema = optionsListAccountSchema[index];
+    currentOptionsData.forEach((value, index) => {
+        const schema = optionsListAccountSchema[index];
 
-            if (schema) {
-                // Skip if hiding AI and this is an AI option
-                if (shouldHideAi && schema.AI) {
-                    return;
-                }
+        // 1. Render to Documented List (if schema exists)
+        if (schema) {
+            const docItem = createOptionItem(index, value, schema);
+            docFrag.appendChild(docItem);
+        }
 
-                // Render in documented tab
-                const item = createOptionItem(index, value, schema, false);
-                documentedFragment.appendChild(item);
-            }
+        // 2. Render to Raw List (always)
+        const rawItem = createOptionItem(index, value, null);
+        rawFrag.appendChild(rawItem);
+    });
 
-            // Render in raw tab (all indices)
-            const rawItem = createOptionItem(index, value, schema, true);
-            rawFragment.appendChild(rawItem);
-        });
+    DOM.containers.documented.appendChild(docFrag);
+    DOM.containers.raw.appendChild(rawFrag);
 
-        // Single DOM update per container
-        documentedContainer.innerHTML = '';
-        documentedContainer.appendChild(documentedFragment);
-        rawContainer.innerHTML = '';
-        rawContainer.appendChild(rawFragment);
-    } catch (error) {
-        console.error('Error rendering options:', error);
-        showStatus('Error rendering options', true);
-    }
+    // Apply initial state of checkboxes/filters
+    if (DOM.hideAiCheckbox) toggleAiOptions(DOM.hideAiCheckbox.checked);
+    if (DOM.filterInput && DOM.filterInput.value) handleFilter();
 }
 
-function createOptionItem(index, value, schema, isRaw) {
+function createOptionItem(index, value, schema) {
     const item = document.createElement('div');
     item.className = 'option-item';
     item.dataset.index = index;
 
-    if (schema && schema.warning) {
+    // --- Performance: Add Classes for Filtering/Hiding ---
+    if (schema?.AI) {
+        item.classList.add('is-ai-option');
+    }
+    if (schema?.warning) {
         item.classList.add('has-warning');
     }
 
-    if (!schema) {
-        item.classList.add('unknown');
-    }
-
+    // --- Header ---
     const header = document.createElement('div');
     header.className = 'option-header';
 
     const label = document.createElement('div');
     label.className = 'option-label';
 
-    let nameText = schema ? schema.name : `Unknown Setting`;
-
-    // Add AI indicator to the front if applicable
-    if (schema && schema.AI) {
-        // Using a span for styling if needed, or just text
-        const aiPrefix = document.createElement('span');
-        aiPrefix.textContent = '[AI] ';
-        aiPrefix.style.color = 'var(--accent)';
-        aiPrefix.style.fontWeight = 'bold';
-        label.appendChild(aiPrefix);
-        label.appendChild(document.createTextNode(nameText));
-    } else {
-        label.textContent = nameText;
+    if (schema?.AI) {
+        const aiSpan = document.createElement('span');
+        aiSpan.textContent = '[AI] ';
+        aiSpan.style.color = 'var(--accent)';
+        label.appendChild(aiSpan);
     }
+    label.appendChild(document.createTextNode(schema ? schema.name : 'Unknown Setting'));
 
     const indexLabel = document.createElement('div');
     indexLabel.className = 'option-index';
-    indexLabel.textContent = `Index: ${index}`;
+    indexLabel.textContent = `Idx: ${index}`;
 
-    header.appendChild(label);
-    header.appendChild(indexLabel);
+    header.append(label, indexLabel);
     item.appendChild(header);
 
-    if (schema && schema.description) {
+    // --- Description/Warning ---
+    if (schema?.description) {
         const desc = document.createElement('div');
         desc.className = 'option-description';
         desc.textContent = schema.description;
         item.appendChild(desc);
     }
 
-    if (schema && schema.warning) {
-        const warning = document.createElement('div');
-        warning.className = 'option-warning';
-        warning.textContent = schema.warning;
-        item.appendChild(warning);
+    if (schema?.warning) {
+        const warn = document.createElement('div');
+        warn.className = 'option-warning';
+        warn.textContent = schema.warning;
+        item.appendChild(warn);
     }
 
+    // --- Input Area ---
     const inputWrapper = document.createElement('div');
     inputWrapper.className = 'option-input-wrapper';
 
     const input = document.createElement('input');
     input.className = 'option-input';
     input.dataset.index = index;
-    input.dataset.originalType = typeof value;
+    input.dataset.originalType = typeof value; // Crucial for Safety
 
-    // Determine input type and value
+    // Set Input Attributes based on type
     if (typeof value === 'boolean') {
         input.type = 'checkbox';
         input.checked = value;
     } else if (typeof value === 'number') {
-        input.type = 'text';
+        input.type = 'number'; // Allow native number controls
+        input.step = 'any';
         input.value = value;
     } else if (typeof value === 'string') {
         input.type = 'text';
@@ -254,146 +217,119 @@ function createOptionItem(index, value, schema, isRaw) {
     } else {
         input.type = 'text';
         input.value = JSON.stringify(value);
+        input.dataset.isComplex = 'true';
     }
 
-    inputWrapper.appendChild(input);
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'option-apply-button';
+    applyBtn.textContent = 'Apply';
+    applyBtn.addEventListener('click', () => applySingleOption(index, input));
 
-    const typeBadge = document.createElement('span');
-    typeBadge.className = 'option-type-badge';
-    typeBadge.textContent = typeof value;
-    inputWrapper.appendChild(typeBadge);
-
-    // Add Apply button for this specific index
-    const applyButton = document.createElement('button');
-    applyButton.className = 'option-apply-button';
-    applyButton.textContent = 'Apply';
-    applyButton.addEventListener('click', () => applySingleOption(index, input));
-    inputWrapper.appendChild(applyButton);
-
+    inputWrapper.append(input, applyBtn);
     item.appendChild(inputWrapper);
-
-    if (schema && schema.hint) {
-        const hint = document.createElement('div');
-        hint.className = 'option-hint';
-        hint.textContent = `Hint: ${schema.hint}`;
-        item.appendChild(hint);
-    }
-
-    if (!schema && isRaw) {
-        const unknownNote = document.createElement('div');
-        unknownNote.className = 'option-description';
-        unknownNote.textContent = 'Unknown - edit at your own risk';
-        unknownNote.style.color = 'var(--warning)';
-        item.appendChild(unknownNote);
-    }
 
     return item;
 }
 
+// --- Safety: Strict Type Checking ---
 async function applySingleOption(index, inputElement) {
-    if (!currentOptionsData) {
-        showStatus('No options data loaded', true);
-        return;
-    }
-
     const originalType = inputElement.dataset.originalType;
+    const isComplex = inputElement.dataset.isComplex === 'true';
     let newValue;
+    let rawValue;
 
     try {
-        // Get the value from input
         if (inputElement.type === 'checkbox') {
-            newValue = inputElement.checked;
+            rawValue = inputElement.checked;
+            newValue = rawValue;
         } else {
-            const inputValue = inputElement.value.trim();
+            rawValue = inputElement.value; // Don't trim immediately, strings might need spaces
 
-            // Preserve original type
             if (originalType === 'number') {
-                newValue = parseFloat(inputValue);
-                if (isNaN(newValue)) {
-                    showStatus(`Invalid number at index ${index}`, true);
-                    return;
-                }
-            } else if (originalType === 'boolean') {
-                newValue = inputValue.toLowerCase() === 'true';
-            } else if (originalType === 'string') {
-                newValue = inputValue;
-            } else {
-                // Try to parse as JSON for complex types
+                newValue = Number(rawValue);
+                if (isNaN(newValue)) throw new Error(`Value must be a valid number.`);
+            }
+            else if (originalType === 'boolean') {
+                // Should be covered by checkbox, but fallback handling
+                newValue = String(rawValue).toLowerCase() === 'true';
+            }
+            else if (originalType === 'string') {
+                // SECURITY FIX: Do NOT JSON.parse strings. Keep them as strings.
+                newValue = String(rawValue);
+            }
+            else if (originalType === 'object' || isComplex) {
+                // Only parse if it was originally an object/array
                 try {
-                    newValue = JSON.parse(inputValue);
-                } catch {
-                    newValue = inputValue;
+                    newValue = JSON.parse(rawValue);
+                } catch (e) {
+                    throw new Error(`Invalid JSON format for object/array.`);
                 }
+            }
+            else {
+                // Fallback for undefined/null
+                newValue = rawValue;
             }
         }
 
-        // Send to server
-        const response = await fetch('/api/options-account/index', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index: index, value: newValue })
-        });
+        // Send to API
+        await updateOptionAccountIndex(index, newValue);
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        // Update local cache
+        // Update Local State
         currentOptionsData[index] = newValue;
 
-        // Visual feedback - briefly highlight the item
-        const optionItem = inputElement.closest('.option-item');
-        if (optionItem) {
-            optionItem.style.borderColor = 'var(--success)';
-            optionItem.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
-            setTimeout(() => {
-                optionItem.style.borderColor = '';
-                optionItem.style.backgroundColor = '';
-            }, 1000);
+        // Visual Feedback
+        const item = inputElement.closest('.option-item');
+        item.classList.add('save-success');
+        setTimeout(() => item.classList.remove('save-success'), 1000);
+        showStatus(`Index ${index} updated.`);
+
+    } catch (error) {
+        console.error(`Error saving index ${index}:`, error);
+        showStatus(error.message, true);
+
+        const item = inputElement.closest('.option-item');
+        item.classList.add('save-error');
+        setTimeout(() => item.classList.remove('save-error'), 1000);
+    }
+}
+
+// --- Performance: CSS Toggling ---
+function toggleAiOptions(shouldHide) {
+    const container = document.getElementById('options-account-content');
+    if (!container) return;
+
+    // We toggle a class on the parent container
+    if (shouldHide) {
+        container.classList.add('hide-ai-mode');
+    } else {
+        container.classList.remove('hide-ai-mode');
+    }
+}
+
+function handleFilter() {
+    const filterText = DOM.filterInput.value.toLowerCase().trim();
+    const allItems = document.querySelectorAll('.option-item');
+
+    allItems.forEach(item => {
+        // If empty filter, clear filter class (display: flex/block)
+        if (!filterText) {
+            item.classList.remove('filtered-out');
+            return;
         }
 
-        showStatus(`Index ${index} updated successfully`);
-    } catch (error) {
-        console.error(`Error applying option at index ${index}:`, error);
-        showStatus(`Error updating index ${index}: ${error.message}`, true);
-    }
+        const label = item.querySelector('.option-label')?.textContent.toLowerCase() || '';
+        const index = item.dataset.index;
+        const desc = item.querySelector('.option-description')?.textContent.toLowerCase() || '';
+
+        // If match
+        if (label.includes(filterText) || index.includes(filterText) || desc.includes(filterText)) {
+            item.classList.remove('filtered-out');
+        } else {
+            item.classList.add('filtered-out');
+        }
+    });
 }
 
-function filterOptions() {
-    try {
-        const filterInput = document.getElementById('options-filter');
-        if (!filterInput) return;
-
-        const filterText = filterInput.value.toLowerCase().trim();
-        const allItems = document.querySelectorAll('.option-item');
-
-        allItems.forEach(item => {
-            if (!filterText) {
-                item.style.display = '';
-                return;
-            }
-
-            const index = item.dataset.index;
-            const label = item.querySelector('.option-label')?.textContent.toLowerCase() || '';
-            const description = item.querySelector('.option-description')?.textContent.toLowerCase() || '';
-
-            if (index.includes(filterText) || label.includes(filterText) || description.includes(filterText)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    } catch (error) {
-        console.error('Error filtering options:', error);
-        showStatus('Error filtering options', true);
-    }
-}
-
-
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initOptionsAccount);
 } else {
