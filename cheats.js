@@ -2093,8 +2093,6 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
-  setupArcadeProxies.call(this);
-  setupBetterCogsProxy.call(this);
   setupTimeCandyProxy.call(this);
   setupCurrenciesOwnedProxy.call(this);
   setupArbitraryProxy.call(this);
@@ -2105,6 +2103,9 @@ function setupAllProxies() {
   setupw2StuffProxy.call(this);
   setupw3StuffProxy.call(this);
   setupw4StuffProxy.call(this);
+  setupw5Proxies.call(this);
+  setupw6Proxies.call(this);
+  setupw7Proxies.call(this);
   setupOptionsListAccountProxy.call(this);
   setupCListProxy.call(this);
   setupQuestProxy.call(this);
@@ -2117,9 +2118,6 @@ function setupAllProxies() {
   setupItemsMenuProxy.call(this);
   setupTrappingProxy.call(this);
   setupTalentProxy.call(this);
-  setupw5Proxies.call(this);
-  setupw6Proxies.call(this);
-  setupw7Proxies.call(this);
   setupItemMiscProxy.call(this);
   setupMiscProxies.call(this);
   setupPlayerLoadProxy.call(this);
@@ -2357,26 +2355,6 @@ function setupCreateElementProxy() {
 
       let resp = Reflect.apply(originalFn, context, argumentsList);
       return resp;
-    },
-  });
-}
-
-function setupBetterCogsProxy() {
-  events(481).prototype._customEvent_WorkbenchStuff2 = new Proxy(events(481).prototype._customEvent_WorkbenchStuff2, {
-    apply: function (originalFn, context, argumentsList) {
-      try {
-        if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
-          cheatState["rng"] = "high";
-          // cheatState["rngInt"] = ["high", "high", "low", "high"]; // does not work like i thought
-          let rtn = Reflect.apply(originalFn, context, argumentsList);
-          cheatState["rng"] = false;
-          // cheatState["rngInt"] = false;
-          return rtn;
-        }
-      } catch (e) {
-        console.error("Error in Better Cogs Proxy:", e);
-      }
-      return Reflect.apply(originalFn, context, argumentsList);
     },
   });
 }
@@ -3329,17 +3307,28 @@ function setupw1StuffProxy() {
 // TODO: move all setups stuff that is in w2 in here, so it is sorted.
 function setupw2StuffProxy() {
   const actorEvents579 = events(579);
+  const actorEvents345 = events(345);
+
   const Roo = actorEvents579._customBlock_Summoning;
   actorEvents579._customBlock_Summoning = function (...argumentList) {
     return cheatState.w2.roo && cheatConfig.w2.roo.hasOwnProperty(argumentList[0])
       ? cheatConfig.w2.roo[argumentList[0]](Reflect.apply(Roo, this, argumentList))
       : Reflect.apply(Roo, this, argumentList);
   };
+
+  // wide arcade, not sure if this should be switched to w2 arcade?
+  const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
+  actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
+    return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
+      ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
+      : Reflect.apply(DungeonCalc, this, argumentList);
+  };
 }
 
 // w3 cheats
 function setupw3StuffProxy() {
   const actorEvents345 = events(345);
+  const actorEvents481 = events(481)
   // Nullification of all costs inside the workbench
   const Workbench = actorEvents345._customBlock_WorkbenchStuff;
   actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
@@ -3412,6 +3401,26 @@ function setupw3StuffProxy() {
       return Reflect.apply(Refinery, this, argumentsList);
     };
   }
+
+  // tbh this should be removed for good!
+  const Workbenchstuff = actorEvents481.prototype._customEvent_WorkbenchStuff2
+  Workbenchstuff = new Proxy(Workbenchstuff, {
+    apply: function (originalFn, context, argumentsList) {
+      try {
+        if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
+          cheatState["rng"] = "high";
+          // cheatState["rngInt"] = ["high", "high", "low", "high"]; // does not work like i thought
+          let rtn = Reflect.apply(originalFn, context, argumentsList);
+          cheatState["rng"] = false;
+          // cheatState["rngInt"] = false;
+          return rtn;
+        }
+      } catch (e) {
+        console.error("Error in Better Cogs Proxy:", e);
+      }
+      return Reflect.apply(originalFn, context, argumentsList);
+    },
+  });
 }
 
 // w4 cheats
@@ -3740,17 +3749,6 @@ function setupw7Proxies() {
   };
 }
 
-function setupArcadeProxies() {
-  const actorEvents345 = events(345)
-
-  const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
-  actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
-    return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
-      ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
-      : Reflect.apply(DungeonCalc, this, argumentList);
-  };
-
-}
 
 
 // Minigame cheats
