@@ -43,32 +43,59 @@ function renderConfigItem(container, key, value, fullKey, fullConfig) {
     itemDiv.dataset.configKey = fullKey;
 
     const label = document.createElement('label');
-    label.textContent = key;
+    label.textContent = key.replace(/([A-Z])/g, ' $1').trim(); // Readable spacing
     label.htmlFor = `config-${fullKey}`;
     itemDiv.appendChild(label);
 
     let input;
+
+    // RENDER: Fancy Toggle Switch for Booleans
     if (typeof value === 'boolean') {
+        // Create the wrapper structure for the CSS toggle
+        const toggleLabel = document.createElement('label');
+        toggleLabel.className = 'toggle-switch';
+
         input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = value;
-    } else if (typeof value === 'number') {
-        input = document.createElement('input');
-        input.type = 'number';
-        input.value = value;
-    } else if (typeof value === 'string') {
-        input = document.createElement('input');
-        input.type = 'text';
-        input.value = value;
-    } else {
-        input = document.createElement('textarea');
-        input.value = JSON.stringify(value, null, 2);
-        input.rows = 3;
-    }
+        input.id = `config-${fullKey}`;
+        input.dataset.key = fullKey;
 
-    input.id = `config-${fullKey}`;
-    input.dataset.key = fullKey; // Used by gatherConfig
-    itemDiv.appendChild(input);
+        const slider = document.createElement('span');
+        slider.className = 'slider';
+
+        const stateLabel = document.createElement('span');
+        stateLabel.className = 'label';
+        stateLabel.textContent = value ? 'ENABLED' : 'DISABLED';
+        stateLabel.style.fontSize = '0.7rem';
+
+        // Update text on change
+        input.addEventListener('change', (e) => {
+            stateLabel.textContent = e.target.checked ? 'ENABLED' : 'DISABLED';
+        });
+
+        toggleLabel.append(input, slider, stateLabel);
+        itemDiv.appendChild(toggleLabel);
+    }
+    // RENDER: Standard Inputs for others
+    else {
+        if (typeof value === 'number') {
+            input = document.createElement('input');
+            input.type = 'number';
+            input.value = value;
+        } else if (typeof value === 'string') {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.value = value;
+        } else {
+            input = document.createElement('textarea');
+            input.value = JSON.stringify(value, null, 2);
+            input.rows = 3;
+        }
+        input.id = `config-${fullKey}`;
+        input.dataset.key = fullKey;
+        itemDiv.appendChild(input);
+    }
 
     // Apply Diff Logic
     setupDiffListener(itemDiv, input, fullKey, fullConfig);

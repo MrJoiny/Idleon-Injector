@@ -17,11 +17,17 @@ const DOM = {
     btnSave: document.getElementById('save-config-button')
 };
 
-// Global state for config
+// Global state
 let currentFullConfig = null;
+let listenersInitialized = false;
 
 export async function initConfig() {
-    setupEventListeners();
+    if (!listenersInitialized) {
+        setupEventListeners();
+        listenersInitialized = true;
+    }
+
+    // Always reload data to ensure fresh state
     await loadAndRenderConfig();
 }
 
@@ -79,7 +85,7 @@ async function handleSave(isPersistentSave) {
             ? await saveConfigFile(config)
             : await updateSessionConfig(config);
 
-        showStatus(result.message || (isPersistentSave ? 'Saved to file.' : 'Session updated.'));
+        showStatus(result.message || (isPersistentSave ? 'CONFIG SAVED TO DISK' : 'RAM UPDATED'));
     } catch (error) {
         showStatus(error.message, true);
     }
@@ -89,8 +95,6 @@ async function handleCategoryChange(event) {
     const selectedCategory = event.target.value;
     DOM.cheatOptions.innerHTML = '';
 
-    // If we have state, use it. Otherwise, strictly we should re-fetch to ensure sync,
-    // but for UI responsiveness we use cached state here.
     if (!currentFullConfig) return;
 
     const configToRender = selectedCategory === 'all'
@@ -105,20 +109,22 @@ async function handleCategoryChange(event) {
 
 function populateCategorySelect(cheatConfig) {
     if (!DOM.categorySelect) return;
-    // Keep the "All" option (index 0), remove others
-    while (DOM.categorySelect.options.length > 1) {
-        DOM.categorySelect.remove(1);
-    }
+
+    // Reset options
+    DOM.categorySelect.innerHTML = '<option value="all">ALL SECTORS</option>';
+
     Object.keys(cheatConfig).sort().forEach(categoryKey => {
         const option = document.createElement('option');
         option.value = categoryKey;
-        option.textContent = categoryKey;
+        option.textContent = categoryKey.toUpperCase(); // Thematic uppercase
         DOM.categorySelect.appendChild(option);
     });
 }
 
 function toggleLoaders(show) {
-    Object.values(DOM.loaders).forEach(el => el.style.display = show ? 'block' : 'none');
+    Object.values(DOM.loaders).forEach(el => {
+        if (el) el.style.display = show ? 'flex' : 'none'; // Flex centers the spinner
+    });
 }
 
 function clearUI() {
@@ -127,13 +133,9 @@ function clearUI() {
     DOM.injectorOptions.innerHTML = '';
 }
 
-/**
- * Scrapes the DOM to rebuild the config object
- */
 function gatherConfigFromUI() {
     if (!currentFullConfig) return null;
 
-    // Deep copy to avoid mutating original state directly
     const config = JSON.parse(JSON.stringify(currentFullConfig));
     if (config.defaultConfig) delete config.defaultConfig;
 
@@ -142,16 +144,16 @@ function gatherConfigFromUI() {
     config.startupCheats = Array.from(startupInputs).map(i => i.value.trim()).filter(Boolean);
 
     // 2. Gather Tree Options
+    // Note: We need to target our new structure (toggle switches uses input[type=checkbox])
     const genericInputs = document.querySelectorAll('input[data-key], textarea[data-key]');
 
     genericInputs.forEach(input => {
-        const path = input.dataset.key.split('.'); // e.g., ['cheatConfig', 'Cat', 'Key']
+        const path = input.dataset.key.split('.');
         if (path.length < 2) return;
 
         const relativePath = path.slice(1);
         let value;
 
-        // Type conversion logic
         if (input.type === 'checkbox') value = input.checked;
         else if (input.type === 'number') value = parseFloat(input.value);
         else if (input.tagName === 'TEXTAREA') {
@@ -165,7 +167,6 @@ function gatherConfigFromUI() {
             }
         }
 
-        // Set value in object
         let current = config;
         let root = path[0];
         if (!current[root]) current[root] = {};

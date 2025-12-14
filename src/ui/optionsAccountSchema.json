@@ -948,8 +948,7 @@
     "169": {
         "name": "Unlocked Islands",
         "description": "Unlocked islands (all islands: 'abcde_')",
-        "type": "string",
-        "hint": "Format: 'abcde_' for all islands"
+        "type": "string"
     },
     "170": {
         "name": "Uncollected Bottles (Docks)",
@@ -1474,8 +1473,7 @@
     "267": {
         "name": "Poppy - Fish Amount",
         "description": "Poppy the Kangaroo fish amount (can use exponent like '5e+50')",
-        "type": "string",
-        "hint": "Can use scientific notation like '5e+50'"
+        "type": "string"
     },
     "268": {
         "name": "Poppy - Tasty Fishbait",
@@ -1536,9 +1534,8 @@
     },
     "279": {
         "name": "Poppy - Greatest Catch",
-        "description": "Poppy upgrade (Greatest Catch) - needs to be +12",
-        "type": "number",
-        "hint": "Counts all other 11 fishes in this value"
+        "description": "Poppy upgrade (Greatest Catch) - needs to be +12, Counts all other 11 fishes in this value",
+        "type": "number"
     },
     "280": {
         "name": "Roo Progress Tracker",
@@ -1672,8 +1669,7 @@
     "305": {
         "name": "Poppy - Tartar Progress",
         "description": "Poppy Tar pit tartar fishing progress bar (0-100)",
-        "type": "number",
-        "hint": "Set between 0-100"
+        "type": "number"
     },
     "306": {
         "name": "Farming Autofeeder",
@@ -1706,9 +1702,8 @@
     },
     "311": {
         "name": "Event Bonuses",
-        "description": "Tracks event bonuses",
-        "type": "string",
-        "hint": "Set to '0abc_defghijkmlopn' to apply all (up to 4th Anniversary)"
+        "description": "Tracks event bonuses, Set to '0abc_defghijkmlopn' to apply all (up to 4th Anniversary)",
+        "type": "string"
     },
     "312": {
         "name": "Villager Selection Tracking",
@@ -1776,8 +1771,7 @@
     "323": {
         "name": "Supreme Wiring Bonus Days",
         "description": "Accumulated days of Supreme Wiring Bonus (safe to max at 50)",
-        "type": "number",
-        "hint": "Safe to max at 50"
+        "type": "number"
     },
     "324": {
         "name": "Cosmic Balls",
@@ -2602,15 +2596,13 @@
     },
     "476": {
         "name": "Friend Bonuses - Active",
-        "description": "Active friend bonuses",
-        "type": "string",
-        "hint": "Format: 'x,yyyy,name;x,yyyy,name' where x=bonus index, yyyy=account level, name=player name"
+        "description": "Active friend bonuses, Format: 'x,yyyy,name;x,yyyy,name' where x=bonus index, yyyy=account level, name=player name",
+        "type": "string"
     },
     "477": {
         "name": "Friend Bonuses - Incoming",
-        "description": "Incoming friend bonuses",
-        "type": "string",
-        "hint": "Format: 'x,yyyy,name;x,yyyy,name' where x=bonus index, yyyy=account level, name=player name"
+        "description": "Incoming friend bonuses, Format: 'x,yyyy,name;x,yyyy,name' where x=bonus index, yyyy=account level, name=player name",
+        "type": "string"
     },
     "478": {
         "name": "Spelunking Progress",
@@ -2621,8 +2613,7 @@
     "479": {
         "name": "Yet Another Printer Multi Days",
         "description": "Days since last sample for legend talent (Brown 4) - cap 20",
-        "type": "number",
-        "hint": "Cap at 20"
+        "type": "number"
     },
     "480": {
         "name": "Progression Counter for Upgrades",

@@ -26,6 +26,11 @@ function setupApiRoutes(app, context, client, config) {
   const { Runtime } = client;
   const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
 
+  // --- API Endpoint: Heartbeat (System Status) ---
+  app.get('/api/heartbeat', (req, res) => {
+    res.json({ status: 'online', timestamp: Date.now() });
+  });
+
   // --- API Endpoint: Get available cheats ---
   app.get('/api/cheats', async (req, res) => {
     try {

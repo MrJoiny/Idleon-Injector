@@ -1,76 +1,84 @@
 // Options Account Editor Module
 // Handles the Options List Account editor functionality
-// Special thanks to sciomachist for his great work in finding out a lot off stuff in the OLA
+// Updated for Cyber-Industrial UI compatibility
 
 import { fetchOptionsAccount, updateOptionAccountIndex } from './api.js';
 import { showStatus, debounce, setupTabs } from './utils.js';
 
-// Import schema (loaded via script tag in HTML index.html as global var, or fetch if dynamic)
-// Assuming it acts as a global lookup or fetched. Ideally, fetch it.
-let optionsListAccountSchema = {};
-
 // State
+let optionsListAccountSchema = {};
 let currentOptionsData = null;
 let optionsAccountWarningAccepted = false;
 
-const DOM = {
-    loadBtn: document.getElementById('load-options-button'),
-    refreshBtn: document.getElementById('refresh-options-button'),
-    filterInput: document.getElementById('options-filter'),
-    hideAiCheckbox: document.getElementById('hide-ai-options'),
-    modal: document.getElementById('options-warning-modal'),
-    modalAccept: document.getElementById('modal-accept'),
-    modalCancel: document.getElementById('modal-cancel'),
-    containers: {
-        documented: document.getElementById('documented-options'),
-        raw: document.getElementById('raw-options'),
-        wrapper: document.getElementById('options-account-content'),
-        loading: document.getElementById('loading-options')
-    }
-};
+// DOM Elements
+// We wrap this in a getter or init to ensure HTML exists before we grab it
+let DOM = {};
+
+function initDOM() {
+    DOM = {
+        loadBtn: document.getElementById('load-options-button'),
+        refreshBtn: document.getElementById('refresh-options-button'),
+        filterInput: document.getElementById('options-filter'),
+        hideAiCheckbox: document.getElementById('hide-ai-options'),
+        // Modal elements
+        modal: document.getElementById('options-warning-modal'),
+        modalAccept: document.getElementById('modal-accept'),
+        modalCancel: document.getElementById('modal-cancel'),
+        // Containers
+        containers: {
+            documented: document.getElementById('documented-options'),
+            wrapper: document.getElementById('options-account-content'),
+            loading: document.getElementById('loading-options')
+        }
+    };
+}
 
 export function initOptionsAccount() {
-    setupTabs({
-        triggerSelector: '.options-tab-button',
-        contentSelector: '.options-tab-pane',
-        datasetProperty: 'optionsTab'
-    });
+    initDOM();
 
     setupEventListeners();
-    loadSchema(); // Start loading schema immediately in background
+    loadSchema();
 }
 
 function setupEventListeners() {
-    // 1. Modal / Load Logic
+    // 1. Load Button (Triggers Modal or Load)
     if (DOM.loadBtn) {
         DOM.loadBtn.addEventListener('click', () => {
-            if (optionsAccountWarningAccepted) loadOptionsData();
-            else DOM.modal.style.display = 'flex';
+            if (optionsAccountWarningAccepted) {
+                loadOptionsData();
+            } else {
+                // UI FIX: Remove .hidden class instead of setting style.display
+                DOM.modal.classList.remove('hidden');
+            }
         });
     }
 
+    // 2. Refresh Button
     if (DOM.refreshBtn) {
         DOM.refreshBtn.addEventListener('click', loadOptionsData);
     }
 
+    // 3. Modal Actions
     if (DOM.modalAccept) {
         DOM.modalAccept.addEventListener('click', () => {
             optionsAccountWarningAccepted = true;
-            DOM.modal.style.display = 'none';
+            DOM.modal.classList.add('hidden'); // UI FIX
             loadOptionsData();
         });
     }
 
     if (DOM.modalCancel) {
-        DOM.modalCancel.addEventListener('click', () => DOM.modal.style.display = 'none');
+        DOM.modalCancel.addEventListener('click', () => {
+            DOM.modal.classList.add('hidden'); // UI FIX
+        });
     }
 
-    // 2. Filter Logic (Debounced)
+    // 4. Filter Logic
     if (DOM.filterInput) {
         DOM.filterInput.addEventListener('input', debounce(handleFilter, 300));
     }
 
-    // 3. Hide AI Logic (CSS Based - Performance Fix)
+    // 5. Hide AI Logic
     if (DOM.hideAiCheckbox) {
         DOM.hideAiCheckbox.addEventListener('change', (e) => {
             toggleAiOptions(e.target.checked);
@@ -85,29 +93,32 @@ async function loadSchema() {
             optionsListAccountSchema = await res.json();
         }
     } catch (e) {
-        console.warn("Schema not found, defaulting to raw view.", e);
+        console.warn("Schema not found.", e);
     }
 }
 
 async function loadOptionsData() {
-    DOM.containers.loading.style.display = 'block';
-    DOM.containers.wrapper.style.display = 'none';
+    // UI FIX: Use classes for visibility
+    DOM.containers.loading.classList.remove('hidden');
+    DOM.containers.wrapper.classList.add('hidden');
 
     try {
         const result = await fetchOptionsAccount();
-        currentOptionsData = result.data; // Assuming API returns { data: [...] }
+        currentOptionsData = result.data;
 
-        DOM.containers.loading.style.display = 'none';
-        DOM.containers.wrapper.style.display = 'block';
+        // Swap Visibility
+        DOM.containers.loading.classList.add('hidden');
+        DOM.containers.wrapper.classList.remove('hidden');
 
-        if (DOM.loadBtn) DOM.loadBtn.style.display = 'none';
-        if (DOM.refreshBtn) DOM.refreshBtn.style.display = 'inline-block';
-        if (DOM.filterInput) DOM.filterInput.style.display = 'inline-block';
+        // Toggle Controls
+        if (DOM.loadBtn) DOM.loadBtn.classList.add('hidden');
+        if (DOM.refreshBtn) DOM.refreshBtn.classList.remove('hidden');
+        if (DOM.filterInput) DOM.filterInput.classList.remove('hidden');
 
         renderOptions();
-        showStatus('Options loaded successfully');
+        showStatus('ACCOUNT DATA DECRYPTED'); // Thematic update
     } catch (error) {
-        DOM.containers.loading.style.display = 'none';
+        DOM.containers.loading.classList.add('hidden');
         showStatus(`Error loading options: ${error.message}`, true);
     }
 }
@@ -115,31 +126,23 @@ async function loadOptionsData() {
 function renderOptions() {
     if (!currentOptionsData) return;
 
-    // Clear previous
     DOM.containers.documented.innerHTML = '';
-    DOM.containers.raw.innerHTML = '';
+    // DOM.containers.raw removed
 
     const docFrag = document.createDocumentFragment();
-    const rawFrag = document.createDocumentFragment();
 
     currentOptionsData.forEach((value, index) => {
         const schema = optionsListAccountSchema[index];
 
-        // 1. Render to Documented List (if schema exists)
+        // Only Render Documented List
         if (schema) {
             const docItem = createOptionItem(index, value, schema);
             docFrag.appendChild(docItem);
         }
-
-        // 2. Render to Raw List (always)
-        const rawItem = createOptionItem(index, value, null);
-        rawFrag.appendChild(rawItem);
     });
 
     DOM.containers.documented.appendChild(docFrag);
-    DOM.containers.raw.appendChild(rawFrag);
 
-    // Apply initial state of checkboxes/filters
     if (DOM.hideAiCheckbox) toggleAiOptions(DOM.hideAiCheckbox.checked);
     if (DOM.filterInput && DOM.filterInput.value) handleFilter();
 }
@@ -149,15 +152,10 @@ function createOptionItem(index, value, schema) {
     item.className = 'option-item';
     item.dataset.index = index;
 
-    // --- Performance: Add Classes for Filtering/Hiding ---
-    if (schema?.AI) {
-        item.classList.add('is-ai-option');
-    }
-    if (schema?.warning) {
-        item.classList.add('has-warning');
-    }
+    if (schema?.AI) item.classList.add('is-ai-option');
+    if (schema?.warning) item.classList.add('has-warning');
 
-    // --- Header ---
+    // Header
     const header = document.createElement('div');
     header.className = 'option-header';
 
@@ -166,20 +164,31 @@ function createOptionItem(index, value, schema) {
 
     if (schema?.AI) {
         const aiSpan = document.createElement('span');
-        aiSpan.textContent = '[AI] ';
-        aiSpan.style.color = 'var(--accent)';
+        aiSpan.textContent = 'AI_GEN // ';
+        aiSpan.style.color = 'var(--c-accent)'; // Updated to Var
+        aiSpan.style.fontSize = '0.75rem';
         label.appendChild(aiSpan);
     }
-    label.appendChild(document.createTextNode(schema ? schema.name : 'Unknown Setting'));
+    label.appendChild(document.createTextNode(schema ? schema.name : 'UNKNOWN_INDEX'));
 
     const indexLabel = document.createElement('div');
     indexLabel.className = 'option-index';
-    indexLabel.textContent = `Idx: ${index}`;
+    indexLabel.textContent = `IDX::${index}`;
 
     header.append(label, indexLabel);
     item.appendChild(header);
 
-    // --- Description/Warning ---
+    // Warning
+    if (schema?.warning) {
+        const warn = document.createElement('div');
+        warn.style.color = 'var(--c-warning)';
+        warn.style.fontSize = '0.8rem';
+        warn.style.marginBottom = '8px';
+        warn.textContent = `⚠ ${schema.warning}`;
+        item.appendChild(warn);
+    }
+
+    // Description
     if (schema?.description) {
         const desc = document.createElement('div');
         desc.className = 'option-description';
@@ -187,28 +196,21 @@ function createOptionItem(index, value, schema) {
         item.appendChild(desc);
     }
 
-    if (schema?.warning) {
-        const warn = document.createElement('div');
-        warn.className = 'option-warning';
-        warn.textContent = schema.warning;
-        item.appendChild(warn);
-    }
-
-    // --- Input Area ---
+    // Input Area
     const inputWrapper = document.createElement('div');
     inputWrapper.className = 'option-input-wrapper';
 
     const input = document.createElement('input');
     input.className = 'option-input';
     input.dataset.index = index;
-    input.dataset.originalType = typeof value; // Crucial for Safety
+    input.dataset.originalType = typeof value;
 
-    // Set Input Attributes based on type
     if (typeof value === 'boolean') {
+        // We could do a toggle switch here, but for a massive list, standard checkbox is faster performance-wise
         input.type = 'checkbox';
         input.checked = value;
     } else if (typeof value === 'number') {
-        input.type = 'number'; // Allow native number controls
+        input.type = 'number';
         input.step = 'any';
         input.value = value;
     } else if (typeof value === 'string') {
@@ -222,7 +224,7 @@ function createOptionItem(index, value, schema) {
 
     const applyBtn = document.createElement('button');
     applyBtn.className = 'option-apply-button';
-    applyBtn.textContent = 'Apply';
+    applyBtn.textContent = 'SET';
     applyBtn.addEventListener('click', () => applySingleOption(index, input));
 
     inputWrapper.append(input, applyBtn);
@@ -231,7 +233,6 @@ function createOptionItem(index, value, schema) {
     return item;
 }
 
-// --- Safety: Strict Type Checking ---
 async function applySingleOption(index, inputElement) {
     const originalType = inputElement.dataset.originalType;
     const isComplex = inputElement.dataset.isComplex === 'true';
@@ -243,67 +244,46 @@ async function applySingleOption(index, inputElement) {
             rawValue = inputElement.checked;
             newValue = rawValue;
         } else {
-            rawValue = inputElement.value; // Don't trim immediately, strings might need spaces
-
+            rawValue = inputElement.value;
             if (originalType === 'number') {
                 newValue = Number(rawValue);
                 if (isNaN(newValue)) throw new Error(`Value must be a valid number.`);
-            }
-            else if (originalType === 'boolean') {
-                // Should be covered by checkbox, but fallback handling
+            } else if (originalType === 'boolean') {
                 newValue = String(rawValue).toLowerCase() === 'true';
-            }
-            else if (originalType === 'string') {
-                // SECURITY FIX: Do NOT JSON.parse strings. Keep them as strings.
+            } else if (originalType === 'string') {
                 newValue = String(rawValue);
-            }
-            else if (originalType === 'object' || isComplex) {
-                // Only parse if it was originally an object/array
+            } else if (originalType === 'object' || isComplex) {
                 try {
                     newValue = JSON.parse(rawValue);
                 } catch (e) {
-                    throw new Error(`Invalid JSON format for object/array.`);
+                    throw new Error(`Invalid JSON format.`);
                 }
-            }
-            else {
-                // Fallback for undefined/null
+            } else {
                 newValue = rawValue;
             }
         }
 
-        // Send to API
         await updateOptionAccountIndex(index, newValue);
-
-        // Update Local State
         currentOptionsData[index] = newValue;
 
-        // Visual Feedback
         const item = inputElement.closest('.option-item');
         item.classList.add('save-success');
         setTimeout(() => item.classList.remove('save-success'), 1000);
-        showStatus(`Index ${index} updated.`);
+        showStatus(`INDEX ${index} WROTE TO MEMORY`);
 
     } catch (error) {
-        console.error(`Error saving index ${index}:`, error);
         showStatus(error.message, true);
-
         const item = inputElement.closest('.option-item');
         item.classList.add('save-error');
         setTimeout(() => item.classList.remove('save-error'), 1000);
     }
 }
 
-// --- Performance: CSS Toggling ---
 function toggleAiOptions(shouldHide) {
     const container = document.getElementById('options-account-content');
     if (!container) return;
-
-    // We toggle a class on the parent container
-    if (shouldHide) {
-        container.classList.add('hide-ai-mode');
-    } else {
-        container.classList.remove('hide-ai-mode');
-    }
+    if (shouldHide) container.classList.add('hide-ai-mode');
+    else container.classList.remove('hide-ai-mode');
 }
 
 function handleFilter() {
@@ -311,18 +291,14 @@ function handleFilter() {
     const allItems = document.querySelectorAll('.option-item');
 
     allItems.forEach(item => {
-        // If empty filter, clear filter class (display: flex/block)
         if (!filterText) {
             item.classList.remove('filtered-out');
             return;
         }
-
         const label = item.querySelector('.option-label')?.textContent.toLowerCase() || '';
         const index = item.dataset.index;
-        const desc = item.querySelector('.option-description')?.textContent.toLowerCase() || '';
 
-        // If match
-        if (label.includes(filterText) || index.includes(filterText) || desc.includes(filterText)) {
+        if (label.includes(filterText) || index.includes(filterText)) {
             item.classList.remove('filtered-out');
         } else {
             item.classList.add('filtered-out');
@@ -330,6 +306,7 @@ function handleFilter() {
     });
 }
 
+// Auto-init on load
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initOptionsAccount);
 } else {

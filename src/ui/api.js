@@ -107,3 +107,14 @@ export async function updateOptionAccountIndex(index, value) {
         body: JSON.stringify({ index, value })
     });
 }
+
+// --- SYSTEM ---
+export async function checkHeartbeat() {
+    // We expect a simple object or success. If it fails/timeouts, it throws/returns null from _request catch (if modified) 
+    // actually _request throws on error, so we catch here to return boolean/null
+    try {
+        return await _request('/heartbeat');
+    } catch (e) {
+        return null;
+    }
+}
