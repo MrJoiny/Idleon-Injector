@@ -9,9 +9,15 @@ exports.cheatConfig = {
   chng_enabled: false,
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
 
-  dungeon: {
-    creditcap: 10000000, // lots of people breaking things by having too many credits
-    flurbocap: 1000000,
+  maxval: { // lots of people breaking things by having too much of anything
+    bones: 1e20,
+    totalbones: 1e21,
+    dust: 1e20,
+    totaldust: 1e21,
+    tach: 1e20,
+    totaltach: 1e21,
+    creditcap: 10000000, // dungeon
+    flurbocap: 1000000, // dungeon
   },
   multiply: {
     damage: 1,

@@ -2589,7 +2589,7 @@ function setupOptionsListAccountProxy() {
       return original;
     },
     set: function (value, backupKey) {
-      value = Math.min(cheatConfig.dungeon.creditcap, value);
+      value = Math.min(cheatConfig.maxval.creditcap, value);
       this[backupKey] = value
     },
   });
@@ -2601,7 +2601,7 @@ function setupOptionsListAccountProxy() {
       return original;
     },
     set: function (value, backupKey) {
-      value = Math.min(cheatConfig.dungeon.creditcap, value);
+      value = Math.min(cheatConfig.maxval.creditcap, value);
       this[backupKey] = value
     },
   });
@@ -2613,7 +2613,7 @@ function setupOptionsListAccountProxy() {
       return original;
     },
     set: function (value, backupKey) {
-      value = Math.min(cheatConfig.dungeon.flurbocap, value);
+      value = Math.min(cheatConfig.maxval.flurbocap, value);
       this[backupKey] = value
     },
   });
@@ -2666,6 +2666,71 @@ function setupOptionsListAccountProxy() {
     },
   });
 
+  // max cap for total bones
+  createProxy(optionsListAccount, 329, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totalbones;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totalbones, value);
+      this[backupKey] = value
+    },
+  });
+
+  // max cap for all bones
+  bonesID = [330, 331, 332, 333]
+  bonesID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.bones;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.bones, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for all dusts
+  dustID = [357, 358, 359, 360, 361]
+  dustID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.dust;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.dust, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for total dust
+  createProxy(optionsListAccount, 362, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totaldust;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totaldust, value);
+      this[backupKey] = value
+    },
+  });
 
   // unlimited emperor runs 
   createProxy(optionsListAccount, 370, {
@@ -2675,6 +2740,39 @@ function setupOptionsListAccountProxy() {
     },
     set: function (value, backupKey) {
       if (cheatState.w6.emperor) return;
+      this[backupKey] = value
+    },
+  });
+
+  // max cap for all tach
+  tachID = [388, 389, 390, 391, 392, 393]
+  tachID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.tach;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.tach, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for total tach
+  createProxy(optionsListAccount, 394, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totaltach;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totaltach, value);
       this[backupKey] = value
     },
   });
@@ -3328,7 +3426,7 @@ function setupw2StuffProxy() {
 // w3 cheats
 function setupw3StuffProxy() {
   const actorEvents345 = events(345);
-  const actorEvents481 = events(481)
+  const actorEvents481 = events(481);
   // Nullification of all costs inside the workbench
   const Workbench = actorEvents345._customBlock_WorkbenchStuff;
   actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
@@ -3404,7 +3502,7 @@ function setupw3StuffProxy() {
 
   // tbh this should be removed for good!
   const Workbenchstuff = actorEvents481.prototype._customEvent_WorkbenchStuff2
-  Workbenchstuff = new Proxy(Workbenchstuff, {
+  actorEvents481.prototype._customEvent_WorkbenchStuff2 = new Proxy(Workbenchstuff, {
     apply: function (originalFn, context, argumentsList) {
       try {
         if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
