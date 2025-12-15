@@ -8,6 +8,7 @@ export const ConfigNode = ({ data, path = "", fullDraft }) => {
         const value = data[key];
         const currentPath = path ? `${path}.${key}` : key;
 
+        // Objects (but not arrays or null) recurse
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
             return details({ class: 'cheat-category' },
                 summary(key),
@@ -20,12 +21,17 @@ export const ConfigNode = ({ data, path = "", fullDraft }) => {
                 )
             );
         }
+        // Primitives and arrays go to ConfigItem
         return ConfigItem({ key, initialValue: value, fullPath: currentPath, fullDraft });
     });
 };
 
 const ConfigItem = ({ key, initialValue, fullPath, fullDraft }) => {
+    // Determine if this is an array type
+    const isArray = Array.isArray(initialValue);
+    // For arrays, store both the actual value and a display string
     const currentVal = van.state(initialValue);
+    const displayVal = van.state(isArray ? JSON.stringify(initialValue) : initialValue);
 
     const getDefault = () => {
         const defaults = store.config.val?.defaultConfig;
@@ -43,7 +49,7 @@ const ConfigItem = ({ key, initialValue, fullPath, fullDraft }) => {
 
     const handleInput = (rawVal) => {
         const def = getDefault();
-        const targetType = typeof (initialValue ?? def);
+        const targetType = isArray ? 'array' : typeof (initialValue ?? def);
         let val = rawVal;
 
         if (targetType === 'number') {
@@ -51,6 +57,21 @@ const ConfigItem = ({ key, initialValue, fullPath, fullDraft }) => {
             if (isNaN(val)) val = rawVal;
         } else if (targetType === 'boolean') {
             val = Boolean(rawVal);
+        } else if (targetType === 'array') {
+            // For arrays, update the display value and try to parse
+            displayVal.val = rawVal;
+            try {
+                const parsed = JSON.parse(rawVal);
+                if (Array.isArray(parsed)) {
+                    val = parsed;
+                } else {
+                    // Not an array, keep as string (will show as modified)
+                    val = rawVal;
+                }
+            } catch {
+                // Invalid JSON, keep as string for now (user is still typing)
+                val = rawVal;
+            }
         }
 
         currentVal.val = val;
@@ -64,7 +85,7 @@ const ConfigItem = ({ key, initialValue, fullPath, fullDraft }) => {
     };
 
     const displayKey = key.replace(/([A-Z])/g, ' $1').trim();
-    const type = typeof (initialValue ?? getDefault() ?? 'string');
+    const type = isArray ? 'array' : typeof (initialValue ?? getDefault() ?? 'string');
     const defaultVal = getDefault();
 
     return div({
@@ -100,14 +121,22 @@ const ConfigItem = ({ key, initialValue, fullPath, fullDraft }) => {
                         onclick: () => handleInput(Number(currentVal.val) + 1)
                     }, "+")
                 )
-                : input({
-                    type: 'text',
-                    value: currentVal,
-                    oninput: e => handleInput(e.target.value),
-                    style: 'width: 100%;'
-                }),
+                : (type === 'array')
+                    ? input({
+                        type: 'text',
+                        value: displayVal,
+                        placeholder: '[]',
+                        oninput: e => handleInput(e.target.value),
+                        style: 'width: 100%;'
+                    })
+                    : input({
+                        type: 'text',
+                        value: currentVal,
+                        oninput: e => handleInput(e.target.value),
+                        style: 'width: 100%;'
+                    }),
 
-        // CLEANUP: Uses CSS class for style, only manages visibility here
+        // Default value hint
         div({
             class: 'default-value-hint',
             style: () => isModified.val ? 'display: block;' : 'display: none;'

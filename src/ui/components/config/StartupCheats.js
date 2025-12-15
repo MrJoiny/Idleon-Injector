@@ -3,6 +3,7 @@ import store from '../../store.js';
 
 const { div, ul, li, input, button } = van.tags;
 
+// Returns { element, addItem } so parent can control adding
 export const StartupCheats = (draftConfig, onUpdate) => {
     if (store.cheats.val.length === 0) store.loadCheats();
 
@@ -22,7 +23,7 @@ export const StartupCheats = (draftConfig, onUpdate) => {
         onUpdate(newList);
     };
 
-    return div({ class: 'startup-cheats-editor' },
+    const element = div({ class: 'startup-cheats-editor' },
         () => ul({ class: 'startup-cheats-list' },
             list.val.map((cmd, index) =>
                 li({ class: 'cheat-item-row' },
@@ -43,87 +44,90 @@ export const StartupCheats = (draftConfig, onUpdate) => {
                     }, "✕")
                 )
             )
-        ),
-        AddCheatUI(addItem)
+        )
     );
+
+    return { element, addItem };
 };
 
-const AddCheatUI = (onAdd) => {
-    const isSearching = van.state(false);
+// Search UI for the action bar
+export const AddCheatSearchBar = (onAdd, onCancel) => {
     const searchTerm = van.state("");
 
     const handleAdd = (val) => {
         onAdd(val);
-        isSearching.val = false;
         searchTerm.val = "";
     };
 
-    return div({ class: 'add-cheat-area', style: 'position: relative;' },
-        () => !isSearching.val
-            ? button({ class: 'add-cheat-button', onclick: () => isSearching.val = true }, "+ Add Cheat")
-            : div({ style: 'display:flex; gap:5px; width:100%; align-items: center;' },
-                input({
-                    type: 'text',
-                    class: 'cheat-search-input',
-                    placeholder: 'Search cheats...',
-                    autoFocus: true,
-                    value: searchTerm,
-                    oninput: e => searchTerm.val = e.target.value,
-                    onkeydown: e => {
-                        if (e.key === 'Enter' && searchTerm.val) handleAdd(searchTerm.val);
-                    }
-                }),
-                button({ class: 'cancel-add-cheat-button', onclick: () => isSearching.val = false }, "Cancel"),
+    // Create input with ref for focusing
+    const searchInput = input({
+        type: 'text',
+        class: 'cheat-search-input',
+        placeholder: 'Search cheats...',
+        style: 'flex:1;',
+        value: searchTerm,
+        oninput: e => searchTerm.val = e.target.value,
+        onkeydown: e => {
+            if (e.key === 'Enter' && searchTerm.val) handleAdd(searchTerm.val);
+            if (e.key === 'Escape') onCancel();
+        }
+    });
 
-                // Final Styling: Matches theme variables
-                () => {
-                    const term = searchTerm.val.toLowerCase().trim();
-                    const allCheats = store.cheats.val;
+    // Focus the input after it's added to DOM
+    setTimeout(() => searchInput.focus(), 0);
 
-                    const matches = (term.length >= 2)
-                        ? allCheats.filter(c => {
-                            const val = typeof c === 'object' ? c.value : c;
-                            const msg = typeof c === 'object' ? c.message : c;
-                            return (val.toLowerCase().includes(term) || msg.toLowerCase().includes(term));
-                        }).slice(0, 10)
-                        : [];
+    return div({ class: 'add-cheat-search-bar', style: 'position:relative; display:flex; gap:10px; flex:1; align-items:center;' },
+        searchInput,
+        button({ class: 'btn-secondary', onclick: onCancel }, "CANCEL"),
 
-                    const show = matches.length > 0;
+        // Search results dropdown (positioned above the action bar)
+        (() => {
+            const resultsContainer = ul({
+                class: 'cheat-search-results',
+                style: 'display:none; position:absolute; bottom:100%; left:0; width:100%; z-index:1000; background:var(--c-panel); border:1px solid var(--c-accent); box-shadow:0 -5px 20px rgba(0,0,0,0.5); max-height:200px; overflow-y:auto; list-style:none; padding:0; margin-bottom:5px;'
+            });
 
-                    return ul({
-                        class: 'cheat-search-results',
-                        style: () => `
-                            display: ${show ? 'block' : 'none'}; 
-                            position: absolute; 
-                            bottom: 100%; 
-                            left: 0; 
-                            width: 100%; 
-                            z-index: 1000; 
-                            background: var(--c-panel); 
-                            border: 1px solid var(--c-accent); 
-                            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); 
-                            max-height: 200px; 
-                            overflow-y: auto; 
-                            list-style: none; 
-                            padding: 0; 
-                            margin-bottom: 5px;
-                        `
-                    },
-                        matches.map(c => {
-                            const val = typeof c === 'object' ? c.value : c;
-                            const msg = typeof c === 'object' ? c.message : c;
-                            return li({
-                                onmousedown: (e) => {
-                                    e.preventDefault();
-                                    handleAdd(val);
-                                },
-                                // Using class from style.css might not work if not defined for li inside search-results, 
-                                // so we keep safe inline styles + the click hover effect logic if CSS covers it
-                                style: 'cursor:pointer; padding:10px; border-bottom:1px solid var(--c-border); color: var(--c-text-main);'
-                            }, `${msg} (${val})`);
-                        })
-                    );
+            // Update the list whenever searchTerm changes
+            van.derive(() => {
+                const term = searchTerm.val.toLowerCase().trim();
+                const allCheats = store.cheats.val;
+
+                // Clear existing content
+                resultsContainer.innerHTML = '';
+
+                if (term.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
                 }
-            )
+
+                const matches = allCheats.filter(c => {
+                    const val = typeof c === 'object' ? c.value : c;
+                    const msg = typeof c === 'object' ? c.message : c;
+                    return (val.toLowerCase().includes(term) || msg.toLowerCase().includes(term));
+                }).slice(0, 10);
+
+                if (matches.length === 0) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                resultsContainer.style.display = 'block';
+
+                matches.forEach(c => {
+                    const val = typeof c === 'object' ? c.value : c;
+                    const msg = typeof c === 'object' ? c.message : c;
+                    const item = li({
+                        onmousedown: (e) => {
+                            e.preventDefault();
+                            handleAdd(val);
+                        },
+                        style: 'cursor:pointer; padding:10px; border-bottom:1px solid var(--c-border); color:var(--c-text-main);'
+                    }, `${msg} (${val})`);
+                    resultsContainer.appendChild(item);
+                });
+            });
+
+            return resultsContainer;
+        })()
     );
 };

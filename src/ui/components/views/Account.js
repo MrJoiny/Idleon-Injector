@@ -60,8 +60,8 @@ export const Account = () => {
                 // Controls
                 div({ class: 'control-bar' },
                     button({ class: 'btn-secondary', onclick: () => store.loadAccountOptions() }, "REFRESH"),
-                    div({ class: 'spacer', style: 'flex:1' }),
-                    label({ class: 'toggle-switch' },
+                    // div({ class: 'spacer', style: 'flex:1' }),
+                    label({ class: 'toggle-switch', style: 'margin-left:25px;' },
                         input({ type: 'checkbox', onchange: e => hideAI.val = e.target.checked }),
                         span({ class: 'slider' }),
                         span({ class: 'label' }, "HIDE AI")
@@ -70,7 +70,7 @@ export const Account = () => {
                         type: 'text',
                         class: 'compact-input',
                         placeholder: 'FILTER_INDEX...',
-                        style: 'width: 200px; margin-left: 15px;',
+                        style: 'width: 100%; margin-left: 15px;',
                         oninput: debounce(e => filterText.val = e.target.value, 300)
                     })
                 ),

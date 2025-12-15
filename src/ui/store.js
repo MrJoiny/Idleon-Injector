@@ -84,8 +84,9 @@ const store = {
                 : await API.updateSessionConfig(newConfig);
 
             store.notify(result.message || (isPersistent ? 'SAVED TO DISK' : 'RAM UPDATED'));
-            // Refresh local state to match backend
-            store.config.val = newConfig;
+            // Note: We intentionally do NOT update store.config.val here.
+            // The draftConfig in Config.js already has the current state,
+            // and updating the store would trigger re-renders and lose defaultConfig.
         } catch (e) {
             store.notify(e.message, 'error');
         }

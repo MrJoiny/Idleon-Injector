@@ -256,6 +256,18 @@ body {
     animation: slideIn 0.3s var(--ease-tech);
 }
 
+/* Config tab needs flex layout for sticky action bar */
+.tab-pane.config-layout {
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-pane.config-layout .scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -477,6 +489,12 @@ button {
     margin-bottom: 20px;
     border-bottom: 1px solid var(--c-border);
     padding-bottom: 10px;
+    position: sticky;
+    top: 0;
+    background: var(--c-void);
+    z-index: 10;
+    padding-top: 10px;
+    margin-top: -10px;
 }
 
 .config-sub-tab-button {
@@ -547,17 +565,15 @@ button {
     color: var(--c-warning);
 }
 
-/* Action Bar (Sticky Footer for Config) */
+/* Action Bar (Fixed Footer for Config) */
 .action-bar {
-    margin-top: 20px;
+    margin-top: auto;
     padding: 20px;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     display: flex;
-    justify-content: flex-end;
     gap: 15px;
-    position: sticky;
-    bottom: 0;
+    flex-shrink: 0;
     z-index: 5;
     box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
 }
@@ -1003,4 +1019,22 @@ input[type=number] {
 
 .number-input-btn:active {
     background: rgba(255, 183, 0, 0.2);
+}
+
+/* --- UTILITY CLASSES --- */
+.icon-logo {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.warning-banner {
+    color: var(--c-warning);
+    border: 1px solid var(--c-warning);
+    padding: 10px;
+    background: rgba(255, 183, 0, 0.1);
+    font-size: 0.8rem;
 }

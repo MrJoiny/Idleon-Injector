@@ -1,5 +1,6 @@
 import van from '../van-1.6.0.js';
 import store from '../store.js';
+import { VIEWS } from '../constants.js';
 
 // Components
 import { Sidebar } from './Sidebar.js';
@@ -11,16 +12,22 @@ import { DevTools } from './views/DevTools.js';
 
 const { div, main, header, h2 } = van.tags;
 
+// Map view IDs to their component factories
+const viewFactories = {
+    [VIEWS.CHEATS.id]: Cheats,
+    [VIEWS.CONFIG.id]: Config,
+    [VIEWS.ACCOUNT.id]: Account,
+    [VIEWS.DEVTOOLS.id]: DevTools
+};
+
+// Map view IDs to their labels for the header
+const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
+    acc[v.id] = v.label;
+    return acc;
+}, {});
+
 export const App = () => {
     store.initHeartbeat();
-
-    // Define view factories
-    const viewFactories = {
-        'cheats-tab': Cheats,
-        'config-tab': Config,
-        'options-account-tab': Account,
-        'devtools-tab': DevTools
-    };
 
     // Cache for instantiated views
     const viewInstances = {};
@@ -53,14 +60,7 @@ export const App = () => {
         Sidebar(),
         main({ class: 'viewport' },
             header({ class: 'viewport-header' },
-                h2({ id: 'active-view-title' }, () => {
-                    const tab = store.activeTab.val;
-                    if (tab === 'cheats-tab') return "CHEATS";
-                    if (tab === 'config-tab') return "CONFIGURATION";
-                    if (tab === 'options-account-tab') return "ACCOUNT OPTIONS LIST";
-                    if (tab === 'devtools-tab') return "CHROMEDEBUG";
-                    return "MODULE";
-                })
+                h2({ id: 'active-view-title' }, () => viewLabels[store.activeTab.val] || 'MODULE')
             ),
             // Render the container which holds the views
             tabContent
