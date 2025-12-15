@@ -658,6 +658,10 @@ exports.cheatConfig = {
     sneaksymbol: {
       SneakSymbolChanceBase: (t) => 1,
     },
+    zenith: {
+      ZenithMarketCost: (t) => t * 2,
+      ZenithMarketBonus: (t) => t * 2,
+    },
   },
   misc: {
     keychain: (t) => t,

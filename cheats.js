@@ -701,6 +701,11 @@ registerCheats({
       message: "bubba cheats check config file",
       configurable: { isObject: true },
     },
+    {
+      name: "zenith",
+      message: "zenith market cheats check config file",
+      configurable: { isObject: true },
+    },
   ],
 });
 
@@ -3788,6 +3793,13 @@ function setupw6Proxies() {
 
 function setupw7Proxies() {
   const actorEvents579 = events(579);
+
+  const Zenith = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.zenith && cheatConfig.w7.zenith.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.zenith[argumentList[0]](Reflect.apply(Zenith, this, argumentList))
+      : Reflect.apply(Zenith, this, argumentList);
+  };
 
   const BubbaStuff = actorEvents579._customBlock_Bubbastuff;
   actorEvents579._customBlock_Bubbastuff = function (...argumentList) {
