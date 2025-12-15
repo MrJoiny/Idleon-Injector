@@ -12,7 +12,6 @@ import { DevTools } from './views/DevTools.js';
 
 const { div, main, header, h2 } = van.tags;
 
-// Map view IDs to their component factories
 const viewFactories = {
     [VIEWS.CHEATS.id]: Cheats,
     [VIEWS.CONFIG.id]: Config,
@@ -20,7 +19,6 @@ const viewFactories = {
     [VIEWS.DEVTOOLS.id]: DevTools
 };
 
-// Map view IDs to their labels for the header
 const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
     acc[v.id] = v.label;
     return acc;
@@ -29,18 +27,12 @@ const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
 export const App = () => {
     store.initHeartbeat();
 
-    // Cache for instantiated views
     const viewInstances = {};
-
-    // Container for views
     const tabContent = div({ id: 'tab-content' });
 
-    // Reactively toggle the 'active' class on the DOM nodes and lazy load
-    // The CSS rules for .tab-pane (display:none) and .tab-pane.active (display:block) handle visibility
     van.derive(() => {
-        const activeId = store.activeTab.val;
+        const activeId = store.app.activeTab;
 
-        // Lazy load the view if not present
         if (!viewInstances[activeId] && viewFactories[activeId]) {
             const instance = viewFactories[activeId]();
             viewInstances[activeId] = instance;
@@ -60,9 +52,8 @@ export const App = () => {
         Sidebar(),
         main({ class: 'viewport' },
             header({ class: 'viewport-header' },
-                h2({ id: 'active-view-title' }, () => viewLabels[store.activeTab.val] || 'MODULE')
+                h2({ id: 'active-view-title' }, () => viewLabels[store.app.activeTab] || 'MODULE')
             ),
-            // Render the container which holds the views
             tabContent
         ),
         Toast()

@@ -5,7 +5,7 @@ import { VIEWS } from '../constants.js';
 // Standard HTML Tags
 const { nav, div, button, span } = van.tags;
 
-// SVG Tags (Must use namespace)
+// SVG Tags
 const { svg, path, rect, line, circle, polyline } = van.tags("http://www.w3.org/2000/svg");
 
 const Icons = {
@@ -17,9 +17,10 @@ const Icons = {
 };
 
 export const Sidebar = () => {
+    // VanX: Accessing property registers dependency. No .val needed.
     const NavBtn = (viewConfig, Icon) => button({
-        class: () => `tab-button ${store.activeTab.val === viewConfig.id ? 'active' : ''}`,
-        onclick: () => store.activeTab.val = viewConfig.id
+        class: () => `tab-button ${store.app.activeTab === viewConfig.id ? 'active' : ''}`,
+        onclick: () => store.app.activeTab = viewConfig.id
     }, Icon(), span(viewConfig.sidebarLabel));
 
     return nav({ class: 'sidebar' },
@@ -40,15 +41,15 @@ export const Sidebar = () => {
             div({
                 class: 'status-dot',
                 style: () => {
-                    const online = store.heartbeat.val;
+                    const online = store.app.heartbeat;
                     const color = online ? 'var(--c-success)' : 'var(--c-danger)';
                     return `background:${color}; box-shadow:0 0 6px ${color}; animation:${online ? 'pulse 2s infinite' : 'none'}`;
                 }
             }),
             span({
                 id: 'system-status-text',
-                style: () => `color: ${store.heartbeat.val ? 'var(--c-success)' : 'var(--c-danger)'}`
-            }, () => store.heartbeat.val ? "SYSTEM ONLINE" : "CONNECTION LOST")
+                style: () => `color: ${store.app.heartbeat ? 'var(--c-success)' : 'var(--c-danger)'}`
+            }, () => store.app.heartbeat ? "SYSTEM ONLINE" : "CONNECTION LOST")
         )
     );
 };

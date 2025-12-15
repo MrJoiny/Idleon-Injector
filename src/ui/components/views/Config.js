@@ -1,4 +1,5 @@
 import van from '../../van-1.6.0.js';
+import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
 import { Loader } from '../Loader.js';
 import { ConfigNode } from '../config/ConfigNode.js';
@@ -7,34 +8,36 @@ import { StartupCheats, AddCheatSearchBar } from '../config/StartupCheats.js';
 const { div, button, select, option, label } = van.tags;
 
 export const Config = () => {
+    // Local Reactive UI State (NOT using vanX.reactive for these simple states)
     const activeSubTab = van.state('cheatconfig');
     const categoryFilter = van.state('all');
-    const draftConfig = van.state(null);
     const isAddingCheat = van.state(false);
+    const draftReady = van.state(false);
 
-    // Track if we've already initialized
-    let initialized = false;
-
-    // Reference to the addItem function from StartupCheats
+    // Draft will be a vanX.reactive object, but we store it in a regular variable
+    // to avoid the reactivity cascade issue
+    let draft = null;
     let addCheatFn = null;
 
-    if (!store.config.val) store.loadConfig();
+    // Trigger load if missing
+    if (!store.app.config) store.loadConfig();
 
-    // Only initialize draftConfig ONCE when config first loads
+    // One-time sync: When config loads, create draft and mark ready
     van.derive(() => {
-        if (store.config.val && !initialized) {
-            initialized = true;
-            draftConfig.val = JSON.parse(JSON.stringify(store.config.val));
+        if (store.app.config && !draft) {
+            // Deep clone to create a detached draft, then make it reactive
+            draft = vanX.reactive(JSON.parse(JSON.stringify(store.app.config)));
+            draftReady.val = true;
         }
     });
 
-    const handleStartupUpdate = (newList) => {
-        draftConfig.val.startupCheats = newList;
-    };
-
     const save = (isPersistent) => {
-        const toSave = { ...draftConfig.val };
-        delete toSave.defaultConfig;
+        if (!draft) return;
+
+        // Unwrap proxy using JSON serialization to be safe
+        const toSave = JSON.parse(JSON.stringify(draft));
+        delete toSave.defaultConfig; // Don't save defaults back to file
+
         store.saveConfig(toSave, isPersistent);
     };
 
@@ -45,90 +48,114 @@ export const Config = () => {
         }
     };
 
-    return div({ id: 'config-tab', class: 'tab-pane config-layout' },
+    // Build the content ONCE after draft is ready, not on every reactive update
+    const buildContent = () => {
+        const config = draft;
 
-        // Scrollable content area
-        () => {
-            if (store.isLoading.val || !draftConfig.val) return Loader({ text: "LOADING CONFIG..." });
+        // StartupCheats now takes the reactive array directly - created ONCE
+        const startupCheatsResult = StartupCheats(config.startupCheats);
+        addCheatFn = startupCheatsResult.addItem;
 
-            const config = draftConfig.val;
-            const tab = activeSubTab.val;
+        // Build ConfigNode components ONCE for each config section
+        const root = config.cheatConfig || {};
+        const rootTemplate = store.app.config.cheatConfig || {};
 
-            // Get StartupCheats component and capture addItem function
-            const startupCheatsResult = StartupCheats(config.startupCheats, handleStartupUpdate);
-            addCheatFn = startupCheatsResult.addItem;
+        // Build ConfigNode components ONCE for each config section
+        const cheatConfigNode = div({ id: 'cheatconfig-options' },
+            // This reactive function only depends on categoryFilter, not on input values
+            () => {
+                const filter = categoryFilter.val;
+                const data = filter === 'all' ? root : { [filter]: root[filter] };
+                const template = filter === 'all' ? rootTemplate : { [filter]: rootTemplate[filter] };
 
-            return div({ id: 'config-sub-tab-content', class: 'scroll-container' },
+                return div(ConfigNode({
+                    data,
+                    path: "cheatConfig",
+                    template
+                }));
+            }
+        );
 
-                // Sub-Navigation (sticky within scroll container)
-                div({ class: 'sub-nav' },
-                    ['Cheat Config', 'Startup', 'Injector'].map(name => {
-                        let id = name.toLowerCase().replace(' ', '');
-                        if (name === 'Startup') id += 'cheats';
-                        if (name === 'Injector') id += 'config';
+        const injectorConfigNode = div(ConfigNode({
+            data: config.injectorConfig || {},
+            path: "injectorConfig",
+            template: store.app.config.injectorConfig || {}
+        }));
 
-                        return button({
-                            class: () => `config-sub-tab-button ${activeSubTab.val === id ? 'active' : ''}`,
-                            onclick: () => { activeSubTab.val = id; isAddingCheat.val = false; }
-                        }, name.toUpperCase());
-                    })
-                ),
+        return div({ id: 'config-sub-tab-content', class: 'scroll-container' },
 
-                // Pane 1: Cheat Config
-                div({ class: () => `config-sub-tab-pane ${tab === 'cheatconfig' ? 'active' : ''}` },
-                    div({ class: 'panel-section mb-20' },
-                        label({ style: 'font-size:0.75rem; color:var(--c-text-dim);' }, "CATEGORY FILTER"),
-                        select({ onchange: e => categoryFilter.val = e.target.value },
-                            option({ value: 'all' }, "ALL SECTORS"),
-                            Object.keys(config.cheatConfig || {}).sort().map(k =>
-                                option({ value: k }, k.toUpperCase())
-                            )
+            div({ class: 'sub-nav' },
+                ['Cheat Config', 'Startup', 'Injector'].map(name => {
+                    let id = name.toLowerCase().replace(' ', '');
+                    if (name === 'Startup') id += 'cheats';
+                    if (name === 'Injector') id += 'config';
+
+                    return button({
+                        class: () => `config-sub-tab-button ${activeSubTab.val === id ? 'active' : ''}`,
+                        onclick: () => { activeSubTab.val = id; isAddingCheat.val = false; }
+                    }, name.toUpperCase());
+                })
+            ),
+
+            // Cheat Config sub-tab - use CSS display for toggling, not re-render
+            div({
+                class: 'config-sub-tab-pane',
+                style: () => activeSubTab.val === 'cheatconfig' ? 'display:block' : 'display:none'
+            },
+                div({ class: 'panel-section mb-20' },
+                    label({ style: 'font-size:0.75rem; color:var(--c-text-dim);' }, "CATEGORY FILTER"),
+                    select({
+                        value: categoryFilter,
+                        onchange: e => categoryFilter.val = e.target.value
+                    },
+                        option({ value: 'all' }, "ALL SECTORS"),
+                        Object.keys(config.cheatConfig || {}).sort().map(k =>
+                            option({ value: k }, k.toUpperCase())
                         )
-                    ),
-                    div({ id: 'cheatconfig-options' },
-                        () => {
-                            const root = config.cheatConfig || {};
-                            const filter = categoryFilter.val;
-                            const data = filter === 'all' ? root : { [filter]: root[filter] };
-
-                            return div(ConfigNode({
-                                data,
-                                path: "cheatConfig",
-                                fullDraft: config
-                            }));
-                        }
                     )
                 ),
+                cheatConfigNode
+            ),
 
-                // Pane 2: Startup
-                div({ class: () => `config-sub-tab-pane ${tab === 'startupcheats' ? 'active' : ''}` },
-                    startupCheatsResult.element
+            // Startup Cheats sub-tab
+            div({
+                class: 'config-sub-tab-pane',
+                style: () => activeSubTab.val === 'startupcheats' ? 'display:block' : 'display:none'
+            },
+                startupCheatsResult.element
+            ),
+
+            // Injector Config sub-tab
+            div({
+                class: 'config-sub-tab-pane',
+                style: () => activeSubTab.val === 'injectorconfig' ? 'display:block' : 'display:none'
+            },
+                div({ class: 'warning-banner mb-20' },
+                    "⚠ RESTART REQUIRED FOR CHANGES TO APPLY"
                 ),
+                injectorConfigNode
+            )
+        );
+    };
 
-                // Pane 3: Injector
-                div({ class: () => `config-sub-tab-pane ${tab === 'injectorconfig' ? 'active' : ''}` },
-                    div({ class: 'warning-banner mb-20' },
-                        "⚠ RESTART REQUIRED FOR CHANGES TO APPLY"
-                    ),
-                    div(ConfigNode({
-                        data: config.injectorConfig || {},
-                        path: "injectorConfig",
-                        fullDraft: config
-                    }))
-                )
-            );
+    return div({ id: 'config-tab', class: 'tab-pane config-layout' },
+
+        // Main content area - only renders Loader OR content, but content is built ONCE
+        () => {
+            if (store.app.isLoading || !draftReady.val) {
+                return Loader({ text: "LOADING CONFIG..." });
+            }
+            // Content is built once and returned
+            return buildContent();
         },
 
-        // Action Bar
         div({ class: 'action-bar' },
-            // + ADD CHEAT button (visible only on Startup tab when not adding)
             button({
                 class: 'add-cheat-button',
                 style: () => (activeSubTab.val === 'startupcheats' && !isAddingCheat.val) ? '' : 'display:none',
                 onclick: () => isAddingCheat.val = true
             }, "+ ADD CHEAT"),
 
-            // Search bar container (visible only on Startup tab when adding)
             div({
                 class: 'add-cheat-search-container',
                 style: () => (activeSubTab.val === 'startupcheats' && isAddingCheat.val) ? 'display:flex; flex:1; position:relative;' : 'display:none'

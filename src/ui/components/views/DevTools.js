@@ -4,10 +4,10 @@ import * as API from '../../api.js';
 const { div, iframe } = van.tags;
 
 export const DevTools = () => {
+    // Local state for URL loading
     const url = van.state("");
     const error = van.state("");
 
-    // Load on mount
     const load = async () => {
         try {
             url.val = await API.fetchDevToolsUrl();
@@ -17,7 +17,7 @@ export const DevTools = () => {
     };
     load();
 
-    return div({ id: 'devtools-tab', class: 'tab-pane active' },
+    return div({ id: 'devtools-tab', class: 'tab-pane' },
         div({ class: 'terminal-wrapper' },
             () => {
                 if (error.val) return div({ id: 'devtools-message', style: 'color:var(--c-danger)' }, `Failed to load DevTools: ${error.val}`);

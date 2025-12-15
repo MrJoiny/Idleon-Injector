@@ -1,57 +1,53 @@
-import van from './van-1.6.0.js';
+import vanX from './van-x-0.6.3.js';
 import * as API from './api.js';
 
-// Reactive State Container
+// Reactive State Container: UI & System
+const appState = vanX.reactive({
+    activeTab: 'cheats-tab',
+    isLoading: false,
+    heartbeat: false,
+    toast: { message: '', type: '', id: 0 },
+    config: null
+});
+
+// Reactive State Container: Domain Data
+const dataState = vanX.reactive({
+    cheats: [],
+    needsConfirmation: [],
+    accountOptions: [],
+    accountSchema: {}
+});
+
 const store = {
-    // -- UI STATE --
-    activeTab: van.state('cheats-tab'),
-    isLoading: van.state(false),
-
-    // Toast Notification State ({ message, type: 'success'|'error', id })
-    toast: van.state({ message: '', type: '', id: 0 }),
-
-    // -- SYSTEM STATE --
-    heartbeat: van.state(false),
-
-    // -- DATA STORES --
-    // We keep raw data here. Components will derive views from this.
-    cheats: van.state([]),
-    needsConfirmation: van.state([]), // List of cheats needing input
-
-    config: van.state(null), // The full config object
-
-    accountOptions: van.state(null), // The large array of account options
-    accountSchema: van.state({}),   // The schema for account options
+    // -- NAMESPACES --
+    app: appState,
+    data: dataState,
 
     // -- ACTIONS --
 
-    // Toast Helper
     notify: (message, type = 'success') => {
-        // We increment ID to force listeners to react even if message is same
-        store.toast.val = { message, type, id: Date.now() };
+        store.app.toast = { message, type, id: Date.now() };
     },
 
-    // System Actions
     initHeartbeat: () => {
         const check = async () => {
             const alive = await API.checkHeartbeat();
-            store.heartbeat.val = !!alive;
+            store.app.heartbeat = !!alive;
         };
         check();
         setInterval(check, 10000);
     },
 
-    // Cheat Actions
     loadCheats: async () => {
         try {
-            store.isLoading.val = true;
+            store.app.isLoading = true;
             const { cheats, needsConfirmation } = await API.fetchCheatsData();
-            store.cheats.val = cheats || [];
-            store.needsConfirmation.val = needsConfirmation || [];
+            store.data.cheats = cheats || [];
+            store.data.needsConfirmation = needsConfirmation || [];
         } catch (e) {
             store.notify(e.message, 'error');
         } finally {
-            store.isLoading.val = false;
+            store.app.isLoading = false;
         }
     },
 
@@ -64,72 +60,62 @@ const store = {
         }
     },
 
-    // Config Actions
     loadConfig: async () => {
         try {
-            store.isLoading.val = true;
+            store.app.isLoading = true;
             const data = await API.fetchConfig();
-            store.config.val = data;
+            store.app.config = data;
         } catch (e) {
             store.notify(`Config Load Error: ${e.message}`, 'error');
         } finally {
-            store.isLoading.val = false;
+            store.app.isLoading = false;
         }
     },
 
     saveConfig: async (newConfig, isPersistent) => {
         try {
+            // Strip Proxies via JSON cycle
+            const cleanConfig = JSON.parse(JSON.stringify(newConfig));
             const result = isPersistent
-                ? await API.saveConfigFile(newConfig)
-                : await API.updateSessionConfig(newConfig);
-
+                ? await API.saveConfigFile(cleanConfig)
+                : await API.updateSessionConfig(cleanConfig);
             store.notify(result.message || (isPersistent ? 'SAVED TO DISK' : 'RAM UPDATED'));
-            // Note: We intentionally do NOT update store.config.val here.
-            // The draftConfig in Config.js already has the current state,
-            // and updating the store would trigger re-renders and lose defaultConfig.
         } catch (e) {
             store.notify(e.message, 'error');
         }
     },
 
-    // Account Actions
     loadAccountOptions: async () => {
         try {
-            store.isLoading.val = true;
-
-            // Parallel load schema and data
+            store.app.isLoading = true;
             const [schemaRes, dataRes] = await Promise.all([
                 fetch('optionsAccountSchema.json').catch(() => ({ ok: false })),
                 API.fetchOptionsAccount()
             ]);
 
-            if (schemaRes.ok) {
-                store.accountSchema.val = await schemaRes.json();
-            }
+            if (schemaRes.ok) store.data.accountSchema = await schemaRes.json();
 
-            store.accountOptions.val = dataRes.data;
-            store.notify('ACCOUNT DATA DECRYPTED');
+            // Hard reset to ensure clean reactivity state
+            const newData = dataRes.data || [];
+            store.data.accountOptions = [];
+            store.data.accountOptions = newData;
+
+            store.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
         } catch (e) {
             store.notify(`Error loading options: ${e.message}`, 'error');
         } finally {
-            store.isLoading.val = false;
+            store.app.isLoading = false;
         }
     },
 
     updateAccountOption: async (index, value) => {
         try {
-            // Optimistic Update: Update local state immediately
-            const currentData = [...store.accountOptions.val];
-            currentData[index] = value;
-            store.accountOptions.val = currentData;
-
-            // API Call
+            store.data.accountOptions[index] = value;
             await API.updateOptionAccountIndex(index, value);
             store.notify(`INDEX ${index} WROTE TO MEMORY`);
         } catch (e) {
             store.notify(`Failed to update Index ${index}: ${e.message}`, 'error');
-            // Rollback on error (optional, requires deep clone of original, skipping for simplicity)
-            throw e; // Re-throw so UI can show error state
+            throw e;
         }
     },
 };

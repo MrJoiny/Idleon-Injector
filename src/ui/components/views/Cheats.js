@@ -1,4 +1,5 @@
 import van from '../../van-1.6.0.js';
+import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
 import { Loader } from '../Loader.js';
 import { debounce } from '../../utils.js';
@@ -6,95 +7,103 @@ import { debounce } from '../../utils.js';
 const { div, input, button, span, details, summary } = van.tags;
 
 export const Cheats = () => {
-    // Local UI State
-    const filterText = van.state("");
-    const shouldOpen = van.state(false); // Categories closed by default
+    // Local Reactive UI State
+    const ui = vanX.reactive({
+        filter: '',
+        shouldOpen: false
+    });
 
-    // Load Data on Mount (if empty)
-    if (store.cheats.val.length === 0) {
+    // Initial Load
+    if (store.data.cheats.length === 0) {
         store.loadCheats();
     }
 
-    // Optimized Search Handler
+    // Debounce Input
     const handleInput = debounce((e) => {
         const val = e.target.value.trim();
-        filterText.val = val;
-        // Auto-expand categories if searching, collapse if empty
-        shouldOpen.val = val.length > 0;
-    }, 300); // Wait 300ms before rerendering
+        ui.filter = val;
+        // Auto-expand if searching, otherwise collapse
+        ui.shouldOpen = val.length > 0;
+    }, 300);
 
-    // Helper: Grouping Logic
-    const groupCheats = (list, filter) => {
-        const groups = {};
-        const term = filter.toLowerCase();
+    // Derived State: Grouped Cheats
+    // vanX.calc creates a readonly reactive object derived from other states
+    // When store.data.cheats OR ui.filter changes, this re-runs.
+    const derived = vanX.reactive({
+        grouped: vanX.calc(() => {
+            const list = store.data.cheats;
+            const term = ui.filter.toLowerCase();
+            const groups = {};
 
-        // Helper: does cheat match?
-        const matches = (c) => {
-            if (!term) return true;
-            const msg = (typeof c === 'object' ? c.message : c).toLowerCase();
-            const val = (typeof c === 'object' ? c.value : c).toLowerCase();
-            return msg.includes(term) || val.includes(term);
-        };
+            const matches = (c) => {
+                if (!term) return true;
+                const msg = (typeof c === 'object' ? c.message : c).toLowerCase();
+                const val = (typeof c === 'object' ? c.value : c).toLowerCase();
+                return msg.includes(term) || val.includes(term);
+            };
 
-        list.forEach(cheat => {
-            if (!matches(cheat)) return;
+            // Using standard for loop for proxy iteration efficiency
+            for (let i = 0; i < list.length; i++) {
+                const cheat = list[i];
+                if (!matches(cheat)) continue;
 
-            const val = typeof cheat === 'object' ? cheat.value : cheat;
-            const msg = typeof cheat === 'object' ? cheat.message : cheat;
-            if (!val) return;
+                const val = typeof cheat === 'object' ? cheat.value : cheat;
+                const msg = typeof cheat === 'object' ? cheat.message : cheat;
+                if (!val) continue;
 
-            const parts = val.split(' ');
-            let category = (parts.length > 1) ? parts[0] : 'General';
-            category = category.charAt(0).toUpperCase() + category.slice(1);
+                const parts = val.split(' ');
+                let category = (parts.length > 1) ? parts[0] : 'General';
+                category = category.charAt(0).toUpperCase() + category.slice(1);
 
-            if (!groups[category]) groups[category] = [];
-            groups[category].push({ message: msg, value: val, baseCommand: parts[0] });
-        });
+                if (!groups[category]) groups[category] = [];
+                groups[category].push({ message: msg, value: val, baseCommand: parts[0] });
+            }
 
-        // Sort Categories
-        return Object.keys(groups).sort().reduce((acc, key) => {
-            acc[key] = groups[key];
-            return acc;
-        }, {});
-    };
+            // Sort keys
+            return Object.keys(groups).sort().reduce((acc, key) => {
+                acc[key] = groups[key];
+                return acc;
+            }, {});
+        })
+    });
 
-    // Render
-    return div({ id: 'cheats-tab', class: 'tab-pane active' },
+    return div({ id: 'cheats-tab', class: 'tab-pane' },
 
-        // Control Bar
         div({ class: 'control-bar' },
             div({ class: 'search-wrapper' },
                 span({ class: 'search-icon' }, "ᐳ"),
                 input({
                     type: 'text',
                     placeholder: 'SEARCH_COMMANDS...',
-                    oninput: handleInput // Debounced
+                    oninput: handleInput
                 })
             )
         ),
 
-        // Content
+        // Content Area
         () => {
-            if (store.isLoading.val && store.cheats.val.length === 0) {
+            if (store.app.isLoading && store.data.cheats.length === 0) {
                 return Loader({ text: "INITIALIZING..." });
             }
 
-            // This calculation now only happens once every 300ms
-            const grouped = groupCheats(store.cheats.val, filterText.val);
-            const categories = Object.keys(grouped);
+            // Accessing derived.grouped triggers dependency tracking
+            const groupedData = derived.grouped;
+            const categories = Object.keys(groupedData);
 
             if (categories.length === 0) {
                 return div({ style: 'padding: 20px; color: var(--c-text-dim);' }, "NO CHEATS FOUND.");
             }
 
+            // Grid Layout
             return div({ id: 'cheat-buttons', class: 'grid-layout' },
                 categories.map(cat => {
-                    // We explicitly bind 'open' to the state
-                    // Note: We use a function () => ... for the open attribute to make it reactive
-                    return details({ class: 'cheat-category', open: () => shouldOpen.val },
+                    return details({ class: 'cheat-category', open: () => ui.shouldOpen },
                         summary(cat),
                         div({ class: 'cheat-category-content' },
-                            grouped[cat].map(cheat => CheatItem(cheat))
+                            // Note: We are mapping standard arrays here because the 'grouped' object
+                            // is regenerated entirely on filter. vanX.list is not necessary
+                            // for the leaf nodes if the parent container is replaced anyway.
+                            groupedData[cat].map(cheat => CheatItem(cheat))
                         )
                     );
                 })
@@ -103,14 +112,17 @@ export const Cheats = () => {
     );
 };
 
-// Sub-component (unchanged logic, just re-declaring for completeness)
 const CheatItem = (cheat) => {
-    const needsValue = store.needsConfirmation.val.includes(cheat.baseCommand);
+    // Check global confirmation list (Reactive access)
+    // We use a derived check to ensure reactivity if the list updates
+    const needsValue = van.derive(() => store.data.needsConfirmation.includes(cheat.baseCommand));
+
+    // Local state for the input
     const inputValue = van.state("");
 
     const handleExecute = () => {
         let finalAction = cheat.value;
-        if (needsValue) {
+        if (needsValue.val) {
             if (!inputValue.val.trim()) {
                 store.notify(`Value required for '${cheat.message}'`, 'error');
                 return;
@@ -121,7 +133,7 @@ const CheatItem = (cheat) => {
     };
 
     return div({ class: 'cheat-item-container' },
-        needsValue ? input({
+        () => needsValue.val ? input({
             type: 'text',
             class: 'cheat-input',
             placeholder: 'Val',

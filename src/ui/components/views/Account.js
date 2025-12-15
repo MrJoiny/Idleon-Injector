@@ -1,38 +1,69 @@
 import van from '../../van-1.6.0.js';
+import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
 import { Loader } from '../Loader.js';
 import { debounce } from '../../utils.js';
+import { NumberInput } from '../NumberInput.js';
 
 const { div, button, input, label, span, p, h3 } = van.tags;
 
 export const Account = () => {
-    const isUnlocked = van.state(false);
-    const filterText = van.state("");
-    const hideAI = van.state(false);
-
-    // We bind explicitly to these dependencies for the Main View
-    const dependencies = van.derive(() => {
-        return {
-            unlocked: isUnlocked.val,
-            loading: store.isLoading.val,
-            data: store.accountOptions.val,
-            schema: store.accountSchema.val
-        };
+    // Local Reactive UI State
+    const ui = vanX.reactive({
+        isUnlocked: false,
+        filterText: "",
+        hideAI: false,
+        displayList: [] // We will push filtered items here for vanX.list
     });
 
     const handleLoad = () => {
-        isUnlocked.val = true;
-        if (!store.accountOptions.val) {
+        ui.isUnlocked = true;
+        // Check length of reactive array
+        if (!store.data.accountOptions.length) {
             store.loadAccountOptions();
         }
     };
 
-    return div({ id: 'options-account-tab', class: 'tab-pane active' },
-        () => {
-            const state = dependencies.val;
+    // Reactively update the displayList whenever dependencies change
+    van.derive(() => {
+        const data = store.data.accountOptions;
+        const schema = store.data.accountSchema;
+        const term = ui.filterText.toLowerCase();
+        const hide = ui.hideAI;
 
-            // LOCKED STATE
-            if (!state.unlocked) {
+        // Dependency check
+        // Access lengths to ensure reactivity triggers on data changes
+        const _len = data.length;
+
+        if (!data || data.length === 0) {
+            ui.displayList = [];
+            return;
+        }
+
+        const results = [];
+        // Standard loop for performance on large arrays
+        for (let index = 0; index < data.length; index++) {
+            const val = data[index];
+            const sch = schema[index];
+
+            if (hide && sch && sch.AI) continue;
+            if (term) {
+                const name = (sch && sch.name ? sch.name : `UNDOCUMENTED ${index}`).toLowerCase();
+                // Search both Name and Index ID
+                if (!name.includes(term) && !index.toString().includes(term)) continue;
+            }
+
+            // We push a proxy-friendly object. 
+            // Note: vanX.list operates on the list itself. 
+            results.push({ index, val, schema: sch });
+        }
+        ui.displayList = results;
+    });
+
+    return div({ id: 'options-account-tab', class: 'tab-pane' },
+        () => {
+            // Access properties to trigger dependency tracking
+            if (!ui.isUnlocked) {
                 return div({ class: 'modal-box', style: 'margin: 50px auto; max-width: 600px;' },
                     div({ class: 'modal-header' }, h3("⚠ CRITICAL WARNING")),
                     div({ class: 'modal-body' },
@@ -46,23 +77,23 @@ export const Account = () => {
                 );
             }
 
-            // LOADING STATE
-            if (state.loading) {
+            if (store.app.isLoading) {
                 return div({ style: 'display:flex; height:100%; align-items:center; justify-content:center;' },
                     Loader({ text: "DECRYPTING..." })
                 );
             }
 
-            // UNLOCKED & LOADED
             return div({ style: 'height: 100%; display: flex; flex-direction: column;' },
                 div({ class: 'danger-zone-header' }, "ACCESSING RAW GAME ATTRIBUTES."),
 
-                // Controls
                 div({ class: 'control-bar' },
                     button({ class: 'btn-secondary', onclick: () => store.loadAccountOptions() }, "REFRESH"),
-                    // div({ class: 'spacer', style: 'flex:1' }),
                     label({ class: 'toggle-switch', style: 'margin-left:25px;' },
-                        input({ type: 'checkbox', onchange: e => hideAI.val = e.target.checked }),
+                        input({
+                            type: 'checkbox',
+                            checked: () => ui.hideAI,
+                            onchange: e => ui.hideAI = e.target.checked
+                        }),
                         span({ class: 'slider' }),
                         span({ class: 'label' }, "HIDE AI")
                     ),
@@ -71,36 +102,21 @@ export const Account = () => {
                         class: 'compact-input',
                         placeholder: 'FILTER_INDEX...',
                         style: 'width: 100%; margin-left: 15px;',
-                        oninput: debounce(e => filterText.val = e.target.value, 300)
+                        value: () => ui.filterText,
+                        oninput: debounce(e => ui.filterText = e.target.value, 300)
                     })
                 ),
 
-                // Content List
                 div({ id: 'options-account-content', class: 'scroll-container', style: 'flex: 1;' },
                     () => {
-                        const data = state.data;
-                        if (!data) return div({ style: 'padding:20px; color: red;' }, "ERROR: Data is null");
-
-                        // Perform filtering inside the render to ensure we catch updates
-                        const term = filterText.val.toLowerCase();
-                        const hide = hideAI.val;
-                        const schema = state.schema || {};
-
-                        const items = [];
-                        data.forEach((val, index) => {
-                            const sch = schema[index];
-                            if (hide && sch && sch.AI) return;
-                            if (term) {
-                                const name = (sch && sch.name ? sch.name : `UNDOCUMENTED ${index}`).toLowerCase();
-                                if (!name.includes(term) && !index.toString().includes(term)) return;
-                            }
-
-                            // Render Item
-                            items.push(OptionItem(index, val, sch));
-                        });
-
+                        const items = ui.displayList; // Uses the same reactive list populated by derive
                         if (items.length === 0) return div({ style: 'padding:20px' }, "NO MATCHES");
-                        return div(items);
+
+                        // Explicit mapping creates fresh DOM nodes for every render cycle of the list
+                        // This avoids VanX list reuse issues when data references change rapidly
+                        return div({ style: 'display:flex; flex-direction:column;' },
+                            items.map(item => OptionItem(item.index, item.val, item.schema))
+                        );
                     }
                 )
             );
@@ -113,8 +129,12 @@ const OptionItem = (index, rawVal, schema) => {
     const type = typeof rawVal;
     const normalizedInit = (type === 'object' && rawVal !== null) ? JSON.stringify(rawVal) : rawVal;
 
+    // We keep a local state for the input buffer (while typing)
     const currentVal = van.state(normalizedInit);
     const status = van.state(null);
+
+    // Sync removed to prevent ghost inputs on list shift
+    // We rely on 'normalizedInit' being fresh on component mount
 
     const handleApply = async () => {
         try {
@@ -154,23 +174,13 @@ const OptionItem = (index, rawVal, schema) => {
             (type === 'boolean')
                 ? input({ type: 'checkbox', class: 'option-input', checked: currentVal, onchange: e => currentVal.val = e.target.checked })
                 : (type === 'number')
-                    ? div({ class: 'number-input-wrapper' },
-                        button({
-                            class: 'number-input-btn',
-                            onclick: () => currentVal.val = Number(currentVal.val) - 1
-                        }, "-"),
-                        input({
-                            type: 'number',
-                            class: 'option-input',
-                            value: currentVal,
-                            oninput: e => currentVal.val = e.target.value,
-                            style: 'text-align: center;'
-                        }),
-                        button({
-                            class: 'number-input-btn',
-                            onclick: () => currentVal.val = Number(currentVal.val) + 1
-                        }, "+")
-                    )
+                    ? NumberInput({
+                        class: 'option-input',
+                        value: currentVal,
+                        oninput: e => currentVal.val = e.target.value,
+                        onDecrement: () => currentVal.val = Number(currentVal.val) - 1,
+                        onIncrement: () => currentVal.val = Number(currentVal.val) + 1
+                    })
                     : input({ type: 'text', class: 'option-input', value: currentVal, oninput: e => currentVal.val = e.target.value }),
             button({ class: 'option-apply-button', onclick: handleApply }, "SET")
         )
