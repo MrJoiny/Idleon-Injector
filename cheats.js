@@ -838,6 +838,12 @@ registerCheats({
 registerCheat(
   "nomore",
   function (params) {
+    // init nomore, removed from config because of the webui overwriting it
+    if (!cheatConfig.nomore) {
+      cheatConfig.nomore = {
+        items: [],
+      };
+    }
     if (
       params &&
       params[0] &&
@@ -1966,6 +1972,24 @@ async function setup() {
   try { // Added try block for detailed error catching within setup
     await gameReady.call(this);
 
+    // Ensure cheatConfig.multiply exists with defaults
+    // TODO: find a better solution
+    if (!cheatConfig.multiply) {
+      cheatConfig.multiply = {
+        damage: 1,
+        efficiency: 1,
+        afk: 1,
+        drop: 1,
+        money: 1,
+        classexp: 1,
+        crystal: 1,
+        skillexp: 1,
+        shopstock: 1,
+        printer: 1,
+        monsters: 1,
+      };
+    }
+
     // setup firebase proxy which is needed,
     // if we go into the character selection screen, 
     // since that breaks a lot of proxies
@@ -2958,6 +2982,8 @@ function setupArbitraryProxy() {
   const generateMonsterDrops = ActorEvents12._customBlock_GenerateMonsterDrops;
   ActorEvents12._customBlock_GenerateMonsterDrops = function (...argumentsList) {
     let drops = Reflect.apply(generateMonsterDrops, this, argumentsList);
+    // if cheatConfig.nomore not defined, return all drops
+    if (!cheatConfig.nomore) return drops;
     // filter out drops where drop[0] matches any regex in itemsNotToDrop
     drops = drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
 

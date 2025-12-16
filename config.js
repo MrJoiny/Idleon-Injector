@@ -19,19 +19,6 @@ exports.cheatConfig = {
     creditcap: 10000000, // dungeon
     flurbocap: 1000000, // dungeon
   },
-  multiply: {
-    damage: 1,
-    efficiency: 1,
-    afk: 1,
-    drop: 1,
-    money: 1,
-    classexp: 1,
-    crystal: 1,
-    skillexp: 1,
-    shopstock: 1,
-    printer: 6,
-    monsters: 1,
-  },
   godlike: {
     respawn: (t) => Math.min(t, 1),
   },
