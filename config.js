@@ -643,7 +643,7 @@ exports.cheatConfig = {
       SneakSymbolChanceBase: (t) => 1,
     },
     zenith: {
-      ZenithMarketCost: (t) => t * 2,
+      ZenithMarketCost: (t) => t / 2,
       ZenithMarketBonus: (t) => t * 2,
     },
   },
