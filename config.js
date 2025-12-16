@@ -22,9 +22,6 @@ exports.cheatConfig = {
   godlike: {
     respawn: (t) => Math.min(t, 1),
   },
-  nomore: {
-    items: [],
-  },
   unlock: {
     islands: "abcde_",
   },
