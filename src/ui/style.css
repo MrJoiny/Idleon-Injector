@@ -416,6 +416,8 @@ button {
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     border-left: 2px solid var(--c-text-dim);
+    content-visibility: auto;
+    contain-intrinsic-size: 45px;
 }
 
 .cheat-category[open] {
@@ -539,6 +541,8 @@ button {
     flex-direction: column;
     gap: 8px;
     position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: 85px;
 }
 
 .config-item label {
@@ -649,6 +653,8 @@ button {
     margin-bottom: 8px;
     padding: 12px;
     transition: 0.2s;
+    content-visibility: auto;
+    contain-intrinsic-size: 120px;
 }
 
 .option-item:hover {

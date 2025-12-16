@@ -18,106 +18,140 @@ const dataState = vanX.reactive({
     accountSchema: {}
 });
 
-const store = {
-    // -- NAMESPACES --
-    app: appState,
-    data: dataState,
 
-    // -- ACTIONS --
-
+const Actions = {
     notify: (message, type = 'success') => {
-        store.app.toast = { message, type, id: Date.now() };
+        appState.toast = { message, type, id: Date.now() };
     },
 
+    // Helper to safely handle loading wrappers
+    withLoading: async (fn) => {
+        try {
+            appState.isLoading = true;
+            await fn();
+        } catch (e) {
+            Actions.notify(e.message || 'Unknown Error', 'error');
+        } finally {
+            appState.isLoading = false;
+        }
+    }
+};
+
+const SystemService = {
     initHeartbeat: () => {
         const check = async () => {
             const alive = await API.checkHeartbeat();
-            store.app.heartbeat = !!alive;
+            appState.heartbeat = !!alive;
         };
         check();
         setInterval(check, 10000);
-    },
+    }
+};
 
+const CheatService = {
     loadCheats: async () => {
-        try {
-            store.app.isLoading = true;
+        await Actions.withLoading(async () => {
             const { cheats, needsConfirmation } = await API.fetchCheatsData();
-            store.data.cheats = cheats || [];
-            store.data.needsConfirmation = needsConfirmation || [];
-        } catch (e) {
-            store.notify(e.message, 'error');
-        } finally {
-            store.app.isLoading = false;
-        }
+            dataState.cheats = cheats || [];
+            dataState.needsConfirmation = needsConfirmation || [];
+        });
     },
 
     executeCheat: async (action, message) => {
         try {
             const result = await API.executeCheatAction(action);
-            store.notify(`Executed '${message}': ${result.result || 'Success'}`);
+            Actions.notify(`Executed '${message}': ${result.result || 'Success'}`);
         } catch (e) {
-            store.notify(`Error executing '${message}': ${e.message}`, 'error');
+            Actions.notify(`Error executing '${message}': ${e.message}`, 'error');
         }
-    },
+    }
+};
 
+const ConfigService = {
     loadConfig: async () => {
+        // Custom error message requirement prevents using generic withLoading wrapper
         try {
-            store.app.isLoading = true;
+            appState.isLoading = true;
             const data = await API.fetchConfig();
-            store.app.config = data;
+            appState.config = data;
         } catch (e) {
-            store.notify(`Config Load Error: ${e.message}`, 'error');
+            Actions.notify(`Config Load Error: ${e.message}`, 'error');
         } finally {
-            store.app.isLoading = false;
+            appState.isLoading = false;
         }
     },
 
     saveConfig: async (newConfig, isPersistent) => {
         try {
-            // Strip Proxies via JSON cycle
+            // Strip Proxies via JSON cycle to prevent reactive leaks
             const cleanConfig = JSON.parse(JSON.stringify(newConfig));
+
             const result = isPersistent
                 ? await API.saveConfigFile(cleanConfig)
                 : await API.updateSessionConfig(cleanConfig);
-            store.notify(result.message || (isPersistent ? 'SAVED TO DISK' : 'RAM UPDATED'));
-        } catch (e) {
-            store.notify(e.message, 'error');
-        }
-    },
 
+            Actions.notify(result.message || (isPersistent ? 'SAVED TO DISK' : 'RAM UPDATED'));
+        } catch (e) {
+            Actions.notify(e.message, 'error');
+        }
+    }
+};
+
+const AccountService = {
     loadAccountOptions: async () => {
-        try {
-            store.app.isLoading = true;
+        await Actions.withLoading(async () => {
             const [schemaRes, dataRes] = await Promise.all([
                 fetch('optionsAccountSchema.json').catch(() => ({ ok: false })),
                 API.fetchOptionsAccount()
             ]);
 
-            if (schemaRes.ok) store.data.accountSchema = await schemaRes.json();
+            if (schemaRes.ok) {
+                dataState.accountSchema = await schemaRes.json();
+            }
 
-            // Hard reset to ensure clean reactivity state
+            // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
             const newData = dataRes.data || [];
-            store.data.accountOptions = [];
-            store.data.accountOptions = newData;
+            dataState.accountOptions = []; // Clear reference
+            dataState.accountOptions = newData;
 
-            store.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
-        } catch (e) {
-            store.notify(`Error loading options: ${e.message}`, 'error');
-        } finally {
-            store.app.isLoading = false;
-        }
+            Actions.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
+        }, (e) => `Error loading options: ${e.message}`);
     },
 
     updateAccountOption: async (index, value) => {
         try {
-            store.data.accountOptions[index] = value;
+            // Optimistic UI Update
+            dataState.accountOptions[index] = value;
             await API.updateOptionAccountIndex(index, value);
-            store.notify(`INDEX ${index} WROTE TO MEMORY`);
+            Actions.notify(`INDEX ${index} WROTE TO MEMORY`);
         } catch (e) {
-            store.notify(`Failed to update Index ${index}: ${e.message}`, 'error');
+            Actions.notify(`Failed to update Index ${index}: ${e.message}`, 'error');
+            // Re-throw to allow component to handle local error state (e.g., red border)
             throw e;
         }
-    },
+    }
+};
+
+const store = {
+    // Namespaces
+    app: appState,
+    data: dataState,
+
+    // Public API Actions
+    notify: Actions.notify,
+    initHeartbeat: SystemService.initHeartbeat,
+
+    // Cheats
+    loadCheats: CheatService.loadCheats,
+    executeCheat: CheatService.executeCheat,
+
+    // Config
+    loadConfig: ConfigService.loadConfig,
+    saveConfig: ConfigService.saveConfig,
+
+    // Account
+    loadAccountOptions: AccountService.loadAccountOptions,
+    updateAccountOption: AccountService.updateAccountOption,
 };
 
 export default store;

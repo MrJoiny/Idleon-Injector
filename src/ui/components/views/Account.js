@@ -13,26 +13,24 @@ export const Account = () => {
         isUnlocked: false,
         filterText: "",
         hideAI: false,
-        displayList: [] // We will push filtered items here for vanX.list
+        displayList: []
     });
 
     const handleLoad = () => {
         ui.isUnlocked = true;
-        // Check length of reactive array
         if (!store.data.accountOptions.length) {
             store.loadAccountOptions();
         }
     };
 
-    // Reactively update the displayList whenever dependencies change
+    // Reactively update the displayList
     van.derive(() => {
         const data = store.data.accountOptions;
         const schema = store.data.accountSchema;
         const term = ui.filterText.toLowerCase();
         const hide = ui.hideAI;
 
-        // Dependency check
-        // Access lengths to ensure reactivity triggers on data changes
+        // Dependency trigger
         const _len = data.length;
 
         if (!data || data.length === 0) {
@@ -41,7 +39,6 @@ export const Account = () => {
         }
 
         const results = [];
-        // Standard loop for performance on large arrays
         for (let index = 0; index < data.length; index++) {
             const val = data[index];
             const sch = schema[index];
@@ -49,12 +46,9 @@ export const Account = () => {
             if (hide && sch && sch.AI) continue;
             if (term) {
                 const name = (sch && sch.name ? sch.name : `UNDOCUMENTED ${index}`).toLowerCase();
-                // Search both Name and Index ID
                 if (!name.includes(term) && !index.toString().includes(term)) continue;
             }
 
-            // We push a proxy-friendly object. 
-            // Note: vanX.list operates on the list itself. 
             results.push({ index, val, schema: sch });
         }
         ui.displayList = results;
@@ -62,7 +56,6 @@ export const Account = () => {
 
     return div({ id: 'options-account-tab', class: 'tab-pane' },
         () => {
-            // Access properties to trigger dependency tracking
             if (!ui.isUnlocked) {
                 return div({ class: 'modal-box', style: 'margin: 50px auto; max-width: 600px;' },
                     div({ class: 'modal-header' }, h3("⚠ CRITICAL WARNING")),
@@ -107,17 +100,18 @@ export const Account = () => {
                     })
                 ),
 
+                // We render the container ONCE, and use vanX.list to manage children.
                 div({ id: 'options-account-content', class: 'scroll-container', style: 'flex: 1;' },
-                    () => {
-                        const items = ui.displayList; // Uses the same reactive list populated by derive
-                        if (items.length === 0) return div({ style: 'padding:20px' }, "NO MATCHES");
-
-                        // Explicit mapping creates fresh DOM nodes for every render cycle of the list
-                        // This avoids VanX list reuse issues when data references change rapidly
-                        return div({ style: 'display:flex; flex-direction:column;' },
-                            items.map(item => OptionItem(item.index, item.val, item.schema))
-                        );
-                    }
+                    vanX.list(
+                        div({ style: 'display:flex; flex-direction:column;' }),
+                        ui.displayList,
+                        (itemState) => {
+                            // itemState is a reactive wrapper provided by vanX.list.
+                            // Accessing .val gives us the data object for this row.
+                            const { index, val, schema } = itemState.val;
+                            return OptionItem(index, val, schema);
+                        }
+                    )
                 )
             );
         }
@@ -125,16 +119,11 @@ export const Account = () => {
 };
 
 const OptionItem = (index, rawVal, schema) => {
-    // Determine type safely
     const type = typeof rawVal;
     const normalizedInit = (type === 'object' && rawVal !== null) ? JSON.stringify(rawVal) : rawVal;
 
-    // We keep a local state for the input buffer (while typing)
     const currentVal = van.state(normalizedInit);
     const status = van.state(null);
-
-    // Sync removed to prevent ghost inputs on list shift
-    // We rely on 'normalizedInit' being fresh on component mount
 
     const handleApply = async () => {
         try {

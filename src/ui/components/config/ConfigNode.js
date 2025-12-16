@@ -4,37 +4,62 @@ import { NumberInput } from '../NumberInput.js';
 
 const { div, label, input, details, summary, span, button } = van.tags;
 
-// Data is now a Reactive Object (from VanX)
+/**
+ * Optimized Deep/Loose Equality Check
+ * Prevents expensive JSON.stringify on primitives and handles number/string coercion.
+ */
+const areValuesEqual = (a, b) => {
+    // Identity check (covers undefined/null/same ref)
+    if (a === b) return true;
+
+    // Null handling (one is null, the other isn't, because of step 1)
+    if (a === null || b === null) return false;
+
+    // 3. Numeric Coercion Check (matches NumberInput behavior)
+    // If either is a number, try to compare as numbers
+    if (typeof a === 'number' || typeof b === 'number') {
+        return Number(a) === Number(b);
+    }
+
+    // Type mismatch (non-numbers)
+    if (typeof a !== typeof b) return false;
+
+    // Primitives (String, Boolean) - Strict equality
+    if (typeof a !== 'object') {
+        return a === b;
+    }
+
+    // Deep Comparison (Arrays/Objects)
+    // We fall back to JSON.stringify here as it's stable enough for config objects
+    // and safer than writing a custom recursive deepEqual for this context.
+    return JSON.stringify(a) === JSON.stringify(b);
+};
+
 export const ConfigNode = ({ data, path = "", template = null }) => {
-    // If template is provided, use it for structure (keys and type checking)
-    // Otherwise fallback to data (which might be reactive)
     const source = template || data;
     const keys = Object.keys(source);
 
     return keys.map(key => {
-        // We use the template (source) for structure/recursion checks to avoid valid reactive reads
         const value = source[key];
         const currentPath = path ? `${path}.${key}` : key;
 
-        // If it's an object (and not null/array), we recurse
+        // Recursive Case: Object (and not null/array)
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
 
-            // Check if this entire category subtree is modified compared to defaults
             const isCategoryModified = van.derive(() => {
                 const defaults = store.app.config?.defaultConfig;
                 if (!defaults) return false;
 
                 // Resolve default value at this path
-                // Note: currentPath is dot-separated e.g. "cheatConfig.GodMode"
                 const defaultSub = currentPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, defaults);
 
-                // Deep compare current reactive proxy vs default object
+                // Reactive dependency on the specific sub-tree
                 const currentSub = data[key];
 
-                // If defaults are missing for this section, assume not modified (or modified? safety: false)
                 if (defaultSub === undefined) return false;
 
-                return JSON.stringify(currentSub) !== JSON.stringify(defaultSub);
+                // Optimized comparison
+                return !areValuesEqual(currentSub, defaultSub);
             });
 
             return details({
@@ -43,16 +68,15 @@ export const ConfigNode = ({ data, path = "", template = null }) => {
                 summary(key),
                 div({ class: 'cheat-category-content' },
                     ConfigNode({
-                        data: data[key], // Pass sub-proxy for binding
+                        data: data[key],
                         path: currentPath,
-                        template: template ? template[key] : null // Pass sub-template
+                        template: template ? template[key] : null
                     })
                 )
             );
         }
 
-        // Render leaf node
-        // Pass initialValue from template to avoid reading data[key] during render
+        // Leaf Case
         return ConfigItem({
             data,
             key,
@@ -63,32 +87,27 @@ export const ConfigNode = ({ data, path = "", template = null }) => {
 };
 
 const ConfigItem = ({ data, key, fullPath, initialValue }) => {
-    // data is the PARENT object, key is the property
-    // We bind directly to data[key]
-
-    // Determine type from initial value (passed from template) or default
+    // Determine type
     const isArray = Array.isArray(initialValue);
 
-    // Get default value for diffing
+    // Get default value
     const defaults = store.app.config?.defaultConfig;
     const defaultVal = defaults ? fullPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, defaults) : undefined;
 
-    // Derived state for modification check
+    // Optimized Modification Check
     const isModified = van.derive(() => {
         const curr = data[key];
         if (defaultVal === undefined) return false;
-        if (typeof defaultVal === 'number') return Number(curr) !== Number(defaultVal);
-        return JSON.stringify(curr) !== JSON.stringify(defaultVal);
+
+        // Use the centralized helper
+        return !areValuesEqual(curr, defaultVal);
     });
 
-    const displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+    const displayKey = key;
+    // Fallback to 'string' if initialValue is null/undefined to prevent crashes
     const type = isArray ? 'array' : typeof (initialValue ?? defaultVal ?? 'string');
 
-    // LOCAL STATE for all text-based inputs to prevent cursor reset issues
-    // The input maintains its own state during typing, only syncing when:
-    // 1. The input loses focus (onblur)
-    // 2. External changes occur (detected via van.derive when not focused)
-
+    // Local state logic remains the same (Corrects cursor jumping issues)
     const getStringValue = (val) => {
         if (isArray || Array.isArray(val)) return JSON.stringify(val);
         return String(val ?? '');
@@ -97,7 +116,6 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
     const localTextState = van.state(getStringValue(initialValue));
     const isFocused = van.state(false);
 
-    // Sync local state from store when not focused
     van.derive(() => {
         const storeVal = data[key];
         if (!isFocused.val) {
@@ -108,14 +126,13 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
         }
     });
 
-    // Handle committing the value to the store
     const commitValue = (rawVal) => {
         let val = rawVal;
         const targetType = isArray ? 'array' : typeof (initialValue ?? defaultVal);
 
         if (targetType === 'number') {
             val = parseFloat(rawVal);
-            if (isNaN(val)) val = rawVal;
+            if (isNaN(val)) val = rawVal; // Keep raw if invalid number
         } else if (targetType === 'boolean') {
             val = Boolean(rawVal);
         } else if (targetType === 'array') {
@@ -123,15 +140,12 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
                 const parsed = JSON.parse(rawVal);
                 if (Array.isArray(parsed)) val = parsed;
             } catch {
-                // keep the raw string if invalid JSON
+                // Ignore invalid JSON array input
             }
         }
-
-        // Direct assignment to reactive object
         data[key] = val;
     };
 
-    // Event handlers
     const handleFocus = () => { isFocused.val = true; };
     const handleBlur = (e) => {
         isFocused.val = false;
@@ -139,7 +153,6 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
     };
     const handleInput = (e) => {
         localTextState.val = e.target.value;
-        // For numbers and arrays, also update store immediately for +/- buttons to work
         if (type === 'number' || type === 'array') {
             commitValue(e.target.value);
         }
@@ -156,9 +169,7 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
                 input({
                     type: 'checkbox',
                     checked: () => data[key],
-                    onchange: e => {
-                        data[key] = e.target.checked;
-                    }
+                    onchange: e => data[key] = e.target.checked
                 }),
                 span({ class: 'slider' }),
                 span({ class: 'label' }, () => data[key] ? 'ENABLED' : 'DISABLED')
@@ -198,7 +209,6 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
                         onblur: handleBlur,
                         oninput: (e) => {
                             localTextState.val = e.target.value;
-                            // Commit on every input for string fields
                             commitValue(e.target.value);
                         },
                         style: 'width: 100%;'
