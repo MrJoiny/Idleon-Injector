@@ -323,6 +323,7 @@ const minigameCheat = function (params) {
   setupHoopsMinigameProxy.call(this);
   setupDartsMinigameProxy.call(this);
   setupMonumentProxy.call(this);
+  setupScratchMinigameProxy.call(this);
   cheatState.minigame[params[0]] = !cheatState.minigame[params[0]];
   return `${cheatState.minigame[params[0]] ? "Activated" : "Deactivated"} ${params[0]
     } minigame cheat.`;
@@ -339,7 +340,8 @@ registerCheats({
     { name: "poing", message: "poing minigame cheat", fn: minigameCheat },
     { name: "hoops", message: "hoops minigame cheat", fn: minigameCheat },
     { name: "darts", message: "darts minigame cheat", fn: minigameCheat },
-    { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat }
+    { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat },
+    { name: "scratch", message: "event scratch minigame cheat", fn: minigameCheat },
   ],
 });
 
@@ -3970,6 +3972,57 @@ function setupPoingProxy() {
       },
     }
   );
+}
+
+function setupScratchMinigameProxy() {
+  try {
+    const scratchBehavior = bEngine
+      .getGameAttribute("PixelHelperActor")[25]
+      .behaviors.getBehavior("ActorEvents_670");
+
+    if (!scratchBehavior || typeof scratchBehavior._GenINFO === "undefined") {
+      console.error("Scratch Proxy Failed: Behavior not found.");
+      return;
+    }
+
+    const originalGenInfo = scratchBehavior._GenINFO;
+
+    const SCRATCH_ARRAY_IDX = 212; // The array containing scratch logic
+    const STATE_IDX = 50;          // Index 50: 0=Idle, 1=Playing, 2=Won
+    const COVER_IMG_ARRAY_ID = 68; // Inside _UIinventory15
+    const COVER_IMG_ID = 1;        // The specific index of the grey cover image
+
+    const handler = {
+      get: function (target, property, receiver) {
+        const value = Reflect.get(target, property, receiver);
+
+        // Intercept access to the Scratch Data Array [212]
+        if (Number(property) === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
+          // Check if the game state is "Playing" (1)
+          if (Array.isArray(value) && value[STATE_IDX] === 1) {
+            // [25] to [49] are the scratch zones
+            for (let i = 25; i <= 49; i++) {
+              if (value[i] !== 1) {
+                value[i] = 1;
+              }
+            }
+
+            const coverImage = scratchBehavior._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
+            // remove cover
+            if (coverImage.get_alpha() > 0) { coverImage.set_alpha(0); }
+          }
+        }
+
+        return value;
+      },
+    };
+
+    const proxyScratch = new Proxy(originalGenInfo, handler);
+    scratchBehavior._GenINFO = proxyScratch;
+
+  } catch (error) {
+    console.error("Error setting up Scratch proxy:", error);
+  }
 }
 
 function setupHoopsMinigameProxy() {
