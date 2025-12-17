@@ -462,8 +462,8 @@ registerCheats({
   canToggleSubcheats: true,
   subcheats: [
     { name: "anvil", message: "anvil cost and duration nullification." },
-    { name: "forge", message: "forge upgrade cost nullification." },
-    { name: "stampcost", message: "stamp cost nullification." },
+    { name: "forge", message: "forge speed and capacity multiplier check config" },
+    { name: "stampcost", message: "stamp cost reduction multiplier check config" },
     {
       name: "smith",
       message: "smithing cost nullification (change maps to have the effect apply).",
@@ -2882,16 +2882,11 @@ function setupArbitraryProxy() {
     const key = argumentsList[0];
     const base = Reflect.apply(ForgeStats, this, argumentsList);
 
-    if (!cheatState.w1.forge || !cheatConfig.w1 || !cheatConfig.w1.forge) return base;
-
-    // 2 = forge speed (used by ForgeSpeeed)
-    if (key === 2 && typeof cheatConfig.w1.forge.speed === "function") {
-      return cheatConfig.w1.forge.speed(base);
-    }
-
-    // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
-    if (key === 1 && typeof cheatConfig.w1.forge.capacity === "function") {
-      return cheatConfig.w1.forge.capacity(base);
+    if (cheatState.w1.forge) {
+      // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
+      if (key === 1) return cheatConfig.w1.forge.capacity(base);
+      // 2 = forge speed (used by ForgeSpeeed)
+      if (key === 2) return cheatConfig.w1.forge.speed(base);
     }
 
     return base;
