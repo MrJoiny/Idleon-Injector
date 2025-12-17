@@ -4257,7 +4257,6 @@ async function getAutoCompleteSuggestions() {
   if (cheatNames) {
     cheatNames.split("\n").forEach(function (cheat) {
       choices.push({
-        name: cheat.substring(0, cheat.indexOf("(")).trim(),
         message: cheat,
         value: cheat.substring(0, cheat.indexOf("(")).trim(),
       });
@@ -4269,12 +4268,10 @@ async function getAutoCompleteSuggestions() {
       let itemParts = item.split(", ");
       if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
         choices.push({
-          name: "drop " + itemParts[0],
           message: `drop ${itemParts[0]} (${itemParts[1]})`,
           value: "drop " + itemParts[0],
         });
         choices.push({
-          name: "nomore " + itemParts[0],
           message: `nomore ${itemParts[0]} (${itemParts[1]})`,
           value: "nomore " + itemParts[0],
         });
@@ -4287,7 +4284,6 @@ async function getAutoCompleteSuggestions() {
       let itemParts = item.split(", ");
       if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
         choices.push({
-          name: "spawn " + itemParts[0],
           message: `spawn ${itemParts[0]} (${itemParts[1]})`,
           value: "spawn " + itemParts[0],
         });
@@ -4299,7 +4295,6 @@ async function getAutoCompleteSuggestions() {
     attributes.split("\n").forEach(function (item) {
       if (!["error", "null", undefined, "ingameName"].includes(item)) {
         choices.push({
-          name: "gga " + item,
           message: `gga ${item}`,
           value: "gga " + item,
         });
@@ -4310,7 +4305,6 @@ async function getAutoCompleteSuggestions() {
   Object.keys(summonUnits).forEach(function (item) {
     if (!["error", "null", undefined, "ingameName"].includes(item)) {
       choices.push({
-        name: "summoning " + item,
         message: "summoning " + item,
         value: "summoning " + item,
       });
@@ -4323,12 +4317,10 @@ async function getAutoCompleteSuggestions() {
       let itemParts = item.split(", ");
       if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
         choices.push({
-          name: "drop " + itemParts[0],
           message: `drop ${itemParts[0]} (${itemParts[1]})`,
           value: "drop " + itemParts[0],
         });
         choices.push({
-          name: "nomore " + itemParts[0],
           message: `nomore ${itemParts[0]} (${itemParts[1]})`,
           value: "nomore " + itemParts[0],
         });
@@ -4338,7 +4330,6 @@ async function getAutoCompleteSuggestions() {
       let itemParts = item.split(", ");
       if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
         choices.push({
-          name: "spawn " + itemParts[0],
           message: `spawn ${itemParts[0]} (${itemParts[1]})`,
           value: "spawn " + itemParts[0],
         });
@@ -4347,7 +4338,6 @@ async function getAutoCompleteSuggestions() {
     attributes.split("\n").forEach(function (item) {
       if (!["error", "null", undefined, "ingameName"].includes(item)) {
         choices.push({
-          name: "gga " + item,
           message: `gga ${item}`,
           value: "gga " + item,
         });
@@ -4357,7 +4347,6 @@ async function getAutoCompleteSuggestions() {
     Object.keys(summonUnits).forEach(function (item) {
       if (!["error", "null", undefined, "ingameName"].includes(item)) {
         choices.push({
-          name: "summoning " + item,
           message: "summoning " + item,
           value: "summoning " + item,
         });
@@ -4367,7 +4356,6 @@ async function getAutoCompleteSuggestions() {
     Object.keys(keychainStatsMap).forEach(function (item) {
       if (!["error", "null", undefined, "ingameName"].includes(item)) {
         choices.push({
-          name: "keychain " + item,
           message: "keychain " + item,
           value: "keychain " + item,
         });
