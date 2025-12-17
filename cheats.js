@@ -2218,6 +2218,12 @@ function setupBehaviorScriptProxies() {
       } else if (cheatState["rngInt"]) {
         return cheatState["rngInt"];
       }
+
+      // this forces the vip book to always be max level
+      if (cheatState.w3.book && bEngine.getGameAttribute("MenuType2") == 31 && argumentsList[0] == 1) {
+        return argumentsList[1];
+      }
+
       return Reflect.apply(originalFn, context, argumentsList);
     },
   });
