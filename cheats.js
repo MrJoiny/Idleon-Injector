@@ -456,17 +456,6 @@ registerCheats({
   ],
 });
 
-// Cauldron cheats
-registerCheats({
-  name: "cauldron",
-  message: "costs and duration nullifications (except P2W).",
-  canToggleSubcheats: true,
-  subcheats: [
-    { name: "vialrng", message: "vial unlock upon rolling 1+" },
-    { name: "vialattempt", message: "unlimited vial attempts" },
-  ],
-});
-
 registerCheats({
   name: "w1",
   message: "all w1 cheats.",
@@ -493,6 +482,8 @@ registerCheats({
     { name: "boss", message: "unlimited boss attempts" },
     { name: "roo", message: "Enable Roo cheats, check config file", configurable: true },
     { name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
+    { name: "vialrng", message: "vial unlock upon rolling 1+" },
+    { name: "vialattempt", message: "unlimited vial attempts" },
   ],
 });
 
@@ -2179,6 +2170,7 @@ function setupFirebaseProxy() {
         setupOptionsListAccountProxy.call(this);
         setupTrappingProxy.call(this);
         setupTimeCandyProxy.call(this);
+        setupAlchProxy.call(this);
         return result;
       },
     });
@@ -3254,7 +3246,7 @@ function setupCListProxy() {
   // Vials unlock at rollin 1+
   const vials = CList.AlchemyVialItemsPCT;
   createProxy(CList, "AlchemyVialItemsPCT", (original) => {
-    if (cheatState.cauldron.vialrng) return new Array(vials.length).fill(99);
+    if (cheatState.w2.vialrng) return new Array(vials.length).fill(99);
     return original;
   })
 
@@ -3375,25 +3367,19 @@ function setupQuestProxy() {
 // Alchemy cheats
 function setupAlchProxy() {
   const p2w = bEngine.getGameAttribute("CauldronP2W");
-  p2w[5]._0 = p2w[5][0];
-  // broken on char select
-  // TODO: fix this!
-  Object.defineProperty(p2w[5], 0, {
-    get: function () {
-      return cheatState.cauldron.vialattempt ? this[1] : this._0;
-    },
-    set(value) {
-      return cheatState.cauldron.vialattempt ? true : (this._0 = value), true;
-    },
-    enumerable: true,
-  });
 
-  const Alchemy = events(189)._customBlock_CauldronStats;
-  events(189)._customBlock_CauldronStats = function (...argumentList) {
-    return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
-      ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
-      : Reflect.apply(Alchemy, this, argumentList);
-  };
+  if (p2w._isPatched) return;
+  Object.defineProperty(p2w, "_isPatched", { value: true, enumerable: false });
+
+  createProxy(p2w[5], 0, {
+    get: function (original) {
+      return cheatState.w2.vialattempt ? this[1] : original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.w2.vialattempt) return;
+      this[backupKey] = value;
+    },
+  });
 }
 
 // w1 cheats
@@ -3445,6 +3431,7 @@ function setupw1StuffProxy() {
 function setupw2StuffProxy() {
   const actorEvents579 = events(579);
   const actorEvents345 = events(345);
+  const actorEvents189 = events(189);
 
   const Roo = actorEvents579._customBlock_Summoning;
   actorEvents579._customBlock_Summoning = function (...argumentList) {
@@ -3459,6 +3446,14 @@ function setupw2StuffProxy() {
     return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
       ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
       : Reflect.apply(DungeonCalc, this, argumentList);
+  };
+
+  // alchemy cheats
+  const Alchemy = actorEvents189._customBlock_CauldronStats;
+  actorEvents189._customBlock_CauldronStats = function (...argumentList) {
+    return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
+      : Reflect.apply(Alchemy, this, argumentList);
   };
 }
 
