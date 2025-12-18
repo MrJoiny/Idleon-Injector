@@ -27,7 +27,8 @@ import van from "./van-1.6.0.js";
 // This file consistently uses `let` keyword instead of `const` for reducing the bundle size.
 
 // Global variables - aliasing some builtin symbols to reduce the bundle size.
-let { fromEntries, entries, keys, hasOwn, getPrototypeOf, create, assign } = Object
+let { fromEntries, entries, keys, getPrototypeOf, create, assign } = Object
+let hasOwn = Object.hasOwn ?? ((obj, key) => Object.prototype.hasOwnProperty.call(obj, key))
 let { get: refGet, set: refSet, deleteProperty: refDelete, ownKeys: refOwnKeys } = Reflect
 let { state, derive, add } = van
 let statesToGc, gcCycleInMs = 1000, _undefined, replacing
