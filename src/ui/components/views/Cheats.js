@@ -33,6 +33,17 @@ export const Cheats = () => {
         grouped: vanX.calc(() => {
             const list = store.data.cheats;
             const term = ui.filter.toLowerCase();
+            // Pass 1: Identify all available categories from multi-part commands
+            const categoriesSet = new Set();
+            for (let i = 0; i < list.length; i++) {
+                const val = typeof list[i] === 'object' ? list[i].value : list[i];
+                if (!val) continue;
+                const parts = val.trim().split(' ');
+                if (parts.length > 1) {
+                    categoriesSet.add(parts[0].toLowerCase());
+                }
+            }
+
             const groups = {};
 
             const matches = (c) => {
@@ -42,7 +53,7 @@ export const Cheats = () => {
                 return msg.includes(term) || val.includes(term);
             };
 
-            // Using standard for loop for proxy iteration efficiency
+            // Pass 2: Grouping
             for (let i = 0; i < list.length; i++) {
                 const cheat = list[i];
                 if (!matches(cheat)) continue;
@@ -51,12 +62,19 @@ export const Cheats = () => {
                 const msg = typeof cheat === 'object' ? cheat.message : cheat;
                 if (!val) continue;
 
-                const parts = val.split(' ');
-                let category = (parts.length > 1) ? parts[0] : 'General';
-                category = category.charAt(0).toUpperCase() + category.slice(1);
+                const parts = val.trim().split(' ');
+                const firstWord = parts[0].toLowerCase();
+
+                let category;
+                // If it's multi-part, or if the single word is a known category name
+                if (parts.length > 1 || categoriesSet.has(firstWord)) {
+                    category = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+                } else {
+                    category = 'General';
+                }
 
                 if (!groups[category]) groups[category] = [];
-                groups[category].push({ message: msg, value: val, baseCommand: parts[0] });
+                groups[category].push({ message: msg, value: val, baseCommand: firstWord });
             }
 
             // Sort keys
