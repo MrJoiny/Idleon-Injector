@@ -14,6 +14,7 @@ let monsterDefs;
 let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
+const types = new Set();
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -46,6 +47,10 @@ function registerCommonVariables() {
   events = function (num) {
     return this["scripts.ActorEvents_" + num];
   }.bind(this);
+  Object.values(itemDefs).forEach(entry => {
+    const type = entry.h?.Type;
+    if (type) types.add(type);
+  });
 }
 
 // The main function that executes all cheats
@@ -170,28 +175,10 @@ registerCheat(
 registerCheat(
   "drop",
   function (params) {
-    const actorEvents189 = events(189);
-    const character =
-      bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
-
     const item = params[0];
     const amount = params[1] || 1;
-    try {
-      const itemDefinition = itemDefs[item];
-      if (itemDefinition) {
-        const toChest = cheatConfig.wide.autoloot.tochest;
-        cheatConfig.wide.autoloot.tochest = false;
-        let x = character.getXCenter();
-        let y = character.getValue("ActorEvents_20", "_PlayerNode");
-        if (item.includes("SmithingRecipes"))
-          actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);
-        else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
-        cheatConfig.wide.autoloot.tochest = toChest;
-        return `Dropped ${itemDefinition.h.displayName.replace(/_/g, " ")}. (x${amount})`;
-      } else return `No item found for '${item}'`;
-    } catch (err) {
-      return `Error: ${err}`;
-    }
+
+    dropOnChar(item, amount);
   },
   "drop items, hitting enter selects from the list, add the number you want to drop after that"
 );
@@ -1872,31 +1859,6 @@ registerCheat(
   "!danger! Equip any item at any class/level"
 );
 
-// I still aim to add even more costs to nullify
-registerCheat(
-  "nullify",
-  function (params) {
-    const changedstuff = []; // Used to concatenate strings about what has been nullified by this command xD
-
-    changedstuff.push(cheat.call(this, "wide mtx"));
-    changedstuff.push(cheat.call(this, "wide post"));
-    changedstuff.push(cheat.call(this, "wide task"));
-    changedstuff.push(cheat.call(this, "wide quest"));
-    changedstuff.push(cheat.call(this, "wide star"));
-    changedstuff.push(cheat.call(this, "wide obol"));
-    changedstuff.push(cheat.call(this, "wide candy"));
-    changedstuff.push(cheat.call(this, "unlock"));
-    changedstuff.push(cheat.call(this, "w1"));
-    changedstuff.push(cheat.call(this, "w3"));
-    changedstuff.push(cheat.call(this, "w4"));
-    changedstuff.push(cheat.call(this, "w5"));
-    changedstuff.push(cheat.call(this, "w6"));
-
-    return changedstuff.join("\n"); // Tell the user how many things have happened through this singular command xD
-  },
-  "nullifies a lot of things, use with caution!"
-);
-
 // Don't use unless needed: This function exists to wipe certain stuff from your already broken account!
 registerCheat(
   "fix_save",
@@ -2084,6 +2046,31 @@ async function setup() {
       ],
     });
 
+    // TODO: books, anvil receipe only drop default | dungeon items drop with ring, weap, etc.
+    registerCheats({
+      name: "bulk",
+      message: "Drop a collection of items at once. Usage: bulk [sub-command] [amount]",
+      canToggleSubcheats: true,
+      subcheats: Array.from(types).sort().map(type => ({
+        name: type,
+        message: `Drop all items of type ${type}`,
+        fn: function (params) {
+          const amount = parseInt(params[0]) || 1;
+          const blackList = CList.RANDOlist[64];
+          let droppedCount = 0;
+
+          console.log(blackList);
+          for (const [code, entry] of Object.entries(itemDefs)) {
+            if (entry.h?.Type === type && !blackList.includes(code)) {
+              dropOnChar(code, amount);
+              droppedCount++;
+            }
+          }
+          return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
+        }
+      }))
+    });
+
 
     let rtn = [];
     rtn.push("--------------------");
@@ -2211,7 +2198,7 @@ function setupBehaviorScriptProxies() {
         return cheatState["rngInt"];
       }
 
-      // this forces the vip book to always be max level
+      // this forces the vip book to always be max level, it does not show ingame
       if (cheatState.w3.book && bEngine.getGameAttribute("MenuType2") == 31 && argumentsList[0] == 1) {
         return argumentsList[1];
       }
@@ -4452,6 +4439,7 @@ async function getChoicesNeedingConfirmation() {
     "setalch",
     "wipe invslot",
     "wipe chestslot",
+    "bulk",
     // "keychain", why is this here?
   ];
 }
@@ -4505,6 +4493,39 @@ const keychainStatsMap = {
   skillspd: [3, "EquipmentKeychain23", "%_ALL_SKILL_SPEED", "2"],
   allstats: [3, "EquipmentKeychain24", "%_ALL_STATS", "4"],
 };
+
+// function to drop an item on the character 
+function dropOnChar(item, amount) {
+  const actorEvents189 = events(189);
+  const character = bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
+
+  try {
+    const itemDefinition = itemDefs[item];
+
+    if (itemDefinition) {
+      const toChest = cheatConfig.wide.autoloot.tochest;
+      cheatConfig.wide.autoloot.tochest = false;
+
+      let x = character.getXCenter();
+      let y = character.getValue("ActorEvents_20", "_PlayerNode");
+
+      if (item.includes("SmithingRecipes"))
+        actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);
+
+      else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
+
+      cheatConfig.wide.autoloot.tochest = toChest;
+
+      return `Dropped ${itemDefinition.h.displayName.replace(/_/g, " ")}. (x${amount})`;
+
+    }
+    else return `No item found for '${item}'`;
+
+  } catch (err) {
+    return `Error: ${err}`;
+  }
+}
+
 
 /**
  * Creates a proxy for a specific property on an object, allowing custom getter and setter logic.
