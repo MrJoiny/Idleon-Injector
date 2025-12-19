@@ -14,7 +14,7 @@ let monsterDefs;
 let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
-const types = new Set();
+const itemTypes = new Set();
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -49,7 +49,7 @@ function registerCommonVariables() {
   }.bind(this);
   Object.values(itemDefs).forEach(entry => {
     const type = entry.h?.Type;
-    if (type) types.add(type);
+    if (type) itemTypes.add(type);
   });
 }
 
@@ -370,6 +370,7 @@ registerCheats({
     { name: "quest", message: "quest item requirment nullification" },
     { name: "star", message: "star point requirement nullification" },
     { name: "giant", message: "100% giant mob spawn rate" },
+    { name: "gems", message: "freezes current gem amount" },
     {
       name: "plunderous",
       message: "100% plunderous mob spawn rate",
@@ -426,6 +427,7 @@ registerCheats({
         "dartshop cost nullify",
       configurable: { isObject: true },
     },
+
   ],
 });
 
@@ -1951,7 +1953,7 @@ async function setup() {
       name: "bulk",
       message: "Drop a collection of items at once. Usage: bulk [sub-command] [amount]",
       canToggleSubcheats: true,
-      subcheats: Array.from(types).sort().map(type => ({
+      subcheats: Array.from(itemTypes).sort().map(type => ({
         name: type,
         message: `Drop all items of type ${type}`,
         fn: function (params) {
@@ -2002,6 +2004,7 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
+  setupGemsProxy.call(this);
   setupSteamAchProxy.call(this);
   setupTimeCandyProxy.call(this);
   setupCurrenciesOwnedProxy.call(this);
@@ -2076,6 +2079,19 @@ function setupSteamAchProxy() {
       achieveList.push(args[0]);
       return Reflect.apply(target, thisArg, args)
     }
+  });
+}
+
+// freezes gems not changable
+function setupGemsProxy() {
+  createProxy(bEngine.gameAttributes.h, "GemsOwned", {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.wide.gems) return;
+      this[backupKey] = value
+    },
   });
 }
 
