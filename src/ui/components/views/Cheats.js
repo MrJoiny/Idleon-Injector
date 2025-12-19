@@ -63,18 +63,19 @@ export const Cheats = () => {
                 if (!val) continue;
 
                 const parts = val.trim().split(' ');
-                const firstWord = parts[0].toLowerCase();
+                const firstWordRaw = parts[0];
+                const firstWordLower = firstWordRaw.toLowerCase();
 
                 let category;
                 // If it's multi-part, or if the single word is a known category name
-                if (parts.length > 1 || categoriesSet.has(firstWord)) {
-                    category = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+                if (parts.length > 1 || categoriesSet.has(firstWordLower)) {
+                    category = firstWordLower.charAt(0).toUpperCase() + firstWordLower.slice(1);
                 } else {
                     category = 'General';
                 }
 
                 if (!groups[category]) groups[category] = [];
-                groups[category].push({ message: msg, value: val, baseCommand: firstWord });
+                groups[category].push({ message: msg, value: val, baseCommand: firstWordRaw });
             }
 
             // Sort keys
