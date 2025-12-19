@@ -1001,78 +1001,6 @@ registerCheats({
 });
 
 
-/****************************************************************************************************
-  Runescape homage cheats: Now we're finally God Gaming xD
-*/
-registerCheat(
-  "runescape",
-  function () {
-    // Activate ability bar switching when switching weapons
-    cheatState.runescape = !cheatState.runescape;
-    return `${cheatState.runescape ? "Activated" : "Deactived"} ability bar switching.`;
-  },
-  "Switches ability bar when switching weapons."
-);
-
-// Preset BiS weapon + upgrade binding
-registerCheat(
-  "bind",
-  function () {
-    const AttackLoadout = bEngine.getGameAttribute("AttackLoadout");
-    bEngine.whenAnyKeyPressedListeners.push(function (e, t) {
-      if (
-        (e.keyCode === 65 || e.keyCode === 83 || e.keyCode === 68 || e.keyCode === 70) &&
-        bEngine.getGameAttribute("MenuType") === 6
-      ) {
-        const BiS = {
-          65: ["STR", "EquipmentSword3"], // Key A
-          83: ["AGI", "EquipmentBows8"], // Key S
-          68: ["WIS", "EquipmentWands7"], // Key D
-          70: ["LUK", "EquipmentPunching5"], // Key F
-        };
-        // BiS = Warped Weapon Upgrade Stone: All random stats goes to the style's DPS stat
-        const upgrstats = { Weapon_Power: 3, Defence: 0, Random_Stat: 4 }; // Edit this line to whatever you like
-        const EquipOrd = bEngine.getGameAttribute("EquipmentOrder")[0];
-        const EquipMap = bEngine.getGameAttribute("EquipmentMap")[0];
-        const upgrslots = itemDefs.h[BiS[e.keyCode][1]].h["Upgrade_Slots_Left"];
-        if (BiS[e.keyCode]) {
-          // Only procs if whatever keycode is defined in the dictionary
-          EquipOrd[1] = BiS[e.keyCode][1]; // Change equipped weapon
-          EquipMap[1].h["Upgrade_Slots_Left"] = upgrslots * -1; // Deduct the amount of slots left
-          EquipMap[1].h["Weapon_Power"] = upgrslots * upgrstats["Weapon_Power"];
-          EquipMap[1].h["Defence"] = upgrslots * upgrstats["Defence"];
-          EquipMap[1].h[BiS[e.keyCode][0]] = upgrslots * upgrstats["Random_Stat"];
-        }
-        if (cheatState.runescape) {
-          // Let's play Runescape xD
-          switch (e.keyCode) {
-            case 65: // Melee
-              AttackLoadout[0] = [90, 91, 105, 120, 106, 121];
-              AttackLoadout[1] = [94, 108, 122, 107, 639, 635];
-              break;
-            case 83: // Ranged
-              AttackLoadout[0] = [270, 271, 285, 300, 286, 301];
-              AttackLoadout[1] = [273, 288, 303, 302, 639, 635];
-              break;
-            case 68: // Mage
-              AttackLoadout[0] = [453, 450, 451, 482, 465, 467];
-              AttackLoadout[1] = [481, 480, 466, 469, 639, 635];
-              break;
-            case 70: // Buffbar
-              AttackLoadout[0] = [15, 30, 94, 108, 288, 481];
-              AttackLoadout[1] = [302, 303, 466, 469, 122, 273];
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    });
-    return `The custom keybinds have been activated! (Has to be re-applied when changing maps)`;
-  },
-  "Binds a weapon to a key. (A = STR, S = AGI, D = WIS, F = LUK)"
-);
-
 // This function doesn't kill other players (luckily) but yourself :)
 registerCheat(
   "noob",
@@ -1590,34 +1518,6 @@ registerCheat(
   "!danger! Change character class to this id"
 );
 
-// A highly dangerous function, only use it on shadow banned test accounts!!
-registerCheat(
-  "abilitybar",
-  function (params) {
-    const talentDefs = CList.TalentIconNames;
-    const AttackLoadout = bEngine.getGameAttribute("AttackLoadout");
-    // First parameter is the ability bar that ranges from 0 to 9.
-    const abilitybar = params[0];
-    const abilities = params.slice(1); //
-    const Abilities = [];
-    if (abilitybar < 10 && abilitybar >= 0) {
-      for (const [index, element] of Object.entries(abilities)) {
-        if (index >= 6) return "An ability bar can only hold 6 elements!";
-        if (element < talentDefs.length && element >= 0) {
-          Abilities.push(
-            `Bar ${abilitybar} ability ${index} set to: ${talentDefs[element]
-              .replace(/_/g, " ")
-              .toLowerCase()}`
-          );
-          AttackLoadout[abilitybar][index] = element;
-        } else Abilities.push("Ability falls out of the known id range!");
-      }
-      bEngine.setGameAttribute("AttackLoadout", AttackLoadout);
-      return Abilities.join("\n");
-    } else return "The ability bar index ranges from 0 to 9!";
-  },
-  "!danger! The ability bar index a from 0-2, then up to 6 ability IDs x y z... (use list ability to find ability IDs)"
-);
 
 // This function is extremely dangerous, as you're changing the lvl value your exp isn't changing accordingly
 const changeLv0 = function (params) {
@@ -4455,6 +4355,8 @@ async function getChoicesNeedingConfirmation() {
     "wipe invslot",
     "wipe chestslot",
     "bulk",
+    "class",
+
     // "keychain", why is this here?
   ];
 }
