@@ -151,12 +151,12 @@ const CheatItem = (cheat) => {
     };
 
     return div({ class: 'cheat-item-container' },
+        button({ class: 'cheat-button', onclick: handleExecute }, cheat.message),
         () => needsValue.val ? input({
             type: 'text',
             class: 'cheat-input',
             placeholder: 'Val',
             oninput: e => inputValue.val = e.target.value
         }) : null,
-        button({ class: 'cheat-button', onclick: handleExecute }, cheat.message)
     );
 };
