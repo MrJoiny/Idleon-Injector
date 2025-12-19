@@ -2,6 +2,7 @@ exports.startupCheats = [];
 
 exports.cheatConfig = {
   unban: true,
+  steamachieve: true,
 
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
   // If this is true, chng command will become available.

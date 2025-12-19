@@ -1956,7 +1956,7 @@ async function setup() {
     // The name is generated so it may well change between versions and need updating here
     // changed for a solution not relying on the name.
     // this still crashes after a while playing the game 24.11.2025
-    window[0].agIis = function () { };
+    // window[0].agIis = function () { };
     // window[0].agIis = new Proxy(window[0].agIis, {
     //   apply: function (target, thisArg, argumentsList) {
     //     const n = argumentsList[0];
@@ -2102,6 +2102,7 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
+  setupSteamAchProxy.call(this);
   setupTimeCandyProxy.call(this);
   setupCurrenciesOwnedProxy.call(this);
   setupArbitraryProxy.call(this);
@@ -2162,6 +2163,20 @@ function setupFirebaseProxy() {
       },
     });
   }
+}
+
+// the game is spamming via stdout? to steam and that freezes the game with the cheatinject
+// this creates a list that already sent to steam and stops the spam
+function setupSteamAchProxy() {
+  let achieveList = [];
+  this["FirebaseStorage"].areaCheck = new Proxy(this["FirebaseStorage"].areaCheck, {
+    apply: function (target, thisArg, args) {
+      if (!cheatConfig.steamachieve) return;
+      if (achieveList.includes(args[0])) return;
+      achieveList.push(args[0]);
+      return Reflect.apply(target, thisArg, args)
+    }
+  });
 }
 
 
