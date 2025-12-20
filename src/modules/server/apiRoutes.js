@@ -26,6 +26,11 @@ function setupApiRoutes(app, context, client, config) {
   const { Runtime } = client;
   const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
 
+  // --- API Endpoint: Heartbeat (System Status) ---
+  app.get('/api/heartbeat', (req, res) => {
+    res.json({ status: 'online', timestamp: Date.now() });
+  });
+
   // --- API Endpoint: Get available cheats ---
   app.get('/api/cheats', async (req, res) => {
     try {
@@ -41,7 +46,16 @@ function setupApiRoutes(app, context, client, config) {
           details: suggestionsResult.exceptionDetails.text
         });
       } else {
-        res.json(suggestionsResult.result.value || []);
+        const allCheats = suggestionsResult.result.value || [];
+
+        // filter out commands that are not usable in the webui
+        const EXCLUDED_PREFIXES = ['gga', 'ggk', 'cheats', 'list', 'search', 'chng', 'egga', 'eggk', 'chromedebug'];
+        const filteredCheats = allCheats.filter(c => {
+          const cmd = c.value?.toLowerCase();
+          return !EXCLUDED_PREFIXES.some(prefix => cmd === prefix || cmd?.startsWith(prefix + ' '));
+        });
+
+        res.json(filteredCheats);
       }
     } catch (apiError) {
       console.error("API Error in /api/cheats:", apiError);

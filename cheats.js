@@ -18,6 +18,11 @@ const itemTypes = new Set();
 
 let iframe; // Declare iframe globally, initialize later
 
+// ingame webui
+let uiIframe;
+let uiContainer;
+let isUiExpanded = false;
+
 const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
 async function gameReady() {
@@ -1985,6 +1990,10 @@ async function setup() {
     );
     rtn.push("--------------------");
     console.log('Exiting setup function successfully.'); // Added for diagnostics
+
+    // inject webui ingame
+    if (cheatConfig.ingameUI) injectWebUI();
+
     return rtn.join("\n");
 
   } catch (setupError) { // Added catch block
@@ -4195,159 +4204,74 @@ function getOptionsListAccountIndex(index) {
 // Here you can add suggestions for the autocomplete
 async function getAutoCompleteSuggestions() {
   let choices = [];
-  let cheatNames = "";
-  let items = "";
-  let monsters = "";
-  let attributes = "";
 
-  // Diagnostic checks before accessing .fn
-  if (cheats["cheats"] && typeof cheats["cheats"].fn === 'function') {
-    cheatNames = cheats["cheats"].fn.call(this, []);
-  } else {
-    console.error("Error in getAutoCompleteSuggestions: cheats['cheats'] or its .fn is missing!");
-    // Optionally return early or provide default/empty suggestions
-  }
+  const cheatNames = cheats['cheats'].fn.call(this, []);
+  const items = cheats['list item'].fn.call(this, []);
+  const monsters = cheats['list monster'].fn.call(this, []);
+  const attributes = cheats['list gga'].fn.call(this, []);
 
-  if (cheats["list item"] && typeof cheats["list item"].fn === 'function') {
-    items = cheats["list item"].fn.call(this, []);
-  } else {
-    console.error("Error in getAutoCompleteSuggestions: cheats['list item'] or its .fn is missing!");
-  }
+  cheatNames.split("\n").forEach(function (cheat) {
+    choices.push({
+      message: cheat,
+      value: cheat.substring(0, cheat.indexOf("(")).trim(),
+    });
+  });
 
-  if (cheats["list monster"] && typeof cheats["list monster"].fn === 'function') {
-    monsters = cheats["list monster"].fn.call(this, []);
-  } else {
-    console.error("Error in getAutoCompleteSuggestions: cheats['list monster'] or its .fn is missing!");
-  }
-
-  if (cheats["list gga"] && typeof cheats["list gga"].fn === 'function') {
-    attributes = cheats["list gga"].fn.call(this, []);
-  } else {
-    console.error("Error in getAutoCompleteSuggestions: cheats['list gga'] or its .fn is missing!");
-  }
-
-  // Process available data, even if some parts failed
-  if (cheatNames) {
-    cheatNames.split("\n").forEach(function (cheat) {
+  items.split("\n").forEach(function (item) {
+    let itemParts = item.split(", ");
+    if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
       choices.push({
-        name: cheat.substring(0, cheat.indexOf("(")).trim(),
-        message: cheat,
-        value: cheat.substring(0, cheat.indexOf("(")).trim(),
+        message: `drop ${itemParts[0]} (${itemParts[1]})`,
+        value: "drop " + itemParts[0],
       });
-    });
-  }
+      choices.push({
+        message: `nomore ${itemParts[0]} (${itemParts[1]})`,
+        value: "nomore " + itemParts[0],
+      });
+    }
+  });
 
-  if (items) {
-    items.split("\n").forEach(function (item) {
-      let itemParts = item.split(", ");
-      if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
-        choices.push({
-          name: "drop " + itemParts[0],
-          message: `drop ${itemParts[0]} (${itemParts[1]})`,
-          value: "drop " + itemParts[0],
-        });
-        choices.push({
-          name: "nomore " + itemParts[0],
-          message: `nomore ${itemParts[0]} (${itemParts[1]})`,
-          value: "nomore " + itemParts[0],
-        });
-      }
-    });
-  }
 
-  if (monsters) {
-    monsters.split("\n").forEach(function (item) {
-      let itemParts = item.split(", ");
-      if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
-        choices.push({
-          name: "spawn " + itemParts[0],
-          message: `spawn ${itemParts[0]} (${itemParts[1]})`,
-          value: "spawn " + itemParts[0],
-        });
-      }
-    });
-  }
+  monsters.split("\n").forEach(function (item) {
+    let itemParts = item.split(", ");
+    if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
+      choices.push({
+        message: `spawn ${itemParts[0]} (${itemParts[1]})`,
+        value: "spawn " + itemParts[0],
+      });
+    }
+  });
 
-  if (attributes) {
-    attributes.split("\n").forEach(function (item) {
-      if (!["error", "null", undefined, "ingameName"].includes(item)) {
-        choices.push({
-          name: "gga " + item,
-          message: `gga ${item}`,
-          value: "gga " + item,
-        });
-      }
-    });
-  }
+
+  attributes.split("\n").forEach(function (item) {
+    if (!["error", "null", undefined, "ingameName"].includes(item)) {
+      choices.push({
+        message: `gga ${item}`,
+        value: "gga " + item,
+      });
+    }
+  });
+
 
   Object.keys(summonUnits).forEach(function (item) {
     if (!["error", "null", undefined, "ingameName"].includes(item)) {
       choices.push({
-        name: "summoning " + item,
         message: "summoning " + item,
         value: "summoning " + item,
       });
     }
   });
 
-  // Process items if available
-  if (items) {
-    items.split("\n").forEach(function (item) {
-      let itemParts = item.split(", ");
-      if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
-        choices.push({
-          name: "drop " + itemParts[0],
-          message: `drop ${itemParts[0]} (${itemParts[1]})`,
-          value: "drop " + itemParts[0],
-        });
-        choices.push({
-          name: "nomore " + itemParts[0],
-          message: `nomore ${itemParts[0]} (${itemParts[1]})`,
-          value: "nomore " + itemParts[0],
-        });
-      }
-    });
-    monsters.split("\n").forEach(function (item) {
-      let itemParts = item.split(", ");
-      if (!["error", "null", undefined, "ingameName"].includes(itemParts[1])) {
-        choices.push({
-          name: "spawn " + itemParts[0],
-          message: `spawn ${itemParts[0]} (${itemParts[1]})`,
-          value: "spawn " + itemParts[0],
-        });
-      }
-    });
-    attributes.split("\n").forEach(function (item) {
-      if (!["error", "null", undefined, "ingameName"].includes(item)) {
-        choices.push({
-          name: "gga " + item,
-          message: `gga ${item}`,
-          value: "gga " + item,
-        });
-      }
-    });
 
-    Object.keys(summonUnits).forEach(function (item) {
-      if (!["error", "null", undefined, "ingameName"].includes(item)) {
-        choices.push({
-          name: "summoning " + item,
-          message: "summoning " + item,
-          value: "summoning " + item,
-        });
-      }
-    });
-
-    Object.keys(keychainStatsMap).forEach(function (item) {
-      if (!["error", "null", undefined, "ingameName"].includes(item)) {
-        choices.push({
-          name: "keychain " + item,
-          message: "keychain " + item,
-          value: "keychain " + item,
-        });
-      }
-    });
-    return choices;
-  }
+  Object.keys(keychainStatsMap).forEach(function (item) {
+    if (!["error", "null", undefined, "ingameName"].includes(item)) {
+      choices.push({
+        message: "keychain " + item,
+        value: "keychain " + item,
+      });
+    }
+  });
+  return choices;
 }
 
 // These choices won't execute immediately when you hit enter, they will allow you to add additional input such as a number if you like, then execute the second time you press enter
@@ -4579,6 +4503,137 @@ function gg_func(Params, which) {
     return `Error: ${error}`;
   }
 }
+
+// till a better solution is found it stays here :(
+function injectWebUI() {
+  if (uiContainer || typeof webPort === 'undefined') return;
+
+  uiContainer = document.createElement('div');
+  uiContainer.id = 'cheat-ui-container';
+  uiContainer.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+    overflow: hidden;
+  `;
+
+  const toggleBtn = document.createElement('div');
+  toggleBtn.id = 'cheat-ui-toggle';
+  toggleBtn.innerHTML = 'CHEATS';
+  const defaultBtnStyle = `
+    background: linear-gradient(180deg, #161821, #0e0f14);
+    color: #ffb700;
+    padding: 0 20px;
+    height: 32px;
+    line-height: 32px;
+    cursor: pointer;
+    border-radius: 0 0 8px 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    border: 1px solid #2a2b36;
+    border-top: none;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.2, 0.6, 0.3, 1);
+    pointer-events: auto;
+    text-shadow: 0 0 10px rgba(255, 183, 0, 0.3);
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483649;
+    text-align: center;
+    -webkit-app-region: no-drag;
+  `;
+
+  const expandedBtnStyle = `
+    background: #ffb700;
+    color: #050507;
+    padding: 10px 24px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(255, 183, 0, 0.2);
+    border: none;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.2, 0.6, 0.3, 1);
+    pointer-events: auto;
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    transform: none;
+    z-index: 2147483649;
+    text-transform: uppercase;
+    height: auto;
+    line-height: normal;
+    -webkit-app-region: no-drag;
+  `;
+
+  toggleBtn.style.cssText = defaultBtnStyle;
+
+  toggleBtn.onmouseover = () => {
+    if (!isUiExpanded) {
+      toggleBtn.style.background = '#161821';
+      toggleBtn.style.color = '#ffe066';
+      toggleBtn.style.boxShadow = '0 4px 20px rgba(255, 183, 0, 0.15)';
+      toggleBtn.style.height = '36px';
+    } else {
+      toggleBtn.style.background = '#ffe066';
+      toggleBtn.style.boxShadow = '0 0 25px rgba(255, 183, 0, 0.4)';
+    }
+  };
+  toggleBtn.onmouseout = () => {
+    if (!isUiExpanded) {
+      toggleBtn.style.background = 'linear-gradient(180deg, #161821, #0e0f14)';
+      toggleBtn.style.color = '#ffb700';
+      toggleBtn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+      toggleBtn.style.height = '32px';
+    } else {
+      toggleBtn.style.background = '#ffb700';
+      toggleBtn.style.boxShadow = '0 0 20px rgba(255, 183, 0, 0.2)';
+    }
+  };
+
+  uiIframe = document.createElement('iframe');
+  uiIframe.src = `http://localhost:${webPort}`;
+  uiIframe.style.cssText = `
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    transform: translateY(-100%);
+    transition: transform 0.6s cubic-bezier(0.05, 0.7, 0.1, 1);
+    background: #050507;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    pointer-events: auto;
+    z-index: 2147483648;
+  `;
+
+  toggleBtn.onclick = () => {
+    isUiExpanded = !isUiExpanded;
+    if (isUiExpanded) {
+      uiIframe.style.transform = 'translateY(0)';
+      toggleBtn.innerHTML = 'CLOSE';
+      toggleBtn.style.cssText = expandedBtnStyle;
+    } else {
+      uiIframe.style.transform = 'translateY(-100%)';
+      toggleBtn.innerHTML = 'CHEATS';
+      toggleBtn.style.cssText = defaultBtnStyle;
+    }
+  };
+
+  uiContainer.appendChild(uiIframe);
+  uiContainer.appendChild(toggleBtn);
+  document.body.appendChild(uiContainer);
+}
+
 /*  Credit section:
  
   iBelg

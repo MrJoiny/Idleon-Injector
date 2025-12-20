@@ -2,6 +2,7 @@ exports.startupCheats = [];
 
 exports.cheatConfig = {
   unban: true,
+  ingameUI: true,
   steamachieve: true,
 
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------

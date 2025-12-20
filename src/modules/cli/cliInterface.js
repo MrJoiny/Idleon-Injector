@@ -35,6 +35,12 @@ async function startCliInterface(context, client, options = {}) {
   }
   let choices = choicesResult.result.value || []; // Default to empty array
 
+  // Populate name for Enquirer
+  choices = choices.map(c => {
+    if (!c.name) c.name = c.value;
+    return c;
+  });
+
   let cheatsNeedingConfirmationResult = await Runtime.evaluate({
     expression: `getChoicesNeedingConfirmation.call(${context})`,
     awaitPromise: true,

@@ -35,7 +35,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
   console.log('Injecting cheats...');
 
   let cheats = await fs.readFile('cheats.js', 'utf8');
-  cheats = `let startupCheats = ${JSON.stringify(startupCheats)};\nlet cheatConfig = ${objToString(cheatConfig)};\n${cheats}`;
+  cheats = `let startupCheats = ${JSON.stringify(startupCheats)};\nlet cheatConfig = ${objToString(cheatConfig)};\nlet webPort = ${config.webPort};\n${cheats}`;
 
   // Intercept specific script requests to modify their content before execution.
   // This targets the main game script based on the configured URL pattern

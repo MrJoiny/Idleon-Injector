@@ -4,169 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Idleon Cheat Injector UI</title>
+    <title>IDLEON // INJECTOR</title>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="bg-wrapper"></div>
-    <div class="app-container">
-        <h1>Idleon Cheat Injector</h1>
+    <!-- Background Grid & Noise -->
+    <div class="hud-background">
+        <div class="grid-overlay"></div>
+        <div class="vignette"></div>
+    </div>
 
-        <!-- Tab Buttons -->
-        <div class="tab-container">
-            <button class="tab-button active" data-tab="cheats-tab">Cheats</button>
-            <button class="tab-button" data-tab="devtools-tab">DevTools</button>
-            <button class="tab-button" data-tab="options-account-tab">Options Account</button>
-            <button class="tab-button" data-tab="config-tab">Config</button>
-        </div>
+    <!-- VanJS Mount Point -->
+    <script type="module">
+        import van from './van-1.6.0.js';
+        import { App } from './components/App.js';
 
-        <!-- Tab Content -->
-        <div id="tab-content">
-            <!-- Cheats Tab -->
-            <div id="cheats-tab" class="tab-pane active">
-                <h2>Available Cheats</h2>
-                <div id="filter-container">
-                    <input type="text" id="filter-input" placeholder="Filter cheats...">
-                </div>
-                <div id="cheat-buttons">
-                    <!-- Cheat buttons will be loaded here -->
-                </div>
-                <p id="loading-cheats">Loading cheats...</p>
-            </div>
-
-            <!-- Config Tab -->
-            <div id="config-tab" class="tab-pane">
-                <h2>Configuration</h2>
-
-                <!-- Config Sub-Tabs -->
-                <div class="config-sub-tab-container">
-                    <button class="config-sub-tab-button active" data-sub-tab="cheatconfig-pane">Cheat Config</button>
-                    <button class="config-sub-tab-button" data-sub-tab="startupcheats-pane">Startup Cheats</button>
-                    <button class="config-sub-tab-button" data-sub-tab="injectorconfig-pane">Injector Config</button>
-                </div>
-
-                <!-- Config Sub-Tab Content -->
-                <div id="config-sub-tab-content">
-                    <div id="cheatconfig-pane" class="config-sub-tab-pane active">
-                        <h3>Cheat Configuration</h3>
-                        <div class="config-category-selector">
-                            <label for="cheatconfig-category-select">Select Category:</label>
-                            <select id="cheatconfig-category-select">
-                                <option value="all">All</option>
-                                <!-- Categories will be loaded here -->
-                            </select>
-                        </div>
-                        <div id="cheatconfig-options">
-                            <!-- CheatConfig options will be loaded here -->
-                        </div>
-                        <p id="loading-cheatconfig" style="display: none;">Loading CheatConfig...</p>
-                    </div>
-                    <div id="startupcheats-pane" class="config-sub-tab-pane">
-                        <h3>Startup Cheats</h3>
-                        <div id="startupcheats-options">
-                            <!-- StartupCheats options will be loaded here -->
-                        </div>
-                        <p id="loading-startupcheats" style="display: none;">Loading Startup Cheats...</p>
-                    </div>
-                    <div id="injectorconfig-pane" class="config-sub-tab-pane">
-                        <h3>Injector Configuration</h3>
-                        <p class="config-note">Note: Changes here may require an application restart to take effect.</p>
-                        <div id="injectorconfig-options">
-                            <!-- Injector config options will be loaded here -->
-                        </div>
-                        <p id="loading-injectorconfig" style="display: none;">Loading Injector Config...</p>
-                    </div>
-                </div>
-                <p id="loading-config" style="display: none;">Loading configuration...</p>
-                <!-- Keep general loading indicator? Maybe remove later -->
-
-                <div class="config-actions">
-                    <button id="update-config-button">Apply Config</button>
-                    <button id="save-config-button">Save Config</button>
-                </div>
-            </div>
-
-            <!-- DevTools Tab -->
-            <div id="devtools-tab" class="tab-pane">
-                <h2>Embedded DevTools</h2>
-                <!-- Removed toggle button, DevTools are now always visible within this tab -->
-                <iframe id="devtools-iframe" style="width: 100%; height: 600px; border: 1px solid #ccc;"></iframe>
-                <p id="devtools-message">Loading DevTools URL...</p>
-            </div>
-
-            <!-- Options Account Tab -->
-            <div id="options-account-tab" class="tab-pane">
-                <h2>Options List Account Editor</h2>
-                <p class="options-account-description">
-                    This section allows you to edit bEngine.gameAttributes.h.OptionsListAccount values.
-                    <strong>This data is extremely sensitive and must be in the correct format and type.</strong>
-                </p>
-
-                <div class="options-account-controls">
-                    <button id="load-options-button" class="primary-button">Load Options</button>
-                    <button id="refresh-options-button" class="secondary-button" style="display: none;">Refresh</button>
-                    <label class="checkbox-container"
-                        style="margin-left: 10px; display: inline-flex; align-items: center; gap: 5px;">
-                        <input type="checkbox" id="hide-ai-options">
-                        Hide AI Options
-                    </label>
-                    <input type="text" id="options-filter" placeholder="Filter by index or name..."
-                        style="display: none;">
-                </div>
-
-                <div id="options-account-content" style="display: none;">
-                    <div class="options-tabs">
-                        <button class="options-tab-button active" data-options-tab="documented">Documented
-                            Settings</button>
-                        <button class="options-tab-button" data-options-tab="raw">Raw Array</button>
-                    </div>
-
-                    <div id="documented-options" class="options-tab-pane active">
-                        <!-- Documented options will be rendered here -->
-                    </div>
-
-                    <div id="raw-options" class="options-tab-pane">
-                        <!-- Raw array will be rendered here -->
-                    </div>
-                </div>
-
-                <p id="loading-options" style="display: none;">Loading options...</p>
-            </div>
-        </div>
-
-        <div id="status-message"></div>
-
-        <!-- Warning Modal -->
-        <div id="options-warning-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <h2>⚠️ WARNING ⚠️</h2>
-                <p><strong>You are about to access the Options List Account editor.</strong></p>
-                <p>This section allows you to modify sensitive game data that is stored as a flat array with positional
-                    indices.</p>
-                <ul>
-                    <li>Incorrect values or types can <strong>corrupt your save data</strong></li>
-                    <li>Some indices trigger <strong>shadowbans or abuse detection</strong></li>
-                    <li>Changes take effect immediately when applied</li>
-                    <li>There is <strong>no undo</strong> - backup your save first</li>
-                </ul>
-                <p><strong>Do you understand the risks and wish to proceed?</strong></p>
-                <div class="modal-buttons">
-                    <button id="modal-accept" class="danger-button">Yes, I Understand</button>
-                    <button id="modal-cancel" class="secondary-button">No, Go Back</button>
-                </div>
-            </div>
-        </div>
-
-    </div> <!-- End app-container -->
-    <script src="utils.js"></script>
-    <script src="script.js"></script>
-    <script src="optionsAccount.js"></script>
+        // Mount the application
+        van.add(document.body, App());
+    </script>
 </body>
 
 </html>
