@@ -2,6 +2,7 @@ exports.startupCheats = [];
 
 exports.cheatConfig = {
   unban: true,
+  steamachieve: true,
 
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
   // If this is true, chng command will become available.
@@ -9,28 +10,18 @@ exports.cheatConfig = {
   chng_enabled: false,
   // ⚠️ DANGER ⚠️ --------------------------------------------------------------------------------------------------
 
-  dungeon: {
-    creditcap: 10000000, // lots of people breaking things by having too many credits
-    flurbocap: 1000000,
-  },
-  multiply: {
-    damage: 1,
-    efficiency: 1,
-    afk: 1,
-    drop: 1,
-    money: 1,
-    classexp: 1,
-    crystal: 1,
-    skillexp: 1,
-    shopstock: 1,
-    printer: 6,
-    monsters: 1,
+  maxval: { // lots of people breaking things by having too much of anything
+    bones: 1e20,
+    totalbones: 1e21,
+    dust: 1e20,
+    totaldust: 1e21,
+    tach: 1e20,
+    totaltach: 1e21,
+    creditcap: 10000000, // dungeon
+    flurbocap: 1000000, // dungeon
   },
   godlike: {
     respawn: (t) => Math.min(t, 1),
-  },
-  nomore: {
-    items: [],
   },
   unlock: {
     islands: "abcde_",
@@ -59,9 +50,6 @@ exports.cheatConfig = {
   },
   wipe: {
     cogs: 0,
-  },
-  cauldron: {
-    liq_rate: (t) => 100000,
   },
   talent: {
     168: (t) => t * 2, // orb of remembrance time doubled,
@@ -115,17 +103,17 @@ exports.cheatConfig = {
       // RooMegafeather: (t) => t,
       // RooBonuse: (t) => t,
     },
-	alchemy: {
-		BubbleBonus: (t) => t, // bubble effects (t * 2 would be 2x effects from bubbles)
-		CauldronCosts: (t) => t, // cost to upgrade a bubble
-		ResearchSpeed: (t) => t * 4, // brewing speed
-		VialCosts: (t) => t / 2, // vials are 50% cheaper
-		VialBonus: (t) => t, // vial effects (t * 2 would be 2x effects from vials)
-		PctChanceNewBubble: (t) => t * 4, // 4x higher chance for a new bubble
-		CauldronLvsBrewREQ: (t) => t / 2, // upgrading cauldrons is 50% cheaper
-		LiquidCap: (t) => t * 2, // 2x liquid capacity
-		LiquidHRrate: (t) => t * 4, // 4x liquid speed
-	},
+    alchemy: {
+      BubbleBonus: (t) => t, // bubble effects (t * 2 would be 2x effects from bubbles)
+      CauldronCosts: (t) => t, // cost to upgrade a bubble
+      ResearchSpeed: (t) => t * 4, // brewing speed
+      VialCosts: (t) => t / 2, // vials are 50% cheaper
+      VialBonus: (t) => t, // vial effects (t * 2 would be 2x effects from vials)
+      PctChanceNewBubble: (t) => t * 4, // 4x higher chance for a new bubble
+      CauldronLvsBrewREQ: (t) => t / 2, // upgrading cauldrons is 50% cheaper
+      LiquidCap: (t) => t * 2, // 2x liquid capacity
+      LiquidHRrate: (t) => t * 4, // 4x liquid speed
+    },
   },
   w3: {
     buildspd: (t) => t * 10,
@@ -654,6 +642,10 @@ exports.cheatConfig = {
     },
     sneaksymbol: {
       SneakSymbolChanceBase: (t) => 1,
+    },
+    zenith: {
+      ZenithMarketCost: (t) => t / 2,
+      ZenithMarketBonus: (t) => t * 2,
     },
   },
   misc: {
