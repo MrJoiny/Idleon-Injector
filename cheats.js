@@ -14,8 +14,7 @@ let monsterDefs;
 let CList; // The custom list definitions
 let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
-// let CListFuncDict = {}; // Dictionary of custom list entries
-let CListCached;
+const itemTypes = new Set();
 
 let iframe; // Declare iframe globally, initialize later
 
@@ -53,6 +52,10 @@ function registerCommonVariables() {
   events = function (num) {
     return this["scripts.ActorEvents_" + num];
   }.bind(this);
+  Object.values(itemDefs).forEach(entry => {
+    const type = entry.h?.Type;
+    if (type) itemTypes.add(type);
+  });
 }
 
 // The main function that executes all cheats
@@ -177,28 +180,10 @@ registerCheat(
 registerCheat(
   "drop",
   function (params) {
-    const actorEvents189 = events(189);
-    const character =
-      bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
-
     const item = params[0];
     const amount = params[1] || 1;
-    try {
-      const itemDefinition = itemDefs[item];
-      if (itemDefinition) {
-        const toChest = cheatConfig.wide.autoloot.tochest;
-        cheatConfig.wide.autoloot.tochest = false;
-        let x = character.getXCenter();
-        let y = character.getValue("ActorEvents_20", "_PlayerNode");
-        if (item.includes("SmithingRecipes"))
-          actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);
-        else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
-        cheatConfig.wide.autoloot.tochest = toChest;
-        return `Dropped ${itemDefinition.h.displayName.replace(/_/g, " ")}. (x${amount})`;
-      } else return `No item found for '${item}'`;
-    } catch (err) {
-      return `Error: ${err}`;
-    }
+
+    dropOnChar(item, amount);
   },
   "drop items, hitting enter selects from the list, add the number you want to drop after that"
 );
@@ -330,6 +315,7 @@ const minigameCheat = function (params) {
   setupHoopsMinigameProxy.call(this);
   setupDartsMinigameProxy.call(this);
   setupMonumentProxy.call(this);
+  setupScratchMinigameProxy.call(this);
   cheatState.minigame[params[0]] = !cheatState.minigame[params[0]];
   return `${cheatState.minigame[params[0]] ? "Activated" : "Deactivated"} ${params[0]
     } minigame cheat.`;
@@ -346,7 +332,8 @@ registerCheats({
     { name: "poing", message: "poing minigame cheat", fn: minigameCheat },
     { name: "hoops", message: "hoops minigame cheat", fn: minigameCheat },
     { name: "darts", message: "darts minigame cheat", fn: minigameCheat },
-    { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat }
+    { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat },
+    { name: "scratch", message: "event scratch minigame cheat", fn: minigameCheat },
   ],
 });
 
@@ -388,6 +375,7 @@ registerCheats({
     { name: "quest", message: "quest item requirment nullification" },
     { name: "star", message: "star point requirement nullification" },
     { name: "giant", message: "100% giant mob spawn rate" },
+    { name: "gems", message: "freezes current gem amount" },
     {
       name: "plunderous",
       message: "100% plunderous mob spawn rate",
@@ -444,6 +432,7 @@ registerCheats({
         "dartshop cost nullify",
       configurable: { isObject: true },
     },
+
   ],
 });
 
@@ -461,31 +450,14 @@ registerCheats({
   ],
 });
 
-// Cauldron cheats
-registerCheats({
-  name: "cauldron",
-  message: "costs and duration nullifications (except P2W).",
-  canToggleSubcheats: true,
-  subcheats: [
-    { name: "vialrng", message: "vial unlock upon rolling 1+" },
-    { name: "vialattempt", message: "unlimited vial attempts" },
-    { name: "bubblecost", message: "bubble cost nullification" },
-    { name: "vialcost", message: "vial cost nullification" },
-    { name: "lvlreq", message: "lvl requirement nullification" },
-    { name: "newbubble", message: "new bubble chance 100%" },
-    { name: "re_speed", message: "super research speed" },
-    { name: "liq_rate", message: "super liquid speed", configurable: true },
-  ],
-});
-
 registerCheats({
   name: "w1",
   message: "all w1 cheats.",
   canToggleSubcheats: true,
   subcheats: [
     { name: "anvil", message: "anvil cost and duration nullification." },
-    { name: "forge", message: "forge upgrade cost nullification." },
-    { name: "stampcost", message: "stamp cost nullification." },
+    { name: "forge", message: "forge speed and capacity multiplier check config" },
+    { name: "stampcost", message: "stamp cost reduction multiplier check config" },
     {
       name: "smith",
       message: "smithing cost nullification (change maps to have the effect apply).",
@@ -504,6 +476,8 @@ registerCheats({
     { name: "boss", message: "unlimited boss attempts" },
     { name: "roo", message: "Enable Roo cheats, check config file", configurable: true },
     { name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
+    { name: "vialrng", message: "vial unlock upon rolling 1+" },
+    { name: "vialattempt", message: "unlimited vial attempts" },
   ],
 });
 
@@ -714,6 +688,11 @@ registerCheats({
       message: "bubba cheats check config file",
       configurable: { isObject: true },
     },
+    {
+      name: "zenith",
+      message: "zenith market cheats check config file",
+      configurable: { isObject: true },
+    },
   ],
 });
 
@@ -846,6 +825,12 @@ registerCheats({
 registerCheat(
   "nomore",
   function (params) {
+    // init nomore, removed from config because of the webui overwriting it
+    if (!cheatConfig.nomore) {
+      cheatConfig.nomore = {
+        items: [],
+      };
+    }
     if (
       params &&
       params[0] &&
@@ -998,8 +983,8 @@ registerCheats({
       name: "save",
       message: "Saves the current values of items and cards",
       fn: function (params) {
-        dictVals.itemDefs = JSON.parse(JSON.stringify(itemDefs));
-        dictVals.CardStuff = JSON.parse(JSON.stringify(CList.CardStuff));
+        dictVals.itemDefs = deepCopy(itemDefs);
+        dictVals.CardStuff = deepCopy(CList.CardStuff);
         return `Saved the current values.`;
       },
     },
@@ -1022,181 +1007,6 @@ registerCheats({
   ],
 });
 
-// The bulk item function with dictionary item collections
-registerCheat(
-  "bulk",
-  function (params) {
-    const actorEvents189 = events(189);
-    const character =
-      bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
-
-    // Obtaining clusters of items at once (Doesn't return a drop log in the console)
-    const items = params[0] || "default";
-    const amnt = params[1] || 1;
-    try {
-      let x = character.getXCenter();
-      let y = character.getValue("ActorEvents_20", "_PlayerNode");
-      const drop_log = [];
-      // Here we'll use the pre-defined function to work out the magic
-      if (DictDrops[items]) {
-        if (items === "startalents")
-          DictDrops[items].forEach((item) => {
-            actorEvents189._customBlock_DropSomething("TalentBook1", item, 0, 0, 2, y, 0, x, y);
-            drop_log.push(`Dropped talent book with id ${item}`);
-          });
-        if (items === "smith") {
-          DictDrops[items].forEach((item) => {
-            // Drop the regular items
-            if (itemDefs[item]) {
-              actorEvents189._customBlock_DropSomething(item, 1, 0, 0, 2, y, 0, x, y);
-              drop_log.push(`Dropped ${itemDefs[item].h.displayName.replace(/_/g, " ")}. (x${1})`);
-            } else drop_log.push(`No item found for '${item}'`);
-          });
-          //Not really too efficient, must be a better way to deal with this... Since this one's kinda lackluster I'll postphone it for now
-          const notreleased = [
-            [23, 59, 63, 70],
-            [24, 44, 48, 65, 66, 67, 79],
-            [20, 21, 46, 59],
-          ]; // Array of smithing recipes that aren't out yet
-          if (amnt == 1)
-            [...Array(84).keys()].forEach((item) => {
-              if (notreleased[0].indexOf(item) == -1)
-                actorEvents189._customBlock_DropSomething(
-                  `SmithingRecipes1`,
-                  0,
-                  item,
-                  0,
-                  2,
-                  y,
-                  0,
-                  x,
-                  y
-                );
-            });
-          if (amnt == 2)
-            [...Array(80).keys()].forEach((item) => {
-              if (notreleased[1].indexOf(item) == -1)
-                actorEvents189._customBlock_DropSomething(
-                  `SmithingRecipes2`,
-                  0,
-                  item,
-                  0,
-                  2,
-                  y,
-                  0,
-                  x,
-                  y
-                );
-            });
-          if (amnt == 3)
-            [...Array(60).keys()].forEach((item) => {
-              if (notreleased[2].indexOf(item) == -1)
-                actorEvents189._customBlock_DropSomething(
-                  `SmithingRecipes3`,
-                  0,
-                  item,
-                  0,
-                  2,
-                  y,
-                  0,
-                  x,
-                  y
-                );
-            });
-        } else
-          DictDrops[items].forEach((item) => {
-            if (itemDefs[item]) {
-              actorEvents189._customBlock_DropSomething(item, amnt, 0, 0, 2, y, 0, x, y);
-              drop_log.push(
-                `Dropped ${itemDefs[item].h.displayName.replace(/_/g, " ")}. (x${amnt})`
-              );
-            } else drop_log.push(`No item found for '${item}'`);
-          });
-      } else
-        drop_log.push(
-          ` The sub-command didn't yield any item collection. Existing sub-commands are: \n ${Object.keys(
-            DictDrops
-          ).join(", ")}`
-        );
-      return drop_log.join("\n");
-    } catch (err) {
-      return `Error: ${err}`;
-    }
-  },
-  `Drop a collection of items at once. Usage: bulk [sub-command] [amount]`
-);
-
-/****************************************************************************************************
-  Runescape homage cheats: Now we're finally God Gaming xD
-*/
-registerCheat(
-  "runescape",
-  function () {
-    // Activate ability bar switching when switching weapons
-    cheatState.runescape = !cheatState.runescape;
-    return `${cheatState.runescape ? "Activated" : "Deactived"} ability bar switching.`;
-  },
-  "Switches ability bar when switching weapons."
-);
-
-// Preset BiS weapon + upgrade binding
-registerCheat(
-  "bind",
-  function () {
-    const AttackLoadout = bEngine.getGameAttribute("AttackLoadout");
-    bEngine.whenAnyKeyPressedListeners.push(function (e, t) {
-      if (
-        (e.keyCode === 65 || e.keyCode === 83 || e.keyCode === 68 || e.keyCode === 70) &&
-        bEngine.getGameAttribute("MenuType") === 6
-      ) {
-        const BiS = {
-          65: ["STR", "EquipmentSword3"], // Key A
-          83: ["AGI", "EquipmentBows8"], // Key S
-          68: ["WIS", "EquipmentWands7"], // Key D
-          70: ["LUK", "EquipmentPunching5"], // Key F
-        };
-        // BiS = Warped Weapon Upgrade Stone: All random stats goes to the style's DPS stat
-        const upgrstats = { Weapon_Power: 3, Defence: 0, Random_Stat: 4 }; // Edit this line to whatever you like
-        const EquipOrd = bEngine.getGameAttribute("EquipmentOrder")[0];
-        const EquipMap = bEngine.getGameAttribute("EquipmentMap")[0];
-        const upgrslots = itemDefs.h[BiS[e.keyCode][1]].h["Upgrade_Slots_Left"];
-        if (BiS[e.keyCode]) {
-          // Only procs if whatever keycode is defined in the dictionary
-          EquipOrd[1] = BiS[e.keyCode][1]; // Change equipped weapon
-          EquipMap[1].h["Upgrade_Slots_Left"] = upgrslots * -1; // Deduct the amount of slots left
-          EquipMap[1].h["Weapon_Power"] = upgrslots * upgrstats["Weapon_Power"];
-          EquipMap[1].h["Defence"] = upgrslots * upgrstats["Defence"];
-          EquipMap[1].h[BiS[e.keyCode][0]] = upgrslots * upgrstats["Random_Stat"];
-        }
-        if (cheatState.runescape) {
-          // Let's play Runescape xD
-          switch (e.keyCode) {
-            case 65: // Melee
-              AttackLoadout[0] = [90, 91, 105, 120, 106, 121];
-              AttackLoadout[1] = [94, 108, 122, 107, 639, 635];
-              break;
-            case 83: // Ranged
-              AttackLoadout[0] = [270, 271, 285, 300, 286, 301];
-              AttackLoadout[1] = [273, 288, 303, 302, 639, 635];
-              break;
-            case 68: // Mage
-              AttackLoadout[0] = [453, 450, 451, 482, 465, 467];
-              AttackLoadout[1] = [481, 480, 466, 469, 639, 635];
-              break;
-            case 70: // Buffbar
-              AttackLoadout[0] = [15, 30, 94, 108, 288, 481];
-              AttackLoadout[1] = [302, 303, 466, 469, 122, 273];
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    });
-    return `The custom keybinds have been activated! (Has to be re-applied when changing maps)`;
-  },
-  "Binds a weapon to a key. (A = STR, S = AGI, D = WIS, F = LUK)"
-);
 
 // This function doesn't kill other players (luckily) but yourself :)
 registerCheat(
@@ -1715,34 +1525,6 @@ registerCheat(
   "!danger! Change character class to this id"
 );
 
-// A highly dangerous function, only use it on shadow banned test accounts!!
-registerCheat(
-  "abilitybar",
-  function (params) {
-    const talentDefs = CList.TalentIconNames;
-    const AttackLoadout = bEngine.getGameAttribute("AttackLoadout");
-    // First parameter is the ability bar that ranges from 0 to 9.
-    const abilitybar = params[0];
-    const abilities = params.slice(1); //
-    const Abilities = [];
-    if (abilitybar < 10 && abilitybar >= 0) {
-      for (const [index, element] of Object.entries(abilities)) {
-        if (index >= 6) return "An ability bar can only hold 6 elements!";
-        if (element < talentDefs.length && element >= 0) {
-          Abilities.push(
-            `Bar ${abilitybar} ability ${index} set to: ${talentDefs[element]
-              .replace(/_/g, " ")
-              .toLowerCase()}`
-          );
-          AttackLoadout[abilitybar][index] = element;
-        } else Abilities.push("Ability falls out of the known id range!");
-      }
-      bEngine.setGameAttribute("AttackLoadout", AttackLoadout);
-      return Abilities.join("\n");
-    } else return "The ability bar index ranges from 0 to 9!";
-  },
-  "!danger! The ability bar index a from 0-2, then up to 6 ability IDs x y z... (use list ability to find ability IDs)"
-);
 
 // This function is extremely dangerous, as you're changing the lvl value your exp isn't changing accordingly
 const changeLv0 = function (params) {
@@ -1984,31 +1766,6 @@ registerCheat(
   "!danger! Equip any item at any class/level"
 );
 
-// I still aim to add even more costs to nullify
-registerCheat(
-  "nullify",
-  function (params) {
-    const changedstuff = []; // Used to concatenate strings about what has been nullified by this command xD
-
-    changedstuff.push(cheat.call(this, "wide mtx"));
-    changedstuff.push(cheat.call(this, "wide post"));
-    changedstuff.push(cheat.call(this, "wide task"));
-    changedstuff.push(cheat.call(this, "wide quest"));
-    changedstuff.push(cheat.call(this, "wide star"));
-    changedstuff.push(cheat.call(this, "wide obol"));
-    changedstuff.push(cheat.call(this, "wide candy"));
-    changedstuff.push(cheat.call(this, "unlock"));
-    changedstuff.push(cheat.call(this, "w1"));
-    changedstuff.push(cheat.call(this, "w3"));
-    changedstuff.push(cheat.call(this, "w4"));
-    changedstuff.push(cheat.call(this, "w5"));
-    changedstuff.push(cheat.call(this, "w6"));
-
-    return changedstuff.join("\n"); // Tell the user how many things have happened through this singular command xD
-  },
-  "nullifies a lot of things, use with caution!"
-);
-
 // Don't use unless needed: This function exists to wipe certain stuff from your already broken account!
 registerCheat(
   "fix_save",
@@ -2077,6 +1834,24 @@ async function setup() {
   try { // Added try block for detailed error catching within setup
     await gameReady.call(this);
 
+    // Ensure cheatConfig.multiply exists with defaults
+    // TODO: find a better solution
+    if (!cheatConfig.multiply) {
+      cheatConfig.multiply = {
+        damage: 1,
+        efficiency: 1,
+        afk: 1,
+        drop: 1,
+        money: 1,
+        classexp: 1,
+        crystal: 1,
+        skillexp: 1,
+        shopstock: 1,
+        printer: 1,
+        monsters: 1,
+      };
+    }
+
     // setup firebase proxy which is needed,
     // if we go into the character selection screen, 
     // since that breaks a lot of proxies
@@ -2088,7 +1863,7 @@ async function setup() {
     // The name is generated so it may well change between versions and need updating here
     // changed for a solution not relying on the name.
     // this still crashes after a while playing the game 24.11.2025
-    window[0].agIis = function () { };
+    // window[0].agIis = function () { };
     // window[0].agIis = new Proxy(window[0].agIis, {
     //   apply: function (target, thisArg, argumentsList) {
     //     const n = argumentsList[0];
@@ -2178,6 +1953,31 @@ async function setup() {
       ],
     });
 
+    // TODO: books, anvil receipe only drop default | dungeon items drop with ring, weap, etc.
+    registerCheats({
+      name: "bulk",
+      message: "Drop a collection of items at once. Usage: bulk [sub-command] [amount]",
+      canToggleSubcheats: true,
+      subcheats: Array.from(itemTypes).sort().map(type => ({
+        name: type,
+        message: `Drop all items of type ${type}`,
+        fn: function (params) {
+          const amount = parseInt(params[0]) || 1;
+          const blackList = CList.RANDOlist[64];
+          let droppedCount = 0;
+
+          console.log(blackList);
+          for (const [code, entry] of Object.entries(itemDefs)) {
+            if (entry.h?.Type === type && !blackList.includes(code)) {
+              dropOnChar(code, amount);
+              droppedCount++;
+            }
+          }
+          return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
+        }
+      }))
+    });
+
 
     let rtn = [];
     rtn.push("--------------------");
@@ -2213,8 +2013,8 @@ function runStartupCheats() {
 }
 
 function setupAllProxies() {
-  setupArcadeProxies.call(this);
-  setupBetterCogsProxy.call(this);
+  setupGemsProxy.call(this);
+  setupSteamAchProxy.call(this);
   setupTimeCandyProxy.call(this);
   setupCurrenciesOwnedProxy.call(this);
   setupArbitraryProxy.call(this);
@@ -2225,6 +2025,9 @@ function setupAllProxies() {
   setupw2StuffProxy.call(this);
   setupw3StuffProxy.call(this);
   setupw4StuffProxy.call(this);
+  setupw5Proxies.call(this);
+  setupw6Proxies.call(this);
+  setupw7Proxies.call(this);
   setupOptionsListAccountProxy.call(this);
   setupCListProxy.call(this);
   setupQuestProxy.call(this);
@@ -2237,9 +2040,6 @@ function setupAllProxies() {
   setupItemsMenuProxy.call(this);
   setupTrappingProxy.call(this);
   setupTalentProxy.call(this);
-  setupw5Proxies.call(this);
-  setupw6Proxies.call(this);
-  setupw7Proxies.call(this);
   setupItemMiscProxy.call(this);
   setupMiscProxies.call(this);
   setupPlayerLoadProxy.call(this);
@@ -2270,10 +2070,38 @@ function setupFirebaseProxy() {
         setupOptionsListAccountProxy.call(this);
         setupTrappingProxy.call(this);
         setupTimeCandyProxy.call(this);
+        setupAlchProxy.call(this);
         return result;
       },
     });
   }
+}
+
+// the game is spamming via stdout? to steam and that freezes the game with the cheatinject
+// this creates a list that already sent to steam and stops the spam
+function setupSteamAchProxy() {
+  let achieveList = [];
+  this["FirebaseStorage"].areaCheck = new Proxy(this["FirebaseStorage"].areaCheck, {
+    apply: function (target, thisArg, args) {
+      if (!cheatConfig.steamachieve) return;
+      if (achieveList.includes(args[0])) return;
+      achieveList.push(args[0]);
+      return Reflect.apply(target, thisArg, args)
+    }
+  });
+}
+
+// freezes gems not changable
+function setupGemsProxy() {
+  createProxy(bEngine.gameAttributes.h, "GemsOwned", {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.wide.gems) return;
+      this[backupKey] = value
+    },
+  });
 }
 
 
@@ -2309,6 +2137,12 @@ function setupBehaviorScriptProxies() {
       } else if (cheatState["rngInt"]) {
         return cheatState["rngInt"];
       }
+
+      // this forces the vip book to always be max level, it does not show ingame
+      if (cheatState.w3.book && bEngine.getGameAttribute("MenuType2") == 31 && argumentsList[0] == 1) {
+        return argumentsList[1];
+      }
+
       return Reflect.apply(originalFn, context, argumentsList);
     },
   });
@@ -2477,26 +2311,6 @@ function setupCreateElementProxy() {
 
       let resp = Reflect.apply(originalFn, context, argumentsList);
       return resp;
-    },
-  });
-}
-
-function setupBetterCogsProxy() {
-  events(481).prototype._customEvent_WorkbenchStuff2 = new Proxy(events(481).prototype._customEvent_WorkbenchStuff2, {
-    apply: function (originalFn, context, argumentsList) {
-      try {
-        if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
-          cheatState["rng"] = "high";
-          // cheatState["rngInt"] = ["high", "high", "low", "high"]; // does not work like i thought
-          let rtn = Reflect.apply(originalFn, context, argumentsList);
-          cheatState["rng"] = false;
-          // cheatState["rngInt"] = false;
-          return rtn;
-        }
-      } catch (e) {
-        console.error("Error in Better Cogs Proxy:", e);
-      }
-      return Reflect.apply(originalFn, context, argumentsList);
     },
   });
 }
@@ -2671,176 +2485,264 @@ function setupItemsMenuProxy() {
 
 // Unlock quick references
 function setupOptionsListAccountProxy() {
-  // Using defineProperties instead of Proxy
-  const optionsListAccount = bEngine.getGameAttribute("OptionsListAccount");
-  optionsListAccount._26 = optionsListAccount[26];
-  Object.defineProperty(optionsListAccount, 26, {
-    get: function () {
-      if (cheatConfig.unban) return 0;
-      return this._26;
+  const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
+
+  if (optionsListAccount._isPatched) return;
+  Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
+
+  // unban
+  createProxy(optionsListAccount, 26, {
+    get: function (original) {
+      if (cheatState.unban) return 0;
+      return original;
     },
-    set: function (value) {
-      if (cheatConfig.unban) return true;
-      this._26 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unban) return;
+      this[backupKey] = value
     },
-    enumerable: true,
-  });
-  optionsListAccount._29 = optionsListAccount[29];
-  Object.defineProperty(optionsListAccount, 29, {
-    get: function () {
-      if (cheatState.wide.eventitems) return 0;
-      return this._29;
-    },
-    set: function (value) {
-      if (cheatState.wide.eventitems) return true;
-      this._29 = value;
-      return true;
-    },
-    enumerable: true,
   });
 
-  optionsListAccount._33 = optionsListAccount[33];
-  Object.defineProperty(optionsListAccount, 33, {
-    get: function () {
+  // unlimited eventitems
+  createProxy(optionsListAccount, 29, {
+    get: function (original) {
+      if (cheatState.wide.eventitems) return 0;
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.wide.eventitems) return;
+      this[backupKey] = value
+    },
+  });
+
+  // unlimited minigames
+  createProxy(optionsListAccount, 33, {
+    get: function (original) {
       if (cheatState.minigames) return 1;
-      return this._33;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.minigames) return true;
-      this._33 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.minigames) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._34 = optionsListAccount[34];
-  Object.defineProperty(optionsListAccount, 34, {
-    get: function () {
+
+  // unlock quickref everywhere
+  createProxy(optionsListAccount, 34, {
+    get: function (original) {
       if (cheatState.unlock.quickref) return 0;
-      return this._34;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.unlock.quickref) return true;
-      this._34 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unlock.quickref) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._71 = optionsListAccount[71];
-  Object.defineProperty(optionsListAccount, 71, {
-    get: function () {
-      return this._71;
+
+  // set maximum dungeon creditcap, prevent account bricking
+  // 71 - total number of credits, for rank
+  createProxy(optionsListAccount, 71, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
-      value = Math.min(cheatConfig.dungeon.creditcap, value);
-      this._71 = value;
-      return true;
+    set: function (value, backupKey) {
+      value = Math.min(cheatConfig.maxval.creditcap, value);
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._72 = optionsListAccount[72];
-  Object.defineProperty(optionsListAccount, 72, {
-    get: function () {
-      return this._72;
+
+  // set maximum dungeon creditcap, prevent account bricking
+  // 72 - current amount of credits
+  createProxy(optionsListAccount, 72, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
-      value = Math.min(cheatConfig.dungeon.creditcap, value);
-      this._72 = value;
-      return true;
+    set: function (value, backupKey) {
+      value = Math.min(cheatConfig.maxval.creditcap, value);
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._73 = optionsListAccount[73];
-  Object.defineProperty(optionsListAccount, 73, {
-    get: function () {
-      return this._73;
+
+  // set maximum dungeon flurbocap, prevent account bricking
+  // 73 - current amount of flurbo
+  createProxy(optionsListAccount, 73, {
+    get: function (original) {
+      return original;
     },
-    set: function (value) {
-      value = Math.min(cheatConfig.dungeon.flurbocap, value);
-      this._73 = value;
-      return true;
+    set: function (value, backupKey) {
+      value = Math.min(cheatConfig.maxval.flurbocap, value);
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._100 = optionsListAccount[100];
-  Object.defineProperty(optionsListAccount, 100, {
-    get: function () {
+
+  // w4 unlimited spiceclaim
+  createProxy(optionsListAccount, 100, {
+    get: function (original) {
       if (cheatState.w4.spiceclaim) return 0;
-      return this._100;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.w4.spiceclaim) return true;
-      this._100 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w4.spiceclaim) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._169 = optionsListAccount[169];
-  Object.defineProperty(optionsListAccount, 169, {
-    get: function () {
+
+  // unlocks islands via string from config
+  createProxy(optionsListAccount, 169, {
+    get: function (original) {
       if (cheatState.unlock.islands) return cheatConfig.unlock.islands;
-      return this._169;
+      return original;
     },
-    set: function (value) {
-      if (cheatState.unlock.islands) return true;
-      this._169 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.unlock.islands) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
-  optionsListAccount._185 = optionsListAccount[185];
-  Object.defineProperty(optionsListAccount, 185, {
-    get: function () {
-      if (cheatState.w2.boss && this._185 == 10) this._185 = 0;
-      return this._185;
+
+  // boss attempts / not sure what it does and how it works
+  // sets to 0 if cheat is enabled and original is 10
+  createProxy(optionsListAccount, 185, {
+    get: function (original) {
+      if (cheatState.w2.boss && original == 10) original = 0;
+      return original;
     },
-    set: function (value) {
-      this._185 = value;
-      return true;
+    set: function (value, backupKey) {
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 
   // event spins
-  optionsListAccount._325 = optionsListAccount[325];
-  Object.defineProperty(optionsListAccount, 325, {
-    get: function () {
-      if (cheatState.wide.eventspins) this._325 = 10;
-      return this._325;
+  createProxy(optionsListAccount, 325, {
+    get: function (original) {
+      if (cheatState.wide.eventspins) return 10;
+      return original;
     },
-    set: function (value) {
-      this._325 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.wide.eventspins) return;
+      this[backupKey] = value
     },
-    enumerable: true,
+  });
+
+  // max cap for total bones
+  createProxy(optionsListAccount, 329, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totalbones;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totalbones, value);
+      this[backupKey] = value
+    },
+  });
+
+  // max cap for all bones
+  bonesID = [330, 331, 332, 333]
+  bonesID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.bones;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.bones, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for all dusts
+  dustID = [357, 358, 359, 360, 361]
+  dustID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.dust;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.dust, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for total dust
+  createProxy(optionsListAccount, 362, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totaldust;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totaldust, value);
+      this[backupKey] = value
+    },
   });
 
   // unlimited emperor runs 
-  optionsListAccount._370 = optionsListAccount[370];
-  Object.defineProperty(optionsListAccount, 370, {
-    get: function () {
-      if (cheatState.w6.emperor) this._370 = -10;
-      return this._370;
+  createProxy(optionsListAccount, 370, {
+    get: function (original) {
+      if (cheatState.w6.emperor) return -10;
+      return original;
     },
-    set: function (value) {
-      this._370 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w6.emperor) return;
+      this[backupKey] = value
     },
-    enumerable: true,
+  });
+
+  // max cap for all tach
+  tachID = [388, 389, 390, 391, 392, 393]
+  tachID.forEach(index => {
+    createProxy(optionsListAccount, index, {
+      get: function (original) {
+        return original;
+      },
+      set: function (value, backupKey) {
+        if (isNaN(value)) {
+          this[backupKey] = cheatConfig.maxval.tach;
+          return;
+        }
+        value = Math.min(cheatConfig.maxval.tach, value);
+        this[backupKey] = value
+      },
+    });
+  });
+
+  // max cap for total tach
+  createProxy(optionsListAccount, 394, {
+    get: function (original) {
+      return original;
+    },
+    set: function (value, backupKey) {
+      if (isNaN(value)) {
+        this[backupKey] = cheatConfig.maxval.totaltach;
+        return;
+      }
+      value = Math.min(cheatConfig.maxval.totaltach, value);
+      this[backupKey] = value
+    },
   });
 
   // unlimited jeweled cogs
-  optionsListAccount._414 = optionsListAccount[414];
-  Object.defineProperty(optionsListAccount, 414, {
-    get: function () {
-      if (cheatState.w3.jeweledcogs) this._414 = 0;
-      return this._414;
+  createProxy(optionsListAccount, 414, {
+    get: function (original) {
+      if (cheatState.w3.jeweledcogs) return 0;
+      return original;
     },
-    set: function (value) {
-      this._414 = value;
-      return true;
+    set: function (value, backupKey) {
+      if (cheatState.w3.jeweledcogs) return;
+      this[backupKey] = value
     },
-    enumerable: true,
   });
 }
 
@@ -2907,16 +2809,11 @@ function setupArbitraryProxy() {
     const key = argumentsList[0];
     const base = Reflect.apply(ForgeStats, this, argumentsList);
 
-    if (!cheatState.w1.forge || !cheatConfig.w1 || !cheatConfig.w1.forge) return base;
-
-    // 2 = forge speed (used by ForgeSpeeed)
-    if (key === 2 && typeof cheatConfig.w1.forge.speed === "function") {
-      return cheatConfig.w1.forge.speed(base);
-    }
-
-    // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
-    if (key === 1 && typeof cheatConfig.w1.forge.capacity === "function") {
-      return cheatConfig.w1.forge.capacity(base);
+    if (cheatState.w1.forge) {
+      // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
+      if (key === 1) return cheatConfig.w1.forge.capacity(base);
+      // 2 = forge speed (used by ForgeSpeeed)
+      if (key === 2) return cheatConfig.w1.forge.speed(base);
     }
 
     return base;
@@ -3007,6 +2904,8 @@ function setupArbitraryProxy() {
   const generateMonsterDrops = ActorEvents12._customBlock_GenerateMonsterDrops;
   ActorEvents12._customBlock_GenerateMonsterDrops = function (...argumentsList) {
     let drops = Reflect.apply(generateMonsterDrops, this, argumentsList);
+    // if cheatConfig.nomore not defined, return all drops
+    if (!cheatConfig.nomore) return drops;
     // filter out drops where drop[0] matches any regex in itemsNotToDrop
     drops = drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
 
@@ -3193,7 +3092,7 @@ function setupTrappingProxy() {
 // Ability tweaking cheat
 function setupAbilityProxy() {
   const CustomMaps = this["scripts.CustomMaps"];
-  const atkMoveMap = JSON.parse(JSON.stringify(this["scripts.CustomMaps"].atkMoveMap.h));
+  const atkMoveMap = deepCopy(this["scripts.CustomMaps"].atkMoveMap.h);
   for (const [key, value] of Object.entries(atkMoveMap)) {
     value.h["cooldown"] = 0;
     value.h["castTime"] = 0.1;
@@ -3229,123 +3128,127 @@ function setupSmithProxy() {
   tCustomList["ItemToCraftCostTYPE"] = proxy;
 }
 
-// see comment on setupCListProxy() not needed with that implementation
-// dont delete this function, might revert back to that implementation
-// function updateCListFuncDict() {
-//   CListFuncDict = {
-//     AlchemyVialItemsPCT: new Array(CList.AlchemyVialItemsPCT.length).fill(99), // Vials unlock at rollin 1+
-//     SaltLicks: ChangeND(2, "SaltLicks", "0", [2]), // Nullify Saltlick upgrade cost
-//     RefineryInfo: ChangeND(2, "RefineryInfo", "0", [6, 7, 8, 9, 10, 11]), // Nullify refinery cost
-//     PrayerInfo: ChangeND(2, ChangeND(2, "PrayerInfo", "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]),
-//     MTXinfo: ChangeND(4, ChangeND(4, "MTXinfo", 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]), // Nullify MTX cost
-//     // MTXinfo: ChangeND(4, "MTXinfo", 0, [3, 7]), // Nullify MTX cost
-//     PostOfficePossibleOrders: ChangeND(4, "PostOfficePossibleOrders", "0", [1]), // Nullify post office order cost
-//     GuildGPtasks: ChangeND(2, "GuildGPtasks", "0", [1]), // Nullify guild task requirements
-//     TaskDescriptions: ChangeND(3, "TaskDescriptions", "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]), // Nullify task requirements
-//     SSignInfoUI: ChangeND(2, "SSignInfoUI", "0", [4]), // Nullify star sign unlock req
-//     WorshipBASEinfos: ChangeND(2, "WorshipBASEinfos", 0, [6]), // Nullify worship cost					// Nullify worship cost
-//   };
-//   return CListFuncDict;
-// }
-
-// new implementation like this could cause performance issues, need to evaluate that
-// its reevaluated every call instead of having a dict that is precalculated.
-// this is just done to have wide mtx and wide gembuylimit separately working.
 function setupCListProxy() {
-  if (!CListCached) {
-    CListCached = deepCopy(CList);
-  }
-
-  function defineProxiedProperty(propName, getModifiedValue) {
-    Object.defineProperty(CList, propName, {
-      get: function () {
-        const modified = getModifiedValue.call(this);
-        return modified !== undefined ? modified : CListCached[propName];
-      },
-      enumerable: true,
-    });
-  }
-
-  // Vials unlock at rollin 1+
-  defineProxiedProperty("AlchemyVialItemsPCT", function () {
-    if (cheatState.cauldron.vialrng) {
-      return new Array(CListCached.AlchemyVialItemsPCT.length).fill(99);
-    }
-  });
-
-  // Nullify Saltlick upgrade cost
-  defineProxiedProperty("SaltLicks", function () {
-    if (cheatState.w3.saltlick) {
-      return ChangeND(2, deepCopy(CListCached.SaltLicks), "0", [2]);
-    }
-  });
-
-  // Nullify refinery cost
-  defineProxiedProperty("RefineryInfo", function () {
-    if (cheatState.w3.refinery) {
-      return ChangeND(2, deepCopy(CListCached.RefineryInfo), "0", [6, 7, 8, 9, 10, 11]);
-    }
-  });
-
-  // Nullify prayer requirements
-  defineProxiedProperty("PrayerInfo", function () {
-    if (cheatState.w3.prayer) {
-      return ChangeND(2, ChangeND(2, deepCopy(CListCached.PrayerInfo), "0", [4, 6]), "None._Even_curses_need_time_off_every_now_and_then.", [2]);
-    }
-  });
+  // this stops the function from running multiple times, if already proxied
+  if (CList._isPatched) return;
+  Object.defineProperty(CList, "_isPatched", { value: true, enumerable: false });
 
   // Nullify MTX cost / Set gem buy limit
-  defineProxiedProperty("MTXinfo", function () {
-    if (cheatState.wide.mtx && cheatState.wide.gembuylimit) {
-      return ChangeND(4, ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
-    } else if (cheatState.wide.mtx) {
-      return ChangeND(4, deepCopy(CListCached.MTXinfo), 0, [3, 7]);
-    } else if (cheatState.wide.gembuylimit) {
-      return ChangeND(4, deepCopy(CListCached.MTXinfo), function (t) { return Math.max(t, cheatConfig.wide.gembuylimit); }, [5]);
-    }
-  });
+  const mtxIndex = [3, 7]
+  const gembuylimitIndex = 5
+
+  traverse(CList.MTXinfo, 3, (data) => {
+    // free mtx
+    mtxIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.wide.mtx) return 0;
+        return original;
+      });
+    })
+
+    // gembuylimit
+    createProxy(data, gembuylimitIndex, (original) => {
+      if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig.wide.gembuylimit);
+      return original;
+    })
+  })
+
+  // Nullify refinery cost
+  const refineryIndex = [6, 7, 8, 9, 10, 11]
+
+  traverse(CList.RefineryInfo, 1, (data) => {
+    refineryIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.w3.refinery) return "0";
+        return original;
+      });
+    })
+  })
+
+  // Vials unlock at rollin 1+
+  const vials = CList.AlchemyVialItemsPCT;
+  createProxy(CList, "AlchemyVialItemsPCT", (original) => {
+    if (cheatState.w2.vialrng) return new Array(vials.length).fill(99);
+    return original;
+  })
+
+  // Nullify Saltlick upgrade cost
+  traverse(CList.SaltLicks, 1, (data) => {
+    createProxy(data, 2, (original) => {
+      if (cheatState.w3.saltlick) return "0";
+      return original;
+    })
+  })
+
+  // Nullify prayer requirements
+  const prayerIndex = [4, 6]
+
+  traverse(CList.PrayerInfo, 1, (data) => {
+    prayerIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.w3.prayer) return "0";
+        return original;
+      })
+    })
+
+    createProxy(data, 2, (original) => {
+      if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then.";
+      return original;
+    })
+  })
 
   // Nullify post office order cost
-  defineProxiedProperty("PostOfficePossibleOrders", function () {
-    if (cheatState.wide.post) {
-      return ChangeND(4, deepCopy(CListCached.PostOfficePossibleOrders), "0", [1]);
-    }
-  });
+  traverse(CList.PostOfficePossibleOrders, 3, (data) => {
+    createProxy(data, 1, (original) => {
+      if (cheatState.wide.post) return "0";
+      return original;
+    })
+  })
+
 
   // Nullify guild task requirements
-  defineProxiedProperty("GuildGPtasks", function () {
-    if (cheatState.wide.guild) {
-      return ChangeND(2, deepCopy(CListCached.GuildGPtasks), "0", [1]);
-    }
-  });
+  traverse(CList.GuildGPtasks, 1, (data) => {
+    createProxy(data, 1, (original) => {
+      if (cheatState.wide.guild) return "0";
+      return original;
+    })
+  })
 
   // Nullify task requirements
-  defineProxiedProperty("TaskDescriptions", function () {
-    if (cheatState.wide.task) {
-      return ChangeND(3, deepCopy(CListCached.TaskDescriptions), "0", [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
-    }
-  });
+  const taskIndex = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+  traverse(CList.TaskDescriptions, 2, (data) => {
+    taskIndex.forEach(index => {
+      createProxy(data, index, (original) => {
+        if (cheatState.wide.task) return "0";
+        return original;
+      })
+    })
+  })
 
   // Nullify star sign unlock req
-  defineProxiedProperty("SSignInfoUI", function () {
-    if (cheatState.wide.star) {
-      return ChangeND(2, deepCopy(CListCached.SSignInfoUI), "0", [4]);
-    }
-  });
+  traverse(CList.SSignInfoUI, 1, (data) => {
+    createProxy(data, 4, (original) => {
+      if (cheatState.wide.star) return "0";
+      return original;
+    })
+  })
 
   // Nullify worship cost
-  defineProxiedProperty("WorshipBASEinfos", function () {
-    if (cheatState.w3.freeworship) {
-      return ChangeND(2, deepCopy(CListCached.WorshipBASEinfos), 0, [6]);
-    }
-  });
+  traverse(CList.WorshipBASEinfos, 1, (data) => {
+    createProxy(data, 6, (original) => {
+      if (cheatState.w3.freeworship) return "0";
+      return original;
+    })
+  })
+
 }
 
 // The proxy that allows us to enable/disable quest item requirement nullifications whenever we like
 function setupQuestProxy() {
   const dialogueDefs = this["scripts.DialogueDefinitions"].dialogueDefs.h;
-  const dialogueDefsOriginal = JSON.parse(JSON.stringify(dialogueDefs));
-  const dialogueDefsUpdated = JSON.parse(JSON.stringify(dialogueDefs));
+  const dialogueDefsOriginal = deepCopy(dialogueDefs);
+  const dialogueDefsUpdated = deepCopy(dialogueDefs);
   for (const [key, value] of Object.entries(dialogueDefsUpdated)) // Go over all the quest-giving NPCs
     for (
       i = 0;
@@ -3386,23 +3289,19 @@ function setupQuestProxy() {
 // Alchemy cheats
 function setupAlchProxy() {
   const p2w = bEngine.getGameAttribute("CauldronP2W");
-  p2w[5]._0 = p2w[5][0];
-  Object.defineProperty(p2w[5], 0, {
-    get: function () {
-      return cheatState.cauldron.vialattempt ? this[1] : this._0;
-    },
-    set(value) {
-      return cheatState.cauldron.vialattempt ? true : (this._0 = value), true;
-    },
-    enumerable: true,
-  });
 
-  const Alchemy = events(189)._customBlock_CauldronStats;
-  events(189)._customBlock_CauldronStats = function (...argumentList) {
-    return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
-      ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
-      : Reflect.apply(Alchemy, this, argumentList);
-  };
+  if (p2w._isPatched) return;
+  Object.defineProperty(p2w, "_isPatched", { value: true, enumerable: false });
+
+  createProxy(p2w[5], 0, {
+    get: function (original) {
+      return cheatState.w2.vialattempt ? this[1] : original;
+    },
+    set: function (value, backupKey) {
+      if (cheatState.w2.vialattempt) return;
+      this[backupKey] = value;
+    },
+  });
 }
 
 // w1 cheats
@@ -3453,17 +3352,37 @@ function setupw1StuffProxy() {
 // TODO: move all setups stuff that is in w2 in here, so it is sorted.
 function setupw2StuffProxy() {
   const actorEvents579 = events(579);
+  const actorEvents345 = events(345);
+  const actorEvents189 = events(189);
+
   const Roo = actorEvents579._customBlock_Summoning;
   actorEvents579._customBlock_Summoning = function (...argumentList) {
     return cheatState.w2.roo && cheatConfig.w2.roo.hasOwnProperty(argumentList[0])
       ? cheatConfig.w2.roo[argumentList[0]](Reflect.apply(Roo, this, argumentList))
       : Reflect.apply(Roo, this, argumentList);
   };
+
+  // wide arcade, not sure if this should be switched to w2 arcade?
+  const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
+  actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
+    return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
+      ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
+      : Reflect.apply(DungeonCalc, this, argumentList);
+  };
+
+  // alchemy cheats
+  const Alchemy = actorEvents189._customBlock_CauldronStats;
+  actorEvents189._customBlock_CauldronStats = function (...argumentList) {
+    return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
+      : Reflect.apply(Alchemy, this, argumentList);
+  };
 }
 
 // w3 cheats
 function setupw3StuffProxy() {
   const actorEvents345 = events(345);
+  const actorEvents481 = events(481);
   // Nullification of all costs inside the workbench
   const Workbench = actorEvents345._customBlock_WorkbenchStuff;
   actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
@@ -3536,6 +3455,26 @@ function setupw3StuffProxy() {
       return Reflect.apply(Refinery, this, argumentsList);
     };
   }
+
+  // tbh this should be removed for good!
+  const Workbenchstuff = actorEvents481.prototype._customEvent_WorkbenchStuff2
+  actorEvents481.prototype._customEvent_WorkbenchStuff2 = new Proxy(Workbenchstuff, {
+    apply: function (originalFn, context, argumentsList) {
+      try {
+        if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
+          cheatState["rng"] = "high";
+          // cheatState["rngInt"] = ["high", "high", "low", "high"]; // does not work like i thought
+          let rtn = Reflect.apply(originalFn, context, argumentsList);
+          cheatState["rng"] = false;
+          // cheatState["rngInt"] = false;
+          return rtn;
+        }
+      } catch (e) {
+        console.error("Error in Better Cogs Proxy:", e);
+      }
+      return Reflect.apply(originalFn, context, argumentsList);
+    },
+  });
 }
 
 // w4 cheats
@@ -3806,6 +3745,13 @@ function setupw6Proxies() {
 function setupw7Proxies() {
   const actorEvents579 = events(579);
 
+  const Zenith = actorEvents579._customBlock_Thingies;
+  actorEvents579._customBlock_Thingies = function (...argumentList) {
+    return cheatState.w7.zenith && cheatConfig.w7.zenith.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w7.zenith[argumentList[0]](Reflect.apply(Zenith, this, argumentList))
+      : Reflect.apply(Zenith, this, argumentList);
+  };
+
   const BubbaStuff = actorEvents579._customBlock_Bubbastuff;
   actorEvents579._customBlock_Bubbastuff = function (...argumentList) {
     return cheatState.w7.bubba && cheatConfig.w7.bubba.hasOwnProperty(argumentList[0])
@@ -3864,17 +3810,6 @@ function setupw7Proxies() {
   };
 }
 
-function setupArcadeProxies() {
-  const actorEvents345 = events(345)
-
-  const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
-  actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
-    return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
-      ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
-      : Reflect.apply(DungeonCalc, this, argumentList);
-  };
-
-}
 
 
 // Minigame cheats
@@ -3960,6 +3895,57 @@ function setupPoingProxy() {
       },
     }
   );
+}
+
+function setupScratchMinigameProxy() {
+  try {
+    const scratchBehavior = bEngine
+      .getGameAttribute("PixelHelperActor")[25]
+      .behaviors.getBehavior("ActorEvents_670");
+
+    if (!scratchBehavior || typeof scratchBehavior._GenINFO === "undefined") {
+      console.error("Scratch Proxy Failed: Behavior not found.");
+      return;
+    }
+
+    const originalGenInfo = scratchBehavior._GenINFO;
+
+    const SCRATCH_ARRAY_IDX = 212; // The array containing scratch logic
+    const STATE_IDX = 50;          // Index 50: 0=Idle, 1=Playing, 2=Won
+    const COVER_IMG_ARRAY_ID = 68; // Inside _UIinventory15
+    const COVER_IMG_ID = 1;        // The specific index of the grey cover image
+
+    const handler = {
+      get: function (target, property, receiver) {
+        const value = Reflect.get(target, property, receiver);
+
+        // Intercept access to the Scratch Data Array [212]
+        if (Number(property) === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
+          // Check if the game state is "Playing" (1)
+          if (Array.isArray(value) && value[STATE_IDX] === 1) {
+            // [25] to [49] are the scratch zones
+            for (let i = 25; i <= 49; i++) {
+              if (value[i] !== 1) {
+                value[i] = 1;
+              }
+            }
+
+            const coverImage = scratchBehavior._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
+            // remove cover
+            if (coverImage.get_alpha() > 0) { coverImage.set_alpha(0); }
+          }
+        }
+
+        return value;
+      },
+    };
+
+    const proxyScratch = new Proxy(originalGenInfo, handler);
+    scratchBehavior._GenINFO = proxyScratch;
+
+  } catch (error) {
+    console.error("Error setting up Scratch proxy:", error);
+  }
 }
 
 function setupHoopsMinigameProxy() {
@@ -4190,19 +4176,6 @@ function getOptionsListAccount() {
   }
 }
 
-function setOptionsListAccount(newArray) {
-  try {
-    if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h) {
-      bEngine.gameAttributes.h.OptionsListAccount = newArray;
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error setting OptionsListAccount:', error);
-    return false;
-  }
-}
-
 function setOptionsListAccountIndex(index, value) {
   try {
     if (bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h && bEngine.gameAttributes.h.OptionsListAccount) {
@@ -4321,6 +4294,9 @@ async function getChoicesNeedingConfirmation() {
     "setalch",
     "wipe invslot",
     "wipe chestslot",
+    "bulk",
+    "class",
+
     // "keychain", why is this here?
   ];
 }
@@ -4334,687 +4310,6 @@ function getZJSManipulator() {
     return zjs;
   }.toString();
 }
-
-/****************************************************************************************************
-  A huge dictionary made for the bulk function:
-  Since we'd hardly access this part of the code, it's fine being all the way down here.
-*/
-const DictDrops = {
-  // 0) Handy cheat items
-  default: ["Timecandy6", "ExpBalloon3", "ResetCompleted", "ResetCompletedS", "ClassSwap"],
-  // 1) All bag boosters
-  invbag: [
-    "InvBag1",
-    "InvBag2",
-    "InvBag3",
-    "InvBag4",
-    "InvBag5",
-    "InvBag6",
-    "InvBag7",
-    "InvBag8", //"InvBag9",
-    "InvBag21",
-    "InvBag22",
-    "InvBag23",
-    "InvBag24",
-    "InvBag25",
-    "InvBag26",
-    "InvBag100",
-    "InvBag101",
-    "InvBag102",
-    "InvBag103",
-    "InvBag104",
-    "InvBag105",
-    "InvBag106",
-    "InvBag107", //"InvBag101",
-    "InvBag109",
-    "InvBag110",
-  ],
-  // 2) All storage chest boosters
-  invstorage: [
-    "InvStorage1",
-    "InvStorage2",
-    "InvStorage3",
-    "InvStorage4",
-    "InvStorage5",
-    "InvStorage6",
-    "InvStorage7",
-    "InvStorage8",
-    "InvStorage9",
-    "InvStorage10",
-    "InvStorage11",
-    "InvStorage12",
-    "InvStorage13", //"InvStorage14",
-    "InvStorage15",
-    "InvStorage16",
-    "InvStorage17",
-    "InvStorage18",
-    "InvStorage19",
-    "InvStorage20",
-    "InvStorage21",
-    "InvStorage31",
-    "InvStorage32",
-    "InvStorage33",
-    "InvStorage34",
-    "InvStorage35",
-    "InvStorage36",
-    "InvStorage37",
-    "InvStorage38",
-    "InvStorage39",
-    "InvStorage40",
-    "InvStorage41",
-    "InvStorage42",
-    "InvStorageF",
-  ],
-  // 3) All item bag capacity boosters
-  capbag: [
-    "MaxCapBagT2",
-    "MaxCapBag1",
-    "MaxCapBag2",
-    "MaxCapBag3",
-    "MaxCapBag4",
-    "MaxCapBag5",
-    "MaxCapBagMi6",
-    "MaxCapBagT1",
-    "MaxCapBag7",
-    "MaxCapBag9",
-    "MaxCapBagT3",
-    "MaxCapBagT4",
-    "MaxCapBagT5",
-    "MaxCapBagT6",
-    "MaxCapBag6",
-    "MaxCapBag8",
-    "MaxCapBag10",
-    "MaxCapBagF3",
-    "MaxCapBagF4",
-    "MaxCapBagF5",
-    "MaxCapBagF6",
-    "MaxCapBagM1",
-    "MaxCapBagM2",
-    "MaxCapBagM3",
-    "MaxCapBagM4",
-    "MaxCapBagM5",
-    "MaxCapBagM6",
-    "MaxCapBagM7",
-    "MaxCapBagFi0",
-    "MaxCapBagFi1",
-    "MaxCapBagFi2",
-    "MaxCapBagFi3",
-    "MaxCapBagFi4",
-    "MaxCapBagFi5",
-    "MaxCapBagFi6",
-    "MaxCapBagB0",
-    "MaxCapBagB1",
-    "MaxCapBagB2",
-    "MaxCapBagB3",
-    "MaxCapBagB4",
-    "MaxCapBagB5",
-    "MaxCapBagB6",
-    "MaxCapBagTr0",
-    "MaxCapBagTr1",
-    "MaxCapBagTr2",
-    "MaxCapBagTr3",
-    "MaxCapBagTr4",
-    "MaxCapBagTr5",
-    "MaxCapBagS0",
-    "MaxCapBagS1",
-    "MaxCapBagS2",
-    "MaxCapBagS3",
-    "MaxCapBagS4",
-    "MaxCapBagS5",
-  ],
-  // 4) All Yugioh cards
-  yugioh: [
-    "CardsA0",
-    "CardsA1",
-    "CardsA2",
-    "CardsA3",
-    "CardsA4",
-    "CardsA5",
-    "CardsA6",
-    "CardsA7",
-    "CardsA8",
-    "CardsA9",
-    "CardsA10",
-    "CardsA11",
-    "CardsA12",
-    "CardsA13",
-    "CardsA14",
-    "CardsA15",
-    "CardsA16",
-    "CardsB1",
-    "CardsB2",
-    "CardsB3",
-    "CardsB4",
-    "CardsB5",
-    "CardsB6",
-    "CardsB7",
-    "CardsB8",
-    "CardsB9",
-    "CardsB10",
-    "CardsB11",
-    "CardsB12",
-    "CardsB13",
-    "CardsB14",
-    "CardsC1",
-    "CardsC2",
-    "CardsC3",
-    "CardsC4",
-    "CardsC5",
-    "CardsC6",
-    "CardsC7",
-    "CardsC8",
-    "CardsC9",
-    "CardsC10",
-    "CardsC11",
-    "CardsC12",
-    "CardsC13",
-    "CardsC14",
-    "CardsC15",
-    "CardsC16",
-    "CardsD1",
-    "CardsD2",
-    "CardsD3",
-    "CardsD4",
-    "CardsD5",
-    "CardsD6",
-    "CardsD7",
-    "CardsD8",
-    "CardsD9",
-    "CardsD10",
-    "CardsD11",
-    "CardsD12",
-    "CardsD13",
-    "CardsD16",
-    "CardsD17",
-    "CardsD18",
-    "CardsD19",
-    "CardsD20",
-    "CardsD21",
-    "CardsE0",
-    "CardsE1",
-    "CardsE2",
-    "CardsE3",
-    "CardsE4",
-    "CardsE5",
-    "CardsE6",
-    "CardsE7",
-    "CardsE8",
-    "CardsE9",
-    "CardsE10",
-    "CardsE11",
-    "CardsE12",
-    "CardsE13",
-    "CardsE14",
-    "CardsE15",
-    "CardsF1",
-    "CardsF2",
-    "CardsF3",
-    "CardsF4",
-    "CardsF5",
-    "CardsF6",
-    "CardsF7",
-    "CardsF8",
-    "CardsF9",
-    "CardsF10",
-    "CardsF11",
-    "CardsY0",
-    "CardsY1",
-    "CardsY2",
-    "CardsY3",
-    "CardsY4",
-    "CardsY5",
-    "CardsY5",
-    "CardsY6",
-    "CardsY7",
-    "CardsY8",
-    "CardsY9",
-    "CardsY10",
-    "CardsY11",
-    "CardsY12",
-    "CardsY13",
-    "CardsZ0",
-    "CardsZ1",
-    "CardsZ2",
-    "CardsZ3",
-    "CardsZ4",
-    "CardsZ5",
-    "CardsZ6",
-    "CardsZ7",
-    "CardsZ8",
-    "CardsZ9",
-  ],
-  // 5) All statues
-  statues: [
-    "EquipmentStatues1",
-    "EquipmentStatues2",
-    "EquipmentStatues3",
-    "EquipmentStatues4",
-    "EquipmentStatues5",
-    "EquipmentStatues6",
-    "EquipmentStatues7",
-    "EquipmentStatues8",
-    "EquipmentStatues9",
-    "EquipmentStatues10",
-    "EquipmentStatues11",
-    "EquipmentStatues12",
-    "EquipmentStatues13",
-    "EquipmentStatues14",
-    "EquipmentStatues15",
-    "EquipmentStatues16",
-    "EquipmentStatues17",
-    "EquipmentStatues18",
-    "EquipmentStatues19",
-  ],
-  // 6) All stamps (Many stamps aren't released yet)
-  stamps: [
-    "StampA1",
-    "StampA2",
-    "StampA3",
-    "StampA4",
-    "StampA5",
-    "StampA6",
-    "StampA7",
-    "StampA8",
-    "StampA9",
-    "StampA10",
-    "StampA11",
-    "StampA12",
-    "StampA13",
-    "StampA14",
-    "StampA15",
-    "StampA16",
-    "StampA17",
-    "StampA18",
-    "StampA19",
-    "StampA20",
-    "StampA21" /*,"StampA22"*/,
-    "StampA23",
-    "StampA24" /*,"StampA25"*/,
-    "StampA26",
-    "StampA27",
-    "StampA28",
-    //"StampA29","StampA30","StampA31","StampA32","StampA33","StampA34","StampA35",
-    "StampB1",
-    "StampB2",
-    "StampB3",
-    "StampB4",
-    "StampB5",
-    "StampB6",
-    "StampB7",
-    "StampB8",
-    "StampB9",
-    "StampB10",
-    "StampB11",
-    "StampB12",
-    "StampB13",
-    "StampB14",
-    "StampB15",
-    "StampB16",
-    "StampB17",
-    "StampB18",
-    "StampB19",
-    "StampB20",
-    "StampB21",
-    "StampB22",
-    "StampB23",
-    "StampB24",
-    "StampB25",
-    "StampB26",
-    "StampB27", //"StampB28","StampB29",
-    "StampB30",
-    "StampB31" /*,"StampB32","StampB33"*/,
-    "StampB34" /*,"StampB35"*/,
-    "StampB36",
-    "StampC1",
-    "StampC2",
-    "StampC3" /*,"StampC4","StampC5"*/,
-    "StampC6",
-    "StampC7" /*,"StampC8"*/,
-    "StampC9", //"StampC10","StampC11","StampC12","StampC13",
-    "StampC14",
-    "StampC15" /*,"StampC16","StampC17","StampC18"*/,
-    "StampC19",
-    "StampC20",
-  ],
-  // 7) All fishing tools
-  fishtools: [
-    "Line1",
-    "Line2",
-    "Line3",
-    "Line4",
-    "Line5",
-    "Line6",
-    "Line7",
-    "Line8",
-    "Line9",
-    "Line10",
-    "Line11",
-    "Line12",
-    "Line13",
-    "Line14",
-    "Weight1",
-    "Weight2",
-    "Weight3",
-    "Weight4",
-    "Weight5",
-    "Weight6",
-    "Weight7",
-    "Weight8",
-    "Weight9",
-    "Weight10",
-    "Weight11",
-    "Weight12",
-    "Weight13",
-    "Weight14",
-  ],
-  // 8) All released Star Talent books
-  startalents: [
-    //"3615100",  //Bored To Death (Lvl 100)
-    "361650", //Beginner Best Class (Lvl 50)
-    //"3617100",  //Studious Quester (Lvl 100)
-    "3618100", //Quest Chungus (Lvl 100)
-    "3619100", //Crystals 4 Dayys (Lvl 100)
-    "362050", //Will Of The Eldest (Lvl 50)
-    "3621104", //TICK TOCK (Lvl 104)
-    "3622100", //STONKS! (Lvl 100)
-    "3623100", //Roll Da Dice (Lvl 100)
-    "362450", //Attacks on simmer (Lvl 50)
-    "3625120", //Toilet Paper Postage (Lvl 120)
-    "362640", //Exp Converter (Lvl 40)
-    "362750", //Goblet Of Hemoglobin (Lvl 50)
-    "3628100", //JUST EXP (Lvl 100)
-    "3629100", //Frothy Malk (Lvl 100)
-    "363050", //Convert Better Darnit (Lvl 50)
-    "3631100", //PULSATION (Lvl 100)
-    "3632100", //CARDIOVASCULAR! (Lvl 100)
-    //"3633100",  //Nothing
-    "363450", //Telekinetic Storage (Lvl 50)
-    "3635100", //Printer Sampling (Lvl 100)
-    "3639100", //Shrine Architect (Lvl 100)
-    "3655100", //BOSS BATTLE SPILLOVER (Lvl 100)
-    "3640100", //Mega Crit (Lvl 100)
-  ],
-  // 9) Blacksmith recipes and tabs
-  smith: ["EquipmentSmithingTabs3", "SmithingHammerChisel", "SmithingHammerChisel2"],
-  // 10) All skilling resources
-  skill: [
-    "Copper",
-    "Iron",
-    "Gold",
-    "Plat",
-    "Dementia",
-    "Void",
-    "Lustre",
-    "Starfire",
-    "Dreadlo",
-    "Godshard",
-    "CopperBar",
-    "IronBar",
-    "GoldBar",
-    "PlatBar",
-    "DementiaBar",
-    "VoidBar",
-    "LustreBar",
-    "StarfireBar",
-    "DreadloBar",
-    "GodshardBar",
-    "OakTree",
-    "BirchTree",
-    "JungleTree",
-    "ForestTree",
-    "ToiletTree",
-    "PalmTree",
-    "StumpTree",
-    "SaharanFoal",
-    "Tree7",
-    "Leaf1",
-    "Leaf2",
-    "Leaf3",
-    "Fish1",
-    "Fish2",
-    "Fish3",
-    "Fish4",
-    "Bug1",
-    "Bug2",
-    "Bug3",
-    "Bug4",
-    "Bug5",
-    "Bug6",
-    "PureWater",
-    "Critter1",
-    "Critter2",
-    "Critter3",
-    "Critter4",
-    "Critter5",
-    "Critter6",
-    "Critter7",
-    "Critter8",
-    "Critter9",
-    "Critter1A",
-    "Critter2A",
-    "Critter3A",
-    "Critter4A",
-    "Critter5A",
-    "Critter6A",
-    "Critter7A",
-    "Critter8A",
-    "Critter9A",
-    "Soul1",
-    "Soul2",
-    "Soul3",
-    "Soul4",
-    "Soul5",
-    "Soul6",
-    "Refinery1",
-    "Refinery2",
-    "Refinery3",
-    "Refinery4",
-    "Refinery5",
-    "Refinery6",
-    "CraftMat1",
-    "CraftMat2",
-    "CraftMat3" /*,"CraftMat4"*/,
-    "CraftMat5",
-    "CraftMat6",
-    "CraftMat7",
-    "CraftMat8",
-    "CraftMat9",
-    "CraftMat10",
-  ],
-  // 11) All monster resources
-  monster: [
-    "Grasslands1",
-    "Grasslands2",
-    "Grasslands3",
-    "Grasslands4",
-    "Jungle1",
-    "Jungle2",
-    "Jungle3",
-    "Forest1",
-    "Forest2",
-    "Forest3",
-    "Sewers1",
-    "Sewers1b",
-    "Sewers2",
-    "Sewers3",
-    "TreeInterior1",
-    "TreeInterior1b",
-    "TreeInterior2",
-    "BabaYagaETC",
-    "DesertA1",
-    "DesertA1b",
-    "DesertA2",
-    "DesertA3",
-    "DesertA3b",
-    "DesertB1",
-    "DesertB2",
-    "DesertB3",
-    "DesertB4",
-    "DesertC1",
-    "DesertC2",
-    "DesertC2b",
-    "DesertC3",
-    "DesertC4",
-    "SnowA1",
-    "SnowA2",
-    "SnowA2a",
-    "SnowA3",
-    "SnowA4",
-    "SnowB1",
-    "SnowB2",
-    "SnowB2a",
-    "SnowB5",
-    "SnowB3",
-    "SnowB4",
-    "SnowC1",
-    "SnowC2",
-    "SnowC3",
-    "SnowC4",
-    "SnowC4a",
-    "IceMountains2",
-    "Hgg",
-    "EfauntDrop1",
-    "EfauntDrop2",
-  ],
-  // 12) Most (not all) currencies and gift items
-  currency: [
-    "Key1",
-    "Key2",
-    "Key3",
-    "SilverPen",
-    "PremiumGem", //"DeliveryBox",
-    "Quest30",
-    "Quest35",
-    "Quest36",
-    "Quest38",
-    "Quest40",
-    "Quest42",
-    "Quest44",
-    "Quest45",
-    "Quest49",
-    "Quest50",
-  ],
-  // 13) Best food
-  food: [
-    "PeanutG",
-    "FoodG1",
-    "FoodG2",
-    "FoodG3",
-    "FoodG4",
-    "FoodG5",
-    "FoodG6",
-    "Meatloaf",
-    "MidnightCookie",
-    "FoodPotOr3",
-    "FoodPotRe3",
-    "FoodPotGr3",
-    "FoodPotMana3",
-    "FoodPotYe3",
-  ],
-  // 14) All trophies
-  trophy: [
-    "Trophy1",
-    "Trophy2",
-    "Trophy3" /*,"Trophy4"*/,
-    "Trophy5",
-    "Trophy6",
-    "Trophy7",
-    "Trophy8",
-    "Trophy9",
-    "Trophy10",
-    "Trophy11",
-    "Trophy12",
-    "Trophy13",
-    "Trophy14",
-  ],
-  // 15) All upgrade stones (except lvl 1 and 2 cause 3 exists)
-  upstone: [
-    "StoneWe",
-    "StoneWeb",
-    "Stonew3",
-    "StoneW6",
-    "StoneA1b",
-    "StoneA2b",
-    "StoneA3b",
-    "StoneA3",
-    "StoneAe",
-    "StoneAeB",
-    "StoneHelm1",
-    "StoneHelm6",
-    "StoneHelm1b",
-    "StoneTe",
-    "StoneT1e",
-    "StoneT1eb",
-    "StoneT3",
-    "StoneZ2",
-    "StonePremSTR",
-    "StonePremAGI",
-    "StonePremWIS",
-    "StonePremLUK",
-  ],
-  // 16) All premium hats
-  phats: [
-    "EquipmentHats31",
-    "EquipmentHats32",
-    "EquipmentHats33",
-    "EquipmentHats34",
-    "EquipmentHats35",
-    "EquipmentHats36",
-    "EquipmentHats40",
-    "EquipmentHats37",
-    "EquipmentHats38",
-    "EquipmentHats46",
-    "EquipmentHats47",
-    "EquipmentHats48",
-    "EquipmentHats49",
-    "EquipmentHats50",
-    "EquipmentHats43",
-    "EquipmentHats45",
-    "EquipmentHats57",
-    "EquipmentHats62",
-  ],
-  // 17) High level Gear
-  gear: [
-    "EquipmentHats60",
-    "EquipmentShirts28",
-    "EquipmentShirts29",
-    "EquipmentShirts30",
-    "EquipmentPants21",
-    "EquipmentShoes22",
-    "EquipmentPendant14",
-    "EquipmentPendant17",
-    "EquipmentRings16",
-    "EquipmentRings16",
-    "EquipmentRings6",
-    "EquipmentRings6",
-    "EquipmentTools11",
-    "EquipmentTools7",
-    "EquipmentToolsHatchet5",
-    "EquipmentToolsHatchet7",
-    "CatchingNet7",
-    "CatchingNet6",
-    "FishingRod6",
-    "FishingRod7",
-    "EquipmentSword3",
-    "EquipmentBows8",
-    "EquipmentWands7",
-    "EquipmentPunching5",
-    "EquipmentHats58",
-    "EquipmentHats59",
-    "TrapBoxSet5",
-    "WorshipSkull5",
-  ],
-  // 18) Cheat equipments (Some unreleased items which will definitely shadow ban you)
-  cheat: [
-    "EquipmentWeapons2",
-    "TestObj16",
-    "EquipmentRings8",
-    "EquipmentPendant8",
-    "EquipmentShoes12",
-    "EquipmentPants13",
-    "EquipmentShirts8",
-  ],
-};
 
 const summonUnits = {
   vrumbi: 4,
@@ -5055,46 +4350,97 @@ const keychainStatsMap = {
   skillspd: [3, "EquipmentKeychain23", "%_ALL_SKILL_SPEED", "2"],
   allstats: [3, "EquipmentKeychain24", "%_ALL_STATS", "4"],
 };
-/****************************************************************************************************
-  This function is made to simplify some code, basically a bit of elementary programming.
-  The arguments are as followed:
-  dim 		= Amount of dimensions, can take values 2 to 4 (at 1D there's no reason for such complexity)
-  KeyName 	= The respecitve key inside GameAttribute Customlist that we want to iterate
-  repl 		= The replacement value
-  elem 		= List of Array indices, which elements we want replaced
-*/
-function ChangeND(dim, KeyName, repl, elem) {
-  let NDArr;
-  if (typeof KeyName === "string")
-    // Creates a deep-copy
-    NDArr = JSON.parse(JSON.stringify(CList[KeyName]));
-  else NDArr = KeyName; // Else this KeyName parameter is an object
-  if (dim === 4) {
-    for (const [index1, element1] of Object.entries(NDArr)) {
-      for (const [index2, element2] of Object.entries(element1)) {
-        for (const [index3, element3] of Object.entries(element2)) {
-          for (i in elem)
-            element3[elem[i]] = repl instanceof Function ? repl(element3[elem[i]]) : repl; // Fill every
-          NDArr[index1][index2][index3] = element3; // Write back to the 4D Array
-        }
-      }
+
+// function to drop an item on the character 
+function dropOnChar(item, amount) {
+  const actorEvents189 = events(189);
+  const character = bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
+
+  try {
+    const itemDefinition = itemDefs[item];
+
+    if (itemDefinition) {
+      const toChest = cheatConfig.wide.autoloot.tochest;
+      cheatConfig.wide.autoloot.tochest = false;
+
+      let x = character.getXCenter();
+      let y = character.getValue("ActorEvents_20", "_PlayerNode");
+
+      if (item.includes("SmithingRecipes"))
+        actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);
+
+      else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
+
+      cheatConfig.wide.autoloot.tochest = toChest;
+
+      return `Dropped ${itemDefinition.h.displayName.replace(/_/g, " ")}. (x${amount})`;
+
     }
-  } else if (dim === 3) {
-    for (const [index1, element1] of Object.entries(NDArr)) {
-      for (const [index2, element2] of Object.entries(element1)) {
-        for (i in elem)
-          element2[elem[i]] = repl instanceof Function ? repl(element2[elem[i]]) : repl;
-        NDArr[index1][index2] = element2; // Write back to the 3D Array
-      }
-    }
-  } else if (dim === 2) {
-    for (const [index1, element1] of Object.entries(NDArr)) {
-      for (i in elem) element1[elem[i]] = repl instanceof Function ? repl(element1[elem[i]]) : repl;
-      NDArr[index1] = element1; // Write back to the 2D Array
-    }
-  } else return NDArr; // Else return the original without modifications
-  return NDArr;
-} // This function's even less likely to ever be revisited, so it's nice here
+    else return `No item found for '${item}'`;
+
+  } catch (err) {
+    return `Error: ${err}`;
+  }
+}
+
+
+/**
+ * Creates a proxy for a specific property on an object, allowing custom getter and setter logic.
+ * The original value is stored in a hidden property prefixed with an underscore.
+ *
+ * @param {object} targetObj - The object on which to create the proxy.
+ * @param {string | number} index - The name of the property to proxy.
+ * @param {function(any): any | {get?: function(any): any, set?: function(any, string): void}} callback -
+ *   A function to be used as a simple getter, or an object containing `get` and/or `set` methods
+ *   to define custom behavior for property access.
+ */
+function createProxy(targetObj, index, callback) {
+  const backupKey = "_" + index;
+
+  // hidden values ᓚᘏᗢ meow
+  Object.defineProperty(targetObj, backupKey, {
+    value: targetObj[index],
+    writable: true, enumerable: false
+  });
+
+  const isSimpleCallback = typeof callback === "function";
+
+  Object.defineProperty(targetObj, index, {
+    get: function () {
+      const original = this[backupKey];
+      if (isSimpleCallback) return callback(original);
+      if (callback.get) return callback.get.call(this, original);
+      return original
+    },
+
+    set: function (value) {
+      if (isSimpleCallback) return;
+      if (callback.set) return callback.set.call(this, value, backupKey);
+      this[backupKey] = value
+    },
+    enumerable: true, configurable: true,
+  });
+}
+
+/**
+ * Recursively traverses an object up to a specified depth, applying a worker function to each traversed object at the given depth.
+ *
+ * @param {object} obj - The object to traverse.
+ * @param {number} depth - The maximum depth to traverse. When depth reaches 0, the worker function is called.
+ * @param {function(object): void} worker - The function to call on objects at the specified depth.
+ */
+function traverse(obj, depth, worker) {
+  if (depth === 0) {
+    worker(obj);
+    return;
+  }
+  for (const key in obj) {
+    // Safety check to ensure we don't crash on nulls
+    if (obj[key]) traverse(obj[key], depth - 1, worker);
+  }
+}
+
+
 /****************************************************************************************************
   The help function for gga/ggk
 */
