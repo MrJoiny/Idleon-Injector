@@ -96,6 +96,40 @@ const parseConfigFromJson = (obj) => {
 };
 
 /**
+ * Recursively filters an object to only include keys that exist in the template object.
+ * @param {Object} target - The object to filter
+ * @param {Object} template - The template object acting as the schema
+ * @returns {Object} A new object with only the keys that exist in the template
+ */
+const filterByTemplate = (target, template) => {
+  if (target === null || target === undefined || template === null || template === undefined) {
+    return undefined;
+  }
+
+  if (typeof target !== 'object' || Array.isArray(target) || typeof template !== 'object' || Array.isArray(template)) {
+    return target;
+  }
+
+  const filtered = {};
+  for (const key in target) {
+    if (Object.hasOwnProperty.call(target, key) && Object.hasOwnProperty.call(template, key)) {
+      const targetVal = target[key];
+      const templateVal = template[key];
+
+      if (typeof targetVal === 'object' && targetVal !== null && !Array.isArray(targetVal)) {
+        const nestedFiltered = filterByTemplate(targetVal, templateVal);
+        if (nestedFiltered !== undefined) {
+          filtered[key] = nestedFiltered;
+        }
+      } else {
+        filtered[key] = targetVal;
+      }
+    }
+  }
+  return Object.keys(filtered).length > 0 ? filtered : undefined;
+};
+
+/**
  * Recursively compares two objects and returns only the properties from `current`
  * that differ from `defaultObj`. Used to save only user overrides to config.custom.js.
  * @param {Object} current - The current full configuration object
@@ -173,5 +207,6 @@ module.exports = {
   objToString,
   prepareConfigForJson,
   parseConfigFromJson,
+  filterByTemplate,
   getDeepDiff
 };
