@@ -68,52 +68,59 @@ export const Account = () => {
                         button({ class: 'btn-danger', onclick: handleLoad }, "CONFIRM ACCESS")
                     )
                 );
-            }
-
-            if (store.app.isLoading) {
-                return div({ style: 'display:flex; height:100%; align-items:center; justify-content:center;' },
-                    Loader({ text: "DECRYPTING..." })
-                );
-            }
-
-            return div({ style: 'height: 100%; display: flex; flex-direction: column;' },
-                div({ class: 'danger-zone-header' }, "ACCESSING RAW GAME ATTRIBUTES."),
-
-                div({ class: 'control-bar' },
-                    button({ class: 'btn-secondary', onclick: () => store.loadAccountOptions() }, "REFRESH"),
-                    label({ class: 'toggle-switch', style: 'margin-left:25px;' },
-                        input({
-                            type: 'checkbox',
-                            checked: () => ui.hideAI,
-                            onchange: e => ui.hideAI = e.target.checked
-                        }),
-                        span({ class: 'slider' }),
-                        span({ class: 'label' }, "HIDE AI")
-                    ),
-                    input({
-                        type: 'text',
-                        class: 'compact-input',
-                        placeholder: 'FILTER_INDEX...',
-                        style: 'width: 100%; margin-left: 15px;',
-                        value: () => ui.filterText,
-                        oninput: debounce(e => ui.filterText = e.target.value, 300)
+            } else {
+                return div({
+                    style: () => ({
+                        display: ui.isUnlocked ? 'flex' : 'none',
+                        height: '100%',
+                        flexDirection: 'column'
                     })
-                ),
+                },
+                    div({ class: 'danger-zone-header' }, "ACCESSING RAW GAME ATTRIBUTES."),
 
-                // We render the container ONCE, and use vanX.list to manage children.
-                div({ id: 'options-account-content', class: 'scroll-container', style: 'flex: 1;' },
-                    vanX.list(
-                        div({ style: 'display:flex; flex-direction:column;' }),
-                        ui.displayList,
-                        (itemState) => {
-                            // itemState is a reactive wrapper provided by vanX.list.
-                            // Accessing .val gives us the data object for this row.
-                            const { index, val, schema } = itemState.val;
-                            return OptionItem(index, val, schema);
+                    div({ class: 'control-bar' },
+                        button({ class: 'btn-secondary', onclick: () => store.loadAccountOptions() }, "REFRESH"),
+                        label({ class: 'toggle-switch', style: 'margin-left:25px;' },
+                            input({
+                                type: 'checkbox',
+                                checked: () => ui.hideAI,
+                                onchange: e => ui.hideAI = e.target.checked
+                            }),
+                            span({ class: 'slider' }),
+                            span({ class: 'label' }, "HIDE AI")
+                        ),
+                        input({
+                            type: 'text',
+                            class: 'compact-input',
+                            placeholder: 'FILTER_INDEX...',
+                            style: 'width: 100%; margin-left: 15px;',
+                            value: () => ui.filterText,
+                            oninput: debounce(e => ui.filterText = e.target.value, 300)
+                        })
+                    ),
+
+                    div({ id: 'options-account-content', class: 'scroll-container', style: 'flex: 1;' },
+                        () => {
+                            if (store.app.isLoading) {
+                                return div({ style: 'display:flex; height:100%; align-items:center; justify-content:center;' },
+                                    Loader({ text: "DECRYPTING..." })
+                                );
+                            }
+
+                            return vanX.list(
+                                div({ style: 'display:flex; flex-direction:column;' }),
+                                ui.displayList,
+                                (itemState) => {
+                                    // itemState is a reactive wrapper provided by vanX.list.
+                                    // Accessing .val gives us the data object for this row.
+                                    const { index, val, schema } = itemState.val;
+                                    return OptionItem(index, val, schema);
+                                }
+                            );
                         }
                     )
-                )
-            );
+                );
+            }
         }
     );
 };

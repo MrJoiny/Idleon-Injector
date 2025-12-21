@@ -1966,7 +1966,6 @@ async function setup() {
           const blackList = CList.RANDOlist[64];
           let droppedCount = 0;
 
-          console.log(blackList);
           for (const [code, entry] of Object.entries(itemDefs)) {
             if (entry.h?.Type === type && !blackList.includes(code)) {
               dropOnChar(code, amount);

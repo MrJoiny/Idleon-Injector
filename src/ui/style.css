@@ -784,13 +784,14 @@ button {
 /* Toast Messages */
 #status-message {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    bottom: 55px;
+    left: 0px;
     background: rgba(14, 15, 20, 0.95);
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     padding: 15px 20px;
-    min-width: 300px;
+    width: calc(var(--nav-width));
+    max-width: calc(var(--nav-width));
     backdrop-filter: blur(10px);
     z-index: 2000;
     display: none;
