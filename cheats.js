@@ -2223,7 +2223,7 @@ function setupAutoLootProxy() {
           behavior.recycleActor(context.actor);
           return;
         }
-        if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autochestitems[matchedType] === true) {
+        if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autoloot.itemtypes[matchedType] === true) {
           let chestSlot =
             bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType) != -1
               ? bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType)
