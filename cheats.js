@@ -2199,7 +2199,7 @@ function setupAutoLootProxy() {
     apply: function (originalFn, context, argumentsList) {
       let rtn = Reflect.apply(originalFn, context, argumentsList);
       const itemType = itemDefs[context._DropType].h.Type;
-      const matchedType = Object.keys(cheatConfig.wide.autochestitems).find(type => itemType.includes(type));
+      const matchedType = Object.keys(cheatConfig.wide.autoloot.itemtypes).find(type => itemType.includes(type));
       if (
         cheatState.wide.autoloot &&
         bEngine.getGameAttribute("OptionsListAccount")[83] == 0 &&
