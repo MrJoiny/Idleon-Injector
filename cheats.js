@@ -2198,6 +2198,8 @@ function setupAutoLootProxy() {
   actorEvents44.prototype.init = new Proxy(actorEvents44.prototype.init, {
     apply: function (originalFn, context, argumentsList) {
       let rtn = Reflect.apply(originalFn, context, argumentsList);
+      const itemType = itemDefs[context._DropType].h.Type;
+      const matchedType = Object.keys(cheatConfig.wide.autochestitems).find(type => itemType.includes(type));
       if (
         cheatState.wide.autoloot &&
         bEngine.getGameAttribute("OptionsListAccount")[83] == 0 &&
@@ -2206,10 +2208,7 @@ function setupAutoLootProxy() {
         context._PlayerDroppedItem === 0 &&
         actorEvents345._customBlock_Dungon() === -1 &&
         itemDefs[context._DropType] &&
-        (/.*(LOG|ORE|LEAF|FISH|BUG|CRITTER|SOUL|FOOD|STATUE|TELEPORT|FISHING_ACCESSORY|OFFICE_PEN|BOSS_KEY|FRAGMENT|UPGRADE|MONSTER_DROP|MATERIAL|CARD).*/i.test(
-          itemDefs[context._DropType].h.Type
-        ) ||
-          ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
+          (matchedType || ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
       ) {
         context._CollectedStatus = 0;
         bEngine.gameAttributes.h.DummyNumber4 = 23.34;
@@ -2224,7 +2223,7 @@ function setupAutoLootProxy() {
           behavior.recycleActor(context.actor);
           return;
         }
-        if (cheatConfig.wide.autoloot.tochest) {
+        if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autochestitems[matchedType] === true) {
           let chestSlot =
             bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType) != -1
               ? bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType)
