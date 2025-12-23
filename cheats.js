@@ -2224,21 +2224,49 @@ function setupAutoLootProxy() {
           return;
         }
         if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autoloot.itemtypes[matchedType] === true) {
-          let chestSlot =
-            bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType) != -1
-              ? bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType)
-              : bEngine.getGameAttribute("ChestOrder").indexOf("Blank");
-          if (bEngine.getGameAttribute("ChestOrder")[chestSlot] == "Blank")
-            bEngine.getGameAttribute("ChestOrder")[chestSlot] = context._DropType;
+          let chestOrder = bEngine.getGameAttribute("ChestOrder");
+          let chestQuantity = bEngine.getGameAttribute("ChestQuantity");
+          let indexOfDropType = chestOrder.indexOf(context._DropType);
+          let indexOfBlankSlot = chestOrder.indexOf("Blank");
+          let chestSlot = indexOfDropType !== -1 ? indexOfDropType : indexOfBlankSlot;
+
+          if(cheatConfig.wide.autoloot.multiplestacks){
+            let firstSlotMatch = -1;
+            let foundSlot = -1;
+            let stackCount = 0;
+            for (let i = 0; i < chestOrder.length; i++){
+              if(chestOrder[i] === context._DropType){
+                stackCount++;
+                if(firstSlotMatch === -1) {
+                  firstSlotMatch = i;
+                }
+                if(chestQuantity[i] < 1050000000 && foundSlot === -1){
+                  foundSlot = i;
+                }
+              }
+            }
+
+            if(foundSlot !== -1) {
+              chestSlot = foundSlot;
+            } else if(firstSlotMatch !== -1 && indexOfBlankSlot === -1){
+              chestSlot = firstSlotMatch;
+            }
+            else if(stackCount < cheatConfig.wide.autoloot.amountofstacks){
+              chestSlot = indexOfBlankSlot;
+            }
+          }
+
+          if (chestOrder[chestSlot] === "Blank")
+            chestOrder[chestSlot] = context._DropType;
+
           let inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
           while (chestSlot !== -1 && inventorySlot !== -1) {
-            bEngine.getGameAttribute("ChestQuantity")[chestSlot] +=
-              bEngine.getGameAttribute("ItemQuantity")[inventorySlot];
+            chestQuantity[chestSlot] += bEngine.getGameAttribute("ItemQuantity")[inventorySlot];
             bEngine.getGameAttribute("ItemQuantity")[inventorySlot] = 0;
             bEngine.getGameAttribute("InventoryOrder")[inventorySlot] = "Blank";
             inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
           }
-          bEngine.getGameAttribute("ChestQuantity")[chestSlot] += context._DropAmount;
+          chestQuantity[chestSlot] += context._DropAmount;
           context._DropAmount = 0;
         }
         if (context._DropAmount == 0) {

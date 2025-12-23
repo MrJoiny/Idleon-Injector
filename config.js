@@ -52,6 +52,8 @@ exports.cheatConfig = {
         CARD: true,
         STATUE: true,
       },
+      multiplestacks: false,
+      amountofstacks: 3,
     },
     perfectobols: {
       preferredstat: "PRIMARY", // PRIMARY, STR, AGI, WIS or LUK
