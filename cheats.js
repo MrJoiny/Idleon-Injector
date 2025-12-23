@@ -586,6 +586,10 @@ registerCheats({
       configurable: { isObject: true },
     },
     {
+      name: "endercaptains",
+      message: "100% ender captains (requires Emporium bonus unlock)",
+    },
+    {
       name: "gaming",
       message: "gaming cheats check config file",
       configurable: { isObject: true },
@@ -3627,9 +3631,20 @@ function setupw5Proxies() {
 
   const Sailing = actorEvents579._customBlock_Sailing;
   actorEvents579._customBlock_Sailing = function (...argumentsList) {
-    return cheatState.w5.sailing && cheatConfig.w5.sailing.hasOwnProperty(argumentsList[0])
-      ? cheatConfig.w5.sailing[argumentsList[0]](Reflect.apply(Sailing, this, argumentsList))
-      : Reflect.apply(Sailing, this, argumentsList);
+    let res = Reflect.apply(Sailing, this, argumentsList);
+    if (cheatState.w5.sailing && cheatConfig.w5.sailing.hasOwnProperty(argumentsList[0]))
+      res = cheatConfig.w5.sailing[argumentsList[0]](res);
+    if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" == argumentsList[0]) {
+      if (
+        1 == this._customBlock_Ninja("EmporiumBonus", 32, 0) &&
+        50 <= Number(bEngine.getGameAttribute("Lv0")[13])
+      ) {
+        const dnsm = bEngine.getGameAttribute("DNSM");
+        dnsm && dnsm.h && (dnsm.h.SailzDN4 = 6);
+        res = 6;
+      }
+    }
+    return res;
   };
 
   const GamingStatType = actorEvents579._customBlock_GamingStatType;
