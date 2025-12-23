@@ -32,6 +32,28 @@ exports.cheatConfig = {
     autoloot: {
       tochest: true,
       hidenotifications: true,
+      itemtypes:{
+        LOG: true,
+        ORE: true,
+        LEAF: true,
+        FISH: true,
+        BUG: true,
+        CRITTER: true,
+        SOUL: true,
+        FOOD: true,
+        TELEPORT: true,
+        FISHING_ACCESSORY: true,
+        OFFICE_PEN: true,
+        BOSS_KEY: true,
+        FRAGMENT: true,
+        UPGRADE: true,
+        MONSTER_DROP: true,
+        MATERIAL: true,
+        CARD: true,
+        STATUE: true,
+      },
+      multiplestacks: false,
+      amountofstacks: 3,
     },
     perfectobols: {
       preferredstat: "PRIMARY", // PRIMARY, STR, AGI, WIS or LUK

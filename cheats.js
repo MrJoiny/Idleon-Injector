@@ -2198,6 +2198,8 @@ function setupAutoLootProxy() {
   actorEvents44.prototype.init = new Proxy(actorEvents44.prototype.init, {
     apply: function (originalFn, context, argumentsList) {
       let rtn = Reflect.apply(originalFn, context, argumentsList);
+      const itemType = itemDefs[context._DropType].h.Type;
+      const matchedType = Object.keys(cheatConfig.wide.autoloot.itemtypes).find(type => itemType.includes(type));
       if (
         cheatState.wide.autoloot &&
         bEngine.getGameAttribute("OptionsListAccount")[83] == 0 &&
@@ -2206,10 +2208,7 @@ function setupAutoLootProxy() {
         context._PlayerDroppedItem === 0 &&
         actorEvents345._customBlock_Dungon() === -1 &&
         itemDefs[context._DropType] &&
-        (/.*(LOG|ORE|LEAF|FISH|BUG|CRITTER|SOUL|FOOD|STATUE|TELEPORT|FISHING_ACCESSORY|OFFICE_PEN|BOSS_KEY|FRAGMENT|UPGRADE|MONSTER_DROP|MATERIAL|CARD).*/i.test(
-          itemDefs[context._DropType].h.Type
-        ) ||
-          ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
+        (matchedType || ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
       ) {
         context._CollectedStatus = 0;
         bEngine.gameAttributes.h.DummyNumber4 = 23.34;
@@ -2224,22 +2223,51 @@ function setupAutoLootProxy() {
           behavior.recycleActor(context.actor);
           return;
         }
-        if (cheatConfig.wide.autoloot.tochest) {
-          let chestSlot =
-            bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType) != -1
-              ? bEngine.getGameAttribute("ChestOrder").indexOf(context._DropType)
-              : bEngine.getGameAttribute("ChestOrder").indexOf("Blank");
-          if (bEngine.getGameAttribute("ChestOrder")[chestSlot] == "Blank")
-            bEngine.getGameAttribute("ChestOrder")[chestSlot] = context._DropType;
+        if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autoloot.itemtypes[matchedType] === true) {
+          const chestOrder = bEngine.getGameAttribute("ChestOrder");
+          const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
+          const indexOfDropType = chestOrder.indexOf(context._DropType);
+          const indexOfBlankSlot = chestOrder.indexOf("Blank");
+          let chestSlot = indexOfDropType !== -1 ? indexOfDropType : indexOfBlankSlot;
+
+          if (cheatConfig.wide.autoloot.multiplestacks) {
+            let firstSlotMatch = -1;
+            let foundSlot = -1;
+            let stackCount = 0;
+            for (let i = 0; i < chestOrder.length; i++) {
+              if (chestOrder[i] === context._DropType) {
+                stackCount++;
+                if (firstSlotMatch === -1) {
+                  firstSlotMatch = i;
+                }
+                if (chestQuantity[i] < 1050000000 && foundSlot === -1) {
+                  foundSlot = i;
+                }
+              }
+            }
+
+            if (foundSlot !== -1) {
+              chestSlot = foundSlot;
+            }
+            else if (firstSlotMatch !== -1 && indexOfBlankSlot === -1) {
+              chestSlot = firstSlotMatch;
+            }
+            else if (stackCount < cheatConfig.wide.autoloot.amountofstacks) {
+              chestSlot = indexOfBlankSlot;
+            }
+          }
+
+          if (chestOrder[chestSlot] === "Blank")
+            chestOrder[chestSlot] = context._DropType;
+
           let inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
           while (chestSlot !== -1 && inventorySlot !== -1) {
-            bEngine.getGameAttribute("ChestQuantity")[chestSlot] +=
-              bEngine.getGameAttribute("ItemQuantity")[inventorySlot];
+            chestQuantity[chestSlot] += bEngine.getGameAttribute("ItemQuantity")[inventorySlot];
             bEngine.getGameAttribute("ItemQuantity")[inventorySlot] = 0;
             bEngine.getGameAttribute("InventoryOrder")[inventorySlot] = "Blank";
             inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
           }
-          bEngine.getGameAttribute("ChestQuantity")[chestSlot] += context._DropAmount;
+          chestQuantity[chestSlot] += context._DropAmount;
           context._DropAmount = 0;
         }
         if (context._DropAmount == 0) {
@@ -2252,7 +2280,6 @@ function setupAutoLootProxy() {
       return rtn;
     },
   });
-
   // Proxy:
   const hxOverrides = this["HxOverrides"];
   events(34).prototype._event_ItemGet = new Proxy(events(34).prototype._event_ItemGet, {
