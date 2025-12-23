@@ -2208,7 +2208,7 @@ function setupAutoLootProxy() {
         context._PlayerDroppedItem === 0 &&
         actorEvents345._customBlock_Dungon() === -1 &&
         itemDefs[context._DropType] &&
-          (matchedType || ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
+        (matchedType || ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
       ) {
         context._CollectedStatus = 0;
         bEngine.gameAttributes.h.DummyNumber4 = 23.34;
@@ -2224,34 +2224,35 @@ function setupAutoLootProxy() {
           return;
         }
         if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autoloot.itemtypes[matchedType] === true) {
-          let chestOrder = bEngine.getGameAttribute("ChestOrder");
-          let chestQuantity = bEngine.getGameAttribute("ChestQuantity");
-          let indexOfDropType = chestOrder.indexOf(context._DropType);
-          let indexOfBlankSlot = chestOrder.indexOf("Blank");
+          const chestOrder = bEngine.getGameAttribute("ChestOrder");
+          const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
+          const indexOfDropType = chestOrder.indexOf(context._DropType);
+          const indexOfBlankSlot = chestOrder.indexOf("Blank");
           let chestSlot = indexOfDropType !== -1 ? indexOfDropType : indexOfBlankSlot;
 
-          if(cheatConfig.wide.autoloot.multiplestacks){
+          if (cheatConfig.wide.autoloot.multiplestacks) {
             let firstSlotMatch = -1;
             let foundSlot = -1;
             let stackCount = 0;
-            for (let i = 0; i < chestOrder.length; i++){
-              if(chestOrder[i] === context._DropType){
+            for (let i = 0; i < chestOrder.length; i++) {
+              if (chestOrder[i] === context._DropType) {
                 stackCount++;
-                if(firstSlotMatch === -1) {
+                if (firstSlotMatch === -1) {
                   firstSlotMatch = i;
                 }
-                if(chestQuantity[i] < 1050000000 && foundSlot === -1){
+                if (chestQuantity[i] < 1050000000 && foundSlot === -1) {
                   foundSlot = i;
                 }
               }
             }
 
-            if(foundSlot !== -1) {
+            if (foundSlot !== -1) {
               chestSlot = foundSlot;
-            } else if(firstSlotMatch !== -1 && indexOfBlankSlot === -1){
+            }
+            else if (firstSlotMatch !== -1 && indexOfBlankSlot === -1) {
               chestSlot = firstSlotMatch;
             }
-            else if(stackCount < cheatConfig.wide.autoloot.amountofstacks){
+            else if (stackCount < cheatConfig.wide.autoloot.amountofstacks) {
               chestSlot = indexOfBlankSlot;
             }
           }
@@ -2279,7 +2280,6 @@ function setupAutoLootProxy() {
       return rtn;
     },
   });
-
   // Proxy:
   const hxOverrides = this["HxOverrides"];
   events(34).prototype._event_ItemGet = new Proxy(events(34).prototype._event_ItemGet, {
