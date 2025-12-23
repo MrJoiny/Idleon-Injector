@@ -1,5 +1,6 @@
 import vanX from './van-x-0.6.3.js';
 import * as API from './api.js';
+import { IS_ELECTRON } from './constants.js';
 
 // Reactive State Container: UI & System
 const appState = vanX.reactive({
@@ -39,6 +40,10 @@ const Actions = {
 
 const SystemService = {
     initHeartbeat: () => {
+        if (IS_ELECTRON) {
+            appState.heartbeat = true;
+            return;
+        }
         const check = async () => {
             const alive = await API.checkHeartbeat();
             appState.heartbeat = !!alive;

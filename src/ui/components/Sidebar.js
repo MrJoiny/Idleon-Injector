@@ -1,6 +1,6 @@
 import van from '../van-1.6.0.js';
 import store from '../store.js';
-import { VIEWS } from '../constants.js';
+import { VIEWS, IS_ELECTRON } from '../constants.js';
 
 // Standard HTML Tags
 const { nav, div, button, span } = van.tags;
@@ -41,15 +41,18 @@ export const Sidebar = () => {
             div({
                 class: 'status-dot',
                 style: () => {
-                    const online = store.app.heartbeat;
+                    const online = IS_ELECTRON || store.app.heartbeat;
                     const color = online ? 'var(--c-success)' : 'var(--c-danger)';
                     return `background:${color}; box-shadow:0 0 6px ${color}; animation:${online ? 'pulse 2s infinite' : 'none'}`;
                 }
             }),
             span({
                 id: 'system-status-text',
-                style: () => `color: ${store.app.heartbeat ? 'var(--c-success)' : 'var(--c-danger)'}`
-            }, () => store.app.heartbeat ? "SYSTEM ONLINE" : "CONNECTION LOST")
+                style: () => {
+                    const online = IS_ELECTRON || store.app.heartbeat;
+                    return `color: ${online ? 'var(--c-success)' : 'var(--c-danger)'}`;
+                }
+            }, () => (IS_ELECTRON || store.app.heartbeat) ? "SYSTEM ONLINE" : "CONNECTION LOST")
         )
     );
 };
