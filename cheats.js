@@ -672,7 +672,31 @@ registerCheats({
         }
         return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
       },
-    }
+    },
+    {
+      name: "sumunit",
+      message: "Set summoning units to be always a certain type",
+      fn: function (params) {
+        if (params && params[0]) {
+          try {
+            if (params[0] === "reset") {
+              cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => t;
+              return `summoning units has been reset to default`;
+            }
+
+            const summonUnit = summonUnits[params[0]];
+            if (summonUnit || summonUnit === 0) {
+              cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => summonUnit;
+              return `${params[0]} set as unit to be drawn`;
+            }
+            return `no such unit ${params[0]} found`;
+          } catch (err) {
+            return `Error: ${err}`;
+          }
+        }
+        return `Please input a unit name 'basic' 'vrumbi' 'bloomy' 'tonka' 'regalis' 'sparkie' 'guardio' 'muddah' OR 'reset' to summon as per normal.`;
+      },
+    },
   ],
 });
 
@@ -723,32 +747,6 @@ registerCheats({
     },
   ],
 });
-
-//summoning game cheat
-registerCheat(
-  "summoning",
-  function (params) {
-    if (params && params[0]) {
-      try {
-        if (params[0] === "reset") {
-          cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => t;
-          return `summoning units has been reset to default`;
-        }
-
-        const summonUnit = summonUnits[params[0]];
-        if (summonUnit || summonUnit === 0) {
-          cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => summonUnit;
-          return `${params[0]} set as unit to be drawn`;
-        }
-        return `no such unit ${params[0]} found`;
-      } catch (err) {
-        return `Error: ${err}`;
-      }
-    }
-    return `Please input a unit name 'basic' 'vrumbi' 'bloomy' 'tonka' 'regalis' OR 'reset' to summon as per normal.`;
-  },
-  "Set summoning units to be always a certain type"
-);
 
 // drop stat specific maxed keychain
 registerCheat(
@@ -4283,8 +4281,8 @@ async function getAutoCompleteSuggestions() {
   Object.keys(summonUnits).forEach(function (item) {
     if (!["error", "null", undefined, "ingameName"].includes(item)) {
       choices.push({
-        message: "summoning " + item,
-        value: "summoning " + item,
+        message: "w6 sumunit " + item,
+        value: "w6 sumunit " + item,
       });
     }
   });
@@ -4301,7 +4299,9 @@ async function getAutoCompleteSuggestions() {
   return choices;
 }
 
-// These choices won't execute immediately when you hit enter, they will allow you to add additional input such as a number if you like, then execute the second time you press enter
+// These choices won't execute immediately when you hit enter,
+// they will allow you to add additional input such as a number if you like,
+// then execute the second time you press enter
 // This is now also used to make a value field for the ui
 async function getChoicesNeedingConfirmation() {
   return [
@@ -4314,8 +4314,8 @@ async function getChoicesNeedingConfirmation() {
     "wide candytime",
     "gga",
     "multiply",
-    "summoning",
-    "ninjaItem",
+    "w6 summoning",
+    "w6 ninjaItem",
     "lvl",
     "qnty",
     "setalch",
@@ -4338,12 +4338,16 @@ function getZJSManipulator() {
   }.toString();
 }
 
+// TODO: Make this dynamic, if possible
 const summonUnits = {
   vrumbi: 4,
   bloomy: 3,
   tonka: 5,
   regalis: 2,
   basic: 0,
+  sparkie: 1,
+  guardio: 6,
+  muddah: 7,
 };
 
 const keychainStatsMap = {
