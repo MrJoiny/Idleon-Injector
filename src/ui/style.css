@@ -19,8 +19,8 @@
 
     /* Text */
     --c-text-main: #e0e6ed;
-    --c-text-dim: #707a8c;
-    --c-text-muted: #444a57;
+    --c-text-dim: #e0e6edee;
+    --c-text-muted: #e0e6ede0;
 
     /* -- DIMENSIONS & FONTS -- */
     --nav-width: 240px;
