@@ -479,6 +479,7 @@ registerCheats({
     { name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
     { name: "vialrng", message: "vial unlock upon rolling 1+" },
     { name: "vialattempt", message: "unlimited vial attempts" },
+    { name: "sigilspeed", message: "fast sigil research (see config)" },
   ],
 });
 
@@ -542,7 +543,6 @@ registerCheats({
     { name: "kitchensdiscount", message: "cheaper kitchens and upgrades (see config)" },
     { name: "platesdiscount", message: "cheaper dinner plate upgrades (see config)" },
     { name: "arena", message: "unlimited arena entries" },
-    { name: "sigilspeed", message: "fast sigil research (see config)" },
     {
       name: "mainframe",
       message: "mainframe cheats check config file",
@@ -640,6 +640,38 @@ registerCheats({
       name: "endless",
       message: "easy endless runs for summoning",
       configurable: { isObject: true },
+    },
+    {
+      name: "sneaksymbol",
+      message: "sneaksymbol 100% chance",
+      configurable: { isObject: true },
+    },
+    {
+      name: "ninjaItem",
+      message: "Generates a ninja item based on the floor which ninja twin is inputted.",
+      fn: function (params) {
+        if (params && params[0]) {
+          const char = parseInt(params[0]);
+          let loopTimes = 1;
+
+          // TODO: make this dynamic with character count
+          if (char < 0 || char > 9)
+            return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
+          try {
+            loopTimes = params[1] && parseInt(params[1]) > 0 ? parseInt(params[1]) : 1;
+            const actorEvents579 = events(579);
+            let n = 0;
+            while (n < loopTimes) {
+              actorEvents579._customBlock_Ninja("GenerateItem", char, 0);
+              n++;
+            }
+            return `Generated ${loopTimes} ninja items for character ${char}`;
+          } catch (err) {
+            return `Error: ${err}`;
+          }
+        }
+        return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
+      },
     }
   ],
 });
@@ -680,11 +712,6 @@ registerCheats({
       configurable: { isObject: true },
     },
     {
-      name: "sneaksymbol",
-      message: "sneaksymbol 100% chance",
-      configurable: { isObject: true },
-    },
-    {
       name: "bubba",
       message: "bubba cheats check config file",
       configurable: { isObject: true },
@@ -721,34 +748,6 @@ registerCheat(
     return `Please input a unit name 'basic' 'vrumbi' 'bloomy' 'tonka' 'regalis' OR 'reset' to summon as per normal.`;
   },
   "Set summoning units to be always a certain type"
-);
-
-// drop ninja item
-registerCheat(
-  "ninjaItem",
-  function (params) {
-    if (params && params[0]) {
-      const char = parseInt(params[0]);
-      let loopTimes = 1;
-
-      if (char < 0 || char > 9)
-        return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
-      try {
-        loopTimes = params[1] && parseInt(params[1]) > 0 ? parseInt(params[1]) : 1;
-        const actorEvents579 = events(579);
-        let n = 0;
-        while (n < loopTimes) {
-          actorEvents579._customBlock_Ninja("GenerateItem", char, 0);
-          n++;
-        }
-        return `Generated ${loopTimes} ninja items for character ${char}`;
-      } catch (err) {
-        return `Error: ${err}`;
-      }
-    }
-    return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
-  },
-  "Generates a ninja item based on the floor which ninja twin is inputted."
 );
 
 // drop stat specific maxed keychain
@@ -3538,8 +3537,8 @@ function setupw4StuffProxy() {
   actorEvents345._customBlock_Labb = function (...argumentsList) {
     const t = argumentsList[0];
     if (cheatState.w4.labpx && (t == "Dist" || t == "BonusLineWidth")) return 1000; // long lab connections
-    if (cheatState.w4.sigilspeed && t == "SigilBonusSpeed")
-      return cheatConfig.w4.sigilspeed(Reflect.apply(Lab, this, argumentsList));
+    if (cheatState.w2.sigilspeed && t == "SigilBonusSpeed")
+      return cheatConfig.w2.alchemy.sigilspeed(Reflect.apply(Lab, this, argumentsList));
     return Reflect.apply(Lab, this, argumentsList);
   };
 
@@ -3831,8 +3830,8 @@ function setupw7Proxies() {
 
   const Sneaksymbol = actorEvents579._customBlock_Thingies;
   actorEvents579._customBlock_Thingies = function (...argumentList) {
-    return cheatState.w7.sneaksymbol && cheatConfig.w7.sneaksymbol.hasOwnProperty(argumentList[0])
-      ? cheatConfig.w7.sneaksymbol[argumentList[0]](Reflect.apply(Sneaksymbol, this, argumentList))
+    return cheatState.w6.sneaksymbol && cheatConfig.w6.sneaksymbol.hasOwnProperty(argumentList[0])
+      ? cheatConfig.w6.sneaksymbol[argumentList[0]](Reflect.apply(Sneaksymbol, this, argumentList))
       : Reflect.apply(Sneaksymbol, this, argumentList);
   };
 }
