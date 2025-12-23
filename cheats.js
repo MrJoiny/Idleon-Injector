@@ -216,7 +216,7 @@ registerCheat(
 registerCheats({
   name: "unlock",
   message:
-    "unlock portals, rifts, pearls, presets, quickref, teleports, colloseum, silver pens, revives",
+    "unlock portals, rifts, pearls, presets, quickref, teleports, colloseum, silver pens, revives, storagecrafting",
   canToggleSubcheats: true,
   subcheats: [
     {
@@ -227,6 +227,21 @@ registerCheats({
           return entry;
         });
         return `The portals have been unlocked!`;
+      },
+    },
+  	{
+      name: "storagecrafting",
+      message: "unlocks craft from storage feature for all items in the anvil",
+      fn: function () {
+        const status = bEngine.getGameAttribute("AnvilCraftStatus");
+        for (let i = 0; i < status.length; i++) {
+          const tab = status[i];
+          if (!tab) continue;
+          for (let j = 0; j < tab.length; j++) {
+            if (tab[j] == 0) tab[j] = 1;
+          }
+        }
+        return "Unlocked all anvil crafts.";
       },
     },
     { name: "divinitypearl", message: "divinity pearls > lvl50" },
