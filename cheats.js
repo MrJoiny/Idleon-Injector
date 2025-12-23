@@ -307,6 +307,7 @@ registerCheats({
   ],
 });
 
+// TODO: fix the proxy in proxy issue that would appear, when minigame is called multiple times.
 const minigameCheat = function (params) {
   setupMinigameProxy.call(this);
   setupCatchingMinigameProxy.call(this);
@@ -3923,6 +3924,7 @@ function setupPoingProxy() {
   );
 }
 
+// TODO: to fix the proxy when used portal, we have to create a proxy where the window is created and on that call we call that proxy again.
 function setupScratchMinigameProxy() {
   try {
     const scratchBehavior = bEngine
