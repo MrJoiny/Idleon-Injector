@@ -497,6 +497,9 @@ exports.cheatConfig = {
       // NBLB_bubbleLVrangeDisp: (t) => t,
       // ArcaneTachyonType: (t) => t,
     },
+    sneaksymbol: {
+      SneakSymbolChanceBase: (t) => 1,
+    },
   },
   w7: {
     bubba: {
@@ -662,9 +665,6 @@ exports.cheatConfig = {
     },
     bigfish: {
       BigFishCost: (t) => 0,
-    },
-    sneaksymbol: {
-      SneakSymbolChanceBase: (t) => 1,
     },
     zenith: {
       ZenithMarketCost: (t) => t / 2,
