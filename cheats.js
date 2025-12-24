@@ -3841,13 +3841,16 @@ function setupMinigameProxy() {
   const miningGameOver = bEngine
     .getGameAttribute("PixelHelperActor")[4]
     .getValue("ActorEvents_229", "_customEvent_MiningGameOver");
+
   const handlerMining = {
     apply: function (originalFn, context, argumentsList) {
       if (cheatState.minigame.mining) return; // Do nothing when game over
       return Reflect.apply(originalFn, context, argumentsList);
     },
   };
+
   const proxyMining = new Proxy(miningGameOver, handlerMining);
+
   bEngine
     .getGameAttribute("PixelHelperActor")[4]
     .setValue("ActorEvents_229", "_customEvent_MiningGameOver", proxyMining);
@@ -3855,22 +3858,26 @@ function setupMinigameProxy() {
   const fishingGameOver = bEngine
     .getGameAttribute("PixelHelperActor")[4]
     .getValue("ActorEvents_229", "_customEvent_FishingGameOver");
+
   const handlerFishing = {
     apply: function (originalFn, context, argumentsList) {
       if (cheatState.minigame.fishing) return; // Do nothing when game over
       return Reflect.apply(originalFn, context, argumentsList);
     },
   };
+
   const proxyFishing = new Proxy(fishingGameOver, handlerFishing);
   bEngine
     .getGameAttribute("PixelHelperActor")[4]
     .setValue("ActorEvents_229", "_customEvent_FishingGameOver", proxyFishing);
 }
+
 // Static fly and hoop positions
 function setupCatchingMinigameProxy() {
   const catchingGameGenInfo = bEngine
     .getGameAttribute("PixelHelperActor")[4]
     .getValue("ActorEvents_229", "_GenInfo");
+
   const handler = {
     get: function (originalObject, property) {
       if (cheatState.minigame.catching) {
@@ -3891,6 +3898,7 @@ function setupGeneralInfoProxy() {
   const generalInfo = bEngine
     .getGameAttribute("PixelHelperActor")[1]
     .getValue("ActorEvents_116", "_GeneralINFO");
+
   const handler = {
     get: function (orignalObject, property) {
       if (cheatState.minigame.choppin && Number(property) === 7)
@@ -3906,18 +3914,20 @@ function setupGeneralInfoProxy() {
 
 function setupPoingProxy() {
   let aiVelocity = 0;
-  Object.defineProperty(
-    bEngine.gameAttributes.h.PixelHelperActor[23].behaviors.behaviors[0].script._GenINFO[63],
-    "1",
-    {
-      get: function () {
-        return cheatState.minigame.poing ? 0 : aiVelocity;
-      },
-      set: function (value) {
-        aiVelocity = value;
-        return true;
-      },
-    }
+
+  const poingGeninfo = bEngine
+    .gameAttributes.h.PixelHelperActor[23]
+    .behaviors.behaviors[0].script._GenINFO;
+
+  Object.defineProperty(poingGeninfo[63], "1", {
+    get: function () {
+      return cheatState.minigame.poing ? 0 : aiVelocity;
+    },
+    set: function (value) {
+      aiVelocity = value;
+      return true;
+    },
+  }
   );
 }
 
