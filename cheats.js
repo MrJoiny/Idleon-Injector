@@ -1151,126 +1151,206 @@ registerCheats({
   ],
 });
 
-// A list creator
-const listFunction = function (params) {
-  const foundVals = [];
 
-  if (params[0] == "item") {
-    foundVals.push("Id, ingameName");
-    for (const [key, value] of Object.entries(itemDefs)) {
-      let valName;
-      if (key.startsWith("Cards"))
-        valName = (
-          value.h.desc_line1.replace(/_/g, " ").toLowerCase() +
-          value.h.desc_line2.replace(/_/g, " ").toLowerCase()
-        ).replace("filler", "");
-      else valName = value.h.displayName.replace(/_/g, " ").toLowerCase();
-      foundVals.push(`${key}, ${valName}`);
-    }
-  } else if (params[0] == "bundle") {
-    foundVals.push("Bundle, Message");
-    console.log(this["scripts.CustomMapsREAL"].GemPopupBundleMessages());
-    const GemPopupBundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
-    let cleaned;
-    for (const [key, value] of Object.entries(GemPopupBundleMessages)) {
-      cleaned = value.replace(/_/g, " ");
-      if (key != "Blank") {
-        foundVals.push(`${key}, ${cleaned}`);
-        foundVals.push("\n");
+const listFunction = function (params) {
+
+  const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
+
+  const listType = params[0];
+  const filterQuery = params[1];
+  const results = [];
+
+  const listHandlers = {
+    item: () => {
+      results.push("Id, ingameName");
+      for (const [key, value] of Object.entries(itemDefs)) {
+        if (key.startsWith("Cards")) {
+          const desc1 = formatText(value.h.desc_line1);
+          const desc2 = formatText(value.h.desc_line2);
+          const displayName = (desc1 + desc2).replace("filler", "");
+          results.push(`${key}, ${displayName}`);
+          continue;
+        }
+        const displayName = formatText(value.h.displayName);
+        results.push(`${key}, ${displayName}`);
       }
-    }
-  } else if (params[0] == "missing_bundle") {
-    foundVals.push("Bundle, Message");
-    console.log(this["scripts.CustomMapsREAL"].GemPopupBundleMessages());
-    const GemPopupBundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
-    const bundles_received = bEngine.gameAttributes.h.BundlesReceived.h; // dict with the same key as GemPopupBundleMessages value is 0 or 1
-    let cleaned;
-    for (const [key, value] of Object.entries(GemPopupBundleMessages)) {
-      cleaned = value.replace(/_/g, " ");
-      if (bundles_received[key] != 1 && key != "Blank") {
-        foundVals.push(`${key}, ${cleaned}`);
-        foundVals.push("\n");
+    },
+
+    bundle: () => {
+      results.push("Bundle, Message");
+      const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
+
+      for (const [key, value] of Object.entries(bundleMessages)) {
+        if (key === "Blank") continue;
+
+        const cleanedMessage = formatText(value);
+        results.push(`${key}, ${cleanedMessage}`);
+        results.push("\n");
       }
-    }
-  } else if (params[0] == "monster") {
-    foundVals.push("Id, ingameName, HP, Defence, Damage, EXP");
-    for (const [key, value] of Object.entries(monsterDefs)) {
-      const valName = value.h["Name"].replace(/_/g, " ").toLowerCase();
-      foundVals.push(
-        `${key}, ${valName}, ${value.h["MonsterHPTotal"]}, ${value.h["Defence"]}, ${value.h["Damages"][0]}, ${value.h["ExpGiven"]}`
-      );
-    }
-  } else if (params[0] == "monster") {
-    foundVals.push("Id, ingameName, HP, Defence, Damage, EXP");
-    for (const [key, value] of Object.entries(monsterDefs)) {
-      const valName = value.h["Name"].replace(/_/g, " ").toLowerCase();
-      foundVals.push(
-        `${key}, ${valName}, ${value.h["MonsterHPTotal"]}, ${value.h["Defence"]}, ${value.h["Damages"][0]}, ${value.h["ExpGiven"]}`
-      );
-    }
-  } else if (params[0] == "card") {
-    foundVals.push("Id, Entity, Value, Effect");
-    const CardStuff = CList.CardStuff;
-    for (const [key1, value1] of Object.entries(CardStuff))
-      for (const [key2, value2] of Object.entries(value1)) {
-        if (monsterDefs[value2[0]])
-          foundVals.push(
-            `${value2[0]}, ${monsterDefs[value2[0]].h["Name"]}, ${value2[4]}, ${value2[3]}`
-          );
-        else foundVals.push(`${value2[0]}, Unknown, ${value2[4]}, ${value2[3]}`);
+    },
+
+    missing_bundle: () => {
+      results.push("Bundle, Message");
+      const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
+      const bundlesReceived = bEngine.gameAttributes.h.BundlesReceived.h;
+
+      for (const [key, value] of Object.entries(bundleMessages)) {
+        const isNotReceived = bundlesReceived[key] !== 1;
+        const isNotBlank = key !== "Blank";
+
+        if (isNotReceived && isNotBlank) {
+          const cleanedMessage = formatText(value);
+          results.push(`${key}, ${cleanedMessage}`);
+          results.push("\n");
+        }
       }
-  } else if (params[0] == "class") {
-    foundVals.push("Id, ClassName, PromotesTo");
-    for (const [index, element] of CList.ClassNames.entries())
-      foundVals.push(`${index}, ${element}, [${CList.ClassPromotionChoices[index]}]`);
-  } else if (params[0] == "quest") {
-    foundVals.push("Id, QuestName, NPC, QuestlineNo, paramX1");
-    for (const [index, element] of CList.SceneNPCquestOrder.entries())
-      foundVals.push(`${element}, ${CList.SceneNPCquestInfo[index].join(", ")}`);
-  } else if (params[0] == "map") {
-    foundVals.push("Num_Id, Str_Id, MapName, AFK1, AFK2, Transition");
-    for (const [index, element] of CList.MapName.entries())
-      foundVals.push(
-        `${index}, ${element}, ${CList.MapDispName[index]}, ${CList.MapAFKtarget[index]}, ${CList.MapAFKtargetSide[index]}, [${CList.SceneTransitions[index]}]`
-      );
-  } else if (params[0] == "talent") {
-    foundVals.push("Order, Id, Name");
-    const Order = CList.TalentOrder;
-    const talentDefs = CList.TalentIconNames;
-    for (i = 0; i < Order.length; i++)
-      if (talentDefs[Order[i]] !== "_")
-        foundVals.push(`${i}, ${Order[i]}, ${talentDefs[Order[i]]}`);
-  } else if (params[0] == "ability") {
-    foundVals.push("Order, Id, Name");
-    const Order = CList.TalentOrder;
-    const talentDefs = CList.TalentIconNames;
-    const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
-    for (i = 0; i < Order.length; i++)
-      if (talentDefs[Order[i]] !== "_")
-        if (atkMoveMap[talentDefs[Order[i]]])
-          // Filter out all non-ability talents
-          foundVals.push(`${i}, ${Order[i]}, ${talentDefs[Order[i]]}`);
-  } else if (params[0] == "companion") {
-    foundVals.push("Id, Name, Effects");
-    const CompanionDB = CList.CompanionDB;
-    for (i = 0; i < CompanionDB.length; i++)
-      foundVals.push(`${i}, ${CompanionDB[i][0]}, ${CompanionDB[i][1]}`);
-  } else if (params[0] == "smith") {
-    foundVals.push("CraftId, Tab, ItemId, ItemName");
-    const ItemToCraftNAME = CList.ItemToCraftNAME;
-    for (i = 0; i < ItemToCraftNAME.length; i++)
-      for (j = 0; j < ItemToCraftNAME[i].length; j++) {
-        let itemName = itemDefs[ItemToCraftNAME[i][j]].h.displayName
-          .replace(/_/g, " ")
-          .toLowerCase();
-        foundVals.push(`${i + 1}, ${j}, ${ItemToCraftNAME[i][j]}, ${itemName}`);
+    },
+
+    monster: () => {
+      results.push("Id, ingameName, HP, Defence, Damage, EXP");
+      for (const [key, value] of Object.entries(monsterDefs)) {
+        const monsterData = value.h;
+        const name = formatText(monsterData.Name);
+        const hp = monsterData.MonsterHPTotal;
+        const defence = monsterData.Defence;
+        const damage = monsterData.Damages[0];
+        const exp = monsterData.ExpGiven;
+
+        results.push(`${key}, ${name}, ${hp}, ${defence}, ${damage}, ${exp}`);
       }
-  } else if ((params[0] = "gga"))
-    for (const [key, val] of Object.entries(bEngine.gameAttributes.h)) foundVals.push(key);
-  else return "Valid sub-commands are:\n item\n monster\n class\n quest\n map\n talent\n smith";
-  if (params[1]) return foundVals.filter((foundVals) => foundVals.includes(params[1])).join("\n");
-  return foundVals.join("\n"); // Concatenate all lines into one string with new lines
+    },
+
+    card: () => {
+      results.push("Id, Entity, Value, Effect");
+      const cardData = CList.CardStuff;
+
+      for (const category of Object.values(cardData)) {
+        for (const card of Object.values(category)) {
+          const cardId = card[0];
+          const cardValue = card[4];
+          const cardEffect = card[3];
+          const entityName = monsterDefs[cardId]?.h?.Name ?? "Unknown";
+
+          results.push(`${cardId}, ${entityName}, ${cardValue}, ${cardEffect}`);
+        }
+      }
+    },
+
+    class: () => {
+      results.push("Id, ClassName, PromotesTo");
+      for (const [index, className] of CList.ClassNames.entries()) {
+        const promotions = CList.ClassPromotionChoices[index];
+        results.push(`${index}, ${className}, [${promotions}]`);
+      }
+    },
+
+    quest: () => {
+      results.push("Id, QuestName, NPC, QuestlineNo, paramX1");
+      for (const [index, questId] of CList.SceneNPCquestOrder.entries()) {
+        const questInfo = CList.SceneNPCquestInfo[index].join(", ");
+        results.push(`${questId}, ${questInfo}`);
+      }
+    },
+
+    map: () => {
+      results.push("Num_Id, Str_Id, MapName, AFK1, AFK2, Transition");
+      for (const [index, mapId] of CList.MapName.entries()) {
+        const displayName = CList.MapDispName[index];
+        const afkTarget = CList.MapAFKtarget[index];
+        const afkTargetSide = CList.MapAFKtargetSide[index];
+        const transitions = CList.SceneTransitions[index];
+
+        results.push(`${index}, ${mapId}, ${displayName}, ${afkTarget}, ${afkTargetSide}, [${transitions}]`);
+      }
+    },
+
+    talent: () => {
+      results.push("Order, Id, Name");
+      const talentOrder = CList.TalentOrder;
+      const talentNames = CList.TalentIconNames;
+
+      for (let i = 0; i < talentOrder.length; i++) {
+        const talentId = talentOrder[i];
+        const talentName = talentNames[talentId];
+
+        if (talentName !== "_") {
+          results.push(`${i}, ${talentId}, ${talentName}`);
+        }
+      }
+    },
+
+    ability: () => {
+      results.push("Order, Id, Name");
+      const talentOrder = CList.TalentOrder;
+      const talentNames = CList.TalentIconNames;
+      const abilityMap = this["scripts.CustomMaps"].atkMoveMap.h;
+
+      for (let i = 0; i < talentOrder.length; i++) {
+        const talentId = talentOrder[i];
+        const talentName = talentNames[talentId];
+
+        // Only include talents that are abilities (exist in abilityMap)
+        const isValidTalent = talentName !== "_";
+        const isAbility = abilityMap[talentName];
+
+        if (isValidTalent && isAbility) {
+          results.push(`${i}, ${talentId}, ${talentName}`);
+        }
+      }
+    },
+
+    companion: () => {
+      results.push("Id, Name, Effects");
+      const companions = CList.CompanionDB;
+
+      for (let i = 0; i < companions.length; i++) {
+        const name = companions[i][0];
+        const effects = companions[i][1];
+        results.push(`${i}, ${name}, ${effects}`);
+      }
+    },
+
+    smith: () => {
+      results.push("CraftId, Tab, ItemId, ItemName");
+      const craftingRecipes = CList.ItemToCraftNAME;
+
+      for (let tabIndex = 0; tabIndex < craftingRecipes.length; tabIndex++) {
+        const tab = craftingRecipes[tabIndex];
+
+        for (let recipeIndex = 0; recipeIndex < tab.length; recipeIndex++) {
+          const itemId = tab[recipeIndex];
+          const itemName = formatText(itemDefs[itemId].h.displayName);
+
+          results.push(`${tabIndex + 1}, ${recipeIndex}, ${itemId}, ${itemName}`);
+        }
+      }
+    },
+
+    gga: () => {
+      for (const key of Object.keys(bEngine.gameAttributes.h)) {
+        results.push(key);
+      }
+    },
+  };
+
+  const handler = listHandlers[listType];
+  if (!handler) {
+    const validTypes = Object.keys(listHandlers).join("\n ");
+    return `Valid sub-commands are:\n ${validTypes}`;
+  }
+
+  handler.call(this);
+
+  // filter if provided
+  if (filterQuery) {
+    return results
+      .filter((entry) => entry.includes(filterQuery))
+      .join("\n");
+  }
+
+  return results.join("\n");
 };
+
 registerCheats({
   name: "list",
   message: "list something. third param optional filter",
