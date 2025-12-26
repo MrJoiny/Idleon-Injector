@@ -1250,6 +1250,11 @@ const listFunction = function (params) {
         if (atkMoveMap[talentDefs[Order[i]]])
           // Filter out all non-ability talents
           foundVals.push(`${i}, ${Order[i]}, ${talentDefs[Order[i]]}`);
+  } else if (params[0] == "companion") {
+    foundVals.push("Id, Name, Effects");
+    const CompanionDB = CList.CompanionDB;
+    for (i = 0; i < CompanionDB.length; i++)
+      foundVals.push(`${i}, ${CompanionDB[i][0]}, ${CompanionDB[i][1]}`);
   } else if (params[0] == "smith") {
     foundVals.push("CraftId, Tab, ItemId, ItemName");
     const ItemToCraftNAME = CList.ItemToCraftNAME;
@@ -1328,6 +1333,11 @@ registerCheats({
     {
       name: "gga",
       message: "list game attributes. third param optional filter",
+      fn: listFunction,
+    },
+    {
+      name: "companion",
+      message: "list all companions",
       fn: listFunction,
     },
   ],
