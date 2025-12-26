@@ -4329,6 +4329,15 @@ function getOptionsListAccountIndex(index) {
   }
 }
 
+function cheatStateList() {
+  try {
+    return cheatState;
+  } catch (error) {
+    console.error('Error getting cheatStateList:', error);
+    return null;
+  }
+}
+
 // Here you can add suggestions for the autocomplete
 async function getAutoCompleteSuggestions() {
   let choices = [];

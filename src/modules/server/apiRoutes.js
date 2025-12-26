@@ -260,6 +260,33 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
+  // --- API Endpoint: Get Active Cheat States ---
+  app.get('/api/cheat-states', async (req, res) => {
+    try {
+      const statesResult = await Runtime.evaluate({
+        expression: `cheatStateList.call(${context})`,
+        awaitPromise: true,
+        returnByValue: true
+      });
+
+      if (statesResult.exceptionDetails) {
+        console.error("API Error getting cheat states:", statesResult.exceptionDetails.text);
+        res.status(500).json({
+          error: 'Failed to get cheat states from game',
+          details: statesResult.exceptionDetails.text
+        });
+      } else {
+        res.json({ data: statesResult.result.value || {} });
+      }
+    } catch (apiError) {
+      console.error("API Error in /api/cheat-states:", apiError);
+      res.status(500).json({
+        error: 'Internal server error while fetching cheat states',
+        details: apiError.message
+      });
+    }
+  });
+
   // --- API Endpoint: Get Options List Account ---
   app.get('/api/options-account', async (req, res) => {
     try {
