@@ -66,7 +66,7 @@ const CheatService = {
     executeCheat: async (action, message) => {
         try {
             const result = await API.executeCheatAction(action);
-            Actions.notify(`Executed '${message}': ${result.result || 'Success'}`);
+            Actions.notify(`Cheat ${result.result || 'Success'}`);
             // Refresh cheat states after execution
             CheatStateService.loadCheatStates();
         } catch (e) {

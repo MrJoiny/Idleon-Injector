@@ -383,7 +383,7 @@ registerCheats({
       message: "100% plunderous mob spawn rate",
       configurable: { isObject: true },
     },
-    { name: "candy", message: "enable candy use everywhere" },
+    { name: "candy", message: "candy use everywhere" },
     {
       name: "candytime",
       message: "buffs 1 hr candys in minutes",
@@ -464,8 +464,8 @@ registerCheats({
       name: "smith",
       message: "smithing cost nullification (change maps to have the effect apply).",
     },
-    { name: "companion", message: "Enable companion", configurable: true },
-    { name: "owl", message: "Enable Owl cheats, check config file", configurable: true }
+    { name: "companion", message: "companions cheat", configurable: true },
+    { name: "owl", message: "owl cheats, check config file", configurable: true }
   ],
 });
 
@@ -476,8 +476,8 @@ registerCheats({
   canToggleSubcheats: true,
   subcheats: [
     { name: "boss", message: "unlimited boss attempts" },
-    { name: "roo", message: "Enable Roo cheats, check config file", configurable: true },
-    { name: "alchemy", message: "Enable Alchemy cheats, check config file", configurable: true },
+    { name: "roo", message: "roo cheats, check config file", configurable: true },
+    { name: "alchemy", message: "alchemy cheats, check config file", configurable: true },
     { name: "vialrng", message: "vial unlock upon rolling 1+" },
     { name: "vialattempt", message: "unlimited vial attempts" },
     { name: "sigilspeed", message: "fast sigil research (see config)" },
