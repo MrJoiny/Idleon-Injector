@@ -1226,6 +1226,8 @@ const listFunction = function (params) {
 
       for (const category of Object.values(cardData)) {
         for (const card of Object.values(category)) {
+          if (!card[0]) continue;
+
           const cardId = card[0];
           const cardValue = card[4];
           const cardEffect = card[3];
