@@ -302,6 +302,7 @@ registerCheats({
         ["Bunny Pack", "bon_m"],
         ["Hedgehog Pack", "bon_n"],
         ["Panda Pack", "bon_o"],
+        ["Santa helper bundle", "bon_p"],
       ].map(([name, code]) => createBundleCheat(name, code));
     })(),
   ],
