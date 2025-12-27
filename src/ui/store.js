@@ -97,7 +97,7 @@ const getActiveCheats = (states) => {
         if (typeof value === 'object' && value !== null) {
             for (const subKey in value) {
                 if (value[subKey] === true) {
-                    activeCheats.push(`${key}.${subKey}`);
+                    activeCheats.push(`${key} ${subKey}`);
                 }
             }
         } else if (value === true) {
