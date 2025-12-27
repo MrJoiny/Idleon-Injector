@@ -871,28 +871,22 @@ registerCheat(
     function (params) {
       // init multiplestack, removed from config because of the webui overwriting it
       if (!cheatConfig.multiplestacks) {
-        cheatConfig.multiplestacks = { 
-          items: [], 
-        };
+        cheatConfig.multiplestacks = {
+          items: new Map(),
+        }
       }
 
       const name = params[0];
       const amount = params[1];
-      const items = cheatConfig.multiplestacks.items;
-      if(name != null && amount != null){
-        const index = items.indexOf(item => item.name === name);
-
-        if(index !== -1){
-          items.splice(index, 1);
-          return `${name} removed from multiple stacks list`;
-        } else{
-          items.push({ name, amount });
-          return `${name} will now go up to ${amount} in the chest.`;
-        }
+      if (cheatConfig.multiplestacks.items.has(name) && amount <= 1) {
+        cheatConfig.multiplestacks.items.delete(name);
+        return `${name} has been removed from multiplestacks.`;
+      } else {
+        cheatConfig.multiplestacks.items.set(name, amount);
+        return `${name} has been added to multiplestacks with ${amount} stacks.`;
       }
-      return `Need stack size`;
     },
-    `Will make multiple stacks in chest when autochest is on for this item.`
+    `Will make multiple stacks of specified items in chest when autochest is on.`
 );
 
 // Quick daily shop and post office reset
@@ -2299,10 +2293,10 @@ function setupAutoLootProxy() {
       let chestSlot = dropSlot !== -1 ? dropSlot : blankSlot;
 
       // Check if item is on Multiple stacks list.
-      const items = cheatConfig.multiplestacks?.items ?? [];
-      const item = items.find(i => i.name === dropType);
+      const items = cheatConfig.multiplestacks?.items ?? new Map();
       // Grab correct slot for multiple stacks.
-      if (item !== undefined) {
+      if (items.has(dropType)) {
+        const maxStacks = items.get(dropType);
         let stackCount = 0;
         let chestSlotFound = false;
 
@@ -2315,7 +2309,7 @@ function setupAutoLootProxy() {
             chestSlot = i;
             break;
           }
-          if(stackCount === item.size) {
+          if(stackCount >= maxStacks) {
             chestSlotFound = true;
             break;
           }
@@ -4317,6 +4311,10 @@ async function getAutoCompleteSuggestions() {
         message: `nomore ${itemParts[0]} (${itemParts[1]})`,
         value: "nomore " + itemParts[0],
       });
+      choices.push({
+        message: `multiplestacks ${itemParts[0]} (${itemParts[1]})`,
+        value: "multiplestacks " + itemParts[0],
+      });
     }
   });
 
@@ -4385,6 +4383,7 @@ async function getChoicesNeedingConfirmation() {
     "wipe chestslot",
     "bulk",
     "class",
+    "multiplestacks",
 
     // "keychain", why is this here?
   ];
