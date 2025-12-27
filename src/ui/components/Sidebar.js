@@ -30,7 +30,11 @@ const ActiveCheatList = () => {
 
             return div({ class: 'active-cheats-list' },
                 ...activeCheats.map(cheat =>
-                    span({ class: 'active-cheat-item' }, cheat)
+                    span({
+                        class: 'active-cheat-item',
+                        onclick: () => store.executeCheat(cheat, cheat),
+                        title: 'Click to deactivate'
+                    }, cheat)
                 )
             );
         }

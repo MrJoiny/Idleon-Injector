@@ -216,6 +216,13 @@ body {
     min-height: 22px;
     flex-shrink: 0;
     line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.active-cheat-item:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 8px var(--c-accent-dim);
 }
 
 .no-active-cheats {
