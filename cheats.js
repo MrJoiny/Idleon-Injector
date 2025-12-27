@@ -965,11 +965,6 @@ registerCheats({
       message: "Multiplies sample print by x, overrides lab/god bonus",
       configurable: true,
     },
-    {
-      name: "monsters",
-      message: "Multiplies the number of monsters on the map by the number given",
-      configurable: true,
-    },
   ],
 });
 
@@ -2161,6 +2156,7 @@ function setupFirebaseProxy() {
         setupTrappingProxy.call(this);
         setupTimeCandyProxy.call(this);
         setupAlchProxy.call(this);
+        setupMonsterProxy.call(this);
         return result;
       },
     });
@@ -2561,25 +2557,23 @@ function setupItemMoveProxy() {
 }
 
 function setupMonsterProxy() {
-  bEngine.setGameAttribute(
-    "MonsterRespawnTime",
-    new Proxy(bEngine.getGameAttribute("MonsterRespawnTime"), {
-      set: function (obj, prop, value) {
-        return (obj[prop] = cheatState.godlike.respawn
-          ? cheatConfig.godlike.respawn(value)
-          : value);
-      },
-    })
-  );
+  const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
 
-  behavior.getValueForScene = new Proxy(behavior.getValueForScene, {
-    apply: function (originalFn, context, argumentsList) {
-      if (cheatState.multiply.monsters && argumentsList[1] === "_NumberOfEnemies") {
-        return Reflect.apply(originalFn, context, argumentsList) * cheatConfig.multiply.monsters;
-      }
-      return Reflect.apply(originalFn, context, argumentsList);
+  if (monsterRespawnTime._isPatched) return;
+  Object.defineProperty(monsterRespawnTime, "_isPatched", { value: true, enumerable: false });
+
+  const respawnHandler = {
+    set(target, prop, value) {
+      const newValue = cheatState.godlike.respawn
+        ? cheatConfig.godlike.respawn(value)
+        : value;
+      target[prop] = newValue;
+      return true;
     },
-  });
+  };
+
+
+  bEngine.gameAttributes.h.MonsterRespawnTime = new Proxy(monsterRespawnTime, respawnHandler);
 }
 
 function setupItemsMenuProxy() {
