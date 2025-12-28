@@ -3633,15 +3633,15 @@ function setupw5Proxies() {
   actorEvents579._customBlock_Sailing = function (...argumentsList) {
     let res = Reflect.apply(Sailing, this, argumentsList);
     if (cheatState.w5.sailing && cheatConfig.w5.sailing.hasOwnProperty(argumentsList[0]))
-      res = cheatConfig.w5.sailing[argumentsList[0]](res);
+      return cheatConfig.w5.sailing[argumentsList[0]](res);
     if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" == argumentsList[0]) {
       if (
         1 == this._customBlock_Ninja("EmporiumBonus", 32, 0) &&
         50 <= Number(bEngine.getGameAttribute("Lv0")[13])
       ) {
         const dnsm = bEngine.getGameAttribute("DNSM");
-        dnsm && dnsm.h && (dnsm.h.SailzDN4 = 6);
-        res = 6;
+        dnsm.h.SailzDN4 = 6;
+        return 6;
       }
     }
     return res;
