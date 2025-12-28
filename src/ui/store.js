@@ -1,5 +1,6 @@
 import vanX from './van-x-0.6.3.js';
 import * as API from './api.js';
+import { IS_ELECTRON } from './constants.js';
 
 // Reactive State Container: UI & System
 const appState = vanX.reactive({
@@ -15,7 +16,8 @@ const dataState = vanX.reactive({
     cheats: [],
     needsConfirmation: [],
     accountOptions: [],
-    accountSchema: {}
+    accountSchema: {},
+    activeCheatStates: {}
 });
 
 
@@ -39,6 +41,10 @@ const Actions = {
 
 const SystemService = {
     initHeartbeat: () => {
+        if (IS_ELECTRON) {
+            appState.heartbeat = true;
+            return;
+        }
         const check = async () => {
             const alive = await API.checkHeartbeat();
             appState.heartbeat = !!alive;
@@ -60,9 +66,56 @@ const CheatService = {
     executeCheat: async (action, message) => {
         try {
             const result = await API.executeCheatAction(action);
-            Actions.notify(`Executed '${message}': ${result.result || 'Success'}`);
+            Actions.notify(`Cheat ${result.result || 'Success'}`);
+            // Refresh cheat states after execution
+            CheatStateService.loadCheatStates();
         } catch (e) {
             Actions.notify(`Error executing '${message}': ${e.message}`, 'error');
+        }
+    }
+};
+
+const getActiveCheats = (states) => {
+    const activeCheats = [];
+    const processedGroups = new Set();
+
+    // cheats with s at the end like w1s
+    for (const key in states) {
+        const value = states[key];
+        if (key.endsWith('s') && value === true) {
+            const baseKey = key.slice(0, -1);
+            processedGroups.add(baseKey);
+            activeCheats.push(baseKey);
+        }
+    }
+
+    for (const key in states) {
+        const value = states[key];
+        if (key.endsWith('s') && typeof value === 'boolean') continue;
+        if (processedGroups.has(key)) continue;
+
+        if (typeof value === 'object' && value !== null) {
+            for (const subKey in value) {
+                if (value[subKey] === true) {
+                    activeCheats.push(`${key} ${subKey}`);
+                }
+            }
+        } else if (value === true) {
+            activeCheats.push(key);
+        }
+    }
+
+    return activeCheats;
+};
+
+const CheatStateService = {
+    loadCheatStates: async () => {
+        try {
+            const result = await API.fetchCheatStates();
+            dataState.activeCheatStates = result.data || {};
+        } catch (e) {
+            console.error('Error loading cheat states:', e);
+            dataState.activeCheatStates = {};
         }
     }
 };
@@ -144,6 +197,8 @@ const store = {
     // Cheats
     loadCheats: CheatService.loadCheats,
     executeCheat: CheatService.executeCheat,
+    loadCheatStates: CheatStateService.loadCheatStates,
+    getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 
     // Config
     loadConfig: ConfigService.loadConfig,

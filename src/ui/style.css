@@ -19,8 +19,8 @@
 
     /* Text */
     --c-text-main: #e0e6ed;
-    --c-text-dim: #707a8c;
-    --c-text-muted: #444a57;
+    --c-text-dim: #e0e6edee;
+    --c-text-muted: #e0e6ede0;
 
     /* -- DIMENSIONS & FONTS -- */
     --nav-width: 240px;
@@ -126,7 +126,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    flex: 1;
 }
 
 .tab-button {
@@ -172,6 +171,65 @@ body {
 .tab-button.active svg {
     opacity: 1;
     filter: drop-shadow(0 0 4px var(--c-accent));
+}
+
+/* --- ACTIVE CHEATS --- */
+.active-cheats {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--c-border);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.active-cheats-header {
+    font-size: 0.85rem;
+    color: var(--c-text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.active-cheats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-border) transparent;
+}
+
+.active-cheat-item {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--c-accent);
+    padding: 4px 8px;
+    background: var(--c-accent-dim);
+    border-left: 2px solid var(--c-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 22px;
+    flex-shrink: 0;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.active-cheat-item:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 8px var(--c-accent-dim);
+}
+
+.no-active-cheats {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--c-text-muted);
+    font-style: italic;
 }
 
 .system-status {

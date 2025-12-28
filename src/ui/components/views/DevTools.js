@@ -1,5 +1,6 @@
 import van from '../../van-1.6.0.js';
 import * as API from '../../api.js';
+import { IS_ELECTRON } from '../../constants.js';
 
 const { div, iframe } = van.tags;
 
@@ -7,11 +8,11 @@ export const DevTools = () => {
     // Local state for URL loading
     const url = van.state("");
     const error = van.state("");
-    const isElectron = /electron/i.test(navigator.userAgent);
+
 
     const load = async () => {
         try {
-            if (!isElectron) url.val = await API.fetchDevToolsUrl();
+            if (!IS_ELECTRON) url.val = await API.fetchDevToolsUrl();
         } catch (e) {
             error.val = e.message;
         }
@@ -22,7 +23,7 @@ export const DevTools = () => {
         div({ class: 'terminal-wrapper' },
             () => {
                 // prevent showing iframe -> crashes the ingame webui
-                if (isElectron && window.parent !== window) {
+                if (IS_ELECTRON && window.parent !== window) {
                     return div({ class: 'danger-zone-header' }, [
                         div({ style: 'font-size: 24px; margin-bottom: 20px;' }, "⚠ ELECTRON DETECTED"),
                         div("Nested DevTools is disabled within the game screen to prevent stability issues."),

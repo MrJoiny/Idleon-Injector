@@ -42,6 +42,10 @@ async function _request(endpoint, options = {}) {
 
 // --- CHEATS ---
 
+export async function fetchCheatStates() {
+    return _request('/cheat-states');
+}
+
 export async function fetchCheatsData() {
     // Parallel fetch for cheats and confirmation list
     const [cheats, needsConfirmation] = await Promise.all([

@@ -134,7 +134,11 @@ export const Cheats = () => {
 const CheatItem = (cheat) => {
     // Check global confirmation list (Reactive access)
     // We use a derived check to ensure reactivity if the list updates
-    const needsValue = van.derive(() => store.data.needsConfirmation.includes(cheat.baseCommand));
+    const needsValue = van.derive(() => {
+        const list = store.data.needsConfirmation;
+        const val = cheat.value;
+        return list.some(cmd => val === cmd || val.startsWith(cmd + ' '));
+    });
 
     // Local state for the input
     const inputValue = van.state("");

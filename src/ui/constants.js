@@ -35,3 +35,5 @@ export const VIEW_ORDER = [
     VIEWS.CONFIG,
     VIEWS.DEVTOOLS
 ];
+
+export const IS_ELECTRON = /electron/i.test(navigator.userAgent);

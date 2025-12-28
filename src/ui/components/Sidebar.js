@@ -1,6 +1,6 @@
 import van from '../van-1.6.0.js';
 import store from '../store.js';
-import { VIEWS } from '../constants.js';
+import { VIEWS, IS_ELECTRON } from '../constants.js';
 
 // Standard HTML Tags
 const { nav, div, button, span } = van.tags;
@@ -16,7 +16,35 @@ const Icons = {
     DevTools: () => svg({ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "aria-hidden": "true" }, polyline({ points: "4 17 10 11 4 5" }), line({ x1: "12", y1: "19", x2: "20", y2: "19" }))
 };
 
+const ActiveCheatList = () => {
+    return div({ class: 'active-cheats' },
+        div({ class: 'active-cheats-header' }, 'ACTIVE CHEATS'),
+        () => {
+            const activeCheats = store.getActiveCheats();
+
+            if (activeCheats.length === 0) {
+                return div({ class: 'active-cheats-list' },
+                    span({ class: 'no-active-cheats' }, 'None')
+                );
+            }
+
+            return div({ class: 'active-cheats-list' },
+                ...activeCheats.map(cheat =>
+                    span({
+                        class: 'active-cheat-item',
+                        onclick: () => store.executeCheat(cheat, cheat),
+                        title: 'Click to deactivate'
+                    }, cheat)
+                )
+            );
+        }
+    );
+};
+
 export const Sidebar = () => {
+    // Load cheat states on initial mount
+    store.loadCheatStates();
+
     // VanX: Accessing property registers dependency. No .val needed.
     const NavBtn = (viewConfig, Icon) => button({
         class: () => `tab-button ${store.app.activeTab === viewConfig.id ? 'active' : ''}`,
@@ -37,19 +65,23 @@ export const Sidebar = () => {
             NavBtn(VIEWS.CONFIG, Icons.Config),
             NavBtn(VIEWS.DEVTOOLS, Icons.DevTools)
         ),
+        ActiveCheatList(),
         div({ class: 'system-status' },
             div({
                 class: 'status-dot',
                 style: () => {
-                    const online = store.app.heartbeat;
+                    const online = IS_ELECTRON || store.app.heartbeat;
                     const color = online ? 'var(--c-success)' : 'var(--c-danger)';
                     return `background:${color}; box-shadow:0 0 6px ${color}; animation:${online ? 'pulse 2s infinite' : 'none'}`;
                 }
             }),
             span({
                 id: 'system-status-text',
-                style: () => `color: ${store.app.heartbeat ? 'var(--c-success)' : 'var(--c-danger)'}`
-            }, () => store.app.heartbeat ? "SYSTEM ONLINE" : "CONNECTION LOST")
+                style: () => {
+                    const online = IS_ELECTRON || store.app.heartbeat;
+                    return `color: ${online ? 'var(--c-success)' : 'var(--c-danger)'}`;
+                }
+            }, () => (IS_ELECTRON || store.app.heartbeat) ? "SYSTEM ONLINE" : "CONNECTION LOST")
         )
     );
 };

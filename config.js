@@ -117,6 +117,7 @@ exports.cheatConfig = {
       CauldronLvsBrewREQ: (t) => t / 2, // upgrading cauldrons is 50% cheaper
       LiquidCap: (t) => t * 2, // 2x liquid capacity
       LiquidHRrate: (t) => t * 4, // 4x liquid speed
+      sigilspeed: (t) => t * 10, // 10x sigil research speed
     },
   },
   w3: {
@@ -130,7 +131,6 @@ exports.cheatConfig = {
     fasteggs: (t) => t / 4, // 4x faster incubation (you can tweak)
     petchance: (t) => t * 2,   // pet chance multiplier
     petupgrades: (t) => t / 4, // pet upgrades 4x cheaper
-    sigilspeed: (t) => t * 10,     // 10x sigil research speed
     mealspeed: (t) => t / 4, // meals cook 4x faster
     recipespeed: (t) => t / 4, // recipes craft 4x faster
     kitchensdiscount: (t) => t / 4, // kitchens & spice 4x cheaper
@@ -478,6 +478,9 @@ exports.cheatConfig = {
       // NBLB_bubbleLVrangeDisp: (t) => t,
       // ArcaneTachyonType: (t) => t,
     },
+    sneaksymbol: {
+      SneakSymbolChanceBase: (t) => 1,
+    },
   },
   w7: {
     bubba: {
@@ -643,9 +646,6 @@ exports.cheatConfig = {
     },
     bigfish: {
       BigFishCost: (t) => 0,
-    },
-    sneaksymbol: {
-      SneakSymbolChanceBase: (t) => 1,
     },
     zenith: {
       ZenithMarketCost: (t) => t / 2,
