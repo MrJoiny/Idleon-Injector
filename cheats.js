@@ -867,26 +867,26 @@ registerCheat(
 );
 
 registerCheat(
-    "multiplestacks",
-    function (params) {
-      // init multiplestack, removed from config because of the webui overwriting it
-      if (!cheatConfig.multiplestacks) {
-        cheatConfig.multiplestacks = {
-          items: new Map(),
-        }
+  "multiplestacks", 
+  function (params) {
+    // init multiplestack, removed from config because of the webui overwriting it
+    if (!cheatConfig.multiplestacks) {
+      cheatConfig.multiplestacks = {
+        items: new Map(),
       }
+    }
 
-      const name = params[0];
-      const amount = params[1];
-      if (cheatConfig.multiplestacks.items.has(name) && amount <= 1) {
-        cheatConfig.multiplestacks.items.delete(name);
-        return `${name} has been removed from multiplestacks.`;
-      } else {
-        cheatConfig.multiplestacks.items.set(name, amount);
-        return `${name} has been added to multiplestacks with ${amount} stacks.`;
-      }
-    },
-    `Will make multiple stacks of specified items in chest when autochest is on.`
+    const name = params[0];
+    const amount = params[1];
+    if (cheatConfig.multiplestacks.items.has(name) && amount <= 1) {
+      cheatConfig.multiplestacks.items.delete(name);
+      return `${name} has been removed from multiplestacks.`;
+    } else {
+      cheatConfig.multiplestacks.items.set(name, amount);
+      return `${name} has been added to multiplestacks with ${amount} stacks.`;
+    }
+  },
+  `Will make multiple stacks of specified items in chest when autochest is on.`
 );
 
 // Quick daily shop and post office reset
