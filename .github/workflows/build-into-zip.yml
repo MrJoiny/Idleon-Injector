@@ -43,8 +43,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-package
-          # Copy all files and directories except release-package
-          find . -maxdepth 1 -not -name '.' -not -name 'release-package' -exec cp -r {} release-package/ \;
+          # Copy all files and directories except release-package, node_modules
+          find . -maxdepth 1 -not -name '.' -not -name 'release-package' -not -name 'node_modules' -exec cp -r {} release-package/ \;
 
       - name: Upload Release Package
         uses: actions/upload-artifact@v4
