@@ -229,7 +229,7 @@ registerCheats({
         return `The portals have been unlocked!`;
       },
     },
-  	{
+    {
       name: "storagecrafting",
       message: "unlocks craft from storage feature for all items in the anvil",
       fn: function () {
@@ -867,7 +867,7 @@ registerCheat(
 );
 
 registerCheat(
-  "multiplestacks", 
+  "multiplestacks",
   function (params) {
     // init multiplestack, removed from config because of the webui overwriting it
     if (!cheatConfig.multiplestacks) {
@@ -2248,9 +2248,9 @@ function setupAutoLootProxy() {
       const notAnItem = bEngine.getGameAttribute("OptionsListAccount")[83] !== 0 || !itemDefs[dropType];
 
       // Early Pre-check logic
-      if(!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem) 
+      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem) 
         return;
-      
+
       // Collect item into first open inventory slot
       context._CollectedStatus = 0;
       bEngine.gameAttributes.h.DummyNumber4 = 23.34;
@@ -2309,13 +2309,13 @@ function setupAutoLootProxy() {
             chestSlot = i;
             break;
           }
-          if(stackCount >= maxStacks) {
+          if (stackCount >= maxStacks) {
             chestSlotFound = true;
             break;
           }
         }
 
-        if(!chestSlotFound && blankSlot !== -1)
+        if (!chestSlotFound && blankSlot !== -1)
           chestSlot = blankSlot;
       }
 
