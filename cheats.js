@@ -229,7 +229,7 @@ registerCheats({
         return `The portals have been unlocked!`;
       },
     },
-  	{
+    {
       name: "storagecrafting",
       message: "unlocks craft from storage feature for all items in the anvil",
       fn: function () {
@@ -864,6 +864,29 @@ registerCheat(
     }
   },
   `Stop dropping these item from monsters, accepts regular expressions. Useful for xtal farming (safe)`
+);
+
+registerCheat(
+  "multiplestacks",
+  function (params) {
+    // init multiplestack, removed from config because of the webui overwriting it
+    if (!cheatConfig.multiplestacks) {
+      cheatConfig.multiplestacks = {
+        items: new Map(),
+      }
+    }
+
+    const name = params[0];
+    const amount = params[1];
+    if (cheatConfig.multiplestacks.items.has(name) && amount <= 1) {
+      cheatConfig.multiplestacks.items.delete(name);
+      return `${name} has been removed from multiplestacks.`;
+    } else {
+      cheatConfig.multiplestacks.items.set(name, amount);
+      return `${name} has been added to multiplestacks with ${amount} stacks.`;
+    }
+  },
+  `Will make multiple stacks of specified items in chest when autochest is on.`
 );
 
 // Quick daily shop and post office reset
@@ -2213,88 +2236,108 @@ function setupAutoLootProxy() {
   actorEvents44.prototype.init = new Proxy(actorEvents44.prototype.init, {
     apply: function (originalFn, context, argumentsList) {
       let rtn = Reflect.apply(originalFn, context, argumentsList);
-      const itemType = itemDefs[context._DropType].h.Type;
-      const matchedType = Object.keys(cheatConfig.wide.autoloot.itemtypes).find(type => itemType.includes(type));
-      if (
-        cheatState.wide.autoloot &&
-        bEngine.getGameAttribute("OptionsListAccount")[83] == 0 &&
-        context._BlockAutoLoot === 0 &&
-        context._DungItemStatus === 0 &&
-        context._PlayerDroppedItem === 0 &&
-        actorEvents345._customBlock_Dungon() === -1 &&
-        itemDefs[context._DropType] &&
-        (matchedType || ["COIN", "Quest22", "Quest23", "Quest24"].includes(context._DropType))
-      ) {
-        context._CollectedStatus = 0;
-        bEngine.gameAttributes.h.DummyNumber4 = 23.34;
-        context._customEvent_ItemPickupInTheFirstPlace();
-        if (context._DropType == "COIN" || context._DropType.substring(0, 5) == "Cards") {
-          cheatConfig.wide.autoloot.tochest && context._DropType == "COIN"
-            ? (bEngine.gameAttributes.h.MoneyBANK =
-              bEngine.getGameAttribute("MoneyBANK") + context._DropAmount)
-            : (bEngine.gameAttributes.h.Money =
-              bEngine.getGameAttribute("Money") + context._DropAmount);
-          context._ImageInst = null;
-          behavior.recycleActor(context.actor);
-          return;
-        }
-        if (cheatConfig.wide.autoloot.tochest && cheatConfig.wide.autoloot.itemtypes[matchedType] === true) {
-          const chestOrder = bEngine.getGameAttribute("ChestOrder");
-          const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
-          const indexOfDropType = chestOrder.indexOf(context._DropType);
-          const indexOfBlankSlot = chestOrder.indexOf("Blank");
-          let chestSlot = indexOfDropType !== -1 ? indexOfDropType : indexOfBlankSlot;
 
-          if (cheatConfig.wide.autoloot.multiplestacks) {
-            let firstSlotMatch = -1;
-            let foundSlot = -1;
-            let stackCount = 0;
-            for (let i = 0; i < chestOrder.length; i++) {
-              if (chestOrder[i] === context._DropType) {
-                stackCount++;
-                if (firstSlotMatch === -1) {
-                  firstSlotMatch = i;
-                }
-                if (chestQuantity[i] < 1050000000 && foundSlot === -1) {
-                  foundSlot = i;
-                }
-              }
-            }
+      //Easy to read boolean checks
+      const dropType = context._DropType;
+      const itemType = itemDefs[dropType].h.Type;
+      const toChest = cheatConfig.wide.autoloot.itemstochest;
+      const playerDropped = context._PlayerDroppedItem !== 0;
+      const blockAutoLoot = context._BlockAutoLoot !== 0;
+      const safeToLootItem = lootableItemTypes.includes(itemType);
+      const inDungeon = context._DungItemStatus !== 0 || actorEvents345._customBlock_Dungon() !== -1;
+      const notAnItem = bEngine.getGameAttribute("OptionsListAccount")[83] !== 0 || !itemDefs[dropType];
 
-            if (foundSlot !== -1) {
-              chestSlot = foundSlot;
-            }
-            else if (firstSlotMatch !== -1 && indexOfBlankSlot === -1) {
-              chestSlot = firstSlotMatch;
-            }
-            else if (stackCount < cheatConfig.wide.autoloot.amountofstacks) {
-              chestSlot = indexOfBlankSlot;
-            }
-          }
+      // Early Pre-check logic
+      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem) 
+        return;
 
-          if (chestOrder[chestSlot] === "Blank")
-            chestOrder[chestSlot] = context._DropType;
+      // Collect item into first open inventory slot
+      context._CollectedStatus = 0;
+      bEngine.gameAttributes.h.DummyNumber4 = 23.34;
+      context._customEvent_ItemPickupInTheFirstPlace();
 
-          let inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
-          while (chestSlot !== -1 && inventorySlot !== -1) {
-            chestQuantity[chestSlot] += bEngine.getGameAttribute("ItemQuantity")[inventorySlot];
-            bEngine.getGameAttribute("ItemQuantity")[inventorySlot] = 0;
-            bEngine.getGameAttribute("InventoryOrder")[inventorySlot] = "Blank";
-            inventorySlot = bEngine.getGameAttribute("InventoryOrder").indexOf(context._DropType);
-          }
-          chestQuantity[chestSlot] += context._DropAmount;
-          context._DropAmount = 0;
-        }
-        if (context._DropAmount == 0) {
-          context._ImageInst = null;
-          behavior.recycleActor(context.actor);
-        } else {
-          context._CollectedStatus = 0;
-        }
+      // Get coin and card information.
+      const isCoin = "COIN".includes(dropType);
+      const isCard = dropType.substring(0, 5) === "Cards";
+
+      // Deal with coins and cards.
+      if (isCoin || isCard) {
+        const moneyKey = cheatConfig.wide.autoloot.moneytochest && isCoin ? "MoneyBANK" : "Money";
+        bEngine.gameAttributes.h[moneyKey] = bEngine.getGameAttribute(moneyKey) + context._DropAmount;
+        context._DropAmount = 0;
+        context._ImageInst = null;
+        behavior.recycleActor(context.actor);
+        return;
       }
+
+      // Separate out items for Zenith farming and Material farming
+      // Materials as in Monster drops for stamps and such.
+      const zenithFarming = (itemType === "STATUE" || dropType === "Quest110") && cheatConfig.wide.autoloot.zenithfarm;
+      const materialFarming = itemType === "MONSTER_DROP" && cheatConfig.wide.autoloot.materialfarm;
+      if (!toChest || zenithFarming || materialFarming) {
+        context._DropAmount = 0;
+        context._ImageInst = null;
+        behavior.recycleActor(context.actor);
+        return rtn;
+      }
+
+      // Variable setup for chest and inventory management.
+      const chestOrder = bEngine.getGameAttribute("ChestOrder");
+      const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
+      const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
+      const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
+
+      // First open slots for item and blank spot.
+      const blankSlot = chestOrder.indexOf("Blank");
+      const dropSlot = chestOrder.indexOf(dropType);
+      let chestSlot = dropSlot !== -1 ? dropSlot : blankSlot;
+
+      // Check if item is on Multiple stacks list.
+      const items = cheatConfig.multiplestacks?.items ?? new Map();
+      // Grab correct slot for multiple stacks.
+      if (items.has(dropType)) {
+        const maxStacks = items.get(dropType);
+        let stackCount = 0;
+        let chestSlotFound = false;
+
+        for (let i = 0; i < chestOrder.length; i++) {
+          if (chestOrder[i] !== dropType) continue;
+
+          stackCount++;
+          if (chestQuantity[i] < 1050000000) {
+            chestSlotFound = true;
+            chestSlot = i;
+            break;
+          }
+          if (stackCount >= maxStacks) {
+            chestSlotFound = true;
+            break;
+          }
+        }
+
+        if (!chestSlotFound && blankSlot !== -1)
+          chestSlot = blankSlot;
+      }
+
+      if (chestOrder[chestSlot] === "Blank")
+        chestOrder[chestSlot] = context._DropType;
+
+      let inventorySlot;
+      while (chestSlot !== -1 && (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1) {
+        chestQuantity[chestSlot] += itemQuantity[inventorySlot];
+        itemQuantity[inventorySlot] = 0;
+        inventoryOrder[inventorySlot] = "Blank";
+      }
+      chestQuantity[chestSlot] += context._DropAmount;
+
+      // Zero out values and return.
+      context._DropAmount = 0;
+      context._ImageInst = null;
+      behavior.recycleActor(context.actor);
       return rtn;
     },
   });
+
   // Proxy:
   const hxOverrides = this["HxOverrides"];
   events(34).prototype._event_ItemGet = new Proxy(events(34).prototype._event_ItemGet, {
@@ -2307,7 +2350,6 @@ function setupAutoLootProxy() {
         : Reflect.apply(originalFn, context, argumentsList);
     },
   });
-
 }
 
 function setupCreateElementProxy() {
@@ -4269,6 +4311,10 @@ async function getAutoCompleteSuggestions() {
         message: `nomore ${itemParts[0]} (${itemParts[1]})`,
         value: "nomore " + itemParts[0],
       });
+      choices.push({
+        message: `multiplestacks ${itemParts[0]} (${itemParts[1]})`,
+        value: "multiplestacks " + itemParts[0],
+      });
     }
   });
 
@@ -4337,6 +4383,7 @@ async function getChoicesNeedingConfirmation() {
     "wipe chestslot",
     "bulk",
     "class",
+    "multiplestacks",
 
     // "keychain", why is this here?
   ];
@@ -4392,6 +4439,44 @@ const keychainStatsMap = {
   allstats: [3, "EquipmentKeychain24", "%_ALL_STATS", "4"],
 };
 
+// List of Item Types that are safe to loot straight into chest.
+const lootableItemTypes = [
+  "ORE",
+  "BAR",
+  "LOG",
+  "LEAF",
+  "FISH",
+  "BUG",
+  "CRITTER",
+  "SOUL",
+  "SPELUNKY_PAGE",
+  "KITCHEN_LADLE",
+  "PET_EGG",
+  "MATERIAL",
+  "MONSTER_DROP",
+  "BOSS_KEY",
+  "FISHING_ACCESSORY",
+  "FRAGMENT",
+  "TELEPORT",
+  "TALENT_POINT",
+  "OFFICE_PEN",
+  "TELEPORTER",
+  "CURRENCY", // Zenith Clusters
+  "STATUE",
+  "UPGRADE",
+  "TIME_CANDY",
+  "HEALTH_FOOD",
+  "BOOST_FOOD",
+  "GOLDEN_FOOD",
+  "USABLE",
+  "TICKET",
+  "EXP_BALLOON",
+  "EVENT_WISH",
+  "RESET_POTION",
+  "CARD",
+  "FISTICUFF",  // Coins
+];
+
 // function to drop an item on the character 
 function dropOnChar(item, amount) {
   const actorEvents189 = events(189);
@@ -4401,8 +4486,8 @@ function dropOnChar(item, amount) {
     const itemDefinition = itemDefs[item];
 
     if (itemDefinition) {
-      const toChest = cheatConfig.wide.autoloot.tochest;
-      cheatConfig.wide.autoloot.tochest = false;
+      const toChest = cheatConfig.wide.autoloot.itemstochest;
+      cheatConfig.wide.autoloot.itemstochest = false;
 
       let x = character.getXCenter();
       let y = character.getValue("ActorEvents_20", "_PlayerNode");
@@ -4412,7 +4497,7 @@ function dropOnChar(item, amount) {
 
       else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
 
-      cheatConfig.wide.autoloot.tochest = toChest;
+      cheatConfig.wide.autoloot.itemstochest = toChest;
 
       return `Dropped ${itemDefinition.h.displayName.replace(/_/g, " ")}. (x${amount})`;
 
