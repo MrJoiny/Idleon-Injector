@@ -2334,12 +2334,12 @@ function setupAutoLootProxy() {
       const toChest = cheatConfig.wide.autoloot.itemstochest;
       const playerDropped = context._PlayerDroppedItem !== 0;
       const blockAutoLoot = context._BlockAutoLoot !== 0;
-      const safeToLootItem = lootableItemTypes.includes(itemType);
+      const safeToLootItem = lootableItemTypes.includes(itemType) || dropType === "Quest110"; // Zenith Clusters.
       const inDungeon = context._DungItemStatus !== 0 || actorEvents345._customBlock_Dungon() !== -1;
       const notAnItem = bEngine.getGameAttribute("OptionsListAccount")[83] !== 0 || !itemDefs[dropType];
 
       // Early Pre-check logic
-      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem) 
+      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem)
         return;
 
       // Collect item into first open inventory slot
@@ -2410,16 +2410,15 @@ function setupAutoLootProxy() {
           chestSlot = blankSlot;
       }
 
-      if (chestOrder[chestSlot] === "Blank")
-        chestOrder[chestSlot] = context._DropType;
-
-      let inventorySlot;
-      while (chestSlot !== -1 && (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1) {
+      // Move item from inventory into chest if the slot isn't locked.
+      const inventorySlot = inventoryOrder.indexOf(dropType);
+      const lockedSlot = bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0];
+      if (chestSlot !== -1 && inventorySlot !== -1 && !lockedSlot) {
+        chestOrder[chestSlot] = chestOrder[chestSlot] === "Blank" ? context._DropType : chestOrder[chestSlot];
         chestQuantity[chestSlot] += itemQuantity[inventorySlot];
         itemQuantity[inventorySlot] = 0;
         inventoryOrder[inventorySlot] = "Blank";
       }
-      chestQuantity[chestSlot] += context._DropAmount;
 
       // Zero out values and return.
       context._DropAmount = 0;
@@ -4587,7 +4586,6 @@ const lootableItemTypes = [
   "TALENT_POINT",
   "OFFICE_PEN",
   "TELEPORTER",
-  "CURRENCY", // Zenith Clusters
   "STATUE",
   "UPGRADE",
   "TIME_CANDY",
@@ -4601,6 +4599,9 @@ const lootableItemTypes = [
   "RESET_POTION",
   "CARD",
   "FISTICUFF",  // Coins
+  "GEM",
+  "EVENT_BOX",
+  "QUEST_ITEM",
 ];
 
 // function to drop an item on the character 
