@@ -670,15 +670,15 @@ registerCheats({
       name: "ninjaItem",
       message: "Generates a ninja item based on the floor which ninja twin is inputted.",
       fn: function (params) {
-        if (params && params[0]) {
-          const char = parseInt(params[0]);
+        if (params && params[1]) {
+          const char = parseInt(params[1]);
           let loopTimes = 1;
 
           // TODO: make this dynamic with character count
           if (char < 0 || char > 9)
             return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
           try {
-            loopTimes = params[1] && parseInt(params[1]) > 0 ? parseInt(params[1]) : 1;
+            loopTimes = params[2] && parseInt(params[2]) > 0 ? parseInt(params[2]) : 1;
             const actorEvents579 = events(579);
             let n = 0;
             while (n < loopTimes) {
@@ -697,19 +697,19 @@ registerCheats({
       name: "sumunit",
       message: "Set summoning units to be always a certain type",
       fn: function (params) {
-        if (params && params[0]) {
+        if (params && params[1]) {
           try {
-            if (params[0] === "reset") {
+            if (params[1] === "reset") {
               cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => t;
               return `summoning units has been reset to default`;
             }
 
-            const summonUnit = summonUnits[params[0]];
+            const summonUnit = summonUnits[params[1]];
             if (summonUnit || summonUnit === 0) {
               cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => summonUnit;
-              return `${params[0]} set as unit to be drawn`;
+              return `${params[1]} set as unit to be drawn`;
             }
-            return `no such unit ${params[0]} found`;
+            return `no such unit ${params[1]} found`;
           } catch (err) {
             return `Error: ${err}`;
           }
@@ -1343,9 +1343,10 @@ const listFunction = function (params) {
       const companions = CList.CompanionDB;
 
       for (let i = 0; i < companions.length; i++) {
-        const name = companions[i][0];
-        const effects = companions[i][1];
-        results.push(`${i}, ${name}, ${effects}`);
+        const id = companions[i][0];
+        const effects = formatText(companions[i][1]);
+        const ingameName = formatText(monsterDefs[id]?.h?.Name) ?? "Unknown";
+        results.push(`${i}, ${ingameName}, ${effects}`);
       }
     },
 
@@ -2339,7 +2340,7 @@ function setupAutoLootProxy() {
       const notAnItem = bEngine.getGameAttribute("OptionsListAccount")[83] !== 0 || !itemDefs[dropType];
 
       // Early Pre-check logic
-      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem) 
+      if (!cheatState.wide.autoloot || inDungeon || notAnItem || playerDropped || blockAutoLoot || !safeToLootItem)
         return;
 
       // Collect item into first open inventory slot
@@ -4469,7 +4470,6 @@ async function getAutoCompleteSuggestions() {
     }
   });
 
-
   Object.keys(keychainStatsMap).forEach(function (item) {
     if (!["error", "null", undefined, "ingameName"].includes(item)) {
       choices.push({
@@ -4531,6 +4531,7 @@ const summonUnits = {
   sparkie: 1,
   guardio: 6,
   muddah: 7,
+  reset: -1,
 };
 
 const keychainStatsMap = {
