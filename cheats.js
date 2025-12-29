@@ -2412,9 +2412,10 @@ function setupAutoLootProxy() {
       }
 
       // Move item from inventory into chest if the slot isn't locked.
-      const inventorySlot = inventoryOrder.indexOf(dropType);
-      const lockedSlot = bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0];
-      if (chestSlot !== -1 && inventorySlot !== -1 && !lockedSlot) {
+      let inventorySlot;
+      while (chestSlot !== -1 &&
+      (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1 &&
+      !bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0]) {
         chestOrder[chestSlot] = chestOrder[chestSlot] === "Blank" ? context._DropType : chestOrder[chestSlot];
         chestQuantity[chestSlot] += itemQuantity[inventorySlot];
         itemQuantity[inventorySlot] = 0;
