@@ -258,70 +258,7 @@ registerCheats({
   ],
 });
 
-// Gem Pack Cheats
-registerCheats({
-  name: "buy",
-  message: "buy gem shop packs, you get the items from the pack, but no gems and no pets",
-  canToggleSubcheats: true,
-  subcheats: [
-    // Helper function to create bundle cheats
-    ...(() => {
-      const createBundleCheat = (name, code) => ({
-        name: code,
-        message: name,
-        fn: function () {
-          this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
-          return `${name} has been bought!`;
-        },
-      });
 
-      // Bundle definitions - name, code
-      return [
-        ["Lava Supporter Pack", "bun_a"],
-        ["New Year Supporter Pack", "bun_b"],
-        ["Starter Pack", "bun_c"],
-        ["Easter Bundle", "bun_d"],
-        ["Totally Chill Pack", "bun_e"],
-        ["Summer Bundle", "bun_f"],
-        ["Dungeon Bundle", "bun_g"],
-        ["Giftmas Bundle", "bun_h"],
-        ["Auto Loot Pack", "bun_i"],
-        ["Outta This World Pack", "bun_j"],
-        ["Eggscellent Pack", "bun_k"],
-        ["Super Hot Fire Pack", "bun_l"],
-        ["Gem Motherlode Pack", "bun_m"],
-        ["Riftwalker Pack", "bun_n"],
-        ["Bloomin Pet Pack", "bun_o"],
-        ["Island Explorer Pack", "bun_p"],
-        ["Equinox Dreamer Pack", "bun_q"],
-        ["Calm Serenity Pack", "bun_r"],
-        ["Sacred Methods Pack", "bun_s"],
-        ["Timeless Pack", "bun_t"],
-        ["Ancient Echoes Pack", "bun_u"],
-        ["Deathbringer Pack", "bun_v"],
-        ["Windwalker Pack", "bun_w"],
-        ["Arcande Cultist Pack", "bun_x"],
-        ["Valenslime Day Pack", "bun_y"],
-        ["Fallen Spirits Pet Pack", "bun_z"],
-        ["Storage Ram Pack", "bon_a"],
-        ["Blazing Star Anniversary Pack", "bon_c"],
-        ["Midnight Tide Anniversary Pack", "bon_d"],
-        ["Lush Emerald Anniversary Pack", "bon_e"],
-        ["Eternal Hunter Pack", "bon_f"],
-        ["Gilded Treasure Pack", "bon_g"],
-        ["World 7 Pack", "bon_i"],
-        ["Squirell Pack", "bon_h"],
-        ["Mr.Piggy Pack", "bon_j"],
-        ["Autumn Pack", "bon_k"],
-        ["Bubba! Pack", "bon_l"],
-        ["Bunny Pack", "bon_m"],
-        ["Hedgehog Pack", "bon_n"],
-        ["Panda Pack", "bon_o"],
-        ["Santa helper bundle", "bon_p"],
-      ].map(([name, code]) => createBundleCheat(name, code));
-    })(),
-  ],
-});
 
 // TODO: fix the proxy in proxy issue that would appear, when minigame is called multiple times.
 const minigameCheat = function (params) {
@@ -1391,78 +1328,6 @@ const listFunction = function (params) {
   return results.join("\n");
 };
 
-registerCheats({
-  name: "list",
-  message: "list something. third param optional filter",
-  subcheats: [
-    {
-      name: "bundle",
-      message: "list bundles. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "missing_bundle",
-      message: "list missing bundles",
-      fn: listFunction,
-    },
-    {
-      name: "item",
-      message: "list items. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "monster",
-      message: "list monsters. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "class",
-      message: "list classes. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "card",
-      message: "list classes. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "quest",
-      message: "list quests. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "map",
-      message: "list maps. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "talent",
-      message: "list talents. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "ability",
-      message: "list abilities. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "smith",
-      message: "list smithing recipes. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "gga",
-      message: "list game attributes. third param optional filter",
-      fn: listFunction,
-    },
-    {
-      name: "companion",
-      message: "list all companions",
-      fn: listFunction,
-    },
-  ],
-});
-
 // Get Game Attributes: Uses a for loop to iterate over the object's key/index and element.
 registerCheat(
   "gga",
@@ -2001,7 +1866,8 @@ async function setup() {
     //   },
     // });
 
-    console.log('Registering "cheats" command...'); // Added for diagnostics
+    // all the following cheats need to have the game to be ready to be able to init them
+
     registerCheat(
       "cheats",
       function (params) {
@@ -2014,7 +1880,6 @@ async function setup() {
       "list available cheats"
     );
 
-    console.log('Registering "list" command group...'); // Added for diagnostics
     registerCheats({
       name: "list",
       message: "list something. third param optional filter",
@@ -2079,6 +1944,11 @@ async function setup() {
           message: "list game attributes. third param optional filter",
           fn: listFunction,
         },
+        {
+          name: "companion",
+          message: "list all companions",
+          fn: listFunction,
+        },
       ],
     });
 
@@ -2104,6 +1974,37 @@ async function setup() {
           return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
         }
       }))
+    });
+
+    // Gem Pack Cheats
+    registerCheats({
+      name: "buy",
+      message: "buy gem shop packs, you get the items from the pack, but no gems and no pets",
+      canToggleSubcheats: true,
+      subcheats: [
+        // Helper function to create bundle cheats
+        ...(() => {
+          const createBundleCheat = (name, code) => ({
+            name: code,
+            message: name,
+            fn: function () {
+              this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
+              return `${name} has been bought!`;
+            },
+          });
+          // [key, value]
+          const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
+          // add all missing keys
+          for (const [key, value] of Object.entries(bundleMessages)) {
+            if (key === "Blank") continue;
+            if (!knownBundles.some(bundle => bundle[1] === key)) {
+              knownBundles.push(["Unknown", key]);
+            }
+          }
+
+          return knownBundles.map(([name, code]) => createBundleCheat(name, code));
+        })(),
+      ],
     });
 
 
@@ -2414,8 +2315,8 @@ function setupAutoLootProxy() {
       // Move item from inventory into chest if the slot isn't locked.
       let inventorySlot;
       while (chestSlot !== -1 &&
-      (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1 &&
-      !bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0]) {
+        (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1 &&
+        !bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0]) {
         chestOrder[chestSlot] = chestOrder[chestSlot] === "Blank" ? context._DropType : chestOrder[chestSlot];
         chestQuantity[chestSlot] += itemQuantity[inventorySlot];
         itemQuantity[inventorySlot] = 0;
@@ -4604,6 +4505,50 @@ const lootableItemTypes = [
   "GEM",
   "EVENT_BOX",
   "QUEST_ITEM",
+];
+
+const knownBundles = [
+  ["Lava Supporter Pack", "bun_a"],
+  ["New Year Supporter Pack", "bun_b"],
+  ["Starter Pack", "bun_c"],
+  ["Easter Bundle", "bun_d"],
+  ["Totally Chill Pack", "bun_e"],
+  ["Summer Bundle", "bun_f"],
+  ["Dungeon Bundle", "bun_g"],
+  ["Giftmas Bundle", "bun_h"],
+  ["Auto Loot Pack", "bun_i"],
+  ["Outta This World Pack", "bun_j"],
+  ["Eggscellent Pack", "bun_k"],
+  ["Super Hot Fire Pack", "bun_l"],
+  ["Gem Motherlode Pack", "bun_m"],
+  ["Riftwalker Pack", "bun_n"],
+  ["Bloomin Pet Pack", "bun_o"],
+  ["Island Explorer Pack", "bun_p"],
+  ["Equinox Dreamer Pack", "bun_q"],
+  ["Calm Serenity Pack", "bun_r"],
+  ["Sacred Methods Pack", "bun_s"],
+  ["Timeless Pack", "bun_t"],
+  ["Ancient Echoes Pack", "bun_u"],
+  ["Deathbringer Pack", "bun_v"],
+  ["Windwalker Pack", "bun_w"],
+  ["Arcande Cultist Pack", "bun_x"],
+  ["Valenslime Day Pack", "bun_y"],
+  ["Fallen Spirits Pet Pack", "bun_z"],
+  ["Storage Ram Pack", "bon_a"],
+  ["Blazing Star Anniversary Pack", "bon_c"],
+  ["Midnight Tide Anniversary Pack", "bon_d"],
+  ["Lush Emerald Anniversary Pack", "bon_e"],
+  ["Eternal Hunter Pack", "bon_f"],
+  ["Gilded Treasure Pack", "bon_g"],
+  ["World 7 Pack", "bon_i"],
+  ["Squirell Pack", "bon_h"],
+  ["Mr.Piggy Pack", "bon_j"],
+  ["Autumn Pack", "bon_k"],
+  ["Bubba! Pack", "bon_l"],
+  ["Bunny Pack", "bon_m"],
+  ["Hedgehog Pack", "bon_n"],
+  ["Panda Pack", "bon_o"],
+  ["Santa helper bundle", "bon_p"],
 ];
 
 // function to drop an item on the character 
