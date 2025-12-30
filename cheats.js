@@ -130,11 +130,11 @@ function registerCheats(cheatMap, higherKeys = []) {
       for (const i in stateObject[cheatMap.name])
         stateObject[cheatMap.name][i] = !stateObject[cheatMap.name + "s"];
       stateObject[cheatMap.name + "s"] = !stateObject[cheatMap.name + "s"];
-      return `${stateObject[cheatMap.name + "s"] ? "Activated" : "Deactived"} ${cheatMap.message}`;
+      return `${stateObject[cheatMap.name + "s"] ? "Activated" : "Deactivated"} ${cheatMap.message}`;
     }
 
     stateObject[cheatMap.name] = !stateObject[cheatMap.name];
-    return `${stateObject[cheatMap.name] ? "Activated" : "Deactived"} ${cheatMap.message}.`;
+    return `${stateObject[cheatMap.name] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
   };
   registerCheat(cmd, fn, cheatMap["message"]);
 
@@ -356,7 +356,7 @@ registerCheats({
       fn: function (params) {
         if (!cheatState.wide[params[0]]) rollAllObols();
         cheatState.wide[params[0]] = !cheatState.wide[params[0]];
-        return `${cheatState.wide[params[0]] ? "Activated" : "Deactived"
+        return `${cheatState.wide[params[0]] ? "Activated" : "Deactivated"
           } Perfect obol rolls. Family and inventory obols update on character change.`;
       },
     },
@@ -1408,7 +1408,7 @@ registerCheat(
   "cloudz",
   function () {
     cheatState.cloudz = !cheatState.cloudz;
-    return `${cheatState.cloudz ? "Activated" : "Deactived"
+    return `${cheatState.cloudz ? "Activated" : "Deactivated"
       } the cloudsave jammer: Your game will not be saved while it's active! \nOnce disabled, your game will proc a cloudsave in 5 seconds. \nProbably doesn't work.`;
   },
   "Stop cloud saving"
