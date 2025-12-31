@@ -1308,6 +1308,33 @@ const listFunction = function (params) {
         results.push(key);
       }
     },
+
+    nans: () => {
+      const findings = [];
+      results.push("NaNs scan:");
+
+      const gga = bEngine.gameAttributes.h;
+      const globalVisited = new Set();
+
+      for (const key in gga) {
+        if (blacklist_gga.has(key)) continue;
+        const attributeFindingsCount = findings.length;
+
+        traverse(gga[key], -1, (val, path) => {
+          if (typeof val === "number" && isNaN(val)) {
+            findings.push([key, ...path].join(" > "));
+          }
+        }, globalVisited);
+
+        if (findings.length > attributeFindingsCount) {
+          results.push(`\nAttribute: [${key}]`);
+          for (let i = attributeFindingsCount; i < findings.length; i++) {
+            results.push(`${findings[i]}`);
+          }
+        }
+      }
+      results.push(findings.length === 0 ? "No NaNs found." : `${findings.length} NaNs found.`);
+    },
   };
 
   const handler = listHandlers[listType];
@@ -1947,6 +1974,11 @@ async function setup() {
         {
           name: "companion",
           message: "list all companions",
+          fn: listFunction,
+        },
+        {
+          name: "nans",
+          message: "scan game attributes for NaN values",
           fn: listFunction,
         },
       ],
@@ -4551,6 +4583,22 @@ const knownBundles = [
   ["Santa helper bundle", "bon_p"],
 ];
 
+const blacklist_gga = new Set([
+  "Player",
+  "DummyNumbersStatManager",
+  "PixelHelperActor",
+  "OriginPixelActor",
+  "OtherPlayers",
+  "PlayerImgInst",
+  "_rawCustomLists",
+  "CustomLists",
+  "ItemDefinitionsGET",
+  "MonsterDefinitionsGET",
+  "DialogueDefGET",
+  "MapMonstersList",
+  "dummyActor",
+]);
+
 // function to drop an item on the character 
 function dropOnChar(item, amount) {
   const actorEvents189 = events(189);
@@ -4623,20 +4671,40 @@ function createProxy(targetObj, index, callback) {
 }
 
 /**
- * Recursively traverses an object up to a specified depth, applying a worker function to each traversed object at the given depth.
- *
+ * Recursively traverses an object, applying a worker function.
+ * 
  * @param {object} obj - The object to traverse.
- * @param {number} depth - The maximum depth to traverse. When depth reaches 0, the worker function is called.
- * @param {function(object): void} worker - The function to call on objects at the specified depth.
+ * @param {number} depth - If >= 0, only calls worker at this exact depth. If < 0, calls worker at every node.
+ * @param {function} worker - Function(value, path, depth)
+ * @param {Set} [visited] - Internal: tracked objects for circular references.
+ * @param {string[]} [path] - Internal: tracked path segments.
+ * @param {number} [currentDepth] - Internal: current recursion depth.
  */
-function traverse(obj, depth, worker) {
-  if (depth === 0) {
-    worker(obj);
-    return;
+function traverse(obj, depth, worker, visited = new Set(), path = [], currentDepth = 0) {
+  if (obj === null || obj === undefined) return;
+
+  const isObject = typeof obj === "object";
+  const shouldCallWorker = (depth < 0) || (currentDepth === depth);
+
+  if (shouldCallWorker) {
+    worker(obj, path, currentDepth);
   }
-  for (const key in obj) {
-    // Safety check to ensure we don't crash on nulls
-    if (obj[key]) traverse(obj[key], depth - 1, worker);
+
+  // If we reached target depth and it's positive, don't go deeper
+  if (depth >= 0 && currentDepth >= depth) return;
+
+  if (!isObject || visited.has(obj)) return;
+
+  visited.add(obj);
+  const target = obj.h || obj;
+  for (const key in target) {
+    try {
+      path.push(key);
+      traverse(target[key], depth, worker, visited, path, currentDepth + 1);
+      path.pop();
+    } catch (e) {
+      path.pop();
+    }
   }
 }
 
