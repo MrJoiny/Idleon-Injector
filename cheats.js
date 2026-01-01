@@ -23,7 +23,6 @@ let uiIframe;
 let uiContainer;
 let isUiExpanded = false;
 
-const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
 async function gameReady() {
   while (
@@ -223,7 +222,7 @@ registerCheats({
       name: "portals",
       fn: function (params) {
         bEngine.getGameAttribute("KillsLeft2Advance").map((entry) => {
-          for (i = 0; i < entry.length; i++) entry[i] = 0;
+          for (let i = 0; i < entry.length; i++) entry[i] = 0;
           return entry;
         });
         return `The portals have been unlocked!`;
@@ -786,10 +785,11 @@ registerCheat(
         items: [],
       };
     }
+    const regex = params[0] ? new RegExp(params[0]) : null;
     if (
       params &&
       params[0] &&
-      (regex = new RegExp(params[0])) &&
+      regex &&
       Object.keys(itemDefs).filter((item) => regex.test(item)).length > 0
     ) {
       cheatConfig.nomore.items.map((r) => r.toString()).includes(regex.toString())
@@ -1113,9 +1113,9 @@ registerCheats({
           const valName = value.h.displayName.replace(/_/g, " ").toLowerCase();
           if (valName.includes(queryX)) ItemVals.push([key, valName]);
         }
-        for (h = 0; h < ItemVals.length; h++)
-          for (i = 0; i < ItemToCraftNAME.length; i++)
-            for (j = 0; j < ItemToCraftNAME[i].length; j++)
+        for (let h = 0; h < ItemVals.length; h++)
+          for (let i = 0; i < ItemToCraftNAME.length; i++)
+            for (let j = 0; j < ItemToCraftNAME[i].length; j++)
               if (ItemVals[h][0] == ItemToCraftNAME[i][j])
                 searchVals.push(`${i + i}, ${j}, ${ItemVals[h][0]}, ${ItemVals[h][1]}`);
         if (searchVals.length > 0) return searchVals.join("\n");
@@ -1395,7 +1395,7 @@ registerCheat(
       // If the gga isn't an Array nor Dictionary.
       if (error instanceof TypeError)
         return `This TypeError should appear if you gave a non-existing object`;
-      return `Error: ${err}`;
+      return `Error: ${error}`;
     }
   },
   "Show the game attribute, separate with spaces."
@@ -1419,7 +1419,7 @@ registerCheat(
       // If the gga isn't an Array nor Dictionary.
       if (error instanceof TypeError)
         return `This TypeError should appear if you gave a non-existing object`;
-      return `Error: ${err}`;
+      return `Error: ${error}`;
     }
   },
   "Show the game key, separate with spaces."
@@ -2744,7 +2744,7 @@ function setupOptionsListAccountProxy() {
   });
 
   // max cap for all bones
-  bonesID = [330, 331, 332, 333]
+  const bonesID = [330, 331, 332, 333]
   bonesID.forEach(index => {
     createProxy(optionsListAccount, index, {
       get: function (original) {
@@ -2762,7 +2762,7 @@ function setupOptionsListAccountProxy() {
   });
 
   // max cap for all dusts
-  dustID = [357, 358, 359, 360, 361]
+  const dustID = [357, 358, 359, 360, 361]
   dustID.forEach(index => {
     createProxy(optionsListAccount, index, {
       get: function (original) {
@@ -2807,7 +2807,7 @@ function setupOptionsListAccountProxy() {
   });
 
   // max cap for all tach
-  tachID = [388, 389, 390, 391, 392, 393]
+  const tachID = [388, 389, 390, 391, 392, 393]
   tachID.forEach(index => {
     createProxy(optionsListAccount, index, {
       get: function (original) {
@@ -4631,6 +4631,37 @@ function dropOnChar(item, amount) {
   }
 }
 
+
+/**
+ * Handles plain objects and arrays without the overhead of JSON serialization
+ * Falls back to JSON.parse(JSON.stringify()) for other types
+ */
+const deepCopy = (obj) => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (obj instanceof Array) {
+    return obj.map(item => deepCopy(item));
+  }
+
+  if (obj.constructor === Object) {
+    const copy = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        copy[key] = deepCopy(obj[key]);
+      }
+    }
+    return copy;
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    console.warn('deepCopy: Unable to copy object, returning original', e);
+    return obj;
+  }
+};
 
 /**
  * Creates a proxy for a specific property on an object, allowing custom getter and setter logic.
