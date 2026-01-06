@@ -2,6 +2,7 @@ import van from '../../van-1.6.0.js';
 import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
 import { Loader } from '../Loader.js';
+import { EmptyState } from '../EmptyState.js';
 import { ConfigNode } from '../config/ConfigNode.js';
 import { StartupCheats, AddCheatSearchBar } from '../config/StartupCheats.js';
 import { SearchBar } from '../SearchBar.js';
@@ -73,12 +74,24 @@ export const Config = () => {
                 const data = filter === 'all' ? root : { [filter]: root[filter] };
                 const template = filter === 'all' ? rootTemplate : { [filter]: rootTemplate[filter] };
 
-                return div(ConfigNode({
+                const nodes = ConfigNode({
                     data,
                     path: "cheatConfig",
                     template,
                     searchTerm: search
-                }));
+                });
+
+                // Check if all nodes are null (no matches)
+                const hasMatches = nodes.some(node => node !== null);
+                if (search && !hasMatches) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: 'NO CONFIG FOUND',
+                        subtitle: 'Try a different search term or category'
+                    });
+                }
+
+                return div(nodes);
             }
         );
 
