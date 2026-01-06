@@ -2,8 +2,11 @@ import van from '../../van-1.6.0.js';
 import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
 import { Loader } from '../Loader.js';
-import { debounce } from '../../utils.js';
+import { EmptyState } from '../EmptyState.js';
+import { SearchBar } from '../SearchBar.js';
 import { NumberInput } from '../NumberInput.js';
+import { Icons } from '../../icons.js';
+import { withTooltip } from '../Tooltip.js';
 
 const { div, button, input, label, span, p, h3 } = van.tags;
 
@@ -79,24 +82,31 @@ export const Account = () => {
                     div({ class: 'danger-zone-header' }, "ACCESSING RAW GAME ATTRIBUTES."),
 
                     div({ class: 'control-bar' },
-                        button({ class: 'btn-secondary', onclick: () => store.loadAccountOptions() }, "REFRESH"),
-                        label({ class: 'toggle-switch', style: 'margin-left:25px;' },
-                            input({
-                                type: 'checkbox',
-                                checked: () => ui.hideAI,
-                                onchange: e => ui.hideAI = e.target.checked
-                            }),
-                            span({ class: 'slider' }),
-                            span({ class: 'label' }, "HIDE AI")
+                        withTooltip(
+                            button({
+                                class: 'btn-secondary',
+                                onclick: () => store.loadAccountOptions()
+                            }, "REFRESH"),
+                            'Reload from game memory'
                         ),
-                        input({
-                            type: 'text',
-                            class: 'compact-input',
-                            placeholder: 'FILTER_INDEX...',
-                            style: 'width: 100%; margin-left: 15px;',
-                            value: () => ui.filterText,
-                            oninput: debounce(e => ui.filterText = e.target.value, 300)
-                        })
+                        withTooltip(
+                            label({ class: 'toggle-switch', style: 'margin-left:25px;' },
+                                input({
+                                    type: 'checkbox',
+                                    checked: () => ui.hideAI,
+                                    onchange: e => ui.hideAI = e.target.checked
+                                }),
+                                span({ class: 'slider' }),
+                                span({ class: 'label' }, "HIDE AI")
+                            ),
+                            'Hide AI-generated options'
+                        ),
+                        div({ style: 'flex: 1; margin-left: 15px;' },
+                            SearchBar({
+                                placeholder: 'FILTER_INDEX...',
+                                onInput: (val) => ui.filterText = val
+                            })
+                        )
                     ),
 
                     div({ id: 'options-account-content', class: 'scroll-container', style: 'flex: 1;' },
@@ -105,6 +115,14 @@ export const Account = () => {
                                 return div({ style: 'display:flex; height:100%; align-items:center; justify-content:center;' },
                                     Loader({ text: "DECRYPTING..." })
                                 );
+                            }
+
+                            if (ui.displayList.length === 0) {
+                                return EmptyState({
+                                    icon: Icons.SearchX(),
+                                    title: 'NO OPTIONS MATCH',
+                                    subtitle: 'Adjust your filter or search term'
+                                });
                             }
 
                             return vanX.list(
@@ -178,7 +196,13 @@ const OptionItem = (index, rawVal, schema) => {
                         onIncrement: () => currentVal.val = Number(currentVal.val) + 1
                     })
                     : input({ type: 'text', class: 'option-input', value: currentVal, oninput: e => currentVal.val = e.target.value }),
-            button({ class: 'option-apply-button', onclick: handleApply }, "SET")
+            withTooltip(
+                button({
+                    class: 'option-apply-button',
+                    onclick: handleApply
+                }, "SET"),
+                'Write to game memory'
+            )
         )
     );
 };

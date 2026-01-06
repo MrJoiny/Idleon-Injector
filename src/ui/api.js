@@ -122,3 +122,12 @@ export async function checkHeartbeat() {
         return null;
     }
 }
+
+// --- OPEN URL ---
+export async function openExternalUrl(url) {
+    return _request('/open-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+    });
+}

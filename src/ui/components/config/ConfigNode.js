@@ -1,6 +1,8 @@
 import van from '../../van-1.6.0.js';
 import store from '../../store.js';
 import { NumberInput } from '../NumberInput.js';
+import { Icons } from '../../icons.js';
+import { withTooltip } from '../Tooltip.js';
 
 const { div, label, input, details, summary, span, button } = van.tags;
 
@@ -35,9 +37,30 @@ const areValuesEqual = (a, b) => {
     return JSON.stringify(a) === JSON.stringify(b);
 };
 
-export const ConfigNode = ({ data, path = "", template = null }) => {
+/**
+ * Helper function to check if a category or any of its children match the search term
+ */
+const hasMatchingChildren = (obj, searchTerm) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+
+    for (const key of Object.keys(obj)) {
+        // Check if key matches
+        if (key.toLowerCase().includes(term)) return true;
+
+        const value = obj[key];
+        // Recurse into nested objects
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            if (hasMatchingChildren(value, searchTerm)) return true;
+        }
+    }
+    return false;
+};
+
+export const ConfigNode = ({ data, path = "", template = null, searchTerm = "" }) => {
     const source = template || data;
     const keys = Object.keys(source);
+    const termLower = searchTerm.toLowerCase();
 
     return keys.map(key => {
         const value = source[key];
@@ -45,6 +68,14 @@ export const ConfigNode = ({ data, path = "", template = null }) => {
 
         // Recursive Case: Object (and not null/array)
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            // Check if this category or any children match the search
+            const categoryMatches = !termLower || key.toLowerCase().includes(termLower);
+            const childrenMatch = hasMatchingChildren(data[key] || {}, searchTerm);
+
+            // Hide categories with no matching content
+            if (termLower && !categoryMatches && !childrenMatch) {
+                return null;
+            }
 
             const isCategoryModified = van.derive(() => {
                 const defaults = store.app.config?.defaultConfig;
@@ -62,21 +93,31 @@ export const ConfigNode = ({ data, path = "", template = null }) => {
                 return !areValuesEqual(currentSub, defaultSub);
             });
 
+            // Auto-expand when searching
+            const shouldAutoExpand = termLower && (categoryMatches || childrenMatch);
+
             return details({
-                class: () => `cheat-category ${isCategoryModified.val ? 'modified-category' : ''}`
+                class: () => `cheat-category ${isCategoryModified.val ? 'modified-category' : ''}`,
+                open: shouldAutoExpand || undefined
             },
                 summary(key),
                 div({ class: 'cheat-category-content' },
                     ConfigNode({
                         data: data[key],
                         path: currentPath,
-                        template: template ? template[key] : null
+                        template: template ? template[key] : null,
+                        searchTerm
                     })
                 )
             );
         }
 
-        // Leaf Case
+        // Leaf Case - check if key matches search
+        const matchesSearch = !termLower || key.toLowerCase().includes(termLower);
+        if (!matchesSearch) {
+            return null;
+        }
+
         return ConfigItem({
             data,
             key,
@@ -162,7 +203,20 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
         class: () => `config-item ${isModified.val ? 'modified-config' : ''}`,
         'data-config-key': fullPath
     },
-        label(displayKey),
+        div({ class: 'config-item-header' },
+            label(displayKey),
+            withTooltip(
+                button({
+                    class: 'config-reset-btn',
+                    style: () => isModified.val ? 'display: inline-flex;' : 'display: none;',
+                    onclick: () => {
+                        data[key] = defaultVal;
+                        localTextState.val = getStringValue(defaultVal);
+                    }
+                }, Icons.Refresh()),
+                'Reset to default'
+            )
+        ),
 
         (type === 'boolean')
             ? label({ class: 'toggle-switch' },

@@ -10,6 +10,7 @@ const _ = require('lodash');
 const fs = require('fs').promises;
 const path = require('path');
 const { objToString, prepareConfigForJson, parseConfigFromJson, getDeepDiff, filterByTemplate } = require('../utils/helpers');
+const { exec } = require('child_process');
 
 /**
  * Sets up all API routes for the web UI
@@ -456,6 +457,26 @@ exports.injectorConfig = ${new_injectorConfig};
         details: apiError.message
       });
     }
+  });
+
+  // --- API Endpoint: Open External URL ---
+  app.post('/api/open-url', (req, res) => {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'Missing url parameter' });
+    }
+
+    const command = process.platform === 'win32'
+      ? `start "" "${url}"`
+      : `xdg-open "${url}"`;
+
+    exec(command, (error) => {
+      if (error) {
+        console.error(`Failed to open URL: ${url}`, error);
+        return res.status(500).json({ error: 'Failed to open URL', details: error.message });
+      }
+      res.json({ message: 'URL opened successfully' });
+    });
   });
 }
 

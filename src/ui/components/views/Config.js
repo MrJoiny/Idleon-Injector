@@ -4,13 +4,17 @@ import store from '../../store.js';
 import { Loader } from '../Loader.js';
 import { ConfigNode } from '../config/ConfigNode.js';
 import { StartupCheats, AddCheatSearchBar } from '../config/StartupCheats.js';
+import { SearchBar } from '../SearchBar.js';
+import { Icons } from '../../icons.js';
+import { withTooltip } from '../Tooltip.js';
 
-const { div, button, select, option, label } = van.tags;
+const { div, button, select, option, label, input, span } = van.tags;
 
 export const Config = () => {
     // Local Reactive UI State (NOT using vanX.reactive for these simple states)
     const activeSubTab = van.state('cheatconfig');
     const categoryFilter = van.state('all');
+    const configSearchTerm = van.state('');
     const isAddingCheat = van.state(false);
     const draftReady = van.state(false);
 
@@ -62,16 +66,18 @@ export const Config = () => {
 
         // Build ConfigNode components ONCE for each config section
         const cheatConfigNode = div({ id: 'cheatconfig-options' },
-            // This reactive function only depends on categoryFilter, not on input values
+            // This reactive function depends on categoryFilter and configSearchTerm
             () => {
                 const filter = categoryFilter.val;
+                const search = configSearchTerm.val;
                 const data = filter === 'all' ? root : { [filter]: root[filter] };
                 const template = filter === 'all' ? rootTemplate : { [filter]: rootTemplate[filter] };
 
                 return div(ConfigNode({
                     data,
                     path: "cheatConfig",
-                    template
+                    template,
+                    searchTerm: search
                 }));
             }
         );
@@ -102,16 +108,26 @@ export const Config = () => {
                 class: 'config-sub-tab-pane',
                 style: () => activeSubTab.val === 'cheatconfig' ? 'display:block' : 'display:none'
             },
-                div({ class: 'panel-section mb-20' },
-                    label({ style: 'font-size:0.75rem; color:var(--c-text-dim);' }, "CATEGORY FILTER"),
-                    select({
-                        value: categoryFilter,
-                        onchange: e => categoryFilter.val = e.target.value
-                    },
-                        option({ value: 'all' }, "ALL SECTORS"),
-                        Object.keys(config.cheatConfig || {}).sort().map(k =>
-                            option({ value: k }, k.toUpperCase())
+                div({ class: 'panel-section mb-20', style: 'display: flex; gap: 15px; align-items: flex-end;' },
+                    div({ style: 'flex: 0 0 auto;' },
+                        label({ style: 'font-size:0.75rem; color:var(--c-text-dim); display:block; margin-bottom:5px;' }, "CATEGORY FILTER"),
+                        select({
+                            value: categoryFilter,
+                            onchange: e => categoryFilter.val = e.target.value
+                        },
+                            option({ value: 'all' }, "ALL SECTORS"),
+                            Object.keys(config.cheatConfig || {}).sort().map(k =>
+                                option({ value: k }, k.toUpperCase())
+                            )
                         )
+                    ),
+                    div({ style: 'flex: 1;' },
+                        SearchBar({
+                            placeholder: 'SEARCH_CONFIG...',
+                            onInput: (val) => configSearchTerm.val = val,
+                            debounceMs: 0,  // No extra debounce, value is used reactively
+                            icon: Icons.HelpCircle()
+                        })
                     )
                 ),
                 cheatConfigNode
@@ -164,8 +180,22 @@ export const Config = () => {
             ),
 
             div({ class: 'spacer', style: () => (activeSubTab.val === 'startupcheats' && isAddingCheat.val) ? 'display:none' : 'flex:1' }),
-            button({ id: 'update-config-button', class: 'btn-secondary', onclick: () => save(false) }, "APPLY (RAM)"),
-            button({ id: 'save-config-button', class: 'btn-primary', onclick: () => save(true) }, "SAVE (DISK)")
+            withTooltip(
+                button({
+                    id: 'update-config-button',
+                    class: 'btn-secondary',
+                    onclick: () => save(false)
+                }, "APPLY (RAM)"),
+                'Apply to session only (lost on restart)'
+            ),
+            withTooltip(
+                button({
+                    id: 'save-config-button',
+                    class: 'btn-primary',
+                    onclick: () => save(true)
+                }, "SAVE (DISK)"),
+                'Save permanently to config file'
+            )
         )
     );
 };

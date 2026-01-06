@@ -1,8 +1,10 @@
 import van from '../../van-1.6.0.js';
 import vanX from '../../van-x-0.6.3.js';
 import store from '../../store.js';
+import { EmptyState } from '../EmptyState.js';
+import { Icons } from '../../icons.js';
 
-const { div, ul, li, input, button } = van.tags;
+const { div, ul, li, input, button, span } = van.tags;
 
 export const StartupCheats = (list) => {
     if (store.data.cheats.length === 0) store.loadCheats();
@@ -13,20 +15,30 @@ export const StartupCheats = (list) => {
     };
 
     const element = div({ class: 'startup-cheats-editor' },
-        vanX.list(ul({ class: 'startup-cheats-list' }), list, (v, deleter, index) => {
-            return li({ class: 'cheat-item-row' },
-                input({
-                    type: 'text',
-                    class: 'startup-cheat-input',
-                    value: () => v.val,
-                    onchange: e => v.val = e.target.value
-                }),
-                button({
-                    class: 'remove-cheat-button',
-                    onclick: () => list.splice(index, 1)
-                }, "✕")
+        () => {
+            // Accessing length triggers reactivity when items are added/removed
+            if (list.length === 0) {
+                return EmptyState({
+                    icon: Icons.Lightning(),
+                    title: 'NO STARTUP CHEATS',
+                    subtitle: 'Add cheats that will run automatically on injection'
+                });
+            }
+            return ul({ class: 'startup-cheats-list' },
+                ...list.map((v, i) => li({ class: 'cheat-item-row' },
+                    input({
+                        type: 'text',
+                        class: 'startup-cheat-input',
+                        value: v,
+                        onchange: e => list[i] = e.target.value
+                    }),
+                    button({
+                        class: 'remove-cheat-button',
+                        onclick: () => list.splice(i, 1)
+                    }, Icons.X())
+                ))
             );
-        })
+        }
     );
 
     return { element, addItem };

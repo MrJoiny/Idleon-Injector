@@ -2,13 +2,28 @@ import vanX from './van-x-0.6.3.js';
 import * as API from './api.js';
 import { IS_ELECTRON } from './constants.js';
 
+/**
+ * Safely parse JSON from localStorage with fallback
+ * @param {string} key - localStorage key
+ * @param {*} fallback - Default value if parse fails
+ * @returns {*} Parsed value or fallback
+ */
+const safeParseJSON = (key, fallback = []) => {
+    try {
+        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+    } catch {
+        return fallback;
+    }
+};
+
 // Reactive State Container: UI & System
 const appState = vanX.reactive({
     activeTab: 'cheats-tab',
     isLoading: false,
     heartbeat: false,
     toast: { message: '', type: '', id: 0 },
-    config: null
+    config: null,
+    sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
 });
 
 // Reactive State Container: Domain Data
@@ -17,7 +32,9 @@ const dataState = vanX.reactive({
     needsConfirmation: [],
     accountOptions: [],
     accountSchema: {},
-    activeCheatStates: {}
+    activeCheatStates: {},
+    favoriteCheats: safeParseJSON('favoriteCheats', []),
+    recentCheats: safeParseJSON('recentCheats', [])
 });
 
 
@@ -67,6 +84,7 @@ const CheatService = {
         try {
             const result = await API.executeCheatAction(action);
             Actions.notify(`Cheat ${result.result || 'Success'}`);
+            FavoritesService.addToRecent(action);
             // Refresh cheat states after execution
             CheatStateService.loadCheatStates();
         } catch (e) {
@@ -117,6 +135,33 @@ const CheatStateService = {
             console.error('Error loading cheat states:', e);
             dataState.activeCheatStates = {};
         }
+    }
+};
+
+const FavoritesService = {
+    toggleFavorite: (cheatValue) => {
+        const index = dataState.favoriteCheats.indexOf(cheatValue);
+        if (index > -1) {
+            dataState.favoriteCheats.splice(index, 1);
+        } else {
+            dataState.favoriteCheats.push(cheatValue);
+        }
+        localStorage.setItem('favoriteCheats', JSON.stringify([...dataState.favoriteCheats]));
+    },
+
+    isFavorite: (cheatValue) => {
+        return dataState.favoriteCheats.includes(cheatValue);
+    },
+
+    addToRecent: (cheatValue) => {
+        // Remove if exists, then add to front
+        const filtered = dataState.recentCheats.filter(c => c !== cheatValue);
+        filtered.unshift(cheatValue);
+        // Keep only last 10
+        const newRecent = filtered.slice(0, 10);
+        dataState.recentCheats.length = 0;
+        newRecent.forEach(c => dataState.recentCheats.push(c));
+        localStorage.setItem('recentCheats', JSON.stringify(newRecent));
     }
 };
 
@@ -207,6 +252,25 @@ const store = {
     // Account
     loadAccountOptions: AccountService.loadAccountOptions,
     updateAccountOption: AccountService.updateAccountOption,
+
+    // Sidebar
+    toggleSidebar: () => {
+        appState.sidebarCollapsed = !appState.sidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', appState.sidebarCollapsed);
+    },
+
+    openExternalUrl: async (url) => {
+        try {
+            await API.openExternalUrl(url);
+        } catch (e) {
+            Actions.notify(`Failed to open URL: ${e.message}`, 'error');
+        }
+    },
+
+    // Favorites
+    toggleFavorite: FavoritesService.toggleFavorite,
+    isFavorite: FavoritesService.isFavorite,
+    addToRecent: FavoritesService.addToRecent
 };
 
 export default store;
