@@ -1,5 +1,7 @@
 # Idleon Injector UI
 
+**Idleon Injector** is a JavaScript-based injector for **Idleon**, allowing runtime code injection into the game client for debugging, modding, and experimentation.
+
 ---
 
 ## Files Included
