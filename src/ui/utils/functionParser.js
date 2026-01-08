@@ -39,8 +39,8 @@ export const FUNCTION_TYPE_NAMES = {
     [FUNCTION_TYPES.DIVIDE]: 'Divide',
     [FUNCTION_TYPES.FIXED]: 'Fixed',
     [FUNCTION_TYPES.PASSTHROUGH]: 'Pass-through',
-    [FUNCTION_TYPES.MIN]: 'Max',
-    [FUNCTION_TYPES.MAX]: 'Min',
+    [FUNCTION_TYPES.MIN]: 'Min',
+    [FUNCTION_TYPES.MAX]: 'Max',
     [FUNCTION_TYPES.COMPLEX]: 'Custom'
 };
 
@@ -76,13 +76,13 @@ const PATTERNS = [
     // Min: (t) => Math.min(t, n)
     {
         type: FUNCTION_TYPES.MIN,
-        regex: /^\s*\(?t\)?\s*=>\s*Math\.min\s*\(\s*(-?\d+\.?\d*)\s*,\s*t\s*\)\s*$/,
+        regex: /^\s*\(?t\)?\s*=>\s*Math\.min\s*\(\s*t\s*,\s*(-?\d+\.?\d*)\s*\)\s*$/,
         extract: (match) => parseFloat(match[1])
     },
     // Max: (t) => Math.max(t, n)
     {
         type: FUNCTION_TYPES.MAX,
-        regex: /^\s*\(?t\)?\s*=>\s*Math\.max\s*\(\s*(-?\d+\.?\d*)\s*,\s*t\s*\)\s*$/,
+        regex: /^\s*\(?t\)?\s*=>\s*Math\.max\s*\(\s*t\s*,\s*(-?\d+\.?\d*)\s*\)\s*$/,
         extract: (match) => parseFloat(match[1])
     }
 ];

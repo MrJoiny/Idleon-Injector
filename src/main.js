@@ -32,7 +32,7 @@ async function printHeader() {
   console.log(`InjectCheatUI v${version}`);
   console.log('------------------------------------------------------------------------------------------');
   console.log('');
-  console.log('  FREE & OPEN SOURCE SOFTWARE');
+  console.log('  FREE & PUBLIC SOURCE SOFTWARE');
   console.log('  If you paid for this, you were scammed.');
   console.log('  Official Download: https://github.com/MrJoiny/Idleon-Injector');
   console.log('');

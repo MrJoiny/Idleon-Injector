@@ -2,7 +2,7 @@ import van from '../../van-1.6.0.js';
 import * as API from '../../api.js';
 import { IS_ELECTRON } from '../../constants.js';
 
-const { div, iframe } = van.tags;
+const { div, iframe, button } = van.tags;
 
 export const DevTools = () => {
     // Local state for URL loading
@@ -27,13 +27,11 @@ export const DevTools = () => {
                     return div({ class: 'danger-zone-header' }, [
                         div({ style: 'font-size: 24px; margin-bottom: 20px;' }, "⚠ ELECTRON DETECTED"),
                         div("Nested DevTools is disabled within the game screen to prevent stability issues."),
-                        div({ style: 'margin-top: 15px; opacity: 0.8; font-size: 0.9em;' },
-                            `Please use the external browser UI ( http://localhost:${window.location.port || '8080'} ) for full DevTools access.`
-                        ),
+                        div(`Please use the external browser UI ( http://localhost:${window.location.port || '8080'} ) for full DevTools access.`),
                         button({
                             class: 'quick-access-btn',
                             style: 'margin-top: 20px;',
-                            onclick: () => API.openExternalUrl(url.val)
+                            onclick: () => API.openExternalUrl(`http://localhost:${window.location.port || '8080'}`)
                         }, "Open URL")
                     ]);
                 }
