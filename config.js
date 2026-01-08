@@ -43,7 +43,7 @@ exports.cheatConfig = {
       allcharacters: false,
     },
     arcade: {
-      ArcadeCost: (t) => Math.min(t, 0),
+      ArcadeCost: (t) => 0,
     },
     dartshop: {
       DartsUpgCost: (t) => 0,
@@ -241,7 +241,7 @@ exports.cheatConfig = {
       RareTreasureChance: (t) => t * 5, // 5x chance for rare treasure
       Minimumtraveltime: (t) => t / 5, // minimum travel time reduced from 2h to 30m ( t => 10 would be 10 minues )
       BoatUpgCostType: (t) => t, // loot type for upgrade
-      BoatUpgCostQty: (t) => t, // loot amount for upgrade, t => 0 for free upgrades
+      BoatUpgCostQty: (t) => t / 2, // loot amount for upgrade, t => 0 for free upgrades
       BoatValue: (t) => t * 2, // 2x boat loot
       BoatSpeed: (t) => t * 2, // 2x boat speed
       CloudDiscoverBonus: (t) => t * 2, // 2x cloud discover bonus
@@ -661,9 +661,8 @@ exports.injectorConfig = {
   injreg: "\\w+\\.ApplicationMain\\s*?=",
   interceptPattern: "*N.js",
   showConsoleLog: false,
-  chrome: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   enableUI: true,
-  onLinuxTimeout: 30000,
   webPort: 8080,
+  onLinuxTimeout: 30000,
   // gameExePath: "C:/Path/To/LegendsOfIdleon.exe", // Optional: set this to override EXE search on Windows
 };

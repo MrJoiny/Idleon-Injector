@@ -51,7 +51,6 @@ function printConfiguration(injectorConfig) {
   console.log('Options:');
   console.log(`Regex: ${injectorConfig.injreg}`);
   console.log(`Show idleon window console logs: ${injectorConfig.showConsoleLog}`);
-  console.log(`Chrome location: ${injectorConfig.chrome}`);
   console.log(`Web server port: ${injectorConfig.webPort || 8080}`);
   console.log(`Detected OS: ${os.platform()}`);
   console.log('');

@@ -8,7 +8,7 @@
  */
 
 const Enquirer = require('enquirer');
-const spawn = require('child_process').spawn;
+const { exec } = require('child_process');
 
 /**
  * Start the CLI interface for user interaction
@@ -109,16 +109,17 @@ async function startCliInterface(context, client, options = {}) {
       if (action === 'chromedebug') {
         const response = await client.Target.getTargetInfo();
         const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
-        try {
-          const child = spawn(injectorConfig.chrome, ["--new-window", url]);
-          child.on('error', (err) => {
-            console.error('Failed to start chrome debugger process:', err);
-            console.error('Check if that is the right chrome path in the config file');
-          });
-          console.log('Opened idleon chrome debugger');
-        } catch (error) {
-          console.error('Error opening chrome debugger:', error);
-        }
+        const command = process.platform === 'win32'
+          ? `start "" "${url}"`
+          : `xdg-open "${url}"`;
+
+        exec(command, (error) => {
+          if (error) {
+            console.error('Failed to open chrome debugger in default browser:', error);
+          } else {
+            console.log('Opened idleon chrome debugger in default browser');
+          }
+        });
       } else {
         // Execute the selected cheat command within the game's context
         const cheatResponse = await Runtime.evaluate({
