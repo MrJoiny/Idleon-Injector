@@ -350,7 +350,7 @@ exports.cheatConfig = {
       CropsOnVine: (t) => t * 2, // 2 x Num of crops on each plant
       GrowthRate: (t) => t, // Growth rate multiplier (growth increase/sec)
       // new w7 stuff
-      ExoticPurchasesAllowed: (t) => Math.max(8, t), // Exotic purchases allowed 8 are only available
+      ExoticPurchasesAllowed: (t) => Math.max(t, 8), // Exotic purchases allowed 8 are only available
       ExoticLVQTY: (t) => t * 2, // Exotic LV QTY
     },
     ninja: {
@@ -401,12 +401,12 @@ exports.cheatConfig = {
       Compass_DEF: (t) => t * 2,
       Compass_CRITPCT: (t) => t * 2,
       Compass_CRITDMG: (t) => t * 2,
-      Compass_MoveSpeed: (t) => Math.max(300, t),
+      Compass_MoveSpeed: (t) => Math.max(t, 300),
       TempestMultishotPCT: (t) => t * 2,
       CompassDustQTYbase: (t) => t * 2,
-      TempestWepDropChance: (t) => Math.max(0.1, t),
-      TempestRingDropChance: (t) => Math.max(0.1, t),
-      TempestStoneDropChance: (t) => Math.max(0.1, t),
+      TempestWepDropChance: (t) => Math.max(t, 0.1),
+      TempestRingDropChance: (t) => Math.max(t, 0.1),
+      TempestStoneDropChance: (t) => Math.max(t, 0.1),
       TempestMedallionDropChance: (t) => 1,
       PortalCostQTY: (t) => 1,
       // Not tested and or not interesting or maybe dangerous!
@@ -450,13 +450,13 @@ exports.cheatConfig = {
       Arcane_CRITDMG: (t) => t * 2,
       Arcane_AttackSpdPCT: (t) => t * 2,
       ArcaneMultishotPCT: (t) => t * 2,
-      TenteyeclePCT: (t) => Math.max(100, t), // this is the same as fully upgraded tent.
+      TenteyeclePCT: (t) => Math.max(t, 100), // this is the same as fully upgraded tent.
       PrismaBubDropChance: (t) => t * 2,
       WepDropChance: (t) => t * 2,
       // WepDropQuality: (t) => t, // not sure about that needs testing
       RingDropChance: (t) => t * 2,
       // RingDropQuality: (t) => t, // not sure about that needs testing
-      DoubleItemDropz: (t) => Math.max(100, t), // always double statue drops
+      DoubleItemDropz: (t) => Math.max(t, 100), // always double statue drops
       ExtraTachyon: (t) => t * 2,
       ExtraTachyonMulti: (t) => t * 2,
       ArcaneTachyonQTYbase: (t) => t * 2,

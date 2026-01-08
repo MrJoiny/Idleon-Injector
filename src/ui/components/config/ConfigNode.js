@@ -1,8 +1,10 @@
 import van from '../../van-1.6.0.js';
 import store from '../../store.js';
 import { NumberInput } from '../NumberInput.js';
+import { FunctionInput } from '../FunctionInput.js';
 import { Icons } from '../../icons.js';
 import { withTooltip } from '../Tooltip.js';
+import { isFunction } from '../../utils/functionParser.js';
 
 const { div, label, input, details, summary, span, button } = van.tags;
 
@@ -128,29 +130,43 @@ export const ConfigNode = ({ data, path = "", template = null, searchTerm = "" }
 };
 
 const ConfigItem = ({ data, key, fullPath, initialValue }) => {
-    // Determine type
+    // Determine type - check for function first
     const isArray = Array.isArray(initialValue);
+    const isFn = isFunction(initialValue);
 
     // Get default value
     const defaults = store.app.config?.defaultConfig;
     const defaultVal = defaults ? fullPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, defaults) : undefined;
+
+    // For functions, compare the string representation
+    const getFunctionString = (val) => {
+        if (typeof val === 'function') return val.toString();
+        if (typeof val === 'string' && isFunction(val)) return val;
+        return String(val ?? '');
+    };
 
     // Optimized Modification Check
     const isModified = van.derive(() => {
         const curr = data[key];
         if (defaultVal === undefined) return false;
 
-        // Use the centralized helper
+        // For functions, compare string representations
+        if (isFn || isFunction(curr) || isFunction(defaultVal)) {
+            return getFunctionString(curr) !== getFunctionString(defaultVal);
+        }
+
+        // Use the centralized helper for non-functions
         return !areValuesEqual(curr, defaultVal);
     });
 
     const displayKey = key;
-    // Fallback to 'string' if initialValue is null/undefined to prevent crashes
-    const type = isArray ? 'array' : typeof (initialValue ?? defaultVal ?? 'string');
+    // Determine the display type
+    const type = isFn ? 'function' : isArray ? 'array' : typeof (initialValue ?? defaultVal ?? 'string');
 
     // Local state logic remains the same (Corrects cursor jumping issues)
     const getStringValue = (val) => {
         if (isArray || Array.isArray(val)) return JSON.stringify(val);
+        if (typeof val === 'function') return val.toString();
         return String(val ?? '');
     };
 
@@ -169,7 +185,7 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
 
     const commitValue = (rawVal) => {
         let val = rawVal;
-        const targetType = isArray ? 'array' : typeof (initialValue ?? defaultVal);
+        const targetType = isFn ? 'function' : isArray ? 'array' : typeof (initialValue ?? defaultVal);
 
         if (targetType === 'number') {
             val = parseFloat(rawVal);
@@ -184,6 +200,7 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
                 // Ignore invalid JSON array input
             }
         }
+        // For functions and strings, store as-is (string)
         data[key] = val;
     };
 
@@ -199,6 +216,20 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
         }
     };
 
+    // Handler for FunctionInput changes
+    const handleFunctionChange = (newFnString) => {
+        data[key] = newFnString;
+        localTextState.val = newFnString;
+    };
+
+    // Get display string for default value
+    const getDefaultDisplayString = () => {
+        if (isFunction(defaultVal)) {
+            return getFunctionString(defaultVal);
+        }
+        return JSON.stringify(defaultVal);
+    };
+
     return div({
         class: () => `config-item ${isModified.val ? 'modified-config' : ''}`,
         'data-config-key': fullPath
@@ -210,7 +241,12 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
                     class: 'config-reset-btn',
                     style: () => isModified.val ? 'display: inline-flex;' : 'display: none;',
                     onclick: () => {
-                        data[key] = defaultVal;
+                        if (isFn && typeof defaultVal === 'function') {
+                            // Store the function string representation
+                            data[key] = defaultVal.toString();
+                        } else {
+                            data[key] = defaultVal;
+                        }
                         localTextState.val = getStringValue(defaultVal);
                     }
                 }, Icons.Refresh()),
@@ -218,59 +254,65 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
             )
         ),
 
-        (type === 'boolean')
-            ? label({ class: 'toggle-switch' },
-                input({
-                    type: 'checkbox',
-                    checked: () => data[key],
-                    onchange: e => data[key] = e.target.checked
-                }),
-                span({ class: 'slider' }),
-                span({ class: 'label' }, () => data[key] ? 'ENABLED' : 'DISABLED')
-            )
-            : (type === 'number')
-                ? NumberInput({
-                    value: localTextState,
-                    onfocus: handleFocus,
-                    onblur: handleBlur,
-                    oninput: handleInput,
-                    onDecrement: () => {
-                        const newVal = Number(data[key]) - 1;
-                        data[key] = newVal;
-                        localTextState.val = String(newVal);
-                    },
-                    onIncrement: () => {
-                        const newVal = Number(data[key]) + 1;
-                        data[key] = newVal;
-                        localTextState.val = String(newVal);
-                    }
-                })
-                : (type === 'array')
-                    ? input({
-                        type: 'text',
-                        name: fullPath,
+        (type === 'function')
+            ? FunctionInput({
+                data: data,
+                dataKey: key,
+                initialValue: initialValue
+            })
+            : (type === 'boolean')
+                ? label({ class: 'toggle-switch' },
+                    input({
+                        type: 'checkbox',
+                        checked: () => data[key],
+                        onchange: e => data[key] = e.target.checked
+                    }),
+                    span({ class: 'slider' }),
+                    span({ class: 'label' }, () => data[key] ? 'ENABLED' : 'DISABLED')
+                )
+                : (type === 'number')
+                    ? NumberInput({
                         value: localTextState,
-                        placeholder: '[]',
                         onfocus: handleFocus,
                         onblur: handleBlur,
                         oninput: handleInput,
-                        style: 'width: 100%;'
-                    })
-                    : input({
-                        type: 'text',
-                        value: localTextState,
-                        onfocus: handleFocus,
-                        onblur: handleBlur,
-                        oninput: (e) => {
-                            localTextState.val = e.target.value;
-                            commitValue(e.target.value);
+                        onDecrement: () => {
+                            const newVal = Number(data[key]) - 1;
+                            data[key] = newVal;
+                            localTextState.val = String(newVal);
                         },
-                        style: 'width: 100%;'
-                    }),
+                        onIncrement: () => {
+                            const newVal = Number(data[key]) + 1;
+                            data[key] = newVal;
+                            localTextState.val = String(newVal);
+                        }
+                    })
+                    : (type === 'array')
+                        ? input({
+                            type: 'text',
+                            name: fullPath,
+                            value: localTextState,
+                            placeholder: '[]',
+                            onfocus: handleFocus,
+                            onblur: handleBlur,
+                            oninput: handleInput,
+                            style: 'width: 100%;'
+                        })
+                        : input({
+                            type: 'text',
+                            value: localTextState,
+                            onfocus: handleFocus,
+                            onblur: handleBlur,
+                            oninput: (e) => {
+                                localTextState.val = e.target.value;
+                                commitValue(e.target.value);
+                            },
+                            style: 'width: 100%;'
+                        }),
 
         div({
             class: 'default-value-hint',
             style: () => isModified.val ? 'display: block;' : 'display: none;'
-        }, `Default: ${JSON.stringify(defaultVal)}`)
+        }, () => `Default: ${getDefaultDisplayString()}`)
     );
 };

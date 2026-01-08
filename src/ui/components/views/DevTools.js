@@ -29,7 +29,12 @@ export const DevTools = () => {
                         div("Nested DevTools is disabled within the game screen to prevent stability issues."),
                         div({ style: 'margin-top: 15px; opacity: 0.8; font-size: 0.9em;' },
                             `Please use the external browser UI ( http://localhost:${window.location.port || '8080'} ) for full DevTools access.`
-                        )
+                        ),
+                        button({
+                            class: 'quick-access-btn',
+                            style: 'margin-top: 20px;',
+                            onclick: () => API.openExternalUrl(url.val)
+                        }, "Open URL")
                     ]);
                 }
 

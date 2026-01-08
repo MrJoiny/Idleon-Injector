@@ -49,7 +49,7 @@ const QuickAccessSection = () => {
             button({
                 class: 'quick-access-btn',
                 onclick: () => store.executeCheat(val, msg)
-            }, msg),
+            }, val),
             isFavorite ? button({
                 class: 'quick-access-remove',
                 onclick: () => store.toggleFavorite(cheatValue)
