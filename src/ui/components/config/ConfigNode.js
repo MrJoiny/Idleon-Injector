@@ -5,6 +5,7 @@ import { FunctionInput } from '../FunctionInput.js';
 import { Icons } from '../../icons.js';
 import { withTooltip } from '../Tooltip.js';
 import { isFunction } from '../../utils/functionParser.js';
+import { configDescriptions } from '../../configDescriptions.js';
 
 const { div, label, input, details, summary, span, button } = van.tags;
 
@@ -160,6 +161,7 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
     });
 
     const displayKey = key;
+    const description = configDescriptions[fullPath] || '';
     // Determine the display type
     const type = isFn ? 'function' : isArray ? 'array' : typeof (initialValue ?? defaultVal ?? 'string');
 
@@ -236,6 +238,7 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
     },
         div({ class: 'config-item-header' },
             label(displayKey),
+            description ? span({ class: 'config-description' }, description) : null,
             withTooltip(
                 button({
                     class: 'config-reset-btn',

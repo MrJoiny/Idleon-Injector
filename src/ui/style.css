@@ -832,6 +832,18 @@ button {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    gap: 10px;
+}
+
+.config-description {
+    flex: 1;
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-align: left;
+    padding-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-reset-btn {
