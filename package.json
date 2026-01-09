@@ -13,8 +13,7 @@
     "author": "MrJoiny",
     "dependencies": {
         "chrome-remote-interface": "^0.33.0",
-        "enquirer": "^2.3.6",
-        "express": "^4.18.2"
+        "enquirer": "^2.3.6"
     },
     "pkg": {
         "assets": [

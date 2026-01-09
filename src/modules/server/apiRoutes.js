@@ -14,7 +14,7 @@ const { exec } = require('child_process');
 
 /**
  * Sets up all API routes for the web UI
- * @param {Object} app - Express application instance
+ * @param {Object} app - TinyRouter application instance
  * @param {string} context - JavaScript expression for game context
  * @param {Object} client - Chrome DevTools Protocol client
  * @param {Object} config - Configuration objects
@@ -66,7 +66,7 @@ function setupApiRoutes(app, context, client, config) {
 
   // --- API Endpoint: Execute cheat command ---
   app.post('/api/toggle', async (req, res) => {
-    const { action } = req.body;
+    const { action } = await req.json();
     if (!action) {
       return res.status(400).json({ error: 'Missing action parameter' });
     }
@@ -167,7 +167,7 @@ function setupApiRoutes(app, context, client, config) {
 
   // --- API Endpoint: Update configuration in memory and game ---
   app.post('/api/config/update', async (req, res) => {
-    const receivedFullConfig = req.body;
+    const receivedFullConfig = await req.json();
     // console.log('[Web UI] Received full config for update:', receivedFullConfig);
 
     if (!receivedFullConfig || typeof receivedFullConfig !== 'object') {
@@ -322,7 +322,7 @@ function setupApiRoutes(app, context, client, config) {
 
   // --- API Endpoint: Update Single Options List Account Index ---
   app.post('/api/options-account/index', async (req, res) => {
-    const { index, value } = req.body;
+    const { index, value } = await req.json();
 
     if (index === undefined || value === undefined) {
       return res.status(400).json({
@@ -381,7 +381,7 @@ function setupApiRoutes(app, context, client, config) {
 
   // --- API Endpoint: Save configuration to file ---
   app.post('/api/config/save', async (req, res) => {
-    const receivedFullConfig = req.body;
+    const receivedFullConfig = await req.json();
 
     if (!receivedFullConfig || typeof receivedFullConfig !== 'object' ||
       !receivedFullConfig.cheatConfig || !Array.isArray(receivedFullConfig.startupCheats)) {
@@ -460,8 +460,8 @@ exports.injectorConfig = ${new_injectorConfig};
   });
 
   // --- API Endpoint: Open External URL ---
-  app.post('/api/open-url', (req, res) => {
-    const { url } = req.body;
+  app.post('/api/open-url', async (req, res) => {
+    const { url } = await req.json();
     if (!url) {
       return res.status(400).json({ error: 'Missing url parameter' });
     }
