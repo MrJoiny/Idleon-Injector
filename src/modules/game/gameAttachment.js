@@ -10,7 +10,8 @@ const spawn = require('child_process').spawn;
 const http = require('http');
 const path = require('path');
 const os = require('os');
-const { existsSync } = require('fs');
+const { existsSync, access } = require('fs');
+const { promisify } = require('util');
 
 const {
   getCdpPort,
@@ -18,6 +19,8 @@ const {
   isLinux,
   getLinuxTimeout
 } = require('../config/configManager');
+
+const accessAsync = promisify(access);
 
 // Constants
 const IDLEON_APP_ID = 1476970;
@@ -38,37 +41,11 @@ const DEFAULT_IDLEON_PATHS = [
 ];
 
 /**
- * Basic attach function for launching a game executable with remote debugging
- * @param {string} name - Path to the executable
- * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
+ * Wait for CDP endpoint to be available by polling
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<string>} WebSocket URL
  */
-function attach(name) {
-  const cdp_port = getCdpPort();
-
-  return new Promise((resolve, reject) => {
-    const idleon = spawn(name, [`--remote-debugging-port=${cdp_port}`]);
-
-    // Chrome/Electron outputs the DevTools WebSocket URL to stderr on startup.
-    idleon.stderr.on('data', (data) => {
-      const match = data.toString().match(/DevTools listening on (ws:\/\/.*)/);
-      if (match) {
-        resolve(match[1]);
-      }
-    });
-
-    // Add error handler for spawn issues (like ENOENT)
-    idleon.on('error', (err) => {
-      reject(err); // Reject the promise to propagate the error
-    });
-  });
-}
-
-/**
- * Linux-specific attach function that polls for CDP endpoint
- * @param {number} timeout - Timeout in milliseconds (default: 10000)
- * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
- */
-function AttachLinux(timeout = LINUX_TIMEOUT) {
+function waitForCdpEndpoint(timeout = DEFAULT_TIMEOUT) {
   const cdp_port = getCdpPort();
   const startTime = Date.now();
 
@@ -89,7 +66,6 @@ function AttachLinux(timeout = LINUX_TIMEOUT) {
           }
         });
       });
-
       req.on('error', retry);
     }
 
@@ -105,6 +81,62 @@ function AttachLinux(timeout = LINUX_TIMEOUT) {
 }
 
 /**
+ * Basic attach function for launching a game executable with remote debugging
+ * @param {string} name - Path to the executable
+ * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
+ */
+function attach(name) {
+  const cdp_port = getCdpPort();
+
+  return new Promise((resolve, reject) => {
+    const idleon = spawn(name, [`--remote-debugging-port=${cdp_port}`]);
+    let resolved = false;
+
+    idleon.stderr.on('data', (data) => {
+      const match = data.toString().match(/DevTools listening on (ws:\/\/.*)/);
+      if (match && !resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(match[1]);
+      }
+    });
+
+    idleon.on('error', (err) => {
+      if (!resolved) {
+        clearTimeout(timeoutId);
+        reject(err);
+      }
+    });
+
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        try {
+          idleon.kill('SIGTERM');
+        } catch (err) {
+        }
+        reject(new Error('Timeout waiting for game to start'));
+      }
+    }, 30000);
+
+    idleon.on('close', () => {
+      clearTimeout(timeoutId);
+      if (!resolved) {
+        reject(new Error('Game process closed before CDP was available'));
+      }
+    });
+  });
+}
+
+/**
+ * Linux-specific attach function that polls for CDP endpoint
+ * @param {number} timeout - Timeout in milliseconds (default: 10000)
+ * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
+ */
+function attachLinux(timeout = LINUX_TIMEOUT) {
+  return waitForCdpEndpoint(timeout);
+}
+
+/**
  * Automatic Linux attach with Steam integration
  * @param {number} timeout - Timeout in milliseconds (default: 30000)
  * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
@@ -114,12 +146,7 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
 
   let steamCmd = "steam";
 
-  // Try common locations if not in PATH
   const possibleSteamPaths = COMMON_STEAM_PATHS;
-
-  const { access } = require("fs");
-  const { promisify } = require("util");
-  const accessAsync = promisify(access);
   let foundSteam = false;
 
   for (const p of possibleSteamPaths) {
@@ -128,14 +155,6 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
       steamCmd = p;
       foundSteam = true;
       break;
-    } catch (e) { }
-  }
-
-  if (!foundSteam) {
-    try {
-      await accessAsync("/usr/bin/steam");
-      steamCmd = "/usr/bin/steam";
-      foundSteam = true;
     } catch (e) { }
   }
 
@@ -158,15 +177,17 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
   });
 
   let stderr = "";
-  child.stderr.on("data", (data) => {
+  const stderrHandler = (data) => {
     stderr += data.toString();
-  });
+  };
+  child.stderr.on("data", stderrHandler);
 
-  // Poll for CDP endpoint (reuse AttachLinux logic)
   try {
-    const wsUrl = await AttachLinux(timeout);
+    const wsUrl = await attachLinux(timeout);
+    child.stderr.off("data", stderrHandler);
     return wsUrl;
   } catch (e) {
+    child.stderr.off("data", stderrHandler);
     throw new Error(`[Linux] Failed to auto-launch with Steam: ${e.message}\nStderr: ${stderr}`);
   }
 }
@@ -176,40 +197,8 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
  * @param {number} timeout - Timeout in milliseconds (default: 30000)
  * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
  */
-function AttachWindows(timeout = DEFAULT_TIMEOUT) {
-  const cdp_port = getCdpPort();
-
-  // Poll for CDP endpoint (like Linux)
-  const startTime = Date.now();
-  return new Promise((resolve, reject) => {
-    function check() {
-      const req = http.get(`http://localhost:${cdp_port}/json/version`, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const json = JSON.parse(data);
-            if (json.webSocketDebuggerUrl) {
-              return resolve(json.webSocketDebuggerUrl);
-            }
-            retry();
-          } catch (err) {
-            retry();
-          }
-        });
-      });
-      req.on('error', retry);
-    }
-
-    function retry() {
-      if (Date.now() - startTime > timeout) {
-        return reject(new Error('Timeout waiting for debugger WebSocket URL. Have you set --remote-debugging-port?'));
-      }
-      setTimeout(check, POLL_INTERVAL);
-    }
-
-    check();
-  });
+function attachWindows(timeout = DEFAULT_TIMEOUT) {
+  return waitForCdpEndpoint(timeout);
 }
 
 /**
@@ -219,15 +208,12 @@ function AttachWindows(timeout = DEFAULT_TIMEOUT) {
 function findIdleonExe() {
   const injectorConfig = getInjectorConfig();
 
-  // Default Steam install locations for Idleon
-  const defaultSteamPaths = DEFAULT_IDLEON_PATHS;
-
   if (injectorConfig.gameExePath && existsSync(injectorConfig.gameExePath)) {
     return injectorConfig.gameExePath;
   }
 
-  for (const p of defaultSteamPaths) {
-    if (existsSync(p)) return p;
+  for (const path of DEFAULT_IDLEON_PATHS) {
+    if (existsSync(path)) return path;
   }
 
   return null;
@@ -261,10 +247,9 @@ async function attachToGame() {
     } catch (autoErr) {
       console.error("[Linux] Auto attach failed:", autoErr.message);
       console.log("[Linux] Falling back to manual attach. Please launch the game via Steam with the required parameters.");
-      hook = await AttachLinux(linuxTimeout);
+      hook = await attachLinux(linuxTimeout);
     }
   } else if (os.platform() === 'win32') {
-    // --- Windows logic ---
     let exePath = findIdleonExe();
     if (exePath) {
       try {
@@ -277,10 +262,9 @@ async function attachToGame() {
     if (!exePath) {
       console.log('[Windows] Could not find LegendsOfIdleon.exe. Attempting to launch via Steam protocol...');
       launchIdleonViaSteamProtocol();
-      hook = await AttachWindows(linuxTimeout || DEFAULT_TIMEOUT);
+      hook = await attachWindows(linuxTimeout || DEFAULT_TIMEOUT);
     }
   } else {
-    // Default (legacy) logic
     hook = await attach('LegendsOfIdleon.exe');
   }
 
@@ -291,9 +275,9 @@ async function attachToGame() {
 module.exports = {
   attachToGame,
   attach,
-  AttachLinux,
+  attachLinux,
   autoAttachLinux,
-  AttachWindows,
+  attachWindows,
   findIdleonExe,
   launchIdleonViaSteamProtocol
 };

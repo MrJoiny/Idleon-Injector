@@ -6,7 +6,7 @@
  * Provides the bridge between the web interface and the game's cheat system.
  */
 
-const _ = require('lodash');
+const { deepMerge } = require('../utils/objectUtils');
 const fs = require('fs').promises;
 const path = require('path');
 const { objToString, prepareConfigForJson, parseConfigFromJson, getDeepDiff, filterByTemplate } = require('../utils/helpers');
@@ -184,7 +184,7 @@ function setupApiRoutes(app, context, client, config) {
         // console.log('[Web UI] Parsed cheatConfig (with functions):', parsedCheatConfig);
 
         // 2. Update the server-side cheatConfig object (merge)
-        _.merge(cheatConfig, parsedCheatConfig);
+        deepMerge(cheatConfig, parsedCheatConfig);
         // console.log('[Web UI] Updated server-side cheatConfig:', cheatConfig);
       }
 
@@ -198,7 +198,7 @@ function setupApiRoutes(app, context, client, config) {
 
       // Update server-side injectorConfig (merge)
       if (receivedFullConfig.injectorConfig) {
-        _.merge(injectorConfig, receivedFullConfig.injectorConfig);
+        deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
         console.log('[Web UI] Updated server-side injectorConfig.');
       }
 
@@ -445,8 +445,8 @@ exports.injectorConfig = ${new_injectorConfig};
         startupCheats.length = 0; // Clear existing
         startupCheats.push(...uiStartupCheats); // Add new
       }
-      if (parsedUiCheatConfig) _.merge(cheatConfig, parsedUiCheatConfig); // Merge cheatConfig updates
-      if (filteredInjectorConfig) _.merge(injectorConfig, filteredInjectorConfig);
+      if (parsedUiCheatConfig) deepMerge(cheatConfig, parsedUiCheatConfig); // Merge cheatConfig updates
+      if (filteredInjectorConfig) deepMerge(injectorConfig, filteredInjectorConfig);
 
       res.json({ message: 'Configuration successfully saved to config.custom.js' });
 

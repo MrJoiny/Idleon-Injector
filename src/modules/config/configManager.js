@@ -6,7 +6,7 @@
  * interface for all configuration-related operations throughout the application.
  */
 
-const _ = require('lodash');
+const { deepClone, union, deepMerge } = require('../utils/objectUtils');
 const os = require('os');
 
 // Configuration state - holds loaded configuration data in memory
@@ -42,14 +42,14 @@ function loadConfiguration() {
     config = require(configPath);
 
     // Deep clone for defaultConfig to ensure it stays pristine
-    defaultConfig = _.cloneDeep(config);
+    defaultConfig = deepClone(config);
 
     // Try to load custom configuration and merge
     try {
       const customConfig = require(customConfigPath);
-      config.injectorConfig = _.merge(config.injectorConfig, customConfig.injectorConfig);
-      config.startupCheats = _.union(config.startupCheats, customConfig.startupCheats);
-      config.cheatConfig = _.merge(config.cheatConfig, customConfig.cheatConfig);
+      config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
+      config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
+      config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
     } catch (e) {
       console.log('****** No custom config found, using default config ******');
       console.log('****** To create a custom config, copy config.custom.example.js to config.custom.js and edit to your liking ******');
@@ -154,7 +154,6 @@ module.exports = {
   loadConfiguration,
   getInjectorConfig,
   getStartupCheats,
-  getCheatConfig,
   getCheatConfig,
   getDefaultConfig,
   getCdpPort,

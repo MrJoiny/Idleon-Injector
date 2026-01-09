@@ -8,8 +8,6 @@
 
 const CDP = require('chrome-remote-interface');
 const fs = require('fs').promises;
-const atob = require('atob');
-const btoa = require('btoa');
 
 // Import utility functions
 const { objToString } = require('../utils/helpers');
@@ -74,7 +72,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
     try {
       console.log(`Intercepted: ${request.url}`);
       const response = await Network.getResponseBodyForInterception({ interceptionId });
-      const originalBody = atob(response.body);
+      const originalBody = Buffer.from(response.body, 'base64').toString('utf8');
 
       // Regex to find the main application variable assignment in the game's code.
       // This is crucial for hooking the cheats into the game's context.
@@ -128,12 +126,12 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
         `Content-Length: ${newBody.length}`,
         `Content-Type: text/javascript`,
       ];
-      const newResponse = btoa(
+      const newResponse = Buffer.from(
         "HTTP/1.1 200 OK\r\n" +
         newHeaders.join('\r\n') +
         "\r\n\r\n" +
         newBody
-      );
+      ).toString('base64');
 
       await Network.continueInterceptedRequest({ // Make sure to await this
         interceptionId,
