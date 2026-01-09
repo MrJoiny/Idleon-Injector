@@ -16,7 +16,6 @@ const safeParseJSON = (key, fallback = []) => {
     }
 };
 
-// Reactive State Container: UI & System
 const appState = vanX.reactive({
     activeTab: 'cheats-tab',
     isLoading: false,
@@ -26,7 +25,6 @@ const appState = vanX.reactive({
     sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
 });
 
-// Reactive State Container: Domain Data
 const dataState = vanX.reactive({
     cheats: [],
     needsConfirmation: [],
@@ -37,13 +35,11 @@ const dataState = vanX.reactive({
     recentCheats: safeParseJSON('recentCheats', [])
 });
 
-
 const Actions = {
     notify: (message, type = 'success') => {
         appState.toast = { message, type, id: Date.now() };
     },
 
-    // Helper to safely handle loading wrappers
     withLoading: async (fn) => {
         try {
             appState.isLoading = true;
@@ -97,7 +93,7 @@ const getActiveCheats = (states) => {
     const activeCheats = [];
     const processedGroups = new Set();
 
-    // cheats with s at the end like w1s
+    // Process group cheats (plural keys ending in 's' like 'w1s' indicate all sub-cheats enabled)
     for (const key in states) {
         const value = states[key];
         if (key.endsWith('s') && value === true) {
@@ -154,10 +150,8 @@ const FavoritesService = {
     },
 
     addToRecent: (cheatValue) => {
-        // Remove if exists, then add to front
         const filtered = dataState.recentCheats.filter(c => c !== cheatValue);
         filtered.unshift(cheatValue);
-        // Keep only last 10
         const newRecent = filtered.slice(0, 10);
         dataState.recentCheats.length = 0;
         newRecent.forEach(c => dataState.recentCheats.push(c));
@@ -209,7 +203,7 @@ const AccountService = {
 
             // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
             const newData = dataRes.data || [];
-            dataState.accountOptions = []; // Clear reference
+            dataState.accountOptions = [];
             dataState.accountOptions = newData;
 
             Actions.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
@@ -231,29 +225,23 @@ const AccountService = {
 };
 
 const store = {
-    // Namespaces
     app: appState,
     data: dataState,
 
-    // Public API Actions
     notify: Actions.notify,
     initHeartbeat: SystemService.initHeartbeat,
 
-    // Cheats
     loadCheats: CheatService.loadCheats,
     executeCheat: CheatService.executeCheat,
     loadCheatStates: CheatStateService.loadCheatStates,
     getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 
-    // Config
     loadConfig: ConfigService.loadConfig,
     saveConfig: ConfigService.saveConfig,
 
-    // Account
     loadAccountOptions: AccountService.loadAccountOptions,
     updateAccountOption: AccountService.updateAccountOption,
 
-    // Sidebar
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;
         localStorage.setItem('sidebarCollapsed', appState.sidebarCollapsed);
@@ -267,7 +255,6 @@ const store = {
         }
     },
 
-    // Favorites
     toggleFavorite: FavoritesService.toggleFavorite,
     isFavorite: FavoritesService.isFavorite,
     addToRecent: FavoritesService.addToRecent

@@ -20,28 +20,23 @@ const { div, select, option, input, button, span } = van.tags;
  * @param {Function|string} props.initialValue - The initial function value (for parsing)
  */
 export const FunctionInput = ({ data, dataKey, initialValue }) => {
-    // Parse the initial function to determine type and value
     const parsed = parseFunction(initialValue);
 
-    // Local state for the UI
     const currentType = van.state(parsed.type);
     const currentValue = van.state(parsed.value ?? 1);
     const rawSource = van.state(parsed.source);
 
-    // Local text state for the editable number input (to avoid cursor jumping)
+    // Prevents cursor jumping by using local state synced via van.derive with focus guards
     const localNumberText = van.state(String(parsed.value ?? 1));
 
-    // Track if we're currently focused (to avoid sync overwriting user input)
     const isFocused = van.state(false);
 
-    // Sync with external changes (e.g., reset button)
     van.derive(() => {
-        if (isFocused.val) return; // Don't sync while user is editing
+        if (isFocused.val) return;
 
         const externalVal = data[dataKey];
         const externalParsed = parseFunction(externalVal);
 
-        // Only update if the external value is different from what we have
         if (externalParsed.source !== rawSource.val) {
             currentType.val = externalParsed.type;
             currentValue.val = externalParsed.value ?? 1;
@@ -50,7 +45,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     });
 
-    // Update the data when type or value changes
     const emitChange = (type, val) => {
         if (type === FUNCTION_TYPES.COMPLEX) {
             data[dataKey] = rawSource.val;
@@ -61,14 +55,12 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     };
 
-    // Handle type dropdown change
     const handleTypeChange = (e) => {
         const newType = e.target.value;
         const oldType = currentType.val;
         currentType.val = newType;
 
         if (newType === FUNCTION_TYPES.COMPLEX) {
-            // Keep current raw source
         } else {
             if (newType === FUNCTION_TYPES.PASSTHROUGH) {
                 // Don't reset currentValue - keep it for when switching back
@@ -82,7 +74,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     };
 
-    // Handle slider change
     const handleSliderChange = (e) => {
         const val = parseFloat(e.target.value);
         currentValue.val = val;
@@ -90,7 +81,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         emitChange(currentType.val, val);
     };
 
-    // Handle editable number input change for slider value
     const handleSliderNumberInput = (e) => {
         localNumberText.val = e.target.value;
         const num = parseFloat(e.target.value);
@@ -100,7 +90,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     };
 
-    // Handle number input change (for Fixed/Max/Min)
     const handleNumberInputChange = (e) => {
         localNumberText.val = e.target.value;
         const num = parseFloat(e.target.value);
@@ -117,7 +106,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         emitChange(currentType.val, newVal);
     };
 
-    // Handle raw function text change - auto-detect patterns on every input
     const handleRawChange = (e) => {
         const newText = e.target.value;
         rawSource.val = newText;
@@ -132,7 +120,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         data[dataKey] = newText;
     };
 
-    // Handle raw function blur
     const handleRawBlur = () => {
         isFocused.val = false;
         const newParsed = parseFunction(rawSource.val);
@@ -143,18 +130,15 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     };
 
-    // Handle preset button click
     const handlePresetClick = (presetVal) => {
         currentValue.val = presetVal;
         localNumberText.val = String(presetVal);
         emitChange(currentType.val, presetVal);
     };
 
-    // Focus handlers
     const handleFocus = () => { isFocused.val = true; };
     const handleBlur = () => { isFocused.val = false; };
 
-    // Selectable function types
     const selectableTypes = [
         FUNCTION_TYPES.MULTIPLY,
         FUNCTION_TYPES.DIVIDE,
@@ -165,18 +149,14 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         FUNCTION_TYPES.COMPLEX
     ];
 
-    // Get slider config
     const sliderConfig = getSliderConfig(FUNCTION_TYPES.MULTIPLY);
     const presets = getPresetValues(FUNCTION_TYPES.MULTIPLY);
 
-    // Helper to check if type uses slider
     const isSliderType = (type) => type === FUNCTION_TYPES.MULTIPLY || type === FUNCTION_TYPES.DIVIDE;
     const isNumberType = (type) => type === FUNCTION_TYPES.FIXED || type === FUNCTION_TYPES.MIN || type === FUNCTION_TYPES.MAX;
 
     return div({ class: 'function-input' },
-        // Main row
         div({ class: 'function-input-row' },
-            // Type selector
             select({
                 class: 'function-type-select',
                 value: currentType,
@@ -190,7 +170,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
                 )
             ),
 
-            // Slider group (for multiply/divide)
             div({
                 class: 'function-slider-group',
                 style: () => isSliderType(currentType.val) ? '' : 'display: none;'
@@ -223,7 +202,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
                 )
             ),
 
-            // Number input group (for fixed/max/min)
             div({
                 class: 'function-number-input-wrapper',
                 style: () => isNumberType(currentType.val) ? '' : 'display: none;'
@@ -248,13 +226,11 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
                 }, '+')
             ),
 
-            // Passthrough label
             span({
                 class: 'function-passthrough-label',
                 style: () => currentType.val === FUNCTION_TYPES.PASSTHROUGH ? '' : 'display: none;'
             }, '(no change)'),
 
-            // Custom/Complex text input
             input({
                 type: 'text',
                 class: 'function-raw-input',
@@ -268,7 +244,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
             })
         ),
 
-        // Presets row
         div({
             class: 'function-presets',
             style: () => isSliderType(currentType.val) ? '' : 'display: none;'

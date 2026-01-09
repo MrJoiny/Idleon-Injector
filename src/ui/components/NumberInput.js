@@ -20,13 +20,12 @@ export const NumberInput = ({
         input({
             type: 'number',
             value: value,
-            style: '', // Default to empty to allow flex to work
+            style: '',
             ...inputProps
         }),
         button({
             class: 'number-input-btn',
             onclick: onDecrement,
-            // Prevent taking focus from input if possible, or handle tab index
             tabindex: -1
         }, "-"),
         button({

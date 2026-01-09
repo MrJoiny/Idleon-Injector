@@ -22,7 +22,6 @@ const {
 
 const accessAsync = promisify(access);
 
-// Constants
 const IDLEON_APP_ID = 1476970;
 const DEFAULT_TIMEOUT = 30000;
 const LINUX_TIMEOUT = 10000;
@@ -163,7 +162,6 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
     throw new Error("Steam not found");
   }
 
-  // Launch the game using Steam with the required parameters
   console.log(`[Linux] Launching Legends of Idleon using Steam (AppID: ${IDLEON_APP_ID})...`);
   const args = [
     "-applaunch",
@@ -226,7 +224,6 @@ function findIdleonExe() {
 function launchIdleonViaSteamProtocol() {
   const cdp_port = getCdpPort();
 
-  // Pass remote debugging port as launch arg
   const steamUrl = `steam://run/${IDLEON_APP_ID}//--remote-debugging-port=${cdp_port}`;
   return spawn('cmd', ['/c', 'start', '', steamUrl], { detached: true, stdio: 'ignore' });
 }

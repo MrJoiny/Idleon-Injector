@@ -27,12 +27,10 @@ function setupApiRoutes(app, context, client, config) {
   const { Runtime } = client;
   const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
 
-  // --- API Endpoint: Heartbeat (System Status) ---
   app.get('/api/heartbeat', (req, res) => {
     res.json({ status: 'online', timestamp: Date.now() });
   });
 
-  // --- API Endpoint: Get available cheats ---
   app.get('/api/cheats', async (req, res) => {
     try {
       const suggestionsResult = await Runtime.evaluate({
@@ -49,7 +47,6 @@ function setupApiRoutes(app, context, client, config) {
       } else {
         const allCheats = suggestionsResult.result.value || [];
 
-        // filter out commands that are not usable in the webui
         const EXCLUDED_PREFIXES = ['gga', 'ggk', 'cheats', 'list', 'search', 'chng', 'egga', 'eggk', 'chromedebug'];
         const filteredCheats = allCheats.filter(c => {
           const cmd = c.value?.toLowerCase();
@@ -64,14 +61,12 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Execute cheat command ---
   app.post('/api/toggle', async (req, res) => {
     const { action } = await req.json();
     if (!action) {
       return res.status(400).json({ error: 'Missing action parameter' });
     }
     try {
-      // Execute the selected cheat command within the game's context.
       const cheatResponse = await Runtime.evaluate({
         expression: `cheat.call(${context}, '${action}')`,
         awaitPromise: true,
@@ -93,7 +88,6 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Get cheats needing confirmation ---
   app.get('/api/needs-confirmation', async (req, res) => {
     try {
       const confirmationResult = await Runtime.evaluate({
@@ -116,15 +110,11 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Get DevTools URL ---
   app.get('/api/devtools-url', async (req, res) => {
     try {
-      // Use the existing CDP client to get target info
       const response = await client.Target.getTargetInfo();
       if (response && response.targetInfo && response.targetInfo.targetId) {
         const targetId = response.targetInfo.targetId;
-        // Construct the DevTools URL
-        // Note: Using http, not ws, for the main URL. The ws part is a parameter.
         const devtoolsUrl = `http://localhost:${cdpPort}/devtools/inspector.html?ws=localhost:${cdpPort}/devtools/page/${targetId}`;
         console.log(`[Web UI] Generated DevTools URL: ${devtoolsUrl}`);
         res.json({ url: devtoolsUrl });
@@ -141,22 +131,20 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Get current configuration ---
   app.get('/api/config', (req, res) => {
     try {
       const serializableCheatConfig = prepareConfigForJson(cheatConfig);
 
-      // Serialize the entire default config structure (cheatConfig, injectorConfig, startupCheats)
       let serializableDefaultConfig = {};
       if (defaultConfig) {
         serializableDefaultConfig = prepareConfigForJson(defaultConfig);
       }
 
       const fullConfigResponse = {
-        startupCheats: startupCheats, // Send the raw startupCheats array
-        cheatConfig: serializableCheatConfig, // Send the processed cheatConfig
-        injectorConfig: injectorConfig, // Send the injectorConfig
-        defaultConfig: serializableDefaultConfig, // Send the processed default cheatConfig
+        startupCheats: startupCheats,
+        cheatConfig: serializableCheatConfig,
+        injectorConfig: injectorConfig,
+        defaultConfig: serializableDefaultConfig,
       };
       res.json(fullConfigResponse);
     } catch (error) {
@@ -165,10 +153,8 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Update configuration in memory and game ---
   app.post('/api/config/update', async (req, res) => {
     const receivedFullConfig = await req.json();
-    // console.log('[Web UI] Received full config for update:', receivedFullConfig);
 
     if (!receivedFullConfig || typeof receivedFullConfig !== 'object') {
       return res.status(400).json({
@@ -177,35 +163,26 @@ function setupApiRoutes(app, context, client, config) {
     }
 
     try {
-      // 1. Extract and parse the cheatConfig part
       if (receivedFullConfig.cheatConfig) {
         const receivedCheatConfig = receivedFullConfig.cheatConfig;
         const parsedCheatConfig = parseConfigFromJson(receivedCheatConfig);
-        // console.log('[Web UI] Parsed cheatConfig (with functions):', parsedCheatConfig);
 
-        // 2. Update the server-side cheatConfig object (merge)
         deepMerge(cheatConfig, parsedCheatConfig);
-        // console.log('[Web UI] Updated server-side cheatConfig:', cheatConfig);
       }
 
-      // 3. Update server-side startupCheats (replace)
       if (Array.isArray(receivedFullConfig.startupCheats)) {
-        // Overwrite the existing array content while keeping the reference
-        startupCheats.length = 0; // Clear existing items
-        startupCheats.push(...receivedFullConfig.startupCheats); // Add new items
+        startupCheats.length = 0;
+        startupCheats.push(...receivedFullConfig.startupCheats);
         console.log('[Web UI] Updated server-side startupCheats.');
       }
 
-      // Update server-side injectorConfig (merge)
       if (receivedFullConfig.injectorConfig) {
         deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
         console.log('[Web UI] Updated server-side injectorConfig.');
       }
 
-      // 4. Inject the updated *cheatConfig* into the game context
-      // Note: injectorConfig only affects the node process, so we don't inject it into game context.
       const parsedCheatConfig = receivedFullConfig.cheatConfig ? parseConfigFromJson(receivedFullConfig.cheatConfig) : cheatConfig;
-      const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` }); // Re-check context
+      const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` });
       if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
         console.error("API Error: Cheat context not found in iframe. Cannot update config in game.");
         return res.status(200).json({
@@ -213,7 +190,6 @@ function setupApiRoutes(app, context, client, config) {
         });
       }
 
-      // Only inject cheatConfig changes
       const configStringForInjection = objToString(parsedCheatConfig);
 
       const updateExpression = `
@@ -261,7 +237,6 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Get Active Cheat States ---
   app.get('/api/cheat-states', async (req, res) => {
     try {
       const statesResult = await Runtime.evaluate({
@@ -288,7 +263,6 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Get Options List Account ---
   app.get('/api/options-account', async (req, res) => {
     try {
       const optionsResult = await Runtime.evaluate({
@@ -320,7 +294,6 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Update Single Options List Account Index ---
   app.post('/api/options-account/index', async (req, res) => {
     const { index, value } = await req.json();
 
@@ -337,13 +310,10 @@ function setupApiRoutes(app, context, client, config) {
     }
 
     try {
-      // Serialize the value properly based on its type
       let serializedValue;
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        // Use objToString for complex objects
         serializedValue = objToString(value);
       } else {
-        // Use JSON.stringify for primitives, arrays, and null
         serializedValue = JSON.stringify(value);
       }
 
@@ -379,7 +349,6 @@ function setupApiRoutes(app, context, client, config) {
     }
   });
 
-  // --- API Endpoint: Save configuration to file ---
   app.post('/api/config/save', async (req, res) => {
     const receivedFullConfig = await req.json();
 
@@ -391,15 +360,12 @@ function setupApiRoutes(app, context, client, config) {
     }
 
     try {
-      // Extract parts from UI payload
       const uiCheatConfigRaw = receivedFullConfig.cheatConfig || cheatConfig;
       const uiStartupCheats = receivedFullConfig.startupCheats || startupCheats;
       const uiInjectorConfig = receivedFullConfig.injectorConfig || injectorConfig;
 
-      // Parse UI cheatConfig to handle functions for saving
       let parsedUiCheatConfig = parseConfigFromJson(uiCheatConfigRaw);
 
-      // Filter out keys that don't exist in the default config
       if (defaultConfig?.cheatConfig) {
         parsedUiCheatConfig = filterByTemplate(parsedUiCheatConfig, defaultConfig.cheatConfig) || {};
       }
@@ -409,17 +375,14 @@ function setupApiRoutes(app, context, client, config) {
         filteredInjectorConfig = filterByTemplate(uiInjectorConfig, defaultConfig.injectorConfig) || {};
       }
 
-      // Compute diff against defaults to save only overrides
       const cheatConfigDiff = getDeepDiff(parsedUiCheatConfig, defaultConfig?.cheatConfig) || {};
       const injectorConfigDiff = getDeepDiff(filteredInjectorConfig, defaultConfig?.injectorConfig) || {};
-      // For startupCheats, compare arrays - if different from default, save the whole array
       const startupCheatsDiff = JSON.stringify(uiStartupCheats) !== JSON.stringify(defaultConfig?.startupCheats)
         ? uiStartupCheats
         : [];
 
       const new_injectorConfig = objToString(injectorConfigDiff).replaceAll("\\", "\\\\");
 
-      // Construct file content string with only the overrides
       const fileContentString = `
 /****************************************************************************************************
  * This file is generated by the Idleon Cheat Injector UI.
@@ -433,19 +396,16 @@ exports.cheatConfig = ${objToString(cheatConfigDiff)};
 
 exports.injectorConfig = ${new_injectorConfig};
 `;
-      // 4. Define save path
       const savePath = path.join(process.cwd(), 'config.custom.js');
 
-      // 5. Write to file
       await fs.writeFile(savePath, fileContentString.trim());
       console.log(`[Web UI] Configuration saved to ${savePath}`);
 
-      // 6. Update in-memory variables AFTER successful save
       if (uiStartupCheats) {
-        startupCheats.length = 0; // Clear existing
-        startupCheats.push(...uiStartupCheats); // Add new
+        startupCheats.length = 0;
+        startupCheats.push(...uiStartupCheats);
       }
-      if (parsedUiCheatConfig) deepMerge(cheatConfig, parsedUiCheatConfig); // Merge cheatConfig updates
+      if (parsedUiCheatConfig) deepMerge(cheatConfig, parsedUiCheatConfig);
       if (filteredInjectorConfig) deepMerge(injectorConfig, filteredInjectorConfig);
 
       res.json({ message: 'Configuration successfully saved to config.custom.js' });
@@ -459,7 +419,6 @@ exports.injectorConfig = ${new_injectorConfig};
     }
   });
 
-  // --- API Endpoint: Open External URL ---
   app.post('/api/open-url', async (req, res) => {
     const { url } = await req.json();
     if (!url) {

@@ -4,27 +4,22 @@ import store from '../store.js';
 const { div } = van.tags;
 
 export const Toast = () => {
-    // Local state for visibility and animation classes
     const isVisible = van.state(false);
     const isFading = van.state(false);
 
     let currentTimeout = null;
 
-    // We subscribe to the global store's toast object
     van.derive(() => {
         const toast = store.app.toast;
         if (!toast.message) return;
 
-        // Reset Logic
         if (currentTimeout) clearTimeout(currentTimeout);
         isVisible.val = true;
         isFading.val = false;
 
-        // Start Timer to Fade Out (5 seconds)
         currentTimeout = setTimeout(() => {
             isFading.val = true;
 
-            // Start Timer to Hide completely
             setTimeout(() => {
                 isVisible.val = false;
                 isFading.val = false;

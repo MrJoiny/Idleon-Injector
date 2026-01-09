@@ -34,20 +34,17 @@ export const App = () => {
 
         if (isInputFocused) return;
 
-        // switch tabs
         if (e.key === '1') store.app.activeTab = VIEWS.CHEATS.id;
         if (e.key === '2') store.app.activeTab = VIEWS.ACCOUNT.id;
         if (e.key === '3') store.app.activeTab = VIEWS.CONFIG.id;
         if (e.key === '4') store.app.activeTab = VIEWS.DEVTOOLS.id;
 
-        // focus on search input
         if (e.key === '/') {
             e.preventDefault();
             const searchInput = document.querySelector('.tab-pane.active .global-search-input');
             searchInput?.focus();
         }
 
-        // save config
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
             if (store.app.activeTab === VIEWS.CONFIG.id) {

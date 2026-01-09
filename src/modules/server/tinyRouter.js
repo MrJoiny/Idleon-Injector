@@ -52,7 +52,6 @@ class TinyRouter {
       res.end(JSON.stringify(data));
     };
 
-    // Helper to parse JSON body
     req.json = () => {
       return new Promise((resolve, reject) => {
         let body = '';

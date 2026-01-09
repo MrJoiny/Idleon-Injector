@@ -12,14 +12,13 @@ const API_BASE = '/api';
  * @param {object} options - fetch options
  */
 async function _request(endpoint, options = {}) {
-    // FIX: Ensure we don't accidentally ignore API_BASE or create double slashes
+    // Clean endpoint to prevent double slashes when joining with API_BASE
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const url = `${API_BASE}/${cleanEndpoint}`;
 
     try {
         const response = await fetch(url, options);
 
-        // specific handling for 204 No Content
         if (response.status === 204) return null;
 
         const contentType = response.headers.get("content-type");
@@ -36,11 +35,9 @@ async function _request(endpoint, options = {}) {
         return data;
     } catch (error) {
         console.error(`API Error [${endpoint}]:`, error);
-        throw error; // Propagate to UI layer
+        throw error;
     }
 }
-
-// --- CHEATS ---
 
 export async function fetchCheatStates() {
     return _request('/cheat-states');
@@ -50,7 +47,7 @@ export async function fetchCheatsData() {
     // Parallel fetch for cheats and confirmation list
     const [cheats, needsConfirmation] = await Promise.all([
         _request('/cheats'),
-        _request('/needs-confirmation').catch(() => []) // Fallback to empty array if this fails
+        _request('/needs-confirmation').catch(() => [])
     ]);
 
     return { cheats, needsConfirmation };
@@ -67,8 +64,6 @@ export async function executeCheatAction(action) {
 export async function fetchAvailableCheats() {
     return _request('/cheats');
 }
-
-// --- CONFIG ---
 
 export async function fetchConfig() {
     return _request('/config');
@@ -90,16 +85,12 @@ export async function saveConfigFile(configToSave) {
     });
 }
 
-// --- DEVTOOLS ---
-
 export async function fetchDevToolsUrl() {
     const data = await _request('/devtools-url');
     if (data && data.url) return data.url;
     throw new Error('No URL received from backend.');
 }
 
-
-// --- OPTION LISTs ACCOUNT ---
 export async function fetchOptionsAccount() {
     return _request('/options-account');
 }
@@ -112,10 +103,7 @@ export async function updateOptionAccountIndex(index, value) {
     });
 }
 
-// --- SYSTEM ---
 export async function checkHeartbeat() {
-    // We expect a simple object or success. If it fails/timeouts, it throws/returns null from _request catch (if modified) 
-    // actually _request throws on error, so we catch here to return boolean/null
     try {
         return await _request('/heartbeat');
     } catch (e) {
@@ -123,7 +111,6 @@ export async function checkHeartbeat() {
     }
 }
 
-// --- OPEN URL ---
 export async function openExternalUrl(url) {
     return _request('/open-url', {
         method: 'POST',

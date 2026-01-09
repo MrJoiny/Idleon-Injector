@@ -51,11 +51,10 @@ const prepareConfigForJson = (obj) => {
     if (Object.hasOwnProperty.call(obj, key)) {
       const value = obj[key];
       if (typeof value === 'function') {
-        result[key] = value.toString(); // Convert function to string
+        result[key] = value.toString();
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        result[key] = prepareConfigForJson(value); // Recurse for nested objects
+        result[key] = prepareConfigForJson(value);
       } else {
-        // Keep other JSON-serializable types as is (string, number, boolean, array, null)
         result[key] = value;
       }
     }
@@ -75,19 +74,16 @@ const parseConfigFromJson = (obj) => {
       let value = obj[key];
       if (typeof value === 'string') {
         const trimmedValue = value.trim();
-        // Check if it looks like an arrow function string
-        // Handles: (t) => ..., (t, args) => ..., t => ...
+        // Check if it looks like an arrow function string: (t) => ..., (t, args) => ..., t => ...
         if (/^(\(.*\)|[\w$]+)\s*=>/.test(trimmedValue)) {
           try {
-            // Arrow functions are already valid expressions, wrap in parentheses for safety
             value = new Function(`return (${trimmedValue})`)();
           } catch (e) {
             console.warn(`[Config Parse] Failed to convert arrow function string for key '${key}': ${e.message}. Keeping as string.`);
           }
         }
-        // If it doesn't match the arrow function pattern, it's just a regular string
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        value = parseConfigFromJson(value); // Recurse for nested objects
+        value = parseConfigFromJson(value);
       }
       result[key] = value;
     }
@@ -141,16 +137,13 @@ const getDeepDiff = (current, defaultObj) => {
     return current;
   }
   if (defaultObj === null || defaultObj === undefined) {
-    // No default to compare against, return current as-is
     return current;
   }
   if (typeof current !== 'object' || Array.isArray(current)) {
-    // For primitives and arrays, do a direct comparison
-    // Arrays are treated as atomic units - if different, return whole array
     if (JSON.stringify(current) !== JSON.stringify(defaultObj)) {
       return current;
     }
-    return undefined; // Same, so omit from diff
+    return undefined;
   }
 
   // Helper to normalize values for comparison (handles function strings vs actual functions)
@@ -165,7 +158,6 @@ const getDeepDiff = (current, defaultObj) => {
     return val;
   };
 
-  // It's an object, recurse
   const diff = {};
   for (const key in current) {
     if (Object.hasOwnProperty.call(current, key)) {
@@ -173,19 +165,14 @@ const getDeepDiff = (current, defaultObj) => {
       const defaultVal = defaultObj ? defaultObj[key] : undefined;
 
       if (typeof currentVal === 'object' && currentVal !== null && !Array.isArray(currentVal)) {
-        // Nested object
         const nestedDiff = getDeepDiff(currentVal, defaultVal);
         if (nestedDiff !== undefined && Object.keys(nestedDiff).length > 0) {
           diff[key] = nestedDiff;
         }
       } else {
-        // Primitive, array, or function (serialized as string)
-        // Normalize both values to handle function-to-string comparisons
         const normalizedCurrent = normalizeForComparison(currentVal);
         const normalizedDefault = normalizeForComparison(defaultVal);
 
-        // Use JSON.stringify for comparison to handle arrays and nested structures
-        // For function strings, compare directly since JSON.stringify would wrap them in quotes
         const currentStr = typeof normalizedCurrent === 'string' && /^(\(.*\)|[\w$]+)\s*=>/.test(normalizedCurrent)
           ? normalizedCurrent
           : JSON.stringify(normalizedCurrent);

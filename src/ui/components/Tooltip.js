@@ -2,7 +2,6 @@ import van from '../van-1.6.0.js';
 
 const { div } = van.tags;
 
-// Singleton tooltip state
 const tooltipState = van.state({
     visible: false,
     text: '',
@@ -11,7 +10,6 @@ const tooltipState = van.state({
     position: 'top'
 });
 
-// Padding from viewport edges
 const VIEWPORT_PADDING = 8;
 const TOOLTIP_OFFSET = 8;
 
@@ -40,7 +38,6 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
         position = 'left';
     }
 
-    // Calculate coordinates based on final position
     switch (position) {
         case 'top':
             x = rect.left + rect.width / 2;
@@ -63,13 +60,12 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
             y = rect.top - TOOLTIP_OFFSET;
     }
 
-    // Clamp X position to viewport bounds for top/bottom positions
+    // Clamp positions to viewport bounds
     if (position === 'top' || position === 'bottom') {
         const halfWidth = tooltipRect.width / 2;
         x = Math.max(halfWidth + VIEWPORT_PADDING, Math.min(x, window.innerWidth - halfWidth - VIEWPORT_PADDING));
     }
 
-    // Clamp Y position to viewport bounds for left/right positions
     if (position === 'left' || position === 'right') {
         const halfHeight = tooltipRect.height / 2;
         y = Math.max(halfHeight + VIEWPORT_PADDING, Math.min(y, window.innerHeight - halfHeight - VIEWPORT_PADDING));
@@ -78,17 +74,10 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
     return { x, y, position };
 };
 
-// Reference to the tooltip DOM element for size measurement
 let tooltipElement = null;
 
-/**
- * Show tooltip for a target element
- * @param {HTMLElement} targetEl - Element to show tooltip for
- * @param {string} text - Tooltip text
- * @param {string} position - Position preference
- */
 const showTooltip = (targetEl, text, position = 'top') => {
-    // First render with visibility hidden to measure size
+    // First render off-screen to measure size, then position correctly
     tooltipState.val = {
         visible: true,
         text,
@@ -97,7 +86,6 @@ const showTooltip = (targetEl, text, position = 'top') => {
         position
     };
 
-    // Use requestAnimationFrame to ensure DOM has updated
     requestAnimationFrame(() => {
         if (tooltipElement) {
             const pos = calculatePosition(targetEl, position, tooltipElement);
@@ -106,24 +94,16 @@ const showTooltip = (targetEl, text, position = 'top') => {
     });
 };
 
-/**
- * Hide the tooltip
- */
 const hideTooltip = () => {
     tooltipState.val = { ...tooltipState.val, visible: false };
 };
 
-/**
- * Tooltip container component - render once at app root
- * @returns {HTMLElement}
- */
 export const TooltipContainer = () => {
     const el = div({
         class: () => `tooltip-fixed tooltip-${tooltipState.val.position} ${tooltipState.val.visible ? 'visible' : ''}`,
         style: () => `left: ${tooltipState.val.x}px; top: ${tooltipState.val.y}px;`
     }, () => tooltipState.val.text);
 
-    // Store reference for size measurement
     setTimeout(() => { tooltipElement = el; }, 0);
 
     return el;

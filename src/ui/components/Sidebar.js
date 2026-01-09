@@ -4,7 +4,6 @@ import { VIEWS, IS_ELECTRON } from '../constants.js';
 import { Icons } from '../icons.js';
 import { withTooltip } from './Tooltip.js';
 
-// Standard HTML Tags
 const { nav, div, button, span, a } = van.tags;
 
 const ActiveCheatList = () => {
@@ -34,10 +33,8 @@ const ActiveCheatList = () => {
 };
 
 export const Sidebar = () => {
-    // Load cheat states on initial mount
     store.loadCheatStates();
 
-    // VanX: Accessing property registers dependency. No .val needed.
     const NavBtn = (viewConfig, Icon) => withTooltip(
         button({
             class: () => `tab-button ${store.app.activeTab === viewConfig.id ? 'active' : ''}`,
@@ -92,7 +89,6 @@ export const Sidebar = () => {
                 () => store.app.sidebarCollapsed
             )
         ),
-        // ActiveCheatList with proper flex container - transitioned via CSS
         ActiveCheatList(),
         div({ class: 'system-status' },
             div({

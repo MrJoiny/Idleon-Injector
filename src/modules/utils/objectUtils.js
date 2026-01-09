@@ -12,37 +12,30 @@
  * @returns {any} Deep cloned copy
  */
 const deepClone = (obj) => {
-  // Handle null/undefined
   if (obj === null || obj === undefined) {
     return obj;
   }
 
-  // Handle primitives (string, number, boolean, symbol, bigint)
   if (typeof obj !== 'object' && typeof obj !== 'function') {
     return obj;
   }
 
-  // Handle functions - copy by reference (same as lodash)
   if (typeof obj === 'function') {
     return obj;
   }
 
-  // Handle Date
   if (obj instanceof Date) {
     return new Date(obj.getTime());
   }
 
-  // Handle RegExp
   if (obj instanceof RegExp) {
     return new RegExp(obj.source, obj.flags);
   }
 
-  // Handle Array
   if (Array.isArray(obj)) {
     return obj.map(item => deepClone(item));
   }
 
-  // Handle Object
   const cloned = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {

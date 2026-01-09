@@ -12,25 +12,20 @@ import { withTooltip } from '../Tooltip.js';
 const { div, button, select, option, label, input, span } = van.tags;
 
 export const Config = () => {
-    // Local Reactive UI State (NOT using vanX.reactive for these simple states)
     const activeSubTab = van.state('cheatconfig');
     const categoryFilter = van.state('all');
     const configSearchTerm = van.state('');
     const isAddingCheat = van.state(false);
     const draftReady = van.state(false);
 
-    // Draft will be a vanX.reactive object, but we store it in a regular variable
-    // to avoid the reactivity cascade issue
+    // Draft will be a vanX.reactive object, but we store it in a regular variable to avoid reactivity cascade
     let draft = null;
     let addCheatFn = null;
 
-    // Trigger load if missing
     if (!store.app.config) store.loadConfig();
 
-    // One-time sync: When config loads, create draft and mark ready
     van.derive(() => {
         if (store.app.config && !draft) {
-            // Deep clone to create a detached draft, then make it reactive
             draft = vanX.reactive(JSON.parse(JSON.stringify(store.app.config)));
             draftReady.val = true;
         }
@@ -39,9 +34,8 @@ export const Config = () => {
     const save = (isPersistent) => {
         if (!draft) return;
 
-        // Unwrap proxy using JSON serialization to be safe
         const toSave = JSON.parse(JSON.stringify(draft));
-        delete toSave.defaultConfig; // Don't save defaults back to file
+        delete toSave.defaultConfig;
 
         store.saveConfig(toSave, isPersistent);
     };
@@ -53,21 +47,16 @@ export const Config = () => {
         }
     };
 
-    // Build the content ONCE after draft is ready, not on every reactive update
     const buildContent = () => {
         const config = draft;
 
-        // StartupCheats now takes the reactive array directly - created ONCE
         const startupCheatsResult = StartupCheats(config.startupCheats);
         addCheatFn = startupCheatsResult.addItem;
 
-        // Build ConfigNode components ONCE for each config section
         const root = config.cheatConfig || {};
         const rootTemplate = store.app.config.cheatConfig || {};
 
-        // Build ConfigNode components ONCE for each config section
         const cheatConfigNode = div({ id: 'cheatconfig-options' },
-            // This reactive function depends on categoryFilter and configSearchTerm
             () => {
                 const filter = categoryFilter.val;
                 const search = configSearchTerm.val;
@@ -81,7 +70,6 @@ export const Config = () => {
                     searchTerm: search
                 });
 
-                // Check if all nodes are null (no matches)
                 const hasMatches = nodes.some(node => node !== null);
                 if (search && !hasMatches) {
                     return EmptyState({
@@ -116,7 +104,6 @@ export const Config = () => {
                 })
             ),
 
-            // Cheat Config sub-tab - use CSS display for toggling, not re-render
             div({
                 class: 'config-sub-tab-pane',
                 style: () => activeSubTab.val === 'cheatconfig' ? 'display:block' : 'display:none'
@@ -138,7 +125,7 @@ export const Config = () => {
                         SearchBar({
                             placeholder: 'SEARCH_CONFIG...',
                             onInput: (val) => configSearchTerm.val = val,
-                            debounceMs: 0,  // No extra debounce, value is used reactively
+                            debounceMs: 0,
                             icon: Icons.HelpCircle()
                         })
                     )
@@ -146,7 +133,6 @@ export const Config = () => {
                 cheatConfigNode
             ),
 
-            // Startup Cheats sub-tab
             div({
                 class: 'config-sub-tab-pane',
                 style: () => activeSubTab.val === 'startupcheats' ? 'display:block' : 'display:none'
@@ -154,7 +140,6 @@ export const Config = () => {
                 startupCheatsResult.element
             ),
 
-            // Injector Config sub-tab
             div({
                 class: 'config-sub-tab-pane',
                 style: () => activeSubTab.val === 'injectorconfig' ? 'display:block' : 'display:none'
@@ -169,12 +154,10 @@ export const Config = () => {
 
     return div({ id: 'config-tab', class: 'tab-pane config-layout' },
 
-        // Main content area - only renders Loader OR content, but content is built ONCE
         () => {
             if (store.app.isLoading || !draftReady.val) {
                 return Loader({ text: "LOADING CONFIG..." });
             }
-            // Content is built once and returned
             return buildContent();
         },
 

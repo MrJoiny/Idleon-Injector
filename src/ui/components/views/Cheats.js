@@ -8,18 +8,15 @@ import { Icons } from '../../icons.js';
 
 const { div, input, button, span, details, summary } = van.tags;
 
-// Quick Access section for Favorites and Recent cheats
 const QuickAccessSection = () => {
     const getCheatByValue = (val) => {
         const allCheats = store.data.cheats;
-        // Try exact match first
         const found = allCheats.find(c => {
             const cheatVal = typeof c === 'object' ? c.value : c;
             return cheatVal === val;
         });
         if (found) return found;
 
-        // For parameterized commands, try matching the base command
         const baseParts = val.split(' ');
         if (baseParts.length > 1) {
             const baseCmd = baseParts.slice(0, -1).join(' ');
@@ -28,7 +25,6 @@ const QuickAccessSection = () => {
                 return cheatVal === baseCmd;
             });
             if (paramFound) {
-                // Return a modified version with the full action
                 return {
                     message: `${typeof paramFound === 'object' ? paramFound.message : paramFound} (${baseParts[baseParts.length - 1]})`,
                     value: val
@@ -58,7 +54,6 @@ const QuickAccessSection = () => {
     };
 
     return div({ class: 'quick-access-section' },
-        // Favorites Group - always show header, content is reactive
         div({ class: 'quick-access-group' },
             div({ class: 'quick-access-header' }, '★ FAVORITES'),
             () => {
@@ -72,7 +67,6 @@ const QuickAccessSection = () => {
             }
         ),
 
-        // Recent Group - always show header, content is reactive
         div({ class: 'quick-access-group' },
             div({ class: 'quick-access-header' }, '↻ RECENT'),
             () => {
@@ -89,27 +83,20 @@ const QuickAccessSection = () => {
 };
 
 export const Cheats = () => {
-    // Local Reactive UI State
     const ui = vanX.reactive({
         filter: '',
         shouldOpen: false
     });
 
-    // Initial Load
     if (store.data.cheats.length === 0) {
         store.loadCheats();
     }
 
-    // Handle search input
     const handleSearch = (val) => {
         ui.filter = val;
-        // Auto-expand if searching, otherwise collapse
         ui.shouldOpen = val.length > 0;
     };
 
-    // Derived State: Grouped Cheats
-    // vanX.calc creates a readonly reactive object derived from other states
-    // When store.data.cheats OR ui.filter changes, this re-runs.
     const derived = vanX.reactive({
         grouped: vanX.calc(() => {
             const list = store.data.cheats;
@@ -148,7 +135,6 @@ export const Cheats = () => {
                 const firstWordLower = firstWordRaw.toLowerCase();
 
                 let category;
-                // If it's multi-part, or if the single word is a known category name
                 if (parts.length > 1 || categoriesSet.has(firstWordLower)) {
                     category = firstWordLower.charAt(0).toUpperCase() + firstWordLower.slice(1);
                 } else {
@@ -159,7 +145,6 @@ export const Cheats = () => {
                 groups[category].push({ message: msg, value: val, baseCommand: firstWordRaw });
             }
 
-            // Sort keys
             return Object.keys(groups).sort().reduce((acc, key) => {
                 acc[key] = groups[key];
                 return acc;
@@ -176,10 +161,8 @@ export const Cheats = () => {
             })
         ),
 
-        // Quick Access Section (Favorites & Recent)
         QuickAccessSection(),
 
-        // Content Area
         () => {
             if (store.app.isLoading && store.data.cheats.length === 0) {
                 return Loader({ text: "INITIALIZING..." });
@@ -197,12 +180,11 @@ export const Cheats = () => {
                 });
             }
 
-            // Grid Layout
             return div({ id: 'cheat-buttons', class: 'grid-layout' },
                 categories.map(cat => {
                     return details({
                         class: 'cheat-category',
-                        open: ui.shouldOpen  // Only auto-open during search
+                        open: ui.shouldOpen
                     },
                         summary(cat),
                         div({ class: 'cheat-category-content' },
@@ -219,19 +201,15 @@ export const Cheats = () => {
 };
 
 const CheatItem = (cheat) => {
-    // Check global confirmation list (Reactive access)
-    // We use a derived check to ensure reactivity if the list updates
     const needsValue = van.derive(() => {
         const list = store.data.needsConfirmation;
         const val = cheat.value;
         return list.some(cmd => val === cmd || val.startsWith(cmd + ' '));
     });
 
-    // Local state for the input
     const inputValue = van.state("");
 
-    // Local state for feedback animation
-    const feedbackState = van.state(null); // 'success' | 'error' | null
+    const feedbackState = van.state(null);
 
     const handleExecute = async () => {
         let finalAction = cheat.value;
@@ -255,13 +233,12 @@ const CheatItem = (cheat) => {
     };
 
     const handleFavorite = () => {
-        // For cheats that need a value, include the current input value
+        // For cheats that need a value, include the current input value for the favorite
         if (needsValue.val) {
             if (!inputValue.val.trim()) {
                 store.notify(`Enter a value first to favorite '${cheat.message}'`, 'error');
                 return;
             }
-            // Store the full command with parameter
             const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
             store.toggleFavorite(fullCommand);
         } else {
@@ -269,10 +246,9 @@ const CheatItem = (cheat) => {
         }
     };
 
-    // Check if this cheat (or any variant with param) is favorited
+    // Check if this cheat (or parameterized variant) is favorited
     const isFavorited = () => {
         if (needsValue.val) {
-            // For param cheats, check if the current value combo is favorited
             if (!inputValue.val.trim()) return false;
             const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
             return store.isFavorite(fullCommand);

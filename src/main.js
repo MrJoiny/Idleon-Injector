@@ -16,8 +16,6 @@ const { startCliInterface } = require('./modules/cli/cliInterface');
 const { checkForUpdates } = require('./modules/updateChecker');
 const { version } = require('../package.json');
 
-let servicesStarted = false;
-
 /**
  * InjectCheatUI - Main application entry point
  * 
@@ -26,6 +24,8 @@ let servicesStarted = false;
  * 2. Intercepting and modifying game resources during load
  * 3. Providing both web UI and CLI interfaces for cheat management
  */
+
+let servicesStarted = false;
 
 async function printHeader() {
   console.log('------------------------------------------------------------------------------------------');
@@ -56,10 +56,6 @@ function printConfiguration(injectorConfig) {
   console.log('');
 }
 
-/**
- * Loads and consolidates all configuration settings needed for the application.
- * This centralizes config access and ensures all settings are loaded before use.
- */
 function initializeConfiguration() {
   loadConfiguration();
 
@@ -73,22 +69,15 @@ function initializeConfiguration() {
   return { injectorConfig, startupCheats, cheatConfig, defaultConfig, cdpPort, webPort };
 }
 
-
-/**
- * Verifies the cheat context exists in the game's iframe and initializes the cheat system.
- * The context must be successfully injected before cheats can be activated.
- */
 async function initializeCheatContext(Runtime, context) {
   console.log('Initializing cheats ingame...');
 
-  // Verify the injected cheat context is accessible in the game's iframe
   const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
   if (!contextExists.result.value) {
     console.error("Cheat context not found in iframe. Injection might have failed.");
     return false;
   }
 
-  // Execute the setup function from cheats.js within the game's context
   const init = await Runtime.evaluate({
     expression: `setup.call(${context})`,
     awaitPromise: true,
@@ -106,10 +95,6 @@ async function startWebServer(app, webPort) {
   }
 }
 
-/**
- * Handles the game page load event by initializing cheats and starting user interfaces.
- * This is triggered after the game's DOM is fully loaded and ready for cheat injection.
- */
 async function handlePageLoad(gameContext, config, app) {
   const { Runtime, Page, context, client } = gameContext;
   console.log("Page load event fired.");
@@ -120,7 +105,6 @@ async function handlePageLoad(gameContext, config, app) {
   if (!servicesStarted) {
     servicesStarted = true;
 
-    // Start web UI if enabled in configuration
     if (config.injectorConfig.enableUI) {
       setupApiRoutes(app, context, client, {
         cheatConfig: config.cheatConfig,
@@ -133,7 +117,6 @@ async function handlePageLoad(gameContext, config, app) {
       await startWebServer(app, config.webPort);
     }
 
-    // Always start CLI interface for user interaction
     await startCliInterface(context, client, {
       injectorConfig: config.injectorConfig,
       cdpPort: config.cdpPort
@@ -186,8 +169,7 @@ async function main() {
 
     console.log("Page load event listener attached.");
 
-    // Force a reload to ensure the script is intercepted, even if it loaded before we attached
-    // possible fix for iframe not found error
+    // Force reload to ensure cheat injection happens even if the script loaded before we attached
     console.log("Reloading page to ensure cheat injection...");
     await Page.reload({ ignoreCache: true });
   } catch (error) {

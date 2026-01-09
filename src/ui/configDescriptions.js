@@ -3,17 +3,14 @@
  * Format: "path.to.key": "Description text".
  */
 export const configDescriptions = {
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // CHEAT CONFIG - Top Level
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.unban": "Prevents accounts from being banned. Might not work anymore, since there are multiple ways for a ban.",
     "cheatConfig.ingameUI": "Enables the in-game UI overlay.",
     "cheatConfig.steamachieve": "Allows unlocking Steam achievements.",
     "cheatConfig.chng_enabled": "⚠️ DANGER: If true, 'chng' command becomes available. ONLY enable if you know what you are doing!",
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // MAXVAL - Resource Caps
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.maxval.bones": "Maximum limit for bones to prevent save corruption.",
     "cheatConfig.maxval.totalbones": "Maximum limit for total bones across all characters.",
     "cheatConfig.maxval.dust": "Maximum limit for dust to prevent save corruption.",
@@ -23,19 +20,15 @@ export const configDescriptions = {
     "cheatConfig.maxval.creditcap": "Maximum credit capacity for dungeons.",
     "cheatConfig.maxval.flurbocap": "Maximum flurbo capacity for dungeons.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
     // GODLIKE
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.godlike.respawn": "Mob respawn time (lower is faster).",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // UNLOCK
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.unlock.islands": "String of IDs for islands to unlock (e.g., 'abcde_').",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // WIDE - Miscellaneous Wide Cheats
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.wide.gembuylimit": "Removes daily gem purchase limits.",
     "cheatConfig.wide.autoloot.itemstochest": "Automatically sends looted items to the chest.",
     "cheatConfig.wide.autoloot.moneytochest": "Automatically sends looted money to the chest.",
@@ -48,14 +41,12 @@ export const configDescriptions = {
     "cheatConfig.wide.dartshop.DartsUpgCost": "Sets the Upgrade Cost in the Dart Shop. (lower is better)",
     "cheatConfig.wide.hoopshop.HoopsUpgCost": "Sets the Upgrade Cost in the Hoop Shop. (lower is better)",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // WIPE
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.wipe.cogs": "Wipes all cogs currently on the board.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // TALENT - Talent ID Overrides
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.talent.168": "Orb of Remembrance: Active time duration.",
     "cheatConfig.talent.169": "Shockwave: Sets the proc chance percentage.",
     "cheatConfig.talent.318": "Plunderous Mobs: HP and drop rate.",
@@ -63,9 +54,8 @@ export const configDescriptions = {
     "cheatConfig.talent.483": "Tenteycle: Sets the base value or multiplier.",
     "cheatConfig.talent.45": "Custom logic for Talent 45 (1: time?, 2: points?).",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W1 - World 1
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.w1.anvil.productionspeed": "Anvil: Item production speed.",
     "cheatConfig.w1.forge.speed": "Forge: Bar processing speed.",
     "cheatConfig.w1.forge.capacity": "Forge: Ore capacity.",
@@ -77,9 +67,8 @@ export const configDescriptions = {
     "cheatConfig.w1.owl.OwlBonuses": "Owl: All owl-related bonuses.",
     "cheatConfig.w1.owl.OwlFeatherShinyGe": "Owl: Not sure what that is.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W2 - World 2
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.w2.roo.RooCost": "Roo: Upgrade costs. (lower is better)",
     "cheatConfig.w2.roo.RooShinyMulti": "Roo: Shiny catch rates.",
     "cheatConfig.w2.roo.RooCatchRate": "Roo: Standard catch rates.",
@@ -89,6 +78,7 @@ export const configDescriptions = {
     "cheatConfig.w2.roo.RooCatchREQ_S": "Roo: Shiny catch requirements. (lower is better)",
     "cheatConfig.w2.roo.RooCatchRate_T": "Roo: Tar pit catch rates.",
     "cheatConfig.w2.roo.RooCatchREQ_T": "Roo: Tar pit catch requirements. (lower is better)",
+
     // Alchemy
     "cheatConfig.w2.alchemy.BubbleBonus": "Alchemy: All bubble effects.",
     "cheatConfig.w2.alchemy.CauldronCosts": "Alchemy: Bubble upgrade costs.",
@@ -101,18 +91,16 @@ export const configDescriptions = {
     "cheatConfig.w2.alchemy.LiquidHRrate": "Alchemy: Liquid generation speed.",
     "cheatConfig.w2.alchemy.sigilspeed": "Alchemy: Sigil research speed.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W3 - World 3
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.w3.buildspd": "Construction: Building speed.",
     "cheatConfig.w3.WorshipSpeed": "Worship: Charge generation speed.",
     "cheatConfig.w3.towerdamage": "Tower Defense: Tower damage.",
     "cheatConfig.w3.refineryspeed": "Refinery: Cycle speed. Don't go below 1! (lower is better)",
     "cheatConfig.w3.trapping": "Trapping: Trap timer speed.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W4 - World 4
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.w4.fasteggs": "Breeding: Egg incubation speed. (lower is better)",
     "cheatConfig.w4.petchance": "Breeding: New pet discovery chance.",
     "cheatConfig.w4.petupgrades": "Breeding: Pet upgrade costs. (lower is better)",
@@ -122,9 +110,11 @@ export const configDescriptions = {
     "cheatConfig.w4.platesdiscount": "Cooking: Plate upgrade costs. (lower is better)",
     "cheatConfig.w4.fastforaging": "Cooking: Foraging speed.",
     "cheatConfig.w4.luckychef": "Cooking: New recipe discovery luck.",
+
     // Superpets
     "cheatConfig.w4.superpets.BlockChance": "Pet Arena: Block chance when attacked.",
     "cheatConfig.w4.superpets.TotalDMG": "Pet Arena: Total pet damage.",
+
     // Mainframe
     "cheatConfig.w4.mainframe.0": "Mainframe: Animal farm damage bonus percentage.",
     "cheatConfig.w4.mainframe.1": "Mainframe: Wired In printer multiplier.",
@@ -158,6 +148,7 @@ export const configDescriptions = {
     "cheatConfig.w4.mainframe.115": "Mainframe: Pet passive ability speed percentage.",
     "cheatConfig.w4.mainframe.116": "Mainframe: Additional meal bonus percentage.",
     "cheatConfig.w4.mainframe.117": "Mainframe: Damage per greened stack bonus.",
+
     // Chipbonuses
     "cheatConfig.w4.chipbonuses.resp": "Lab Chip: Mob respawn speed bonus percentage.",
     "cheatConfig.w4.chipbonuses.card1": "Lab Chip: Double top-left card effect (1 = yes).",
@@ -181,6 +172,7 @@ export const configDescriptions = {
     "cheatConfig.w4.chipbonuses.atkspd": "Lab Chip: Attack speed bonus percentage.",
     "cheatConfig.w4.chipbonuses.safk": "Lab Chip: Skill AFK gains bonus percentage.",
     "cheatConfig.w4.chipbonuses.fafk": "Lab Chip: Fight AFK gains bonus percentage.",
+
     // Meals
     "cheatConfig.w4.meals.TotDmg": "",
     "cheatConfig.w4.meals.Mcook": "",
@@ -215,9 +207,8 @@ export const configDescriptions = {
     "cheatConfig.w4.meals.Sailing": "",
     "cheatConfig.w4.meals.GamingExp": "",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W5 - World 5
-    // ═══════════════════════════════════════════════════════════════════════════
     // Sailing
     "cheatConfig.w5.sailing.IslandDistance": "Sailing: Island distance (lower is closer).",
     "cheatConfig.w5.sailing.MaxChests": "Sailing: Maximum chest limit (Warning: too high may break cloud saves).",
@@ -236,6 +227,7 @@ export const configDescriptions = {
     "cheatConfig.w5.sailing.NewCaptBoatSlot": "Sailing: Cost for unlocking new boat and captain slots. (lower is better)",
     "cheatConfig.w5.sailing.BuyCaptainCost": "Sailing: Cost for hiring new captains. (lower is better)",
     "cheatConfig.w5.sailing.ArtifactBonus": "Sailing: All artifact-provided bonuses.",
+
     // Gaming
     "cheatConfig.w5.gaming.FertilizerUpgCosts": "Gaming: Fertilizer upgrade costs. (lower is better)",
     "cheatConfig.w5.gaming.SproutCapacity": "Gaming: Maximum number of sprout slots.",
@@ -253,6 +245,7 @@ export const configDescriptions = {
     "cheatConfig.w5.gaming.SnailMail": "Gaming: Enable/disable Snail Mail automation.",
     "cheatConfig.w5.gaming.PaletteLuck": "Gaming: Palette-related luck.",
     "cheatConfig.w5.gaming.PaletteBonus": "Gaming: Palette-related bonuses.",
+
     // Divinity
     "cheatConfig.w5.divinity.unlinks": "Divinity: Allows unlinking gods at any time.",
     "cheatConfig.w5.divinity.StyleLvReq": "Divinity: Meditation style level requirements. (lower is better)",
@@ -263,11 +256,13 @@ export const configDescriptions = {
     "cheatConfig.w5.divinity.Bonus_Minor": "Divinity: Minor god bonuses.",
     "cheatConfig.w5.divinity.OfferingCost": "Divinity: Offering costs. (lower is better)",
     "cheatConfig.w5.divinity.OfferingOdds": "Divinity: Success probability for offerings.",
+
     // Collider
     "cheatConfig.w5.collider.AtomsUnlocked": "Collider: Sets the number of unlocked atoms (max 10).",
     "cheatConfig.w5.collider.AtomCost": "Collider: Atom collider upgrade costs. (lower is better)",
     "cheatConfig.w5.collider.AtomBonuses": "Collider: Bonuses provided by atoms.",
     "cheatConfig.w5.collider.AtomBubbleUpgCost": "Collider: Atom bubble upgrade costs. (lower is better)",
+
     // Holes
     "cheatConfig.w5.holes.VillagerExpPerHour": "Sneaking: Villager XP gain speed.",
     "cheatConfig.w5.holes.BuildCost": "Sneaking: Building upgrade costs. (lower is better)",
@@ -306,12 +301,12 @@ export const configDescriptions = {
     "cheatConfig.w5.holes.JarCollectibleBonus": "Sneaking: Jar collectible bonuses.",
     "cheatConfig.w5.holes.JarEnchantChance": "Sneaking: Jar enchantment success chance.",
     "cheatConfig.w5.holes.JarNewCollectibleChance": "Sneaking: New jar collectible discovery chance.",
-    // fixobj
-    "cheatConfig.w5.fixobj": "Miscellaneous: Internal fix for object state.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // fixobj
+    "cheatConfig.w5.fixobj": "",
+
+
     // W6 - World 6
-    // ═══════════════════════════════════════════════════════════════════════════
     // Farming
     "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time (lower is faster). (lower is better)",
     "cheatConfig.w6.farming.OGunlocked": "Farming: Overgrowth shop unlock state (0 = locked, 1 = unlocked).",
@@ -326,6 +321,7 @@ export const configDescriptions = {
     "cheatConfig.w6.farming.GrowthRate": "Farming: Base growth rate multiplier.",
     "cheatConfig.w6.farming.ExoticPurchasesAllowed": "Farming: Sets the number of allowed exotic purchases (max 8).",
     "cheatConfig.w6.farming.ExoticLVQTY": "Farming: Exotic level quantities.",
+
     // Ninja
     "cheatConfig.w6.ninja.EmporiumCost": "Ninja: Emporium upgrade costs. (lower is better)",
     "cheatConfig.w6.ninja.KOtime": "Ninja: Knockout duration (lower is faster). (lower is better)",
@@ -337,6 +333,7 @@ export const configDescriptions = {
     "cheatConfig.w6.ninja.ItemStat": "Ninja: Ninja item stats.",
     "cheatConfig.w6.ninja.ItemFindOdds": "Ninja: Ninja item find chance.",
     "cheatConfig.w6.ninja.PristineBon": "Ninja: Pristine Charm bonuses.",
+
     // Summoning
     "cheatConfig.w6.summoning.ManaStart": "Summoning: Starting mana in battles.",
     "cheatConfig.w6.summoning.ManaRegen": "Summoning: Mana regeneration speed.",
@@ -354,6 +351,7 @@ export const configDescriptions = {
     "cheatConfig.w6.summoning.EnemyHP": "Summoning: Enemy unit HP. (lower is better)",
     "cheatConfig.w6.summoning.EnemyDMG": "Summoning: Enemy unit damage. (lower is better)",
     "cheatConfig.w6.summoning.EnemySpd": "Summoning: Enemy unit movement speed.",
+
     // Grimoire
     "cheatConfig.w6.grimoire.GrimoireBoneQTYbase": "Grimoire: Bone quantity base value.",
     "cheatConfig.w6.grimoire.GrimoireUpgCost": "Grimoire: Upgrade costs. (lower is better)",
@@ -363,6 +361,7 @@ export const configDescriptions = {
     "cheatConfig.w6.grimoire.Grimoire_DEF": "Grimoire: Defense.",
     "cheatConfig.w6.grimoire.Grimoire_CRITPCT": "Grimoire: Crit Chance.",
     "cheatConfig.w6.grimoire.Grimoire_CRITDMG": "Grimoire: Crit Damage.",
+
     // Windwalker
     "cheatConfig.w6.windwalker.CompassUpgCost": "Windwalker: Compass upgrade costs. (lower is better)",
     "cheatConfig.w6.windwalker.Compass_HP": "Windwalker: HP.",
@@ -379,6 +378,7 @@ export const configDescriptions = {
     "cheatConfig.w6.windwalker.TempestStoneDropChance": "Windwalker: Probability of Tempest stone drops.",
     "cheatConfig.w6.windwalker.TempestMedallionDropChance": "Windwalker: Probability of Tempest medallion drops.",
     "cheatConfig.w6.windwalker.PortalCostQTY": "Windwalker: Sets the quantity of items required for portal access. (lower is better)",
+
     // Arcane
     "cheatConfig.w6.arcane.ArcaneUpgCost": "Arcane: Arcane upgrade costs. (lower is better)",
     "cheatConfig.w6.arcane.Arcane_HP": "Arcane: HP.",
@@ -397,12 +397,12 @@ export const configDescriptions = {
     "cheatConfig.w6.arcane.ExtraTachyon": "Arcane: Extra tachyon gain.",
     "cheatConfig.w6.arcane.ExtraTachyonMulti": "Arcane: Extra tachyon bonuses.",
     "cheatConfig.w6.arcane.ArcaneTachyonQTYbase": "Arcane: Tachyon quantity base value.",
+
     // Sneak Symbol
     "cheatConfig.w6.sneaksymbol.SneakSymbolChanceBase": "Sneaking: Base chance for Sneak Symbol procs.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // W7 - World 7
-    // ═══════════════════════════════════════════════════════════════════════════
     // Bubba
     "cheatConfig.w7.bubba.MeatsliceRate": "Bubba: Meat slicing speed.",
     "cheatConfig.w7.bubba.UpgCost": "Bubba: Upgrade costs. (lower is better)",
@@ -418,6 +418,7 @@ export const configDescriptions = {
     "cheatConfig.w7.bubba.Dice_Result": "Bubba: Modifier for dice roll results.",
     "cheatConfig.w7.bubba.SmokeMeat_Multi": "Bubba: Smoked Meat gain.",
     "cheatConfig.w7.bubba.SpareCoins_Multi": "Bubba: Spare Coins gain.",
+
     // Spelunk
     "cheatConfig.w7.spelunk.POW": "Spelunking: Spelunking power.",
     "cheatConfig.w7.spelunk.StaminaMax": "Spelunking: Maximum stamina.",
@@ -441,13 +442,16 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunk.RockPOWreq": "Spelunking: Rock power requirements. (lower is better)",
     "cheatConfig.w7.spelunk.RockHP": "Spelunking: Rock HP. (lower is better)",
     "cheatConfig.w7.spelunk.StaminaCostMulti": "Spelunking: Stamina costs. (lower is better)",
+
     // Gallery
     "cheatConfig.w7.gallery.GalleryBonusMulti": "Gallery: All gallery-provided bonuses.",
     "cheatConfig.w7.gallery.InitializeTrophyBonuses": "Gallery: Logic for initializing trophy bonuses.",
     "cheatConfig.w7.gallery.InitializeNametagBonuses": "Gallery: Logic for initializing nametag bonuses.",
     "cheatConfig.w7.gallery.PodiumsOwned_Lv4": "Gallery: Sets the number of Level 4 podiums owned (max 19).",
+
     // Reef
     "cheatConfig.w7.reef.ReefCost": "Reef: Reef-related costs. (lower is better)",
+
     // Clam
     "cheatConfig.w7.clam.ClamPromochance": "Clams: Probability of clam promotion.",
     "cheatConfig.w7.clam.ClamBonuses": "Clams: Clam-provided bonuses.",
@@ -456,22 +460,23 @@ export const configDescriptions = {
     "cheatConfig.w7.clam.Clam_Cost": "Clams: Clam costs. (lower is better)",
     "cheatConfig.w7.clam.Clam_PearlUpgReq": "Clams: Pearl upgrade requirements. (lower is better)",
     "cheatConfig.w7.clam.Clam_Mobs": "Clams: Mob spawns.",
+
     // Coral Kid
     "cheatConfig.w7.coralkid.CoralKidUpgCost": "Coral Kid: Upgrade costs. (lower is better)",
+
     // Big Fish
     "cheatConfig.w7.bigfish.BigFishCost": "Big Fish: Costs related to Big Fish. (lower is better)",
+
     // Zenith
     "cheatConfig.w7.zenith.ZenithMarketCost": "Zenith: Market upgrade costs. (lower is better)",
     "cheatConfig.w7.zenith.ZenithMarketBonus": "Zenith: Market-provided bonuses.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // MISC
-    // ═══════════════════════════════════════════════════════════════════════════
     "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses.",
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
     // INJECTOR CONFIG
-    // ═══════════════════════════════════════════════════════════════════════════
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code.",
     "injectorConfig.interceptPattern": "Filename the game runs from, inside app.asar",
     "injectorConfig.showConsoleLog": "Enable/disable logging to the terminal console from game logging.",

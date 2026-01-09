@@ -9,14 +9,12 @@
 const { deepClone, union, deepMerge } = require('../utils/objectUtils');
 const os = require('os');
 
-// Configuration state - holds loaded configuration data in memory
 let config = null;
-let defaultConfig = null; // Store the original default configuration
+let defaultConfig = null;
 let injectorConfig = null;
 let startupCheats = null;
 let cheatConfig = null;
 
-// Application constants - default ports for CDP and web server
 const CDP_PORT = 32123;
 const WEB_PORT = 8080;
 
@@ -26,14 +24,12 @@ const WEB_PORT = 8080;
  */
 function loadConfiguration() {
   try {
-    // Load base configuration - check if we're in src directory or root
     const path = require('path');
     const fs = require('fs');
 
     let configPath = process.cwd() + '/config.js';
     let customConfigPath = process.cwd() + '/config.custom.js';
 
-    // If we're in the src directory, look in parent directory
     if (!fs.existsSync(configPath)) {
       configPath = path.join(process.cwd(), '../config.js');
       customConfigPath = path.join(process.cwd(), '../config.custom.js');
@@ -41,10 +37,8 @@ function loadConfiguration() {
 
     config = require(configPath);
 
-    // Deep clone for defaultConfig to ensure it stays pristine
     defaultConfig = deepClone(config);
 
-    // Try to load custom configuration and merge
     try {
       const customConfig = require(customConfigPath);
       config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
@@ -56,7 +50,6 @@ function loadConfiguration() {
       console.log('');
     }
 
-    // Extract configuration sections
     injectorConfig = config.injectorConfig;
     startupCheats = config.startupCheats;
     cheatConfig = config.cheatConfig;
