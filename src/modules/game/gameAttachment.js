@@ -12,6 +12,7 @@ const path = require('path');
 const os = require('os');
 const { existsSync, access } = require('fs');
 const { promisify } = require('util');
+const CDP = require("chrome-remote-interface");
 
 const {
   getCdpPort,
@@ -19,6 +20,7 @@ const {
   isLinux,
   getLinuxTimeout
 } = require('../config/configManager');
+
 
 const accessAsync = promisify(access);
 
@@ -38,6 +40,37 @@ const DEFAULT_IDLEON_PATHS = [
   path.join(process.env["ProgramW6432"] || "C:/Program Files", "Steam/steamapps/common/Legends of Idleon/LegendsOfIdleon.exe"),
   path.join(process.cwd(), "LegendsOfIdleon.exe"),
 ];
+const DEFAULT_BROWSER_PATHS = {
+    win32: [
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+        "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+        "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+        "C:/Program Files (x86)/BraveSoftware/Brave-Browser/Application/brave.exe",
+        `C:/Users/${process.env.USERNAME}/AppData/Local/Google/Chrome/Application/chrome.exe`,
+        `C:/Users/${process.env.USERNAME}/AppData/Local/Microsoft/Edge/Application/msedge.exe`,
+        `C:/Users/${process.env.USERNAME}/AppData/Local/BraveSoftware/Brave-Browser/Application/brave.exe`,
+    ],
+    darwin: [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+        "/Applications/Opera.app/Contents/MacOS/Opera",
+        "/Applications/Opera GX.app/Contents/MacOS/Opera GX",
+    ],
+    linux: [
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/microsoft-edge",
+        "/usr/bin/brave",
+        "/usr/bin/opera",
+        "/snap/bin/opera",
+    ],
+};
 
 /**
  * Wait for CDP endpoint to be available by polling
@@ -127,37 +160,23 @@ function attach(name) {
 }
 
 /**
- * Linux-specific attach function that polls for CDP endpoint
- * @param {number} timeout - Timeout in milliseconds (default: 10000)
- * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
- */
-function attachLinux(timeout = LINUX_TIMEOUT) {
-  return waitForCdpEndpoint(timeout);
-}
-
-/**
  * Automatic Linux attach with Steam integration
  * @param {number} timeout - Timeout in milliseconds (default: 30000)
  * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
  */
 async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
   const cdp_port = getCdpPort();
+  let steamCmd = null;
 
-  let steamCmd = "steam";
-
-  const possibleSteamPaths = COMMON_STEAM_PATHS;
-  let foundSteam = false;
-
-  for (const p of possibleSteamPaths) {
+  for (const steamPath of COMMON_STEAM_PATHS) {
     try {
-      await accessAsync(p);
-      steamCmd = p;
-      foundSteam = true;
+      await accessAsync(steamPath);
+      steamCmd = steamPath;
       break;
     } catch (e) { }
   }
 
-  if (!foundSteam) {
+  if (!steamCmd) {
     console.error("[Linux] Could not find Steam executable. Please ensure Steam is installed and in your PATH.");
     throw new Error("Steam not found");
   }
@@ -181,7 +200,7 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
   child.stderr.on("data", stderrHandler);
 
   try {
-    const wsUrl = await attachLinux(timeout);
+    const wsUrl = await waitForCdpEndpoint(timeout);
     child.stderr.off("data", stderrHandler);
     return wsUrl;
   } catch (e) {
@@ -191,12 +210,125 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
 }
 
 /**
- * Windows-specific attach function that polls for CDP endpoint
- * @param {number} timeout - Timeout in milliseconds (default: 30000)
- * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
+ * Resolve the browser executable path for web injection.
+ * @param {Object} injectorConfig - Injector configuration.
+ * @returns {string} Path to the browser executable.
  */
-function attachWindows(timeout = DEFAULT_TIMEOUT) {
-  return waitForCdpEndpoint(timeout);
+function resolveBrowserPath(injectorConfig = getInjectorConfig()) {
+    if (injectorConfig.browserPath) {
+        if (existsSync(injectorConfig.browserPath)) {
+            return injectorConfig.browserPath;
+        }
+        throw new Error(
+            `Configured browserPath does not exist: ${injectorConfig.browserPath}`
+        );
+    }
+
+    const candidates = DEFAULT_BROWSER_PATHS[os.platform()] || [];
+
+    for (const candidate of candidates) {
+        if (existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    throw new Error("Could not find a compatible Chromium-based browser.");
+}
+
+/**
+ * Wait for an Idleon page target to appear in CDP.
+ * @param {string} idleonUrl - Idleon web URL to match.
+ * @param {number} timeout - Timeout in milliseconds.
+ * @returns {Promise<Object>} The matching CDP target.
+ */
+async function waitForIdleonTarget(idleonUrl, timeout = DEFAULT_TIMEOUT) {
+    const cdpPort = getCdpPort();
+    const startTime = Date.now();
+
+    const matchesIdleonTarget = (targetUrl) => {
+        if (!targetUrl || targetUrl === "about:blank") {
+            return false;
+        }
+
+        if (targetUrl === idleonUrl || targetUrl.startsWith(idleonUrl)) {
+            return true;
+        }
+
+        try {
+            const targetHost = new URL(targetUrl).host;
+            const idleonHost = new URL(idleonUrl).host;
+            return targetHost === idleonHost;
+        } catch (error) {
+            return targetUrl.includes(idleonUrl);
+        }
+    };
+
+    while (Date.now() - startTime < timeout) {
+        try {
+            const targets = await CDP.List({ port: cdpPort });
+            const target = targets.find((candidate) => {
+                if (candidate.type !== "page") {
+                    return false;
+                }
+
+                return matchesIdleonTarget(candidate.url);
+            });
+
+            if (target) {
+                return target;
+            }
+        } catch (error) {
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
+    }
+
+    throw new Error(`Timeout waiting for Idleon page at ${idleonUrl}`);
+}
+
+/**
+ * Launch the browser and attach to the Idleon web session.
+ * @returns {Promise<Object|string>} CDP target or WebSocket URL.
+ */
+async function attachToWeb() {
+    const injectorConfig = getInjectorConfig();
+    const idleonUrl = injectorConfig.webUrl;
+
+    if (!idleonUrl) {
+        throw new Error("webUrl is required when target is 'web'.");
+    }
+
+    const timeout = isLinux() ? getLinuxTimeout() : DEFAULT_TIMEOUT;
+    const cdpPort = getCdpPort();
+    const browserPath = resolveBrowserPath(injectorConfig);
+    const userDataDir = injectorConfig.browserUserDataDir ||
+        path.join(process.cwd(), "idleon-web-profile");
+    const args = [
+        `--remote-debugging-port=${cdpPort}`,
+        `--user-data-dir=${userDataDir}`,
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--remote-allow-origins=*",
+        "--site-per-process",
+        "--disable-extensions",
+        "--new-window",
+        idleonUrl
+    ];
+
+    if (os.platform() === "linux") {
+        args.push("--disable-gpu");
+    }
+
+    console.log("[Web] Launching browser for Idleon...");
+    spawn(browserPath, args, { detached: true, stdio: "ignore" });
+
+    await waitForCdpEndpoint(timeout);
+
+    const target = await waitForIdleonTarget(idleonUrl, timeout);
+    const hook = target.webSocketDebuggerUrl || target;
+
+    console.log("[Web] Attached to Idleon browser tab.");
+    return hook;
 }
 
 /**
@@ -205,6 +337,7 @@ function attachWindows(timeout = DEFAULT_TIMEOUT) {
  */
 function findIdleonExe() {
   const injectorConfig = getInjectorConfig();
+
 
   if (injectorConfig.gameExePath && existsSync(injectorConfig.gameExePath)) {
     return injectorConfig.gameExePath;
@@ -235,6 +368,13 @@ function launchIdleonViaSteamProtocol() {
 async function attachToGame() {
   const onLinux = isLinux();
   const linuxTimeout = getLinuxTimeout();
+  let linuxAttachTimeout = LINUX_TIMEOUT;
+  let windowsAttachTimeout = DEFAULT_TIMEOUT;
+
+  if (typeof linuxTimeout === "number") {
+    linuxAttachTimeout = linuxTimeout;
+    windowsAttachTimeout = linuxTimeout;
+  }
 
   let hook;
 
@@ -244,7 +384,7 @@ async function attachToGame() {
     } catch (autoErr) {
       console.error("[Linux] Auto attach failed:", autoErr.message);
       console.log("[Linux] Falling back to manual attach. Please launch the game via Steam with the required parameters.");
-      hook = await attachLinux(linuxTimeout);
+      hook = await waitForCdpEndpoint(linuxAttachTimeout);
     }
   } else if (os.platform() === 'win32') {
     let exePath = findIdleonExe();
@@ -259,7 +399,7 @@ async function attachToGame() {
     if (!exePath) {
       console.log('[Windows] Could not find LegendsOfIdleon.exe. Attempting to launch via Steam protocol...');
       launchIdleonViaSteamProtocol();
-      hook = await attachWindows(linuxTimeout || DEFAULT_TIMEOUT);
+      hook = await waitForCdpEndpoint(windowsAttachTimeout);
     }
   } else {
     hook = await attach('LegendsOfIdleon.exe');
@@ -269,12 +409,21 @@ async function attachToGame() {
   return hook;
 }
 
+/**
+ * Attach to Idleon based on the configured target.
+ * @returns {Promise<Object|string>} CDP target or WebSocket URL.
+ */
+async function attachToTarget() {
+    const injectorConfig = getInjectorConfig();
+    const target = (injectorConfig.target || "steam").toLowerCase();
+
+    if (target === "web") {
+        return attachToWeb();
+    }
+
+    return attachToGame();
+}
+
 module.exports = {
-  attachToGame,
-  attach,
-  attachLinux,
-  autoAttachLinux,
-  attachWindows,
-  findIdleonExe,
-  launchIdleonViaSteamProtocol
+  attachToTarget
 };

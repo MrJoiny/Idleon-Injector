@@ -478,9 +478,13 @@ export const configDescriptions = {
 
     // INJECTOR CONFIG
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code.",
-    "injectorConfig.interceptPattern": "Filename the game runs from, inside app.asar",
+    "injectorConfig.interceptPattern": "Script filename pattern to intercept (N.js).",
     "injectorConfig.showConsoleLog": "Enable/disable logging to the terminal console from game logging.",
     "injectorConfig.enableUI": "Enable/disable the webui.",
     "injectorConfig.onLinuxTimeout": "Timeout in milliseconds for Linux-specific operations.",
     "injectorConfig.webPort": "Port for the webui.",
+    "injectorConfig.target": "Injection target platform (steam or web).",
+    "injectorConfig.webUrl": "Idleon web URL when using browser injection.",
+    "injectorConfig.browserPath": "Browser executable path for web injection (auto if empty).",
+    "injectorConfig.browserUserDataDir": "Browser user data dir for web injection (optional)."
 };
