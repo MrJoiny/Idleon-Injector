@@ -8,7 +8,7 @@ const {
   getCdpPort,
   getWebPort
 } = require('./modules/config/configManager');
-const { attachToGame } = require('./modules/game/gameAttachment');
+const { attachToTarget } = require('./modules/game/gameAttachment');
 const { setupIntercept, createCheatContext } = require('./modules/game/cheatInjection');
 const { createWebServer, startServer } = require('./modules/server/webServer');
 const { setupApiRoutes } = require('./modules/server/apiRoutes');
@@ -49,12 +49,22 @@ async function printHeader() {
 
 function printConfiguration(injectorConfig) {
   console.log('Options:');
+  const target = (injectorConfig.target || "steam").toLowerCase();
+
   console.log(`Regex: ${injectorConfig.injreg}`);
   console.log(`Show idleon window console logs: ${injectorConfig.showConsoleLog}`);
   console.log(`Web server port: ${injectorConfig.webPort || 8080}`);
+  console.log(`Target: ${target}`);
+  if (target === "web") {
+    console.log(`Web URL: ${injectorConfig.webUrl}`);
+    if (injectorConfig.browserPath) {
+      console.log(`Browser path: ${injectorConfig.browserPath}`);
+    }
+  }
   console.log(`Detected OS: ${os.platform()}`);
   console.log('');
 }
+
 
 function initializeConfiguration() {
   loadConfiguration();
@@ -74,7 +84,7 @@ async function initializeCheatContext(Runtime, context) {
 
   const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
   if (!contextExists.result.value) {
-    console.error("Cheat context not found in iframe. Injection might have failed.");
+    console.error("Cheat context not found. Injection might have failed.");
     return false;
   }
 
@@ -151,7 +161,7 @@ async function main() {
     const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
     printConfiguration(config.injectorConfig);
 
-    const hook = await attachToGame();
+    const hook = await attachToTarget();
     const client = await setupIntercept(hook, config.injectorConfig, config.startupCheats, config.cheatConfig, config.cdpPort);
     console.log("Interceptor setup finished.");
 

@@ -16,7 +16,6 @@ let events; // function that returns actorEvent script by it's number
 let behavior; // Stencyl behavior object
 const itemTypes = new Set();
 
-let iframe; // Declare iframe globally, initialize later
 
 // ingame webui
 let uiIframe;
@@ -1833,25 +1832,6 @@ async function setup() {
   console.log('Entering setup function...'); // Added for diagnostics
   setupDone = true;
 
-  // Retry finding the iframe for up to 10 seconds
-  let iframeRetryCount = 0;
-  const maxRetries = 20; // 20 * 500ms = 10 seconds
-  while (!iframe && iframeRetryCount < maxRetries) {
-    iframe = window.document.querySelector("iframe")?.contentWindow;
-    if (!iframe) {
-      iframeRetryCount++;
-      console.log(`Iframe not found, retrying... (${iframeRetryCount}/${maxRetries})`);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
-    }
-  }
-
-  if (!iframe) {
-    console.error(`CRITICAL ERROR: Could not find the game iframe after ${maxRetries} retries.`);
-    throw new Error(`Could not find the game iframe after ${maxRetries} retries.`);
-  }
-  console.log("Iframe found successfully.");
-
-
   try { // Added try block for detailed error catching within setup
     await gameReady.call(this);
 
@@ -2109,7 +2089,8 @@ function setupAllProxies() {
   setupMonsterProxy.call(this);
   setupHPProxy.call(this);
   setupNodmgProxy.call(this);
-  setupCreateElementProxy.call(iframe);
+  setupCreateElementProxy.call(this);
+
 }
 
 // with this proxy we catch the play button and recall the requested proxy functions
@@ -2378,50 +2359,88 @@ function setupAutoLootProxy() {
 }
 
 function setupCreateElementProxy() {
-  this.React.createElement = new Proxy(this.React.createElement, {
-    apply: function (originalFn, context, argumentsList) {
-      if (cheatState.w1.companion && argumentsList[0].includes("Companion")) {
-        if (["deleteCompanion", "swapCompanionOrder"].includes(argumentsList[0]))
-          return new Promise((resolve) => resolve(1));
-        if (argumentsList[0] == "setCompanionFollower") {
-          cheatConfig.w1.companion.current = string(argumentsList[1]);
-        }
-        if (argumentsList[0] == "getCompanionInfoMe") {
-          if (!cheatConfig.w1.companion.companions) return Array.from({ length: CList.CompanionDB.length }, (_, i) => i);
-          let companions = cheatConfig.w1.companion.companions
-          if (typeof companions == "function") {
-            return companions()
-          }
-          return companions;
-        }
-        if (argumentsList[0] == "getCurrentCompanion") {
-          return cheatConfig.w1.companion.current;
-        }
-        // return true;
-        return Reflect.apply(originalFn, context, argumentsList);
-      }
+  const firebaseStorage = this["FirebaseStorage"];
 
-      if (cheatConfig.unban && argumentsList[0] == "cleanMarkedFiles") {
-        return;
-      }
+  const proxyMethod = (methodName, handler) => {
+    const originalFn = firebaseStorage[methodName];
+    if (typeof originalFn !== "function") return;
+    firebaseStorage[methodName] = new Proxy(originalFn, {
+      apply: function (target, context, argumentsList) {
+        return handler(target, context, argumentsList);
+      },
+    });
+  };
 
-      if (cheatState.wide.autoparty && argumentsList[0] == "getPartyMembers") {
-        let resp = Reflect.apply(originalFn, context, argumentsList);
-        if (resp.length > 0 && resp.length < 10) {
-          let playersToAdd = 11 - resp.length;
-          let names = Object.keys(bEngine.gameAttributes.h.OtherPlayers.h).slice(1, playersToAdd);
-          names.forEach(function (name) {
-            resp.push([name, resp[0][1], 0]);
-          });
-        }
-        return resp;
-      }
+  proxyMethod("deleteCompanion", (target, context, argumentsList) => {
+    if (cheatState.w1.companion) {
+      return Promise.resolve(1);
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
 
-      let resp = Reflect.apply(originalFn, context, argumentsList);
-      return resp;
-    },
+  proxyMethod("swapCompanionOrder", (target, context, argumentsList) => {
+    if (cheatState.w1.companion) {
+      return Promise.resolve(1);
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
+
+  proxyMethod("setCompanionFollower", (target, context, argumentsList) => {
+    if (cheatState.w1.companion) {
+      cheatConfig.w1.companion.current = string(argumentsList[0]);
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
+
+  proxyMethod("getCompanionInfoMe", (target, context, argumentsList) => {
+    if (cheatState.w1.companion) {
+      if (!cheatConfig.w1.companion.companions) {
+        return Array.from(
+          { length: CList.CompanionDB.length },
+          (_, index) => index
+        );
+      }
+      const companions = cheatConfig.w1.companion.companions;
+      if (typeof companions === "function") {
+        return companions();
+      }
+      return companions;
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
+
+  proxyMethod("getCurrentCompanion", (target, context, argumentsList) => {
+    if (cheatState.w1.companion) {
+      return cheatConfig.w1.companion.current;
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
+
+  proxyMethod("cleanMarkedFiles", (target, context, argumentsList) => {
+    if (cheatConfig.unban) {
+      return;
+    }
+    return Reflect.apply(target, context, argumentsList);
+  });
+
+  proxyMethod("getPartyMembers", (target, context, argumentsList) => {
+    if (!cheatState.wide.autoparty) {
+      return Reflect.apply(target, context, argumentsList);
+    }
+
+    const resp = Reflect.apply(target, context, argumentsList);
+    if (Array.isArray(resp) && resp.length > 0 && resp.length < 10) {
+      const playersToAdd = 11 - resp.length;
+      const otherPlayers = bEngine.gameAttributes.h.OtherPlayers.h;
+      const names = Object.keys(otherPlayers).slice(1, playersToAdd);
+      names.forEach(function (name) {
+        resp.push([name, resp[0][1], 0]);
+      });
+    }
+    return resp;
   });
 }
+
 
 // Proxy for Mystery Stones always hitting the Misc stat if possible.
 function setupItemMiscProxy() {
@@ -3223,7 +3242,7 @@ function setupSmithProxy() {
   const size = []; // Time to obtain the Array lengths (e.g. amount of items per smithing tab)
   for (const [index, element] of Object.entries(sizeref)) size.push(element.length);
   // Yup we're using double square brackets, cause each item could require multiple materials to craft, while we only need to fill in one
-  for (i = 0; i < size.length; i++) NewReqs.push(new Array(size[i]).fill([["Copper", "0"]]));
+  for (let i = 0; i < size.length; i++) NewReqs.push(new Array(size[i]).fill([["Copper", "0"]]));
   const handler = {
     apply: function (originalFn, context, argumentsList) {
       if (cheatState.w1.smith) return NewReqs;
@@ -3357,7 +3376,7 @@ function setupQuestProxy() {
   const dialogueDefsUpdated = deepCopy(dialogueDefs);
   for (const [key, value] of Object.entries(dialogueDefsUpdated)) // Go over all the quest-giving NPCs
     for (
-      i = 0;
+      let i = 0;
       i < value[1].length;
       i++ // Go over all the addLine elements of that NPC
     )
@@ -3368,13 +3387,13 @@ function setupQuestProxy() {
         // Iterate over an unknown amount of req. values/Arrays
         if (value[1][i][2] === value[1][i][8])
           // This is addLine_Custom
-          for (j = 0; j < value[1][i][3].length; j++) {
+          for (let j = 0; j < value[1][i][3].length; j++) {
             dialogueDefsUpdated[key][1][i][3][j][1] = 0;
             dialogueDefsUpdated[key][1][i][3][j][3] = 0;
           }
         else
           for (
-            j = 0;
+            let j = 0;
             j < value[1][i][3].length;
             j++ // This is addLine_ItemsAndSpaceRequired
           )

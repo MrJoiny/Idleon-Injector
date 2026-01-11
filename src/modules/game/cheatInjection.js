@@ -141,8 +141,9 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
  * @returns {string} JavaScript expression for the cheat context
  */
 function createCheatContext() {
-  return `window.document.querySelector('iframe').contentWindow.__idleon_cheats__`;
+    return "(window.__idleon_cheats__ || window.document.querySelector('iframe')?.contentWindow?.__idleon_cheats__)";
 }
+
 
 module.exports = {
   setupIntercept,

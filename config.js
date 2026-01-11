@@ -664,5 +664,9 @@ exports.injectorConfig = {
   enableUI: true,
   webPort: 8080,
   onLinuxTimeout: 30000,
+  target: "web", // "web" or "steam"
+  webUrl: "https://www.legendsofidleon.com/ytGl5oc/",
+  browserPath: "", // browser path for web (auto if empty)
+  browserUserDataDir: "", // optional
   // gameExePath: "C:/Path/To/LegendsOfIdleon.exe", // Optional: set this to override EXE search on Windows
 };
