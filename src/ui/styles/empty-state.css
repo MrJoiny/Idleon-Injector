@@ -1,0 +1,34 @@
+/**
+ * Empty State Component
+ * Empty state display with icon, title, and subtitle
+ */
+
+/* --- EMPTY STATES --- */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--c-text-dim);
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.empty-state-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.empty-state-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    max-width: 300px;
+}

@@ -1,0 +1,70 @@
+/**
+ * Number Input Component
+ * Custom number input wrapper with +/- buttons
+ */
+
+/* --- NUMBER INPUT STYLING --- */
+/* Hide default arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* --- NUMBER INPUT WRAPPER --- */
+.number-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    position: relative;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.number-input-wrapper:focus-within {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+}
+
+.number-input-wrapper input {
+    border: none;
+    background: transparent;
+    text-align: left;
+    box-shadow: none !important;
+    border-radius: 0;
+    flex: 1;
+    width: auto;
+    padding-left: 20px;
+}
+
+.number-input-btn {
+    background: transparent;
+    color: var(--c-accent);
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 10px;
+    height: 34px;
+    /* Approximate height of input */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    user-select: none;
+}
+
+.number-input-btn:hover {
+    background: rgba(255, 183, 0, 0.1);
+    color: #fff;
+}
+
+.number-input-btn:active {
+    background: rgba(255, 183, 0, 0.2);
+}

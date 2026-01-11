@@ -1,0 +1,38 @@
+/**
+ * Base Styles
+ * Reset, body, and scrollbar defaults
+ */
+
+/* --- RESET --- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--c-void);
+    color: var(--c-text-main);
+    font-family: var(--font-display);
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+/* --- SCROLLBARS --- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--c-void);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--c-accent);
+}

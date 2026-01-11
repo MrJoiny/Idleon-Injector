@@ -1,0 +1,83 @@
+/**
+ * Button Styles
+ * All button variants and states
+ */
+
+/* --- BASE BUTTON --- */
+button {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+/* --- PRIMARY BUTTON --- */
+.btn-primary,
+#load-options-button,
+#update-config-button {
+    background: var(--c-accent);
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    box-shadow: 0 0 10px var(--c-accent-dim);
+}
+
+.btn-primary:hover,
+#load-options-button:hover,
+#update-config-button:hover {
+    background: #ffe066;
+    box-shadow: 0 0 15px var(--c-accent-glow);
+    transform: translateY(-1px);
+}
+
+/* --- SECONDARY BUTTON --- */
+.btn-secondary,
+#refresh-options-button,
+#modal-cancel,
+.cancel-add-cheat-button,
+.add-cheat-button {
+    background: transparent;
+    border: 1px solid var(--c-text-dim);
+    color: var(--c-text-main);
+    padding: 7px 19px;
+}
+
+.btn-secondary:hover,
+#refresh-options-button:hover,
+#modal-cancel:hover,
+.cancel-add-cheat-button:hover,
+.add-cheat-button:hover {
+    border-color: var(--c-text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- DANGER BUTTON --- */
+.btn-danger,
+#modal-accept {
+    background: rgba(255, 0, 60, 0.1);
+    border: 1px solid var(--c-danger);
+    color: var(--c-danger);
+    padding: 8px 20px;
+}
+
+.remove-cheat-button {
+    background: rgba(255, 0, 60, 0.1);
+    border: 1px solid var(--c-danger);
+    color: var(--c-danger);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-danger:hover,
+#modal-accept:hover,
+.remove-cheat-button:hover {
+    background: var(--c-danger);
+    color: white;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+}

@@ -1,0 +1,147 @@
+/**
+ * Config Component
+ * Sub-navigation, config items, diff highlighting, action bar
+ */
+
+/* --- SUB NAVIGATION --- */
+.sub-nav {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 10px;
+    position: sticky;
+    top: 0;
+    background: var(--c-panel);
+    z-index: 1000;
+    padding-top: 10px;
+    margin-top: -10px;
+}
+
+.config-sub-tab-button {
+    background: transparent;
+    border: none;
+    color: var(--c-text-dim);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.config-sub-tab-button.active {
+    color: var(--c-text-main);
+}
+
+.config-sub-tab-button:hover {
+    color: var(--c-text-main);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.config-sub-tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--c-accent);
+    box-shadow: 0 -2px 5px var(--c-accent);
+}
+
+.config-sub-tab-pane {
+    display: none;
+}
+
+.config-sub-tab-pane.active {
+    display: block;
+    animation: slideIn 0.2s;
+}
+
+/* --- CONFIG ITEM --- */
+.config-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--c-border);
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    transition: z-index 0s;
+}
+
+.config-item:hover {
+    z-index: 100;
+}
+
+.config-item label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--c-text-dim);
+    letter-spacing: 0.05em;
+}
+
+.config-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.config-description {
+    flex: 1;
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-align: left;
+    padding-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-reset-btn {
+    background: transparent;
+    border: 1px solid var(--c-warning);
+    color: var(--c-warning);
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-items: center;
+    gap: 4px;
+}
+
+.config-reset-btn:hover {
+    background: var(--c-warning);
+    color: #000;
+}
+
+/* --- DIFF HIGHLIGHTING --- */
+.config-item.modified-config {
+    border-left: 3px solid var(--c-warning);
+    background: rgba(255, 183, 0, 0.03);
+}
+
+.default-value-hint {
+    font-size: 0.75rem;
+    color: var(--c-warning);
+    font-family: var(--font-mono);
+    margin-top: 5px;
+}
+
+.modified-category>summary {
+    color: var(--c-warning);
+}
+
+/* --- ACTION BAR (Fixed Footer for Config) --- */
+.action-bar {
+    margin-top: auto;
+    padding: 20px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    display: flex;
+    gap: 15px;
+    flex-shrink: 0;
+    z-index: 5;
+    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
+}

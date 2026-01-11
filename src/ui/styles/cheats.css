@@ -1,0 +1,194 @@
+/**
+ * Cheats Component
+ * Grid layout, categories, cheat items, quick access, favorites
+ */
+
+/* --- CHEATS GRID --- */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding-bottom: 40px;
+    align-items: start;
+}
+
+/* --- CHEAT CATEGORY --- */
+.cheat-category {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 2px solid var(--c-text-dim);
+    position: relative;
+    transition: z-index 0s;
+}
+
+.cheat-category:hover {
+    z-index: 100;
+}
+
+.cheat-category[open] {
+    border-left-color: var(--c-accent);
+    grid-column: 1 / -1;
+}
+
+.cheat-category summary {
+    padding: 12px 15px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+    font-weight: 600;
+    user-select: none;
+}
+
+.cheat-category summary::after {
+    content: '+';
+    font-family: var(--font-mono);
+    color: var(--c-text-dim);
+}
+
+.cheat-category[open] summary::after {
+    content: '-';
+    color: var(--c-accent);
+}
+
+.cheat-category-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--c-border);
+}
+
+/* --- CHEAT ITEM --- */
+.cheat-item-container {
+    display: flex;
+    gap: 8px;
+    position: relative;
+}
+
+.cheat-input {
+    width: 80px;
+    flex: none;
+    text-align: center;
+}
+
+.cheat-button {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #333;
+    color: var(--c-text-dim);
+    padding: 10px 12px;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.cheat-button:hover {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+    background: var(--c-accent-dim);
+}
+
+/* --- QUICK ACCESS SECTION (Favorites/Recent) --- */
+.quick-access-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.quick-access-group {
+    margin-bottom: 15px;
+}
+
+.quick-access-group:last-child {
+    margin-bottom: 0;
+}
+
+.quick-access-header {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.quick-access-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.quick-access-btn {
+    background: var(--c-accent-dim);
+    border: 1px solid var(--c-accent);
+    color: var(--c-accent);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-access-btn:hover {
+    background: var(--c-accent);
+    color: #000;
+}
+
+.quick-access-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quick-access-remove {
+    background: transparent;
+    border: none;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 1rem;
+    opacity: 0.5;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-access-remove:hover {
+    opacity: 1;
+    color: var(--c-danger);
+}
+
+.quick-access-empty {
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    font-style: italic;
+    padding: 4px 0;
+}
+
+/* --- FAVORITE BUTTON --- */
+.favorite-btn {
+    background: transparent;
+    border: none;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 1rem;
+    opacity: 0.3;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.favorite-btn:hover {
+    opacity: 1;
+    color: var(--c-warning);
+}
+
+.favorite-btn.is-favorite {
+    opacity: 1;
+    color: var(--c-warning);
+}
