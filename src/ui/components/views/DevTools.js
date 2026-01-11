@@ -1,26 +1,24 @@
-import van from '../../van-1.6.0.js';
-import * as API from '../../api.js';
+import van from "../../van-1.6.0.js";
+import * as API from "../../api.js";
 
 const { div, iframe, button } = van.tags;
 
 export const DevTools = () => {
-    // Local state for URL loading
     const url = van.state("");
     const error = van.state("");
     const isEmbedded = window.parent !== window;
-    const headlineStyle = 'font-size: 24px; margin-bottom: 20px;';
-    const webUiUrl = `http://localhost:${window.location.port || '8080'}`;
+    const webUiUrl = `http://localhost:${window.location.port || "8080"}`;
 
-    const load = async () => {
-        try {
-            if (!isEmbedded) {
-                url.val = await API.fetchDevToolsUrl();
-            }
-        } catch (e) {
-            error.val = e.message;
-        }
-    };
-    load();
+    // Load DevTools URL on mount (skip if embedded to prevent crashes)
+    if (!isEmbedded) {
+        API.fetchDevToolsUrl()
+            .then((devtoolsUrl) => {
+                url.val = devtoolsUrl;
+            })
+            .catch((e) => {
+                error.val = e.message;
+            });
+    }
 
     const openDevTools = async () => {
         try {
@@ -39,59 +37,53 @@ export const DevTools = () => {
         }
     };
 
-    return div({ id: 'devtools-tab', class: 'tab-pane' },
-        div({ class: 'terminal-wrapper' },
-            () => {
-                // prevent showing iframe -> crashes the ingame webui
-                if (isEmbedded) {
-                    return div({ class: 'danger-zone-header' }, [
-                        div({ style: headlineStyle }, '⚠ DEVTOOLS POP-OUT'),
-                        div(
-                            'Embedded DevTools is disabled inside the game UI ' +
-                            'to prevent crashes.'
-                        ),
-                        div('Use the pop-out window for full DevTools access.'),
-                        div(button({
-                            class: 'quick-access-btn',
-                            style: 'margin-top: 20px;',
-                            onclick: openWebUi
-                        }, 'Open Web UI')),
-                        div(button({
-                            class: 'quick-access-btn',
-                            style: 'margin-top: 10px;',
-                            onclick: openDevTools
-                        }, 'Open ChromeDebug')),
-                        error.val
-                            ? div(
-                                {
-                                    style: 'color:var(--c-danger); margin-top: 10px;'
-                                },
-                                error.val
-                            )
-                            : null
-                    ]);
-                }
+    const renderEmbeddedView = () =>
+        div(
+            { class: "danger-zone-header" },
+            div({ style: "font-size: 24px; margin-bottom: 20px;" }, "⚠ DEVTOOLS POP-OUT"),
+            div("Embedded DevTools is disabled inside the game UI to prevent crashes."),
+            div("Use the pop-out window for full DevTools access."),
+            button(
+                {
+                    class: "quick-access-btn",
+                    style: "margin: 20px auto 10px; display: block;",
+                    onclick: openWebUi,
+                },
+                "Open Web UI"
+            ),
+            button(
+                {
+                    class: "quick-access-btn",
+                    style: "margin: 10px auto; display: block;",
+                    onclick: openDevTools,
+                },
+                "Open ChromeDebug"
+            ),
+            () => (error.val ? div({ style: "color:var(--c-danger); margin-top: 10px;" }, error.val) : null)
+        );
 
-                if (error.val) {
-                    return div(
-                        {
-                            id: 'devtools-message',
-                            style: 'color:var(--c-danger)'
-                        },
-                        `Failed to load DevTools: ${error.val}`
-                    );
-                }
+    const renderContent = () => {
+        if (isEmbedded) {
+            return renderEmbeddedView();
+        }
 
-                if (!url.val) {
-                    return div({ id: 'devtools-message' }, 'ESTABLISHING UPLINK...');
-                }
+        if (error.val) {
+            return div(
+                { id: "devtools-message", style: "color:var(--c-danger)" },
+                `Failed to load DevTools: ${error.val}`
+            );
+        }
 
-                return iframe({
-                    id: 'devtools-iframe',
-                    src: url.val,
-                    style: 'width:100%; height:100%; border:none; background:#fff;'
-                });
-            }
-        )
-    );
+        if (!url.val) {
+            return div({ id: "devtools-message" }, "ESTABLISHING UPLINK...");
+        }
+
+        return iframe({
+            id: "devtools-iframe",
+            src: url.val,
+            style: "width:100%; height:100%; border:none; background:#fff;",
+        });
+    };
+
+    return div({ id: "devtools-tab", class: "tab-pane" }, div({ class: "terminal-wrapper" }, renderContent));
 };
