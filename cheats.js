@@ -369,6 +369,14 @@ registerCheats({
             message: "dartshop cost nullify",
             configurable: { isObject: true },
         },
+        {
+            name: "guildpoints",
+            message: "Adds 1200 guild points to the guild.",
+            fn: function () {
+                this["FirebaseStorage"].guildPointAdjust(1200);
+                return "Added 1200 guild points to the guild.";
+            },
+        },
     ],
 });
 
