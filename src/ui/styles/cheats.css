@@ -43,13 +43,13 @@
 }
 
 .cheat-category summary::after {
-    content: '+';
+    content: "+";
     font-family: var(--font-mono);
     color: var(--c-text-dim);
 }
 
 .cheat-category[open] summary::after {
-    content: '-';
+    content: "-";
     color: var(--c-accent);
 }
 

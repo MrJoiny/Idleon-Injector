@@ -40,26 +40,29 @@ export const DevTools = () => {
     const renderEmbeddedView = () =>
         div(
             { class: "danger-zone-header" },
-            div({ style: "font-size: 24px; margin-bottom: 20px;" }, "⚠ DEVTOOLS POP-OUT"),
+            div({ class: "devtools-popout-title" }, "⚠ DEVTOOLS POP-OUT"),
+
             div("Embedded DevTools is disabled inside the game UI to prevent crashes."),
             div("Use the pop-out window for full DevTools access."),
-            button(
-                {
-                    class: "quick-access-btn",
-                    style: "margin: 20px auto 10px; display: block;",
-                    onclick: openWebUi,
-                },
-                "Open Web UI"
+            div(
+                { class: "devtools-actions" },
+                button(
+                    {
+                        class: "quick-access-btn",
+                        onclick: openWebUi,
+                    },
+                    "Open Web UI"
+                ),
+                button(
+                    {
+                        class: "quick-access-btn",
+                        onclick: openDevTools,
+                    },
+                    "Open ChromeDebug"
+                )
             ),
-            button(
-                {
-                    class: "quick-access-btn",
-                    style: "margin: 10px auto; display: block;",
-                    onclick: openDevTools,
-                },
-                "Open ChromeDebug"
-            ),
-            () => (error.val ? div({ style: "color:var(--c-danger); margin-top: 10px;" }, error.val) : null)
+
+            () => (error.val ? div({ class: "devtools-error" }, error.val) : null)
         );
 
     const renderContent = () => {
@@ -69,7 +72,8 @@ export const DevTools = () => {
 
         if (error.val) {
             return div(
-                { id: "devtools-message", style: "color:var(--c-danger)" },
+                { id: "devtools-message", class: "is-error" },
+
                 `Failed to load DevTools: ${error.val}`
             );
         }
@@ -81,7 +85,6 @@ export const DevTools = () => {
         return iframe({
             id: "devtools-iframe",
             src: url.val,
-            style: "width:100%; height:100%; border:none; background:#fff;",
         });
     };
 

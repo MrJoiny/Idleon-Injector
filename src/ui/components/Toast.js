@@ -1,5 +1,5 @@
-import van from '../van-1.6.0.js';
-import store from '../store.js';
+import van from "../van-1.6.0.js";
+import store from "../store.js";
 
 const { div } = van.tags;
 
@@ -29,13 +29,13 @@ export const Toast = () => {
 
     return div(
         {
-            id: 'status-message',
+            id: "status-message",
             class: () => {
-                const typeClass = store.app.toast.type === 'error' ? 'status-error' : 'status-success';
-                const fadeClass = isFading.val ? 'fade-out' : '';
-                return `${typeClass} ${fadeClass}`;
+                const typeClass = store.app.toast.type === "error" ? "status-error" : "status-success";
+                const fadeClass = isFading.val ? "fade-out" : "";
+                const visibleClass = isVisible.val ? "is-visible" : "";
+                return `${typeClass} ${fadeClass} ${visibleClass}`;
             },
-            style: () => isVisible.val ? 'display: block;' : 'display: none;'
         },
         () => store.app.toast.message
     );

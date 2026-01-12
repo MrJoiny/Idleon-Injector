@@ -1,13 +1,13 @@
-import van from '../van-1.6.0.js';
+import van from "../van-1.6.0.js";
 
 const { div } = van.tags;
 
 const tooltipState = van.state({
     visible: false,
-    text: '',
+    text: "",
     x: 0,
     y: 0,
-    position: 'top'
+    position: "top",
 });
 
 const VIEWPORT_PADDING = 8;
@@ -28,30 +28,36 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
     let x, y;
 
     // Check if preferred position would overflow and flip if needed
-    if (position === 'top' && rect.top - tooltipRect.height - TOOLTIP_OFFSET < VIEWPORT_PADDING) {
-        position = 'bottom';
-    } else if (position === 'bottom' && rect.bottom + tooltipRect.height + TOOLTIP_OFFSET > window.innerHeight - VIEWPORT_PADDING) {
-        position = 'top';
-    } else if (position === 'left' && rect.left - tooltipRect.width - TOOLTIP_OFFSET < VIEWPORT_PADDING) {
-        position = 'right';
-    } else if (position === 'right' && rect.right + tooltipRect.width + TOOLTIP_OFFSET > window.innerWidth - VIEWPORT_PADDING) {
-        position = 'left';
+    if (position === "top" && rect.top - tooltipRect.height - TOOLTIP_OFFSET < VIEWPORT_PADDING) {
+        position = "bottom";
+    } else if (
+        position === "bottom" &&
+        rect.bottom + tooltipRect.height + TOOLTIP_OFFSET > window.innerHeight - VIEWPORT_PADDING
+    ) {
+        position = "top";
+    } else if (position === "left" && rect.left - tooltipRect.width - TOOLTIP_OFFSET < VIEWPORT_PADDING) {
+        position = "right";
+    } else if (
+        position === "right" &&
+        rect.right + tooltipRect.width + TOOLTIP_OFFSET > window.innerWidth - VIEWPORT_PADDING
+    ) {
+        position = "left";
     }
 
     switch (position) {
-        case 'top':
+        case "top":
             x = rect.left + rect.width / 2;
             y = rect.top - TOOLTIP_OFFSET;
             break;
-        case 'bottom':
+        case "bottom":
             x = rect.left + rect.width / 2;
             y = rect.bottom + TOOLTIP_OFFSET;
             break;
-        case 'left':
+        case "left":
             x = rect.left - TOOLTIP_OFFSET;
             y = rect.top + rect.height / 2;
             break;
-        case 'right':
+        case "right":
             x = rect.right + TOOLTIP_OFFSET;
             y = rect.top + rect.height / 2;
             break;
@@ -61,12 +67,12 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
     }
 
     // Clamp positions to viewport bounds
-    if (position === 'top' || position === 'bottom') {
+    if (position === "top" || position === "bottom") {
         const halfWidth = tooltipRect.width / 2;
         x = Math.max(halfWidth + VIEWPORT_PADDING, Math.min(x, window.innerWidth - halfWidth - VIEWPORT_PADDING));
     }
 
-    if (position === 'left' || position === 'right') {
+    if (position === "left" || position === "right") {
         const halfHeight = tooltipRect.height / 2;
         y = Math.max(halfHeight + VIEWPORT_PADDING, Math.min(y, window.innerHeight - halfHeight - VIEWPORT_PADDING));
     }
@@ -76,14 +82,14 @@ const calculatePosition = (targetEl, preferredPosition, tooltipEl) => {
 
 let tooltipElement = null;
 
-const showTooltip = (targetEl, text, position = 'top') => {
+const showTooltip = (targetEl, text, position = "top") => {
     // First render off-screen to measure size, then position correctly
     tooltipState.val = {
         visible: true,
         text,
         x: -9999,
         y: -9999,
-        position
+        position,
     };
 
     requestAnimationFrame(() => {
@@ -99,12 +105,18 @@ const hideTooltip = () => {
 };
 
 export const TooltipContainer = () => {
-    const el = div({
-        class: () => `tooltip-fixed tooltip-${tooltipState.val.position} ${tooltipState.val.visible ? 'visible' : ''}`,
-        style: () => `left: ${tooltipState.val.x}px; top: ${tooltipState.val.y}px;`
-    }, () => tooltipState.val.text);
+    const el = div(
+        {
+            class: () =>
+                `tooltip-fixed tooltip-${tooltipState.val.position} ${tooltipState.val.visible ? "visible" : ""}`,
+            style: () => `--tooltip-x: ${tooltipState.val.x}px; --tooltip-y: ${tooltipState.val.y}px;`,
+        },
+        () => tooltipState.val.text
+    );
 
-    setTimeout(() => { tooltipElement = el; }, 0);
+    setTimeout(() => {
+        tooltipElement = el;
+    }, 0);
 
     return el;
 };
@@ -117,16 +129,16 @@ export const TooltipContainer = () => {
  * @param {boolean | (() => boolean)} enabled - Whether the tooltip is enabled
  * @returns {HTMLElement} The same element with tooltip attached
  */
-export const withTooltip = (element, text, position = 'top', enabled = true) => {
-    element.addEventListener('mouseenter', () => {
-        const isEnabled = typeof enabled === 'function' ? enabled() : enabled;
+export const withTooltip = (element, text, position = "top", enabled = true) => {
+    element.addEventListener("mouseenter", () => {
+        const isEnabled = typeof enabled === "function" ? enabled() : enabled;
         if (!isEnabled) return;
 
-        const tooltipText = typeof text === 'function' ? text() : text;
+        const tooltipText = typeof text === "function" ? text() : text;
         showTooltip(element, tooltipText, position);
     });
 
-    element.addEventListener('mouseleave', hideTooltip);
+    element.addEventListener("mouseleave", hideTooltip);
 
     return element;
 };

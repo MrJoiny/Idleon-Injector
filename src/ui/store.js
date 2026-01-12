@@ -1,6 +1,6 @@
-import vanX from './van-x-0.6.3.js';
-import * as API from './api.js';
-import { IS_ELECTRON } from './constants.js';
+import vanX from "./van-x-0.6.3.js";
+import * as API from "./api.js";
+import { IS_ELECTRON } from "./constants.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -17,12 +17,12 @@ const safeParseJSON = (key, fallback = []) => {
 };
 
 const appState = vanX.reactive({
-    activeTab: 'cheats-tab',
+    activeTab: "cheats-tab",
     isLoading: false,
     heartbeat: false,
-    toast: { message: '', type: '', id: 0 },
+    toast: { message: "", type: "", id: 0 },
     config: null,
-    sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
+    sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
 });
 
 const dataState = vanX.reactive({
@@ -31,12 +31,12 @@ const dataState = vanX.reactive({
     accountOptions: [],
     accountSchema: {},
     activeCheatStates: {},
-    favoriteCheats: safeParseJSON('favoriteCheats', []),
-    recentCheats: safeParseJSON('recentCheats', [])
+    favoriteCheats: safeParseJSON("favoriteCheats", []),
+    recentCheats: safeParseJSON("recentCheats", []),
 });
 
 const Actions = {
-    notify: (message, type = 'success') => {
+    notify: (message, type = "success") => {
         appState.toast = { message, type, id: Date.now() };
     },
 
@@ -45,11 +45,11 @@ const Actions = {
             appState.isLoading = true;
             await fn();
         } catch (e) {
-            Actions.notify(e.message || 'Unknown Error', 'error');
+            Actions.notify(e.message || "Unknown Error", "error");
         } finally {
             appState.isLoading = false;
         }
-    }
+    },
 };
 
 const SystemService = {
@@ -64,7 +64,7 @@ const SystemService = {
         };
         check();
         setInterval(check, 10000);
-    }
+    },
 };
 
 const CheatService = {
@@ -79,14 +79,14 @@ const CheatService = {
     executeCheat: async (action, message) => {
         try {
             const result = await API.executeCheatAction(action);
-            Actions.notify(`Cheat ${result.result || 'Success'}`);
+            Actions.notify(`Cheat ${result.result || "Success"}`);
             FavoritesService.addToRecent(action);
             // Refresh cheat states after execution
             CheatStateService.loadCheatStates();
         } catch (e) {
-            Actions.notify(`Error executing '${message}': ${e.message}`, 'error');
+            Actions.notify(`Error executing '${message}': ${e.message}`, "error");
         }
-    }
+    },
 };
 
 const getActiveCheats = (states) => {
@@ -96,7 +96,7 @@ const getActiveCheats = (states) => {
     // Process group cheats (plural keys ending in 's' like 'w1s' indicate all sub-cheats enabled)
     for (const key in states) {
         const value = states[key];
-        if (key.endsWith('s') && value === true) {
+        if (key.endsWith("s") && value === true) {
             const baseKey = key.slice(0, -1);
             processedGroups.add(baseKey);
             activeCheats.push(baseKey);
@@ -105,10 +105,10 @@ const getActiveCheats = (states) => {
 
     for (const key in states) {
         const value = states[key];
-        if (key.endsWith('s') && typeof value === 'boolean') continue;
+        if (key.endsWith("s") && typeof value === "boolean") continue;
         if (processedGroups.has(key)) continue;
 
-        if (typeof value === 'object' && value !== null) {
+        if (typeof value === "object" && value !== null) {
             for (const subKey in value) {
                 if (value[subKey] === true) {
                     activeCheats.push(`${key} ${subKey}`);
@@ -128,10 +128,10 @@ const CheatStateService = {
             const result = await API.fetchCheatStates();
             dataState.activeCheatStates = result.data || {};
         } catch (e) {
-            console.error('Error loading cheat states:', e);
+            console.error("Error loading cheat states:", e);
             dataState.activeCheatStates = {};
         }
-    }
+    },
 };
 
 const FavoritesService = {
@@ -142,7 +142,7 @@ const FavoritesService = {
         } else {
             dataState.favoriteCheats.push(cheatValue);
         }
-        localStorage.setItem('favoriteCheats', JSON.stringify([...dataState.favoriteCheats]));
+        localStorage.setItem("favoriteCheats", JSON.stringify([...dataState.favoriteCheats]));
     },
 
     isFavorite: (cheatValue) => {
@@ -150,13 +150,13 @@ const FavoritesService = {
     },
 
     addToRecent: (cheatValue) => {
-        const filtered = dataState.recentCheats.filter(c => c !== cheatValue);
+        const filtered = dataState.recentCheats.filter((c) => c !== cheatValue);
         filtered.unshift(cheatValue);
         const newRecent = filtered.slice(0, 10);
         dataState.recentCheats.length = 0;
-        newRecent.forEach(c => dataState.recentCheats.push(c));
-        localStorage.setItem('recentCheats', JSON.stringify(newRecent));
-    }
+        newRecent.forEach((c) => dataState.recentCheats.push(c));
+        localStorage.setItem("recentCheats", JSON.stringify(newRecent));
+    },
 };
 
 const ConfigService = {
@@ -167,7 +167,7 @@ const ConfigService = {
             const data = await API.fetchConfig();
             appState.config = data;
         } catch (e) {
-            Actions.notify(`Config Load Error: ${e.message}`, 'error');
+            Actions.notify(`Config Load Error: ${e.message}`, "error");
         } finally {
             appState.isLoading = false;
         }
@@ -182,32 +182,35 @@ const ConfigService = {
                 ? await API.saveConfigFile(cleanConfig)
                 : await API.updateSessionConfig(cleanConfig);
 
-            Actions.notify(result.message || (isPersistent ? 'SAVED TO DISK' : 'RAM UPDATED'));
+            Actions.notify(result.message || (isPersistent ? "SAVED TO DISK" : "RAM UPDATED"));
         } catch (e) {
-            Actions.notify(e.message, 'error');
+            Actions.notify(e.message, "error");
         }
-    }
+    },
 };
 
 const AccountService = {
     loadAccountOptions: async () => {
-        await Actions.withLoading(async () => {
-            const [schemaRes, dataRes] = await Promise.all([
-                fetch('optionsAccountSchema.json').catch(() => ({ ok: false })),
-                API.fetchOptionsAccount()
-            ]);
+        await Actions.withLoading(
+            async () => {
+                const [schemaRes, dataRes] = await Promise.all([
+                    fetch("optionsAccountSchema.json").catch(() => ({ ok: false })),
+                    API.fetchOptionsAccount(),
+                ]);
 
-            if (schemaRes.ok) {
-                dataState.accountSchema = await schemaRes.json();
-            }
+                if (schemaRes.ok) {
+                    dataState.accountSchema = await schemaRes.json();
+                }
 
-            // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
-            const newData = dataRes.data || [];
-            dataState.accountOptions = [];
-            dataState.accountOptions = newData;
+                // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
+                const newData = dataRes.data || [];
+                dataState.accountOptions = [];
+                dataState.accountOptions = newData;
 
-            Actions.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
-        }, (e) => `Error loading options: ${e.message}`);
+                Actions.notify(`ACCOUNT DATA DECRYPTED (${newData.length} ITEMS)`);
+            },
+            (e) => `Error loading options: ${e.message}`
+        );
     },
 
     updateAccountOption: async (index, value) => {
@@ -217,11 +220,11 @@ const AccountService = {
             await API.updateOptionAccountIndex(index, value);
             Actions.notify(`INDEX ${index} WROTE TO MEMORY`);
         } catch (e) {
-            Actions.notify(`Failed to update Index ${index}: ${e.message}`, 'error');
+            Actions.notify(`Failed to update Index ${index}: ${e.message}`, "error");
             // Re-throw to allow component to handle local error state (e.g., red border)
             throw e;
         }
-    }
+    },
 };
 
 const store = {
@@ -244,20 +247,20 @@ const store = {
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;
-        localStorage.setItem('sidebarCollapsed', appState.sidebarCollapsed);
+        localStorage.setItem("sidebarCollapsed", appState.sidebarCollapsed);
     },
 
     openExternalUrl: async (url) => {
         try {
             await API.openExternalUrl(url);
         } catch (e) {
-            Actions.notify(`Failed to open URL: ${e.message}`, 'error');
+            Actions.notify(`Failed to open URL: ${e.message}`, "error");
         }
     },
 
     toggleFavorite: FavoritesService.toggleFavorite,
     isFavorite: FavoritesService.isFavorite,
-    addToRecent: FavoritesService.addToRecent
+    addToRecent: FavoritesService.addToRecent,
 };
 
 export default store;

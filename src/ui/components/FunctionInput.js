@@ -1,4 +1,4 @@
-import van from '../van-1.6.0.js';
+import van from "../van-1.6.0.js";
 import {
     parseFunction,
     generateFunctionString,
@@ -6,14 +6,14 @@ import {
     FUNCTION_TYPE_LABELS,
     FUNCTION_TYPE_NAMES,
     getSliderConfig,
-    getPresetValues
-} from '../utils/functionParser.js';
+    getPresetValues,
+} from "../utils/functionParser.js";
 
 const { div, select, option, input, button, span } = van.tags;
 
 /**
  * FunctionInput - A specialized input component for editing function config values
- * 
+ *
  * @param {Object} props
  * @param {Object} props.data - The reactive data object containing the value
  * @param {string} props.dataKey - The key in data object to read/write
@@ -55,23 +55,31 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         }
     };
 
+    const defaultValuesByType = {
+        [FUNCTION_TYPES.FIXED]: 0,
+        [FUNCTION_TYPES.MIN]: 1,
+        [FUNCTION_TYPES.MAX]: 1,
+    };
+
     const handleTypeChange = (e) => {
         const newType = e.target.value;
         const oldType = currentType.val;
         currentType.val = newType;
 
         if (newType === FUNCTION_TYPES.COMPLEX) {
-        } else {
-            if (newType === FUNCTION_TYPES.PASSTHROUGH) {
-                // Don't reset currentValue - keep it for when switching back
-            } else if (currentValue.val === null || currentValue.val === undefined || oldType === FUNCTION_TYPES.PASSTHROUGH) {
-                const defaultVal = newType === FUNCTION_TYPES.FIXED ? 0 :
-                    (newType === FUNCTION_TYPES.MIN || newType === FUNCTION_TYPES.MAX) ? 100 : 2;
-                currentValue.val = defaultVal;
-                localNumberText.val = String(defaultVal);
-            }
-            emitChange(newType, currentValue.val);
+            return;
         }
+
+        if (
+            newType !== FUNCTION_TYPES.PASSTHROUGH &&
+            (currentValue.val === null || currentValue.val === undefined || oldType === FUNCTION_TYPES.PASSTHROUGH)
+        ) {
+            const defaultVal = defaultValuesByType[newType] ?? 2;
+            currentValue.val = defaultVal;
+            localNumberText.val = String(defaultVal);
+        }
+
+        emitChange(newType, currentValue.val);
     };
 
     const handleSliderChange = (e) => {
@@ -81,23 +89,17 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         emitChange(currentType.val, val);
     };
 
-    const handleSliderNumberInput = (e) => {
+    const handleNumberInput = (e, requirePositive = false) => {
         localNumberText.val = e.target.value;
         const num = parseFloat(e.target.value);
-        if (!isNaN(num) && num > 0) {
+        if (!isNaN(num) && (!requirePositive || num > 0)) {
             currentValue.val = num;
             emitChange(currentType.val, num);
         }
     };
 
-    const handleNumberInputChange = (e) => {
-        localNumberText.val = e.target.value;
-        const num = parseFloat(e.target.value);
-        if (!isNaN(num)) {
-            currentValue.val = num;
-            emitChange(currentType.val, num);
-        }
-    };
+    const handleSliderNumberInput = (e) => handleNumberInput(e, true);
+    const handleNumberInputChange = handleNumberInput;
 
     const handleNumberIncrement = (delta) => {
         const newVal = (currentValue.val ?? 0) + delta;
@@ -114,7 +116,7 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         if (newParsed.type !== FUNCTION_TYPES.COMPLEX) {
             currentType.val = newParsed.type;
             currentValue.val = newParsed.value;
-            localNumberText.val = String(newParsed.value ?? '');
+            localNumberText.val = String(newParsed.value ?? "");
         }
 
         data[dataKey] = newText;
@@ -122,12 +124,6 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
 
     const handleRawBlur = () => {
         isFocused.val = false;
-        const newParsed = parseFunction(rawSource.val);
-        if (newParsed.type !== FUNCTION_TYPES.COMPLEX) {
-            currentType.val = newParsed.type;
-            currentValue.val = newParsed.value;
-            localNumberText.val = String(newParsed.value ?? '');
-        }
     };
 
     const handlePresetClick = (presetVal) => {
@@ -136,8 +132,12 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         emitChange(currentType.val, presetVal);
     };
 
-    const handleFocus = () => { isFocused.val = true; };
-    const handleBlur = () => { isFocused.val = false; };
+    const handleFocus = () => {
+        isFocused.val = true;
+    };
+    const handleBlur = () => {
+        isFocused.val = false;
+    };
 
     const selectableTypes = [
         FUNCTION_TYPES.MULTIPLY,
@@ -146,114 +146,114 @@ export const FunctionInput = ({ data, dataKey, initialValue }) => {
         FUNCTION_TYPES.PASSTHROUGH,
         FUNCTION_TYPES.MIN,
         FUNCTION_TYPES.MAX,
-        FUNCTION_TYPES.COMPLEX
+        FUNCTION_TYPES.COMPLEX,
     ];
 
     const sliderConfig = getSliderConfig(FUNCTION_TYPES.MULTIPLY);
     const presets = getPresetValues(FUNCTION_TYPES.MULTIPLY);
 
     const isSliderType = (type) => type === FUNCTION_TYPES.MULTIPLY || type === FUNCTION_TYPES.DIVIDE;
-    const isNumberType = (type) => type === FUNCTION_TYPES.FIXED || type === FUNCTION_TYPES.MIN || type === FUNCTION_TYPES.MAX;
+    const isNumberType = (type) =>
+        type === FUNCTION_TYPES.FIXED || type === FUNCTION_TYPES.MIN || type === FUNCTION_TYPES.MAX;
 
-    return div({ class: 'function-input' },
-        div({ class: 'function-input-row' },
-            select({
-                class: 'function-type-select',
-                value: currentType,
-                onchange: handleTypeChange
-            },
-                selectableTypes.map(type =>
-                    option({
-                        value: type,
-                        selected: () => currentType.val === type
-                    }, `${FUNCTION_TYPE_LABELS[type]} ${FUNCTION_TYPE_NAMES[type]}`)
+    return div(
+        { class: "function-input" },
+        div(
+            { class: "function-input-row" },
+            select(
+                { class: "function-type-select", value: currentType, onchange: handleTypeChange },
+                selectableTypes.map((type) =>
+                    option(
+                        { value: type, selected: () => currentType.val === type },
+                        `${FUNCTION_TYPE_LABELS[type]} ${FUNCTION_TYPE_NAMES[type]}`
+                    )
                 )
             ),
 
-            div({
-                class: 'function-slider-group',
-                style: () => isSliderType(currentType.val) ? '' : 'display: none;'
-            },
+            div(
+                { class: () => `function-slider-group ${isSliderType(currentType.val) ? "" : "hidden"}` },
+
                 input({
-                    type: 'range',
-                    class: 'function-slider',
+                    type: "range",
+                    class: "function-slider",
                     min: sliderConfig.min,
                     max: sliderConfig.max,
                     step: sliderConfig.step,
                     value: () => Math.min(sliderConfig.max, Math.max(sliderConfig.min, currentValue.val)),
                     oninput: handleSliderChange,
                     onfocus: handleFocus,
-                    onblur: handleBlur
+                    onblur: handleBlur,
                 }),
-                div({ class: 'function-value-input-wrapper' },
+                div(
+                    { class: "function-value-input-wrapper" },
                     input({
-                        type: 'number',
-                        class: 'function-value-input',
+                        type: "number",
+                        class: "function-value-input",
                         value: localNumberText,
                         min: 0.1,
                         step: 0.5,
                         oninput: handleSliderNumberInput,
                         onfocus: handleFocus,
-                        onblur: handleBlur
+                        onblur: handleBlur,
                     }),
-                    span({ class: 'function-value-suffix' },
-                        () => currentType.val === FUNCTION_TYPES.MULTIPLY ? '×' : '÷'
+                    span({ class: "function-value-suffix" }, () =>
+                        currentType.val === FUNCTION_TYPES.MULTIPLY ? "×" : "÷"
                     )
                 )
             ),
 
-            div({
-                class: 'function-number-input-wrapper',
-                style: () => isNumberType(currentType.val) ? '' : 'display: none;'
-            },
-                button({
-                    class: 'function-number-btn',
-                    onclick: () => handleNumberIncrement(-1),
-                    tabindex: -1
-                }, '−'),
+            div(
+                {
+                    class: () => `function-number-input-wrapper ${isNumberType(currentType.val) ? "" : "hidden"}`,
+                },
+
+                button({ class: "function-number-btn", onclick: () => handleNumberIncrement(-1), tabindex: -1 }, "−"),
                 input({
-                    type: 'number',
-                    class: 'function-number-input',
+                    type: "number",
+                    class: "function-number-input",
                     value: localNumberText,
                     oninput: handleNumberInputChange,
                     onfocus: handleFocus,
-                    onblur: handleBlur
+                    onblur: handleBlur,
                 }),
-                button({
-                    class: 'function-number-btn',
-                    onclick: () => handleNumberIncrement(1),
-                    tabindex: -1
-                }, '+')
+                button({ class: "function-number-btn", onclick: () => handleNumberIncrement(1), tabindex: -1 }, "+")
             ),
 
-            span({
-                class: 'function-passthrough-label',
-                style: () => currentType.val === FUNCTION_TYPES.PASSTHROUGH ? '' : 'display: none;'
-            }, '(no change)'),
+            span(
+                {
+                    class: () =>
+                        `function-passthrough-label ${currentType.val === FUNCTION_TYPES.PASSTHROUGH ? "" : "hidden"}`,
+                },
+                "(no change)"
+            ),
 
             input({
-                type: 'text',
-                class: 'function-raw-input',
-                style: () => currentType.val === FUNCTION_TYPES.COMPLEX ? '' : 'display: none;',
+                type: "text",
+                class: () => `function-raw-input ${currentType.val === FUNCTION_TYPES.COMPLEX ? "" : "hidden"}`,
                 value: rawSource,
+
                 oninput: handleRawChange,
                 onfocus: handleFocus,
                 onblur: handleRawBlur,
                 spellcheck: false,
-                placeholder: '(t) => t'
+                placeholder: "(t) => t",
             })
         ),
 
-        div({
-            class: 'function-presets',
-            style: () => isSliderType(currentType.val) ? '' : 'display: none;'
-        },
-            presets.map(preset =>
-                button({
-                    class: () => `function-preset-btn ${currentValue.val === preset ? 'active' : ''}`,
-                    onclick: () => handlePresetClick(preset),
-                    tabindex: -1
-                }, () => `${preset}${currentType.val === FUNCTION_TYPES.MULTIPLY ? '×' : '÷'}`)
+        div(
+            {
+                class: () => `function-presets ${isSliderType(currentType.val) ? "" : "hidden"}`,
+            },
+
+            presets.map((preset) =>
+                button(
+                    {
+                        class: () => `function-preset-btn ${currentValue.val === preset ? "active" : ""}`,
+                        onclick: () => handlePresetClick(preset),
+                        tabindex: -1,
+                    },
+                    () => `${preset}${currentType.val === FUNCTION_TYPES.MULTIPLY ? "×" : "÷"}`
+                )
             )
         )
     );

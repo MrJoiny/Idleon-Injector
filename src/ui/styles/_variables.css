@@ -16,7 +16,6 @@
     --c-accent-dim: rgba(255, 183, 0, 0.1);
     --c-accent-glow: rgba(255, 183, 0, 0.3);
 
-
     /* States */
     --c-success: #ccff00;
     --c-warning: #ffb700;
@@ -31,8 +30,8 @@
     --nav-width: 240px;
     --radius-sm: 2px;
     --radius-md: 4px;
-    --font-display: 'Rajdhani', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: "Rajdhani", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
 
     /* -- TRANSITIONS -- */
     --ease-tech: cubic-bezier(0.2, 0.6, 0.3, 1);

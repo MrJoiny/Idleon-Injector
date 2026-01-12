@@ -17,9 +17,19 @@
     backdrop-filter: blur(10px);
     z-index: 2000;
     display: none;
+    opacity: 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-family: var(--font-mono);
     font-size: 0.85rem;
+    transition: opacity 0.3s ease;
+}
+
+#status-message.is-visible {
+    display: block;
+}
+
+#status-message.fade-out {
+    opacity: 0;
 }
 
 #status-message.status-success {

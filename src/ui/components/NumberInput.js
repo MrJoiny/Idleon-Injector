@@ -1,4 +1,4 @@
-import van from '../van-1.6.0.js';
+import van from "../van-1.6.0.js";
 
 const { div, input, button } = van.tags;
 
@@ -10,28 +10,11 @@ const { div, input, button } = van.tags;
  * @param {Function} [props.onIncrement] - Click handler for plus button
  * @param {Object} [props.inputProps] - Additional properties for the input element (oninput, onfocus, etc)
  */
-export const NumberInput = ({
-    value,
-    onDecrement,
-    onIncrement,
-    ...inputProps
-}) => {
-    return div({ class: 'number-input-wrapper' },
-        input({
-            type: 'number',
-            value: value,
-            style: '',
-            ...inputProps
-        }),
-        button({
-            class: 'number-input-btn',
-            onclick: onDecrement,
-            tabindex: -1
-        }, "-"),
-        button({
-            class: 'number-input-btn',
-            onclick: onIncrement,
-            tabindex: -1
-        }, "+")
+export const NumberInput = ({ value, onDecrement, onIncrement, ...inputProps }) => {
+    return div(
+        { class: "number-input-wrapper" },
+        input({ type: "number", value: value, ...inputProps }),
+        button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "-"),
+        button({ class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
     );
 };

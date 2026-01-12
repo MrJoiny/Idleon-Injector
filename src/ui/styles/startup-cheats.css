@@ -12,8 +12,21 @@
     align-items: center;
 }
 
+.add-cheat-search-bar {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    align-items: center;
+}
+
+.cheat-search-input {
+    flex: 1;
+}
+
 /* --- CHEAT SEARCH RESULTS --- */
 .cheat-search-results {
+    display: none;
     position: absolute;
     bottom: 100%;
     left: 0;
@@ -33,6 +46,7 @@
     padding: 10px;
     cursor: pointer;
     border-bottom: 1px solid var(--c-border);
+    color: var(--c-text-main);
 }
 
 .cheat-search-results li:hover {

@@ -4,7 +4,7 @@
  * purely handles data: Returns Promises that resolve with data or reject with Error.
  */
 
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 /**
  * Generic internal request helper
@@ -13,7 +13,7 @@ const API_BASE = '/api';
  */
 async function _request(endpoint, options = {}) {
     // Clean endpoint to prevent double slashes when joining with API_BASE
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
     const url = `${API_BASE}/${cleanEndpoint}`;
 
     try {
@@ -40,81 +40,81 @@ async function _request(endpoint, options = {}) {
 }
 
 export async function fetchCheatStates() {
-    return _request('/cheat-states');
+    return _request("/cheat-states");
 }
 
 export async function fetchCheatsData() {
     // Parallel fetch for cheats and confirmation list
     const [cheats, needsConfirmation] = await Promise.all([
-        _request('/cheats'),
-        _request('/needs-confirmation').catch(() => [])
+        _request("/cheats"),
+        _request("/needs-confirmation").catch(() => []),
     ]);
 
     return { cheats, needsConfirmation };
 }
 
 export async function executeCheatAction(action) {
-    return _request('/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    return _request("/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: action }),
     });
 }
 
 export async function fetchAvailableCheats() {
-    return _request('/cheats');
+    return _request("/cheats");
 }
 
 export async function fetchConfig() {
-    return _request('/config');
+    return _request("/config");
 }
 
 export async function updateSessionConfig(updatedConfig) {
-    return _request('/config/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    return _request("/config/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedConfig),
     });
 }
 
 export async function saveConfigFile(configToSave) {
-    return _request('/config/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    return _request("/config/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(configToSave),
     });
 }
 
 export async function fetchDevToolsUrl() {
-    const data = await _request('/devtools-url');
+    const data = await _request("/devtools-url");
     if (data && data.url) return data.url;
-    throw new Error('No URL received from backend.');
+    throw new Error("No URL received from backend.");
 }
 
 export async function fetchOptionsAccount() {
-    return _request('/options-account');
+    return _request("/options-account");
 }
 
 export async function updateOptionAccountIndex(index, value) {
-    return _request('/options-account/index', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ index, value })
+    return _request("/options-account/index", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index, value }),
     });
 }
 
 export async function checkHeartbeat() {
     try {
-        return await _request('/heartbeat');
+        return await _request("/heartbeat");
     } catch (e) {
         return null;
     }
 }
 
 export async function openExternalUrl(url) {
-    return _request('/open-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+    return _request("/open-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
     });
 }

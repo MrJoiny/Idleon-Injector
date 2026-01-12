@@ -13,14 +13,14 @@
 
 // Uncomment the lines to use the cheats, that here is just an example
 exports.startupCheats = [
-	// 'unlock quickref',
-	// 'wide mtx',
-	// 'upstones rng',
-	// 'wide perfectobols',
-	// 'wide autoloot',
-	// 'nomore ^InvBag.*', // inventory bags
-	// 'nomore ^InvStorage.*', // chests
-	// 'nomore ^Obol([Bronze|Silver|Gold]).*', // bronze, silver, gold obols
+    // 'unlock quickref',
+    // 'wide mtx',
+    // 'upstones rng',
+    // 'wide perfectobols',
+    // 'wide autoloot',
+    // 'nomore ^InvBag.*', // inventory bags
+    // 'nomore ^InvStorage.*', // chests
+    // 'nomore ^Obol([Bronze|Silver|Gold]).*', // bronze, silver, gold obols
 ];
 
 /****************************************************************************************************
@@ -31,20 +31,19 @@ exports.startupCheats = [
 	Typing 'wide autoloot hidenotifications false' will disable the hidenotifications option for the wide autoloot cheat.
  */
 exports.cheatConfig = {
-	// wide: {
-	// 	autoloot: {
-	// 		hidenotifications: false,
-	// 	},
-	// },
-	// w5: {
-	// 	gaming: {
-	// 		FertilizerUpgCosts: t => t * 0.8, // fertilizer upgrades reduced by 20%
-	// 	},
-	// },
+    // wide: {
+    // 	autoloot: {
+    // 		hidenotifications: false,
+    // 	},
+    // },
+    // w5: {
+    // 	gaming: {
+    // 		FertilizerUpgCosts: t => t * 0.8, // fertilizer upgrades reduced by 20%
+    // 	},
+    // },
 };
 
 /****************************************************************************************************
 	Finally some injector config. The only thing you might need to change here is chromePath, which should be the path to your chrome.exe file.
 */
-exports.injectorConfig = {
-};
+exports.injectorConfig = {};

@@ -47,7 +47,8 @@
 .brand-text,
 .tab-label,
 #system-status-text {
-    transition: opacity 0.2s var(--ease-tech), max-width 0.2s var(--ease-tech), margin 0.2s var(--ease-tech), padding 0.2s var(--ease-tech);
+    transition: opacity 0.2s var(--ease-tech), max-width 0.2s var(--ease-tech), margin 0.2s var(--ease-tech),
+        padding 0.2s var(--ease-tech);
     opacity: 1;
     max-width: 200px;
     white-space: nowrap;
@@ -262,8 +263,25 @@
 .status-dot {
     width: 6px;
     height: 6px;
-    background: var(--c-success);
     border-radius: 50%;
+}
+
+.status-dot.is-online {
+    background: var(--c-success);
     box-shadow: 0 0 6px var(--c-success);
     animation: pulse 2s infinite;
+}
+
+.status-dot.is-offline {
+    background: var(--c-danger);
+    box-shadow: 0 0 6px var(--c-danger);
+    animation: none;
+}
+
+#system-status-text.is-online {
+    color: var(--c-success);
+}
+
+#system-status-text.is-offline {
+    color: var(--c-danger);
 }

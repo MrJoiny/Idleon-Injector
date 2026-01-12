@@ -19,6 +19,8 @@
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
+    left: var(--tooltip-x, -9999px);
+    top: var(--tooltip-y, -9999px);
     transition: opacity 0.15s, visibility 0.15s;
 }
 

@@ -1,0 +1,26 @@
+/**
+ * DevTools View
+ * Embedded warning, actions, error states
+ */
+
+.devtools-popout-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.devtools-actions {
+    margin: 20px auto 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.devtools-error {
+    color: var(--c-danger);
+    margin-top: 10px;
+}
+
+#devtools-message.is-error {
+    color: var(--c-danger);
+}

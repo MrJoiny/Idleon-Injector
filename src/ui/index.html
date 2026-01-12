@@ -1,34 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>IDLEON // INJECTOR</title>
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDLEON // INJECTOR</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
+    <body>
+        <!-- Background Grid & Noise -->
+        <div class="hud-background">
+            <div class="grid-overlay"></div>
+            <div class="vignette"></div>
+        </div>
 
-<body>
-    <!-- Background Grid & Noise -->
-    <div class="hud-background">
-        <div class="grid-overlay"></div>
-        <div class="vignette"></div>
-    </div>
+        <!-- VanJS Mount Point -->
+        <script type="module">
+            import van from "./van-1.6.0.js";
+            import { App } from "./components/App.js";
 
-    <!-- VanJS Mount Point -->
-    <script type="module">
-        import van from './van-1.6.0.js';
-        import { App } from './components/App.js';
-
-        // Mount the application
-        van.add(document.body, App());
-    </script>
-</body>
-
+            // Mount the application
+            van.add(document.body, App());
+        </script>
+    </body>
 </html>

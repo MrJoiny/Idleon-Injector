@@ -15,6 +15,50 @@
     letter-spacing: 0.05em;
 }
 
+/* --- ACCOUNT LAYOUT --- */
+.options-account-modal {
+    margin: 50px auto;
+    max-width: 600px;
+}
+
+.options-account-layout {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+
+.options-account-search {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.options-account-content {
+    flex: 1;
+}
+
+.options-account-loader {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.options-account-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.option-ai-label {
+    color: var(--c-accent);
+    font-size: 0.75rem;
+}
+
+.option-warning {
+    color: var(--c-warning);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
 /* --- TOGGLE SWITCH --- */
 .toggle-switch {
     display: inline-flex;
@@ -22,6 +66,10 @@
     cursor: pointer;
     gap: 10px;
     flex-shrink: 0;
+}
+
+.toggle-switch.account-toggle {
+    margin-left: 25px;
 }
 
 .toggle-switch input {
@@ -39,7 +87,7 @@
 }
 
 .toggle-switch .slider::before {
-    content: '';
+    content: "";
     position: absolute;
     width: 12px;
     height: 12px;
@@ -50,12 +98,12 @@
     transition: 0.3s;
 }
 
-.toggle-switch input:checked+.slider {
+.toggle-switch input:checked + .slider {
     background: rgba(200, 145, 0, 0.2);
     border-color: var(--c-accent);
 }
 
-.toggle-switch input:checked+.slider::before {
+.toggle-switch input:checked + .slider::before {
     transform: translateX(18px);
     background: var(--c-accent);
     box-shadow: 0 0 5px var(--c-accent);

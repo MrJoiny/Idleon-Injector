@@ -37,7 +37,7 @@
 }
 
 .config-sub-tab-button.active::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -11px;
     left: 0;
@@ -54,6 +54,39 @@
 .config-sub-tab-pane.active {
     display: block;
     animation: slideIn 0.2s;
+}
+
+/* --- FILTER BAR --- */
+.panel-section {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.config-filter-group {
+    flex: 0 0 auto;
+}
+
+.config-filter-label {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.config-filter-search {
+    flex: 1;
+}
+
+/* --- ACTION BAR HELPERS --- */
+.add-cheat-search-container {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
+.spacer {
+    flex: 1;
 }
 
 /* --- CONFIG ITEM --- */
@@ -100,6 +133,7 @@
 }
 
 .config-reset-btn {
+    display: inline-flex;
     background: transparent;
     border: 1px solid var(--c-warning);
     color: var(--c-warning);
@@ -129,7 +163,7 @@
     margin-top: 5px;
 }
 
-.modified-category>summary {
+.modified-category > summary {
     color: var(--c-warning);
 }
 

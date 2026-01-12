@@ -8,7 +8,7 @@ export const configDescriptions = {
     "cheatConfig.unban": "Prevents accounts from being banned. Might not work anymore, since there are multiple ways for a ban.",
     "cheatConfig.ingameUI": "Enables the in-game UI overlay.",
     "cheatConfig.steamachieve": "Allows unlocking Steam achievements.",
-    "cheatConfig.chng_enabled": "⚠️ DANGER: If true, 'chng' command becomes available. ONLY enable if you know what you are doing!",
+    "cheatConfig.chng_enabled": "⚠ DANGER: If true, 'chng' command becomes available. ONLY enable if you know what you are doing!",
 
     // MAXVAL - Resource Caps
     "cheatConfig.maxval.bones": "Maximum limit for bones to prevent save corruption.",
