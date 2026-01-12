@@ -2422,28 +2422,27 @@ function setupCreateElementProxy() {
 // Proxy for Mystery Stones always hitting the Misc stat if possible.
 function setupItemMiscProxy() {
     events(38).prototype._event_InventoryItem = new Proxy(events(38).prototype._event_InventoryItem, {
-        apply: function (originalFn, context, argumentsList) {
-            const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
-            try {
-                if (
-                    cheatState.upstones.misc &&
-                    itemDefs[inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]].h.typeGen ==
-                        "dStone" &&
-                    itemDefs[
-                        inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]
-                    ].h.Effect.startsWith("Mystery_Stat")
-                ) {
-                    cheatState["rng"] = 0.85; // First random roll for Misc stat.
-                    cheatState["rngInt"] = "high"; // 2nd random roll for positive value.
-                    let rtn = Reflect.apply(originalFn, context, argumentsList);
-                    cheatState["rng"] = false;
-                    cheatState["rngInt"] = false;
-                    return rtn;
-                }
-            } catch (e) {
-                console.error("Error in _event_InventoryItem proxy:", e);
+        apply: function (target, thisArg, argumentsList) {
+            if (!cheatState.upstones.misc) return Reflect.apply(target, thisArg, argumentsList);
+
+            const dragId = thisArg.actor.getValue("ActorEvents_38", "_ItemDragID");
+            const inventory = bEngine.getGameAttribute("InventoryOrder");
+            const item = itemDefs[inventory[dragId]].h;
+
+            const isMysteryStone = item.typeGen === "dStone" && item.Effect.startsWith("Mystery_Stat");
+
+            if (isMysteryStone) {
+                cheatState.rng = 0.85; // First random roll for Misc stat.
+                cheatState.rngInt = "high"; // 2nd random roll for positive value.
+
+                let rtn = Reflect.apply(target, thisArg, argumentsList);
+
+                cheatState.rng = false;
+                cheatState.rngInt = false;
+                return rtn;
             }
-            return Reflect.apply(originalFn, context, argumentsList);
+
+            return Reflect.apply(target, thisArg, argumentsList);
         },
     });
 }
