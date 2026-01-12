@@ -444,8 +444,12 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "Missing url parameter" });
         }
 
-        //TODO: implement for macos
-        const command = process.platform === "win32" ? `start "" "${url}"` : `xdg-open "${url}"`;
+        const command =
+            process.platform === "win32"
+                ? `start "" "${url}"`
+                : process.platform === "darwin"
+                ? `open "${url}"`
+                : `xdg-open "${url}"`;
 
         exec(command, (error) => {
             if (error) {

@@ -160,7 +160,13 @@ async function main() {
         const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
         printConfiguration(config.injectorConfig);
 
+        const target = (config.injectorConfig.target || "steam").toLowerCase();
+        if (os.platform() === "darwin" && target !== "web") {
+            throw new Error("macOS only supports the 'web' target. Set injectorConfig.target to 'web'.");
+        }
+
         const hook = await attachToTarget();
+
         const client = await setupIntercept(
             hook,
             config.injectorConfig,
