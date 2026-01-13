@@ -87,22 +87,9 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
-            let manipulatorResult = await Runtime.evaluate({ expression: "getZJSManipulator()", awaitPromise: true });
-            let newBody;
-
-            if (manipulatorResult.result && manipulatorResult.result.type === "string") {
-                let manipulator = new Function("return " + manipulatorResult.result.value)();
-                newBody = manipulator(originalBody);
-            } else {
-                console.warn(
-                    "getZJSManipulator() did not return a valid function string. Applying basic injection only."
-                );
-                newBody = originalBody;
-            }
-
             // Assign the game variable to a global window property for cheat access
             const replacementRegex = new RegExp(config.injreg);
-            newBody = newBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
+            let newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 
             console.log("Updated game code...");
 

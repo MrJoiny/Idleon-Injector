@@ -1,0 +1,160 @@
+/**
+ * Core Globals Module
+ *
+ * Contains game engine references and initialization functions.
+ * These are populated when the game is ready.
+ */
+
+/**
+ * The Stencyl game engine reference.
+ * @type {object|null}
+ */
+export let bEngine = null;
+
+/**
+ * Item definitions from the game.
+ * @type {object|null}
+ */
+export let itemDefs = null;
+
+/**
+ * Monster definitions from the game.
+ * @type {object|null}
+ */
+export let monsterDefs = null;
+
+/**
+ * Custom lists from the game (CList).
+ * @type {object|null}
+ */
+export let CList = null;
+
+/**
+ * Stencyl behavior script object.
+ * @type {object|null}
+ */
+export let behavior = null;
+
+/**
+ * Function to get actor event scripts by number.
+ * @type {function|null}
+ */
+export let events = null;
+
+/**
+ * Set of all item types discovered from item definitions.
+ * @type {Set<string>}
+ */
+export const itemTypes = new Set();
+
+/**
+ * The game context (window/this reference).
+ * Set during gameReady().
+ * @type {object|null}
+ */
+export let gameContext = null;
+
+/**
+ * Wait for the game to be fully loaded and ready.
+ * This polls until the Stencyl engine is initialized and cloud data is loaded.
+ *
+ * @param {object} context - The game window context (usually `this` from injection)
+ * @returns {Promise<boolean>} Resolves to true when game is ready
+ */
+export async function gameReady(context) {
+    while (
+        !context["com.stencyl.Engine"] ||
+        !context["com.stencyl.Engine"].hasOwnProperty("engine") ||
+        !context["com.stencyl.Engine"].engine.hasOwnProperty("scene") ||
+        !context["com.stencyl.Engine"].engine.sceneInitialized ||
+        context["com.stencyl.Engine"].engine.behaviors.behaviors[0].script._CloudLoadComplete !== 1
+    ) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    registerCommonVariables(context);
+    return true;
+}
+
+/**
+ * Register common game variables and references.
+ * Called after the game is ready to populate global references.
+ *
+ * @param {object} context - The game window context
+ */
+export function registerCommonVariables(context) {
+    gameContext = context;
+    bEngine = context["com.stencyl.Engine"].engine;
+    itemDefs = bEngine.getGameAttribute("ItemDefinitionsGET").h;
+    monsterDefs = bEngine.getGameAttribute("MonsterDefinitionsGET").h;
+    CList = bEngine.gameAttributes.h.CustomLists.h;
+    behavior = context["com.stencyl.behavior.Script"];
+    events = function (num) {
+        return context["scripts.ActorEvents_" + num];
+    };
+
+    // Populate itemTypes set
+    itemTypes.clear();
+    Object.values(itemDefs).forEach((entry) => {
+        const type = entry.h?.Type;
+        if (type) itemTypes.add(type);
+    });
+}
+
+/**
+ * Get the current game context.
+ * @returns {object|null}
+ */
+export function getGameContext() {
+    return gameContext;
+}
+
+/**
+ * Check if game globals are initialized.
+ * @returns {boolean}
+ */
+export function isGameReady() {
+    return bEngine !== null && itemDefs !== null;
+}
+
+/**
+ * Internal globals registry for accessor functions.
+ * @private
+ */
+const _globals = {
+    get bEngine() {
+        return bEngine;
+    },
+    get itemDefs() {
+        return itemDefs;
+    },
+    get monsterDefs() {
+        return monsterDefs;
+    },
+    get CList() {
+        return CList;
+    },
+    get behavior() {
+        return behavior;
+    },
+    get events() {
+        return events;
+    },
+};
+
+/**
+ * Get a global reference by name.
+ * @param {string} name - One of: bEngine, itemDefs, monsterDefs, CList, behavior, events
+ * @returns {any|null}
+ */
+export function getGlobal(name) {
+    return _globals[name] ?? null;
+}
+
+// Individual accessor functions for backwards compatibility
+export const getBEngine = () => bEngine;
+export const getItemDefs = () => itemDefs;
+export const getMonsterDefs = () => monsterDefs;
+export const getCList = () => CList;
+export const getBehavior = () => behavior;
+export const getEvents = () => events;

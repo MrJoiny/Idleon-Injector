@@ -6,12 +6,13 @@
     "bin": "src/main.js",
     "scripts": {
         "start": "node src/main.js",
+        "build:cheats": "node build.cheats.mjs",
+        "watch:cheats": "node build.cheats.mjs --watch",
         "validate": "node --check cheats.js config.js && node -e \"require('./src/ui/optionsAccountSchema.json')\"",
-        "build": "pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
-        "build-unix": "pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
-        "build-macos-x64": "pkg . -t node18-macos-x64 --compress Gzip --output InjectCheatsUI-macos-x64",
-        "build-macos-arm64": "pkg . -t node18-macos-arm64 --compress Gzip --output InjectCheatsUI-macos-arm64"
-
+        "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
+        "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
+        "build-macos-x64": "npm run build:cheats && pkg . -t node18-macos-x64 --compress Gzip --output InjectCheatsUI-macos-x64",
+        "build-macos-arm64": "npm run build:cheats && pkg . -t node18-macos-arm64 --compress Gzip --output InjectCheatsUI-macos-arm64"
     },
     "author": "MrJoiny",
     "dependencies": {
@@ -22,5 +23,8 @@
         "assets": [
             "src/ui/**/*"
         ]
+    },
+    "devDependencies": {
+        "esbuild": "^0.27.2"
     }
 }
