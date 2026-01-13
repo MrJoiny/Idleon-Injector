@@ -9,85 +9,97 @@
 import { cheats } from "../core/registration.js";
 import { summonUnits } from "../constants/summonUnits.js";
 import { keychainStatsMap } from "../constants/keychainStats.js";
-import { itemDefs, monsterDefs, CList } from "../core/globals.js";
+import { bEngine, itemDefs, monsterDefs, CList } from "../core/globals.js";
 
 /**
  * Helper to add choices from an object's keys.
  * @param {Array} choices - Target array to push choices to
  * @param {object} source - Source object to iterate keys
- * @param {function} formatter - (key, item) => { message, value }
+ * @param {function} formatter - (key, item) => choice | choice[] | null
  */
 function addChoices(choices, source, formatter) {
     if (!source) return;
     for (const key of Object.keys(source)) {
-        const choice = formatter(key, source[key]);
-        if (choice) choices.push(choice);
+        const result = formatter(key, source[key]);
+        if (!result) continue;
+        if (Array.isArray(result)) {
+            choices.push(...result);
+        } else {
+            choices.push(result);
+        }
     }
 }
 
 /**
  * Get autocomplete suggestions for the CLI/WebUI.
- * @returns {Array<{message: string, value: string}>}
+ * @returns {Array<{value: string, message: string, category: string}>}
  */
 export function getAutoCompleteSuggestions() {
     const choices = [];
     // here are items stored that are not visible in the w5 slab
     const itemBlacklist = new Set(CList.RANDOlist[17]);
+    itemBlacklist.delete("COIN");
 
-    // Add cheat commands
+    // cheat commands
     addChoices(choices, cheats, (name, def) => ({
-        message: `${name} (${def?.message || " "})`,
         value: name,
+        message: def?.message || "",
+        category: def?.category || "general",
     }));
 
-    // Add item drops
+    // item commands (drop, nomore, multiplestacks)
     addChoices(choices, itemDefs, (code, item) => {
         if (!item?.h?.displayName) return null;
         if (itemBlacklist.has(code)) return null;
         const name = item.h.displayName.replace(/_/g, " ");
         // filtering out ui items named strung jewels
         if (code != "Quest66" && name == "Strung Jewels") return null;
-        choices.push({
-            message: `nomore ${code} (${name})`,
-            value: `nomore ${code}`,
-        });
-        choices.push({
-            message: `multiplestacks ${code} (${name})`,
-            value: `multiplestacks ${code}`,
-        });
-        return {
-            message: `drop ${code} (${name})`,
-            value: `drop ${code}`,
-        };
+
+        return [
+            { value: `drop ${code}`, message: name, category: "drop" },
+            { value: `nomore ${code}`, message: name, category: "nomore" },
+            { value: `multiplestacks ${code}`, message: name, category: "multiplestacks" },
+        ];
     });
 
-    // Add monster spawns
+    // monster spawns
     addChoices(choices, monsterDefs, (code, monster) => {
         if (!monster?.h?.Name) return null;
         const name = monster.h.Name.replace(/_/g, " ");
-        return {
-            message: `spawn ${code} (${name})`,
-            value: `spawn ${code}`,
-        };
+        return { value: `spawn ${code}`, message: name, category: "spawn" };
     });
 
-    // Add summon units
+    // summon units
     addChoices(choices, summonUnits, (unit) => ({
-        message: `w6 sumunit ${unit}`,
         value: `w6 sumunit ${unit}`,
+        message: "",
+        category: "w6",
     }));
 
-    // Add keychain stats
+    // keychain stats
     addChoices(choices, keychainStatsMap, (stat) => ({
-        message: `keychain ${stat}`,
         value: `keychain ${stat}`,
+        message: "",
+        category: "keychain",
     }));
+
+    // game attributes (gga)
+    if (bEngine?.gameAttributes?.h) {
+        for (const key of Object.keys(bEngine.gameAttributes.h)) {
+            choices.push({
+                value: `gga ${key}`,
+                message: "",
+                category: "gga",
+            });
+        }
+    }
 
     return choices;
 }
 
 /**
  * Get commands that need confirmation/additional input.
+ * This is now also used to make a value fields for the ui
  * @returns {string[]}
  */
 export function getChoicesNeedingConfirmation() {

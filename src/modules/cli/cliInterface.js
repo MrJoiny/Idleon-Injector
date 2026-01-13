@@ -33,7 +33,11 @@ async function startCliInterface(context, client, options = {}) {
         return;
     }
     const choices = (choicesResult.result.value || []).map((choice) => {
+        // Set name to value for Enquirer display/selection
         if (!choice.name) choice.name = choice.value;
+        // Create display message: "value (description)" for CLI readability
+        choice.displayMessage = choice.message;
+        choice.message = `${choice.value} (${choice.message || ""})`;
         return choice;
     });
 
@@ -65,8 +69,11 @@ async function startCliInterface(context, client, options = {}) {
                     const str = input.toLowerCase();
                     const mustInclude = str.split(" ");
                     return choices.filter((ch) => {
+                        const msg = (ch.message || "").toLowerCase();
+                        const val = (ch.value || "").toLowerCase();
                         for (const word of mustInclude) {
-                            if (!ch.message.toLowerCase().includes(word)) return false;
+                            // Match if word is in either value or message
+                            if (!msg.includes(word) && !val.includes(word)) return false;
                         }
                         return true;
                     });

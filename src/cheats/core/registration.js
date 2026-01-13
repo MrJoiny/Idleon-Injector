@@ -9,8 +9,8 @@ import { setup } from "./setup.js";
 
 /**
  * Registry of all cheat commands.
- * Keys are command strings (e.g., "godlike crit"), values are { fn, message }.
- * @type {Object<string, {fn: Function, message: string}>}
+ * Keys are command strings (e.g., "godlike crit"), values are { fn, message, category }.
+ * @type {Object<string, {fn: Function, message: string, category: string}>}
  */
 export const cheats = {};
 
@@ -59,9 +59,10 @@ export function cheat(action, context) {
  * @param {string} command - The command string (e.g., "drop" or "godlike crit")
  * @param {Function} fn - The function to execute when command is called
  * @param {string} message - Help message describing the cheat
+ * @param {string} [category="general"] - Category for grouping in UI
  */
-export function registerCheat(command, fn, message) {
-    cheats[command] = { fn: fn, message: message };
+export function registerCheat(command, fn, message, category = "general") {
+    cheats[command] = { fn: fn, message: message, category: category };
 }
 
 /**
@@ -76,14 +77,29 @@ export function registerCheat(command, fn, message) {
  * @param {object} cheatMap - Cheat definition object
  * @param {string} cheatMap.name - Command name
  * @param {string} cheatMap.message - Help message
+ * @param {string} [cheatMap.category] - Category for grouping (overrides inherited)
  * @param {Function} [cheatMap.fn] - Custom function (overrides default toggle behavior)
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
  * @param {object} [cheatMap.configurable] - Configuration options
  * @param {boolean} [cheatMap.canToggleSubcheats] - Allow mass toggle of subcheats
  * @param {string[]} [higherKeys] - Parent command keys (for recursion)
+ * @param {string} [parentCategory] - Category inherited from parent
  */
-export function registerCheats(cheatMap, higherKeys = []) {
+export function registerCheats(cheatMap, higherKeys = [], parentCategory = null) {
     const cmd = higherKeys.concat(cheatMap.name).join(" ");
+
+    // Determine category: explicit > inherited > derive from top-level name > "general"
+    let category;
+    if (cheatMap.category) {
+        category = cheatMap.category;
+    } else if (parentCategory) {
+        category = parentCategory;
+    } else if (higherKeys.length === 0 && cheatMap.subcheats) {
+        // Top-level group with subcheats: use name as category (e.g., "w1")
+        category = cheatMap.name;
+    } else {
+        category = "general";
+    }
 
     // Navigate to the correct state object level
     let stateObject = higherKeys.reduce((obj, key) => obj[key], cheatState);
@@ -151,11 +167,11 @@ export function registerCheats(cheatMap, higherKeys = []) {
         return `${stateObject[cheatMap.name] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
     };
 
-    registerCheat(cmd, fn, cheatMap["message"]);
+    registerCheat(cmd, fn, cheatMap["message"], category);
 
-    // Recursively register subcheats
+    // Recursively register subcheats, passing category
     if (cheatMap.hasOwnProperty("subcheats")) {
-        cheatMap.subcheats.forEach((map) => registerCheats(map, higherKeys.concat(cheatMap.name)));
+        cheatMap.subcheats.forEach((map) => registerCheats(map, higherKeys.concat(cheatMap.name), category));
     }
 }
 
@@ -176,7 +192,7 @@ export function updateCheatConfig(newConfig) {
 
 /**
  * Get all registered cheats.
- * @returns {Object<string, {fn: Function, message: string}>}
+ * @returns {Object<string, {fn: Function, message: string, category: string}>}
  */
 export function getCheats() {
     return cheats;
