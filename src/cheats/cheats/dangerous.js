@@ -10,11 +10,11 @@
  * Dynamic cheats (bulk, buy) need game data and are registered via registerDynamicDangerousCheats().
  */
 
-import { registerCheat, registerCheats } from "../core/registration.js";
+import { registerCheats } from "../core/registration.js";
 import { bEngine, itemDefs, CList } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
-import { knownBundles, skillTypes, alchemyTypes } from "../constants.js";
+import { knownBundles, alchemyTypes } from "../constants.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -104,22 +104,6 @@ function wipeFunction(params) {
 }
 
 /**
- * Change skill level function.
- * @param {Array} params - Command parameters
- * @returns {string} Result message
- */
-function changeLv0(params) {
-    const lvltype = params[0];
-    const setlvl = parseInt(params[1]) || -1;
-    if (setlvl === -1) return "The lvl value has to be numeric!";
-
-    if (lvltype in skillTypes) {
-        bEngine.getGameAttribute("Lv0")[skillTypes[lvltype]] = setlvl;
-    }
-    return `${lvltype} level has been changed to ${setlvl}.`;
-}
-
-/**
  * Creates a level changer function with custom setter logic.
  * @param {string} name - Display name for the result message
  * @param {function(number): void} setter - Function to set the level
@@ -170,26 +154,6 @@ registerCheats({
         { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
     ],
 });
-
-// Class change
-registerCheat(
-    "class",
-    function (params) {
-        let ClassId = parseInt(params[0]) || -1;
-        if (ClassId === -1) return "Class Id has to be a numeric value!";
-        if (ClassId > 50 || ClassId < 0) ClassId = 1; // A small fail-safe
-        bEngine.setGameAttribute("CharacterClass", ClassId);
-        return `Class id has been changed to ${ClassId}`;
-    },
-    "!danger! Change character class to this id"
-);
-
-// Level change - generate basic skill subcheats from skillTypes
-const basicSkillSubcheats = Object.keys(skillTypes).map((skill) => ({
-    name: skill,
-    message: `Change the ${skill} lvl to this value`,
-    fn: changeLv0,
-}));
 
 // Alchemy subcheats - generated from alchemyTypes
 const alchemySubcheats = Object.keys(alchemyTypes).map((type) => ({
@@ -255,14 +219,8 @@ const customLevelChangers = [
     },
 ];
 
-registerCheats({
-    name: "lvl",
-    message: "Change the lvl of a skill or alchemy type to this value",
-    subcheats: [...basicSkillSubcheats, ...alchemySubcheats, ...customLevelChangers],
-});
-
 /**
- * Register bulk and buy cheats.
+ * Register dynamic cheats.
  * These need to be registered after game is ready because they use dynamic data.
  * @param {object} gameWindow - The game window context
  */
@@ -301,7 +259,7 @@ export function registerDynamicDangerousCheats(gameWindow) {
             })),
     });
 
-    // Gem Pack Cheats - build dynamically from game data
+    // Gem Pack Cheats
     const bundleMessages = gameWindow["scripts.CustomMapsREAL"]?.GemPopupBundleMessages()?.h || {};
     const allBundles = [...knownBundles];
 
@@ -325,5 +283,45 @@ export function registerDynamicDangerousCheats(gameWindow) {
                 return `${name} has been bought!`;
             },
         })),
+    });
+
+    // Class change
+    const classNames = CList.ClassNames.slice(0, 41) || [];
+    registerCheats({
+        name: "class",
+        message: "!danger! Change character class",
+        subcheats: classNames
+            .map((name, id) => ({
+                name: name.toLowerCase(),
+                message: `Change to ${name} (ID: ${id})`,
+                fn: function () {
+                    bEngine.setGameAttribute("CharacterClass", id);
+                    return `Class changed to ${name} (ID: ${id})`;
+                },
+            }))
+            .filter((sub) => sub.name && sub.name !== "blank"),
+    });
+
+    // Skill level changes
+    // SkillNames starts with "Mining" at index 0, but Lv0 has "class" at index 0
+    // So we prepend "class" and offset the skill indices by 1
+    const skillNames = CList.SkillNames || [];
+    const skillSubcheats = [{ name: "class", index: 0 }, ...skillNames.map((name, i) => ({ name, index: i + 1 }))]
+        .filter((s) => s.name && s.name !== "Blank")
+        .map(({ name, index }) => ({
+            name: name.toLowerCase(),
+            message: `Change ${name} level`,
+            fn: function (params) {
+                const setlvl = parseInt(params[1]) || -1;
+                if (setlvl === -1) return "The lvl value has to be numeric!";
+                bEngine.getGameAttribute("Lv0")[index] = setlvl;
+                return `${name} level has been changed to ${setlvl}.`;
+            },
+        }));
+
+    registerCheats({
+        name: "lvl",
+        message: "Change the lvl of a skill or alchemy type to this value",
+        subcheats: [...skillSubcheats, ...alchemySubcheats, ...customLevelChangers],
     });
 }

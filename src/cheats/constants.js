@@ -4,20 +4,6 @@
  * Consolidated constants used across the cheats module.
  */
 
-// Skill type indices for Lv0 attribute
-export const skillTypes = {
-    class: 0,
-    mining: 1,
-    smithing: 2,
-    chopping: 3,
-    fishing: 4,
-    alchemy: 5,
-    catching: 6,
-    trapping: 7,
-    construction: 8,
-    worship: 9,
-};
-
 // Alchemy type indices for CauldronInfo attribute
 export const alchemyTypes = {
     orangebubbles: 0,
