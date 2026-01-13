@@ -2,26 +2,34 @@
  * Cheats Module - Main Entry Point
  *
  * This is the main entry point for the cheats module.
- * All exports from here will be available in the global scope after bundling.
+ * Functions and objects are exposed via window.* for runtime access.
  */
 
 // Runtime-injected globals (defined by cheatInjection.js before this runs)
 
 /* global startupCheats, cheatConfig, webPort */
 
-// Import utilities and constants
+// Import utilities
 
-import { deepCopy, createProxy, traverse } from "./utils/index.js";
-import { summonUnits, keychainStatsMap, lootableItemTypes, knownBundles, blacklist_gga } from "./constants/index.js";
+import { deepCopy } from "./utils/deepCopy.js";
+import { createProxy } from "./utils/createProxy.js";
+import { traverse } from "./utils/traverse.js";
 
-// Import core system
+// Import constants
+
+import { summonUnits } from "./constants/summonUnits.js";
+import { keychainStatsMap } from "./constants/keychainStats.js";
+import { lootableItemTypes } from "./constants/lootableItems.js";
+import { knownBundles } from "./constants/bundles.js";
+import { blacklist_gga } from "./constants/blacklist.js";
+
+// Import core - state
+
+import { cheatState } from "./core/state.js";
+
+// Import core - globals
 
 import {
-    // State
-    cheatState,
-    dictVals,
-    setupDone,
-    // Globals (use accessor functions for late-bound values)
     getBEngine,
     getItemDefs,
     getMonsterDefs,
@@ -29,35 +37,43 @@ import {
     getBehavior,
     getEvents,
     itemTypes,
-    getGameContext,
-    isGameReady,
-    // Registration
+} from "./core/globals.js";
+
+// Import core - registration
+
+import {
     cheats,
     cheat as coreCheat,
     registerCheat,
     registerCheats,
     updateCheatConfig,
-    getCheats,
-    // Setup
+} from "./core/registration.js";
+
+// Import core - setup
+
+import {
     setup as coreSetup,
     initSetup,
     setSetupAllProxies,
     setSetupFirebaseProxy,
     setInjectWebUI,
     setRegisterDynamicCheats,
-} from "./core/index.js";
+} from "./core/setup.js";
 
 // Import proxies
-import { setupAllProxies, setupFirebaseProxy } from "./proxies/index.js";
+import { setupAllProxies } from "./proxies/setup.js";
+import { setupFirebaseProxy } from "./proxies/firebase.js";
 
 // Import cheats
-import { registerStaticCheats, registerDynamicCheats } from "./cheats/index.js";
+import { registerStaticCheats, registerDynamicCheats } from "./cheats/register.js";
 
 // Import helpers
-import { initHelpers, dropOnChar, rollAllObols } from "./helpers/index.js";
+import { initHelpers } from "./helpers/init.js";
+import { dropOnChar } from "./helpers/dropOnChar.js";
+import { rollAllObols } from "./helpers/obolRolling.js";
 
 // Import UI
-import { injectWebUI, setWebPort } from "./ui/index.js";
+import { injectWebUI, setWebPort } from "./ui/overlay.js";
 
 // Import API functions
 import {
@@ -65,9 +81,8 @@ import {
     setOptionsListAccountIndex,
     getOptionsListAccountIndex,
     cheatStateList,
-    getAutoCompleteSuggestions,
-    getChoicesNeedingConfirmation,
-} from "./api/index.js";
+} from "./api/stateAccessors.js";
+import { getAutoCompleteSuggestions, getChoicesNeedingConfirmation } from "./api/suggestions.js";
 
 // Initialize with runtime globals
 
@@ -113,7 +128,7 @@ setRegisterDynamicCheats((gameWindow, options) => {
  * @param {string} action - The cheat command to execute
  * @returns {string} Result message
  */
-export function cheat(action) {
+function cheat(action) {
     return coreCheat(action, this);
 }
 
@@ -121,64 +136,9 @@ export function cheat(action) {
  * Setup function - wraps coreSetup with proper context.
  * @returns {Promise<string>} Setup result message
  */
-export async function setup() {
+async function setup() {
     return coreSetup.call(this);
 }
-
-// Re-export core functions
-
-export { registerCheat, registerCheats, updateCheatConfig };
-export { cheatState, cheats };
-export { getBEngine, getItemDefs, getMonsterDefs, getCList, getBehavior, getEvents, itemTypes };
-export { getGameContext, isGameReady };
-
-// Legacy exports for backwards compatibility (these are getters that return current values)
-export const bEngine = {
-    get current() {
-        return getBEngine();
-    },
-};
-export const itemDefs = {
-    get current() {
-        return getItemDefs();
-    },
-};
-export const monsterDefs = {
-    get current() {
-        return getMonsterDefs();
-    },
-};
-export const CList = {
-    get current() {
-        return getCList();
-    },
-};
-export const behavior = {
-    get current() {
-        return getBehavior();
-    },
-};
-export const events = {
-    get current() {
-        return getEvents();
-    },
-};
-
-// Re-export API functions
-
-export {
-    getOptionsListAccount,
-    setOptionsListAccountIndex,
-    getOptionsListAccountIndex,
-    cheatStateList,
-    getAutoCompleteSuggestions,
-    getChoicesNeedingConfirmation,
-};
-
-// Re-export utilities and constants
-
-export { deepCopy, createProxy, traverse };
-export { summonUnits, keychainStatsMap, lootableItemTypes, knownBundles, blacklist_gga };
 
 // Global Exports
 // These are assigned to window/global for access by cheatInjection.js and WebUI

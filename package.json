@@ -6,8 +6,8 @@
     "bin": "src/main.js",
     "scripts": {
         "start": "node src/main.js",
-        "build:cheats": "node build.cheats.mjs",
-        "watch:cheats": "node build.cheats.mjs --watch",
+        "build:cheats": "rollup -c",
+        "watch:cheats": "rollup -c --watch",
         "validate": "node --check cheats.js config.js && node -e \"require('./src/ui/optionsAccountSchema.json')\"",
         "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
         "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
@@ -25,6 +25,6 @@
         ]
     },
     "devDependencies": {
-        "esbuild": "^0.27.2"
+        "rollup": "^4.41.0"
     }
 }

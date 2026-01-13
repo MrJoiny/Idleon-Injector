@@ -7,7 +7,8 @@
  */
 
 import { cheats } from "../core/registration.js";
-import { summonUnits, keychainStatsMap } from "../constants/index.js";
+import { summonUnits } from "../constants/summonUnits.js";
+import { keychainStatsMap } from "../constants/keychainStats.js";
 import { itemDefs, monsterDefs } from "../core/globals.js";
 
 /**

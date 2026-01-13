@@ -12,7 +12,8 @@
 
 import { cheatState } from "../core/state.js";
 import { bEngine } from "../core/globals.js";
-import { createProxy, createToggleProxy } from "../utils/index.js";
+import { createProxy } from "../utils/createProxy.js";
+import { createToggleProxy } from "../utils/proxyHelpers.js";
 import { getConfig, setConfig } from "./proxyContext.js";
 
 /**
