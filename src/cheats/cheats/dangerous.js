@@ -8,6 +8,7 @@
  * - setalch (change alchemy levels)
  * - bulk (drop items by type)
  * - buy (gem shop packs)
+ * Dynamic cheats (bulk, buy) need game data and are registered via registerDynamicDangerousCheats().
  */
 
 import { registerCheat, registerCheats } from "../core/registration.js";
@@ -165,137 +166,131 @@ function alchFn(params) {
     } else return `Wrong sub-command, use one of these:\n${Object.keys(alchdict).join(", ")}`;
 }
 
-/**
- * Register all dangerous cheats.
- * This function should be called after game is ready.
- */
-export function registerDangerousCheats() {
-    // Wipe commands
-    registerCheats({
-        name: "wipe",
-        message: "Wipe certain stuff from your account. Use with caution!",
-        subcheats: [
-            { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
-            {
-                name: "invslot",
-                message: "Wipe your inventory slot uses array indexes 0 equals the first slot",
-                fn: wipeFunction,
-            },
-            { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
-            {
-                name: "chestslot",
-                message: "Wipe your chest slot uses array indexes 0 equals the first slot",
-                fn: wipeFunction,
-            },
-            { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
-            {
-                name: "overpurchases",
-                message: "Set all overpurchased items in the gem shop to their max safe value.",
-                fn: wipeFunction,
-            },
-            { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
-        ],
-    });
-
-    // Class change
-    registerCheat(
-        "class",
-        function (params) {
-            let ClassId = parseInt(params[0]) || -1;
-            if (ClassId == -1) return `Class Id has to be a numeric value!`;
-            if (ClassId > 50 || ClassId < 0) ClassId = 1; // A small fail-safe
-            bEngine.setGameAttribute("CharacterClass", ClassId);
-            return `Class id has been changed to ${ClassId}`;
+// Wipe commands
+registerCheats({
+    name: "wipe",
+    message: "Wipe certain stuff from your account. Use with caution!",
+    subcheats: [
+        { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
+        {
+            name: "invslot",
+            message: "Wipe your inventory slot uses array indexes 0 equals the first slot",
+            fn: wipeFunction,
         },
-        "!danger! Change character class to this id"
-    );
+        { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
+        {
+            name: "chestslot",
+            message: "Wipe your chest slot uses array indexes 0 equals the first slot",
+            fn: wipeFunction,
+        },
+        { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
+        {
+            name: "overpurchases",
+            message: "Set all overpurchased items in the gem shop to their max safe value.",
+            fn: wipeFunction,
+        },
+        { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
+    ],
+});
 
-    // Level change
-    registerCheats({
-        name: "lvl",
-        message: "Change the lvl of this skill to this value",
-        subcheats: [
-            { name: "class", message: "Change the class lvl to this value", fn: changeLv0 },
-            { name: "mining", message: "Change the mining lvl to this value", fn: changeLv0 },
-            { name: "smithing", message: "Change the smithing lvl to this value", fn: changeLv0 },
-            { name: "chopping", message: "Change the chopping lvl to this value", fn: changeLv0 },
-            { name: "fishing", message: "Change the fishing lvl to this value", fn: changeLv0 },
-            { name: "alchemy", message: "Change the alchemy lvl to this value", fn: changeLv0 },
-            { name: "catching", message: "Change the catching lvl to this value", fn: changeLv0 },
-            { name: "trapping", message: "Change the trapping lvl to this value", fn: changeLv0 },
-            { name: "construction", message: "Change the construction lvl to this value", fn: changeLv0 },
-            { name: "worship", message: "Change the worship lvl to this value", fn: changeLv0 },
-            {
-                name: "furnace",
-                message: "!danger! Change all furnace lvl to this value",
-                fn: createLevelChanger("Furnace", (lvl) =>
-                    bEngine.setGameAttribute("FurnaceLevels", [16, lvl, lvl, lvl, lvl, lvl])
-                ),
-            },
-            {
-                name: "statue",
-                message: "!danger! Change all statue lvl to this value",
-                fn: createLevelChanger("Statue", (lvl) =>
-                    bEngine.getGameAttribute("StatueLevels").forEach((item) => (item[0] = lvl))
-                ),
-            },
-            {
-                name: "anvil",
-                message: "!danger! Change all anvil lvl to this value",
-                fn: createLevelChanger("Anvil levels", (lvl) => {
-                    const Levels = bEngine.getGameAttribute("AnvilPAstats");
-                    [3, 4, 5].forEach((i) => (Levels[i] = lvl));
-                    bEngine.setGameAttribute("AnvilPAstats", Levels);
-                }),
-            },
-            {
-                name: "talent",
-                message: "!danger! Change all talent lvls to this value",
-                fn: createLevelChanger("Talent levels", (lvl) => {
-                    const LevelsMax = bEngine.getGameAttribute("SkillLevelsMAX");
-                    const Levels = bEngine.getGameAttribute("SkillLevels");
-                    for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
-                }),
-            },
-            {
-                name: "stamp",
-                message: "Change all stamp lvls to this value",
-                fn: createLevelChanger("Both current and max of all stamp levels have been set", (lvl) => {
-                    const LevelsMax = bEngine.getGameAttribute("StampLevelMAX");
-                    const Levels = bEngine.getGameAttribute("StampLevel");
-                    for (const [i, arr] of Object.entries(LevelsMax))
-                        for (const j of Object.keys(arr)) LevelsMax[i][j] = Levels[i][j] = lvl;
-                }),
-            },
-            {
-                name: "shrine",
-                message: "!danger! Change all shrine lvls to this value",
-                fn: createLevelChanger("Shrine levels", (lvl) =>
-                    bEngine.getGameAttribute("ShrineInfo").forEach((item) => {
-                        item[3] = lvl;
-                        item[4] = 0;
-                    })
-                ),
-            },
-        ],
-    });
+// Class change
+registerCheat(
+    "class",
+    function (params) {
+        let ClassId = parseInt(params[0]) || -1;
+        if (ClassId == -1) return `Class Id has to be a numeric value!`;
+        if (ClassId > 50 || ClassId < 0) ClassId = 1; // A small fail-safe
+        bEngine.setGameAttribute("CharacterClass", ClassId);
+        return `Class id has been changed to ${ClassId}`;
+    },
+    "!danger! Change character class to this id"
+);
 
-    // Alchemy level changes
-    registerCheats({
-        name: "setalch",
-        message: "change alchemy levels",
-        subcheats: [
-            { name: "orangebubbles", message: "!danger! Change all orange bubble lvls to this value", fn: alchFn },
-            { name: "greenbubbles", message: "!danger! Change all green bubble lvls to this value", fn: alchFn },
-            { name: "purplebubbles", message: "!danger! Change all purple bubble lvls to this value", fn: alchFn },
-            { name: "yellowbubbles", message: "!danger! Change all yellow bubble lvls to this value", fn: alchFn },
-            { name: "vials", message: "!danger! Change all vial lvls to this value", fn: alchFn },
-            { name: "color", message: "!danger! Change the color?!?! lvls to this value", fn: alchFn },
-            { name: "liquids", message: "!danger! Change the liquid cap/rate lvls to this value", fn: alchFn },
-            { name: "cauldrons", message: "!danger! Change the cauldron lvls to this value", fn: alchFn },
-        ],
-    });
-}
+// Level change
+registerCheats({
+    name: "lvl",
+    message: "Change the lvl of this skill to this value",
+    subcheats: [
+        { name: "class", message: "Change the class lvl to this value", fn: changeLv0 },
+        { name: "mining", message: "Change the mining lvl to this value", fn: changeLv0 },
+        { name: "smithing", message: "Change the smithing lvl to this value", fn: changeLv0 },
+        { name: "chopping", message: "Change the chopping lvl to this value", fn: changeLv0 },
+        { name: "fishing", message: "Change the fishing lvl to this value", fn: changeLv0 },
+        { name: "alchemy", message: "Change the alchemy lvl to this value", fn: changeLv0 },
+        { name: "catching", message: "Change the catching lvl to this value", fn: changeLv0 },
+        { name: "trapping", message: "Change the trapping lvl to this value", fn: changeLv0 },
+        { name: "construction", message: "Change the construction lvl to this value", fn: changeLv0 },
+        { name: "worship", message: "Change the worship lvl to this value", fn: changeLv0 },
+        {
+            name: "furnace",
+            message: "!danger! Change all furnace lvl to this value",
+            fn: createLevelChanger("Furnace", (lvl) =>
+                bEngine.setGameAttribute("FurnaceLevels", [16, lvl, lvl, lvl, lvl, lvl])
+            ),
+        },
+        {
+            name: "statue",
+            message: "!danger! Change all statue lvl to this value",
+            fn: createLevelChanger("Statue", (lvl) =>
+                bEngine.getGameAttribute("StatueLevels").forEach((item) => (item[0] = lvl))
+            ),
+        },
+        {
+            name: "anvil",
+            message: "!danger! Change all anvil lvl to this value",
+            fn: createLevelChanger("Anvil levels", (lvl) => {
+                const Levels = bEngine.getGameAttribute("AnvilPAstats");
+                [3, 4, 5].forEach((i) => (Levels[i] = lvl));
+                bEngine.setGameAttribute("AnvilPAstats", Levels);
+            }),
+        },
+        {
+            name: "talent",
+            message: "!danger! Change all talent lvls to this value",
+            fn: createLevelChanger("Talent levels", (lvl) => {
+                const LevelsMax = bEngine.getGameAttribute("SkillLevelsMAX");
+                const Levels = bEngine.getGameAttribute("SkillLevels");
+                for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
+            }),
+        },
+        {
+            name: "stamp",
+            message: "Change all stamp lvls to this value",
+            fn: createLevelChanger("Both current and max of all stamp levels have been set", (lvl) => {
+                const LevelsMax = bEngine.getGameAttribute("StampLevelMAX");
+                const Levels = bEngine.getGameAttribute("StampLevel");
+                for (const [i, arr] of Object.entries(LevelsMax))
+                    for (const j of Object.keys(arr)) LevelsMax[i][j] = Levels[i][j] = lvl;
+            }),
+        },
+        {
+            name: "shrine",
+            message: "!danger! Change all shrine lvls to this value",
+            fn: createLevelChanger("Shrine levels", (lvl) =>
+                bEngine.getGameAttribute("ShrineInfo").forEach((item) => {
+                    item[3] = lvl;
+                    item[4] = 0;
+                })
+            ),
+        },
+    ],
+});
+
+// Alchemy level changes
+registerCheats({
+    name: "setalch",
+    message: "change alchemy levels",
+    subcheats: [
+        { name: "orangebubbles", message: "!danger! Change all orange bubble lvls to this value", fn: alchFn },
+        { name: "greenbubbles", message: "!danger! Change all green bubble lvls to this value", fn: alchFn },
+        { name: "purplebubbles", message: "!danger! Change all purple bubble lvls to this value", fn: alchFn },
+        { name: "yellowbubbles", message: "!danger! Change all yellow bubble lvls to this value", fn: alchFn },
+        { name: "vials", message: "!danger! Change all vial lvls to this value", fn: alchFn },
+        { name: "color", message: "!danger! Change the color?!?! lvls to this value", fn: alchFn },
+        { name: "liquids", message: "!danger! Change the liquid cap/rate lvls to this value", fn: alchFn },
+        { name: "cauldrons", message: "!danger! Change the cauldron lvls to this value", fn: alchFn },
+    ],
+});
 
 /**
  * Register bulk and buy cheats.

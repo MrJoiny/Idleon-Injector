@@ -5,7 +5,7 @@
  */
 
 import { cheatState, setupDone, cheatConfig } from "./state.js";
-import { setup } from "./setup.js";
+// Note: setup.js is imported dynamically below to avoid circular dependency
 
 /**
  * Registry of all cheat commands.
@@ -28,6 +28,8 @@ export function cheat(action, context) {
     try {
         if (!setupDone) {
             (async () => {
+                // Dynamic import to avoid circular dependency
+                const { setup } = await import("./setup.js");
                 await setup.call(context);
             })();
         }

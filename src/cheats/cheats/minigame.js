@@ -55,24 +55,20 @@ function minigameCheat(params) {
     return `${cheatState.minigame[minigameName] ? "Activated" : "Deactivated"} ${minigameName} minigame cheat.`;
 }
 
-/**
- * Register all minigame cheats.
- */
-export function registerMinigameCheats() {
-    registerCheats({
-        name: "minigame",
-        message: "unlimited minigames",
-        canToggleSubcheats: true,
-        subcheats: [
-            { name: "mining", message: "mining minigame cheat", fn: minigameCheat },
-            { name: "fishing", message: "fishing minigame cheat", fn: minigameCheat },
-            { name: "catching", message: "catching minigame cheat", fn: minigameCheat },
-            { name: "choppin", message: "choppin minigame cheat", fn: minigameCheat },
-            { name: "poing", message: "poing minigame cheat", fn: minigameCheat },
-            { name: "hoops", message: "hoops minigame cheat", fn: minigameCheat },
-            { name: "darts", message: "darts minigame cheat", fn: minigameCheat },
-            { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat },
-            { name: "scratch", message: "event scratch minigame cheat", fn: minigameCheat },
-        ],
-    });
-}
+// Register minigame cheats
+registerCheats({
+    name: "minigame",
+    message: "unlimited minigames",
+    canToggleSubcheats: true,
+    subcheats: [
+        { name: "mining", message: "mining minigame cheat", fn: minigameCheat },
+        { name: "fishing", message: "fishing minigame cheat", fn: minigameCheat },
+        { name: "catching", message: "catching minigame cheat", fn: minigameCheat },
+        { name: "choppin", message: "choppin minigame cheat", fn: minigameCheat },
+        { name: "poing", message: "poing minigame cheat", fn: minigameCheat },
+        { name: "hoops", message: "hoops minigame cheat", fn: minigameCheat },
+        { name: "darts", message: "darts minigame cheat", fn: minigameCheat },
+        { name: "wisdom", message: "wisdom monument minigame cheat", fn: minigameCheat },
+        { name: "scratch", message: "event scratch minigame cheat", fn: minigameCheat },
+    ],
+});

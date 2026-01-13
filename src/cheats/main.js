@@ -16,7 +16,8 @@ import { cheatState, setCheatConfig, setStartupCheats, setWebPort } from "./core
 import { getBEngine, getItemDefs, getMonsterDefs, getCList, getBehavior, getEvents } from "./core/globals.js";
 import { cheats, cheat as coreCheat, updateCheatConfig } from "./core/registration.js";
 import { setup as coreSetup } from "./core/setup.js";
-import { registerStaticCheats } from "./cheats/register.js";
+// Static cheats register automatically when this module is imported
+import "./cheats/register.js";
 import { getOLA, setOLAIndex, getOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions, getChoicesNeedingConfirmation } from "./api/suggestions.js";
 
@@ -24,9 +25,6 @@ import { getAutoCompleteSuggestions, getChoicesNeedingConfirmation } from "./api
 setCheatConfig(cheatConfig);
 setStartupCheats(startupCheats);
 setWebPort(webPort);
-
-// Register static cheats (don't need game to be ready)
-registerStaticCheats();
 
 // Wrapper functions for global context binding
 
