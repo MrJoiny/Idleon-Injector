@@ -6,11 +6,16 @@
  * - giant, gems, plunderous, candy, candytime, nodmg
  * - eventitems, autoloot, perfectobols, autoparty
  * - arcade, eventspins, hoopshop, dartshop, guildpoints
+ * - buy (gem shop packs)
  */
 
-import { registerCheats } from "../core/registration.js";
+import { registerCheats, registerCheat } from "../core/registration.js";
 import { cheatState, cheatConfig } from "../core/state.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
+import { knownBundles } from "../constants.js";
+
+// Build lookup map from bundle code to display name
+const bundleCodeToName = new Map(knownBundles.map(([name, code]) => [code, name]));
 
 // Wide (account-wide) cheats
 registerCheats({
@@ -120,3 +125,20 @@ registerCheats({
         { name: "45", message: "Void trial rerun", configurable: true },
     ],
 });
+
+// Buy gem shop packs
+registerCheat(
+    "buy",
+    function (params) {
+        const code = params[0];
+        if (!code) {
+            const validCodes = knownBundles.map(([name, c]) => `${c} (${name})`).join("\n");
+            return `Usage: buy [bundle_code]\nValid codes:\n${validCodes}`;
+        }
+
+        const name = bundleCodeToName.get(code) || code;
+        this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
+        return `${name} has been bought!`;
+    },
+    "Buy gem shop packs. You get items from the pack, but no gems and no pets."
+);

@@ -6,7 +6,6 @@
  * - list (bundle, missing_bundle, item, monster, class, card, quest, map, talent, ability, smith, gga, companion, nans)
  * - gga, ggk, egga, eggk (game attribute inspection)
  * - cheats (list available cheats)
- * - qnty (change item quantity)
  */
 
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
@@ -306,198 +305,166 @@ function createListFunction(params) {
     return results.join("\n");
 }
 
-/**
- * Register all utility cheats.
- * This function should be called after game is ready.
- */
-export function registerUtilityCheats() {
-    // Search commands
-    registerCheats({
-        name: "search",
-        message: "Search for an item, monster, talent or smithing recipe",
-        subcheats: [
-            {
-                name: "item",
-                message: "Search for an item",
-                fn: createSearchFn(
-                    "Id, Item",
-                    () => Object.entries(itemDefs).map(([k, v]) => [k, v.h.displayName]),
-                    (key, name) => `${key} - ${name}`
-                ),
-            },
-            {
-                name: "monster",
-                message: "Search for a monster",
-                fn: createSearchFn(
-                    "Id, Monster",
-                    () => Object.entries(monsterDefs).map(([k, v]) => [k, v.h.Name]),
-                    (key, name) => `${key} - ${name}`
-                ),
-            },
-            {
-                name: "talent",
-                message: "Search for a talent",
-                fn: createSearchFn(
-                    "Order, Id, Talent",
-                    () => {
-                        const talentDefs = CList.TalentIconNames;
-                        const Order = CList.TalentOrder;
-                        return Order.map((id, i) => [i, talentDefs[id], id]);
-                    },
-                    (order, name, id) => `${order} - ${id} - ${name}`
-                ),
-            },
-            {
-                name: "smith",
-                message: "Search for an item to smith",
-                fn: function (params) {
-                    const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
-                    const results = ["Tab, Id, ItemId, ItemName"];
-                    const ItemToCraftNAME = CList.ItemToCraftNAME;
+// Search commands
+registerCheats({
+    name: "search",
+    message: "Search for an item, monster, talent or smithing recipe",
+    subcheats: [
+        {
+            name: "item",
+            message: "Search for an item",
+            fn: createSearchFn(
+                "Id, Item",
+                () => Object.entries(itemDefs).map(([k, v]) => [k, v.h.displayName]),
+                (key, name) => `${key} - ${name}`
+            ),
+        },
+        {
+            name: "monster",
+            message: "Search for a monster",
+            fn: createSearchFn(
+                "Id, Monster",
+                () => Object.entries(monsterDefs).map(([k, v]) => [k, v.h.Name]),
+                (key, name) => `${key} - ${name}`
+            ),
+        },
+        {
+            name: "talent",
+            message: "Search for a talent",
+            fn: createSearchFn(
+                "Order, Id, Talent",
+                () => {
+                    const talentDefs = CList.TalentIconNames;
+                    const Order = CList.TalentOrder;
+                    return Order.map((id, i) => [i, talentDefs[id], id]);
+                },
+                (order, name, id) => `${order} - ${id} - ${name}`
+            ),
+        },
+        {
+            name: "smith",
+            message: "Search for an item to smith",
+            fn: function (params) {
+                const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
+                const results = ["Tab, Id, ItemId, ItemName"];
+                const ItemToCraftNAME = CList.ItemToCraftNAME;
 
-                    // Find matching items first
-                    const matchingItems = [];
-                    for (const [key, value] of Object.entries(itemDefs)) {
-                        const name = value.h.displayName.replace(/_/g, " ").toLowerCase();
-                        if (name.includes(query)) matchingItems.push([key, name]);
-                    }
+                // Find matching items first
+                const matchingItems = [];
+                for (const [key, value] of Object.entries(itemDefs)) {
+                    const name = value.h.displayName.replace(/_/g, " ").toLowerCase();
+                    if (name.includes(query)) matchingItems.push([key, name]);
+                }
 
-                    // Find them in crafting recipes
-                    for (const [itemId, itemName] of matchingItems) {
-                        for (let tab = 0; tab < ItemToCraftNAME.length; tab++) {
-                            for (let slot = 0; slot < ItemToCraftNAME[tab].length; slot++) {
-                                if (itemId === ItemToCraftNAME[tab][slot]) {
-                                    results.push(`${tab + 1}, ${slot}, ${itemId}, ${itemName}`);
-                                }
+                // Find them in crafting recipes
+                for (const [itemId, itemName] of matchingItems) {
+                    for (let tab = 0; tab < ItemToCraftNAME.length; tab++) {
+                        for (let slot = 0; slot < ItemToCraftNAME[tab].length; slot++) {
+                            if (itemId === ItemToCraftNAME[tab][slot]) {
+                                results.push(`${tab + 1}, ${slot}, ${itemId}, ${itemName}`);
                             }
                         }
                     }
+                }
 
-                    return results.length > 1 ? results.join("\n") : `No info found for '${query}'`;
-                },
+                return results.length > 1 ? results.join("\n") : `No info found for '${query}'`;
             },
-        ],
-    });
-
-    // Get Game Attributes
-    registerCheat(
-        "gga",
-        function (params) {
-            return gg_func(params, 0);
         },
-        "The attribute you want to get, separated by spaces"
-    );
+    ],
+});
 
-    // Get Game Key
-    registerCheat(
-        "ggk",
-        function (params) {
-            return gg_func(params, 1);
-        },
-        "The key you want to get, separated by spaces"
-    );
+// Get Game Attributes
+registerCheat(
+    "gga",
+    function (params) {
+        return gg_func(params, 0);
+    },
+    "The attribute you want to get, separated by spaces"
+);
 
-    // Evaluate Get Game Attributes
-    registerCheat(
-        "egga",
-        function (params) {
-            const foundVals = [];
-            const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
-            const abilities = bEngine.getGameAttribute("AttackLoadout");
-            try {
-                let gga = eval(params[0]);
-                let obj_gga = Object.entries(gga);
-                if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`${gga}`);
-                else for (const [index, element] of obj_gga) foundVals.push(`${index}, ${element}`);
-                return foundVals.join("\n");
-            } catch (error) {
-                if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
-                return `Error: ${error}`;
-            }
-        },
-        "Show the game attribute, separate with spaces."
-    );
+// Get Game Key
+registerCheat(
+    "ggk",
+    function (params) {
+        return gg_func(params, 1);
+    },
+    "The key you want to get, separated by spaces"
+);
 
-    // Evaluate Get Game Key
-    registerCheat(
-        "eggk",
-        function (params) {
-            const foundVals = [];
-            const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
-            const abilities = bEngine.getGameAttribute("AttackLoadout");
-            try {
-                let gga = eval(params[0]);
-                let obj_gga = Object.entries(gga);
-                if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`Non iterable value: ${gga}`);
-                else for (const [index, element] of obj_gga) foundVals.push(`${index}`);
-                return foundVals.join("\n");
-            } catch (error) {
-                if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
-                return `Error: ${error}`;
-            }
-        },
-        "Show the game key, separate with spaces."
-    );
+// Evaluate Get Game Attributes
+registerCheat(
+    "egga",
+    function (params) {
+        const foundVals = [];
+        const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
+        const abilities = bEngine.getGameAttribute("AttackLoadout");
+        try {
+            let gga = eval(params[0]);
+            let obj_gga = Object.entries(gga);
+            if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`${gga}`);
+            else for (const [index, element] of obj_gga) foundVals.push(`${index}, ${element}`);
+            return foundVals.join("\n");
+        } catch (error) {
+            if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
+            return `Error: ${error}`;
+        }
+    },
+    "Show the game attribute, separate with spaces."
+);
 
-    // List available cheats
-    registerCheat(
-        "cheats",
-        function (params) {
-            let cheatsAvailable = [];
-            const cheats = getCheats();
-            Object.keys(cheats).forEach((cheat) => {
-                cheatsAvailable.push(cheat + (cheats[cheat]["message"] ? ` (${cheats[cheat].message})` : ""));
-            });
-            return cheatsAvailable.join("\n");
-        },
-        "list available cheats"
-    );
+// Evaluate Get Game Key
+registerCheat(
+    "eggk",
+    function (params) {
+        const foundVals = [];
+        const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
+        const abilities = bEngine.getGameAttribute("AttackLoadout");
+        try {
+            let gga = eval(params[0]);
+            let obj_gga = Object.entries(gga);
+            if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`Non iterable value: ${gga}`);
+            else for (const [index, element] of obj_gga) foundVals.push(`${index}`);
+            return foundVals.join("\n");
+        } catch (error) {
+            if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
+            return `Error: ${error}`;
+        }
+    },
+    "Show the game key, separate with spaces."
+);
 
-    // List command
-    registerCheats({
-        name: "list",
-        message: "list something. third param optional filter",
-        subcheats: [
-            { name: "bundle", message: "list bundles. third param optional filter", fn: createListFunction },
-            { name: "missing_bundle", message: "list missing bundles", fn: createListFunction },
-            { name: "item", message: "list items. third param optional filter", fn: createListFunction },
-            { name: "monster", message: "list monsters. third param optional filter", fn: createListFunction },
-            { name: "class", message: "list classes. third param optional filter", fn: createListFunction },
-            { name: "card", message: "list cards. third param optional filter", fn: createListFunction },
-            { name: "quest", message: "list quests. third param optional filter", fn: createListFunction },
-            { name: "map", message: "list maps. third param optional filter", fn: createListFunction },
-            { name: "talent", message: "list talents. third param optional filter", fn: createListFunction },
-            { name: "ability", message: "list abilities. third param optional filter", fn: createListFunction },
-            { name: "smith", message: "list smithing recipes. third param optional filter", fn: createListFunction },
-            { name: "gga", message: "list game attributes. third param optional filter", fn: createListFunction },
-            { name: "companion", message: "list all companions", fn: createListFunction },
-            { name: "nans", message: "scan game attributes for NaN values", fn: createListFunction },
-        ],
-    });
+// List available cheats
+registerCheat(
+    "cheats",
+    function (params) {
+        let cheatsAvailable = [];
+        const cheats = getCheats();
+        Object.keys(cheats).forEach((cheat) => {
+            cheatsAvailable.push(cheat + (cheats[cheat]["message"] ? ` (${cheats[cheat].message})` : ""));
+        });
+        return cheatsAvailable.join("\n");
+    },
+    "list available cheats"
+);
 
-    // Quantity change
-    registerCheats({
-        name: "qnty",
-        message: "Change the quantity of the first item in inventory/chest",
-        subcheats: [
-            {
-                name: "inv",
-                message: "Change the quantity of the first inventory slot to this value",
-                fn: function (params) {
-                    const setqnty = params[1] || 1;
-                    bEngine.getGameAttribute("ItemQuantity")[0] = setqnty;
-                    return `The item quantity in the first inventory slot has been changed to ${setqnty}`;
-                },
-            },
-            {
-                name: "chest",
-                message: "Change the quantity of the first chest slot to this value",
-                fn: function (params) {
-                    const setqnty = params[1] || 1;
-                    bEngine.getGameAttribute("ChestQuantity")[0] = setqnty;
-                    return `The item quantity in the first chest slot has been changed to ${setqnty}`;
-                },
-            },
-        ],
-    });
-}
+// List command
+registerCheats({
+    name: "list",
+    message: "list something. third param optional filter",
+    subcheats: [
+        { name: "bundle", message: "list bundles. third param optional filter", fn: createListFunction },
+        { name: "missing_bundle", message: "list missing bundles", fn: createListFunction },
+        { name: "item", message: "list items. third param optional filter", fn: createListFunction },
+        { name: "monster", message: "list monsters. third param optional filter", fn: createListFunction },
+        { name: "class", message: "list classes. third param optional filter", fn: createListFunction },
+        { name: "card", message: "list cards. third param optional filter", fn: createListFunction },
+        { name: "quest", message: "list quests. third param optional filter", fn: createListFunction },
+        { name: "map", message: "list maps. third param optional filter", fn: createListFunction },
+        { name: "talent", message: "list talents. third param optional filter", fn: createListFunction },
+        { name: "ability", message: "list abilities. third param optional filter", fn: createListFunction },
+        { name: "smith", message: "list smithing recipes. third param optional filter", fn: createListFunction },
+        { name: "gga", message: "list game attributes. third param optional filter", fn: createListFunction },
+        { name: "companion", message: "list all companions", fn: createListFunction },
+        { name: "nans", message: "scan game attributes for NaN values", fn: createListFunction },
+    ],
+});

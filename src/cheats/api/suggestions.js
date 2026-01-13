@@ -7,8 +7,11 @@
  */
 
 import { cheats } from "../core/registration.js";
-import { summonUnits, keychainStatsMap } from "../constants.js";
-import { bEngine, itemDefs, monsterDefs, CList } from "../core/globals.js";
+import { summonUnits, keychainStatsMap, knownBundles, alchemyTypes } from "../constants.js";
+import { bEngine, itemDefs, monsterDefs, CList, itemTypes, gameContext } from "../core/globals.js";
+
+// Custom level changers for lvl command suggestions
+const customLevelChangerNames = ["furnace", "statue", "anvil", "talent", "stamp", "shrine"];
 
 /**
  * Helper to add choices from an object's keys.
@@ -35,16 +38,39 @@ function addChoices(choices, source, formatter) {
  */
 export function getAutoCompleteSuggestions() {
     const choices = [];
+
+    // Add "cheats" as the first choice (default when Enter pressed with empty input)
+    if (cheats.cheats) {
+        choices.push({
+            value: "cheats",
+            message: cheats.cheats.message || "list available cheats",
+            category: "general",
+        });
+    }
+
     // here are items stored that are not visible in the w5 slab
     const itemBlacklist = new Set(CList.RANDOlist[17]);
     itemBlacklist.delete("COIN");
 
-    // cheat commands
-    addChoices(choices, cheats, (name, def) => ({
-        value: name,
-        message: def?.message || "",
-        category: def?.category || "general",
-    }));
+    const bundleMessages = gameContext["scripts.CustomMapsREAL"]?.GemPopupBundleMessages()?.h || {};
+    const allBundles = [...knownBundles];
+    // Add any missing bundles from game data
+    for (const [key] of Object.entries(bundleMessages)) {
+        if (key === "Blank") continue;
+        if (!allBundles.some((bundle) => bundle[1] === key)) {
+            allBundles.push(["Unknown", key]);
+        }
+    }
+
+    // cheat commands (skip "cheats" since it's already added as first)
+    addChoices(choices, cheats, (name, def) => {
+        if (name === "cheats") return null;
+        return {
+            value: name,
+            message: def?.message || "",
+            category: def?.category || "general",
+        };
+    });
 
     // item commands (drop, nomore, multiplestacks)
     addChoices(choices, itemDefs, (code, item) => {
@@ -81,6 +107,73 @@ export function getAutoCompleteSuggestions() {
         message: "",
         category: "keychain",
     }));
+
+    // bulk item types
+    for (const type of itemTypes) {
+        choices.push({
+            value: `bulk ${type}`,
+            message: `Drop all ${type} items`,
+            category: "bulk",
+        });
+    }
+
+    // buy bundle codes
+    for (const [name, code] of allBundles) {
+        choices.push({
+            value: `buy ${code}`,
+            message: name,
+            category: "buy",
+        });
+    }
+
+    // class names
+    if (CList?.ClassNames) {
+        const classNames = CList.ClassNames.slice(0, 41);
+        for (const [id, name] of classNames.entries()) {
+            if (!name || name.toLowerCase() === "blank") continue;
+            choices.push({
+                value: `class ${name.toLowerCase()}`,
+                message: `Change to ${name} (ID: ${id})`,
+                category: "class",
+            });
+        }
+    }
+
+    // lvl - skills from CList.SkillNames
+    if (CList?.SkillNames) {
+        // Special case: class level at index 0
+        choices.push({
+            value: "lvl class",
+            message: "Change class level",
+            category: "lvl",
+        });
+        for (const name of CList.SkillNames) {
+            if (!name || name === "Blank") continue;
+            choices.push({
+                value: `lvl ${name.toLowerCase()}`,
+                message: `Change ${name} level`,
+                category: "lvl",
+            });
+        }
+    }
+
+    // lvl - alchemy types (static)
+    for (const type of Object.keys(alchemyTypes)) {
+        choices.push({
+            value: `lvl ${type}`,
+            message: `Change all ${type} levels`,
+            category: "lvl",
+        });
+    }
+
+    // lvl - custom changers (static)
+    for (const name of customLevelChangerNames) {
+        choices.push({
+            value: `lvl ${name}`,
+            message: `Change all ${name} levels`,
+            category: "lvl",
+        });
+    }
 
     // game attributes (gga)
     if (bEngine?.gameAttributes?.h) {
@@ -120,6 +213,7 @@ export function getChoicesNeedingConfirmation() {
         "wipe invslot",
         "wipe chestslot",
         "bulk",
+        "buy",
         "class",
         "multiplestacks",
     ];

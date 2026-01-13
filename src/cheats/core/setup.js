@@ -12,7 +12,6 @@ import { cheat } from "./registration.js";
 import { setupAllProxies } from "../proxies/setup.js";
 import { setupFirebaseProxy } from "../proxies/firebase.js";
 import { injectWebUI } from "../ui/overlay.js";
-import { registerDynamicCheats } from "../cheats/register.js";
 
 /**
  * Main setup function - initializes all cheats and proxies.
@@ -21,9 +20,8 @@ import { registerDynamicCheats } from "../cheats/register.js";
  * 1. Waits for the game to be ready
  * 2. Sets up Firebase proxy for character selection handling
  * 3. Sets up all game proxies
- * 4. Registers dynamic cheats that need game data
- * 5. Runs startup cheats
- * 6. Injects the web UI (if enabled)
+ * 4. Runs startup cheats
+ * 5. Injects the web UI (if enabled)
  *
  * @returns {Promise<string>} Setup result message
  */
@@ -57,9 +55,6 @@ export async function setup() {
 
         // Setup all game proxies
         setupAllProxies(this, cheatConfig);
-
-        // Register dynamic cheats that need game data
-        registerDynamicCheats(this);
 
         // Run startup cheats
         let rtn = [];

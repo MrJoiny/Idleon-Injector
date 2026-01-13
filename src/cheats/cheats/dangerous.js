@@ -6,15 +6,15 @@
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
- * - buy (gem shop packs)
- * Dynamic cheats (bulk, buy) need game data and are registered via registerDynamicDangerousCheats().
+ * - chng (execute arbitrary code)
+ * - qnty (change item quantities)
  */
 
-import { registerCheats } from "../core/registration.js";
-import { bEngine, itemDefs, CList } from "../core/globals.js";
+import { registerCheats, registerCheat } from "../core/registration.js";
+import { bEngine, itemDefs, CList, itemTypes } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
-import { knownBundles, alchemyTypes } from "../constants.js";
+import { alchemyTypes } from "../constants.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -104,21 +104,6 @@ function wipeFunction(params) {
 }
 
 /**
- * Creates a level changer function with custom setter logic.
- * @param {string} name - Display name for the result message
- * @param {function(number): void} setter - Function to set the level
- * @returns {function} Cheat function
- */
-function createLevelChanger(name, setter) {
-    return function (params) {
-        const setlvl = parseInt(params[1]) || -1;
-        if (setlvl === -1) return "The lvl value has to be numeric!";
-        setter(setlvl);
-        return `${name} has been changed to ${setlvl}.`;
-    };
-}
-
-/**
  * Alchemy level change function.
  * @param {Array} params - Command parameters
  * @returns {string} Result message
@@ -155,173 +140,157 @@ registerCheats({
     ],
 });
 
-// Alchemy subcheats - generated from alchemyTypes
-const alchemySubcheats = Object.keys(alchemyTypes).map((type) => ({
-    name: type,
-    message: `!danger! Change all ${type} lvls to this value`,
-    fn: alchFn,
-}));
+// Bulk drop - drop all items of a given type
+registerCheat(
+    "bulk",
+    function (params) {
+        const type = params[0];
+        const amount = parseInt(params[1]) || 1;
 
-// Custom level changers with special logic
-const customLevelChangers = [
-    {
-        name: "furnace",
-        message: "!danger! Change all furnace lvl to this value",
-        fn: createLevelChanger("Furnace", (lvl) =>
-            bEngine.setGameAttribute("FurnaceLevels", [16, lvl, lvl, lvl, lvl, lvl])
-        ),
-    },
-    {
-        name: "statue",
-        message: "!danger! Change all statue lvl to this value",
-        fn: createLevelChanger("Statue", (lvl) =>
-            bEngine.getGameAttribute("StatueLevels").forEach((item) => (item[0] = lvl))
-        ),
-    },
-    {
-        name: "anvil",
-        message: "!danger! Change all anvil lvl to this value",
-        fn: createLevelChanger("Anvil levels", (lvl) => {
-            const Levels = bEngine.getGameAttribute("AnvilPAstats");
-            [3, 4, 5].forEach((i) => (Levels[i] = lvl));
-            bEngine.setGameAttribute("AnvilPAstats", Levels);
-        }),
-    },
-    {
-        name: "talent",
-        message: "!danger! Change all talent lvls to this value",
-        fn: createLevelChanger("Talent levels", (lvl) => {
-            const LevelsMax = bEngine.getGameAttribute("SkillLevelsMAX");
-            const Levels = bEngine.getGameAttribute("SkillLevels");
-            for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
-        }),
-    },
-    {
-        name: "stamp",
-        message: "Change all stamp lvls to this value",
-        fn: createLevelChanger("Stamp levels", (lvl) => {
-            const LevelsMax = bEngine.getGameAttribute("StampLevelMAX");
-            const Levels = bEngine.getGameAttribute("StampLevel");
-            for (const [i, arr] of Object.entries(LevelsMax)) {
-                for (const j of Object.keys(arr)) LevelsMax[i][j] = Levels[i][j] = lvl;
+        if (!type || !itemTypes.has(type)) {
+            return `Invalid type. Valid types:\n${Array.from(itemTypes).sort().join(", ")}`;
+        }
+
+        const blackList = CList.RANDOlist[64];
+        let droppedCount = 0;
+
+        for (const [code, entry] of Object.entries(itemDefs)) {
+            if (entry.h?.Type === type && !blackList.includes(code)) {
+                dropOnChar(code, amount);
+                droppedCount++;
             }
-        }),
+        }
+
+        return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
     },
-    {
-        name: "shrine",
-        message: "!danger! Change all shrine lvls to this value",
-        fn: createLevelChanger("Shrine levels", (lvl) =>
-            bEngine.getGameAttribute("ShrineInfo").forEach((item) => {
-                item[3] = lvl;
-                item[4] = 0;
-            })
-        ),
+    "Drop a collection of items at once. Usage: bulk [type] [amount]"
+);
+
+// Class change - change character class by name
+registerCheat(
+    "class",
+    function (params) {
+        const className = params[0]?.toLowerCase();
+        if (!className) {
+            const validClasses = CList.ClassNames.slice(0, 41)
+                .map((name, id) => `${name.toLowerCase()} (${id})`)
+                .filter((s) => !s.startsWith("blank"))
+                .join(", ");
+            return `Usage: class [class_name]\nValid classes:\n${validClasses}`;
+        }
+
+        // Find class ID by name (case-insensitive)
+        const classNames = CList.ClassNames.slice(0, 41);
+        const classId = classNames.findIndex((name) => name.toLowerCase() === className);
+
+        if (classId === -1 || className === "blank") {
+            return `Invalid class name: ${className}`;
+        }
+
+        const displayName = classNames[classId];
+        bEngine.setGameAttribute("CharacterClass", classId);
+        return `Class changed to ${displayName} (ID: ${classId})`;
     },
-];
+    "!danger! Change character class. Usage: class [class_name]"
+);
+
+// Build custom level handlers dispatch object
+const customLevelHandlers = {
+    furnace: (lvl) => {
+        bEngine.setGameAttribute("FurnaceLevels", [16, lvl, lvl, lvl, lvl, lvl]);
+        return `Furnace has been changed to ${lvl}.`;
+    },
+    statue: (lvl) => {
+        bEngine.getGameAttribute("StatueLevels").forEach((item) => (item[0] = lvl));
+        return `Statue has been changed to ${lvl}.`;
+    },
+    anvil: (lvl) => {
+        const Levels = bEngine.getGameAttribute("AnvilPAstats");
+        [3, 4, 5].forEach((i) => (Levels[i] = lvl));
+        bEngine.setGameAttribute("AnvilPAstats", Levels);
+        return `Anvil levels has been changed to ${lvl}.`;
+    },
+    talent: (lvl) => {
+        const LevelsMax = bEngine.getGameAttribute("SkillLevelsMAX");
+        const Levels = bEngine.getGameAttribute("SkillLevels");
+        for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
+        return `Talent levels has been changed to ${lvl}.`;
+    },
+    stamp: (lvl) => {
+        const LevelsMax = bEngine.getGameAttribute("StampLevelMAX");
+        const Levels = bEngine.getGameAttribute("StampLevel");
+        for (const [i, arr] of Object.entries(LevelsMax)) {
+            for (const j of Object.keys(arr)) LevelsMax[i][j] = Levels[i][j] = lvl;
+        }
+        return `Stamp levels has been changed to ${lvl}.`;
+    },
+    shrine: (lvl) => {
+        bEngine.getGameAttribute("ShrineInfo").forEach((item) => {
+            item[3] = lvl;
+            item[4] = 0;
+        });
+        return `Shrine levels has been changed to ${lvl}.`;
+    },
+};
 
 /**
- * Register dynamic cheats.
- * These need to be registered after game is ready because they use dynamic data.
- * @param {object} gameWindow - The game window context
+ * Handle skill level change by name.
+ * @param {string} name - Skill name (lowercase)
+ * @param {number} lvl - Level to set
+ * @returns {string} Result message
  */
-export function registerDynamicDangerousCheats(gameWindow) {
-    // Build item types set from itemDefs
-    const itemTypes = new Set();
-    for (const entry of Object.values(itemDefs)) {
-        if (entry.h?.Type) {
-            itemTypes.add(entry.h.Type);
-        }
+function handleSkillLevel(name, lvl) {
+    // Special case: "class" is at index 0 in Lv0
+    if (name === "class") {
+        bEngine.getGameAttribute("Lv0")[0] = lvl;
+        return `Class level has been changed to ${lvl}.`;
     }
 
-    // Bulk drop commands
-    registerCheats({
-        name: "bulk",
-        message: "Drop a collection of items at once. Usage: bulk [sub-command] [amount]",
-        canToggleSubcheats: true,
-        subcheats: Array.from(itemTypes)
-            .sort()
-            .map((type) => ({
-                name: type,
-                message: `Drop all items of type ${type}`,
-                fn: function (params) {
-                    const amount = parseInt(params[0]) || 1;
-                    const blackList = CList.RANDOlist[64];
-                    let droppedCount = 0;
-
-                    for (const [code, entry] of Object.entries(itemDefs)) {
-                        if (entry.h?.Type === type && !blackList.includes(code)) {
-                            dropOnChar(code, amount);
-                            droppedCount++;
-                        }
-                    }
-                    return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
-                },
-            })),
-    });
-
-    // Gem Pack Cheats
-    const bundleMessages = gameWindow["scripts.CustomMapsREAL"]?.GemPopupBundleMessages()?.h || {};
-    const allBundles = [...knownBundles];
-
-    // Add any missing bundles from game data
-    for (const [key] of Object.entries(bundleMessages)) {
-        if (key === "Blank") continue;
-        if (!allBundles.some((bundle) => bundle[1] === key)) {
-            allBundles.push(["Unknown", key]);
-        }
-    }
-
-    registerCheats({
-        name: "buy",
-        message: "buy gem shop packs, you get the items from the pack, but no gems and no pets",
-        canToggleSubcheats: true,
-        subcheats: allBundles.map(([name, code]) => ({
-            name: code,
-            message: name,
-            fn: function () {
-                this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
-                return `${name} has been bought!`;
-            },
-        })),
-    });
-
-    // Class change
-    const classNames = CList.ClassNames.slice(0, 41) || [];
-    registerCheats({
-        name: "class",
-        message: "!danger! Change character class",
-        subcheats: classNames
-            .map((name, id) => ({
-                name: name.toLowerCase(),
-                message: `Change to ${name} (ID: ${id})`,
-                fn: function () {
-                    bEngine.setGameAttribute("CharacterClass", id);
-                    return `Class changed to ${name} (ID: ${id})`;
-                },
-            }))
-            .filter((sub) => sub.name && sub.name !== "blank"),
-    });
-
-    // Skill level changes
-    // SkillNames starts with "Mining" at index 0, but Lv0 has "class" at index 0
-    // So we prepend "class" and offset the skill indices by 1
+    // Find skill in CList.SkillNames
     const skillNames = CList.SkillNames || [];
-    const skillSubcheats = [{ name: "class", index: 0 }, ...skillNames.map((name, i) => ({ name, index: i + 1 }))]
-        .filter((s) => s.name && s.name !== "Blank")
-        .map(({ name, index }) => ({
-            name: name.toLowerCase(),
-            message: `Change ${name} level`,
-            fn: function (params) {
-                const setlvl = parseInt(params[1]) || -1;
-                if (setlvl === -1) return "The lvl value has to be numeric!";
-                bEngine.getGameAttribute("Lv0")[index] = setlvl;
-                return `${name} level has been changed to ${setlvl}.`;
-            },
-        }));
+    const skillIndex = skillNames.findIndex((s) => s.toLowerCase() === name);
 
-    registerCheats({
-        name: "lvl",
-        message: "Change the lvl of a skill or alchemy type to this value",
-        subcheats: [...skillSubcheats, ...alchemySubcheats, ...customLevelChangers],
-    });
+    if (skillIndex === -1) {
+        return null; // Not a skill
+    }
+
+    // +1 offset because Lv0[0] is class
+    bEngine.getGameAttribute("Lv0")[skillIndex + 1] = lvl;
+    return `${skillNames[skillIndex]} level has been changed to ${lvl}.`;
 }
+
+// Level change - unified handler for skills, alchemy, and custom changers
+registerCheat(
+    "lvl",
+    function (params) {
+        const subcommand = params[0]?.toLowerCase();
+        const value = parseInt(params[1]);
+
+        if (!subcommand) {
+            return "Usage: lvl [skill/alchemy/type] [value]";
+        }
+        if (isNaN(value)) {
+            return "The lvl value has to be numeric!";
+        }
+
+        // 1. Check if it's an alchemy type
+        if (subcommand in alchemyTypes) {
+            return alchFn([subcommand, value]);
+        }
+
+        // 2. Check if it's a custom changer
+        const customHandler = customLevelHandlers[subcommand];
+        if (customHandler) {
+            return customHandler(value);
+        }
+
+        // 3. Check if it's a skill name (from CList.SkillNames)
+        const skillResult = handleSkillLevel(subcommand, value);
+        if (skillResult) {
+            return skillResult;
+        }
+
+        return `Invalid skill/type: ${subcommand}`;
+    },
+    "Change the lvl of a skill or alchemy type to this value"
+);
