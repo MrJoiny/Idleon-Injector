@@ -13,8 +13,7 @@
 
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { events } from "../core/globals.js";
-import { summonUnits } from "../constants/summonUnits.js";
-import { keychainStatsMap } from "../constants/keychainStats.js";
+import { summonUnits, keychainStatsMap } from "../constants.js";
 import { cheatConfig } from "../core/state.js";
 
 /**

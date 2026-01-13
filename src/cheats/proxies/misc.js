@@ -19,7 +19,7 @@
 
 import { cheatState } from "../core/state.js";
 import { bEngine, itemDefs, CList, events, behavior } from "../core/globals.js";
-import { lootableItemTypes } from "../constants/lootableItems.js";
+import { lootableItemTypes } from "../constants.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { createProxy } from "../utils/createProxy.js";
 import { getConfig, setConfig } from "./proxyContext.js";

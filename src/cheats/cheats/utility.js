@@ -12,7 +12,7 @@
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
 import { bEngine, itemDefs, monsterDefs, CList } from "../core/globals.js";
 import { traverse } from "../utils/traverse.js";
-import { blacklist_gga } from "../constants/blacklist.js";
+import { blacklist_gga } from "../constants.js";
 
 /**
  * Creates a search function for the given definitions object.
