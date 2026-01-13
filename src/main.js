@@ -92,6 +92,9 @@ async function initializeCheatContext(Runtime, context) {
         awaitPromise: true,
         allowUnsafeEvalBlockedByCSP: true,
     });
+    if (init.exceptionDetails) {
+        console.error("Setup threw an error:", init.exceptionDetails.exception?.description || init.exceptionDetails.text);
+    }
     console.log("init.result.value", init.result.value);
     return true;
 }
