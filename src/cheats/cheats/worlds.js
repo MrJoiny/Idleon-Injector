@@ -15,17 +15,7 @@ import { registerCheat, registerCheats } from "../core/registration.js";
 import { events } from "../core/globals.js";
 import { summonUnits } from "../constants/summonUnits.js";
 import { keychainStatsMap } from "../constants/keychainStats.js";
-
-// Reference to cheatConfig (injected at runtime)
-let cheatConfig = null;
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
+import { cheatConfig } from "../core/state.js";
 
 /**
  * Helper to create configurable object cheat definition.

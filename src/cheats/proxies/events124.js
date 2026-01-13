@@ -12,9 +12,7 @@
 import { cheatState } from "../core/state.js";
 import { bEngine, events, behavior } from "../core/globals.js";
 import { getConfig, setConfig } from "./proxyContext.js";
-
-// Reference to obol rolling function (set externally)
-let rollAllObols = null;
+import { rollAllObols } from "../helpers/obolRolling.js";
 
 /**
  * Set the cheat config reference.
@@ -22,14 +20,6 @@ let rollAllObols = null;
  */
 export function setCheatConfig(config) {
     setConfig(config);
-}
-
-/**
- * Set the obol rolling function reference.
- * @param {function} fn
- */
-export function setRollAllObols(fn) {
-    rollAllObols = fn;
 }
 
 /**
@@ -79,6 +69,7 @@ export function setupPlayerLoadProxy() {
         return rtn;
     };
 }
+
 
 /**
  * Setup talent number modification proxy.
@@ -137,10 +128,9 @@ export function setupEvents124Proxies() {
 /**
  * Initialize events124 proxies with config.
  * @param {object} config - The cheat config object
- * @param {function} obolRollFn - The obol rolling function
  */
-export function initEvents124Proxies(config, obolRollFn) {
+export function initEvents124Proxies(config) {
     setCheatConfig(config);
-    if (obolRollFn) setRollAllObols(obolRollFn);
     setupEvents124Proxies();
 }
+

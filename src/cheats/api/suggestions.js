@@ -9,7 +9,7 @@
 import { cheats } from "../core/registration.js";
 import { summonUnits } from "../constants/summonUnits.js";
 import { keychainStatsMap } from "../constants/keychainStats.js";
-import { itemDefs, monsterDefs } from "../core/globals.js";
+import { itemDefs, monsterDefs, CList } from "../core/globals.js";
 
 /**
  * Helper to add choices from an object's keys.
@@ -31,12 +31,45 @@ function addChoices(choices, source, formatter) {
  */
 export function getAutoCompleteSuggestions() {
     const choices = [];
+    // here are items stored that are not visible in the w5 slab
+    const itemBlacklist = new Set(CList.RANDOlist[17]);
 
     // Add cheat commands
     addChoices(choices, cheats, (name, def) => ({
-        message: name + (def.message ? ` (${def.message})` : ""),
+        message: `${name} (${def?.message || " "})`,
         value: name,
     }));
+
+    // Add item drops
+    addChoices(choices, itemDefs, (code, item) => {
+        if (!item?.h?.displayName) return null;
+        if (itemBlacklist.has(code)) return null;
+        const name = item.h.displayName.replace(/_/g, " ");
+        // filtering out ui items named strung jewels
+        if (code != "Quest66" && name == "Strung Jewels") return null;
+        choices.push({
+            message: `nomore ${code} (${name})`,
+            value: `nomore ${code}`,
+        });
+        choices.push({
+            message: `multiplestacks ${code} (${name})`,
+            value: `multiplestacks ${code}`,
+        });
+        return {
+            message: `drop ${code} (${name})`,
+            value: `drop ${code}`,
+        };
+    });
+
+    // Add monster spawns
+    addChoices(choices, monsterDefs, (code, monster) => {
+        if (!monster?.h?.Name) return null;
+        const name = monster.h.Name.replace(/_/g, " ");
+        return {
+            message: `spawn ${code} (${name})`,
+            value: `spawn ${code}`,
+        };
+    });
 
     // Add summon units
     addChoices(choices, summonUnits, (unit) => ({
@@ -49,26 +82,6 @@ export function getAutoCompleteSuggestions() {
         message: `keychain ${stat}`,
         value: `keychain ${stat}`,
     }));
-
-    // Add item drops (if itemDefs is available)
-    addChoices(choices, itemDefs, (code, item) => {
-        if (!item?.h?.displayName) return null;
-        const name = item.h.displayName.replace(/_/g, " ");
-        return {
-            message: `drop ${code} (${name})`,
-            value: `drop ${code}`,
-        };
-    });
-
-    // Add monster spawns (if monsterDefs is available)
-    addChoices(choices, monsterDefs, (code, monster) => {
-        if (!monster?.h?.Name) return null;
-        const name = monster.h.Name.replace(/_/g, " ");
-        return {
-            message: `spawn ${code} (${name})`,
-            value: `spawn ${code}`,
-        };
-    });
 
     return choices;
 }

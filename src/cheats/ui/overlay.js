@@ -10,25 +10,17 @@ let uiContainer = null;
 let uiIframe = null;
 let isUiExpanded = false;
 
-// Reference to webPort (injected at runtime)
-let webPortRef = null;
-
-/**
- * Set the web port reference.
- * @param {number} port
- */
-export function setWebPort(port) {
-    webPortRef = port;
-}
+import { webPort } from "../core/state.js";
 
 /**
  * Inject the web UI overlay into the game.
  * Creates a toggleable iframe overlay that loads the cheat UI.
  */
 export function injectWebUI() {
-    if (uiContainer || webPortRef === undefined) return;
+    if (uiContainer || webPort === undefined || webPort === null) return;
 
     uiContainer = document.createElement("div");
+
     uiContainer.id = "cheat-ui-container";
     uiContainer.style.cssText = `
         position: fixed;
@@ -123,9 +115,10 @@ export function injectWebUI() {
     };
 
     uiIframe = document.createElement("iframe");
-    uiIframe.src = `http://localhost:${webPortRef}`;
+    uiIframe.src = `http://localhost:${webPort}`;
     uiIframe.style.cssText = `
         position: absolute;
+
         inset: 0;
         width: 100vw;
         height: 100vh;

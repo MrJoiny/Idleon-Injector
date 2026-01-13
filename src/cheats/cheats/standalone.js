@@ -9,29 +9,10 @@
  */
 
 import { registerCheat, registerCheats } from "../core/registration.js";
-import { cheatState, dictVals } from "../core/state.js";
+import { cheatState, dictVals, cheatConfig } from "../core/state.js";
 import { bEngine, itemDefs, monsterDefs, CList, events } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
-
-// Reference to cheatConfig and helper functions (injected at runtime)
-let cheatConfig = null;
-let dropOnChar = null;
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
-
-/**
- * Set the dropOnChar function reference.
- * @param {function} fn
- */
-export function setDropOnChar(fn) {
-    dropOnChar = fn;
-}
+import { dropOnChar } from "../helpers/dropOnChar.js";
 
 /**
  * Register all standalone cheats.
@@ -41,7 +22,6 @@ export function registerStandaloneCheats() {
     registerCheat(
         "drop",
         function (params) {
-            if (!dropOnChar) return "dropOnChar not initialized - setup may not be complete";
             const item = params[0];
             const amount = params[1] || 1;
             dropOnChar(item, amount);

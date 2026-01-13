@@ -5,17 +5,7 @@
  */
 
 import { bEngine, itemDefs, events } from "../core/globals.js";
-
-// Reference to cheatConfig (injected at runtime)
-let cheatConfig = null;
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
+import { cheatConfig } from "../core/state.js";
 
 /**
  * Drop an item on the current character.

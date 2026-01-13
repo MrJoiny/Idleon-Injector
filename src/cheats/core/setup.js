@@ -4,63 +4,15 @@
  * Contains the main setup function that initializes all cheats and proxies.
  */
 
-import { cheatState, markSetupDone, setupDone } from "./state.js";
-import { gameReady, registerCommonVariables, getGameContext } from "./globals.js";
-import { cheats, cheat, registerCheat, registerCheats, setSetupFunction, setCheatConfig } from "./registration.js";
+import { markSetupDone, setupDone, cheatConfig, startupCheats } from "./state.js";
+import { gameReady } from "./globals.js";
+import { cheat } from "./registration.js";
 
-/**
- * Reference to cheatConfig (injected at runtime).
- * @type {object}
- */
-let cheatConfigRef = null;
-
-/**
- * Reference to startupCheats (injected at runtime).
- * @type {string[]}
- */
-let startupCheatsRef = [];
-
-/**
- * Dependency injection registry for setup functions.
- * @type {Object<string, Function|null>}
- */
-const setupDeps = {
-    setupAllProxies: null,
-    setupFirebaseProxy: null,
-    injectWebUI: null,
-    registerDynamicCheats: null,
-};
-
-/**
- * Set a setup dependency function.
- * @param {string} name - Dependency name (setupAllProxies, setupFirebaseProxy, injectWebUI, registerDynamicCheats)
- * @param {Function} fn - The function to set
- */
-export function setSetupDependency(name, fn) {
-    if (name in setupDeps) {
-        setupDeps[name] = fn;
-    }
-}
-
-// Legacy setters for backwards compatibility
-export const setSetupAllProxies = (fn) => setSetupDependency("setupAllProxies", fn);
-export const setSetupFirebaseProxy = (fn) => setSetupDependency("setupFirebaseProxy", fn);
-export const setInjectWebUI = (fn) => setSetupDependency("injectWebUI", fn);
-export const setRegisterDynamicCheats = (fn) => setSetupDependency("registerDynamicCheats", fn);
-
-/**
- * Initialize setup with runtime-injected config.
- * Called from main index.js with the globals from cheatInjection.js.
- *
- * @param {object} config - The cheatConfig object
- * @param {string[]} startupCheats - Array of startup cheat commands
- */
-export function initSetup(config, startupCheats) {
-    cheatConfigRef = config;
-    startupCheatsRef = startupCheats || [];
-    setCheatConfig(config);
-    setSetupFunction(setup);
-}
+// Imports for setup logic
+import { setupAllProxies } from "../proxies/setup.js";
+import { setupFirebaseProxy } from "../proxies/firebase.js";
+import { injectWebUI } from "../ui/overlay.js";
+import { registerDynamicCheats } from "../cheats/register.js";
 
 /**
  * Main setup function - initializes all cheats and proxies.
@@ -84,8 +36,8 @@ export async function setup() {
         await gameReady(this);
 
         // Ensure cheatConfig.multiply exists with defaults
-        if (cheatConfigRef && !cheatConfigRef.multiply) {
-            cheatConfigRef.multiply = {
+        if (cheatConfig && !cheatConfig.multiply) {
+            cheatConfig.multiply = {
                 damage: 1,
                 efficiency: 1,
                 afk: 1,
@@ -101,21 +53,13 @@ export async function setup() {
         }
 
         // Setup Firebase proxy for character selection handling
-        if (setupDeps.setupFirebaseProxy) {
-            setupDeps.setupFirebaseProxy(this);
-        }
+        setupFirebaseProxy(this);
 
         // Setup all game proxies
-        if (setupDeps.setupAllProxies) {
-            setupDeps.setupAllProxies(this, cheatConfigRef);
-        }
+        setupAllProxies(this, cheatConfig);
 
         // Register dynamic cheats that need game data
-        if (setupDeps.registerDynamicCheats) {
-            setupDeps.registerDynamicCheats(this, {
-                // TODO: Pass dropOnChar and rollAllObols when implemented
-            });
-        }
+        registerDynamicCheats(this);
 
         // Run startup cheats
         let rtn = [];
@@ -132,8 +76,8 @@ export async function setup() {
         console.log("Exiting setup function successfully.");
 
         // Inject web UI if enabled
-        if (cheatConfigRef?.ingameUI && setupDeps.injectWebUI) {
-            setupDeps.injectWebUI();
+        if (cheatConfig?.ingameUI) {
+            injectWebUI();
         }
 
         return rtn.join("\n");
@@ -150,7 +94,7 @@ export async function setup() {
  */
 export function runStartupCheats() {
     let rtn = [];
-    startupCheatsRef.forEach((c) => {
+    startupCheats.forEach((c) => {
         rtn.push(cheat(c, this));
     }, this);
     return rtn;

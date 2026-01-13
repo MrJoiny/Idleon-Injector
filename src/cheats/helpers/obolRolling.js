@@ -5,17 +5,7 @@
  */
 
 import { bEngine, itemDefs } from "../core/globals.js";
-
-// Reference to cheatConfig (injected at runtime)
-let cheatConfig = null;
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
+import { cheatConfig } from "../core/state.js";
 
 /**
  * Roll all obols to perfect stats.

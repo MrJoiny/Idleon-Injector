@@ -13,35 +13,10 @@
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { bEngine, itemDefs, CList } from "../core/globals.js";
 import { knownBundles } from "../constants/bundles.js";
+import { cheatConfig } from "../core/state.js";
+import { dropOnChar } from "../helpers/dropOnChar.js";
 
-// Reference to cheatConfig and dropOnChar (injected at runtime)
-let cheatConfig = null;
-let dropOnChar = null;
 let itemTypes = new Set();
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
-
-/**
- * Set the dropOnChar function.
- * @param {function} fn
- */
-export function setDropOnChar(fn) {
-    dropOnChar = fn;
-}
-
-/**
- * Set the item types set.
- * @param {Set} types
- */
-export function setItemTypes(types) {
-    itemTypes = types;
-}
 
 /**
  * Wipe function implementation.
@@ -346,7 +321,6 @@ export function registerDynamicDangerousCheats(gameWindow) {
                 name: type,
                 message: `Drop all items of type ${type}`,
                 fn: function (params) {
-                    if (!dropOnChar) return "dropOnChar not initialized";
                     const amount = parseInt(params[0]) || 1;
                     const blackList = CList.RANDOlist[64];
                     let droppedCount = 0;

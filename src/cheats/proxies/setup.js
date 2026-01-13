@@ -41,8 +41,8 @@ export {
     setupMonsterKillProxy,
     setupEvents124Proxies,
     initEvents124Proxies,
-    setRollAllObols,
 } from "./events124.js";
+
 
 // Re-export from events189.js
 export {
@@ -159,9 +159,8 @@ import { initMiscProxies } from "./misc.js";
  *
  * @param {object} context - The game window context
  * @param {object} config - The cheat configuration object
- * @param {function} [rollAllObolsFn] - Optional obol rolling function
  */
-export function setupAllProxies(context, config, rollAllObolsFn = null) {
+export function setupAllProxies(context, config) {
     // Behavior script proxies (RNG, timing)
     setupBehaviorScriptProxies();
 
@@ -176,11 +175,12 @@ export function setupAllProxies(context, config, rollAllObolsFn = null) {
 
     // ActorEvents proxies by event number
     initEvents012Proxies(config);
-    initEvents124Proxies(config, rollAllObolsFn);
+    initEvents124Proxies(config);
     initEvents189Proxies(config);
     initEvents345Proxies(config);
     initEvents481Proxies();
     initEvents579Proxies(config);
+
 
     // NOTE: Minigame proxies are lazy-loaded on-demand, not here
     // initMinigameProxies();

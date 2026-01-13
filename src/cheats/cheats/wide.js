@@ -9,27 +9,8 @@
  */
 
 import { registerCheats } from "../core/registration.js";
-import { cheatState } from "../core/state.js";
-
-// Reference to cheatConfig and obol functions (injected at runtime)
-let cheatConfig = null;
-let rollAllObols = null;
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    cheatConfig = config;
-}
-
-/**
- * Set the obol rolling function.
- * @param {function} fn
- */
-export function setRollAllObols(fn) {
-    rollAllObols = fn;
-}
+import { cheatState, cheatConfig } from "../core/state.js";
+import { rollAllObols } from "../helpers/obolRolling.js";
 
 /**
  * Register all wide (account-wide) cheats.
@@ -87,7 +68,7 @@ export function registerWideCheats() {
                 name: "perfectobols",
                 message: "Roll all obols perfectly for class. Family and inventory obols update on character change.",
                 fn: function (params) {
-                    if (!cheatState.wide[params[0]] && rollAllObols) rollAllObols();
+                    if (!cheatState.wide[params[0]]) rollAllObols();
                     cheatState.wide[params[0]] = !cheatState.wide[params[0]];
                     return `${
                         cheatState.wide[params[0]] ? "Activated" : "Deactivated"

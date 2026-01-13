@@ -9,29 +9,11 @@
 import { bEngine } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
 
-/**
- * Helper to get OptionsListAccount safely.
- * @returns {Array|null}
- */
-function getOLA() {
+export function getOLA() {
     return bEngine?.gameAttributes?.h?.OptionsListAccount ?? null;
 }
 
-/**
- * Get the OptionsListAccount array.
- * @returns {Array|null}
- */
-export function getOptionsListAccount() {
-    return getOLA();
-}
-
-/**
- * Set a value at a specific index in OptionsListAccount.
- * @param {number} index
- * @param {any} value
- * @returns {any|null}
- */
-export function setOptionsListAccountIndex(index, value) {
+export function setOLAIndex(index, value) {
     const ola = getOLA();
     if (ola) {
         ola[index] = value;
@@ -40,19 +22,10 @@ export function setOptionsListAccountIndex(index, value) {
     return null;
 }
 
-/**
- * Get a value at a specific index in OptionsListAccount.
- * @param {number} index
- * @returns {any|null}
- */
-export function getOptionsListAccountIndex(index) {
+export function getOLAIndex(index) {
     return getOLA()?.[index] ?? null;
 }
 
-/**
- * Get the cheatState object.
- * @returns {object}
- */
-export function cheatStateList() {
+export function getcheatStateList() {
     return cheatState;
 }

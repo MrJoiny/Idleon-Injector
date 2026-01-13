@@ -18,6 +18,39 @@
 export const cheatState = {};
 
 /**
+ * The cheat configuration object (injected at runtime).
+ * @type {object|null}
+ */
+export let cheatConfig = null;
+export let startupCheats = [];
+export let webPort = null;
+
+/**
+ * Set the cheat config.
+ * @param {object} config - The config object
+ */
+export function setCheatConfig(config) {
+    cheatConfig = config;
+}
+
+/**
+ * Set the startup cheats.
+ * @param {string[]} cheats - Array of cheat commands
+ */
+export function setStartupCheats(cheats) {
+    startupCheats = cheats || [];
+}
+
+/**
+ * Set the web port.
+ * @param {number} port - The web port
+ */
+export function setWebPort(port) {
+    webPort = port;
+}
+
+
+/**
  * Dictionary for storing item/card definitions and other cached values.
  */
 export const dictVals = {};

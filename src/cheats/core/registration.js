@@ -4,7 +4,8 @@
  * Contains cheat registration functions and the main cheat dispatcher.
  */
 
-import { cheatState, setupDone } from "./state.js";
+import { cheatState, setupDone, cheatConfig } from "./state.js";
+import { setup } from "./setup.js";
 
 /**
  * Registry of all cheat commands.
@@ -12,42 +13,6 @@ import { cheatState, setupDone } from "./state.js";
  * @type {Object<string, {fn: Function, message: string}>}
  */
 export const cheats = {};
-
-/**
- * Reference to the setup function (set by setup.js to avoid circular dependency).
- * @type {Function|null}
- */
-let setupFn = null;
-
-/**
- * Reference to cheatConfig (injected at runtime).
- * @type {object}
- */
-let cheatConfigRef = null;
-
-/**
- * Set the setup function reference.
- * @param {Function} fn - The setup function
- */
-export function setSetupFunction(fn) {
-    setupFn = fn;
-}
-
-/**
- * Set the cheatConfig reference.
- * @param {object} config - The cheatConfig object
- */
-export function setCheatConfig(config) {
-    cheatConfigRef = config;
-}
-
-/**
- * Get the cheatConfig reference.
- * @returns {object}
- */
-export function getCheatConfig() {
-    return cheatConfigRef;
-}
 
 /**
  * Main cheat dispatcher - executes cheat commands.
@@ -61,9 +26,9 @@ export function getCheatConfig() {
  */
 export function cheat(action, context) {
     try {
-        if (!setupDone && setupFn) {
+        if (!setupDone) {
             (async () => {
-                await setupFn.call(context);
+                await setup.call(context);
             })();
         }
 
@@ -145,7 +110,7 @@ export function registerCheats(cheatMap, higherKeys = []) {
                 );
             }
 
-            let config = higherKeys.reduce((obj, key) => obj[key], cheatConfigRef);
+            let config = higherKeys.reduce((obj, key) => obj[key], cheatConfig);
             let val = params.slice(cheatMap.configurable["isObject"] ? 1 : 0).join(" ");
 
             if (val === "") {
@@ -200,10 +165,10 @@ export function registerCheats(cheatMap, higherKeys = []) {
  * @param {object} newConfig - New configuration to merge
  */
 export function updateCheatConfig(newConfig) {
-    if (cheatConfigRef) {
+    if (cheatConfig) {
         for (const key in newConfig) {
             if (Object.hasOwnProperty.call(newConfig, key)) {
-                cheatConfigRef[key] = newConfig[key];
+                cheatConfig[key] = newConfig[key];
             }
         }
     }
