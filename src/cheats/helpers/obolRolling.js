@@ -98,33 +98,33 @@ export function rollPerfectObols(obolOrder, obolMap, characterClass) {
         // Clear existing stats
         Object.keys(obolMapItem).forEach((stat) => delete obolMapItem[stat]);
 
-        obolDef["SuperFunItemDisplayType"] = "Inventory";
+        obolDef.SuperFunItemDisplayType = "Inventory";
 
         // Add unique stats if present
-        if (obolDef["UQ1txt"] != 0) {
-            obolMapItem["UQ1txt"] = obolDef["UQ1txt"];
-            obolMapItem["UQ1val"] = 1;
+        if (obolDef.UQ1txt != 0) {
+            obolMapItem.UQ1txt = obolDef.UQ1txt;
+            obolMapItem.UQ1val = 1;
             rollsLeft--;
         }
-        if (obolDef["UQ2txt"] != 0) {
-            obolMapItem["UQ2txt"] = obolDef["UQ2txt"];
-            obolMapItem["UQ2val"] = 1;
+        if (obolDef.UQ2txt != 0) {
+            obolMapItem.UQ2txt = obolDef.UQ2txt;
+            obolMapItem.UQ2val = 1;
             rollsLeft--;
         }
 
-        if (obolDef["Weapon_Power"] > 0 && ["HEXAGON_OBOL", "SPARKLE_OBOL"].includes(obolDef["Type"])) {
+        if (obolDef.Weapon_Power > 0 && ["HEXAGON_OBOL", "SPARKLE_OBOL"].includes(obolDef.Type)) {
             // Skilling obol - add weapon power
-            obolMapItem["Weapon_Power"] = 1;
+            obolMapItem.Weapon_Power = 1;
             rollsLeft--;
         } else {
             // Non-skilling obol - add max possible preferred stat
-            obolMapItem[preferredStat] = obolDef["ID"] + 1;
+            obolMapItem[preferredStat] = obolDef.ID + 1;
             rollsLeft--;
         }
 
         if (rollsLeft > 0) {
             // Add max possible LUK, or AGI if preferred stat is LUK
-            obolMapItem[preferredStat == "LUK" ? "AGI" : "LUK"] = obolDef["ID"] + 1;
+            obolMapItem[preferredStat == "LUK" ? "AGI" : "LUK"] = obolDef.ID + 1;
             rollsLeft--;
         }
     });

@@ -78,7 +78,7 @@ export function getAutoCompleteSuggestions() {
         if (itemBlacklist.has(code)) return null;
         const name = item.h.displayName.replace(/_/g, " ");
         // filtering out ui items named strung jewels
-        if (code != "Quest66" && name == "Strung Jewels") return null;
+        if (code !== "Quest66" && name === "Strung Jewels") return null;
 
         return [
             { value: `drop ${code}`, message: name, category: "drop" },

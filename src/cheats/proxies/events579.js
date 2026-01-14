@@ -101,7 +101,7 @@ export function setupSailingProxy() {
 
     const Sailing = actorEvents579._customBlock_Sailing;
     actorEvents579._customBlock_Sailing = function (...argumentsList) {
-        let res = Reflect.apply(Sailing, this, argumentsList);
+        const res = Reflect.apply(Sailing, this, argumentsList);
         if (cheatState.w5.sailing && cheatConfig?.w5?.sailing?.hasOwnProperty(argumentsList[0]))
             return cheatConfig.w5.sailing[argumentsList[0]](res);
         if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" == argumentsList[0]) {

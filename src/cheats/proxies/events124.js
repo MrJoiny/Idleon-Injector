@@ -60,7 +60,7 @@ export function setupAFKRateProxy() {
 export function setupPlayerLoadProxy() {
     const loadPlayerInfo = events(124)._customBlock_LoadPlayerInfo;
     events(124)._customBlock_LoadPlayerInfo = function (...argumentsList) {
-        let rtn = Reflect.apply(loadPlayerInfo, this, argumentsList);
+        const rtn = Reflect.apply(loadPlayerInfo, this, argumentsList);
         try {
             if (cheatState.wide.perfectobols && rollAllObols) rollAllObols();
         } catch (e) {
@@ -91,11 +91,11 @@ export function setupMonsterKillProxy() {
     const cheatConfig = getConfig();
     const monsterKill = events(124)._customBlock_MonsterKill;
     events(124)._customBlock_MonsterKill = (...argumentsList) => {
-        let e = argumentsList[0];
+        const e = argumentsList[0];
         Reflect.apply(monsterKill, this, argumentsList);
         if (
             cheatState.wide.plunderous &&
-            (0 < events(12)._customBlock_GetBuffBonuses(318, 1) || cheatConfig.wide["plunderous"]["allcharacters"]) &&
+            (0 < events(12)._customBlock_GetBuffBonuses(318, 1) || cheatConfig.wide.plunderous.allcharacters) &&
             bEngine.gameAttributes.h.DummyText3 != "nah" &&
             !bEngine
                 .getGameAttribute("CustomLists")

@@ -19,6 +19,7 @@ export default [
                 varsIgnorePattern: "^_"
             }],
             "no-undef": "error",
+            "no-prototype-builtins": "off",  // Safe to use in controlled game environment
             
             // Best practices
             "dot-notation": "warn",

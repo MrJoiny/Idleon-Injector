@@ -15,8 +15,8 @@ import { cheatConfig } from "../core/state.js";
 export function getCharCords() {
     const OtherPlayer = bEngine.getGameAttribute("OtherPlayers").h;
     const character = OtherPlayer[bEngine.getGameAttribute("UserInfo")[0]];
-    let x = character.getXCenter();
-    let y = character.getValue("ActorEvents_20", "_PlayerNode");
+    const x = character.getXCenter();
+    const y = character.getValue("ActorEvents_20", "_PlayerNode");
     return { y, x };
 }
 
@@ -40,7 +40,7 @@ export function dropOnChar(item, amount) {
                 cheatConfig.wide.autoloot.itemstochest = false;
             }
 
-            let { y, x } = getCharCords();
+            const { y, x } = getCharCords();
 
             if (item.includes("SmithingRecipes"))
                 actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);

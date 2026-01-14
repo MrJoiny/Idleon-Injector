@@ -81,7 +81,7 @@ export function setupWorshipMobDeathProxy() {
 export function setupShrineInfoProxy() {
     const shrineInfo = bEngine.getGameAttribute("ShrineInfo");
     for (const i in shrineInfo) {
-        if (typeof shrineInfo[i] == "object") {
+        if (typeof shrineInfo[i] === "object") {
             shrineInfo[i] = new Proxy(shrineInfo[i], {
                 get: function (original, j) {
                     return cheatState.w3.globalshrines && j == 0 ? bEngine.getGameAttribute("CurrentMap") : original[j];
@@ -266,7 +266,7 @@ export function setupKeychainProxy() {
     const keychain = actorEvents345._customBlock_keychainn;
     actorEvents345._customBlock_keychainn = function (...argumentList) {
         return cheatConfig.misc.hasOwnProperty("keychain")
-            ? cheatConfig.misc["keychain"](Reflect.apply(keychain, this, argumentList))
+            ? cheatConfig.misc.keychain(Reflect.apply(keychain, this, argumentList))
             : Reflect.apply(keychain, this, argumentList);
     };
 }

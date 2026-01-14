@@ -190,13 +190,13 @@ registerCheats({
                 if (params && params[1]) {
                     try {
                         if (params[1] === "reset") {
-                            cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => t;
+                            cheatConfig.w6.summoning.UnitTypeDraw = (t) => t;
                             return `summoning units has been reset to default`;
                         }
 
                         const summonUnit = summonUnits[params[1]];
                         if (summonUnit || summonUnit === 0) {
-                            cheatConfig.w6.summoning["UnitTypeDraw"] = (t) => summonUnit;
+                            cheatConfig.w6.summoning.UnitTypeDraw = (t) => summonUnit;
                             return `${params[1]} set as unit to be drawn`;
                         }
                         return `no such unit ${params[1]} found`;
@@ -237,7 +237,7 @@ registerCheat({
                 const selectedStat = keychainStatsMap[params[0]];
 
                 if (selectedStat) {
-                    cheatConfig.misc["keychain"] = (t) => [
+                    cheatConfig.misc.keychain = (t) => [
                         selectedStat[1],
                         selectedStat[2],
                         parseInt(selectedStat[3]),
@@ -250,7 +250,7 @@ registerCheat({
                 return `Error: ${err}`;
             }
         }
-        cheatConfig.misc["keychain"] = (t) => t;
+        cheatConfig.misc.keychain = (t) => t;
         return `Reset to default rng, input a stat to set keychain stats`;
     },
 });

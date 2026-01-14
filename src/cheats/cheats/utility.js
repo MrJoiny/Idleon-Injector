@@ -51,7 +51,7 @@ function gg_func(params, mode) {
             else if (Array.isArray(gg)) gg = gg[params[i]];
             else break;
         }
-        if (typeof gg == "object" || Array.isArray(gg)) {
+        if (typeof gg === "object" || Array.isArray(gg)) {
             if (gg.h) gg = gg.h;
             for (const [index, element] of Object.entries(gg)) {
                 if (mode === 0) foundVals.push(`${index}, ${element}`);
@@ -396,9 +396,9 @@ registerCheat({
         const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
         const abilities = bEngine.getGameAttribute("AttackLoadout");
         try {
-            let gga = eval(params[0]);
-            let obj_gga = Object.entries(gga);
-            if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`${gga}`);
+            const gga = eval(params[0]);
+            const obj_gga = Object.entries(gga);
+            if (typeof obj_gga === "string" || obj_gga.length == 0) foundVals.push(`${gga}`);
             else for (const [index, element] of obj_gga) foundVals.push(`${index}, ${element}`);
             return foundVals.join("\n");
         } catch (error) {
@@ -417,9 +417,9 @@ registerCheat({
         const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
         const abilities = bEngine.getGameAttribute("AttackLoadout");
         try {
-            let gga = eval(params[0]);
-            let obj_gga = Object.entries(gga);
-            if (typeof obj_gga == "string" || obj_gga.length == 0) foundVals.push(`Non iterable value: ${gga}`);
+            const gga = eval(params[0]);
+            const obj_gga = Object.entries(gga);
+            if (typeof obj_gga === "string" || obj_gga.length == 0) foundVals.push(`Non iterable value: ${gga}`);
             else for (const [index, element] of obj_gga) foundVals.push(`${index}`);
             return foundVals.join("\n");
         } catch (error) {
@@ -434,10 +434,10 @@ registerCheat({
     name: "cheats",
     message: "list available cheats",
     fn: (params) => {
-        let cheatsAvailable = [];
+        const cheatsAvailable = [];
         const cheats = getCheats();
         Object.keys(cheats).forEach((cheat) => {
-            cheatsAvailable.push(cheat + (cheats[cheat]["message"] ? ` (${cheats[cheat].message})` : ""));
+            cheatsAvailable.push(cheat + (cheats[cheat].message ? ` (${cheats[cheat].message})` : ""));
         });
         return cheatsAvailable.join("\n");
     },

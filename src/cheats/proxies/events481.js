@@ -19,9 +19,9 @@ export function setupWorkbenchStuff2Proxy() {
         apply: function (originalFn, context, argumentsList) {
             try {
                 if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
-                    cheatState["rng"] = "high";
-                    let rtn = Reflect.apply(originalFn, context, argumentsList);
-                    cheatState["rng"] = false;
+                    cheatState.rng = "high";
+                    const rtn = Reflect.apply(originalFn, context, argumentsList);
+                    cheatState.rng = false;
                     return rtn;
                 }
             } catch (e) {

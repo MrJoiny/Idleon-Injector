@@ -43,7 +43,7 @@ export function setupAutoLootProxy() {
     // Proxy item init for auto loot
     actorEvents44.prototype.init = new Proxy(actorEvents44.prototype.init, {
         apply: function (originalFn, context, argumentsList) {
-            let rtn = Reflect.apply(originalFn, context, argumentsList);
+            const rtn = Reflect.apply(originalFn, context, argumentsList);
 
             // Easy to read boolean checks
             const dropType = context._DropType;
@@ -155,7 +155,7 @@ export function setupAutoLootProxy() {
     });
 
     // Proxy item get notification
-    const hxOverrides = window["HxOverrides"];
+    const hxOverrides = window.HxOverrides;
     events(34).prototype._event_ItemGet = new Proxy(events(34).prototype._event_ItemGet, {
         apply: function (originalFn, context, argumentsList) {
             return cheatState.wide.autoloot &&
@@ -188,8 +188,8 @@ export function setupNodmgProxy() {
  */
 export function setupTimeCandyProxy() {
     const cheatConfig = getConfig();
-    const timeCandy = itemDefs["Timecandy1"].h;
-    const originalID = timeCandy["ID"];
+    const timeCandy = itemDefs.Timecandy1.h;
+    const originalID = timeCandy.ID;
 
     Object.defineProperty(timeCandy, "ID", {
         get: function () {
@@ -217,11 +217,11 @@ export function setupItemMoveProxy() {
                     itemDefs[inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]].h.Type ==
                         "TIME_CANDY"
                 ) {
-                    let originalMap = bEngine.getGameAttribute("CurrentMap");
-                    let originalTarget = bEngine.getGameAttribute("AFKtarget");
+                    const originalMap = bEngine.getGameAttribute("CurrentMap");
+                    const originalTarget = bEngine.getGameAttribute("AFKtarget");
                     bEngine.getGameAttribute("PixelHelperActor")[23].getValue("ActorEvents_577", "_GenINFO")[86] = 1;
                     if (originalTarget == "Cooking" || originalTarget == "Laboratory") {
-                        let newTarget = {
+                        const newTarget = {
                             calls: 0,
                             [Symbol.toPrimitive](hint) {
                                 if (this.calls < 2) {
@@ -236,7 +236,7 @@ export function setupItemMoveProxy() {
                         bEngine.setGameAttribute("AFKtarget", newTarget);
                     }
                     bEngine.setGameAttribute("CurrentMap", 1);
-                    let rtn = Reflect.apply(originalFn, context, argumentsList);
+                    const rtn = Reflect.apply(originalFn, context, argumentsList);
                     bEngine.setGameAttribute("CurrentMap", originalMap);
                     bEngine.setGameAttribute("AFKtarget", originalTarget);
                     return rtn;
@@ -250,13 +250,13 @@ export function setupItemMoveProxy() {
                     inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")] == "Pearl6"
                 ) {
                     let calls = 0;
-                    const levels = bEngine.gameAttributes.h["Lv0"];
-                    bEngine.gameAttributes.h["Lv0"] = new Proxy(levels, {
+                    const levels = bEngine.gameAttributes.h.Lv0;
+                    bEngine.gameAttributes.h.Lv0 = new Proxy(levels, {
                         get: function (target, name) {
                             if (name == bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
                                 calls = calls + 1;
                                 if (calls == 2) {
-                                    bEngine.gameAttributes.h["Lv0"] = levels;
+                                    bEngine.gameAttributes.h.Lv0 = levels;
                                 }
                                 return 1;
                             }
@@ -278,7 +278,7 @@ export function setupItemsMenuProxy() {
     events(312).prototype._event_resetTalPresets = new Proxy(events(312).prototype._event_resetTalPresets, {
         apply: function (originalFn, context, argumentsList) {
             if (cheatState.unlock.presets) {
-                let originalMap = bEngine.getGameAttribute("CurrentMap");
+                const originalMap = bEngine.getGameAttribute("CurrentMap");
                 bEngine.setGameAttribute("CurrentMap", 0);
                 Reflect.apply(originalFn, context, argumentsList);
                 bEngine.setGameAttribute("CurrentMap", originalMap);
@@ -307,7 +307,7 @@ export function setupItemMiscProxy() {
                 cheatState.rng = 0.85; // First random roll for Misc stat
                 cheatState.rngInt = "high"; // 2nd random roll for positive value
 
-                let rtn = Reflect.apply(target, thisArg, argumentsList);
+                const rtn = Reflect.apply(target, thisArg, argumentsList);
 
                 cheatState.rng = false;
                 cheatState.rngInt = false;
@@ -327,9 +327,9 @@ export function setupAbilityProxy(context) {
     const CustomMaps = context["scripts.CustomMaps"];
     const atkMoveMap = deepCopy(context["scripts.CustomMaps"].atkMoveMap.h);
     for (const [key, value] of Object.entries(atkMoveMap)) {
-        value.h["cooldown"] = 0;
-        value.h["castTime"] = 0.1;
-        value.h["manaCost"] = 0;
+        value.h.cooldown = 0;
+        value.h.castTime = 0.1;
+        value.h.manaCost = 0;
         atkMoveMap[key] = value;
     }
     const handler = {
@@ -361,8 +361,8 @@ export function setupSmithProxy(context) {
             return Reflect.apply(originalFn, context, argumentsList);
         },
     };
-    const proxy = new Proxy(tCustomList["ItemToCraftCostTYPE"], handler);
-    tCustomList["ItemToCraftCostTYPE"] = proxy;
+    const proxy = new Proxy(tCustomList.ItemToCraftCostTYPE, handler);
+    tCustomList.ItemToCraftCostTYPE = proxy;
 }
 
 /**
@@ -371,8 +371,8 @@ export function setupSmithProxy(context) {
 export function setupTrappingProxy() {
     const cheatConfig = getConfig();
     const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
-    for (let name in playerDatabase) {
-        for (let PldTrap of playerDatabase[name].h.PldTraps) {
+    for (const name in playerDatabase) {
+        for (const PldTrap of playerDatabase[name].h.PldTraps) {
             if (!PldTrap) continue;
 
             let elapsed_time = PldTrap[2];
@@ -471,7 +471,7 @@ export function setupQuestProxy(context) {
  * @param {object} context - The game context
  */
 export function setupCreateElementProxy(context) {
-    const firebaseStorage = context["FirebaseStorage"];
+    const firebaseStorage = context.FirebaseStorage;
     const cheatConfig = getConfig();
 
     const proxyMethod = (methodName, handler) => {
@@ -557,8 +557,8 @@ export function setupCreateElementProxy(context) {
  */
 export function setupSteamAchievementProxy(context) {
     const cheatConfig = getConfig();
-    let achieveList = [];
-    context["FirebaseStorage"].areaCheck = new Proxy(context["FirebaseStorage"].areaCheck, {
+    const achieveList = [];
+    context.FirebaseStorage.areaCheck = new Proxy(context.FirebaseStorage.areaCheck, {
         apply: function (target, thisArg, args) {
             if (!cheatConfig.steamachieve) return;
             if (achieveList.includes(args[0])) return;

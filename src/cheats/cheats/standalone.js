@@ -41,7 +41,7 @@ registerCheat({
             for (let i = 0; i < spawnAmnt; i++) {
                 ActorEvents124._customBlock_CreateMonster(monster, y, x);
             }
-            return `Spawned ${monsterDefinition.h["Name"].replace(/_/g, " ")} ${spawnAmnt} time(s)`;
+            return `Spawned ${monsterDefinition.h.Name.replace(/_/g, " ")} ${spawnAmnt} time(s)`;
         } else return `No monster found for '${monster}'`;
     },
 });
@@ -51,7 +51,7 @@ registerCheat({
     name: "daily",
     message: "Daily shop and post office reset",
     fn: (params) => {
-        bEngine.getGameAttribute("TimeAway").h["ShopRestock"] = 1;
+        bEngine.getGameAttribute("TimeAway").h.ShopRestock = 1;
         return `The daily shop restock has been triggered.`;
     },
 });
@@ -224,7 +224,7 @@ registerCheats({
             message: "100% upgrade stone success (safe)",
             fn: (params) => {
                 for (const [index, element] of Object.entries(itemDefs))
-                    if (element.h["typeGen"] === "dStone") itemDefs[index].h["Amount"] = 100;
+                    if (element.h.typeGen === "dStone") itemDefs[index].h.Amount = 100;
                 return `All upgrade stones have 100% success chance.`;
             },
         },
@@ -233,7 +233,7 @@ registerCheats({
             message: "Upgrade stone doesn't use a slot (risky)",
             fn: (params) => {
                 for (const [index, element] of Object.entries(itemDefs))
-                    if (element.h["typeGen"] === "dStone") itemDefs[index].h["Trigger"] = 0;
+                    if (element.h.typeGen === "dStone") itemDefs[index].h.Trigger = 0;
                 return `Using an upgrade stone doesn't deduct remaining upgrade amount on an item.`;
             },
         },
@@ -270,7 +270,7 @@ registerCheats({
                     const tab = status[i];
                     if (!tab) continue;
                     for (let j = 0; j < tab.length; j++) {
-                        if (tab[j] == 0) tab[j] = 1;
+                        if (tab[j] === 0) tab[j] = 1;
                     }
                 }
                 return "Unlocked all anvil crafts.";

@@ -29,8 +29,8 @@ export function setFullProxySetup(fn) {
  * @param {object} context - The game context
  */
 export function setupFirebaseProxy(context) {
-    if (context["FirebaseStorage"] && context["FirebaseStorage"].playButton) {
-        context["FirebaseStorage"].playButton = new Proxy(context["FirebaseStorage"].playButton, {
+    if (context.FirebaseStorage && context.FirebaseStorage.playButton) {
+        context.FirebaseStorage.playButton = new Proxy(context.FirebaseStorage.playButton, {
             apply: (target, thisArg, argumentsList) => {
                 const result = Reflect.apply(target, thisArg, argumentsList);
 

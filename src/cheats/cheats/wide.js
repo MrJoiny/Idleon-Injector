@@ -104,7 +104,7 @@ registerCheats({
             name: "guildpoints",
             message: "Adds 1200 guild points to the guild.",
             fn: function () {
-                this["FirebaseStorage"].guildPointAdjust(1200);
+                this.FirebaseStorage.guildPointAdjust(1200);
                 return "Added 1200 guild points to the guild.";
             },
         },
@@ -138,7 +138,7 @@ registerCheat({
         }
 
         const name = bundleCodeToName.get(code) || code;
-        this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
+        this.FirebaseStorage.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
         return `${name} has been bought!`;
     },
 });

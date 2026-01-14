@@ -105,16 +105,16 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
     }
 
     // Navigate to the correct state object level
-    let stateObject = higherKeys.reduce((obj, key) => obj[key], cheatState);
+    const stateObject = higherKeys.reduce((obj, key) => obj[key], cheatState);
     stateObject[cheatMap.name] = cheatMap.hasOwnProperty("subcheats") ? {} : false;
 
     // Add toggle-all state if subcheats can be mass-toggled
-    if (cheatMap["canToggleSubcheats"]) {
+    if (cheatMap.canToggleSubcheats) {
         stateObject[cheatMap.name + "s"] = false;
     }
 
     // Create the cheat handler function
-    let fn = function (params) {
+    const fn = function (params) {
         // Cheat uses a custom function
         if (cheatMap.hasOwnProperty("fn")) {
             return cheatMap.fn.call(this, higherKeys.concat(cheatMap.name).concat(params).splice(1));
@@ -129,8 +129,8 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
                 );
             }
 
-            let config = higherKeys.reduce((obj, key) => obj[key], cheatConfig);
-            let val = params.slice(cheatMap.configurable["isObject"] ? 1 : 0).join(" ");
+            const config = higherKeys.reduce((obj, key) => obj[key], cheatConfig);
+            let val = params.slice(cheatMap.configurable.isObject ? 1 : 0).join(" ");
 
             if (val === "") {
                 return `Invalid value, must be a boolean, number or function that returns a number.`;
@@ -147,7 +147,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
             stateObject[cheatMap.name] = true;
 
-            if (cheatMap.configurable["isObject"]) {
+            if (cheatMap.configurable.isObject) {
                 config[cheatMap.name][params[0]] = val;
                 return `Set ${cmd} ${params[0]} to ${val}`;
             } else {
@@ -157,7 +157,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
         }
 
         // Handle mass toggle of subcheats
-        if (!params[0] && cheatMap["subcheats"]) {
+        if (!params[0] && cheatMap.subcheats) {
             for (const i in stateObject[cheatMap.name]) {
                 stateObject[cheatMap.name][i] = !stateObject[cheatMap.name + "s"];
             }

@@ -88,7 +88,7 @@ export async function setup() {
  * @returns {string[]} Array of result messages
  */
 export function runStartupCheats() {
-    let rtn = [];
+    const rtn = [];
     startupCheats.forEach((c) => {
         rtn.push(cheat(c, this));
     }, this);
