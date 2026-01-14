@@ -10,12 +10,8 @@
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
-import { cheatState, cheatConfig } from "../core/state.js";
+import { cheatState } from "../core/state.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
-import { knownBundles } from "../constants.js";
-
-// Build lookup map from bundle code to display name
-const bundleCodeToName = new Map(knownBundles.map(([name, code]) => [code, name]));
 
 // Wide (account-wide) cheats
 registerCheats({
@@ -38,18 +34,6 @@ registerCheats({
         { name: "nodmg", message: "no damage numbers" },
         { name: "eventitems", message: "unlimited event item drops" },
         { name: "autoloot", message: "autoloot immeditely to chest. Check config for more" },
-        {
-            // TODO: change only to mainstat not configurable.
-            name: "perfectobols",
-            message: "Roll all obols perfectly for class. Family and inventory obols update on character change.",
-            fn: function (params) {
-                if (!cheatState.wide[params[0]]) rollAllObols();
-                cheatState.wide[params[0]] = !cheatState.wide[params[0]];
-                return `${
-                    cheatState.wide[params[0]] ? "Activated" : "Deactivated"
-                } Perfect obol rolls. Family and inventory obols update on character change.`;
-            },
-        },
         { name: "autoparty", message: "Automatically add on screen players to your party" },
         { name: "arcade", message: "arcade cost nullify" },
         { name: "eventspins", message: "Infinite event spins" },
@@ -61,6 +45,17 @@ registerCheats({
             fn: function () {
                 this.FirebaseStorage.guildPointAdjust(1200);
                 return "Added 1200 guild points to the guild.";
+            },
+        },
+        {
+            name: "perfectobols",
+            message: "Roll all obols perfectly for class. Family and inventory obols update on character change.",
+            fn: function () {
+                if (!cheatState.wide.perfectobols) rollAllObols();
+                cheatState.wide.perfectobols = !cheatState.wide.perfectobols;
+                return `${
+                    cheatState.wide.perfectobols ? "Activated" : "Deactivated"
+                } Perfect obol rolls. Family and inventory obols update on character change.`;
             },
         },
     ],
@@ -87,13 +82,10 @@ registerCheat({
     fn: function (params) {
         const code = params[0];
         if (!code) {
-            // TODO: replace knownBundles with all bundles.
-            const validCodes = knownBundles.map(([name, c]) => `${c} (${name})`).join("\n");
-            return `Usage: buy [bundle_code]\nValid codes:\n${validCodes}`;
+            return "No code was given, provide a code";
         }
 
-        const name = bundleCodeToName.get(code) || code;
         this.FirebaseStorage.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
-        return `${name} has been bought!`;
+        return `${code} has been sent!`;
     },
 });

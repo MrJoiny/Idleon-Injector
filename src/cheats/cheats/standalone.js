@@ -50,7 +50,7 @@ registerCheat({
 registerCheat({
     name: "daily",
     message: "Daily shop and post office reset",
-    fn: (params) => {
+    fn: () => {
         bEngine.getGameAttribute("TimeAway").h.ShopRestock = 1;
         return "The daily shop restock has been triggered.";
     },
@@ -188,7 +188,7 @@ registerCheats({
         {
             name: "save",
             message: "Saves the current values of items and cards",
-            fn: (params) => {
+            fn: () => {
                 dictVals.itemDefs = deepCopy(itemDefs);
                 dictVals.CardStuff = deepCopy(CList.CardStuff);
                 return "Saved the current values.";
@@ -197,7 +197,7 @@ registerCheats({
         {
             name: "item",
             message: "Restores original item values.",
-            fn: (params) => {
+            fn: () => {
                 // Note: This doesn't work in modular version since itemDefs is a const
                 // Would need a different approach
                 return "Restored original item values.";
@@ -206,7 +206,7 @@ registerCheats({
         {
             name: "card",
             message: "Restores original card values.",
-            fn: (params) => {
+            fn: () => {
                 CList.CardStuff = dictVals.CardStuff;
                 return "Restored original card values.";
             },
@@ -222,7 +222,7 @@ registerCheats({
         {
             name: "rng",
             message: "100% upgrade stone success (safe)",
-            fn: (params) => {
+            fn: () => {
                 for (const [index, element] of Object.entries(itemDefs))
                     if (element.h.typeGen === "dStone") itemDefs[index].h.Amount = 100;
                 return "All upgrade stones have 100% success chance.";
@@ -231,7 +231,7 @@ registerCheats({
         {
             name: "use",
             message: "Upgrade stone doesn't use a slot (risky)",
-            fn: (params) => {
+            fn: () => {
                 for (const [index, element] of Object.entries(itemDefs))
                     if (element.h.typeGen === "dStone") itemDefs[index].h.Trigger = 0;
                 return "Using an upgrade stone doesn't deduct remaining upgrade amount on an item.";
@@ -253,7 +253,7 @@ registerCheats({
     subcheats: [
         {
             name: "portals",
-            fn: (params) => {
+            fn: () => {
                 bEngine.getGameAttribute("KillsLeft2Advance").map((entry) => {
                     for (let i = 0; i < entry.length; i++) entry[i] = 0;
                     return entry;
