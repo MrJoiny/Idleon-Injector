@@ -173,7 +173,7 @@ export function setupAutoLootProxy() {
  */
 export function setupNodmgProxy() {
     const cRA = behavior.createRecycledActor;
-    behavior.createRecycledActor = function (id, ...args) {
+    behavior.createRecycledActor = function (id) {
         if (cheatState.wide.nodmg) {
             if (typeof id === "object") {
                 if (id.ID === 10) return null;
@@ -214,16 +214,16 @@ export function setupItemMoveProxy() {
             try {
                 if (
                     cheatState.wide.candy &&
-                    itemDefs[inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]].h.Type ==
+                    itemDefs[inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]].h.Type ===
                         "TIME_CANDY"
                 ) {
                     const originalMap = bEngine.getGameAttribute("CurrentMap");
                     const originalTarget = bEngine.getGameAttribute("AFKtarget");
                     bEngine.getGameAttribute("PixelHelperActor")[23].getValue("ActorEvents_577", "_GenINFO")[86] = 1;
-                    if (originalTarget == "Cooking" || originalTarget == "Laboratory") {
+                    if (originalTarget === "Cooking" || originalTarget === "Laboratory") {
                         const newTarget = {
                             calls: 0,
-                            [Symbol.toPrimitive](hint) {
+                            [Symbol.toPrimitive](_hint) {
                                 if (this.calls < 2) {
                                     this.calls = this.calls + 1;
                                     return "mushG";
@@ -241,21 +241,21 @@ export function setupItemMoveProxy() {
                     bEngine.setGameAttribute("AFKtarget", originalTarget);
                     return rtn;
                 }
-            } catch (e) {}
+            } catch (_e) {}
             try {
                 if (
                     cheatState.unlock.divinitypearl &&
-                    context.actor.getValue("ActorEvents_38", "_PixelType") == 2 &&
-                    context.actor.getValue("ActorEvents_38", "_DummyType2Dead") == 7 &&
-                    inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")] == "Pearl6"
+                    context.actor.getValue("ActorEvents_38", "_PixelType") === 2 &&
+                    context.actor.getValue("ActorEvents_38", "_DummyType2Dead") === 7 &&
+                    inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")] === "Pearl6"
                 ) {
                     let calls = 0;
                     const levels = bEngine.gameAttributes.h.Lv0;
                     bEngine.gameAttributes.h.Lv0 = new Proxy(levels, {
                         get: function (target, name) {
-                            if (name == bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
+                            if (name === bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
                                 calls = calls + 1;
-                                if (calls == 2) {
+                                if (calls === 2) {
                                     bEngine.gameAttributes.h.Lv0 = levels;
                                 }
                                 return 1;
@@ -265,7 +265,7 @@ export function setupItemMoveProxy() {
                     });
                     return Reflect.apply(argumentsList[0], context, []);
                 }
-            } catch (e) {}
+            } catch (_e) {}
             return Reflect.apply(originalFn, context, argumentsList);
         },
     });
@@ -352,7 +352,7 @@ export function setupSmithProxy(context) {
 
     const NewReqs = []; // New Array where we write our stuff to
     const size = []; // Array lengths (amount of items per smithing tab)
-    for (const [index, element] of Object.entries(sizeref)) size.push(element.length);
+    for (const element of Object.values(sizeref)) size.push(element.length);
     // Double square brackets since each item could require multiple materials
     for (let i = 0; i < size.length; i++) NewReqs.push(new Array(size[i]).fill([["Copper", "0"]]));
     const handler = {
@@ -425,7 +425,6 @@ export function setupAlchProxy() {
  * @param {object} context - The game context
  */
 export function setupQuestProxy(context) {
-    const cheatConfig = getConfig();
     const dialogueDefs = context["scripts.DialogueDefinitions"].dialogueDefs.h;
     const dialogueDefsOriginal = deepCopy(dialogueDefs);
     const dialogueDefsUpdated = deepCopy(dialogueDefs);
@@ -438,7 +437,7 @@ export function setupQuestProxy(context) {
         )
             // Notice that inside each value (e.g. NPC object), the 1st element is where all numeric stuff reside
             // The 0th element holds the textual dialogue, which is not what we're looking for
-            if (value[1][i].length == 9) {
+            if (value[1][i].length === 9) {
                 // Both addLine_ItemsAndSpaceRequired and addLine_Custom have nine elements within
                 // Iterate over an unknown amount of req. values/Arrays
                 if (value[1][i][2] === value[1][i][8])
@@ -456,7 +455,7 @@ export function setupQuestProxy(context) {
                         dialogueDefsUpdated[key][1][i][3][j] = 0;
             }
 
-    for (const [key, value] of Object.entries(dialogueDefsUpdated)) {
+    for (const key of Object.keys(dialogueDefsUpdated)) {
         Object.defineProperty(dialogueDefs, key, {
             get: function () {
                 return cheatState.wide.quest ? dialogueDefsUpdated[key] : dialogueDefsOriginal[key];

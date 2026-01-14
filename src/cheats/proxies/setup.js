@@ -144,7 +144,7 @@ import { initEvents189Proxies } from "./events189.js";
 import { initEvents345Proxies } from "./events345.js";
 import { initEvents481Proxies } from "./events481.js";
 import { initEvents579Proxies } from "./events579.js";
-import { initMinigameProxies } from "./minigames.js";
+
 import { initMiscProxies } from "./misc.js";
 
 /**

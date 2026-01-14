@@ -49,7 +49,7 @@ export function setupHPProxy(events) {
             return this._PlayerHP;
         },
         set: function (value) {
-            return (this._PlayerHP = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value);
+            this._PlayerHP = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value;
         },
     });
 }
@@ -103,7 +103,7 @@ export function setupCloudSaveProxy() {
                 obj[0] = 235;
                 return true;
             }
-            return Reflect.set(...arguments);
+            return Reflect.set(obj, prop, value);
         },
     };
     const proxy = new Proxy(CloudSave, handler);
@@ -123,9 +123,8 @@ export function setupValuesMapProxy() {
             return this._InstaRevives;
         },
         set: function (value) {
-            if (cheatState.unlock.revive) return true;
+            if (cheatState.unlock.revive) return;
             this._InstaRevives = value;
-            return true;
         },
         enumerable: true,
     });
@@ -220,7 +219,7 @@ export function setupOptionsListAccountProxy() {
     // Boss attempts (special logic - reset when at max)
     createProxy(optionsListAccount, 185, {
         get: function (original) {
-            if (cheatState.w2.boss && original == 10) original = 0;
+            if (cheatState.w2.boss && original === 10) original = 0;
             return original;
         },
         set: function (value, backupKey) {

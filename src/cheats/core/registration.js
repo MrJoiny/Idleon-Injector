@@ -138,7 +138,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
             try {
                 val = JSON.parse(val);
-            } catch (e) {
+            } catch (_e) {
                 val = new Function("return " + val)();
                 if (isNaN(val(1))) {
                     return `Invalid value, must be a boolean, number or function that returns a number.`;

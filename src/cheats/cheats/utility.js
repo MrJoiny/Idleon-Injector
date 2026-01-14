@@ -393,12 +393,10 @@ registerCheat({
     message: "Show the game attribute, separate with spaces.",
     fn: function (params) {
         const foundVals = [];
-        const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
-        const abilities = bEngine.getGameAttribute("AttackLoadout");
         try {
             const gga = eval(params[0]);
             const obj_gga = Object.entries(gga);
-            if (typeof obj_gga === "string" || obj_gga.length == 0) foundVals.push(`${gga}`);
+            if (typeof obj_gga === "string" || obj_gga.length === 0) foundVals.push(`${gga}`);
             else for (const [index, element] of obj_gga) foundVals.push(`${index}, ${element}`);
             return foundVals.join("\n");
         } catch (error) {
@@ -414,13 +412,11 @@ registerCheat({
     message: "Show the game key, separate with spaces.",
     fn: function (params) {
         const foundVals = [];
-        const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
-        const abilities = bEngine.getGameAttribute("AttackLoadout");
         try {
             const gga = eval(params[0]);
             const obj_gga = Object.entries(gga);
-            if (typeof obj_gga === "string" || obj_gga.length == 0) foundVals.push(`Non iterable value: ${gga}`);
-            else for (const [index, element] of obj_gga) foundVals.push(`${index}`);
+            if (typeof obj_gga === "string" || obj_gga.length === 0) foundVals.push(`Non iterable value: ${gga}`);
+            else for (const [index] of obj_gga) foundVals.push(`${index}`);
             return foundVals.join("\n");
         } catch (error) {
             if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;

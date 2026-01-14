@@ -10,14 +10,14 @@ import { setupCListProxy } from "./clist.js";
 import { setupQuestProxy } from "./misc.js";
 
 // Store reference to full proxy setup (set externally to avoid circular dependency)
-let fullProxySetupFn = null;
+let _fullProxySetupFn = null;
 
 /**
  * Set the full proxy setup function reference.
  * @param {Function} fn
  */
 export function setFullProxySetup(fn) {
-    fullProxySetupFn = fn;
+    _fullProxySetupFn = fn;
 }
 
 /**

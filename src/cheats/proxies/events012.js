@@ -66,7 +66,7 @@ export function setupEvents012Proxies() {
     // Damage cap on too-OP broken players with overflowing damage
     const DamageDealt = ActorEvents12._customBlock_DamageDealed;
     ActorEvents12._customBlock_DamageDealed = function (...argumentsList) {
-        return cheatState.multiply.damage && argumentsList[0] == "Max"
+        return cheatState.multiply.damage && argumentsList[0] === "Max"
             ? DamageDealt(...argumentsList) * cheatConfig.multiply.damage
             : DamageDealt(...argumentsList);
     };
@@ -137,7 +137,7 @@ export function setupEvents012Proxies() {
     ActorEvents12._customBlock_TotalStats = (...argumentsList) => {
         return (
             Reflect.apply(TotalStats, this, argumentsList) *
-            (cheatState.multiply.drop && argumentsList[0] == "Drop_Rarity" ? cheatConfig.multiply.drop : 1)
+            (cheatState.multiply.drop && argumentsList[0] === "Drop_Rarity" ? cheatConfig.multiply.drop : 1)
         );
     };
 

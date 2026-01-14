@@ -18,7 +18,7 @@ export function setupWorkbenchStuff2Proxy() {
     actorEvents481.prototype._customEvent_WorkbenchStuff2 = new Proxy(Workbenchstuff, {
         apply: function (originalFn, context, argumentsList) {
             try {
-                if (cheatState.w3.bettercog && -1 != context._TRIGGEREDtext.indexOf("k")) {
+                if (cheatState.w3.bettercog && -1 !== context._TRIGGEREDtext.indexOf("k")) {
                     cheatState.rng = "high";
                     const rtn = Reflect.apply(originalFn, context, argumentsList);
                     cheatState.rng = false;

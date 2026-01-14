@@ -29,9 +29,9 @@ export function setupAnvilProduceStatsProxy() {
     events(189)._customBlock_AnvilProduceStats = function (...argumentsList) {
         if (cheatState.w1.anvil) {
             const t = argumentsList[0];
-            if (t == "Costs1") return 0;
-            if (t == "Costs2") return 0;
-            if (t == "ProductionSpeed")
+            if (t === "Costs1") return 0;
+            if (t === "Costs2") return 0;
+            if (t === "ProductionSpeed")
                 return cheatConfig.w1.anvil.productionspeed(Reflect.apply(anvilProduceStats, this, argumentsList));
         }
         return Reflect.apply(anvilProduceStats, this, argumentsList);

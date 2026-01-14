@@ -47,7 +47,7 @@ export function traverse(obj, depth, worker, visited = new Set(), path = [], cur
             path.push(key);
             traverse(target[key], depth, worker, visited, path, currentDepth + 1);
             path.pop();
-        } catch (e) {
+        } catch (_e) {
             path.pop();
         }
     }

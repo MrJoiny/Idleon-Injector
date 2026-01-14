@@ -38,23 +38,23 @@ export function setupWorkbenchStuffProxy() {
     const Workbench = actorEvents345._customBlock_WorkbenchStuff;
     actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
         const t = argumentsList[0];
-        if (cheatState.w3.flagreq && t == "FlagReq") return 0; // Nullified flag unlock time
-        if (cheatState.w3.freebuildings && (t == "TowerSaltCost" || t == "TowerMatCost")) return 0; // Tower cost nullification
-        if (cheatState.w3.instabuild && t == "TowerBuildReq") return 0; // Instant build/upgrade
-        if (cheatState.w3.booktime && t == "BookReqTime") return 1; // Book/second
-        if (cheatState.w3.totalflags && t == "TotalFlags") return 10; // Total amount of placeable flags
-        if (cheatState.w3.buildspd && t == "PlayerBuildSpd") {
+        if (cheatState.w3.flagreq && t === "FlagReq") return 0; // Nullified flag unlock time
+        if (cheatState.w3.freebuildings && (t === "TowerSaltCost" || t === "TowerMatCost")) return 0; // Tower cost nullification
+        if (cheatState.w3.instabuild && t === "TowerBuildReq") return 0; // Instant build/upgrade
+        if (cheatState.w3.booktime && t === "BookReqTime") return 1; // Book/second
+        if (cheatState.w3.totalflags && t === "TotalFlags") return 10; // Total amount of placeable flags
+        if (cheatState.w3.buildspd && t === "PlayerBuildSpd") {
             // multiply build rate
             const originalValue = Reflect.apply(Workbench, this, argumentsList);
             return cheatConfig.w3.buildspd(originalValue);
         }
-        if (cheatState.multiply.printer && t == "ExtraPrinting")
+        if (cheatState.multiply.printer && t === "ExtraPrinting")
             return (
                 (argumentsList[0] = "AdditionExtraPrinting"),
                 cheatConfig.multiply.printer * Reflect.apply(Workbench, this, argumentsList)
             ); // print multiplier
         // The minimum level talent book from the library is equivalent to the max level
-        if (cheatState.w3.book && t == "minBookLv") {
+        if (cheatState.w3.book && t === "minBookLv") {
             argumentsList[0] = "maxBookLv";
         }
         return Reflect.apply(Workbench, this, argumentsList);
@@ -69,7 +69,7 @@ export function setupWorshipMobDeathProxy() {
 
     actorEvents345._customBlock_2inputs = new Proxy(actorEvents345._customBlock_2inputs, {
         apply: function (originalFn, context, argumentsList) {
-            if (cheatState.w3.mobdeath) return "Worshipmobdeathi" == true ? 0 : 0;
+            if (cheatState.w3.mobdeath) return 0;
             return Reflect.apply(originalFn, context, argumentsList);
         },
     });
@@ -84,7 +84,7 @@ export function setupShrineInfoProxy() {
         if (typeof shrineInfo[i] === "object") {
             shrineInfo[i] = new Proxy(shrineInfo[i], {
                 get: function (original, j) {
-                    return cheatState.w3.globalshrines && j == 0 ? bEngine.getGameAttribute("CurrentMap") : original[j];
+                    return cheatState.w3.globalshrines && j === 0 ? bEngine.getGameAttribute("CurrentMap") : original[j];
                 },
             });
         }
@@ -144,17 +144,17 @@ export function setupBreedingProxy() {
         apply: function (originalFn, context, argumentsList) {
             const t = argumentsList[0];
 
-            if (cheatState.w4.eggcap && t == "TotalEggCapacity") return 13; // 13 eggs
-            if (cheatState.w4.fenceyard && t == "FenceYardSlots") return 27; // 27 fenceyard slots
-            if (cheatState.w4.battleslots && t == "PetBattleSlots") return 6; // 6 battle slots
-            if (cheatState.w4.petchance && t == "TotalBreedChance")
+            if (cheatState.w4.eggcap && t === "TotalEggCapacity") return 13; // 13 eggs
+            if (cheatState.w4.fenceyard && t === "FenceYardSlots") return 27; // 27 fenceyard slots
+            if (cheatState.w4.battleslots && t === "PetBattleSlots") return 6; // 6 battle slots
+            if (cheatState.w4.petchance && t === "TotalBreedChance")
                 return cheatConfig.w4.petchance(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.genes && t == "GeneticCost") return 0; // 0 gene upgrades
-            if (cheatState.w4.fasteggs && t == "TotalTimeForEgg")
+            if (cheatState.w4.genes && t === "GeneticCost") return 0; // 0 gene upgrades
+            if (cheatState.w4.fasteggs && t === "TotalTimeForEgg")
                 return cheatConfig.w4.fasteggs(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.petupgrades && t == "PetUpgCostREAL")
+            if (cheatState.w4.petupgrades && t === "PetUpgCostREAL")
                 return cheatConfig.w4.petupgrades(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.petrng && t == "PetQTYonBreed") {
+            if (cheatState.w4.petrng && t === "PetQTYonBreed") {
                 cheatState.rng = "low";
                 argumentsList[2] = 8;
                 const power = Reflect.apply(originalFn, context, argumentsList);
@@ -176,8 +176,8 @@ export function setupLabProxy() {
     const Lab = actorEvents345._customBlock_Labb;
     actorEvents345._customBlock_Labb = function (...argumentsList) {
         const t = argumentsList[0];
-        if (cheatState.w4.labpx && (t == "Dist" || t == "BonusLineWidth")) return 1000; // long lab connections
-        if (cheatState.w2.sigilspeed && t == "SigilBonusSpeed")
+        if (cheatState.w4.labpx && (t === "Dist" || t === "BonusLineWidth")) return 1000; // long lab connections
+        if (cheatState.w2.sigilspeed && t === "SigilBonusSpeed")
             return cheatConfig.w2.alchemy.sigilspeed(Reflect.apply(Lab, this, argumentsList));
         return Reflect.apply(Lab, this, argumentsList);
     };
@@ -193,7 +193,7 @@ export function setupPetStuffProxy() {
     const PetStuff = actorEvents345._customBlock_PetStuff;
     actorEvents345._customBlock_PetStuff = function (...argumentsList) {
         const originalValue = Reflect.apply(PetStuff, this, argumentsList);
-        if (cheatState.w4.fastforaging && argumentsList[0] == "TotalTrekkingHR")
+        if (cheatState.w4.fastforaging && argumentsList[0] === "TotalTrekkingHR")
             return cheatConfig.w4.fastforaging(originalValue); // fast foraging
         if (cheatState.w4.superpets && cheatConfig.w4.superpets[argumentsList[0]])
             return cheatConfig.w4.superpets[argumentsList[0]](originalValue); // powerful pets
@@ -211,15 +211,15 @@ export function setupCookingProxy() {
     const CookingR = actorEvents345._customBlock_CookingR;
     actorEvents345._customBlock_CookingR = function (...argumentsList) {
         const t = argumentsList[0];
-        if (cheatState.w4.mealspeed && t == "CookingReqToCook")
+        if (cheatState.w4.mealspeed && t === "CookingReqToCook")
             return cheatConfig.w4.mealspeed(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.recipespeed && t == "CookingFireREQ")
+        if (cheatState.w4.recipespeed && t === "CookingFireREQ")
             return cheatConfig.w4.recipespeed(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.luckychef && t == "CookingLUCK")
+        if (cheatState.w4.luckychef && t === "CookingLUCK")
             return cheatConfig.w4.luckychef(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.kitchensdiscount && (t == "CookingNewKitchenCoinCost" || t == "CookingUpgSpiceCostQty"))
+        if (cheatState.w4.kitchensdiscount && (t === "CookingNewKitchenCoinCost" || t === "CookingUpgSpiceCostQty"))
             return cheatConfig.w4.kitchensdiscount(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.platesdiscount && t == "CookingMenuMealCosts")
+        if (cheatState.w4.platesdiscount && t === "CookingMenuMealCosts")
             return cheatConfig.w4.platesdiscount(Reflect.apply(CookingR, this, argumentsList));
         return Reflect.apply(CookingR, this, argumentsList);
     };

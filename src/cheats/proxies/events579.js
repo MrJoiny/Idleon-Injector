@@ -104,9 +104,9 @@ export function setupSailingProxy() {
         const res = Reflect.apply(Sailing, this, argumentsList);
         if (cheatState.w5.sailing && cheatConfig?.w5?.sailing?.hasOwnProperty(argumentsList[0]))
             return cheatConfig.w5.sailing[argumentsList[0]](res);
-        if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" == argumentsList[0]) {
+        if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" === argumentsList[0]) {
             if (
-                1 == this._customBlock_Ninja("EmporiumBonus", 32, 0) &&
+                this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1 &&
                 50 <= Number(bEngine.getGameAttribute("Lv0")[13])
             ) {
                 const dnsm = bEngine.getGameAttribute("DNSM");
@@ -147,7 +147,6 @@ export function setupGamingProxy() {
         },
         set: function (value) {
             GamingAttr._13 = value;
-            return true;
         },
     });
 }
@@ -176,7 +175,6 @@ export function setupDivinityProxy() {
         },
         set: function (value) {
             this._38 = value;
-            return true;
         },
     });
 }
@@ -197,13 +195,12 @@ export function setupRiftProxy() {
     RiftAttr._1 = RiftAttr[1];
     Object.defineProperty(bEngine.getGameAttribute("Rift"), 1, {
         get: function () {
-            return cheatState.unlock.rifts && CList.RiftStuff[4][bEngine.getGameAttribute("Rift")[0]] != 9
+            return cheatState.unlock.rifts && CList.RiftStuff[4][bEngine.getGameAttribute("Rift")[0]] !== 9
                 ? 1e8
                 : RiftAttr._1;
         },
         set: function (value) {
             RiftAttr._1 = value;
-            return true;
         },
     });
 }

@@ -18,7 +18,7 @@ import { cheats, cheat as coreCheat, updateCheatConfig } from "./core/registrati
 import { setup as coreSetup } from "./core/setup.js";
 // Static cheats register automatically when this module is imported
 import "./cheats/register.js";
-import { getOLA, setOLAIndex, getOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
+import { getOLA, setOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions, getChoicesNeedingConfirmation } from "./api/suggestions.js";
 
 // Sets the config, startup and webport from glob to internal state

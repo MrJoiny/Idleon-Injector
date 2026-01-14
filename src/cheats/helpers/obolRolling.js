@@ -101,12 +101,12 @@ export function rollPerfectObols(obolOrder, obolMap, characterClass) {
         obolDef.SuperFunItemDisplayType = "Inventory";
 
         // Add unique stats if present
-        if (obolDef.UQ1txt != 0) {
+        if (obolDef.UQ1txt !== 0) {
             obolMapItem.UQ1txt = obolDef.UQ1txt;
             obolMapItem.UQ1val = 1;
             rollsLeft--;
         }
-        if (obolDef.UQ2txt != 0) {
+        if (obolDef.UQ2txt !== 0) {
             obolMapItem.UQ2txt = obolDef.UQ2txt;
             obolMapItem.UQ2val = 1;
             rollsLeft--;
@@ -124,7 +124,7 @@ export function rollPerfectObols(obolOrder, obolMap, characterClass) {
 
         if (rollsLeft > 0) {
             // Add max possible LUK, or AGI if preferred stat is LUK
-            obolMapItem[preferredStat == "LUK" ? "AGI" : "LUK"] = obolDef.ID + 1;
+            obolMapItem[preferredStat === "LUK" ? "AGI" : "LUK"] = obolDef.ID + 1;
             rollsLeft--;
         }
     });

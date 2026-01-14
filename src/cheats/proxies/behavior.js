@@ -45,7 +45,7 @@ export function setupBehaviorScriptProxies() {
             }
 
             // Force VIP book to always be max level
-            if (cheatState.w3?.book && bEngine.getGameAttribute("MenuType2") == 31 && argumentsList[0] == 1) {
+            if (cheatState.w3?.book && bEngine.getGameAttribute("MenuType2") === 31 && argumentsList[0] === 1) {
                 return argumentsList[1];
             }
 
@@ -69,12 +69,12 @@ export function setupBehaviorScriptProxies() {
             try {
                 if (
                     cheatState.godlike?.intervention &&
-                    argumentsList[0] == 2400 &&
-                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name == "ActorEvents_481"
+                    argumentsList[0] === 2400 &&
+                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name === "ActorEvents_481"
                 ) {
                     argumentsList[0] = 0;
                 }
-            } catch (e) {}
+            } catch (_e) {}
 
             Reflect.apply(originalFn, context, argumentsList);
         },
@@ -86,12 +86,12 @@ export function setupBehaviorScriptProxies() {
             try {
                 if (
                     cheatState.godlike?.poison &&
-                    argumentsList[0] == 2e3 &&
-                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name == "ActorEvents_575"
+                    argumentsList[0] === 2e3 &&
+                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name === "ActorEvents_575"
                 ) {
                     argumentsList[0] = 5;
                 }
-            } catch (e) {}
+            } catch (_e) {}
 
             Reflect.apply(originalFn, context, argumentsList);
         },

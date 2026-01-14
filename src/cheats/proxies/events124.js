@@ -96,11 +96,11 @@ export function setupMonsterKillProxy() {
         if (
             cheatState.wide.plunderous &&
             (0 < events(12)._customBlock_GetBuffBonuses(318, 1) || cheatConfig.wide.plunderous.allcharacters) &&
-            bEngine.gameAttributes.h.DummyText3 != "nah" &&
+            bEngine.gameAttributes.h.DummyText3 !== "nah" &&
             !bEngine
                 .getGameAttribute("CustomLists")
                 .h.NonAFKmonsters.includes(e.getValue("ActorEvents_1", "_MonsterType")) &&
-            0 == e.getValue("ActorEvents_1", "_TempMonster")
+            e.getValue("ActorEvents_1", "_TempMonster") === 0
         ) {
             (bEngine.gameAttributes.h.DummyText3 = "PiratePlunderMonster"),
                 events(124)._customBlock_CreateMonster(

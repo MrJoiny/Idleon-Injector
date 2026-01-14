@@ -43,7 +43,10 @@ export function createProxy(targetObj, index, callback) {
 
         set: function (value) {
             if (isSimpleCallback) return;
-            if (callback.set) return callback.set.call(this, value, backupKey);
+            if (callback.set) {
+                callback.set.call(this, value, backupKey);
+                return;
+            }
             this[backupKey] = value;
         },
         enumerable: true,

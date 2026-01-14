@@ -196,7 +196,7 @@ registerCheats({
 
                         const summonUnit = summonUnits[params[1]];
                         if (summonUnit || summonUnit === 0) {
-                            cheatConfig.w6.summoning.UnitTypeDraw = (t) => summonUnit;
+                            cheatConfig.w6.summoning.UnitTypeDraw = () => summonUnit;
                             return `${params[1]} set as unit to be drawn`;
                         }
                         return `no such unit ${params[1]} found`;
@@ -237,7 +237,7 @@ registerCheat({
                 const selectedStat = keychainStatsMap[params[0]];
 
                 if (selectedStat) {
-                    cheatConfig.misc.keychain = (t) => [
+                    cheatConfig.misc.keychain = () => [
                         selectedStat[1],
                         selectedStat[2],
                         parseInt(selectedStat[3]),

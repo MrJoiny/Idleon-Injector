@@ -262,7 +262,6 @@ export function setupPoingMinigameProxy() {
             },
             set: function (value) {
                 aiVelocity = value;
-                return true;
             },
         });
         proxiesSetup.poing = true;
