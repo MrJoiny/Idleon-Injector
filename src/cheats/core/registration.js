@@ -123,11 +123,15 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
         // Handle configurable cheats with value input
         if (params.length > 0) {
             if (!cheatMap.hasOwnProperty("configurable")) {
-                return (
-                    `Wrong subcommand, use one of these:\n` +
-                    cheatMap.subcheats.map((p) => `${cmd} ${p.name} (${p.message})`).join("\n")
-                );
+                if (cheatMap.subcheats && cheatMap.subcheats.length > 0) {
+                    return (
+                        `Wrong subcommand, use one of these:\n` +
+                        cheatMap.subcheats.map((p) => `${cmd} ${p.name} (${p.message})`).join("\n")
+                    );
+                }
+                return "This cheat doesn't accept values.";
             }
+
 
             const config = higherKeys.reduce((obj, key) => obj[key], cheatConfig);
             let val = params.slice(cheatMap.configurable.isObject ? 1 : 0).join(" ");
