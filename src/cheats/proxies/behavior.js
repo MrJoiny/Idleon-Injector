@@ -66,15 +66,14 @@ export function setupBehaviorScriptProxies() {
     // Proxy runLater for instant divine intervention
     behavior.runLater = new Proxy(behavior.runLater, {
         apply: function (originalFn, context, argumentsList) {
-            try {
-                if (
-                    cheatState.godlike?.intervention &&
-                    argumentsList[0] === 2400 &&
-                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name === "ActorEvents_481"
-                ) {
-                    argumentsList[0] = 0;
-                }
-            } catch (_e) {}
+            const behaviorName = argumentsList[2]?.behaviors?.behaviors?.[0]?.name;
+            if (
+                cheatState.godlike?.intervention &&
+                argumentsList[0] === 2400 &&
+                behaviorName === "ActorEvents_481"
+            ) {
+                argumentsList[0] = 0;
+            }
 
             Reflect.apply(originalFn, context, argumentsList);
         },
@@ -83,15 +82,14 @@ export function setupBehaviorScriptProxies() {
     // Proxy runPeriodically for instant bubo poison
     behavior.runPeriodically = new Proxy(behavior.runPeriodically, {
         apply: function (originalFn, context, argumentsList) {
-            try {
-                if (
-                    cheatState.godlike?.poison &&
-                    argumentsList[0] === 2e3 &&
-                    argumentsList[2]?.behaviors?.behaviors?.[0]?.name === "ActorEvents_575"
-                ) {
-                    argumentsList[0] = 5;
-                }
-            } catch (_e) {}
+            const behaviorName = argumentsList[2]?.behaviors?.behaviors?.[0]?.name;
+            if (
+                cheatState.godlike?.poison &&
+                argumentsList[0] === 2e3 &&
+                behaviorName === "ActorEvents_575"
+            ) {
+                argumentsList[0] = 5;
+            }
 
             Reflect.apply(originalFn, context, argumentsList);
         },

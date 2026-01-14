@@ -52,7 +52,7 @@ registerCheat({
     message: "Daily shop and post office reset",
     fn: (params) => {
         bEngine.getGameAttribute("TimeAway").h.ShopRestock = 1;
-        return `The daily shop restock has been triggered.`;
+        return "The daily shop restock has been triggered.";
     },
 });
 
@@ -83,7 +83,7 @@ registerCheat({
 // Stop/restart cloud saving
 registerCheat({
     name: "cloudz",
-    message: "Stop cloud saving",
+    message: "Stops cloud saving",
     fn: () => {
         cheatState.cloudz = !cheatState.cloudz;
         return `${
@@ -191,7 +191,7 @@ registerCheats({
             fn: (params) => {
                 dictVals.itemDefs = deepCopy(itemDefs);
                 dictVals.CardStuff = deepCopy(CList.CardStuff);
-                return `Saved the current values.`;
+                return "Saved the current values.";
             },
         },
         {
@@ -200,7 +200,7 @@ registerCheats({
             fn: (params) => {
                 // Note: This doesn't work in modular version since itemDefs is a const
                 // Would need a different approach
-                return `Restored original item values.`;
+                return "Restored original item values.";
             },
         },
         {
@@ -208,7 +208,7 @@ registerCheats({
             message: "Restores original card values.",
             fn: (params) => {
                 CList.CardStuff = dictVals.CardStuff;
-                return `Restored original card values.`;
+                return "Restored original card values.";
             },
         },
     ],
@@ -225,7 +225,7 @@ registerCheats({
             fn: (params) => {
                 for (const [index, element] of Object.entries(itemDefs))
                     if (element.h.typeGen === "dStone") itemDefs[index].h.Amount = 100;
-                return `All upgrade stones have 100% success chance.`;
+                return "All upgrade stones have 100% success chance.";
             },
         },
         {
@@ -234,7 +234,7 @@ registerCheats({
             fn: (params) => {
                 for (const [index, element] of Object.entries(itemDefs))
                     if (element.h.typeGen === "dStone") itemDefs[index].h.Trigger = 0;
-                return `Using an upgrade stone doesn't deduct remaining upgrade amount on an item.`;
+                return "Using an upgrade stone doesn't deduct remaining upgrade amount on an item.";
             },
         },
         {
@@ -258,7 +258,7 @@ registerCheats({
                     for (let i = 0; i < entry.length; i++) entry[i] = 0;
                     return entry;
                 });
-                return `The portals have been unlocked!`;
+                return "The portals have been unlocked!";
             },
         },
         {

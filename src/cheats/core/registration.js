@@ -138,7 +138,10 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
             try {
                 val = JSON.parse(val);
-            } catch (_e) {
+            } catch (error) {
+                if (cheatConfig?.debug?.errors) {
+                    console.warn("Cheat config parse failed, using function fallback:", error);
+                }
                 val = new Function("return " + val)();
                 if (isNaN(val(1))) {
                     return `Invalid value, must be a boolean, number or function that returns a number.`;

@@ -210,16 +210,25 @@ export function setupTimeCandyProxy() {
 export function setupItemMoveProxy() {
     events(38).prototype._event_InvItem4custom = new Proxy(events(38).prototype._event_InvItem4custom, {
         apply: function (originalFn, context, argumentsList) {
+            const actor = context?.actor;
+            if (!actor?.getValue) {
+                return Reflect.apply(originalFn, context, argumentsList);
+            }
+
             const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
-            try {
-                if (
-                    cheatState.wide.candy &&
-                    itemDefs[inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")]].h.Type ===
-                        "TIME_CANDY"
-                ) {
+            const dragId = actor.getValue("ActorEvents_38", "_ItemDragID");
+            const itemKey = inventoryOrder?.[dragId];
+
+            if (cheatState.wide.candy) {
+                const itemType = itemDefs[itemKey]?.h?.Type;
+                if (itemType === "TIME_CANDY") {
                     const originalMap = bEngine.getGameAttribute("CurrentMap");
                     const originalTarget = bEngine.getGameAttribute("AFKtarget");
-                    bEngine.getGameAttribute("PixelHelperActor")[23].getValue("ActorEvents_577", "_GenINFO")[86] = 1;
+                    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+                    const genInfo = pixelHelper?.[23]?.getValue?.("ActorEvents_577", "_GenINFO");
+                    if (Array.isArray(genInfo)) {
+                        genInfo[86] = 1;
+                    }
                     if (originalTarget === "Cooking" || originalTarget === "Laboratory") {
                         const newTarget = {
                             calls: 0,
@@ -241,31 +250,38 @@ export function setupItemMoveProxy() {
                     bEngine.setGameAttribute("AFKtarget", originalTarget);
                     return rtn;
                 }
-            } catch (_e) {}
-            try {
-                if (
-                    cheatState.unlock.divinitypearl &&
-                    context.actor.getValue("ActorEvents_38", "_PixelType") === 2 &&
-                    context.actor.getValue("ActorEvents_38", "_DummyType2Dead") === 7 &&
-                    inventoryOrder[context.actor.getValue("ActorEvents_38", "_ItemDragID")] === "Pearl6"
-                ) {
-                    let calls = 0;
-                    const levels = bEngine.gameAttributes.h.Lv0;
-                    bEngine.gameAttributes.h.Lv0 = new Proxy(levels, {
-                        get: function (target, name) {
-                            if (name === bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
-                                calls = calls + 1;
-                                if (calls === 2) {
-                                    bEngine.gameAttributes.h.Lv0 = levels;
-                                }
-                                return 1;
+            }
+
+            if (
+                cheatState.unlock.divinitypearl &&
+                actor.getValue("ActorEvents_38", "_PixelType") === 2 &&
+                actor.getValue("ActorEvents_38", "_DummyType2Dead") === 7 &&
+                itemKey === "Pearl6"
+            ) {
+                const levels = bEngine.gameAttributes?.h?.Lv0;
+                if (!levels) {
+                    return Reflect.apply(originalFn, context, argumentsList);
+                }
+
+                let calls = 0;
+                bEngine.gameAttributes.h.Lv0 = new Proxy(levels, {
+                    get: function (target, name) {
+                        if (name === bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
+                            calls = calls + 1;
+                            if (calls === 2) {
+                                bEngine.gameAttributes.h.Lv0 = levels;
                             }
-                            return target[name];
-                        },
-                    });
+                            return 1;
+                        }
+                        return target[name];
+                    },
+                });
+
+                if (typeof argumentsList[0] === "function") {
                     return Reflect.apply(argumentsList[0], context, []);
                 }
-            } catch (_e) {}
+            }
+
             return Reflect.apply(originalFn, context, argumentsList);
         },
     });

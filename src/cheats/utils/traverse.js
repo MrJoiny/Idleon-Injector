@@ -42,13 +42,13 @@ export function traverse(obj, depth, worker, visited = new Set(), path = [], cur
 
     visited.add(obj);
     const target = obj.h || obj;
-    for (const key in target) {
-        try {
-            path.push(key);
-            traverse(target[key], depth, worker, visited, path, currentDepth + 1);
-            path.pop();
-        } catch (_e) {
-            path.pop();
+    for (const key of Object.keys(target)) {
+        const descriptor = Object.getOwnPropertyDescriptor(target, key);
+        if (!descriptor || !("value" in descriptor)) {
+            continue;
         }
+        path.push(key);
+        traverse(descriptor.value, depth, worker, visited, path, currentDepth + 1);
+        path.pop();
     }
 }
