@@ -374,27 +374,24 @@ registerCheats({
 });
 
 // Get Game Attributes
-registerCheat(
-    "gga",
-    function (params) {
-        return gg_func(params, 0);
-    },
-    "The attribute you want to get, separated by spaces"
-);
+registerCheat({
+    name: "gga",
+    message: "The attribute you want to get, separated by spaces",
+    fn: (params) => gg_func(params, 0),
+});
 
 // Get Game Key
-registerCheat(
-    "ggk",
-    function (params) {
-        return gg_func(params, 1);
-    },
-    "The key you want to get, separated by spaces"
-);
+registerCheat({
+    name: "ggk",
+    message: "The key you want to get, separated by spaces",
+    fn: (params) => gg_func(params, 1),
+});
 
 // Evaluate Get Game Attributes
-registerCheat(
-    "egga",
-    function (params) {
+registerCheat({
+    name: "egga",
+    message: "Show the game attribute, separate with spaces.",
+    fn: function (params) {
         const foundVals = [];
         const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
         const abilities = bEngine.getGameAttribute("AttackLoadout");
@@ -409,13 +406,13 @@ registerCheat(
             return `Error: ${error}`;
         }
     },
-    "Show the game attribute, separate with spaces."
-);
+});
 
 // Evaluate Get Game Key
-registerCheat(
-    "eggk",
-    function (params) {
+registerCheat({
+    name: "eggk",
+    message: "Show the game key, separate with spaces.",
+    fn: function (params) {
         const foundVals = [];
         const atkMoveMap = this["scripts.CustomMaps"].atkMoveMap.h;
         const abilities = bEngine.getGameAttribute("AttackLoadout");
@@ -430,13 +427,13 @@ registerCheat(
             return `Error: ${error}`;
         }
     },
-    "Show the game key, separate with spaces."
-);
+});
 
 // List available cheats
-registerCheat(
-    "cheats",
-    function (params) {
+registerCheat({
+    name: "cheats",
+    message: "list available cheats",
+    fn: (params) => {
         let cheatsAvailable = [];
         const cheats = getCheats();
         Object.keys(cheats).forEach((cheat) => {
@@ -444,8 +441,7 @@ registerCheat(
         });
         return cheatsAvailable.join("\n");
     },
-    "list available cheats"
-);
+});
 
 // List command
 registerCheats({

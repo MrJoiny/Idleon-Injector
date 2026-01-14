@@ -127,9 +127,10 @@ registerCheats({
 });
 
 // Buy gem shop packs
-registerCheat(
-    "buy",
-    function (params) {
+registerCheat({
+    name: "buy",
+    message: "Buy gem shop packs. You get items from the pack, but no gems and no pets.",
+    fn: function (params) {
         const code = params[0];
         if (!code) {
             const validCodes = knownBundles.map(([name, c]) => `${c} (${name})`).join("\n");
@@ -140,5 +141,4 @@ registerCheat(
         this["FirebaseStorage"].addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
         return `${name} has been bought!`;
     },
-    "Buy gem shop packs. You get items from the pack, but no gems and no pets."
-);
+});

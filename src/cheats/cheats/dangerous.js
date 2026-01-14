@@ -8,6 +8,7 @@
  * - bulk (drop items by type)
  * - chng (execute arbitrary code)
  * - qnty (change item quantities)
+ * - equipall (equip any item at any class/level)
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
@@ -125,6 +126,20 @@ function alchFn(params) {
     return `All ${params[0]} levels have changed to ${setlvl}.`;
 }
 
+// Equip any item at any class/level
+registerCheat({
+    name: "equipall",
+    message: "!danger! Equip any item at any class/level",
+    fn: (params) => {
+        for (const [index, element] of Object.entries(itemDefs)) {
+            // Any item with Class attribute is set to ALL, and any with lvlReqToEquip set to 1
+            if (element.h["Class"]) itemDefs[index].h["Class"] = "ALL";
+            if (element.h["lvReqToEquip"]) itemDefs[index].h["lvReqToEquip"] = 1;
+        }
+        return `All items can be worn by any class at any level.`;
+    },
+});
+
 // Wipe commands
 registerCheats({
     name: "wipe",
@@ -141,9 +156,10 @@ registerCheats({
 });
 
 // Bulk drop - drop all items of a given type
-registerCheat(
-    "bulk",
-    function (params) {
+registerCheat({
+    name: "bulk",
+    message: "Drop a collection of items at once. Usage: bulk [type] [amount]",
+    fn: (params) => {
         const type = params[0];
         const amount = parseInt(params[1]) || 1;
 
@@ -163,13 +179,13 @@ registerCheat(
 
         return `Dropped ${droppedCount} types of ${type} items (x${amount} each)`;
     },
-    "Drop a collection of items at once. Usage: bulk [type] [amount]"
-);
+});
 
 // Class change - change character class by name
-registerCheat(
-    "class",
-    function (params) {
+registerCheat({
+    name: "class",
+    message: "!danger! Change character class. Usage: class [class_name]",
+    fn: (params) => {
         const className = params[0]?.toLowerCase();
         if (!className) {
             const validClasses = CList.ClassNames.slice(0, 41)
@@ -191,8 +207,7 @@ registerCheat(
         bEngine.setGameAttribute("CharacterClass", classId);
         return `Class changed to ${displayName} (ID: ${classId})`;
     },
-    "!danger! Change character class. Usage: class [class_name]"
-);
+});
 
 // Build custom level handlers dispatch object
 const customLevelHandlers = {
@@ -260,9 +275,10 @@ function handleSkillLevel(name, lvl) {
 }
 
 // Level change - unified handler for skills, alchemy, and custom changers
-registerCheat(
-    "lvl",
-    function (params) {
+registerCheat({
+    name: "lvl",
+    message: "Change the lvl of a skill or alchemy type to this value",
+    fn: (params) => {
         const subcommand = params[0]?.toLowerCase();
         const value = parseInt(params[1]);
 
@@ -292,5 +308,4 @@ registerCheat(
 
         return `Invalid skill/type: ${subcommand}`;
     },
-    "Change the lvl of a skill or alchemy type to this value"
-);
+});

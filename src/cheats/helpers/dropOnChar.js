@@ -8,6 +8,19 @@ import { bEngine, itemDefs, events } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 
 /**
+ * Get the current character's coordinates.
+ *
+ * @returns {{ y: number, x: number }} The character's coordinates
+ */
+export function getCharCords() {
+    const OtherPlayer = bEngine.getGameAttribute("OtherPlayers").h;
+    const character = OtherPlayer[bEngine.getGameAttribute("UserInfo")[0]];
+    let x = character.getXCenter();
+    let y = character.getValue("ActorEvents_20", "_PlayerNode");
+    return { y, x };
+}
+
+/**
  * Drop an item on the current character.
  *
  * @param {string} item - The item ID to drop
@@ -16,7 +29,6 @@ import { cheatConfig } from "../core/state.js";
  */
 export function dropOnChar(item, amount) {
     const actorEvents189 = events(189);
-    const character = bEngine.getGameAttribute("OtherPlayers").h[bEngine.getGameAttribute("UserInfo")[0]];
 
     try {
         const itemDefinition = itemDefs[item];
@@ -28,8 +40,7 @@ export function dropOnChar(item, amount) {
                 cheatConfig.wide.autoloot.itemstochest = false;
             }
 
-            let x = character.getXCenter();
-            let y = character.getValue("ActorEvents_20", "_PlayerNode");
+            let { y, x } = getCharCords();
 
             if (item.includes("SmithingRecipes"))
                 actorEvents189._customBlock_DropSomething(item, 0, amount, 0, 2, y, 0, x, y);

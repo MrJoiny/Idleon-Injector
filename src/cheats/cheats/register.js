@@ -1,15 +1,5 @@
 /**
- * Cheats Module - Command Definitions
- *
- * Contains all cheat command registrations organized by category:
- * - standalone.js - drop, spawn, daily, etc.
- * - minigame.js - minigame cheats
- * - wide.js - account-wide cheats, buy
- * - worlds.js - w1-w7 cheats
- * - godlike.js - godlike powers
- * - multiply.js - stat multipliers
- * - dangerous.js - wipe, class, lvl, bulk, chng, qnty
- * - utility.js - search, list, gga, cheats
+ * Cheats Module
  *
  * All cheats auto-register on import.
  */

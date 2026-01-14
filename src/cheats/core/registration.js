@@ -58,13 +58,14 @@ export function cheat(action, context) {
 /**
  * Register a simple cheat command.
  *
- * @param {string} command - The command string (e.g., "drop" or "godlike crit")
- * @param {Function} fn - The function to execute when command is called
- * @param {string} message - Help message describing the cheat
- * @param {string} [category="general"] - Category for grouping in UI
+ * @param {object} cheatDef - Cheat definition object
+ * @param {string} cheatDef.name - The command string (e.g., "drop" or "godlike crit")
+ * @param {Function} cheatDef.fn - The function to execute when command is called
+ * @param {string} cheatDef.message - Help message describing the cheat
+ * @param {string} [cheatDef.category="general"] - Category for grouping in UI
  */
-export function registerCheat(command, fn, message, category = "general") {
-    cheats[command] = { fn: fn, message: message, category: category };
+export function registerCheat({ name, fn, message, category = "general" }) {
+    cheats[name] = { fn, message, category };
 }
 
 /**
@@ -169,7 +170,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
         return `${stateObject[cheatMap.name] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
     };
 
-    registerCheat(cmd, fn, cheatMap["message"], category);
+    registerCheat({ name: cmd, fn, message: cheatMap.message, category });
 
     // Recursively register subcheats, passing category
     if (cheatMap.hasOwnProperty("subcheats")) {

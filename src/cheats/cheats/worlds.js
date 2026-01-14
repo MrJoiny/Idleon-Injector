@@ -228,9 +228,10 @@ registerCheats({
 });
 
 // Keychain cheat (W7 Flurbo store)
-registerCheat(
-    "keychain",
-    function (params) {
+registerCheat({
+    name: "keychain",
+    message: "Generate specific keychain with double max stats when buying from Flurbo store",
+    fn: (params) => {
         if (params && params[0]) {
             try {
                 const selectedStat = keychainStatsMap[params[0]];
@@ -252,5 +253,4 @@ registerCheat(
         cheatConfig.misc["keychain"] = (t) => t;
         return `Reset to default rng, input a stat to set keychain stats`;
     },
-    "Generate specific keychain with double max stats when buying from Flurbo store"
-);
+});
