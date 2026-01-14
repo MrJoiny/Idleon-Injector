@@ -16,18 +16,6 @@ import { events } from "../core/globals.js";
 import { summonUnits, keychainStatsMap } from "../constants.js";
 import { cheatConfig } from "../core/state.js";
 
-/**
- * Helper to create configurable object cheat definition.
- * @param {string} name - Cheat name
- * @param {string} msg - Description message (appended with "check config file")
- * @returns {object} Cheat definition
- */
-const configCheat = (name, msg) => ({
-    name,
-    message: `${msg} check config file`,
-    configurable: { isObject: true },
-});
-
 // World 1 cheats
 registerCheats({
     name: "w1",
@@ -37,12 +25,9 @@ registerCheats({
         { name: "anvil", message: "anvil cost and duration nullification." },
         { name: "forge", message: "forge speed and capacity multiplier check config" },
         { name: "stampcost", message: "stamp cost reduction multiplier check config" },
-        {
-            name: "smith",
-            message: "smithing cost nullification (change maps to have the effect apply).",
-        },
-        { name: "companion", message: "companions cheat", configurable: true },
-        { name: "owl", message: "owl cheats, check config file", configurable: true },
+        { name: "smith", message: "smithing cost nullification (change maps to apply)." },
+        { name: "companion", message: "companions cheat" },
+        { name: "owl", message: "owl cheats, check config file" },
     ],
 });
 
@@ -53,8 +38,8 @@ registerCheats({
     canToggleSubcheats: true,
     subcheats: [
         { name: "boss", message: "unlimited boss attempts" },
-        { name: "roo", message: "roo cheats, check config file", configurable: true },
-        { name: "alchemy", message: "alchemy cheats, check config file", configurable: true },
+        { name: "roo", message: "roo cheats, check config file" },
+        { name: "alchemy", message: "alchemy cheats, check config file" },
         { name: "vialrng", message: "vial unlock upon rolling 1+" },
         { name: "vialattempt", message: "unlimited vial attempts" },
         { name: "sigilspeed", message: "fast sigil research (see config)" },
@@ -120,9 +105,9 @@ registerCheats({
         { name: "kitchensdiscount", message: "cheaper kitchens and upgrades (see config)" },
         { name: "platesdiscount", message: "cheaper dinner plate upgrades (see config)" },
         { name: "arena", message: "unlimited arena entries" },
-        configCheat("mainframe", "mainframe cheats"),
-        configCheat("chipbonuses", "chip bonuses"),
-        configCheat("meals", "meal bonus cheats"),
+        { name: "mainframe", message: "mainframe cheats" },
+        { name: "chipbonuses", message: "chip bonuses" },
+        { name: "meals", message: "meal bonus cheats" },
     ],
 });
 
@@ -132,12 +117,12 @@ registerCheats({
     message: "all w5 cheats",
     canToggleSubcheats: true,
     subcheats: [
-        configCheat("sailing", "sailing cheats"),
+        { name: "sailing", message: "sailing cheats" },
         { name: "endercaptains", message: "100% ender captains (requires Emporium bonus unlock)" },
-        configCheat("gaming", "gaming cheats"),
-        configCheat("divinity", "divinity cheats"),
-        configCheat("collider", "collider cheats"),
-        configCheat("holes", "holes cheats"),
+        { name: "gaming", message: "gaming cheats" },
+        { name: "divinity", message: "divinity cheats" },
+        { name: "collider", message: "collider cheats" },
+        { name: "holes", message: "holes cheats" },
     ],
 });
 
@@ -147,15 +132,15 @@ registerCheats({
     message: "all available w6 cheats",
     canToggleSubcheats: true,
     subcheats: [
-        configCheat("farming", "farming cheats"),
-        configCheat("ninja", "ninja cheats"),
-        configCheat("summoning", "summoning cheats"),
-        configCheat("grimoire", "grimoire cheats"),
-        configCheat("windwalker", "windwalker cheats"),
-        configCheat("arcane", "arcane cultist cheats"),
-        configCheat("emperor", "unlimeted emperor tries"),
-        configCheat("endless", "easy endless runs for summoning"),
-        configCheat("sneaksymbol", "sneaksymbol 100% chance"),
+        { name: "farming", message: "farming cheats" },
+        { name: "ninja", message: "ninja cheats" },
+        { name: "summoning", message: "summoning cheats" },
+        { name: "grimoire", message: "grimoire cheats" },
+        { name: "windwalker", message: "windwalker cheats" },
+        { name: "arcane", message: "arcane cultist cheats" },
+        { name: "emperor", message: "unlimeted emperor tries" },
+        { name: "endless", message: "easy endless runs for summoning" },
+        { name: "sneaksymbol", message: "sneaksymbol 100% chance" },
         {
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
@@ -216,14 +201,14 @@ registerCheats({
     message: "all available w7 cheats",
     canToggleSubcheats: true,
     subcheats: [
-        configCheat("spelunk", "spelunk cheats"),
-        configCheat("gallery", "gallery cheats"),
-        configCheat("reef", "coral reef nullify cost"),
-        configCheat("clam", "clam cheats"),
-        configCheat("coralkid", "coral kid nullify cost"),
-        configCheat("bigfish", "big fish nullify cost"),
-        configCheat("bubba", "bubba cheats"),
-        configCheat("zenith", "zenith market cheats"),
+        { name: "spelunk", message: "spelunk cheats" },
+        { name: "gallery", message: "gallery cheats" },
+        { name: "reef", message: "coral reef nullify cost" },
+        { name: "clam", message: "clam cheats" },
+        { name: "coralkid", message: "coral kid nullify cost" },
+        { name: "bigfish", message: "big fish nullify cost" },
+        { name: "bubba", message: "bubba cheats" },
+        { name: "zenith", message: "zenith market cheats" },
     ],
 });
 

@@ -46,7 +46,7 @@ registerCheats({
         { name: "speed", message: "weapon super speed", fn: setWeaponSpeed },
         { name: "card", message: "Efaunt, C.Efaunt, DrDef, Oak and Copper with insane stats", fn: boostTargetCards },
         { name: "poison", message: "instant bubo poison" },
-        { name: "respawn", message: "instant mob respawn", configurable: true },
+        { name: "respawn", message: "instant mob respawn" },
         { name: "hp", message: "never lose hp, become invincible (when active)" },
     ],
 });

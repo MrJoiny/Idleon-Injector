@@ -138,33 +138,24 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
                 }
                 return obj[key];
             }, cheatConfig);
-            let val = params.slice(cheatMap.configurable.isObject ? 1 : 0).join(" ");
+            let val = params.join(" ");
 
             if (val === "") {
-                return `Invalid value, must be a boolean, number or function that returns a number.`;
+                return `Invalid value. Must be a number or boolean.`;
             }
 
             try {
                 val = JSON.parse(val);
-            } catch (error) {
-                if (cheatConfig?.debug?.errors) {
-                    console.warn("Cheat config parse failed, using function fallback:", error);
+                if (typeof val !== "number" && typeof val !== "boolean") {
+                    return `Invalid value. Must be a number or boolean.`;
                 }
-                val = new Function("return " + val)();
-                if (isNaN(val(1))) {
-                    return `Invalid value, must be a boolean, number or function that returns a number.`;
-                }
+            } catch {
+                return `Invalid value. Must be a number or boolean.`;
             }
 
             stateObject[cheatMap.name] = true;
-
-            if (cheatMap.configurable.isObject) {
-                config[cheatMap.name][params[0]] = val;
-                return `Set ${cmd} ${params[0]} to ${val}`;
-            } else {
-                config[cheatMap.name] = val;
-                return `Set ${cmd} to ${val}`;
-            }
+            config[cheatMap.name] = val;
+            return `Set ${cmd} to ${val}`;
         }
 
         // Handle mass toggle of subcheats
