@@ -13,11 +13,13 @@ import { bEngine, itemDefs, monsterDefs, CList } from "../core/globals.js";
 import { traverse } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 
+const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
+
 /**
  * Creates a search function for the given definitions object.
  * @param {string} header - Header line for results (e.g., "Id, Item")
- * @param {function} getEntries - Function that returns entries to search
- * @param {function} formatResult - Function to format a matched result (key, name) => string
+ * @param {function} getEntries - Function that returns entries to search (returns [key, name, ...rest])
+ * @param {function} formatResult - Function to format a matched result (...entry) => string
  * @returns {function} Search function for use as cheat fn
  */
 function createSearchFn(header, getEntries, formatResult) {
@@ -25,10 +27,10 @@ function createSearchFn(header, getEntries, formatResult) {
         const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
         const results = [header];
 
-        for (const [key, name] of getEntries()) {
-            const normalizedName = name.replace(/_/g, " ").toLowerCase();
+        for (const entry of getEntries()) {
+            const normalizedName = formatText(entry[1]);
             if (normalizedName.includes(query)) {
-                results.push(formatResult(key, normalizedName));
+                results.push(formatResult(...entry));
             }
         }
 
@@ -43,27 +45,29 @@ function createSearchFn(header, getEntries, formatResult) {
  * @returns {string} Result string
  */
 function gg_func(params, mode) {
-    const foundVals = [];
     try {
         let gg = bEngine.getGameAttribute(params[0]);
+
         for (let i = 1; i < params.length; i++) {
-            if (gg.h) gg = gg.h[params[i]];
+            if (gg?.h) gg = gg.h[params[i]];
             else if (Array.isArray(gg)) gg = gg[params[i]];
             else break;
         }
-        if (typeof gg === "object" || Array.isArray(gg)) {
-            if (gg.h) gg = gg.h;
-            for (const [index, element] of Object.entries(gg)) {
-                if (mode === 0) foundVals.push(`${index}, ${element}`);
-                else foundVals.push(`${index}`);
-            }
-        } else {
-            foundVals.push(gg);
+
+        // Unwrap .h if present
+        if (gg?.h) gg = gg.h;
+
+        if (typeof gg !== "object" && !Array.isArray(gg)) {
+            return `${gg}`;
         }
-        return foundVals.join("\n");
+
+        return Object.entries(gg)
+            .map(([key, val]) => (mode === 0 ? `${key}, ${val}` : `${key}`))
+            .join("\n");
     } catch (error) {
-        if (error instanceof TypeError)
+        if (error instanceof TypeError) {
             return `This TypeError should appear if you gave a non-iterable value, or wrong query...\n${error}`;
+        }
         return `Error: ${error}`;
     }
 }
@@ -75,8 +79,6 @@ function gg_func(params, mode) {
  * @returns {string} Result string
  */
 function createListFunction(params) {
-    const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
-
     const listType = params[0];
     const filterQuery = params[1];
     const results = [];
@@ -316,7 +318,7 @@ registerCheats({
             fn: createSearchFn(
                 "Id, Item",
                 () => Object.entries(itemDefs).map(([k, v]) => [k, v.h.displayName]),
-                (key, name) => `${key} - ${name}`
+                (key, name) => `${key} - ${formatText(name)}`
             ),
         },
         {
@@ -325,7 +327,7 @@ registerCheats({
             fn: createSearchFn(
                 "Id, Monster",
                 () => Object.entries(monsterDefs).map(([k, v]) => [k, v.h.Name]),
-                (key, name) => `${key} - ${name}`
+                (key, name) => `${key} - ${formatText(name)}`
             ),
         },
         {
@@ -338,7 +340,7 @@ registerCheats({
                     const Order = CList.TalentOrder;
                     return Order.map((id, i) => [i, talentDefs[id], id]);
                 },
-                (order, name, id) => `${order} - ${id} - ${name}`
+                (order, name, id) => `${order} - ${id} - ${formatText(name)}`
             ),
         },
         {
@@ -352,7 +354,7 @@ registerCheats({
                 // Find matching items first
                 const matchingItems = [];
                 for (const [key, value] of Object.entries(itemDefs)) {
-                    const name = value.h.displayName.replace(/_/g, " ").toLowerCase();
+                    const name = formatText(value.h.displayName);
                     if (name.includes(query)) matchingItems.push([key, name]);
                 }
 
@@ -387,55 +389,51 @@ registerCheat({
     fn: (params) => gg_func(params, 1),
 });
 
+/**
+ * Internal eval_gg_func for egga/eggk commands.
+ * @param {Array} params - Command parameters
+ * @param {number} mode - 0 for values, 1 for keys
+ * @returns {string} Result string
+ */
+function eval_gg_func(params, mode) {
+    try {
+        const gga = eval(params[0]);
+        const entries = Object.entries(gga);
+
+        if (typeof entries === "string" || entries.length === 0) {
+            return mode === 0 ? `${gga}` : `Non iterable value: ${gga}`;
+        }
+
+        return entries.map(([key, val]) => (mode === 0 ? `${key}, ${val}` : `${key}`)).join("\n");
+    } catch (error) {
+        if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
+        return `Error: ${error}`;
+    }
+}
+
 // Evaluate Get Game Attributes
 registerCheat({
     name: "egga",
     message: "Show the game attribute, separate with spaces.",
-    fn: function (params) {
-        const foundVals = [];
-        try {
-            const gga = eval(params[0]);
-            const obj_gga = Object.entries(gga);
-            if (typeof obj_gga === "string" || obj_gga.length === 0) foundVals.push(`${gga}`);
-            else for (const [index, element] of obj_gga) foundVals.push(`${index}, ${element}`);
-            return foundVals.join("\n");
-        } catch (error) {
-            if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
-            return `Error: ${error}`;
-        }
-    },
+    fn: (params) => eval_gg_func(params, 0),
 });
 
 // Evaluate Get Game Key
 registerCheat({
     name: "eggk",
     message: "Show the game key, separate with spaces.",
-    fn: function (params) {
-        const foundVals = [];
-        try {
-            const gga = eval(params[0]);
-            const obj_gga = Object.entries(gga);
-            if (typeof obj_gga === "string" || obj_gga.length === 0) foundVals.push(`Non iterable value: ${gga}`);
-            else for (const [index] of obj_gga) foundVals.push(`${index}`);
-            return foundVals.join("\n");
-        } catch (error) {
-            if (error instanceof TypeError) return `This TypeError should appear if you gave a non-existing object`;
-            return `Error: ${error}`;
-        }
-    },
+    fn: (params) => eval_gg_func(params, 1),
 });
 
 // List available cheats
 registerCheat({
     name: "cheats",
     message: "list available cheats",
-    fn: (params) => {
-        const cheatsAvailable = [];
+    fn: () => {
         const cheats = getCheats();
-        Object.keys(cheats).forEach((cheat) => {
-            cheatsAvailable.push(cheat + (cheats[cheat].message ? ` (${cheats[cheat].message})` : ""));
-        });
-        return cheatsAvailable.join("\n");
+        return Object.entries(cheats)
+            .map(([name, cheat]) => name + (cheat.message ? ` (${cheat.message})` : ""))
+            .join("\n");
     },
 });
 
