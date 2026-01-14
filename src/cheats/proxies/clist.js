@@ -14,19 +14,10 @@
  * - Worship costs
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { CList } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
 import { traverse } from "../utils/traverse.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup all CList proxies.
@@ -52,7 +43,6 @@ export function setupCListProxy() {
 
         // gem buy limit
         createProxy(data, gembuylimitIndex, (original) => {
-            const cheatConfig = getConfig();
             if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig?.wide?.gembuylimit ?? original);
             return original;
         });
@@ -148,10 +138,8 @@ export function setupCListProxy() {
 }
 
 /**
- * Initialize CList proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize CList proxies.
  */
-export function initCListProxies(config) {
-    setCheatConfig(config);
+export function initCListProxies() {
     setupCListProxy();
 }

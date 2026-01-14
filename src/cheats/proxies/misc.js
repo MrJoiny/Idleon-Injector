@@ -17,20 +17,11 @@
  * - Steam achievement (prevent duplicate achievements)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, itemDefs, CList, events, behavior } from "../core/globals.js";
 import { lootableItemTypes } from "../constants.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { createProxy } from "../utils/createProxy.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup auto loot proxy (instant item pickup and chest management).
@@ -38,7 +29,6 @@ export function setCheatConfig(config) {
 export function setupAutoLootProxy() {
     const actorEvents44 = events(44);
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     // Proxy item init for auto loot
     actorEvents44.prototype.init = new Proxy(actorEvents44.prototype.init, {
@@ -187,7 +177,6 @@ export function setupNodmgProxy() {
  * Setup time candy proxy (custom candy duration).
  */
 export function setupTimeCandyProxy() {
-    const cheatConfig = getConfig();
     const timeCandy = itemDefs.Timecandy1.h;
     const originalID = timeCandy.ID;
 
@@ -385,7 +374,6 @@ export function setupSmithProxy(context) {
  * Setup trapping proxy (instant trap completion).
  */
 export function setupTrappingProxy() {
-    const cheatConfig = getConfig();
     const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
     for (const name in playerDatabase) {
         for (const PldTrap of playerDatabase[name].h.PldTraps) {
@@ -487,7 +475,6 @@ export function setupQuestProxy(context) {
  */
 export function setupCreateElementProxy(context) {
     const firebaseStorage = context.FirebaseStorage;
-    const cheatConfig = getConfig();
 
     const proxyMethod = (methodName, handler) => {
         const originalFn = firebaseStorage[methodName];
@@ -571,7 +558,6 @@ export function setupCreateElementProxy(context) {
  * @param {object} context - The game context
  */
 export function setupSteamAchievementProxy(context) {
-    const cheatConfig = getConfig();
     const achieveList = [];
     context.FirebaseStorage.areaCheck = new Proxy(context.FirebaseStorage.areaCheck, {
         apply: function (target, thisArg, args) {
@@ -611,11 +597,9 @@ export function setupMiscProxies() {
 
 /**
  * Initialize all misc proxies.
- * @param {object} config - The cheat config object
  * @param {object} context - The game context
  */
-export function initMiscProxies(config, context) {
-    setCheatConfig(config);
+export function initMiscProxies(context) {
     setupMiscProxies();
     setupMiscProxiesWithContext(context);
 }

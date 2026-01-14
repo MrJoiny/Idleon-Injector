@@ -19,22 +19,13 @@
  * - Gallery (gallery cheats)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, CList, events } from "../core/globals.js";
 import { chainProxies, createConfigProxy } from "../utils/proxyHelpers.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 // Helper to create state getter for nested paths like "w1.owl"
 const state = (world, key) => () => cheatState[world]?.[key];
-const config = (world, key) => () => getConfig()?.[world]?.[key];
+const config = (world, key) => () => cheatConfig?.[world]?.[key];
 
 /**
  * Setup summoning proxy (owl, roo, endless, summoning, grimoire).
@@ -97,7 +88,6 @@ export function setupHolesProxy() {
  */
 export function setupSailingProxy() {
     const actorEvents579 = events(579);
-    const cheatConfig = getConfig();
 
     const Sailing = actorEvents579._customBlock_Sailing;
     actorEvents579._customBlock_Sailing = function (...argumentsList) {
@@ -123,7 +113,6 @@ export function setupSailingProxy() {
  */
 export function setupGamingProxy() {
     const actorEvents579 = events(579);
-    const cheatConfig = getConfig();
 
     const GamingStatType = actorEvents579._customBlock_GamingStatType;
     actorEvents579._customBlock_GamingStatType = function (...argumentsList) {
@@ -156,7 +145,6 @@ export function setupGamingProxy() {
  */
 export function setupDivinityProxy() {
     const actorEvents579 = events(579);
-    const cheatConfig = getConfig();
 
     const Divinity = actorEvents579._customBlock_Divinity;
     actorEvents579._customBlock_Divinity = function (...argumentsList) {
@@ -304,10 +292,8 @@ export function setupEvents579Proxies() {
 }
 
 /**
- * Initialize events579 proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize events579 proxies.
  */
-export function initEvents579Proxies(config) {
-    setCheatConfig(config);
+export function initEvents579Proxies() {
     setupEvents579Proxies();
 }

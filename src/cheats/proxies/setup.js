@@ -5,9 +5,6 @@
  * Exports setup functions and a unified setupAllProxies() function.
  */
 
-// Re-export shared proxy context
-export { getConfig, setConfig } from "./proxyContext.js";
-
 // Re-export from behavior.js
 export { setupBehaviorScriptProxies } from "./behavior.js";
 
@@ -42,7 +39,6 @@ export {
     setupEvents124Proxies,
     initEvents124Proxies,
 } from "./events124.js";
-
 
 // Re-export from events189.js
 export {
@@ -158,9 +154,8 @@ import { initMiscProxies } from "./misc.js";
  * be ready at initial setup time.
  *
  * @param {object} context - The game window context
- * @param {object} config - The cheat configuration object
  */
-export function setupAllProxies(context, config) {
+export function setupAllProxies(context) {
     // Behavior script proxies (RNG, timing)
     setupBehaviorScriptProxies();
 
@@ -168,23 +163,22 @@ export function setupAllProxies(context, config) {
     setupFirebaseProxy(context);
 
     // Game attribute proxies (gems, HP, currencies, cloud save, etc.)
-    setupGameAttributeProxies(events, config);
+    setupGameAttributeProxies(events);
 
     // CList proxies (MTX, refinery, vials, prayers, etc.)
-    initCListProxies(config);
+    initCListProxies();
 
     // ActorEvents proxies by event number
-    initEvents012Proxies(config);
-    initEvents124Proxies(config);
-    initEvents189Proxies(config);
-    initEvents345Proxies(config);
+    initEvents012Proxies();
+    initEvents124Proxies();
+    initEvents189Proxies();
+    initEvents345Proxies();
     initEvents481Proxies();
-    initEvents579Proxies(config);
-
+    initEvents579Proxies();
 
     // NOTE: Minigame proxies are lazy-loaded on-demand, not here
     // initMinigameProxies();
 
     // Misc proxies (autoloot, items, abilities, etc.)
-    initMiscProxies(config, context);
+    initMiscProxies(context);
 }

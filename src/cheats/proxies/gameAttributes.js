@@ -10,19 +10,10 @@
  * - Options list account (unban, event items, minigames, quick ref, etc.)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
 import { createToggleProxy } from "../utils/proxyHelpers.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup proxy to freeze gems (prevent changes when enabled).
@@ -145,7 +136,6 @@ function createMaxCapProxy(configKey) {
             return original;
         },
         set: function (value, backupKey) {
-            const cheatConfig = getConfig();
             if (isNaN(value)) {
                 this[backupKey] = cheatConfig?.maxval?.[configKey] ?? value;
                 return;
@@ -167,7 +157,6 @@ function createSimpleMaxCapProxy(configKey) {
             return original;
         },
         set: function (value, backupKey) {
-            const cheatConfig = getConfig();
             value = Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
             this[backupKey] = value;
         },
@@ -179,7 +168,6 @@ function createSimpleMaxCapProxy(configKey) {
  */
 export function setupOptionsListAccountProxy() {
     const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
-    const cheatConfig = getConfig();
 
     if (optionsListAccount._isPatched) return;
     Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
@@ -267,7 +255,6 @@ export function setupOptionsListAccountProxy() {
  * Setup proxy for monster respawn time.
  */
 export function setupMonsterRespawnProxy() {
-    const cheatConfig = getConfig();
     const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
 
     if (monsterRespawnTime._isPatched) return;
@@ -287,12 +274,11 @@ export function setupMonsterRespawnProxy() {
 /**
  * Setup all game attribute proxies.
  * @param {object} events - The events function from globals
- * @param {object} config - The cheat config object
  */
-export function setupGameAttributeProxies(events, config) {
-    setCheatConfig(config);
+export function setupGameAttributeProxies(events) {
     setupGemsProxy();
     setupHPProxy(events);
+
     setupCurrenciesOwnedProxy();
     setupCloudSaveProxy();
     setupValuesMapProxy();

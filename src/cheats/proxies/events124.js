@@ -9,24 +9,14 @@
  * - MonsterKill (plunderous respawn)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events, behavior } from "../core/globals.js";
-import { getConfig, setConfig } from "./proxyContext.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup stamp cost reduction proxy.
  */
 export function setupStampCostProxy() {
-    const cheatConfig = getConfig();
     events(124)._customBlock_StampCostss = new Proxy(events(124)._customBlock_StampCostss, {
         apply: function (originalFn, context, argumentsList) {
             if (!cheatState.w1.stampcost) return Reflect.apply(originalFn, context, argumentsList);
@@ -44,11 +34,11 @@ export function setupStampCostProxy() {
  * Setup AFK gain rate multiplier proxy.
  */
 export function setupAFKRateProxy() {
-    const cheatConfig = getConfig();
+    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
     events(124)._customBlock_AFKgainrates = new Proxy(events(124)._customBlock_AFKgainrates, {
         apply: (originalFn, context, argumentsList) => {
             if (cheatState.multiply.afk)
-                return Reflect.apply(originalFn, context, argumentsList) * cheatConfig.multiply.afk;
+                return Reflect.apply(originalFn, context, argumentsList) * getMultiplyValue("afk");
             return Reflect.apply(originalFn, context, argumentsList);
         },
     });
@@ -70,12 +60,10 @@ export function setupPlayerLoadProxy() {
     };
 }
 
-
 /**
  * Setup talent number modification proxy.
  */
 export function setupTalentProxy() {
-    const cheatConfig = getConfig();
     const getTalentNumber = events(124)._customBlock_GetTalentNumber;
     events(124)._customBlock_GetTalentNumber = (...argumentsList) => {
         return cheatState.talent[argumentsList[1]]
@@ -88,7 +76,6 @@ export function setupTalentProxy() {
  * Setup monster kill proxy for plunderous respawn.
  */
 export function setupMonsterKillProxy() {
-    const cheatConfig = getConfig();
     const monsterKill = events(124)._customBlock_MonsterKill;
     events(124)._customBlock_MonsterKill = (...argumentsList) => {
         const e = argumentsList[0];
@@ -126,11 +113,8 @@ export function setupEvents124Proxies() {
 }
 
 /**
- * Initialize events124 proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize events124 proxies.
  */
-export function initEvents124Proxies(config) {
-    setCheatConfig(config);
+export function initEvents124Proxies() {
     setupEvents124Proxies();
 }
-

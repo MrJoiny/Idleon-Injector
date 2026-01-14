@@ -16,26 +16,18 @@
  * - ShrineInfo (global shrines)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events } from "../core/globals.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup workbench stuff proxy (W3 construction).
  */
 export function setupWorkbenchStuffProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
+    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
 
     const Workbench = actorEvents345._customBlock_WorkbenchStuff;
+
     actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
         const t = argumentsList[0];
         if (cheatState.w3.flagreq && t === "FlagReq") return 0; // Nullified flag unlock time
@@ -51,7 +43,7 @@ export function setupWorkbenchStuffProxy() {
         if (cheatState.multiply.printer && t === "ExtraPrinting")
             return (
                 (argumentsList[0] = "AdditionExtraPrinting"),
-                cheatConfig.multiply.printer * Reflect.apply(Workbench, this, argumentsList)
+                getMultiplyValue("printer") * Reflect.apply(Workbench, this, argumentsList)
             ); // print multiplier
         // The minimum level talent book from the library is equivalent to the max level
         if (cheatState.w3.book && t === "minBookLv") {
@@ -84,7 +76,9 @@ export function setupShrineInfoProxy() {
         if (typeof shrineInfo[i] === "object") {
             shrineInfo[i] = new Proxy(shrineInfo[i], {
                 get: function (original, j) {
-                    return cheatState.w3.globalshrines && j === 0 ? bEngine.getGameAttribute("CurrentMap") : original[j];
+                    return cheatState.w3.globalshrines && j === 0
+                        ? bEngine.getGameAttribute("CurrentMap")
+                        : original[j];
                 },
             });
         }
@@ -96,7 +90,6 @@ export function setupShrineInfoProxy() {
  */
 export function setupTowerStatsProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     actorEvents345._customBlock_TowerStats = new Proxy(actorEvents345._customBlock_TowerStats, {
         apply: function (originalFn, context, argumentList) {
@@ -116,7 +109,6 @@ export function setupTowerStatsProxy() {
  */
 export function setupRefineryProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     if (actorEvents345._customBlock_Refinery) {
         const Refinery = actorEvents345._customBlock_Refinery;
@@ -138,7 +130,6 @@ export function setupRefineryProxy() {
  */
 export function setupBreedingProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     actorEvents345._customBlock_Breeding = new Proxy(actorEvents345._customBlock_Breeding, {
         apply: function (originalFn, context, argumentsList) {
@@ -171,7 +162,6 @@ export function setupBreedingProxy() {
  */
 export function setupLabProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const Lab = actorEvents345._customBlock_Labb;
     actorEvents345._customBlock_Labb = function (...argumentsList) {
@@ -188,7 +178,6 @@ export function setupLabProxy() {
  */
 export function setupPetStuffProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const PetStuff = actorEvents345._customBlock_PetStuff;
     actorEvents345._customBlock_PetStuff = function (...argumentsList) {
@@ -206,7 +195,6 @@ export function setupPetStuffProxy() {
  */
 export function setupCookingProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const CookingR = actorEvents345._customBlock_CookingR;
     actorEvents345._customBlock_CookingR = function (...argumentsList) {
@@ -230,7 +218,6 @@ export function setupCookingProxy() {
  */
 export function setupMainframeBonusProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const MainframeBonus = actorEvents345._customBlock_MainframeBonus;
     actorEvents345._customBlock_MainframeBonus = function (...argumentsList) {
@@ -246,7 +233,6 @@ export function setupMainframeBonusProxy() {
  */
 export function setupDungeonCalcProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
     actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
@@ -261,7 +247,6 @@ export function setupDungeonCalcProxy() {
  */
 export function setupKeychainProxy() {
     const actorEvents345 = events(345);
-    const cheatConfig = getConfig();
 
     const keychain = actorEvents345._customBlock_keychainn;
     actorEvents345._customBlock_keychainn = function (...argumentList) {
@@ -290,10 +275,8 @@ export function setupEvents345Proxies() {
 }
 
 /**
- * Initialize events345 proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize events345 proxies.
  */
-export function initEvents345Proxies(config) {
-    setCheatConfig(config);
+export function initEvents345Proxies() {
     setupEvents345Proxies();
 }

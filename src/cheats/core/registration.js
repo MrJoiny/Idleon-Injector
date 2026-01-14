@@ -132,8 +132,12 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
                 return "This cheat doesn't accept values.";
             }
 
-
-            const config = higherKeys.reduce((obj, key) => obj[key], cheatConfig);
+            const config = higherKeys.reduce((obj, key) => {
+                if (!obj[key] || typeof obj[key] !== "object") {
+                    obj[key] = {};
+                }
+                return obj[key];
+            }, cheatConfig);
             let val = params.slice(cheatMap.configurable.isObject ? 1 : 0).join(" ");
 
             if (val === "") {

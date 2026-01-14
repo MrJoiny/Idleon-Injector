@@ -14,24 +14,15 @@
  * - RunCodeOfTypeXforThingY (shop stock multiplier)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup all ActorEvents_12 proxies (combat stats, damage, multipliers).
  */
 export function setupEvents012Proxies() {
     const ActorEvents12 = events(12);
-    const cheatConfig = getConfig();
+    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
 
     // 100% crit chance
     const CritChance = ActorEvents12._customBlock_CritChance;
@@ -67,7 +58,7 @@ export function setupEvents012Proxies() {
     const DamageDealt = ActorEvents12._customBlock_DamageDealed;
     ActorEvents12._customBlock_DamageDealed = function (...argumentsList) {
         return cheatState.multiply.damage && argumentsList[0] === "Max"
-            ? DamageDealt(...argumentsList) * cheatConfig.multiply.damage
+            ? DamageDealt(...argumentsList) * getMultiplyValue("damage")
             : DamageDealt(...argumentsList);
     };
 
@@ -78,7 +69,7 @@ export function setupEvents012Proxies() {
 
         // Global skill EXP multiplier
         if (cheatState.multiply.skillexp && t === "AllSkillxpMULTI") {
-            return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.skillexp;
+            return Reflect.apply(SkillStats, this, argumentsList) * getMultiplyValue("skillexp");
         }
 
         // Worship speed (config-driven)
@@ -88,7 +79,7 @@ export function setupEvents012Proxies() {
 
         // Skill efficiency multiplier
         if (cheatState.multiply.efficiency && t.includes("Efficiency")) {
-            return Reflect.apply(SkillStats, this, argumentsList) * cheatConfig.multiply.efficiency;
+            return Reflect.apply(SkillStats, this, argumentsList) * getMultiplyValue("efficiency");
         }
 
         return Reflect.apply(SkillStats, this, argumentsList);
@@ -101,13 +92,13 @@ export function setupEvents012Proxies() {
 
         // Coin drop multiplier (MonsterCash)
         if (cheatState.multiply.money && t === "MonsterCash") {
-            return Reflect.apply(Arbitrary, this, argumentsList) * cheatConfig.multiply.money;
+            return Reflect.apply(Arbitrary, this, argumentsList) * getMultiplyValue("money");
         }
 
         // Crystal spawn multiplier
         if (t === "CrystalSpawn") {
             const base = Reflect.apply(Arbitrary, this, argumentsList);
-            if (cheatState.multiply.crystal) return base * cheatConfig.multiply.crystal;
+            if (cheatState.multiply.crystal) return base * getMultiplyValue("crystal");
             return base;
         }
 
@@ -126,7 +117,7 @@ export function setupEvents012Proxies() {
 
         if (cheatState.multiply.shopstock && codeType === "ShopQtyBonus") {
             const base = Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
-            return base * cheatConfig.multiply.shopstock;
+            return base * getMultiplyValue("shopstock");
         }
 
         return Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
@@ -137,7 +128,7 @@ export function setupEvents012Proxies() {
     ActorEvents12._customBlock_TotalStats = (...argumentsList) => {
         return (
             Reflect.apply(TotalStats, this, argumentsList) *
-            (cheatState.multiply.drop && argumentsList[0] === "Drop_Rarity" ? cheatConfig.multiply.drop : 1)
+            (cheatState.multiply.drop && argumentsList[0] === "Drop_Rarity" ? getMultiplyValue("drop") : 1)
         );
     };
 
@@ -160,15 +151,13 @@ export function setupEvents012Proxies() {
         const base = Reflect.apply(ExpMulti, this, argumentsList);
 
         // e == 0 is the main class EXP path
-        return cheatState.multiply.classexp && mode === 0 ? base * cheatConfig.multiply.classexp : base;
+        return cheatState.multiply.classexp && mode === 0 ? base * getMultiplyValue("classexp") : base;
     };
 }
 
 /**
- * Initialize events012 proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize events012 proxies.
  */
-export function initEvents012Proxies(config) {
-    setCheatConfig(config);
+export function initEvents012Proxies() {
     setupEvents012Proxies();
 }

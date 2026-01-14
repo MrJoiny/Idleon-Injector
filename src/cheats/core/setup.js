@@ -33,28 +33,11 @@ export async function setup() {
     try {
         await gameReady(this);
 
-        // Ensure cheatConfig.multiply exists with defaults
-        if (cheatConfig && !cheatConfig.multiply) {
-            cheatConfig.multiply = {
-                damage: 1,
-                efficiency: 1,
-                afk: 1,
-                drop: 1,
-                money: 1,
-                classexp: 1,
-                crystal: 1,
-                skillexp: 1,
-                shopstock: 1,
-                printer: 1,
-                monsters: 1,
-            };
-        }
-
         // Setup Firebase proxy for character selection handling
         setupFirebaseProxy(this);
 
         // Setup all game proxies
-        setupAllProxies(this, cheatConfig);
+        setupAllProxies(this);
 
         // Run startup cheats
         let rtn = [];

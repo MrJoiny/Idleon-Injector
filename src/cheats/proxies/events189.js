@@ -8,23 +8,13 @@
  * - MealBonus (meal bonus modifications)
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
-import { getConfig, setConfig } from "./proxyContext.js";
-
-/**
- * Set the cheat config reference.
- * @param {object} config
- */
-export function setCheatConfig(config) {
-    setConfig(config);
-}
 
 /**
  * Setup anvil production stats proxy.
  */
 export function setupAnvilProduceStatsProxy() {
-    const cheatConfig = getConfig();
     const anvilProduceStats = events(189)._customBlock_AnvilProduceStats;
     events(189)._customBlock_AnvilProduceStats = function (...argumentsList) {
         if (cheatState.w1.anvil) {
@@ -42,7 +32,6 @@ export function setupAnvilProduceStatsProxy() {
  * Setup cauldron stats proxy for alchemy cheats.
  */
 export function setupCauldronStatsProxy() {
-    const cheatConfig = getConfig();
     const Alchemy = events(189)._customBlock_CauldronStats;
     events(189)._customBlock_CauldronStats = function (...argumentList) {
         return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
@@ -55,7 +44,6 @@ export function setupCauldronStatsProxy() {
  * Setup chip bonuses proxy.
  */
 export function setupChipBonusesProxy() {
-    const cheatConfig = getConfig();
     const chipBonuses = events(189)._customBlock_chipBonuses;
     events(189)._customBlock_chipBonuses = function (...argumentsList) {
         if (cheatState.w4.chipbonuses && cheatConfig.w4.chipbonuses[argumentsList[0]]) {
@@ -69,7 +57,6 @@ export function setupChipBonusesProxy() {
  * Setup meal bonus proxy.
  */
 export function setupMealBonusProxy() {
-    const cheatConfig = getConfig();
     const MealBonus = events(189)._customBlock_MealBonus;
     events(189)._customBlock_MealBonus = function (...argumentsList) {
         if (cheatState.w4.meals && cheatConfig.w4.meals[argumentsList[0]]) {
@@ -90,10 +77,8 @@ export function setupEvents189Proxies() {
 }
 
 /**
- * Initialize events189 proxies with config.
- * @param {object} config - The cheat config object
+ * Initialize events189 proxies.
  */
-export function initEvents189Proxies(config) {
-    setCheatConfig(config);
+export function initEvents189Proxies() {
     setupEvents189Proxies();
 }
