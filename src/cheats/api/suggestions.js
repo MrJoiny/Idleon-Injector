@@ -7,8 +7,9 @@
  */
 
 import { cheats } from "../core/registration.js";
-import { summonUnits, keychainStatsMap, knownBundles, alchemyTypes } from "../constants.js";
-import { bEngine, itemDefs, monsterDefs, CList, itemTypes, gameContext } from "../core/globals.js";
+import { summonUnits, keychainStatsMap, alchemyTypes } from "../constants.js";
+import { bEngine, itemDefs, monsterDefs, CList, itemTypes } from "../core/globals.js";
+import { getAllBundles } from "../helpers/bundles.js";
 
 // Custom level changers for lvl command suggestions
 const customLevelChangerNames = ["furnace", "statue", "anvil", "talent", "stamp", "shrine"];
@@ -52,15 +53,7 @@ export function getAutoCompleteSuggestions() {
     const itemBlacklist = new Set(CList.RANDOlist[17]);
     itemBlacklist.delete("COIN");
 
-    const bundleMessages = gameContext["scripts.CustomMapsREAL"]?.GemPopupBundleMessages()?.h || {};
-    const allBundles = [...knownBundles];
-    // Add any missing bundles from game data
-    for (const [key] of Object.entries(bundleMessages)) {
-        if (key === "Blank") continue;
-        if (!allBundles.some((bundle) => bundle[1] === key)) {
-            allBundles.push(["Unknown", key]);
-        }
-    }
+    const allBundles = getAllBundles();
 
     // cheat commands (skip "cheats" since it's already added as first)
     addChoices(choices, cheats, (name, def) => {
