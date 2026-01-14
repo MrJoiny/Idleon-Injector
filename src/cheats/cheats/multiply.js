@@ -8,14 +8,6 @@
 
 import { registerCheats } from "../core/registration.js";
 
-/**
- * Value transformer for multiplier cheats.
- * Converts numeric string to a function that multiplies by that value.
- */
-const multiplierTransformer = {
-    valueTransformer: (val) => (!isNaN(val) ? new Function(`return t => t * ${val}`)() : val),
-};
-
 // Stat multiplier cheats
 registerCheats({
     name: "multiply",
@@ -25,47 +17,47 @@ registerCheats({
         {
             name: "damage",
             message: "Multiplies damage by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "efficiency",
             message: "Multiplies skill efficiency by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "afk",
             message: "Multiplies AFK % by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "drop",
             message: "Multiplies drop rate by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "money",
             message: "Multiplies coin drops by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "classexp",
             message: "Multiplies class EXP by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "crystal",
             message: "Multiplies crystal spawn rate by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "skillexp",
             message: "Multiplies skill EXP by the number given (use reasonably!)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         {
             name: "shopstock",
             message: "Multiplies town shop stock by the number given (works after daily reset)",
-            configurable: multiplierTransformer,
+            configurable: true,
         },
         { name: "printer", message: "Multiplies sample print by x, overrides lab/god bonus", configurable: true },
     ],
