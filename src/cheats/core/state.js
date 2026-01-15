@@ -32,7 +32,18 @@ export let webPort = null;
 export function setCheatConfig(config) {
     cheatConfig = config;
 }
-
+/**
+ * Update cheat configuration from external source.
+ *
+ * @param {object} newConfig - New configuration to merge
+ */
+export function updateCheatConfig(newConfig) {
+    for (const key in newConfig) {
+        if (Object.hasOwnProperty.call(newConfig, key)) {
+            cheatConfig[key] = newConfig[key];
+        }
+    }
+}
 /**
  * Set the startup cheats.
  * @param {string[]} cheats - Array of cheat commands
@@ -48,7 +59,6 @@ export function setStartupCheats(cheats) {
 export function setWebPort(port) {
     webPort = port;
 }
-
 
 /**
  * Dictionary for storing item/card definitions and other cached values.

@@ -12,9 +12,9 @@ if (!startupCheats || !cheatConfig || !webPort || !window) {
     throw new Error("cheatConfig, startupCheats, webPort and window must be defined!");
 }
 
-import { cheatState, setCheatConfig, setStartupCheats, setWebPort } from "./core/state.js";
+import { cheatState, setCheatConfig, setStartupCheats, setWebPort, updateCheatConfig } from "./core/state.js";
 import { getBEngine, getItemDefs, getMonsterDefs, getCList, getBehavior, getEvents } from "./core/globals.js";
-import { cheats, cheat as coreCheat, updateCheatConfig } from "./core/registration.js";
+import { cheats, cheat as coreCheat } from "./core/registration.js";
 import { setup as coreSetup } from "./core/setup.js";
 // Static cheats register automatically when this module is imported
 import "./cheats/register.js";
@@ -33,6 +33,7 @@ setWebPort(webPort);
  * @param {string} action - The cheat command to execute
  * @returns {string} Result message
  */
+// TODO: maybe this can be removed and renamed.
 function cheat(action) {
     return coreCheat(action, this);
 }

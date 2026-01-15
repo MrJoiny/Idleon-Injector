@@ -182,26 +182,9 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 }
 
 /**
- * Update cheat configuration from external source.
- *
- * @param {object} newConfig - New configuration to merge
- */
-// TODO: Check if needed.
-export function updateCheatConfig(newConfig) {
-    if (cheatConfig) {
-        for (const key in newConfig) {
-            if (Object.hasOwnProperty.call(newConfig, key)) {
-                cheatConfig[key] = newConfig[key];
-            }
-        }
-    }
-}
-
-/**
  * Get all registered cheats.
  * @returns {Object<string, {fn: Function, message: string, category: string}>}
  */
-// TODO: CHeck if needed.
 export function getCheats() {
     return cheats;
 }
