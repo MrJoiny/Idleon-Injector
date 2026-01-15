@@ -5,10 +5,24 @@
  * - randomFloatBetween, randomInt, randomFloat (RNG manipulation)
  * - runLater (instant divine intervention)
  * - runPeriodically (instant bubo poison)
+ * - createRecycledActor (no damage text)
  */
 
 import { cheatState } from "../core/state.js";
 import { bEngine, behavior } from "../core/globals.js";
+
+/**
+ * Setup no damage proxy (block damage text creation).
+ */
+export function setupNodmgProxy() {
+    const createRecycledActor = behavior.createRecycledActor;
+    behavior.createRecycledActor = function (...args) {
+        if (cheatState.wide.nodmg && typeof args[0] === "object" && args[0].ID === 10) {
+            return null;
+        }
+        return Reflect.apply(createRecycledActor, this, args);
+    };
+}
 
 /**
  * Setup behavior script proxies for RNG manipulation and ability timing.

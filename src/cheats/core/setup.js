@@ -10,7 +10,6 @@ import { cheat } from "./registration.js";
 
 // Imports for setup logic
 import { setupAllProxies } from "../proxies/setup.js";
-import { setupFirebaseProxy } from "../proxies/firebase.js";
 import { injectWebUI } from "../ui/overlay.js";
 
 /**
@@ -33,11 +32,8 @@ export async function setup() {
     try {
         await gameReady(this);
 
-        // Setup Firebase proxy for character selection handling
-        setupFirebaseProxy(this);
-
         // Setup all game proxies
-        setupAllProxies(this);
+        setupAllProxies();
 
         // Run startup cheats
         const rtn = [

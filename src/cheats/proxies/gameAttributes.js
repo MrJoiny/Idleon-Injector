@@ -15,7 +15,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, cList } from "../core/globals.js";
+import { bEngine, cList, events } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
 
 /**
@@ -34,9 +34,8 @@ function applyMaxCap(value, configKey, handleNaN = false) {
 
 /**
  * Setup all game attribute proxies.
- * @param {function} events - The events function from globals
  */
-export function setupGameAttributeProxies(events) {
+export function setupGameAttributeProxies() {
     // Gems - freeze when enabled
     createProxy(bEngine.gameAttributes.h, "GemsOwned", {
         get(original) {
@@ -249,6 +248,59 @@ export function setupGameAttributeProxies(events) {
 
             obj[prop] = value;
             return true;
+        },
+    });
+}
+
+/**
+ * Setup trapping proxy (instant trap completion).
+ */
+export function setupTrappingProxy() {
+    const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
+    for (const name in playerDatabase) {
+        for (const trap of playerDatabase[name].h.PldTraps) {
+            if (!trap) continue;
+
+            let elapsedTime = trap[2];
+
+            Object.defineProperty(trap, 2, {
+                get() {
+                    return elapsedTime;
+                },
+                set(value) {
+                    if (cheatState.w3.trapping) {
+                        if (value <= 0) {
+                            elapsedTime = 0;
+                        } else {
+                            elapsedTime = cheatConfig.w3.trapping(value - elapsedTime) + elapsedTime;
+                        }
+                    } else {
+                        elapsedTime = value;
+                    }
+                },
+                enumerable: true,
+                configurable: true,
+            });
+        }
+    }
+}
+
+/**
+ * Setup alchemy proxy (vial attempts).
+ */
+export function setupAlchProxy() {
+    const p2w = bEngine.getGameAttribute("CauldronP2W");
+
+    if (p2w._isPatched) return;
+    Object.defineProperty(p2w, "_isPatched", { value: true, enumerable: false });
+
+    createProxy(p2w[5], 0, {
+        get(original) {
+            return cheatState.w2.vialattempt ? this[1] : original;
+        },
+        set(value, backupKey) {
+            if (cheatState.w2.vialattempt) return;
+            this[backupKey] = value;
         },
     });
 }
