@@ -9,13 +9,11 @@
 import { registerCheats } from "../core/registration.js";
 import { cheatState } from "../core/state.js";
 import {
-    setupMiningMinigameProxy,
-    setupFishingMinigameProxy,
+    setupMiningFishingProxies,
     setupCatchingMinigameProxy,
     setupChoppingMinigameProxy,
     setupPoingMinigameProxy,
-    setupHoopsMinigameProxy,
-    setupDartsMinigameProxy,
+    setupHoopsDartsProxies,
     setupWisdomMonumentProxy,
     setupScratchMinigameProxy,
 } from "../proxies/minigames.js";
@@ -25,13 +23,13 @@ import {
  * Only the relevant proxy is called when a minigame cheat is toggled.
  */
 const minigameSetupMap = {
-    mining: setupMiningMinigameProxy,
-    fishing: setupFishingMinigameProxy,
+    mining: setupMiningFishingProxies,
+    fishing: setupMiningFishingProxies,
     catching: setupCatchingMinigameProxy,
     choppin: setupChoppingMinigameProxy,
     poing: setupPoingMinigameProxy,
-    hoops: setupHoopsMinigameProxy,
-    darts: setupDartsMinigameProxy,
+    hoops: setupHoopsDartsProxies,
+    darts: setupHoopsDartsProxies,
     wisdom: setupWisdomMonumentProxy,
     scratch: setupScratchMinigameProxy,
 };

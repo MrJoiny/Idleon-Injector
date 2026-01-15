@@ -95,17 +95,14 @@ export {
 
 // Re-export from minigames.js
 export {
-    setupMiningMinigameProxy,
-    setupFishingMinigameProxy,
+    setupMiningFishingProxies,
     setupCatchingMinigameProxy,
     setupChoppingMinigameProxy,
     setupPoingMinigameProxy,
     setupScratchMinigameProxy,
-    setupHoopsMinigameProxy,
-    setupDartsMinigameProxy,
+    setupHoopsDartsProxies,
     setupWisdomMonumentProxy,
     setupMinigameProxies,
-    initMinigameProxies,
 } from "./minigames.js";
 
 // Re-export from misc.js
