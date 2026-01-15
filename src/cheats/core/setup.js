@@ -40,16 +40,15 @@ export async function setup() {
         setupAllProxies(this);
 
         // Run startup cheats
-        let rtn = [];
-        rtn.push("--------------------");
-        rtn = rtn.concat(runStartupCheats.call(this));
-        rtn.push("Cheat setup complete");
-        rtn.push("--------------------");
-        rtn.push("Hit enter to list available cheats");
-        rtn.push(
-            "Cheats will find as you type, so if you're looking for eg gem cheats, or an item just type it and see what comes up"
-        );
-        rtn.push("--------------------");
+        const rtn = [
+            "--------------------",
+            ...runStartupCheats.call(this),
+            "Cheat setup complete",
+            "--------------------",
+            "Hit enter to list available cheats",
+            "Cheats will find as you type, so if you're looking for eg gem cheats, or an item just type it and see what comes up",
+            "--------------------",
+        ];
 
         console.log("Exiting setup function successfully.");
 
@@ -71,9 +70,5 @@ export async function setup() {
  * @returns {string[]} Array of result messages
  */
 export function runStartupCheats() {
-    const rtn = [];
-    startupCheats.forEach((c) => {
-        rtn.push(cheat(c, this));
-    }, this);
-    return rtn;
+    return startupCheats.map((c) => cheat(c, this));
 }

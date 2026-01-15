@@ -8,6 +8,20 @@ import { bEngine, itemDefs } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 
 /**
+ * Get primary stat for a character class.
+ *
+ * @param {number} characterClass - The character class ID
+ * @returns {string} Primary stat name (STR, AGI, WIS, or LUK)
+ */
+function getPrimaryStat(characterClass) {
+    if ([1, 2, 3, 4, 5].includes(characterClass)) return "LUK";
+    if ([7, 8, 9, 10, 12, 14, 16].includes(characterClass)) return "STR";
+    if ([19, 20, 21, 22, 25, 29].includes(characterClass)) return "AGI";
+    if ([31, 32, 33, 34, 36, 40].includes(characterClass)) return "WIS";
+    return "LUK";
+}
+
+/**
  * Roll all obols to perfect stats.
  * Rolls personal, family, all characters, and inventory obols.
  */
@@ -53,13 +67,12 @@ export function rollAllCharactersObols() {
  * Roll inventory obols to perfect stats.
  */
 export function rollInventoryObols() {
-    [0, 1, 2, 3].forEach((index) => {
-        const obolOrder = bEngine.gameAttributes.h.ObolInventoryOrder[index];
-        rollPerfectObols(
-            obolOrder,
-            bEngine.gameAttributes.h.ObolInventoryMap[index],
-            bEngine.gameAttributes.h.CharacterClass
-        );
+    const inventoryOrder = bEngine.gameAttributes.h.ObolInventoryOrder;
+    const inventoryMap = bEngine.gameAttributes.h.ObolInventoryMap;
+    const characterClass = bEngine.gameAttributes.h.CharacterClass;
+
+    inventoryOrder.forEach((obolOrder, index) => {
+        rollPerfectObols(obolOrder, inventoryMap[index], characterClass);
     });
 }
 
@@ -71,25 +84,14 @@ export function rollInventoryObols() {
  * @param {number} characterClass - The character class ID
  */
 export function rollPerfectObols(obolOrder, obolMap, characterClass) {
-    // Determine primary stat based on character class
-    const primaryStat = [1, 2, 3, 4, 5].includes(characterClass)
-        ? "LUK"
-        : [31, 32, 33, 34, 36, 40].includes(characterClass)
-        ? "WIS"
-        : [7, 8, 9, 10, 12, 14, 16].includes(characterClass)
-        ? "STR"
-        : [19, 20, 21, 22, 25, 29].includes(characterClass)
-        ? "AGI"
-        : "LUK";
-
-    // Get preferred stat from config or use primary
+    const primaryStat = getPrimaryStat(characterClass);
     const preferredStat =
         cheatConfig?.wide?.perfectobols?.preferredstat === "PRIMARY"
             ? primaryStat
             : cheatConfig?.wide?.perfectobols?.preferredstat || primaryStat;
 
     obolOrder.forEach((obol, index) => {
-        if (["Locked", "Blank"].some((s) => obol.indexOf(s) !== -1)) return;
+        if (obol.includes("Locked") || obol.includes("Blank")) return;
 
         const obolDef = itemDefs[obol].h;
         const obolMapItem = obolMap[index].h;
@@ -125,7 +127,6 @@ export function rollPerfectObols(obolOrder, obolMap, characterClass) {
         if (rollsLeft > 0) {
             // Add max possible LUK, or AGI if preferred stat is LUK
             obolMapItem[preferredStat === "LUK" ? "AGI" : "LUK"] = obolDef.ID + 1;
-            rollsLeft--;
         }
     });
 }
