@@ -10,7 +10,7 @@
 
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { cheatState, dictVals, cheatConfig } from "../core/state.js";
-import { bEngine, itemDefs, monsterDefs, CList, events } from "../core/globals.js";
+import { bEngine, itemDefs, monsterDefs, cList, events } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
 import { keychainStatsMap } from "../constants.js";
@@ -193,7 +193,7 @@ registerCheats({
             message: "Saves the current values of items and cards",
             fn: () => {
                 dictVals.itemDefs = deepCopy(itemDefs);
-                dictVals.CardStuff = deepCopy(CList.CardStuff);
+                dictVals.CardStuff = deepCopy(cList.CardStuff);
                 return "Saved the current values.";
             },
         },
@@ -210,7 +210,7 @@ registerCheats({
             name: "card",
             message: "Restores original card values.",
             fn: () => {
-                CList.CardStuff = dictVals.CardStuff;
+                cList.CardStuff = dictVals.CardStuff;
                 return "Restored original card values.";
             },
         },

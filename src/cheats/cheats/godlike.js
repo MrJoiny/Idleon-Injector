@@ -7,7 +7,7 @@
  */
 
 import { registerCheats } from "../core/registration.js";
-import { itemDefs, CList } from "../core/globals.js";
+import { itemDefs, cList } from "../core/globals.js";
 
 const TARGET_CARDS = ["Boss2A", "Boss2B", "poopBig", "OakTree", "Copper"];
 
@@ -22,7 +22,7 @@ function setWeaponSpeed(params) {
 }
 
 function boostTargetCards() {
-    for (const category of Object.values(CList.CardStuff)) {
+    for (const category of Object.values(cList.CardStuff)) {
         for (const card of Object.values(category)) {
             if (TARGET_CARDS.includes(card[0])) {
                 card[4] = "10000";

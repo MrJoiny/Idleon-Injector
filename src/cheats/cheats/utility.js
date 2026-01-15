@@ -9,7 +9,7 @@
  */
 
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
-import { bEngine, itemDefs, monsterDefs, CList } from "../core/globals.js";
+import { bEngine, itemDefs, monsterDefs, cList } from "../core/globals.js";
 import { traverse } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 
@@ -145,7 +145,7 @@ function createListFunction(params) {
 
         card: () => {
             results.push("Id, Entity, Value, Effect");
-            const cardData = CList.CardStuff;
+            const cardData = cList.CardStuff;
 
             for (const category of Object.values(cardData)) {
                 for (const card of Object.values(category)) {
@@ -163,27 +163,27 @@ function createListFunction(params) {
 
         class: () => {
             results.push("Id, ClassName, PromotesTo");
-            for (const [index, className] of CList.ClassNames.entries()) {
-                const promotions = CList.ClassPromotionChoices[index];
+            for (const [index, className] of cList.ClassNames.entries()) {
+                const promotions = cList.ClassPromotionChoices[index];
                 results.push(`${index}, ${className}, [${promotions}]`);
             }
         },
 
         quest: () => {
             results.push("Id, QuestName, NPC, QuestlineNo, paramX1");
-            for (const [index, questId] of CList.SceneNPCquestOrder.entries()) {
-                const questInfo = CList.SceneNPCquestInfo[index].join(", ");
+            for (const [index, questId] of cList.SceneNPCquestOrder.entries()) {
+                const questInfo = cList.SceneNPCquestInfo[index].join(", ");
                 results.push(`${questId}, ${questInfo}`);
             }
         },
 
         map: () => {
             results.push("Num_Id, Str_Id, MapName, AFK1, AFK2, Transition");
-            for (const [index, mapId] of CList.MapName.entries()) {
-                const displayName = CList.MapDispName[index];
-                const afkTarget = CList.MapAFKtarget[index];
-                const afkTargetSide = CList.MapAFKtargetSide[index];
-                const transitions = CList.SceneTransitions[index];
+            for (const [index, mapId] of cList.MapName.entries()) {
+                const displayName = cList.MapDispName[index];
+                const afkTarget = cList.MapAFKtarget[index];
+                const afkTargetSide = cList.MapAFKtargetSide[index];
+                const transitions = cList.SceneTransitions[index];
 
                 results.push(`${index}, ${mapId}, ${displayName}, ${afkTarget}, ${afkTargetSide}, [${transitions}]`);
             }
@@ -191,8 +191,8 @@ function createListFunction(params) {
 
         talent: () => {
             results.push("Order, Id, Name");
-            const talentOrder = CList.TalentOrder;
-            const talentNames = CList.TalentIconNames;
+            const talentOrder = cList.TalentOrder;
+            const talentNames = cList.TalentIconNames;
 
             for (let i = 0; i < talentOrder.length; i++) {
                 const talentId = talentOrder[i];
@@ -206,8 +206,8 @@ function createListFunction(params) {
 
         ability: () => {
             results.push("Order, Id, Name");
-            const talentOrder = CList.TalentOrder;
-            const talentNames = CList.TalentIconNames;
+            const talentOrder = cList.TalentOrder;
+            const talentNames = cList.TalentIconNames;
             const abilityMap = this["scripts.CustomMaps"].atkMoveMap.h;
 
             for (let i = 0; i < talentOrder.length; i++) {
@@ -226,7 +226,7 @@ function createListFunction(params) {
 
         companion: () => {
             results.push("Id, Name, Effects");
-            const companions = CList.CompanionDB;
+            const companions = cList.CompanionDB;
 
             for (let i = 0; i < companions.length; i++) {
                 const id = companions[i][0];
@@ -238,7 +238,7 @@ function createListFunction(params) {
 
         smith: () => {
             results.push("CraftId, Tab, ItemId, ItemName");
-            const craftingRecipes = CList.ItemToCraftNAME;
+            const craftingRecipes = cList.ItemToCraftNAME;
 
             for (let tabIndex = 0; tabIndex < craftingRecipes.length; tabIndex++) {
                 const tab = craftingRecipes[tabIndex];
@@ -336,8 +336,8 @@ registerCheats({
             fn: createSearchFn(
                 "Order, Id, Talent",
                 () => {
-                    const talentDefs = CList.TalentIconNames;
-                    const Order = CList.TalentOrder;
+                    const talentDefs = cList.TalentIconNames;
+                    const Order = cList.TalentOrder;
                     return Order.map((id, i) => [i, talentDefs[id], id]);
                 },
                 (order, name, id) => `${order} - ${id} - ${formatText(name)}`
@@ -349,7 +349,7 @@ registerCheats({
             fn: function (params) {
                 const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
                 const results = ["Tab, Id, ItemId, ItemName"];
-                const ItemToCraftNAME = CList.ItemToCraftNAME;
+                const ItemToCraftNAME = cList.ItemToCraftNAME;
 
                 // Find matching items first
                 const matchingItems = [];

@@ -15,7 +15,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, CList } from "../core/globals.js";
+import { bEngine, cList } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
 
 /**
@@ -100,7 +100,7 @@ export function setupGameAttributeProxies(events) {
     createProxy(bEngine.getGameAttribute("Rift"), 1, {
         get(original) {
             const riftIndex = bEngine.getGameAttribute("Rift")[0];
-            if (cheatState.unlock.rifts && CList.RiftStuff[4][riftIndex] !== 9) {
+            if (cheatState.unlock.rifts && cList.RiftStuff[4][riftIndex] !== 9) {
                 return 1e8;
             }
             return original;

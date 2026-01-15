@@ -24,10 +24,10 @@ export let itemDefs = null;
 export let monsterDefs = null;
 
 /**
- * Custom lists from the game (CList).
+ * Custom lists from the game.
  * @type {object|null}
  */
-export let CList = null;
+export let cList = null;
 
 /**
  * Stencyl behavior script object.
@@ -40,6 +40,24 @@ export let behavior = null;
  * @type {function|null}
  */
 export let events = null;
+
+/**
+ * Custom maps from the game (atkMoveMap, etc).
+ * @type {object|null}
+ */
+export let customMaps = null;
+
+/**
+ * Dialogue definitions for quests/NPCs.
+ * @type {object|null}
+ */
+export let dialogueDefs = null;
+
+/**
+ * Firebase storage interface.
+ * @type {object|null}
+ */
+export let firebase = null;
 
 /**
  * Set of all item types discovered from item definitions.
@@ -87,9 +105,12 @@ export function registerCommonVariables(context) {
     bEngine = context["com.stencyl.Engine"].engine;
     itemDefs = bEngine.getGameAttribute("ItemDefinitionsGET").h;
     monsterDefs = bEngine.getGameAttribute("MonsterDefinitionsGET").h;
-    CList = bEngine.getGameAttribute("CustomLists").h;
+    cList = bEngine.getGameAttribute("CustomLists").h;
     behavior = context["com.stencyl.behavior.Script"];
     events = (num) => context[`scripts.ActorEvents_${num}`];
+    customMaps = context["scripts.CustomMaps"];
+    dialogueDefs = context["scripts.DialogueDefinitions"];
+    firebase = context.FirebaseStorage;
 
     // Populate itemTypes set
     itemTypes.clear();
@@ -119,6 +140,6 @@ export function isGameReady() {
 export const getBEngine = () => bEngine;
 export const getItemDefs = () => itemDefs;
 export const getMonsterDefs = () => monsterDefs;
-export const getCList = () => CList;
+export const getCList = () => cList;
 export const getBehavior = () => behavior;
 export const getEvents = () => events;

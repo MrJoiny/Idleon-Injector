@@ -8,7 +8,7 @@
 
 import { cheats } from "../core/registration.js";
 import { summonUnits, keychainStatsMap, alchemyTypes } from "../constants.js";
-import { bEngine, itemDefs, monsterDefs, CList, itemTypes } from "../core/globals.js";
+import { bEngine, itemDefs, monsterDefs, cList, itemTypes } from "../core/globals.js";
 import { getAllBundles } from "../helpers/bundles.js";
 
 // Custom level changers for lvl command suggestions
@@ -50,7 +50,7 @@ export function getAutoCompleteSuggestions() {
     }
 
     // here are items stored that are not visible in the w5 slab
-    const itemBlacklist = new Set(CList.RANDOlist[17]);
+    const itemBlacklist = new Set(cList.RANDOlist[17]);
     itemBlacklist.delete("COIN");
 
     const allBundles = getAllBundles();
@@ -120,8 +120,8 @@ export function getAutoCompleteSuggestions() {
     }
 
     // class names
-    if (CList?.ClassNames) {
-        const classNames = CList.ClassNames.slice(0, 41);
+    if (cList?.ClassNames) {
+        const classNames = cList.ClassNames.slice(0, 41);
         for (const [id, name] of classNames.entries()) {
             if (!name || name.toLowerCase() === "blank") continue;
             choices.push({
@@ -132,15 +132,15 @@ export function getAutoCompleteSuggestions() {
         }
     }
 
-    // lvl - skills from CList.SkillNames
-    if (CList?.SkillNames) {
+    // lvl - skills from cList.SkillNames
+    if (cList?.SkillNames) {
         // Special case: class level at index 0
         choices.push({
             value: "lvl class",
             message: "Change class level",
             category: "lvl",
         });
-        for (const name of CList.SkillNames) {
+        for (const name of cList.SkillNames) {
             if (!name || name === "Blank") continue;
             choices.push({
                 value: `lvl ${name.toLowerCase()}`,

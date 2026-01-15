@@ -1,7 +1,7 @@
 /**
- * CList Proxies
+ * cList Proxies
  *
- * Proxies for CList (Custom Lists) data structures:
+ * Proxies for cList (Custom Lists) data structures:
  * - MTX (gem shop costs and limits)
  * - Refinery costs
  * - Vial unlock chances
@@ -15,24 +15,24 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { CList } from "../core/globals.js";
+import { cList } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
 import { traverse } from "../utils/traverse.js";
 
 /**
- * Setup all CList proxies.
+ * Setup all cList proxies.
  * This modifies the game's custom lists to enable various cheats.
  */
 export function setupCListProxy() {
     // Prevent running multiple times if already proxied
-    if (CList._isPatched) return;
-    Object.defineProperty(CList, "_isPatched", { value: true, enumerable: false });
+    if (cList._isPatched) return;
+    Object.defineProperty(cList, "_isPatched", { value: true, enumerable: false });
 
     // Nullify MTX cost / Set gem buy limit
     const mtxIndex = [3, 7];
     const gembuylimitIndex = 5;
 
-    traverse(CList.MTXinfo, 3, (data) => {
+    traverse(cList.MTXinfo, 3, (data) => {
         // free mtx
         mtxIndex.forEach((index) => {
             createProxy(data, index, (original) => {
@@ -51,7 +51,7 @@ export function setupCListProxy() {
     // Nullify refinery cost
     const refineryIndex = [6, 7, 8, 9, 10, 11];
 
-    traverse(CList.RefineryInfo, 1, (data) => {
+    traverse(cList.RefineryInfo, 1, (data) => {
         refineryIndex.forEach((index) => {
             createProxy(data, index, (original) => {
                 if (cheatState.w3.refinery) return "0";
@@ -61,14 +61,14 @@ export function setupCListProxy() {
     });
 
     // Vials unlock at rolling 1+
-    const vials = CList.AlchemyVialItemsPCT;
-    createProxy(CList, "AlchemyVialItemsPCT", (original) => {
+    const vials = cList.AlchemyVialItemsPCT;
+    createProxy(cList, "AlchemyVialItemsPCT", (original) => {
         if (cheatState.w2.vialrng) return new Array(vials.length).fill(99);
         return original;
     });
 
     // Nullify Salt Lick upgrade cost
-    traverse(CList.SaltLicks, 1, (data) => {
+    traverse(cList.SaltLicks, 1, (data) => {
         createProxy(data, 2, (original) => {
             if (cheatState.w3.saltlick) return "0";
             return original;
@@ -78,7 +78,7 @@ export function setupCListProxy() {
     // Nullify prayer requirements
     const prayerIndex = [4, 6];
 
-    traverse(CList.PrayerInfo, 1, (data) => {
+    traverse(cList.PrayerInfo, 1, (data) => {
         prayerIndex.forEach((index) => {
             createProxy(data, index, (original) => {
                 if (cheatState.w3.prayer) return "0";
@@ -93,7 +93,7 @@ export function setupCListProxy() {
     });
 
     // Nullify post office order cost
-    traverse(CList.PostOfficePossibleOrders, 3, (data) => {
+    traverse(cList.PostOfficePossibleOrders, 3, (data) => {
         createProxy(data, 1, (original) => {
             if (cheatState.wide.post) return "0";
             return original;
@@ -101,7 +101,7 @@ export function setupCListProxy() {
     });
 
     // Nullify guild task requirements
-    traverse(CList.GuildGPtasks, 1, (data) => {
+    traverse(cList.GuildGPtasks, 1, (data) => {
         createProxy(data, 1, (original) => {
             if (cheatState.wide.guild) return "0";
             return original;
@@ -111,7 +111,7 @@ export function setupCListProxy() {
     // Nullify task requirements
     const taskIndex = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-    traverse(CList.TaskDescriptions, 2, (data) => {
+    traverse(cList.TaskDescriptions, 2, (data) => {
         taskIndex.forEach((index) => {
             createProxy(data, index, (original) => {
                 if (cheatState.wide.task) return "0";
@@ -121,7 +121,7 @@ export function setupCListProxy() {
     });
 
     // Nullify star sign unlock requirement
-    traverse(CList.SSignInfoUI, 1, (data) => {
+    traverse(cList.SSignInfoUI, 1, (data) => {
         createProxy(data, 4, (original) => {
             if (cheatState.wide.star) return "0";
             return original;
@@ -129,7 +129,7 @@ export function setupCListProxy() {
     });
 
     // Nullify worship cost
-    traverse(CList.WorshipBASEinfos, 1, (data) => {
+    traverse(cList.WorshipBASEinfos, 1, (data) => {
         createProxy(data, 6, (original) => {
             if (cheatState.w3.freeworship) return "0";
             return original;
@@ -138,7 +138,7 @@ export function setupCListProxy() {
 }
 
 /**
- * Initialize CList proxies.
+ * Initialize cList proxies.
  */
 export function initCListProxies() {
     setupCListProxy();

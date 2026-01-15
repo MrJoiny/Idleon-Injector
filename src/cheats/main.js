@@ -71,6 +71,6 @@ window.cheatState = cheatState;
 Object.defineProperty(window, "bEngine", { get: getBEngine, enumerable: true, configurable: true });
 Object.defineProperty(window, "itemDefs", { get: getItemDefs, enumerable: true, configurable: true });
 Object.defineProperty(window, "monsterDefs", { get: getMonsterDefs, enumerable: true, configurable: true });
-Object.defineProperty(window, "CList", { get: getCList, enumerable: true, configurable: true });
+Object.defineProperty(window, "cList", { get: getCList, enumerable: true, configurable: true });
 Object.defineProperty(window, "behavior", { get: getBehavior, enumerable: true, configurable: true });
 Object.defineProperty(window, "events", { get: getEvents, enumerable: true, configurable: true });

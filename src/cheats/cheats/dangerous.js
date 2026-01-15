@@ -12,7 +12,7 @@
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
-import { bEngine, itemDefs, CList, itemTypes } from "../core/globals.js";
+import { bEngine, itemDefs, cList, itemTypes } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
@@ -54,7 +54,7 @@ const wipeHandlers = {
     },
     overpurchases() {
         bEngine.getGameAttribute("GemItemsPurchased");
-        const gemShopInfo = CList.MTXinfo;
+        const gemShopInfo = cList.MTXinfo;
         const maxItems = [];
         for (const tab of gemShopInfo) {
             for (const tabGroup of tab) {
@@ -167,7 +167,7 @@ registerCheat({
             return `Invalid type. Valid types:\n${Array.from(itemTypes).sort().join(", ")}`;
         }
 
-        const blackList = CList.RANDOlist[64];
+        const blackList = cList.RANDOlist[64];
         let droppedCount = 0;
 
         for (const [code, entry] of Object.entries(itemDefs)) {
@@ -188,7 +188,7 @@ registerCheat({
     fn: (params) => {
         const className = params[0]?.toLowerCase();
         if (!className) {
-            const validClasses = CList.ClassNames.slice(0, 41)
+            const validClasses = cList.ClassNames.slice(0, 41)
                 .map((name, id) => `${name.toLowerCase()} (${id})`)
                 .filter((s) => !s.startsWith("blank"))
                 .join(", ");
@@ -196,7 +196,7 @@ registerCheat({
         }
 
         // Find class ID by name (case-insensitive)
-        const classNames = CList.ClassNames.slice(0, 41);
+        const classNames = cList.ClassNames.slice(0, 41);
         const classId = classNames.findIndex((name) => name.toLowerCase() === className);
 
         if (classId === -1 || className === "blank") {
@@ -261,8 +261,8 @@ function handleSkillLevel(name, lvl) {
         return `Class level has been changed to ${lvl}.`;
     }
 
-    // Find skill in CList.SkillNames
-    const skillNames = CList.SkillNames || [];
+    // Find skill in cList.SkillNames
+    const skillNames = cList.SkillNames || [];
     const skillIndex = skillNames.findIndex((s) => s.toLowerCase() === name);
 
     if (skillIndex === -1) {
@@ -300,7 +300,7 @@ registerCheat({
             return customHandler(value);
         }
 
-        // 3. Check if it's a skill name (from CList.SkillNames)
+        // 3. Check if it's a skill name (from cList.SkillNames)
         const skillResult = handleSkillLevel(subcommand, value);
         if (skillResult) {
             return skillResult;
