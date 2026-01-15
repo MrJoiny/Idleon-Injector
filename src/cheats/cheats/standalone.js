@@ -5,7 +5,7 @@
  * - daily, noob, jackpot, cloudz, chromedebug
  * - nomore, multiplestacks
  * - fix_save, fix_write
- * - restore, upstones
+ * - restore, upstones, keychain
  */
 
 import { registerCheat, registerCheats } from "../core/registration.js";
@@ -13,6 +13,7 @@ import { cheatState, dictVals, cheatConfig } from "../core/state.js";
 import { bEngine, itemDefs, monsterDefs, CList, events } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
+import { keychainStatsMap } from "../constants.js";
 
 // The OG-drop function that we all love
 registerCheat({
@@ -251,6 +252,17 @@ registerCheats({
         "unlock portals, rifts, pearls, presets, quickref, teleports, colloseum, silver pens, revives, storagecrafting",
     canToggleSubcheats: true,
     subcheats: [
+        { name: "divinitypearl", message: "divinity pearls > lvl50" },
+        { name: "presets", message: "preset changes everywhere" },
+        { name: "quickref", message: "quickref." },
+        { name: "teleports", message: "free teleports." },
+        { name: "tickets", message: "free colosseum tickets." },
+        { name: "silvpen", message: "free silver pens." },
+        { name: "goldpen", message: "free gold pens." },
+        { name: "obolfrag", message: "free obol fragments." },
+        { name: "rifts", message: "Unlock rift portals" },
+        { name: "revive", message: "unlimited revives" },
+        { name: "islands", message: "unlock islands" },
         {
             name: "portals",
             fn: () => {
@@ -276,16 +288,32 @@ registerCheats({
                 return "Unlocked all anvil crafts.";
             },
         },
-        { name: "divinitypearl", message: "divinity pearls > lvl50" },
-        { name: "presets", message: "preset changes everywhere" },
-        { name: "quickref", message: "quickref." },
-        { name: "teleports", message: "free teleports." },
-        { name: "tickets", message: "free colosseum tickets." },
-        { name: "silvpen", message: "free silver pens." },
-        { name: "goldpen", message: "free gold pens." },
-        { name: "obolfrag", message: "free obol fragments." },
-        { name: "rifts", message: "Unlock rift portals" },
-        { name: "revive", message: "unlimited revives" },
-        { name: "islands", message: "unlock islands" },
     ],
+});
+
+// Keychain cheat
+registerCheat({
+    name: "keychain",
+    message: "Generate specific keychain with double max stats when buying from Flurbo store",
+    fn: (params) => {
+        const statName = params?.[0];
+        if (!statName) {
+            cheatConfig.misc.keychain = (t) => t;
+            return `Reset to default rng, input a stat to set keychain stats`;
+        }
+
+        const selectedStat = keychainStatsMap[statName];
+        if (!selectedStat) {
+            return `Unknown stat: ${statName}`;
+        }
+
+        cheatConfig.misc.keychain = () => [
+            selectedStat[1],
+            selectedStat[2],
+            parseInt(selectedStat[3]),
+            selectedStat[2],
+            parseInt(selectedStat[3]),
+        ];
+        return `Set keychain with ${selectedStat[2]}`;
+    },
 });

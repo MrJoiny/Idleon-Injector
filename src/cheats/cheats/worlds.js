@@ -11,15 +11,14 @@
  * - W7: spelunk, gallery, reef, clam, etc.
  */
 
-import { registerCheat, registerCheats } from "../core/registration.js";
+import { registerCheats } from "../core/registration.js";
 import { events } from "../core/globals.js";
-import { summonUnits, keychainStatsMap } from "../constants.js";
+import { summonUnits } from "../constants.js";
 import { cheatConfig } from "../core/state.js";
 
-// World 1 cheats
 registerCheats({
     name: "w1",
-    message: "all w1 cheats.",
+    message: "World 1 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "anvil", message: "anvil cost and duration nullification." },
@@ -31,7 +30,6 @@ registerCheats({
     ],
 });
 
-// World 2 cheats
 registerCheats({
     name: "w2",
     message: "World 2 cheats",
@@ -46,10 +44,9 @@ registerCheats({
     ],
 });
 
-// World 3 cheats
 registerCheats({
     name: "w3",
-    message: "all workbench nullifications and worship mob insta-death.",
+    message: "World 3 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "mobdeath", message: "worship mobs insta-death." },
@@ -75,10 +72,9 @@ registerCheats({
     ],
 });
 
-// World 4 cheats
 registerCheats({
     name: "w4",
-    message: "all w4 cheats.",
+    message: "World 4 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "battleslots", message: "all 6 battle slots" },
@@ -90,14 +86,8 @@ registerCheats({
         { name: "fastforaging", message: "fast foraging (see config)" },
         { name: "spiceclaim", message: "unlimited spice claims" },
         { name: "petupgrades", message: "cheaper pet upgrades (see config)" },
-        {
-            name: "petrng",
-            message: "max strength pets (for level and egg, with a tiny bit of randomness)",
-        },
-        {
-            name: "superpets",
-            message: "don't mess with these little guys, even if they look cute",
-        },
+        { name: "petrng", message: "max strength pets for level and egg, with a bit of randomness" },
+        { name: "superpets", message: "don't mess with these little guys, even if they look cute" },
         { name: "labpx", message: "long lab connections" },
         { name: "mealspeed", message: "configurable meal speed (see config)" },
         { name: "recipespeed", message: "configurable recipe speed (see config)" },
@@ -111,10 +101,9 @@ registerCheats({
     ],
 });
 
-// World 5 cheats
 registerCheats({
     name: "w5",
-    message: "all w5 cheats",
+    message: "World 5 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "sailing", message: "sailing cheats" },
@@ -126,10 +115,9 @@ registerCheats({
     ],
 });
 
-// World 6 cheats
 registerCheats({
     name: "w6",
-    message: "all available w6 cheats",
+    message: "World 6 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "farming", message: "farming cheats" },
@@ -145,60 +133,49 @@ registerCheats({
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
             fn: function (params) {
-                if (params && params[1]) {
-                    const char = parseInt(params[1]);
-                    let loopTimes = 1;
-
+                const char = parseInt(params?.[1]);
+                if (isNaN(char) || char < 0 || char > 9) {
                     // TODO: make this dynamic with character count
-                    if (char < 0 || char > 9)
-                        return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
-                    try {
-                        loopTimes = params[2] && parseInt(params[2]) > 0 ? parseInt(params[2]) : 1;
-                        const actorEvents579 = events(579);
-                        let n = 0;
-                        while (n < loopTimes) {
-                            actorEvents579._customBlock_Ninja("GenerateItem", char, 0);
-                            n++;
-                        }
-                        return `Generated ${loopTimes} ninja items for character ${char}`;
-                    } catch (err) {
-                        return `Error: ${err}`;
-                    }
+                    return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
                 }
-                return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
+
+                const loopTimes = Math.max(1, parseInt(params[2]) || 1);
+                const actorEvents579 = events(579);
+                for (let n = 0; n < loopTimes; n++) {
+                    actorEvents579._customBlock_Ninja("GenerateItem", char, 0);
+                }
+                return `Generated ${loopTimes} ninja items for character ${char}`;
             },
         },
         {
             name: "sumunit",
             message: "Set summoning units to be always a certain type",
             fn: function (params) {
-                if (params && params[1]) {
-                    try {
-                        if (params[1] === "reset") {
-                            cheatConfig.w6.summoning.UnitTypeDraw = (t) => t;
-                            return `summoning units has been reset to default`;
-                        }
-
-                        const summonUnit = summonUnits[params[1]];
-                        if (summonUnit || summonUnit === 0) {
-                            cheatConfig.w6.summoning.UnitTypeDraw = () => summonUnit;
-                            return `${params[1]} set as unit to be drawn`;
-                        }
-                        return `no such unit ${params[1]} found`;
-                    } catch (err) {
-                        return `Error: ${err}`;
-                    }
+                const unitName = params?.[1];
+                if (!unitName) {
+                    return `Please input a unit name ${[...summonUnits.keys()].join(", ")} to summon as per normal.`;
                 }
-                return `Please input a unit name 'basic' 'vrumbi' 'bloomy' 'tonka' 'regalis' 'sparkie' 'guardio' 'muddah' OR 'reset' to summon as per normal.`;
+
+                if (unitName === "reset") {
+                    cheatConfig.w6.summoning.UnitTypeDraw = (t) => t;
+                    return `summoning units has been reset to default`;
+                }
+
+                const summonUnit = summonUnits[unitName];
+                if (summonUnit === undefined) {
+                    return `no such unit ${unitName} found`;
+                }
+
+                cheatConfig.w6.summoning.UnitTypeDraw = () => summonUnit;
+                return `${unitName} set as unit to be drawn`;
             },
         },
     ],
 });
 
-// World 7 cheats
 registerCheats({
     name: "w7",
-    message: "all available w7 cheats",
+    message: "World 7 cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "spelunk", message: "spelunk cheats" },
@@ -210,32 +187,4 @@ registerCheats({
         { name: "bubba", message: "bubba cheats" },
         { name: "zenith", message: "zenith market cheats" },
     ],
-});
-
-// Keychain cheat (W7 Flurbo store)
-registerCheat({
-    name: "keychain",
-    message: "Generate specific keychain with double max stats when buying from Flurbo store",
-    fn: (params) => {
-        if (params && params[0]) {
-            try {
-                const selectedStat = keychainStatsMap[params[0]];
-
-                if (selectedStat) {
-                    cheatConfig.misc.keychain = () => [
-                        selectedStat[1],
-                        selectedStat[2],
-                        parseInt(selectedStat[3]),
-                        selectedStat[2],
-                        parseInt(selectedStat[3]),
-                    ];
-                }
-                return `Set keychain with ${selectedStat[2]}`;
-            } catch (err) {
-                return `Error: ${err}`;
-            }
-        }
-        cheatConfig.misc.keychain = (t) => t;
-        return `Reset to default rng, input a stat to set keychain stats`;
-    },
 });
