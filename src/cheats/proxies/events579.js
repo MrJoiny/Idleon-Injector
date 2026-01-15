@@ -6,8 +6,8 @@
  * - Thingies (hoops/darts shop, zenith, clam, reef, coral kid, sneak symbol)
  * - Holes (W5 holes)
  * - Sailing (sailing cheats, ender captains)
- * - GamingStatType (gaming cheats, snail mail)
- * - Divinity (divinity cheats, unlinks)
+ * - GamingStatType (gaming cheats)
+ * - Divinity (divinity cheats)
  * - AtomCollider (collider cheats)
  * - Dreamstuff (instant dreams)
  * - FarmingStuffs (W6 farming)
@@ -20,275 +20,226 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, CList, events } from "../core/globals.js";
-import { chainProxies, createConfigProxy } from "../utils/proxyHelpers.js";
-
-// Helper to create state getter for nested paths like "w1.owl"
-const state = (world, key) => () => cheatState[world]?.[key];
-const config = (world, key) => () => cheatConfig?.[world]?.[key];
-
-/**
- * Setup summoning proxy (owl, roo, endless, summoning, grimoire).
- * Note: Multiple cheats share the same function, so they're chained.
- */
-export function setupSummoningProxies() {
-    const actorEvents579 = events(579);
-
-    chainProxies(actorEvents579, "_customBlock_Summoning", [
-        // Owl cheats (W1)
-        { stateGetter: state("w1", "owl"), configGetter: config("w1", "owl") },
-        // Roo cheats (W2)
-        { stateGetter: state("w2", "roo"), configGetter: config("w2", "roo") },
-        // Endless cheats (W6) - custom handler
-        {
-            stateGetter: state("w6", "endless"),
-            handler: (args) => (args[0] === "EndlessModifierID" ? 1 : undefined),
-        },
-        // Summoning cheats (W6)
-        { stateGetter: state("w6", "summoning"), configGetter: config("w6", "summoning") },
-        // Grimoire cheats (W6)
-        { stateGetter: state("w6", "grimoire"), configGetter: config("w6", "grimoire") },
-    ]);
-}
-
-/**
- * Setup thingies proxy (hoops shop, darts shop, zenith, clam, reef, coral kid, sneak symbol).
- */
-export function setupThingiesProxies() {
-    const actorEvents579 = events(579);
-
-    chainProxies(actorEvents579, "_customBlock_Thingies", [
-        // Hoops shop
-        { stateGetter: state("wide", "hoopshop"), configGetter: config("wide", "hoopshop") },
-        // Darts shop
-        { stateGetter: state("wide", "dartshop"), configGetter: config("wide", "dartshop") },
-        // Zenith (W7)
-        { stateGetter: state("w7", "zenith"), configGetter: config("w7", "zenith") },
-        // Clam (W7)
-        { stateGetter: state("w7", "clam"), configGetter: config("w7", "clam") },
-        // Reef (W7)
-        { stateGetter: state("w7", "reef"), configGetter: config("w7", "reef") },
-        // Coral kid (W7)
-        { stateGetter: state("w7", "coralkid"), configGetter: config("w7", "coralkid") },
-        // Sneak symbol (W6)
-        { stateGetter: state("w6", "sneaksymbol"), configGetter: config("w6", "sneaksymbol") },
-    ]);
-}
-
-/**
- * Setup holes proxy (W5).
- */
-export function setupHolesProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_Holes", state("w5", "holes"), config("w5", "holes"));
-}
-
-/**
- * Setup sailing proxy (W5).
- */
-export function setupSailingProxy() {
-    const actorEvents579 = events(579);
-
-    const Sailing = actorEvents579._customBlock_Sailing;
-    actorEvents579._customBlock_Sailing = function (...argumentsList) {
-        const res = Reflect.apply(Sailing, this, argumentsList);
-        if (cheatState.w5.sailing && cheatConfig?.w5?.sailing?.hasOwnProperty(argumentsList[0]))
-            return cheatConfig.w5.sailing[argumentsList[0]](res);
-        if (cheatState.w5.endercaptains && "CaptainPedastalTypeGen" === argumentsList[0]) {
-            if (
-                this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1 &&
-                50 <= Number(bEngine.getGameAttribute("Lv0")[13])
-            ) {
-                const dnsm = bEngine.getGameAttribute("DNSM");
-                dnsm.h.SailzDN4 = 6;
-                return 6;
-            }
-        }
-        return res;
-    };
-}
-
-/**
- * Setup gaming proxy (W5).
- */
-export function setupGamingProxy() {
-    const actorEvents579 = events(579);
-
-    const GamingStatType = actorEvents579._customBlock_GamingStatType;
-    actorEvents579._customBlock_GamingStatType = function (...argumentsList) {
-        if (cheatState.w5.gaming && cheatConfig?.w5?.gaming?.[argumentsList[0]]) {
-            return cheatConfig.w5.gaming[argumentsList[0]](
-                Reflect.apply(GamingStatType, this, argumentsList),
-                argumentsList
-            );
-        }
-        return Reflect.apply(GamingStatType, this, argumentsList);
-    };
-
-    // Snail mail attribute proxy
-    const GamingAttr = bEngine.getGameAttribute("Gaming");
-    GamingAttr._13 = GamingAttr[13];
-    Object.defineProperty(bEngine.getGameAttribute("Gaming"), 13, {
-        get: function () {
-            return cheatState.w5.gaming && cheatConfig?.w5?.gaming?.SnailMail
-                ? cheatConfig.w5.gaming.SnailMail
-                : GamingAttr._13;
-        },
-        set: function (value) {
-            GamingAttr._13 = value;
-        },
-    });
-}
-
-/**
- * Setup divinity proxy (W5).
- */
-export function setupDivinityProxy() {
-    const actorEvents579 = events(579);
-
-    const Divinity = actorEvents579._customBlock_Divinity;
-    actorEvents579._customBlock_Divinity = function (...argumentsList) {
-        if (cheatState.w5.divinity && cheatConfig?.w5?.divinity?.[argumentsList[0]]) {
-            return cheatConfig.w5.divinity[argumentsList[0]](Reflect.apply(Divinity, this, argumentsList));
-        }
-        return Reflect.apply(Divinity, this, argumentsList);
-    };
-
-    // Divinity unlinks attribute proxy
-    const DivinityAttr = bEngine.getGameAttribute("Divinity");
-    DivinityAttr._38 = DivinityAttr[38];
-    Object.defineProperty(DivinityAttr, 38, {
-        get: function () {
-            return cheatState.w5.divinity && cheatConfig?.w5?.divinity?.unlinks ? 1 : this._38;
-        },
-        set: function (value) {
-            this._38 = value;
-        },
-    });
-}
-
-/**
- * Setup atom collider proxy (W5).
- */
-export function setupAtomColliderProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_AtomCollider", state("w5", "collider"), config("w5", "collider"));
-}
-
-/**
- * Setup rift attribute proxy (W5).
- */
-export function setupRiftProxy() {
-    const RiftAttr = bEngine.getGameAttribute("Rift");
-    RiftAttr._1 = RiftAttr[1];
-    Object.defineProperty(bEngine.getGameAttribute("Rift"), 1, {
-        get: function () {
-            return cheatState.unlock.rifts && CList.RiftStuff[4][bEngine.getGameAttribute("Rift")[0]] !== 9
-                ? 1e8
-                : RiftAttr._1;
-        },
-        set: function (value) {
-            RiftAttr._1 = value;
-        },
-    });
-}
-
-/**
- * Setup dreamstuff proxy (instant dreams - W3 talent).
- */
-export function setupDreamstuffProxy() {
-    const actorEvents579 = events(579);
-
-    chainProxies(actorEvents579, "_customBlock_Dreamstuff", [
-        {
-            stateGetter: state("w3", "instantdreams"),
-            handler: (args) => (args[0] === "BarFillReq" ? 0 : undefined),
-        },
-    ]);
-}
-
-/**
- * Setup farming proxy (W6).
- */
-export function setupFarmingProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_FarmingStuffs", state("w6", "farming"), config("w6", "farming"));
-}
-
-/**
- * Setup ninja proxy (W6).
- */
-export function setupNinjaProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_Ninja", state("w6", "ninja"), config("w6", "ninja"));
-}
-
-/**
- * Setup windwalker proxy (W6).
- */
-export function setupWindwalkerProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_Windwalker", state("w6", "windwalker"), config("w6", "windwalker"));
-}
-
-/**
- * Setup arcane proxy (W6).
- */
-export function setupArcaneProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_ArcaneType", state("w6", "arcane"), config("w6", "arcane"));
-}
-
-/**
- * Setup bubba proxy (W7).
- */
-export function setupBubbaProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_Bubbastuff", state("w7", "bubba"), config("w7", "bubba"));
-}
-
-/**
- * Setup spelunk proxy (W7 spelunk, big fish).
- */
-export function setupSpelunkProxy() {
-    const actorEvents579 = events(579);
-
-    chainProxies(actorEvents579, "_customBlock_Spelunk", [
-        // Spelunk cheats
-        { stateGetter: state("w7", "spelunk"), configGetter: config("w7", "spelunk") },
-        // Big fish shares Spelunk function
-        { stateGetter: state("w7", "bigfish"), configGetter: config("w7", "bigfish") },
-    ]);
-}
-
-/**
- * Setup gallery proxy (W7).
- */
-export function setupGalleryProxy() {
-    const actorEvents579 = events(579);
-    createConfigProxy(actorEvents579, "_customBlock_Gallery", state("w7", "gallery"), config("w7", "gallery"));
-}
+import { bEngine, events } from "../core/globals.js";
 
 /**
  * Setup all ActorEvents_579 proxies.
  */
 export function setupEvents579Proxies() {
-    setupSummoningProxies();
-    setupThingiesProxies();
-    setupHolesProxy();
-    setupSailingProxy();
-    setupGamingProxy();
-    setupDivinityProxy();
-    setupAtomColliderProxy();
-    setupRiftProxy();
-    setupDreamstuffProxy();
-    setupFarmingProxy();
-    setupNinjaProxy();
-    setupWindwalkerProxy();
-    setupArcaneProxy();
-    setupBubbaProxy();
-    setupSpelunkProxy();
-    setupGalleryProxy();
+    const ActorEvents579 = events(579);
+
+    // Summoning (owl, roo, endless, summoning, grimoire)
+    const Summoning = ActorEvents579._customBlock_Summoning;
+    ActorEvents579._customBlock_Summoning = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Summoning, this, args);
+
+        if (cheatState.w1.owl && cheatConfig.w1.owl[key]) {
+            return cheatConfig.w1.owl[key](base);
+        }
+        if (cheatState.w2.roo && cheatConfig.w2.roo[key]) {
+            return cheatConfig.w2.roo[key](base);
+        }
+        if (cheatState.w6.endless && key === "EndlessModifierID") {
+            return 1;
+        }
+        if (cheatState.w6.summoning && cheatConfig.w6.summoning[key]) {
+            return cheatConfig.w6.summoning[key](base);
+        }
+        if (cheatState.w6.grimoire && cheatConfig.w6.grimoire[key]) {
+            return cheatConfig.w6.grimoire[key](base);
+        }
+
+        return base;
+    };
+
+    // Thingies (hoops shop, darts shop, zenith, clam, reef, coral kid, sneak symbol)
+    const Thingies = ActorEvents579._customBlock_Thingies;
+    ActorEvents579._customBlock_Thingies = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Thingies, this, args);
+
+        if (cheatState.wide.hoopshop && cheatConfig.wide.hoopshop[key]) {
+            return cheatConfig.wide.hoopshop[key](base);
+        }
+        if (cheatState.wide.dartshop && cheatConfig.wide.dartshop[key]) {
+            return cheatConfig.wide.dartshop[key](base);
+        }
+        if (cheatState.w7.zenith && cheatConfig.w7.zenith[key]) {
+            return cheatConfig.w7.zenith[key](base);
+        }
+        if (cheatState.w7.clam && cheatConfig.w7.clam[key]) {
+            return cheatConfig.w7.clam[key](base);
+        }
+        if (cheatState.w7.reef && cheatConfig.w7.reef[key]) {
+            return cheatConfig.w7.reef[key](base);
+        }
+        if (cheatState.w7.coralkid && cheatConfig.w7.coralkid[key]) {
+            return cheatConfig.w7.coralkid[key](base);
+        }
+        if (cheatState.w6.sneaksymbol && cheatConfig.w6.sneaksymbol[key]) {
+            return cheatConfig.w6.sneaksymbol[key](base);
+        }
+
+        return base;
+    };
+
+    // Holes (W5)
+    const Holes = ActorEvents579._customBlock_Holes;
+    ActorEvents579._customBlock_Holes = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Holes, this, args);
+        if (cheatState.w5.holes && cheatConfig.w5.holes[key]) {
+            return cheatConfig.w5.holes[key](base);
+        }
+        return base;
+    };
+
+    // Sailing (W5)
+    const Sailing = ActorEvents579._customBlock_Sailing;
+    ActorEvents579._customBlock_Sailing = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Sailing, this, args);
+
+        if (cheatState.w5.sailing && cheatConfig.w5.sailing[key]) {
+            return cheatConfig.w5.sailing[key](base);
+        }
+
+        if (cheatState.w5.endercaptains && key === "CaptainPedastalTypeGen") {
+            const hasEmporiumBonus = this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1;
+            const hasRequiredLevel = Number(bEngine.getGameAttribute("Lv0")[13]) >= 50;
+            if (hasEmporiumBonus && hasRequiredLevel) {
+                bEngine.getGameAttribute("DNSM").h.SailzDN4 = 6;
+                return 6;
+            }
+        }
+
+        return base;
+    };
+
+    // Gaming (W5)
+    const GamingStatType = ActorEvents579._customBlock_GamingStatType;
+    ActorEvents579._customBlock_GamingStatType = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(GamingStatType, this, args);
+        if (cheatState.w5.gaming && cheatConfig.w5.gaming[key]) {
+            return cheatConfig.w5.gaming[key](base, args);
+        }
+        return base;
+    };
+
+    // Divinity (W5)
+    const Divinity = ActorEvents579._customBlock_Divinity;
+    ActorEvents579._customBlock_Divinity = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Divinity, this, args);
+        if (cheatState.w5.divinity && cheatConfig.w5.divinity[key]) {
+            return cheatConfig.w5.divinity[key](base);
+        }
+        return base;
+    };
+
+    // Atom collider (W5)
+    const AtomCollider = ActorEvents579._customBlock_AtomCollider;
+    ActorEvents579._customBlock_AtomCollider = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(AtomCollider, this, args);
+        if (cheatState.w5.collider && cheatConfig.w5.collider[key]) {
+            return cheatConfig.w5.collider[key](base);
+        }
+        return base;
+    };
+
+    // Dreamstuff (instant dreams - W3 talent)
+    const Dreamstuff = ActorEvents579._customBlock_Dreamstuff;
+    ActorEvents579._customBlock_Dreamstuff = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Dreamstuff, this, args);
+        if (cheatState.w3.instantdreams && key === "BarFillReq") {
+            return 0;
+        }
+        return base;
+    };
+
+    // Farming (W6)
+    const FarmingStuffs = ActorEvents579._customBlock_FarmingStuffs;
+    ActorEvents579._customBlock_FarmingStuffs = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(FarmingStuffs, this, args);
+        if (cheatState.w6.farming && cheatConfig.w6.farming[key]) {
+            return cheatConfig.w6.farming[key](base);
+        }
+        return base;
+    };
+
+    // Ninja (W6)
+    const Ninja = ActorEvents579._customBlock_Ninja;
+    ActorEvents579._customBlock_Ninja = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Ninja, this, args);
+        if (cheatState.w6.ninja && cheatConfig.w6.ninja[key]) {
+            return cheatConfig.w6.ninja[key](base);
+        }
+        return base;
+    };
+
+    // Windwalker (W6)
+    const Windwalker = ActorEvents579._customBlock_Windwalker;
+    ActorEvents579._customBlock_Windwalker = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Windwalker, this, args);
+        if (cheatState.w6.windwalker && cheatConfig.w6.windwalker[key]) {
+            return cheatConfig.w6.windwalker[key](base);
+        }
+        return base;
+    };
+
+    // Arcane (W6)
+    const ArcaneType = ActorEvents579._customBlock_ArcaneType;
+    ActorEvents579._customBlock_ArcaneType = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(ArcaneType, this, args);
+        if (cheatState.w6.arcane && cheatConfig.w6.arcane[key]) {
+            return cheatConfig.w6.arcane[key](base);
+        }
+        return base;
+    };
+
+    // Bubba (W7)
+    const Bubbastuff = ActorEvents579._customBlock_Bubbastuff;
+    ActorEvents579._customBlock_Bubbastuff = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Bubbastuff, this, args);
+        if (cheatState.w7.bubba && cheatConfig.w7.bubba[key]) {
+            return cheatConfig.w7.bubba[key](base);
+        }
+        return base;
+    };
+
+    // Spelunk (W7 spelunk, big fish)
+    const Spelunk = ActorEvents579._customBlock_Spelunk;
+    ActorEvents579._customBlock_Spelunk = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Spelunk, this, args);
+        if (cheatState.w7.spelunk && cheatConfig.w7.spelunk[key]) {
+            return cheatConfig.w7.spelunk[key](base);
+        }
+        if (cheatState.w7.bigfish && cheatConfig.w7.bigfish[key]) {
+            return cheatConfig.w7.bigfish[key](base);
+        }
+        return base;
+    };
+
+    // Gallery (W7)
+    const Gallery = ActorEvents579._customBlock_Gallery;
+    ActorEvents579._customBlock_Gallery = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Gallery, this, args);
+        if (cheatState.w7.gallery && cheatConfig.w7.gallery[key]) {
+            return cheatConfig.w7.gallery[key](base);
+        }
+        return base;
+    };
 }
 
 /**

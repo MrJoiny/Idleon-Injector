@@ -39,6 +39,14 @@ export function setupFirebaseProxy(context) {
 
                 // Re-apply proxies that get reset
                 try {
+                    // TODO: need to get all those working again.
+                    // those are all the proxies that were in the old cheats.js
+                    // setupCListProxy.call(this);
+                    // setupOptionsListAccountProxy.call(this);
+                    // setupTrappingProxy.call(this);
+                    // setupTimeCandyProxy.call(this);
+                    // setupAlchProxy.call(this);
+                    // setupMonsterProxy.call(this);
                     setupCListProxy();
                     setupQuestProxy(context);
                 } catch (e) {

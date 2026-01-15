@@ -14,102 +14,87 @@ import { bEngine, events, behavior } from "../core/globals.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 
 /**
- * Setup stamp cost reduction proxy.
- */
-export function setupStampCostProxy() {
-    events(124)._customBlock_StampCostss = new Proxy(events(124)._customBlock_StampCostss, {
-        apply: function (originalFn, context, argumentsList) {
-            if (!cheatState.w1.stampcost) return Reflect.apply(originalFn, context, argumentsList);
-
-            const result = Reflect.apply(originalFn, context, argumentsList);
-            const currency = result[0];
-            const cost = result[1];
-
-            return [currency, cheatConfig.w1.stampcost(cost)];
-        },
-    });
-}
-
-/**
- * Setup AFK gain rate multiplier proxy.
- */
-export function setupAFKRateProxy() {
-    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
-    events(124)._customBlock_AFKgainrates = new Proxy(events(124)._customBlock_AFKgainrates, {
-        apply: (originalFn, context, argumentsList) => {
-            if (cheatState.multiply.afk)
-                return Reflect.apply(originalFn, context, argumentsList) * getMultiplyValue("afk");
-            return Reflect.apply(originalFn, context, argumentsList);
-        },
-    });
-}
-
-/**
- * Setup player load proxy for perfect obols.
- */
-export function setupPlayerLoadProxy() {
-    const loadPlayerInfo = events(124)._customBlock_LoadPlayerInfo;
-    events(124)._customBlock_LoadPlayerInfo = function (...argumentsList) {
-        const rtn = Reflect.apply(loadPlayerInfo, this, argumentsList);
-        try {
-            if (cheatState.wide.perfectobols && rollAllObols) rollAllObols();
-        } catch (e) {
-            console.log(e.toString());
-        }
-        return rtn;
-    };
-}
-
-/**
- * Setup talent number modification proxy.
- */
-export function setupTalentProxy() {
-    const getTalentNumber = events(124)._customBlock_GetTalentNumber;
-    events(124)._customBlock_GetTalentNumber = (...argumentsList) => {
-        return cheatState.talent[argumentsList[1]]
-            ? cheatConfig.talent[argumentsList[1]](Reflect.apply(getTalentNumber, this, argumentsList), argumentsList)
-            : Reflect.apply(getTalentNumber, this, argumentsList);
-    };
-}
-
-/**
- * Setup monster kill proxy for plunderous respawn.
- */
-export function setupMonsterKillProxy() {
-    const monsterKill = events(124)._customBlock_MonsterKill;
-    events(124)._customBlock_MonsterKill = (...argumentsList) => {
-        const e = argumentsList[0];
-        Reflect.apply(monsterKill, this, argumentsList);
-        if (
-            cheatState.wide.plunderous &&
-            (0 < events(12)._customBlock_GetBuffBonuses(318, 1) || cheatConfig.wide.plunderous.allcharacters) &&
-            bEngine.gameAttributes.h.DummyText3 !== "nah" &&
-            !bEngine
-                .getGameAttribute("CustomLists")
-                .h.NonAFKmonsters.includes(e.getValue("ActorEvents_1", "_MonsterType")) &&
-            e.getValue("ActorEvents_1", "_TempMonster") === 0
-        ) {
-            (bEngine.gameAttributes.h.DummyText3 = "PiratePlunderMonster"),
-                events(124)._customBlock_CreateMonster(
-                    `${e.getValue("ActorEvents_1", "_MonsterType")}`,
-                    behavior.asNumber(e.getValue("ActorEvents_1", "_MonsterNODE")),
-                    e.getXCenter()
-                ),
-                events(124)._customBlock_AddStatusToMonster("StatusPlunder", behavior.getLastCreatedActor(), 36e5),
-                (bEngine.gameAttributes.h.DummyText3 = "nah");
-        }
-    };
-}
-
-/**
  * Setup all ActorEvents_124 proxies.
  */
 export function setupEvents124Proxies() {
-    setupStampCostProxy();
-    setupAFKRateProxy();
-    setupPlayerLoadProxy();
-    setupTalentProxy();
-    setupMonsterKillProxy();
+    const ActorEvents124 = events(124);
+    const ActorEvents12 = events(12);
+    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
+
+    // Stamp cost reduction
+    const StampCostss = ActorEvents124._customBlock_StampCostss;
+    ActorEvents124._customBlock_StampCostss = function (...args) {
+        const base = Reflect.apply(StampCostss, this, args);
+        if (cheatState.w1.stampcost) {
+            const [currency, cost] = base;
+            return [currency, cheatConfig.w1.stampcost(cost)];
+        }
+        return base;
+    };
+
+    // AFK gain rate multiplier
+    const AFKgainrates = ActorEvents124._customBlock_AFKgainrates;
+    ActorEvents124._customBlock_AFKgainrates = function (...args) {
+        const base = Reflect.apply(AFKgainrates, this, args);
+        if (cheatState.multiply.afk) {
+            return base * getMultiplyValue("afk");
+        }
+        return base;
+    };
+
+    // Perfect obols on player load
+    const LoadPlayerInfo = ActorEvents124._customBlock_LoadPlayerInfo;
+    ActorEvents124._customBlock_LoadPlayerInfo = function (...args) {
+        const base = Reflect.apply(LoadPlayerInfo, this, args);
+        if (cheatState.wide.perfectobols) {
+            try {
+                rollAllObols();
+            } catch (e) {
+                console.log(e.toString());
+            }
+        }
+        return base;
+    };
+
+    // Talent number modifications
+    const GetTalentNumber = ActorEvents124._customBlock_GetTalentNumber;
+    ActorEvents124._customBlock_GetTalentNumber = function (...args) {
+        const key = args[1];
+        const base = Reflect.apply(GetTalentNumber, this, args);
+        if (cheatState.talent[key]) {
+            return cheatConfig.talent[key](base, args);
+        }
+        return base;
+    };
+
+    // Plunderous respawn on monster kill
+    const MonsterKill = ActorEvents124._customBlock_MonsterKill;
+    ActorEvents124._customBlock_MonsterKill = function (...args) {
+        const monster = args[0];
+        Reflect.apply(MonsterKill, this, args);
+
+        if (!cheatState.wide.plunderous) return;
+
+        const hasPlunderBuff = ActorEvents12._customBlock_GetBuffBonuses(318, 1) > 0;
+        const allowAllChars = cheatConfig.wide.plunderous.allcharacters;
+        if (!hasPlunderBuff && !allowAllChars) return;
+
+        const monsterType = monster.getValue("ActorEvents_1", "_MonsterType");
+        const monsterNode = monster.getValue("ActorEvents_1", "_MonsterNODE");
+        const isTemp = monster.getValue("ActorEvents_1", "_TempMonster") !== 0;
+        const isNonAFK = bEngine.getGameAttribute("CustomLists").h.NonAFKmonsters.includes(monsterType);
+
+        if (bEngine.gameAttributes.h.DummyText3 === "nah" && !isNonAFK && !isTemp) {
+            bEngine.gameAttributes.h.DummyText3 = "PiratePlunderMonster";
+            ActorEvents124._customBlock_CreateMonster(
+                `${monsterType}`,
+                behavior.asNumber(monsterNode),
+                monster.getXCenter()
+            );
+            ActorEvents124._customBlock_AddStatusToMonster("StatusPlunder", behavior.getLastCreatedActor(), 36e5);
+            bEngine.gameAttributes.h.DummyText3 = "nah";
+        }
+    };
 }
 
 /**

@@ -8,58 +8,120 @@
  * - Cloud save (pause cloud saving)
  * - Values map (free revives)
  * - Options list account (unban, event items, minigames, quick ref, etc.)
+ * - Monster respawn time
+ * - Gaming (snail mail)
+ * - Divinity (unlinks)
+ * - Rift (rift unlock)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine } from "../core/globals.js";
+import { bEngine, CList } from "../core/globals.js";
 import { createProxy } from "../utils/createProxy.js";
-import { createToggleProxy } from "../utils/proxyHelpers.js";
 
 /**
- * Setup proxy to freeze gems (prevent changes when enabled).
+ * Apply max cap to a value, with optional NaN handling.
+ * @param {number} value - The value to cap
+ * @param {string} configKey - Key in cheatConfig.maxval
+ * @param {boolean} handleNaN - Whether to handle NaN values
+ * @returns {number} The capped value
  */
-export function setupGemsProxy() {
+function applyMaxCap(value, configKey, handleNaN = false) {
+    if (handleNaN && isNaN(value)) {
+        return cheatConfig?.maxval?.[configKey] ?? value;
+    }
+    return Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
+}
+
+/**
+ * Setup all game attribute proxies.
+ * @param {function} events - The events function from globals
+ */
+export function setupGameAttributeProxies(events) {
+    // Gems - freeze when enabled
     createProxy(bEngine.gameAttributes.h, "GemsOwned", {
-        get: function (original) {
+        get(original) {
             return original;
         },
-        set: function (value, backupKey) {
+        set(value, backupKey) {
             if (cheatState.wide.gems) return;
             this[backupKey] = value;
         },
     });
-}
 
-/**
- * Setup proxy for HP to always return max HP when enabled.
- * @param {object} events - The events function from globals
- */
-export function setupHPProxy(events) {
-    Object.defineProperty(bEngine.gameAttributes.h, "PlayerHP", {
-        get: function () {
-            return this._PlayerHP;
+    // HP - always return max HP when enabled
+    createProxy(bEngine.gameAttributes.h, "PlayerHP", {
+        get(original) {
+            return original;
         },
-        set: function (value) {
-            this._PlayerHP = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value;
+        set(value, backupKey) {
+            this[backupKey] = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value;
         },
     });
-}
 
-/**
- * Setup proxy for currencies (teleports, tickets, obol fragments, silver pens).
- */
-export function setupCurrenciesOwnedProxy() {
+    // Free revives
+    createProxy(bEngine.getGameAttribute("PersonalValuesMap").h, "InstaRevives", {
+        get(original) {
+            if (cheatState.unlock.revive) return 10;
+            return original;
+        },
+        set(value, backupKey) {
+            if (cheatState.unlock.revive) return;
+            this[backupKey] = value;
+        },
+    });
+
+    // Gaming - snail mail (W5)
+    createProxy(bEngine.getGameAttribute("Gaming"), 13, {
+        get(original) {
+            if (cheatState.w5.gaming && cheatConfig.w5.gaming.SnailMail) {
+                return cheatConfig.w5.gaming.SnailMail;
+            }
+            return original;
+        },
+        set(value, backupKey) {
+            this[backupKey] = value;
+        },
+    });
+
+    // Divinity - unlinks (W5)
+    createProxy(bEngine.getGameAttribute("Divinity"), 38, {
+        get(original) {
+            if (cheatState.w5.divinity && cheatConfig.w5.divinity.unlinks) {
+                return 1;
+            }
+            return original;
+        },
+        set(value, backupKey) {
+            this[backupKey] = value;
+        },
+    });
+
+    // Rift - unlock (W5)
+    createProxy(bEngine.getGameAttribute("Rift"), 1, {
+        get(original) {
+            const riftIndex = bEngine.getGameAttribute("Rift")[0];
+            if (cheatState.unlock.rifts && CList.RiftStuff[4][riftIndex] !== 9) {
+                return 1e8;
+            }
+            return original;
+        },
+        set(value, backupKey) {
+            this[backupKey] = value;
+        },
+    });
+
+    // Currencies - teleports, tickets, obol fragments, silver pens
     const currencies = bEngine.getGameAttribute("CurrenciesOwned").h;
-    const handler = {
-        get: function (obj, prop) {
+    bEngine.getGameAttribute("CurrenciesOwned").h = new Proxy(currencies, {
+        get(obj, prop) {
             if (cheatState.unlock.teleports && prop === "WorldTeleports") return obj.WorldTeleports || 1;
             if (cheatState.unlock.tickets && prop === "ColosseumTickets") return obj.ColosseumTickets || 1;
-            if (cheatState.unlock.obolfrag && prop === "ObolFragments") return obj.ObolFragments || 9001; // It's over nine thousand
+            if (cheatState.unlock.obolfrag && prop === "ObolFragments") return obj.ObolFragments || 9001;
             if (cheatState.unlock.silvpen && prop === "SilverPens") return obj.SilverPens || 1;
             return obj[prop];
         },
-        set: function (obj, prop, value) {
-            if (cheatState.unlock.teleports && prop === "WorldTeleports") return true; // Do nothing
+        set(obj, prop, value) {
+            if (cheatState.unlock.teleports && prop === "WorldTeleports") return true;
             if (cheatState.unlock.tickets && prop === "ColosseumTickets") {
                 if (obj.ColosseumTickets < value) obj.ColosseumTickets = value;
                 return true;
@@ -72,216 +134,121 @@ export function setupCurrenciesOwnedProxy() {
                 if (obj.ObolFragments < value) obj.ObolFragments = value;
                 return true;
             }
-            return (obj[prop] = value);
+            obj[prop] = value;
+            return true;
         },
-    };
-    const proxy = new Proxy(currencies, handler);
-    bEngine.getGameAttribute("CurrenciesOwned").h = proxy;
-}
-
-/**
- * Setup proxy for cloud save cooldown (pause cloud saving).
- */
-export function setupCloudSaveProxy() {
-    const CloudSave = bEngine.getGameAttribute("CloudSaveCD");
-    const handler = {
-        get: function (obj, prop) {
-            if (cheatState.cloudz && Number(prop) === 0) return 235;
-            return Reflect.get(...arguments);
-        },
-        set: function (obj, prop, value) {
-            if (cheatState.cloudz && Number(prop) === 0) {
-                obj[0] = 235;
-                return true;
-            }
-            return Reflect.set(obj, prop, value);
-        },
-    };
-    const proxy = new Proxy(CloudSave, handler);
-    bEngine.setGameAttribute("CloudSaveCD", proxy);
-}
-
-/**
- * Setup proxy for personal values map (free revives).
- */
-export function setupValuesMapProxy() {
-    const personalValuesMap = bEngine.getGameAttribute("PersonalValuesMap").h;
-
-    personalValuesMap._InstaRevives = personalValuesMap.InstaRevives;
-    Object.defineProperty(personalValuesMap, "InstaRevives", {
-        get: function () {
-            if (cheatState.unlock.revive) return 10;
-            return this._InstaRevives;
-        },
-        set: function (value) {
-            if (cheatState.unlock.revive) return;
-            this._InstaRevives = value;
-        },
-        enumerable: true,
     });
-}
 
-// ============================================================================
-// Options List Account Proxy - Data-Driven Configuration
-// ============================================================================
+    // Cloud save cooldown - pause cloud saving
+    const cloudSave = bEngine.getGameAttribute("CloudSaveCD");
+    bEngine.setGameAttribute(
+        "CloudSaveCD",
+        new Proxy(cloudSave, {
+            get(obj, prop) {
+                if (cheatState.cloudz && Number(prop) === 0) return 235;
+                return Reflect.get(obj, prop);
+            },
+            set(obj, prop, value) {
+                if (cheatState.cloudz && Number(prop) === 0) {
+                    obj[0] = 235;
+                    return true;
+                }
+                return Reflect.set(obj, prop, value);
+            },
+        })
+    );
 
-/**
- * Creates a max cap proxy handler that limits values to a configured maximum.
- * @param {string} configKey - Key in cheatConfig.maxval
- * @returns {{get: function, set: function}} Proxy handlers
- */
-function createMaxCapProxy(configKey) {
-    return {
-        get: function (original) {
-            return original;
-        },
-        set: function (value, backupKey) {
-            if (isNaN(value)) {
-                this[backupKey] = cheatConfig?.maxval?.[configKey] ?? value;
-                return;
-            }
-            value = Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
-            this[backupKey] = value;
-        },
-    };
-}
+    // Monster respawn time
+    const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
+    if (!monsterRespawnTime._isPatched) {
+        Object.defineProperty(monsterRespawnTime, "_isPatched", { value: true, enumerable: false });
+        bEngine.gameAttributes.h.MonsterRespawnTime = new Proxy(monsterRespawnTime, {
+            set(target, prop, value) {
+                target[prop] = cheatState.godlike.respawn ? cheatConfig?.godlike?.respawn?.(value) ?? value : value;
+                return true;
+            },
+        });
+    }
 
-/**
- * Creates a simple max cap proxy without NaN handling.
- * @param {string} configKey - Key in cheatConfig.maxval
- * @returns {{get: function, set: function}} Proxy handlers
- */
-function createSimpleMaxCapProxy(configKey) {
-    return {
-        get: function (original) {
-            return original;
-        },
-        set: function (value, backupKey) {
-            value = Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
-            this[backupKey] = value;
-        },
-    };
-}
-
-/**
- * Setup proxy for options list account (many toggles and caps).
- */
-export function setupOptionsListAccountProxy() {
+    // Options list account - toggles, unlocks, and caps
     const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
-
     if (optionsListAccount._isPatched) return;
     Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
 
-    // Toggle-based proxies (state check -> return fixed value)
-    const toggleProxies = [
-        { index: 26, stateGetter: () => cheatState.unban, value: 0 },
-        { index: 29, stateGetter: () => cheatState.wide.eventitems, value: 0 },
-        { index: 33, stateGetter: () => cheatState.minigames, value: 1 },
-        { index: 34, stateGetter: () => cheatState.unlock.quickref, value: 0 },
-        { index: 100, stateGetter: () => cheatState.w4.spiceclaim, value: 0 },
-        { index: 325, stateGetter: () => cheatState.wide.eventspins, value: 10 },
-        { index: 370, stateGetter: () => cheatState.w6.emperor, value: -10 },
-        { index: 414, stateGetter: () => cheatState.w3.jeweledcogs, value: 0 },
-    ];
+    bEngine.gameAttributes.h.OptionsListAccount = new Proxy(optionsListAccount, {
+        get(obj, prop) {
+            const index = Number(prop);
 
-    toggleProxies.forEach(({ index, stateGetter, value }) => {
-        createProxy(
-            optionsListAccount,
-            index,
-            createToggleProxy(stateGetter, () => value)
-        );
-    });
+            // Toggle cheats - return fixed value when enabled
+            if (cheatState.unban && index === 26) return 0;
+            if (cheatState.wide.eventitems && index === 29) return 0;
+            if (cheatState.minigames && index === 33) return 1;
+            if (cheatState.unlock.quickref && index === 34) return 0;
+            if (cheatState.w4.spiceclaim && index === 100) return 0;
+            if (cheatState.unlock.islands && index === 169) return cheatConfig.unlock.islands; // ||?? obj[prop];
+            if (cheatState.w2.boss && index === 185 && obj[prop] === 10) return 0;
+            if (cheatState.wide.eventspins && index === 325) return 10;
+            if (cheatState.w6.emperor && index === 370) return -10;
+            if (cheatState.w3.jeweledcogs && index === 414) return 0;
 
-    // Config-based toggle (state + config value)
-    createProxy(optionsListAccount, 169, {
-        get: function (original) {
-            if (cheatState.unlock.islands) return cheatConfig?.unlock?.islands ?? original;
-            return original;
+            return obj[prop];
         },
-        set: function (value, backupKey) {
-            if (cheatState.unlock.islands) return;
-            this[backupKey] = value;
-        },
-    });
+        set(obj, prop, value) {
+            const index = Number(prop);
 
-    // Boss attempts (special logic - reset when at max)
-    createProxy(optionsListAccount, 185, {
-        get: function (original) {
-            if (cheatState.w2.boss && original === 10) original = 0;
-            return original;
-        },
-        set: function (value, backupKey) {
-            this[backupKey] = value;
-        },
-    });
+            // Toggle cheats - block writes when enabled
+            if (cheatState.unban && index === 26) return true;
+            if (cheatState.wide.eventitems && index === 29) return true;
+            if (cheatState.minigames && index === 33) return true;
+            if (cheatState.unlock.quickref && index === 34) return true;
+            if (cheatState.w4.spiceclaim && index === 100) return true;
+            if (cheatState.unlock.islands && index === 169) return true;
+            if (cheatState.wide.eventspins && index === 325) return true;
+            if (cheatState.w6.emperor && index === 370) return true;
+            if (cheatState.w3.jeweledcogs && index === 414) return true;
 
-    // Simple max cap proxies (no NaN handling)
-    const simpleMaxCapProxies = [
-        { index: 71, configKey: "creditcap" },
-        { index: 72, configKey: "creditcap" },
-        { index: 73, configKey: "flurbocap" },
-    ];
+            // Credit/flurbo caps
+            if (index === 71 || index === 72) {
+                obj[prop] = applyMaxCap(value, "creditcap");
+                return true;
+            }
+            if (index === 73) {
+                obj[prop] = applyMaxCap(value, "flurbocap");
+                return true;
+            }
 
-    simpleMaxCapProxies.forEach(({ index, configKey }) => {
-        createProxy(optionsListAccount, index, createSimpleMaxCapProxy(configKey));
-    });
+            // Bones caps
+            if (index === 329) {
+                obj[prop] = applyMaxCap(value, "totalbones", true);
+                return true;
+            }
+            if (index >= 330 && index <= 333) {
+                obj[prop] = applyMaxCap(value, "bones", true);
+                return true;
+            }
 
-    // Max cap proxies with NaN handling (bones, dust, tach)
-    const maxCapWithNaN = [
-        { index: 329, configKey: "totalbones" },
-        { index: 362, configKey: "totaldust" },
-        { index: 394, configKey: "totaltach" },
-    ];
+            // Dust caps
+            if (index >= 357 && index <= 361) {
+                obj[prop] = applyMaxCap(value, "dust", true);
+                return true;
+            }
+            if (index === 362) {
+                obj[prop] = applyMaxCap(value, "totaldust", true);
+                return true;
+            }
 
-    maxCapWithNaN.forEach(({ index, configKey }) => {
-        createProxy(optionsListAccount, index, createMaxCapProxy(configKey));
-    });
+            // Tach caps
+            if (index >= 388 && index <= 393) {
+                obj[prop] = applyMaxCap(value, "tach", true);
+                return true;
+            }
+            if (index === 394) {
+                obj[prop] = applyMaxCap(value, "totaltach", true);
+                return true;
+            }
 
-    // Array-based max cap proxies
-    const arrayMaxCapProxies = [
-        { indices: [330, 331, 332, 333], configKey: "bones" },
-        { indices: [357, 358, 359, 360, 361], configKey: "dust" },
-        { indices: [388, 389, 390, 391, 392, 393], configKey: "tach" },
-    ];
-
-    arrayMaxCapProxies.forEach(({ indices, configKey }) => {
-        indices.forEach((index) => {
-            createProxy(optionsListAccount, index, createMaxCapProxy(configKey));
-        });
-    });
-}
-
-/**
- * Setup proxy for monster respawn time.
- */
-export function setupMonsterRespawnProxy() {
-    const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
-
-    if (monsterRespawnTime._isPatched) return;
-    Object.defineProperty(monsterRespawnTime, "_isPatched", { value: true, enumerable: false });
-
-    const respawnHandler = {
-        set(target, prop, value) {
-            const newValue = cheatState.godlike.respawn ? cheatConfig?.godlike?.respawn?.(value) ?? value : value;
-            target[prop] = newValue;
+            obj[prop] = value;
             return true;
         },
-    };
-
-    bEngine.gameAttributes.h.MonsterRespawnTime = new Proxy(monsterRespawnTime, respawnHandler);
-}
-
-/**
- * Setup all game attribute proxies.
- * @param {object} events - The events function from globals
- */
-export function setupGameAttributeProxies(events) {
-    setupGemsProxy();
-    setupHPProxy(events);
-
-    setupCurrenciesOwnedProxy();
-    setupCloudSaveProxy();
-    setupValuesMapProxy();
-    setupOptionsListAccountProxy();
-    setupMonsterRespawnProxy();
+    });
 }

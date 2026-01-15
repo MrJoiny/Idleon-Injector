@@ -20,258 +20,193 @@ import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events } from "../core/globals.js";
 
 /**
- * Setup workbench stuff proxy (W3 construction).
+ * Setup all ActorEvents_345 proxies.
  */
-export function setupWorkbenchStuffProxy() {
-    const actorEvents345 = events(345);
+export function setupEvents345Proxies() {
+    const ActorEvents345 = events(345);
     const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
 
-    const Workbench = actorEvents345._customBlock_WorkbenchStuff;
+    // Workbench stuff (W3 construction)
+    const WorkbenchStuff = ActorEvents345._customBlock_WorkbenchStuff;
+    ActorEvents345._customBlock_WorkbenchStuff = function (...args) {
+        const key = args[0];
 
-    actorEvents345._customBlock_WorkbenchStuff = function (...argumentsList) {
-        const t = argumentsList[0];
-        if (cheatState.w3.flagreq && t === "FlagReq") return 0; // Nullified flag unlock time
-        if (cheatState.w3.freebuildings && (t === "TowerSaltCost" || t === "TowerMatCost")) return 0; // Tower cost nullification
-        if (cheatState.w3.instabuild && t === "TowerBuildReq") return 0; // Instant build/upgrade
-        if (cheatState.w3.booktime && t === "BookReqTime") return 1; // Book/second
-        if (cheatState.w3.totalflags && t === "TotalFlags") return 10; // Total amount of placeable flags
-        if (cheatState.w3.buildspd && t === "PlayerBuildSpd") {
-            // multiply build rate
-            const originalValue = Reflect.apply(Workbench, this, argumentsList);
-            return cheatConfig.w3.buildspd(originalValue);
+        // For minBookLv, modify args before calling base
+        if (cheatState.w3.book && key === "minBookLv") {
+            args[0] = "maxBookLv";
         }
-        if (cheatState.multiply.printer && t === "ExtraPrinting")
-            return (
-                (argumentsList[0] = "AdditionExtraPrinting"),
-                getMultiplyValue("printer") * Reflect.apply(Workbench, this, argumentsList)
-            ); // print multiplier
-        // The minimum level talent book from the library is equivalent to the max level
-        if (cheatState.w3.book && t === "minBookLv") {
-            argumentsList[0] = "maxBookLv";
+
+        const base = Reflect.apply(WorkbenchStuff, this, args);
+
+        if (cheatState.w3.flagreq && key === "FlagReq") return 0;
+        if (cheatState.w3.freebuildings && (key === "TowerSaltCost" || key === "TowerMatCost")) return 0;
+        if (cheatState.w3.instabuild && key === "TowerBuildReq") return 0;
+        if (cheatState.w3.booktime && key === "BookReqTime") return 1;
+        if (cheatState.w3.totalflags && key === "TotalFlags") return 10;
+        if (cheatState.w3.buildspd && key === "PlayerBuildSpd") return cheatConfig.w3.buildspd(base);
+        if (cheatState.multiply.printer && key === "ExtraPrinting") {
+            args[0] = "AdditionExtraPrinting";
+            const additionBase = Reflect.apply(WorkbenchStuff, this, args);
+            return additionBase * getMultiplyValue("printer");
         }
-        return Reflect.apply(Workbench, this, argumentsList);
+
+        return base;
     };
-}
 
-/**
- * Setup worship mob death proxy.
- */
-export function setupWorshipMobDeathProxy() {
-    const actorEvents345 = events(345);
+    // Worship mob death
+    const TwoInputs = ActorEvents345._customBlock_2inputs;
+    ActorEvents345._customBlock_2inputs = function (...args) {
+        const base = Reflect.apply(TwoInputs, this, args);
+        if (cheatState.w3.mobdeath) return 0;
+        return base;
+    };
 
-    actorEvents345._customBlock_2inputs = new Proxy(actorEvents345._customBlock_2inputs, {
-        apply: function (originalFn, context, argumentsList) {
-            if (cheatState.w3.mobdeath) return 0;
-            return Reflect.apply(originalFn, context, argumentsList);
-        },
-    });
-}
-
-/**
- * Setup global shrines proxy.
- */
-export function setupShrineInfoProxy() {
+    // Global shrines
+    // TODO: there is alreadya global shrine in the game new since a few release, change the code to just use the ingame one.
+    // find out where and how it works ingame.
     const shrineInfo = bEngine.getGameAttribute("ShrineInfo");
     for (const i in shrineInfo) {
         if (typeof shrineInfo[i] === "object") {
             shrineInfo[i] = new Proxy(shrineInfo[i], {
-                get: function (original, j) {
-                    return cheatState.w3.globalshrines && j === 0
-                        ? bEngine.getGameAttribute("CurrentMap")
-                        : original[j];
+                get(original, j) {
+                    if (cheatState.w3.globalshrines && j === 0) {
+                        return bEngine.getGameAttribute("CurrentMap");
+                    }
+                    return original[j];
                 },
             });
         }
     }
-}
 
-/**
- * Setup tower stats proxy (tower damage).
- */
-export function setupTowerStatsProxy() {
-    const actorEvents345 = events(345);
+    // Tower stats (tower damage)
+    const TowerStats = ActorEvents345._customBlock_TowerStats;
+    ActorEvents345._customBlock_TowerStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(TowerStats, this, args);
+        if (cheatState.w3.towerdamage && key === "damage") {
+            return cheatConfig.w3.towerdamage(base);
+        }
+        return base;
+    };
 
-    actorEvents345._customBlock_TowerStats = new Proxy(actorEvents345._customBlock_TowerStats, {
-        apply: function (originalFn, context, argumentList) {
-            const stat = argumentList[0];
-            const base = Reflect.apply(originalFn, context, argumentList);
-
-            if (cheatState.w3.towerdamage && stat === "damage") {
-                return cheatConfig.w3.towerdamage(base);
+    // Refinery speed
+    if (ActorEvents345._customBlock_Refinery) {
+        const Refinery = ActorEvents345._customBlock_Refinery;
+        ActorEvents345._customBlock_Refinery = function (...args) {
+            const key = args[0];
+            const base = Reflect.apply(Refinery, this, args);
+            if (cheatState.w3.refineryspeed && key === "CycleInitialTime") {
+                return cheatConfig.w3.refineryspeed(base);
             }
             return base;
-        },
-    });
-}
-
-/**
- * Setup refinery proxy (refinery speed).
- */
-export function setupRefineryProxy() {
-    const actorEvents345 = events(345);
-
-    if (actorEvents345._customBlock_Refinery) {
-        const Refinery = actorEvents345._customBlock_Refinery;
-        actorEvents345._customBlock_Refinery = function (...argumentsList) {
-            const key = argumentsList[0];
-
-            if (cheatState.w3.refineryspeed && key === "CycleInitialTime") {
-                const baseTime = Reflect.apply(Refinery, this, argumentsList);
-                return cheatConfig.w3.refineryspeed(baseTime);
-            }
-
-            return Reflect.apply(Refinery, this, argumentsList);
         };
     }
-}
 
-/**
- * Setup breeding proxy (W4 breeding).
- */
-export function setupBreedingProxy() {
-    const actorEvents345 = events(345);
+    // Breeding (W4)
+    const Breeding = ActorEvents345._customBlock_Breeding;
+    ActorEvents345._customBlock_Breeding = function (...args) {
+        const key = args[0];
 
-    actorEvents345._customBlock_Breeding = new Proxy(actorEvents345._customBlock_Breeding, {
-        apply: function (originalFn, context, argumentsList) {
-            const t = argumentsList[0];
-
-            if (cheatState.w4.eggcap && t === "TotalEggCapacity") return 13; // 13 eggs
-            if (cheatState.w4.fenceyard && t === "FenceYardSlots") return 27; // 27 fenceyard slots
-            if (cheatState.w4.battleslots && t === "PetBattleSlots") return 6; // 6 battle slots
-            if (cheatState.w4.petchance && t === "TotalBreedChance")
-                return cheatConfig.w4.petchance(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.genes && t === "GeneticCost") return 0; // 0 gene upgrades
-            if (cheatState.w4.fasteggs && t === "TotalTimeForEgg")
-                return cheatConfig.w4.fasteggs(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.petupgrades && t === "PetUpgCostREAL")
-                return cheatConfig.w4.petupgrades(Reflect.apply(originalFn, context, argumentsList));
-            if (cheatState.w4.petrng && t === "PetQTYonBreed") {
-                cheatState.rng = "low";
-                argumentsList[2] = 8;
-                const power = Reflect.apply(originalFn, context, argumentsList);
-                cheatState.rng = false;
-                return Math.round(power * (1 + Math.random() * 0.2));
-            }
-            return Reflect.apply(originalFn, context, argumentsList);
-        },
-    });
-}
-
-/**
- * Setup lab proxy (lab connections, sigil speed).
- */
-export function setupLabProxy() {
-    const actorEvents345 = events(345);
-
-    const Lab = actorEvents345._customBlock_Labb;
-    actorEvents345._customBlock_Labb = function (...argumentsList) {
-        const t = argumentsList[0];
-        if (cheatState.w4.labpx && (t === "Dist" || t === "BonusLineWidth")) return 1000; // long lab connections
-        if (cheatState.w2.sigilspeed && t === "SigilBonusSpeed")
-            return cheatConfig.w2.alchemy.sigilspeed(Reflect.apply(Lab, this, argumentsList));
-        return Reflect.apply(Lab, this, argumentsList);
-    };
-}
-
-/**
- * Setup pet stuff proxy (foraging, super pets).
- */
-export function setupPetStuffProxy() {
-    const actorEvents345 = events(345);
-
-    const PetStuff = actorEvents345._customBlock_PetStuff;
-    actorEvents345._customBlock_PetStuff = function (...argumentsList) {
-        const originalValue = Reflect.apply(PetStuff, this, argumentsList);
-        if (cheatState.w4.fastforaging && argumentsList[0] === "TotalTrekkingHR")
-            return cheatConfig.w4.fastforaging(originalValue); // fast foraging
-        if (cheatState.w4.superpets && cheatConfig.w4.superpets[argumentsList[0]])
-            return cheatConfig.w4.superpets[argumentsList[0]](originalValue); // powerful pets
-        return originalValue;
-    };
-}
-
-/**
- * Setup cooking proxy (meal speed, recipe speed, lucky chef, kitchens, plates).
- */
-export function setupCookingProxy() {
-    const actorEvents345 = events(345);
-
-    const CookingR = actorEvents345._customBlock_CookingR;
-    actorEvents345._customBlock_CookingR = function (...argumentsList) {
-        const t = argumentsList[0];
-        if (cheatState.w4.mealspeed && t === "CookingReqToCook")
-            return cheatConfig.w4.mealspeed(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.recipespeed && t === "CookingFireREQ")
-            return cheatConfig.w4.recipespeed(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.luckychef && t === "CookingLUCK")
-            return cheatConfig.w4.luckychef(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.kitchensdiscount && (t === "CookingNewKitchenCoinCost" || t === "CookingUpgSpiceCostQty"))
-            return cheatConfig.w4.kitchensdiscount(Reflect.apply(CookingR, this, argumentsList));
-        if (cheatState.w4.platesdiscount && t === "CookingMenuMealCosts")
-            return cheatConfig.w4.platesdiscount(Reflect.apply(CookingR, this, argumentsList));
-        return Reflect.apply(CookingR, this, argumentsList);
-    };
-}
-
-/**
- * Setup mainframe bonus proxy.
- */
-export function setupMainframeBonusProxy() {
-    const actorEvents345 = events(345);
-
-    const MainframeBonus = actorEvents345._customBlock_MainframeBonus;
-    actorEvents345._customBlock_MainframeBonus = function (...argumentsList) {
-        if (cheatState.w4.mainframe && cheatConfig.w4.mainframe.hasOwnProperty(argumentsList[0])) {
-            return cheatConfig.w4.mainframe[argumentsList[0]](Reflect.apply(MainframeBonus, this, argumentsList));
+        // Special case: petrng needs to modify state before calling base
+        if (cheatState.w4.petrng && key === "PetQTYonBreed") {
+            cheatState.rng = "low";
+            args[2] = 8;
+            const base = Reflect.apply(Breeding, this, args);
+            cheatState.rng = false;
+            return Math.round(base * (1 + Math.random() * 0.2));
         }
-        return Reflect.apply(MainframeBonus, this, argumentsList);
+
+        const base = Reflect.apply(Breeding, this, args);
+
+        if (cheatState.w4.eggcap && key === "TotalEggCapacity") return 13;
+        if (cheatState.w4.fenceyard && key === "FenceYardSlots") return 27;
+        if (cheatState.w4.battleslots && key === "PetBattleSlots") return 6;
+        if (cheatState.w4.petchance && key === "TotalBreedChance") return cheatConfig.w4.petchance(base);
+        if (cheatState.w4.genes && key === "GeneticCost") return 0;
+        if (cheatState.w4.fasteggs && key === "TotalTimeForEgg") return cheatConfig.w4.fasteggs(base);
+        if (cheatState.w4.petupgrades && key === "PetUpgCostREAL") return cheatConfig.w4.petupgrades(base);
+
+        return base;
     };
-}
 
-/**
- * Setup dungeon calc proxy (arcade cheats).
- */
-export function setupDungeonCalcProxy() {
-    const actorEvents345 = events(345);
-
-    const DungeonCalc = actorEvents345._customBlock_DungeonCalc;
-    actorEvents345._customBlock_DungeonCalc = function (...argumentList) {
-        return cheatState.wide.arcade && cheatConfig.wide.arcade.hasOwnProperty(argumentList[0])
-            ? cheatConfig.wide.arcade[argumentList[0]](Reflect.apply(DungeonCalc, this, argumentList))
-            : Reflect.apply(DungeonCalc, this, argumentList);
+    // Lab (lab connections, sigil speed)
+    const Labb = ActorEvents345._customBlock_Labb;
+    ActorEvents345._customBlock_Labb = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(Labb, this, args);
+        if (cheatState.w4.labpx && (key === "Dist" || key === "BonusLineWidth")) return 1000;
+        if (cheatState.w2.sigilspeed && key === "SigilBonusSpeed") {
+            return cheatConfig.w2.alchemy.sigilspeed(base);
+        }
+        return base;
     };
-}
 
-/**
- * Setup keychain proxy.
- */
-export function setupKeychainProxy() {
-    const actorEvents345 = events(345);
-
-    const keychain = actorEvents345._customBlock_keychainn;
-    actorEvents345._customBlock_keychainn = function (...argumentList) {
-        return cheatConfig.misc.hasOwnProperty("keychain")
-            ? cheatConfig.misc.keychain(Reflect.apply(keychain, this, argumentList))
-            : Reflect.apply(keychain, this, argumentList);
+    // Pet stuff (foraging, super pets)
+    const PetStuff = ActorEvents345._customBlock_PetStuff;
+    ActorEvents345._customBlock_PetStuff = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(PetStuff, this, args);
+        if (cheatState.w4.fastforaging && key === "TotalTrekkingHR") {
+            return cheatConfig.w4.fastforaging(base);
+        }
+        if (cheatState.w4.superpets && cheatConfig.w4.superpets[key]) {
+            return cheatConfig.w4.superpets[key](base);
+        }
+        return base;
     };
-}
 
-/**
- * Setup all ActorEvents_345 proxies.
- */
-export function setupEvents345Proxies() {
-    setupWorkbenchStuffProxy();
-    setupWorshipMobDeathProxy();
-    setupShrineInfoProxy();
-    setupTowerStatsProxy();
-    setupRefineryProxy();
-    setupBreedingProxy();
-    setupLabProxy();
-    setupPetStuffProxy();
-    setupCookingProxy();
-    setupMainframeBonusProxy();
-    setupDungeonCalcProxy();
-    setupKeychainProxy();
+    // Cooking (meal speed, recipe speed, lucky chef, kitchens, plates)
+    const CookingR = ActorEvents345._customBlock_CookingR;
+    ActorEvents345._customBlock_CookingR = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(CookingR, this, args);
+        if (cheatState.w4.mealspeed && key === "CookingReqToCook") return cheatConfig.w4.mealspeed(base);
+        if (cheatState.w4.recipespeed && key === "CookingFireREQ") return cheatConfig.w4.recipespeed(base);
+        if (cheatState.w4.luckychef && key === "CookingLUCK") return cheatConfig.w4.luckychef(base);
+        if (
+            cheatState.w4.kitchensdiscount &&
+            (key === "CookingNewKitchenCoinCost" || key === "CookingUpgSpiceCostQty")
+        ) {
+            return cheatConfig.w4.kitchensdiscount(base);
+        }
+        if (cheatState.w4.platesdiscount && key === "CookingMenuMealCosts") {
+            return cheatConfig.w4.platesdiscount(base);
+        }
+        return base;
+    };
+
+    // Mainframe bonus
+    const MainframeBonus = ActorEvents345._customBlock_MainframeBonus;
+    ActorEvents345._customBlock_MainframeBonus = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(MainframeBonus, this, args);
+        if (cheatState.w4.mainframe && key in cheatConfig.w4.mainframe) {
+            return cheatConfig.w4.mainframe[key](base);
+        }
+        return base;
+    };
+
+    // Dungeon calc (arcade cheats)
+    const DungeonCalc = ActorEvents345._customBlock_DungeonCalc;
+    ActorEvents345._customBlock_DungeonCalc = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(DungeonCalc, this, args);
+        if (cheatState.wide.arcade && key in cheatConfig.wide.arcade) {
+            return cheatConfig.wide.arcade[key](base);
+        }
+        return base;
+    };
+
+    // Keychain stats
+    // TODO: this cheat has no cheat attached to it. It always runs.
+    const Keychainn = ActorEvents345._customBlock_keychainn;
+    ActorEvents345._customBlock_keychainn = function (...args) {
+        const base = Reflect.apply(Keychainn, this, args);
+        if ("keychain" in cheatConfig.misc) {
+            return cheatConfig.misc.keychain(base);
+        }
+        return base;
+    };
 }
 
 /**

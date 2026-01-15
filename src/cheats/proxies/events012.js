@@ -26,132 +26,116 @@ export function setupEvents012Proxies() {
 
     // 100% crit chance
     const CritChance = ActorEvents12._customBlock_CritChance;
-    ActorEvents12._customBlock_CritChance = function (...argumentsList) {
+    ActorEvents12._customBlock_CritChance = function (...args) {
+        const base = Reflect.apply(CritChance, this, args);
         if (cheatState.godlike.crit) return 100;
-        return Reflect.apply(CritChance, this, argumentsList);
+        return base;
     };
 
     // Extended attack reach
-    const atkReach = ActorEvents12._customBlock_PlayerReach;
-    ActorEvents12._customBlock_PlayerReach = function (...argumentsList) {
+    const PlayerReach = ActorEvents12._customBlock_PlayerReach;
+    ActorEvents12._customBlock_PlayerReach = function (...args) {
+        const base = Reflect.apply(PlayerReach, this, args);
         if (cheatState.godlike.reach) return 666;
-        return Reflect.apply(atkReach, this, argumentsList);
+        return base;
     };
 
     // Forge stat multipliers (speed & capacity)
     const ForgeStats = ActorEvents12._customBlock_ForgeStats;
-    ActorEvents12._customBlock_ForgeStats = function (...argumentsList) {
-        const key = argumentsList[0];
-        const base = Reflect.apply(ForgeStats, this, argumentsList);
-
+    ActorEvents12._customBlock_ForgeStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(ForgeStats, this, args);
         if (cheatState.w1.forge) {
-            // 1 = forge capacity (branch with ForgeCap stamp / furnace levels)
             if (key === 1) return cheatConfig.w1.forge.capacity(base);
-            // 2 = forge speed (used by ForgeSpeeed)
             if (key === 2) return cheatConfig.w1.forge.speed(base);
         }
-
         return base;
     };
 
-    // Damage cap on too-OP broken players with overflowing damage
+    // Damage multiplier
     const DamageDealt = ActorEvents12._customBlock_DamageDealed;
-    ActorEvents12._customBlock_DamageDealed = function (...argumentsList) {
-        return cheatState.multiply.damage && argumentsList[0] === "Max"
-            ? DamageDealt(...argumentsList) * getMultiplyValue("damage")
-            : DamageDealt(...argumentsList);
+    ActorEvents12._customBlock_DamageDealed = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(DamageDealt, this, args);
+        if (cheatState.multiply.damage && key === "Max") {
+            return base * getMultiplyValue("damage");
+        }
+        return base;
     };
 
     // Skill stats (EXP, efficiency, worship speed)
     const SkillStats = ActorEvents12._customBlock_SkillStats;
-    ActorEvents12._customBlock_SkillStats = function (...argumentsList) {
-        const t = argumentsList[0];
-
-        // Global skill EXP multiplier
-        if (cheatState.multiply.skillexp && t === "AllSkillxpMULTI") {
-            return Reflect.apply(SkillStats, this, argumentsList) * getMultiplyValue("skillexp");
+    ActorEvents12._customBlock_SkillStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(SkillStats, this, args);
+        if (cheatState.multiply.skillexp && key === "AllSkillxpMULTI") {
+            return base * getMultiplyValue("skillexp");
         }
-
-        // Worship speed (config-driven)
-        if (cheatState.w3.worshipspeed && cheatConfig.w3.hasOwnProperty(t)) {
-            return cheatConfig.w3[t](Reflect.apply(SkillStats, this, argumentsList));
+        if (cheatState.w3.worshipspeed && key in cheatConfig.w3) {
+            return cheatConfig.w3[key](base);
         }
-
-        // Skill efficiency multiplier
-        if (cheatState.multiply.efficiency && t.includes("Efficiency")) {
-            return Reflect.apply(SkillStats, this, argumentsList) * getMultiplyValue("efficiency");
+        if (cheatState.multiply.efficiency && key.includes("Efficiency")) {
+            return base * getMultiplyValue("efficiency");
         }
-
-        return Reflect.apply(SkillStats, this, argumentsList);
+        return base;
     };
 
     // Arbitrary code (coins, crystals, giant mobs, food, hit chance)
-    const Arbitrary = ActorEvents12._customBlock_ArbitraryCode;
-    ActorEvents12._customBlock_ArbitraryCode = function (...argumentsList) {
-        const t = argumentsList[0];
-
-        // Coin drop multiplier (MonsterCash)
-        if (cheatState.multiply.money && t === "MonsterCash") {
-            return Reflect.apply(Arbitrary, this, argumentsList) * getMultiplyValue("money");
+    const ArbitraryCode = ActorEvents12._customBlock_ArbitraryCode;
+    ActorEvents12._customBlock_ArbitraryCode = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(ArbitraryCode, this, args);
+        if (cheatState.multiply.money && key === "MonsterCash") {
+            return base * getMultiplyValue("money");
         }
-
-        // Crystal spawn multiplier
-        if (t === "CrystalSpawn") {
-            const base = Reflect.apply(Arbitrary, this, argumentsList);
-            if (cheatState.multiply.crystal) return base * getMultiplyValue("crystal");
-            return base;
+        if (cheatState.multiply.crystal && key === "CrystalSpawn") {
+            return base * getMultiplyValue("crystal");
         }
-
-        // Existing cheats
-        if (t === "GiantMob" && cheatState.wide.giant) return 1;
-        if (t === "FoodNOTconsume" && cheatState.godlike.food) return 100;
-        if (t === "HitChancePCT" && cheatState.godlike.hitchance) return 100;
-
-        return Reflect.apply(Arbitrary, this, argumentsList);
+        if (cheatState.wide.giant && key === "GiantMob") return 1;
+        if (cheatState.godlike.food && key === "FoodNOTconsume") return 100;
+        if (cheatState.godlike.hitchance && key === "HitChancePCT") return 100;
+        return base;
     };
 
     // Shop quantity bonus multiplier
     const RunCodeOfTypeXforThingY = ActorEvents12._customBlock_RunCodeOfTypeXforThingY;
-    ActorEvents12._customBlock_RunCodeOfTypeXforThingY = function (...argumentsList) {
-        const codeType = argumentsList[0];
-
-        if (cheatState.multiply.shopstock && codeType === "ShopQtyBonus") {
-            const base = Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
+    ActorEvents12._customBlock_RunCodeOfTypeXforThingY = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(RunCodeOfTypeXforThingY, this, args);
+        if (cheatState.multiply.shopstock && key === "ShopQtyBonus") {
             return base * getMultiplyValue("shopstock");
         }
-
-        return Reflect.apply(RunCodeOfTypeXforThingY, this, argumentsList);
+        return base;
     };
 
     // Total stats (drop rarity multiplier)
     const TotalStats = ActorEvents12._customBlock_TotalStats;
-    ActorEvents12._customBlock_TotalStats = (...argumentsList) => {
-        return (
-            Reflect.apply(TotalStats, this, argumentsList) *
-            (cheatState.multiply.drop && argumentsList[0] === "Drop_Rarity" ? getMultiplyValue("drop") : 1)
-        );
+    ActorEvents12._customBlock_TotalStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(TotalStats, this, args);
+        if (cheatState.multiply.drop && key === "Drop_Rarity") {
+            return base * getMultiplyValue("drop");
+        }
+        return base;
     };
 
     // Generate monster drops (filter unwanted drops)
-    const generateMonsterDrops = ActorEvents12._customBlock_GenerateMonsterDrops;
-    ActorEvents12._customBlock_GenerateMonsterDrops = function (...argumentsList) {
-        let drops = Reflect.apply(generateMonsterDrops, this, argumentsList);
-        // if cheatConfig.nomore not defined, return all drops
+    const GenerateMonsterDrops = ActorEvents12._customBlock_GenerateMonsterDrops;
+    ActorEvents12._customBlock_GenerateMonsterDrops = function (...args) {
+        const drops = Reflect.apply(GenerateMonsterDrops, this, args);
         if (!cheatConfig.nomore) return drops;
-        // filter out drops where drop[0] matches any regex in itemsNotToDrop
-        drops = drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
-
-        return drops;
+        return drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
     };
 
     // Class EXP multiplier
     const ExpMulti = ActorEvents12._customBlock_ExpMulti;
-    ActorEvents12._customBlock_ExpMulti = function (...argumentsList) {
-        const mode = argumentsList[0];
-        const base = Reflect.apply(ExpMulti, this, argumentsList);
-
-        // e == 0 is the main class EXP path
-        return cheatState.multiply.classexp && mode === 0 ? base * getMultiplyValue("classexp") : base;
+    ActorEvents12._customBlock_ExpMulti = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(ExpMulti, this, args);
+        if (cheatState.multiply.classexp && key === 0) {
+            return base * getMultiplyValue("classexp");
+        }
+        return base;
     };
 }
 

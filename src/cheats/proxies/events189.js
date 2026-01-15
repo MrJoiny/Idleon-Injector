@@ -12,68 +12,55 @@ import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 
 /**
- * Setup anvil production stats proxy.
- */
-export function setupAnvilProduceStatsProxy() {
-    const anvilProduceStats = events(189)._customBlock_AnvilProduceStats;
-    events(189)._customBlock_AnvilProduceStats = function (...argumentsList) {
-        if (cheatState.w1.anvil) {
-            const t = argumentsList[0];
-            if (t === "Costs1") return 0;
-            if (t === "Costs2") return 0;
-            if (t === "ProductionSpeed")
-                return cheatConfig.w1.anvil.productionspeed(Reflect.apply(anvilProduceStats, this, argumentsList));
-        }
-        return Reflect.apply(anvilProduceStats, this, argumentsList);
-    };
-}
-
-/**
- * Setup cauldron stats proxy for alchemy cheats.
- */
-export function setupCauldronStatsProxy() {
-    const Alchemy = events(189)._customBlock_CauldronStats;
-    events(189)._customBlock_CauldronStats = function (...argumentList) {
-        return cheatState.w2.alchemy && cheatConfig.w2.alchemy.hasOwnProperty(argumentList[0])
-            ? cheatConfig.w2.alchemy[argumentList[0]](Reflect.apply(Alchemy, this, argumentList))
-            : Reflect.apply(Alchemy, this, argumentList);
-    };
-}
-
-/**
- * Setup chip bonuses proxy.
- */
-export function setupChipBonusesProxy() {
-    const chipBonuses = events(189)._customBlock_chipBonuses;
-    events(189)._customBlock_chipBonuses = function (...argumentsList) {
-        if (cheatState.w4.chipbonuses && cheatConfig.w4.chipbonuses[argumentsList[0]]) {
-            return cheatConfig.w4.chipbonuses[argumentsList[0]](Reflect.apply(chipBonuses, this, argumentsList));
-        }
-        return Reflect.apply(chipBonuses, this, argumentsList);
-    };
-}
-
-/**
- * Setup meal bonus proxy.
- */
-export function setupMealBonusProxy() {
-    const MealBonus = events(189)._customBlock_MealBonus;
-    events(189)._customBlock_MealBonus = function (...argumentsList) {
-        if (cheatState.w4.meals && cheatConfig.w4.meals[argumentsList[0]]) {
-            return cheatConfig.w4.meals[argumentsList[0]](Reflect.apply(MealBonus, this, argumentsList));
-        }
-        return Reflect.apply(MealBonus, this, argumentsList);
-    };
-}
-
-/**
  * Setup all ActorEvents_189 proxies.
  */
 export function setupEvents189Proxies() {
-    setupAnvilProduceStatsProxy();
-    setupCauldronStatsProxy();
-    setupChipBonusesProxy();
-    setupMealBonusProxy();
+    const ActorEvents189 = events(189);
+
+    // Anvil production stats (cost nullification, production speed)
+    const AnvilProduceStats = ActorEvents189._customBlock_AnvilProduceStats;
+    ActorEvents189._customBlock_AnvilProduceStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(AnvilProduceStats, this, args);
+        if (cheatState.w1.anvil) {
+            if (key === "Costs1" || key === "Costs2") return 0;
+            if (key === "ProductionSpeed") return cheatConfig.w1.anvil.productionspeed(base);
+        }
+        return base;
+    };
+
+    // Cauldron stats (alchemy cheats)
+    const CauldronStats = ActorEvents189._customBlock_CauldronStats;
+    ActorEvents189._customBlock_CauldronStats = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(CauldronStats, this, args);
+        if (cheatState.w2.alchemy && key in cheatConfig.w2.alchemy) {
+            return cheatConfig.w2.alchemy[key](base);
+        }
+        return base;
+    };
+
+    // Chip bonuses
+    const ChipBonuses = ActorEvents189._customBlock_chipBonuses;
+    ActorEvents189._customBlock_chipBonuses = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(ChipBonuses, this, args);
+        if (cheatState.w4.chipbonuses && cheatConfig.w4.chipbonuses[key]) {
+            return cheatConfig.w4.chipbonuses[key](base);
+        }
+        return base;
+    };
+
+    // Meal bonuses
+    const MealBonus = ActorEvents189._customBlock_MealBonus;
+    ActorEvents189._customBlock_MealBonus = function (...args) {
+        const key = args[0];
+        const base = Reflect.apply(MealBonus, this, args);
+        if (cheatState.w4.meals && cheatConfig.w4.meals[key]) {
+            return cheatConfig.w4.meals[key](base);
+        }
+        return base;
+    };
 }
 
 /**
