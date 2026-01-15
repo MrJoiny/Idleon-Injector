@@ -166,7 +166,7 @@ registerCheat({
     name: "fix_save",
     message: "Save a game attribute to memory. Use fix_write to write it back to the game.",
     fn: (params) => {
-        cheatConfig.fixobj = bEngine.getGameAttribute(params[0]);
+        cheatConfig.fixobj = deepCopy(bEngine.getGameAttribute(params[0]));
         return "Saved";
     },
 });
@@ -176,7 +176,9 @@ registerCheat({
     name: "fix_write",
     message: "Write a game attribute from memory to the game. Use fix_save to save it to memory.",
     fn: (params) => {
-        bEngine.setGameAttribute(params[0], cheatConfig.fixobj);
+        if (!params[0]) return "No attribute specified";
+        if (!cheatConfig.fixobj) return "No attribute saved";
+        bEngine.setGameAttribute(params[0], deepCopy(cheatConfig.fixobj));
         return "Writen";
     },
 });
