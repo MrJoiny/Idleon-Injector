@@ -38,7 +38,6 @@ export function cheat(action, context) {
         const params = [];
         let foundCheat = cheats[command.join(" ")];
 
-        // TODO: check if that is the real deal! Looks weird to me.
         // Progressively pop words from command to params until we find a match
         while (!foundCheat && command.length > 0) {
             params.unshift(command.pop());
@@ -92,22 +91,16 @@ export function registerCheat({ name, fn, message, category = "general" }) {
 export function registerCheats(cheatMap, higherKeys = [], parentCategory = null) {
     const cmd = higherKeys.concat(cheatMap.name).join(" ");
 
-    // Determine category: explicit > inherited > derive from top-level name > "general"
-    let category;
-    if (cheatMap.category) {
-        category = cheatMap.category;
-    } else if (parentCategory) {
-        category = parentCategory;
-    } else if (higherKeys.length === 0 && cheatMap.subcheats) {
-        // Top-level group with subcheats: use name as category (e.g., "w1")
-        category = cheatMap.name;
-    } else {
-        category = "general";
-    }
+    // Category priority: explicit > inherited > top-level name (if has subcheats) > "general"
+    const category =
+        cheatMap.category ||
+        parentCategory ||
+        (higherKeys.length === 0 && cheatMap.subcheats ? cheatMap.name : null) ||
+        "general";
 
     // Navigate to the correct state object level
     const stateObject = higherKeys.reduce((obj, key) => obj[key], cheatState);
-    stateObject[cheatMap.name] = cheatMap.hasOwnProperty("subcheats") ? {} : false;
+    stateObject[cheatMap.name] = "subcheats" in cheatMap ? {} : false;
 
     // Add toggle-all state if subcheats can be mass-toggled
     if (cheatMap.canToggleSubcheats) {
@@ -116,14 +109,13 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
     // Create the cheat handler function
     const fn = function (params) {
-        // Cheat uses a custom function
-        if (cheatMap.hasOwnProperty("fn")) {
+        if ("fn" in cheatMap) {
             return cheatMap.fn.call(this, higherKeys.concat(cheatMap.name).concat(params).splice(1));
         }
 
         // Handle configurable cheats with value input
         if (params.length > 0) {
-            if (!cheatMap.hasOwnProperty("configurable")) {
+            if (!("configurable" in cheatMap)) {
                 if (cheatMap.subcheats && cheatMap.subcheats.length > 0) {
                     return (
                         `Wrong subcommand, use one of these:\n` +
@@ -133,12 +125,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
                 return "This cheat doesn't accept values.";
             }
 
-            const config = higherKeys.reduce((obj, key) => {
-                if (!obj[key] || typeof obj[key] !== "object") {
-                    obj[key] = {};
-                }
-                return obj[key];
-            }, cheatConfig);
+            const config = higherKeys.reduce((obj, key) => (obj[key] ??= {}), cheatConfig);
             let val = params.join(" ");
 
             if (val === "") {
@@ -176,7 +163,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
     registerCheat({ name: cmd, fn, message: cheatMap.message, category });
 
     // Recursively register subcheats, passing category
-    if (cheatMap.hasOwnProperty("subcheats")) {
+    if ("subcheats" in cheatMap) {
         cheatMap.subcheats.forEach((map) => registerCheats(map, higherKeys.concat(cheatMap.name), category));
     }
 }
