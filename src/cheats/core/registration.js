@@ -20,7 +20,7 @@ export const cheats = {};
  * Parses the action string to find matching cheat commands,
  * passing remaining parts as parameters.
  *
- * @param {string} action - The cheat command to execute (e.g., "godlike crit" or "drop Copper 100")
+ * @param {string} action - The cheat command to execute
  * @param {object} context - The game context (this)
  * @returns {string} Result message
  */
@@ -38,6 +38,7 @@ export function cheat(action, context) {
         const params = [];
         let foundCheat = cheats[command.join(" ")];
 
+        // TODO: check if that is the real deal! Looks weird to me.
         // Progressively pop words from command to params until we find a match
         while (!foundCheat && command.length > 0) {
             params.unshift(command.pop());
@@ -185,6 +186,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
  *
  * @param {object} newConfig - New configuration to merge
  */
+// TODO: Check if needed.
 export function updateCheatConfig(newConfig) {
     if (cheatConfig) {
         for (const key in newConfig) {
@@ -199,6 +201,7 @@ export function updateCheatConfig(newConfig) {
  * Get all registered cheats.
  * @returns {Object<string, {fn: Function, message: string, category: string}>}
  */
+// TODO: CHeck if needed.
 export function getCheats() {
     return cheats;
 }

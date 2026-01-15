@@ -87,11 +87,9 @@ export function registerCommonVariables(context) {
     bEngine = context["com.stencyl.Engine"].engine;
     itemDefs = bEngine.getGameAttribute("ItemDefinitionsGET").h;
     monsterDefs = bEngine.getGameAttribute("MonsterDefinitionsGET").h;
-    CList = bEngine.gameAttributes.h.CustomLists.h;
+    CList = bEngine.getGameAttribute("CustomLists").h;
     behavior = context["com.stencyl.behavior.Script"];
-    events = function (num) {
-        return context["scripts.ActorEvents_" + num];
-    };
+    events = (num) => context[`scripts.ActorEvents_${num}`];
 
     // Populate itemTypes set
     itemTypes.clear();
@@ -115,40 +113,6 @@ export function getGameContext() {
  */
 export function isGameReady() {
     return bEngine !== null && itemDefs !== null;
-}
-
-/**
- * Internal globals registry for accessor functions.
- * @private
- */
-const _globals = {
-    get bEngine() {
-        return bEngine;
-    },
-    get itemDefs() {
-        return itemDefs;
-    },
-    get monsterDefs() {
-        return monsterDefs;
-    },
-    get CList() {
-        return CList;
-    },
-    get behavior() {
-        return behavior;
-    },
-    get events() {
-        return events;
-    },
-};
-
-/**
- * Get a global reference by name.
- * @param {string} name - One of: bEngine, itemDefs, monsterDefs, CList, behavior, events
- * @returns {any|null}
- */
-export function getGlobal(name) {
-    return _globals[name] ?? null;
 }
 
 // Individual accessor functions for backwards compatibility
