@@ -143,6 +143,7 @@ function createListFunction(params) {
             }
         },
 
+        // TODO: show the itemid CardsXXX
         card: () => {
             results.push("Id, Entity, Value, Effect");
             const cardData = cList.CardStuff;
