@@ -5,12 +5,12 @@
  * - injectWebUI - In-game overlay injection
  */
 
+import { webPort } from "../core/state.js";
+
 // UI state
 let uiContainer = null;
 let uiIframe = null;
 let isUiExpanded = false;
-
-import { webPort } from "../core/state.js";
 
 /**
  * Inject the web UI overlay into the game.
@@ -118,7 +118,6 @@ export function injectWebUI() {
     uiIframe.src = `http://localhost:${webPort}`;
     uiIframe.style.cssText = `
         position: absolute;
-
         inset: 0;
         width: 100vw;
         height: 100vh;
