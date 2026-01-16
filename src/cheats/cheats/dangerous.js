@@ -26,9 +26,10 @@ const wipeHandlers = {
     },
     invslot(params) {
         const wipedef = bEngine.getGameAttribute("InventoryOrder");
-        if (!params[1]) return "Specify a slot number.";
-        if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
-        wipedef[params[1]] = "Blank";
+        const slot = parseInt(params[1]);
+        if (isNaN(slot)) return "Specify a valid slot number.";
+        if (slot < 0 || slot > wipedef.length) return "Invalid slot.";
+        wipedef[slot] = "Blank";
         return "Wipe inventory slot could result in a crash: Should be fine after restart.";
     },
     chest() {
@@ -38,9 +39,10 @@ const wipeHandlers = {
     },
     chestslot(params) {
         const wipedef = bEngine.getGameAttribute("ChestOrder");
-        if (!params[1]) return "Specify a slot number.";
-        if (params[1] < 0 || params[1] > wipedef.length) return "Invalid slot.";
-        wipedef[params[1]] = "Blank";
+        const slot = parseInt(params[1]);
+        if (isNaN(slot)) return "Specify a valid slot number.";
+        if (slot < 0 || slot > wipedef.length) return "Invalid slot.";
+        wipedef[slot] = "Blank";
         return "Wipe chest slot could result in a crash: Should be fine after restart.";
     },
     forge() {
@@ -76,16 +78,17 @@ const wipeHandlers = {
         if (parseInt(params[1])) {
             cheatConfig.wipe.cogs = parseInt(params[1]);
         } else {
-            bEngine.gameAttributes.h.CogOrder.forEach((v, k) => {
-                const playerCount = bEngine.gameAttributes.h.CogOrder.slice(100)
+            const cogOrder = bEngine.getGameAttribute("CogOrder");
+            const cogMap = bEngine.getGameAttribute("CogMap");
+            cogOrder.forEach((v, k) => {
+                const playerCount = cogOrder
+                    .slice(100)
                     .toString()
                     .match(/Player/g).length;
                 const threshold = 100 + playerCount - 1 + parseInt(cheatConfig.wipe.cogs);
                 if (typeof v === "string" && k > threshold && !v.includes("Player")) {
-                    bEngine.gameAttributes.h.CogOrder[k] = "Blank";
-                    bEngine.gameAttributes.h.CogMap[k]
-                        .keys()
-                        .keys.forEach((a) => delete bEngine.gameAttributes.h.CogMap[k].h[a]);
+                    cogOrder[k] = "Blank";
+                    cogMap[k].keys().keys.forEach((a) => delete cogMap[k].h[a]);
                 }
             });
         }

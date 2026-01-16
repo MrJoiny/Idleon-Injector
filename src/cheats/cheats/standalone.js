@@ -179,7 +179,7 @@ registerCheat({
         if (!params[0]) return "No attribute specified";
         if (!cheatConfig.fixobj) return "No attribute saved";
         bEngine.setGameAttribute(params[0], deepCopy(cheatConfig.fixobj));
-        return "Writen";
+        return "Written";
     },
 });
 

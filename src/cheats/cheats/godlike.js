@@ -8,8 +8,7 @@
 
 import { registerCheats } from "../core/registration.js";
 import { itemDefs, cList } from "../core/globals.js";
-
-const TARGET_CARDS = ["Boss2A", "Boss2B", "poopBig", "OakTree", "Copper"];
+import { TARGET_CARDS } from "../constants.js";
 
 function setWeaponSpeed(params) {
     const speed = params[1] || 9;
