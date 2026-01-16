@@ -16,58 +16,44 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
+import { createMethodProxy } from "../utils/methodProxy.js";
+import { getMultiplyValue } from "../helpers/values.js";
 
 /**
  * Setup all ActorEvents_12 proxies (combat stats, damage, multipliers).
  */
 export function setupEvents012Proxies() {
     const ActorEvents12 = events(12);
-    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
 
     // 100% crit chance
-    const CritChance = ActorEvents12._customBlock_CritChance;
-    ActorEvents12._customBlock_CritChance = function (...args) {
-        const base = Reflect.apply(CritChance, this, args);
-        if (cheatState.godlike.crit) return 100;
-        return base;
-    };
+    createMethodProxy(ActorEvents12, "_customBlock_CritChance", (base) => {
+        return cheatState.godlike.crit ? 100 : base;
+    });
 
     // Extended attack reach
-    const PlayerReach = ActorEvents12._customBlock_PlayerReach;
-    ActorEvents12._customBlock_PlayerReach = function (...args) {
-        const base = Reflect.apply(PlayerReach, this, args);
-        if (cheatState.godlike.reach) return 666;
-        return base;
-    };
+    createMethodProxy(ActorEvents12, "_customBlock_PlayerReach", (base) => {
+        return cheatState.godlike.reach ? 666 : base;
+    });
 
     // Forge stat multipliers (speed & capacity)
-    const ForgeStats = ActorEvents12._customBlock_ForgeStats;
-    ActorEvents12._customBlock_ForgeStats = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(ForgeStats, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_ForgeStats", (base, key) => {
         if (cheatState.w1.forge) {
             if (key === 1) return cheatConfig.w1.forge.capacity(base);
             if (key === 2) return cheatConfig.w1.forge.speed(base);
         }
         return base;
-    };
+    });
 
     // Damage multiplier
-    const DamageDealt = ActorEvents12._customBlock_DamageDealed;
-    ActorEvents12._customBlock_DamageDealed = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(DamageDealt, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_DamageDealed", (base, key) => {
         if (cheatState.multiply.damage && key === "Max") {
             return base * getMultiplyValue("damage");
         }
         return base;
-    };
+    });
 
     // Skill stats (EXP, efficiency, worship speed)
-    const SkillStats = ActorEvents12._customBlock_SkillStats;
-    ActorEvents12._customBlock_SkillStats = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(SkillStats, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_SkillStats", (base, key) => {
         if (cheatState.multiply.skillexp && key === "AllSkillxpMULTI") {
             return base * getMultiplyValue("skillexp");
         }
@@ -78,13 +64,10 @@ export function setupEvents012Proxies() {
             return base * getMultiplyValue("efficiency");
         }
         return base;
-    };
+    });
 
     // Arbitrary code (coins, crystals, giant mobs, food, hit chance)
-    const ArbitraryCode = ActorEvents12._customBlock_ArbitraryCode;
-    ActorEvents12._customBlock_ArbitraryCode = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(ArbitraryCode, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_ArbitraryCode", (base, key) => {
         if (cheatState.multiply.money && key === "MonsterCash") {
             return base * getMultiplyValue("money");
         }
@@ -95,46 +78,35 @@ export function setupEvents012Proxies() {
         if (cheatState.godlike.food && key === "FoodNOTconsume") return 100;
         if (cheatState.godlike.hitchance && key === "HitChancePCT") return 100;
         return base;
-    };
+    });
 
     // Shop quantity bonus multiplier
-    const RunCodeOfTypeXforThingY = ActorEvents12._customBlock_RunCodeOfTypeXforThingY;
-    ActorEvents12._customBlock_RunCodeOfTypeXforThingY = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(RunCodeOfTypeXforThingY, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_RunCodeOfTypeXforThingY", (base, key) => {
         if (cheatState.multiply.shopstock && key === "ShopQtyBonus") {
             return base * getMultiplyValue("shopstock");
         }
         return base;
-    };
+    });
 
     // Total stats (drop rarity multiplier)
-    const TotalStats = ActorEvents12._customBlock_TotalStats;
-    ActorEvents12._customBlock_TotalStats = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(TotalStats, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_TotalStats", (base, key) => {
         if (cheatState.multiply.drop && key === "Drop_Rarity") {
             return base * getMultiplyValue("drop");
         }
         return base;
-    };
+    });
 
     // Generate monster drops (filter unwanted drops)
-    const GenerateMonsterDrops = ActorEvents12._customBlock_GenerateMonsterDrops;
-    ActorEvents12._customBlock_GenerateMonsterDrops = function (...args) {
-        const drops = Reflect.apply(GenerateMonsterDrops, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_GenerateMonsterDrops", (drops) => {
         if (!cheatConfig.nomore) return drops;
         return drops.filter((drop) => !cheatConfig.nomore.items.some((regex) => regex.test(drop[0])));
-    };
+    });
 
     // Class EXP multiplier
-    const ExpMulti = ActorEvents12._customBlock_ExpMulti;
-    ActorEvents12._customBlock_ExpMulti = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(ExpMulti, this, args);
+    createMethodProxy(ActorEvents12, "_customBlock_ExpMulti", (base, key) => {
         if (cheatState.multiply.classexp && key === 0) {
             return base * getMultiplyValue("classexp");
         }
         return base;
-    };
+    });
 }

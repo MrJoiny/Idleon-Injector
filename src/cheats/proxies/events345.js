@@ -18,6 +18,8 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events } from "../core/globals.js";
+import { createMethodProxy } from "../utils/methodProxy.js";
+import { getMultiplyValue } from "../helpers/values.js";
 
 /**
  * Setup all ActorEvents_345 proxies.
@@ -28,7 +30,6 @@ import { bEngine, events } from "../core/globals.js";
  */
 export function setupEvents345Proxies() {
     const ActorEvents345 = events(345);
-    const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
 
     // Workbench stuff (W3 construction)
     const WorkbenchStuff = ActorEvents345._customBlock_WorkbenchStuff;
@@ -58,12 +59,10 @@ export function setupEvents345Proxies() {
     };
 
     // Worship mob death
-    const TwoInputs = ActorEvents345._customBlock_2inputs;
-    ActorEvents345._customBlock_2inputs = function (...args) {
-        const base = Reflect.apply(TwoInputs, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_2inputs", (base) => {
         if (cheatState.w3.mobdeath) return 0;
         return base;
-    };
+    });
 
     // Global shrines
     // TODO: there is alreadya global shrine in the game new since a few release, change the code to just use the ingame one.
@@ -83,27 +82,21 @@ export function setupEvents345Proxies() {
     }
 
     // Tower stats (tower damage)
-    const TowerStats = ActorEvents345._customBlock_TowerStats;
-    ActorEvents345._customBlock_TowerStats = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(TowerStats, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_TowerStats", (base, key) => {
         if (cheatState.w3.towerdamage && key === "damage") {
             return cheatConfig.w3.towerdamage(base);
         }
         return base;
-    };
+    });
 
     // Refinery speed
     if (ActorEvents345._customBlock_Refinery) {
-        const Refinery = ActorEvents345._customBlock_Refinery;
-        ActorEvents345._customBlock_Refinery = function (...args) {
-            const key = args[0];
-            const base = Reflect.apply(Refinery, this, args);
+        createMethodProxy(ActorEvents345, "_customBlock_Refinery", (base, key) => {
             if (cheatState.w3.refineryspeed && key === "CycleInitialTime") {
                 return cheatConfig.w3.refineryspeed(base);
             }
             return base;
-        };
+        });
     }
 
     // Breeding (W4)
@@ -134,22 +127,16 @@ export function setupEvents345Proxies() {
     };
 
     // Lab (lab connections, sigil speed)
-    const Labb = ActorEvents345._customBlock_Labb;
-    ActorEvents345._customBlock_Labb = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(Labb, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_Labb", (base, key) => {
         if (cheatState.w4.labpx && (key === "Dist" || key === "BonusLineWidth")) return 1000;
         if (cheatState.w2.sigilspeed && key === "SigilBonusSpeed") {
             return cheatConfig.w2.alchemy.sigilspeed(base);
         }
         return base;
-    };
+    });
 
     // Pet stuff (foraging, super pets)
-    const PetStuff = ActorEvents345._customBlock_PetStuff;
-    ActorEvents345._customBlock_PetStuff = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(PetStuff, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_PetStuff", (base, key) => {
         if (cheatState.w4.fastforaging && key === "TotalTrekkingHR") {
             return cheatConfig.w4.fastforaging(base);
         }
@@ -157,13 +144,10 @@ export function setupEvents345Proxies() {
             return cheatConfig.w4.superpets[key](base);
         }
         return base;
-    };
+    });
 
     // Cooking (meal speed, recipe speed, lucky chef, kitchens, plates)
-    const CookingR = ActorEvents345._customBlock_CookingR;
-    ActorEvents345._customBlock_CookingR = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(CookingR, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_CookingR", (base, key) => {
         if (cheatState.w4.mealspeed && key === "CookingReqToCook") return cheatConfig.w4.mealspeed(base);
         if (cheatState.w4.recipespeed && key === "CookingFireREQ") return cheatConfig.w4.recipespeed(base);
         if (cheatState.w4.luckychef && key === "CookingLUCK") return cheatConfig.w4.luckychef(base);
@@ -177,38 +161,30 @@ export function setupEvents345Proxies() {
             return cheatConfig.w4.platesdiscount(base);
         }
         return base;
-    };
+    });
 
     // Mainframe bonus
-    const MainframeBonus = ActorEvents345._customBlock_MainframeBonus;
-    ActorEvents345._customBlock_MainframeBonus = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(MainframeBonus, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_MainframeBonus", (base, key) => {
         if (cheatState.w4.mainframe && key in cheatConfig.w4.mainframe) {
             return cheatConfig.w4.mainframe[key](base);
         }
         return base;
-    };
+    });
 
     // Dungeon calc (arcade cheats)
-    const DungeonCalc = ActorEvents345._customBlock_DungeonCalc;
-    ActorEvents345._customBlock_DungeonCalc = function (...args) {
-        const key = args[0];
-        const base = Reflect.apply(DungeonCalc, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_DungeonCalc", (base, key) => {
         if (cheatState.wide.arcade && key in cheatConfig.wide.arcade) {
             return cheatConfig.wide.arcade[key](base);
         }
         return base;
-    };
+    });
 
     // Keychain stats
     // TODO: this cheat has no cheat attached to it. It always runs.
-    const Keychainn = ActorEvents345._customBlock_keychainn;
-    ActorEvents345._customBlock_keychainn = function (...args) {
-        const base = Reflect.apply(Keychainn, this, args);
+    createMethodProxy(ActorEvents345, "_customBlock_keychainn", (base) => {
         if ("keychain" in cheatConfig.misc) {
             return cheatConfig.misc.keychain(base);
         }
         return base;
-    };
+    });
 }
