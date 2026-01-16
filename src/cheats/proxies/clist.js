@@ -16,8 +16,8 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { cList } from "../core/globals.js";
-import { createProxy } from "../utils/createProxy.js";
 import { traverse } from "../utils/traverse.js";
+import { createProxy, nullifyListCost } from "../utils/proxy.js";
 
 /**
  * Setup all cList proxies.
@@ -28,35 +28,41 @@ export function setupCListProxy() {
     if (cList._isPatched) return;
     Object.defineProperty(cList, "_isPatched", { value: true, enumerable: false });
 
-    // Nullify MTX cost / Set gem buy limit
-    const mtxIndex = [3, 7];
-    const gembuylimitIndex = 5;
-
-    traverse(cList.MTXinfo, 3, (data) => {
-        // free mtx
-        mtxIndex.forEach((index) => {
-            createProxy(data, index, (original) => {
-                if (cheatState.wide.mtx) return 0;
-                return original;
-            });
-        });
-
-        // gem buy limit
-        createProxy(data, gembuylimitIndex, (original) => {
-            if (cheatState.wide.gembuylimit) return Math.max(original, cheatConfig?.wide?.gembuylimit ?? original);
-            return original;
-        });
-    });
+    // Nullify MTX cost
+    nullifyListCost(cList.MTXinfo, 3, [3, 7], "wide.mtx", 0);
 
     // Nullify refinery cost
-    const refineryIndex = [6, 7, 8, 9, 10, 11];
+    nullifyListCost(cList.RefineryInfo, 1, [6, 7, 8, 9, 10, 11], "w3.refinery", "0");
 
-    traverse(cList.RefineryInfo, 1, (data) => {
-        refineryIndex.forEach((index) => {
-            createProxy(data, index, (original) => {
-                if (cheatState.w3.refinery) return "0";
-                return original;
-            });
+    // Nullify Salt Lick upgrade cost
+    nullifyListCost(cList.SaltLicks, 1, 2, "w3.saltlick", "0");
+
+    // Nullify prayer requirements (indexes 4 and 6)
+    nullifyListCost(cList.PrayerInfo, 1, [4, 6], "w3.prayer", "0");
+
+    // Nullify post office order cost
+    nullifyListCost(cList.PostOfficePossibleOrders, 3, 1, "wide.post", "0");
+
+    // Nullify guild task requirements
+    nullifyListCost(cList.GuildGPtasks, 1, 1, "wide.guild", "0");
+
+    // Nullify task requirements (indexes 5-14)
+    nullifyListCost(cList.TaskDescriptions, 2, [5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "wide.task", "0");
+
+    // Nullify star sign unlock requirement
+    nullifyListCost(cList.SSignInfoUI, 1, 4, "wide.star", "0");
+
+    // Nullify worship cost
+    nullifyListCost(cList.WorshipBASEinfos, 1, 6, "w3.freeworship", "0");
+
+    // Gem buy limit (not a simple nullify operation)
+    const gembuylimitIndex = 5;
+    traverse(cList.MTXinfo, 3, (data) => {
+        createProxy(data, gembuylimitIndex, (original) => {
+            if (cheatState.wide.gembuylimit) {
+                return Math.max(original, cheatConfig?.wide?.gembuylimit ?? original);
+            }
+            return original;
         });
     });
 
@@ -67,71 +73,10 @@ export function setupCListProxy() {
         return original;
     });
 
-    // Nullify Salt Lick upgrade cost
-    traverse(cList.SaltLicks, 1, (data) => {
-        createProxy(data, 2, (original) => {
-            if (cheatState.w3.saltlick) return "0";
-            return original;
-        });
-    });
-
-    // Nullify prayer requirements
-    const prayerIndex = [4, 6];
-
+    // Prayer description override (part of prayer cheat)
     traverse(cList.PrayerInfo, 1, (data) => {
-        prayerIndex.forEach((index) => {
-            createProxy(data, index, (original) => {
-                if (cheatState.w3.prayer) return "0";
-                return original;
-            });
-        });
-
         createProxy(data, 2, (original) => {
             if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then.";
-            return original;
-        });
-    });
-
-    // Nullify post office order cost
-    traverse(cList.PostOfficePossibleOrders, 3, (data) => {
-        createProxy(data, 1, (original) => {
-            if (cheatState.wide.post) return "0";
-            return original;
-        });
-    });
-
-    // Nullify guild task requirements
-    traverse(cList.GuildGPtasks, 1, (data) => {
-        createProxy(data, 1, (original) => {
-            if (cheatState.wide.guild) return "0";
-            return original;
-        });
-    });
-
-    // Nullify task requirements
-    const taskIndex = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
-
-    traverse(cList.TaskDescriptions, 2, (data) => {
-        taskIndex.forEach((index) => {
-            createProxy(data, index, (original) => {
-                if (cheatState.wide.task) return "0";
-                return original;
-            });
-        });
-    });
-
-    // Nullify star sign unlock requirement
-    traverse(cList.SSignInfoUI, 1, (data) => {
-        createProxy(data, 4, (original) => {
-            if (cheatState.wide.star) return "0";
-            return original;
-        });
-    });
-
-    // Nullify worship cost
-    traverse(cList.WorshipBASEinfos, 1, (data) => {
-        createProxy(data, 6, (original) => {
-            if (cheatState.w3.freeworship) return "0";
             return original;
         });
     });

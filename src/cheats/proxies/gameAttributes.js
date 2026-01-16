@@ -16,7 +16,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, cList, events } from "../core/globals.js";
-import { createProxy } from "../utils/createProxy.js";
+import { createProxy } from "../utils/proxy.js";
 
 /**
  * Apply max cap to a value, with optional NaN handling.

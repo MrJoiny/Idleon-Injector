@@ -10,7 +10,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
-import { createMethodProxy } from "../utils/methodProxy.js";
+import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
 /**
  * Setup all ActorEvents_189 proxies.
@@ -28,26 +28,11 @@ export function setupEvents189Proxies() {
     });
 
     // Cauldron stats (alchemy cheats)
-    createMethodProxy(ActorEvents189, "_customBlock_CauldronStats", (base, key) => {
-        if (cheatState.w2.alchemy && key in cheatConfig.w2.alchemy) {
-            return cheatConfig.w2.alchemy[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents189, "_customBlock_CauldronStats", [{ state: "w2.alchemy" }]);
 
     // Chip bonuses
-    createMethodProxy(ActorEvents189, "_customBlock_chipBonuses", (base, key) => {
-        if (cheatState.w4.chipbonuses && cheatConfig.w4.chipbonuses[key]) {
-            return cheatConfig.w4.chipbonuses[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents189, "_customBlock_chipBonuses", [{ state: "w4.chipbonuses" }]);
 
     // Meal bonuses
-    createMethodProxy(ActorEvents189, "_customBlock_MealBonus", (base, key) => {
-        if (cheatState.w4.meals && cheatConfig.w4.meals[key]) {
-            return cheatConfig.w4.meals[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents189, "_customBlock_MealBonus", [{ state: "w4.meals" }]);
 }

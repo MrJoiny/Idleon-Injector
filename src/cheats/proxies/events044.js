@@ -5,8 +5,8 @@
  * - Auto loot (instant item pickup and chest management)
  */
 
-import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, itemDefs, events, behavior } from "../core/globals.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 import { lootableItemTypes } from "../constants.js";
 
 /**
@@ -14,116 +14,180 @@ import { lootableItemTypes } from "../constants.js";
  */
 export function setupAutoLootProxy() {
     const actorEvents44 = events(44);
-    const actorEvents345 = events(345);
     const init = actorEvents44.prototype.init;
+
     actorEvents44.prototype.init = function (...args) {
         const base = Reflect.apply(init, this, args);
 
-        // Easy to read boolean checks
-        const dropType = this._DropType;
-        const itemType = itemDefs[dropType].h.Type;
-        const toChest = cheatConfig.wide.autoloot.itemstochest;
-        const playerDropped = this._PlayerDroppedItem !== 0;
-        const blockAutoLoot = this._BlockAutoLoot !== 0;
-        const safeToLootItem = lootableItemTypes.includes(itemType) || dropType === "Quest110"; // Zenith Clusters
-        const inDungeon = this._DungItemStatus !== 0 || actorEvents345._customBlock_Dungon() !== -1;
-        const notAnItem = bEngine.getGameAttribute("OptionsListAccount")[83] !== 0 || !itemDefs[dropType];
+        const handled = processAutoLoot(this);
 
-        // Early Pre-check logic
-        if (
-            !cheatState.wide.autoloot ||
-            inDungeon ||
-            notAnItem ||
-            playerDropped ||
-            blockAutoLoot ||
-            !safeToLootItem
-        )
-            return;
+        if (handled) return;
 
-        // Collect item into first open inventory slot
-        this._CollectedStatus = 0;
-        bEngine.gameAttributes.h.DummyNumber4 = 23.34;
-        this._customEvent_ItemPickupInTheFirstPlace();
-
-        // Get coin and card information
-        const isCoin = "COIN".includes(dropType);
-        const isCard = dropType.substring(0, 5) === "Cards";
-
-        // Deal with coins and cards
-        if (isCoin || isCard) {
-            const moneyKey = cheatConfig.wide.autoloot.moneytochest && isCoin ? "MoneyBANK" : "Money";
-            bEngine.gameAttributes.h[moneyKey] = bEngine.getGameAttribute(moneyKey) + this._DropAmount;
-            this._DropAmount = 0;
-            this._ImageInst = null;
-            behavior.recycleActor(this.actor);
-            return;
-        }
-
-        // Separate out items for Zenith farming and Material farming
-        const zenithFarming =
-            (itemType === "STATUE" || dropType === "Quest110") && cheatConfig.wide.autoloot.zenithfarm;
-        const materialFarming = itemType === "MONSTER_DROP" && cheatConfig.wide.autoloot.materialfarm;
-        if (!toChest || zenithFarming || materialFarming) {
-            this._DropAmount = 0;
-            this._ImageInst = null;
-            behavior.recycleActor(this.actor);
-            return base;
-        }
-
-        // Variable setup for chest and inventory management
-        const chestOrder = bEngine.getGameAttribute("ChestOrder");
-        const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
-        const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
-        const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
-
-        // First open slots for item and blank spot
-        const blankSlot = chestOrder.indexOf("Blank");
-        const dropSlot = chestOrder.indexOf(dropType);
-        let chestSlot = dropSlot !== -1 ? dropSlot : blankSlot;
-
-        // Check if item is on Multiple stacks list
-        const items = cheatConfig.multiplestacks?.items ?? new Map();
-        // Grab correct slot for multiple stacks
-        if (items.has(dropType)) {
-            const maxStacks = items.get(dropType);
-            let stackCount = 0;
-            let chestSlotFound = false;
-
-            for (let i = 0; i < chestOrder.length; i++) {
-                if (chestOrder[i] !== dropType) continue;
-
-                stackCount++;
-                if (chestQuantity[i] < 1050000000) {
-                    chestSlotFound = true;
-                    chestSlot = i;
-                    break;
-                }
-                if (stackCount >= maxStacks) {
-                    chestSlotFound = true;
-                    break;
-                }
-            }
-
-            if (!chestSlotFound && blankSlot !== -1) chestSlot = blankSlot;
-        }
-
-        // Move item from inventory into chest if the slot isn't locked
-        let inventorySlot;
-        while (
-            chestSlot !== -1 &&
-            (inventorySlot = inventoryOrder.indexOf(dropType)) !== -1 &&
-            !bEngine.getGameAttribute("LockedSlots")[inventorySlot !== -1 ? inventorySlot : 0]
-        ) {
-            chestOrder[chestSlot] = chestOrder[chestSlot] === "Blank" ? this._DropType : chestOrder[chestSlot];
-            chestQuantity[chestSlot] += itemQuantity[inventorySlot];
-            itemQuantity[inventorySlot] = 0;
-            inventoryOrder[inventorySlot] = "Blank";
-        }
-
-        // Zero out values and return
-        this._DropAmount = 0;
-        this._ImageInst = null;
-        behavior.recycleActor(this.actor);
         return base;
     };
+}
+
+/**
+ * Processes auto-loot logic for an item drop.
+ * Handles validation, pickup, currency processing, and chest transfer.
+ *
+ * @param {object} context - The `this` context from the ActorEvents_44.init method.
+ * @returns {boolean} True if the item was processed/handled, False if it was ignored.
+ */
+function processAutoLoot(context) {
+    const dropType = context._DropType;
+    const itemDef = itemDefs[dropType];
+
+    const itemType = itemDef.h.Type;
+    const playerDropped = context._PlayerDroppedItem !== 0;
+    const blockAutoLoot = context._BlockAutoLoot !== 0;
+    const safeToLootItem = lootableItemTypes.includes(itemType) || dropType === "Quest110"; // Zenith Clusters
+
+    // Dungeon check
+    const actorEvents345 = events(345);
+    const inDungeon = context._DungItemStatus !== 0 || (actorEvents345 && actorEvents345._customBlock_Dungon() !== -1);
+
+    // Not an item check / ingame autoloot enabled
+    const autolootEnabled = !bEngine.getGameAttribute("OptionsListAccount")[83];
+    const notAnItem = !itemDefs[dropType];
+
+    // Validation Pre-checks
+    if (
+        !cheatState.wide.autoloot ||
+        inDungeon ||
+        notAnItem ||
+        playerDropped ||
+        blockAutoLoot ||
+        !safeToLootItem ||
+        !autolootEnabled
+    ) {
+        return false;
+    }
+
+    // Collect item into first open inventory slot
+    // This triggers the game's internal looting logic (Floor -> Inventory/Cards/Money)
+    // Note: Items must successfully enter a free inventory slot before they can be moved to the chest.
+    context._CollectedStatus = 0;
+    bEngine.gameAttributes.h.DummyNumber4 = 23.34;
+    context._customEvent_ItemPickupInTheFirstPlace();
+
+    const isCoin = dropType.includes("COIN");
+    const isCard = dropType.startsWith("Cards");
+
+    if (isCard) {
+        recycleContextActor(context);
+        return true;
+    }
+
+    if (isCoin) {
+        const moneyKey = cheatConfig.wide.autoloot.moneytochest ? "MoneyBANK" : "Money";
+        const currentMoney = bEngine.getGameAttribute(moneyKey) || 0;
+
+        bEngine.setGameAttribute(moneyKey, currentMoney + context._DropAmount);
+
+        recycleContextActor(context);
+        return true;
+    }
+
+    const toChest = cheatConfig.wide.autoloot.itemstochest;
+
+    // Check specific farming modes that KEEP items in inventory
+    const zenithFarming = (itemType === "STATUE" || dropType === "Quest110") && cheatConfig.wide.autoloot.zenithfarm;
+    const materialFarming = itemType === "MONSTER_DROP" && cheatConfig.wide.autoloot.materialfarm;
+
+    if (!toChest || zenithFarming || materialFarming) {
+        recycleContextActor(context);
+        return true;
+    }
+
+    // Move to Chest Logic
+    // we move only items that we picked up from inventory to chest
+    transferItemToChest(dropType);
+
+    recycleContextActor(context);
+    return true;
+}
+
+/**
+ * Transfers a specific item type from Inventory to Chest.
+ * Handles finding slots, stacking, and locked slots.
+ *
+ * @param {string} dropType - The internal ID of the item to move.
+ */
+function transferItemToChest(dropType) {
+    const chestOrder = bEngine.getGameAttribute("ChestOrder");
+    const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
+    const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
+    const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
+    const lockedSlots = bEngine.getGameAttribute("LockedSlots");
+
+    if (!chestOrder || !inventoryOrder) return;
+
+    // Find first blank slot in chest
+    const blankSlot = chestOrder.indexOf("Blank");
+    const existingSlot = chestOrder.indexOf(dropType);
+    let targetChestSlot = existingSlot !== -1 ? existingSlot : blankSlot;
+
+    // Handle "Multiple Stacks" cheat config
+    const multiStackItems = cheatConfig.multiplestacks?.items;
+    if (multiStackItems && multiStackItems.has(dropType)) {
+        targetChestSlot = findMultiStackSlot(
+            dropType,
+            chestOrder,
+            chestQuantity,
+            multiStackItems.get(dropType),
+            blankSlot
+        );
+    }
+
+    if (targetChestSlot === -1) return; // No room in chest
+
+    // Move all instances from inventory to chest
+    let inventorySlot;
+    while ((inventorySlot = inventoryOrder.indexOf(dropType)) !== -1) {
+        if (lockedSlots && lockedSlots[inventorySlot]) break;
+
+        if (chestOrder[targetChestSlot] === "Blank") {
+            chestOrder[targetChestSlot] = dropType;
+        }
+
+        chestQuantity[targetChestSlot] += itemQuantity[inventorySlot];
+
+        itemQuantity[inventorySlot] = 0;
+        inventoryOrder[inventorySlot] = "Blank";
+    }
+}
+
+/**
+ * Finds the best slot for items that allow multiple stacks in the chest.
+ */
+function findMultiStackSlot(dropType, chestOrder, chestQuantity, maxStacks, blankSlot) {
+    let stackCount = 0;
+
+    for (let i = 0; i < chestOrder.length; i++) {
+        if (chestOrder[i] !== dropType) continue;
+
+        stackCount++;
+        // Check if stack is full (1.05B limit is standard safe max)
+        if (chestQuantity[i] < 1050000000) {
+            return i;
+        }
+
+        if (stackCount >= maxStacks) {
+            return i; // Return full stack if we hit limit, standard fallback
+        }
+    }
+
+    return blankSlot;
+}
+
+/**
+ * Recycles the actor associated with the context.
+ */
+function recycleContextActor(context) {
+    context._DropAmount = 0;
+    context._ImageInst = null;
+    if (context.actor) {
+        behavior.recycleActor(context.actor);
+    }
 }

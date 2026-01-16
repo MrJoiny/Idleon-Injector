@@ -21,7 +21,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events } from "../core/globals.js";
-import { createMethodProxy } from "../utils/methodProxy.js";
+import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
 /**
  * Setup all ActorEvents_579 proxies.
@@ -29,70 +29,35 @@ import { createMethodProxy } from "../utils/methodProxy.js";
 export function setupEvents579Proxies() {
     const ActorEvents579 = events(579);
 
-    // Summoning (owl, roo, endless, summoning, grimoire)
-    createMethodProxy(ActorEvents579, "_customBlock_Summoning", (base, key) => {
-        if (cheatState.w1.owl && cheatConfig.w1.owl[key]) {
-            return cheatConfig.w1.owl[key](base);
-        }
-        if (cheatState.w2.roo && cheatConfig.w2.roo[key]) {
-            return cheatConfig.w2.roo[key](base);
-        }
-        if (cheatState.w6.endless && key === "EndlessModifierID") {
-            return 1;
-        }
-        if (cheatState.w6.summoning && cheatConfig.w6.summoning[key]) {
-            return cheatConfig.w6.summoning[key](base);
-        }
-        if (cheatState.w6.grimoire && cheatConfig.w6.grimoire[key]) {
-            return cheatConfig.w6.grimoire[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Summoning", [
+        { state: "w1.owl" },
+        { state: "w2.roo" },
+        { state: "w6.endless", fixedKey: "EndlessModifierID", value: 1 },
+        { state: "w6.summoning" },
+        { state: "w6.grimoire" },
+    ]);
 
-    // Thingies (hoops shop, darts shop, zenith, clam, reef, coral kid, sneak symbol)
-    createMethodProxy(ActorEvents579, "_customBlock_Thingies", (base, key) => {
-        if (cheatState.wide.hoopshop && cheatConfig.wide.hoopshop[key]) {
-            return cheatConfig.wide.hoopshop[key](base);
-        }
-        if (cheatState.wide.dartshop && cheatConfig.wide.dartshop[key]) {
-            return cheatConfig.wide.dartshop[key](base);
-        }
-        if (cheatState.w7.zenith && cheatConfig.w7.zenith[key]) {
-            return cheatConfig.w7.zenith[key](base);
-        }
-        if (cheatState.w7.clam && cheatConfig.w7.clam[key]) {
-            return cheatConfig.w7.clam[key](base);
-        }
-        if (cheatState.w7.reef && cheatConfig.w7.reef[key]) {
-            return cheatConfig.w7.reef[key](base);
-        }
-        if (cheatState.w7.coralkid && cheatConfig.w7.coralkid[key]) {
-            return cheatConfig.w7.coralkid[key](base);
-        }
-        if (cheatState.w6.sneaksymbol && cheatConfig.w6.sneaksymbol[key]) {
-            return cheatConfig.w6.sneaksymbol[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Thingies", [
+        { state: "wide.hoopshop" },
+        { state: "wide.dartshop" },
+        { state: "w7.zenith" },
+        { state: "w7.clam" },
+        { state: "w7.reef" },
+        { state: "w7.coralkid" },
+        { state: "w6.sneaksymbol" },
+    ]);
 
     // Holes (W5)
-    createMethodProxy(ActorEvents579, "_customBlock_Holes", (base, key) => {
-        if (cheatState.w5.holes && cheatConfig.w5.holes[key]) {
-            return cheatConfig.w5.holes[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Holes", [{ state: "w5.holes" }]);
 
     // Sailing (W5)
-    createMethodProxy(ActorEvents579, "_customBlock_Sailing", (base, key) => {
+    // Kept manual due to complex side-effects and context usage in endercaptains
+    createMethodProxy(ActorEvents579, "_customBlock_Sailing", function (base, key) {
         if (cheatState.w5.sailing && cheatConfig.w5.sailing[key]) {
             return cheatConfig.w5.sailing[key](base);
         }
 
         if (cheatState.w5.endercaptains && key === "CaptainPedastalTypeGen") {
-            // Note: 'this' context is preserved by createMethodProxy
-            // But we need to be careful if 'this' relies on specific scope
-            // ActorEvents579 prototypes usually use 'this' as the instance
             const hasEmporiumBonus = this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1;
             const hasRequiredLevel = Number(bEngine.getGameAttribute("Lv0")[13]) >= 50;
             if (hasEmporiumBonus && hasRequiredLevel) {
@@ -104,94 +69,37 @@ export function setupEvents579Proxies() {
     });
 
     // Gaming (W5)
-    createMethodProxy(ActorEvents579, "_customBlock_GamingStatType", (base, ...args) => {
-        const key = args[0];
-        if (cheatState.w5.gaming && cheatConfig.w5.gaming[key]) {
-            return cheatConfig.w5.gaming[key](base, args);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_GamingStatType", [{ state: "w5.gaming" }]);
 
     // Divinity (W5)
-    createMethodProxy(ActorEvents579, "_customBlock_Divinity", (base, key) => {
-        if (cheatState.w5.divinity && cheatConfig.w5.divinity[key]) {
-            return cheatConfig.w5.divinity[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Divinity", [{ state: "w5.divinity" }]);
 
     // Atom collider (W5)
-    createMethodProxy(ActorEvents579, "_customBlock_AtomCollider", (base, key) => {
-        if (cheatState.w5.collider && cheatConfig.w5.collider[key]) {
-            return cheatConfig.w5.collider[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_AtomCollider", [{ state: "w5.collider" }]);
 
     // Dreamstuff (instant dreams - W3 talent)
-    createMethodProxy(ActorEvents579, "_customBlock_Dreamstuff", (base, key) => {
-        if (cheatState.w3.instantdreams && key === "BarFillReq") {
-            return 0;
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Dreamstuff", [
+        { state: "w3.instantdreams", fixedKey: "BarFillReq", value: 0 },
+    ]);
 
     // Farming (W6)
-    createMethodProxy(ActorEvents579, "_customBlock_FarmingStuffs", (base, key) => {
-        if (cheatState.w6.farming && cheatConfig.w6.farming[key]) {
-            return cheatConfig.w6.farming[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_FarmingStuffs", [{ state: "w6.farming" }]);
 
     // Ninja (W6)
-    createMethodProxy(ActorEvents579, "_customBlock_Ninja", (base, key) => {
-        if (cheatState.w6.ninja && cheatConfig.w6.ninja[key]) {
-            return cheatConfig.w6.ninja[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Ninja", [{ state: "w6.ninja" }]);
 
     // Windwalker (W6)
-    createMethodProxy(ActorEvents579, "_customBlock_Windwalker", (base, key) => {
-        if (cheatState.w6.windwalker && cheatConfig.w6.windwalker[key]) {
-            return cheatConfig.w6.windwalker[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Windwalker", [{ state: "w6.windwalker" }]);
 
     // Arcane (W6)
-    createMethodProxy(ActorEvents579, "_customBlock_ArcaneType", (base, key) => {
-        if (cheatState.w6.arcane && cheatConfig.w6.arcane[key]) {
-            return cheatConfig.w6.arcane[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_ArcaneType", [{ state: "w6.arcane" }]);
 
     // Bubba (W7)
-    createMethodProxy(ActorEvents579, "_customBlock_Bubbastuff", (base, key) => {
-        if (cheatState.w7.bubba && cheatConfig.w7.bubba[key]) {
-            return cheatConfig.w7.bubba[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Bubbastuff", [{ state: "w7.bubba" }]);
 
     // Spelunk (W7 spelunk, big fish)
-    createMethodProxy(ActorEvents579, "_customBlock_Spelunk", (base, key) => {
-        if (cheatState.w7.spelunk && cheatConfig.w7.spelunk[key]) {
-            return cheatConfig.w7.spelunk[key](base);
-        }
-        if (cheatState.w7.bigfish && cheatConfig.w7.bigfish[key]) {
-            return cheatConfig.w7.bigfish[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Spelunk", [{ state: "w7.spelunk" }, { state: "w7.bigfish" }]);
 
     // Gallery (W7)
-    createMethodProxy(ActorEvents579, "_customBlock_Gallery", (base, key) => {
-        if (cheatState.w7.gallery && cheatConfig.w7.gallery[key]) {
-            return cheatConfig.w7.gallery[key](base);
-        }
-        return base;
-    });
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Gallery", [{ state: "w7.gallery" }]);
 }

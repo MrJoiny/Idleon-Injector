@@ -289,18 +289,18 @@ registerCheat({
             return "The lvl value has to be numeric!";
         }
 
-        // 1. Check if it's an alchemy type
+        // Check if it's an alchemy type
         if (subcommand in alchemyTypes) {
             return alchFn([subcommand, value]);
         }
 
-        // 2. Check if it's a custom changer
+        // Check if it's a custom changer
         const customHandler = customLevelHandlers[subcommand];
         if (customHandler) {
             return customHandler(value);
         }
 
-        // 3. Check if it's a skill name (from cList.SkillNames)
+        // Check if it's a skill name (from cList.SkillNames)
         const skillResult = handleSkillLevel(subcommand, value);
         if (skillResult) {
             return skillResult;

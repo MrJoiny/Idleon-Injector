@@ -18,7 +18,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events } from "../core/globals.js";
-import { createMethodProxy } from "../utils/methodProxy.js";
+import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
 /**

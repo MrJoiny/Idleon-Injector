@@ -16,7 +16,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
-import { createMethodProxy } from "../utils/methodProxy.js";
+import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
 /**

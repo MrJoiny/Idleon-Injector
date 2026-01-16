@@ -12,7 +12,7 @@
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, events, behavior } from "../core/globals.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
-import { createMethodProxy } from "../utils/methodProxy.js";
+import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
 /**
