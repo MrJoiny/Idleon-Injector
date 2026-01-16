@@ -24,7 +24,7 @@ registerCheats({
         { name: "post", message: "post cost nullification" },
         { name: "guild", message: "guild cost nullification" },
         { name: "task", message: "task cost nullification" },
-        { name: "quest", message: "quest item requirment nullification" },
+        { name: "quest", message: "quest item requirement nullification" },
         { name: "star", message: "star point requirement nullification" },
         { name: "giant", message: "100% giant mob spawn rate" },
         { name: "gems", message: "freezes current gem amount" },

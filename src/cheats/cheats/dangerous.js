@@ -28,7 +28,7 @@ const wipeHandlers = {
         const wipedef = bEngine.getGameAttribute("InventoryOrder");
         const slot = parseInt(params[1]);
         if (isNaN(slot)) return "Specify a valid slot number.";
-        if (slot < 0 || slot > wipedef.length) return "Invalid slot.";
+        if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
         wipedef[slot] = "Blank";
         return "Wipe inventory slot could result in a crash: Should be fine after restart.";
     },
@@ -41,7 +41,7 @@ const wipeHandlers = {
         const wipedef = bEngine.getGameAttribute("ChestOrder");
         const slot = parseInt(params[1]);
         if (isNaN(slot)) return "Specify a valid slot number.";
-        if (slot < 0 || slot > wipedef.length) return "Invalid slot.";
+        if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
         wipedef[slot] = "Blank";
         return "Wipe chest slot could result in a crash: Should be fine after restart.";
     },

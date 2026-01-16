@@ -34,6 +34,10 @@ function applyMaxCap(value, configKey, handleNaN = false) {
 
 /**
  * Setup all game attribute proxies.
+ * 
+ * NOTE: Unlike items.js and clist.js, gameAttributes.h gets RECREATED
+ * after character selection. Individual sub-object guards are required,
+ * and this function is re-called from firebase.js playButton proxy.
  */
 export function setupGameAttributeProxies() {
     // Gems - freeze when enabled

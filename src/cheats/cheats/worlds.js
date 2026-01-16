@@ -126,13 +126,13 @@ registerCheats({
         { name: "grimoire", message: "grimoire cheats" },
         { name: "windwalker", message: "windwalker cheats" },
         { name: "arcane", message: "arcane cultist cheats" },
-        { name: "emperor", message: "unlimeted emperor tries" },
+        { name: "emperor", message: "unlimited emperor tries" },
         { name: "endless", message: "easy endless runs for summoning" },
         { name: "sneaksymbol", message: "sneaksymbol 100% chance" },
         {
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
-            fn: function (params) {
+            fn: (params) => {
                 const char = parseInt(params?.[1]);
                 if (isNaN(char) || char < 0 || char > 9) {
                     // TODO: make this dynamic with character count
@@ -150,7 +150,7 @@ registerCheats({
         {
             name: "sumunit",
             message: "Set summoning units to be always a certain type",
-            fn: function (params) {
+            fn: (params) => {
                 const unitName = params?.[1];
                 if (!unitName) {
                     return `Please input a unit name ${[...summonUnits.keys()].join(", ")} to summon as per normal.`;

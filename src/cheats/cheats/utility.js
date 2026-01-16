@@ -347,7 +347,7 @@ registerCheats({
         {
             name: "smith",
             message: "Search for an item to smith",
-            fn: function (params) {
+            fn: (params) => {
                 const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
                 const results = ["Tab, Id, ItemId, ItemName"];
                 const ItemToCraftNAME = cList.ItemToCraftNAME;
