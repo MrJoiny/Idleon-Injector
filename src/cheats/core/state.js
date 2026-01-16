@@ -61,11 +61,6 @@ export function setWebPort(port) {
 }
 
 /**
- * Dictionary for storing item/card definitions and other cached values.
- */
-export const dictVals = {};
-
-/**
  * Flag indicating whether setup has completed.
  */
 export let setupDone = false;
