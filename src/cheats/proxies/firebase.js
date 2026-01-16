@@ -11,6 +11,7 @@
 
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, registerCommonVariables, cList, firebase, gameContext } from "../core/globals.js";
+import { createMethodProxy } from "../utils/proxy.js";
 import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
 import { setupTimeCandyProxy } from "./misc.js";
@@ -64,9 +65,7 @@ export function setupFirebaseStorageProxy() {
         return Reflect.apply(cleanMarkedFiles, this, args);
     };
 
-    const getPartyMembers = firebase.getPartyMembers;
-    firebase.getPartyMembers = function (...args) {
-        const base = Reflect.apply(getPartyMembers, this, args);
+    createMethodProxy(firebase, "getPartyMembers", (base) => {
         if (!cheatState.wide.autoparty) return base;
 
         if (Array.isArray(base) && base.length > 0 && base.length < 10) {
@@ -78,7 +77,7 @@ export function setupFirebaseStorageProxy() {
             }
         }
         return base;
-    };
+    });
 }
 
 /**
@@ -103,12 +102,9 @@ export function setupSteamAchievementProxy() {
  * allowing the proxies to be re-applied to the new object references.
  */
 export function setupFirebaseProxy() {
-    const playButton = firebase.playButton;
-    if (!playButton) return;
+    if (!firebase.playButton) return;
 
-    firebase.playButton = function (...args) {
-        const base = Reflect.apply(playButton, this, args);
-
+    createMethodProxy(firebase, "playButton", (base) => {
         // Register common variables again
         registerCommonVariables(gameContext);
 
@@ -124,5 +120,5 @@ export function setupFirebaseProxy() {
         }
 
         return base;
-    };
+    });
 }

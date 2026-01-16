@@ -8,23 +8,19 @@
 import { bEngine, itemDefs, events, behavior } from "../core/globals.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 import { lootableItemTypes } from "../constants.js";
+import { createMethodProxy } from "../utils/proxy.js";
 
 /**
  * Setup auto loot proxy (instant item pickup and chest management).
  */
 export function setupAutoLootProxy() {
     const actorEvents44 = events(44);
-    const init = actorEvents44.prototype.init;
 
-    actorEvents44.prototype.init = function (...args) {
-        const base = Reflect.apply(init, this, args);
-
+    createMethodProxy(actorEvents44.prototype, "init", function (base) {
         const handled = processAutoLoot(this);
-
         if (handled) return;
-
         return base;
-    };
+    });
 }
 
 /**
