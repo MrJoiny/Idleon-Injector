@@ -7,29 +7,6 @@
  */
 
 import { registerCheats } from "../core/registration.js";
-import { itemDefs, cList } from "../core/globals.js";
-import { TARGET_CARDS } from "../constants.js";
-
-function setWeaponSpeed(params) {
-    const speed = params[1] || 9;
-    for (const item of Object.values(itemDefs)) {
-        if (item.h.typeGen === "aWeapon") {
-            item.h.Speed = speed;
-        }
-    }
-    return "All weapon speed set to Turbo. Max speed is 14: higher causes a non-attacking bug.";
-}
-
-function boostTargetCards() {
-    for (const category of Object.values(cList.CardStuff)) {
-        for (const card of Object.values(category)) {
-            if (TARGET_CARDS.includes(card[0])) {
-                card[4] = "10000";
-            }
-        }
-    }
-    return "Target cards altered with insane stats.";
-}
 
 registerCheats({
     name: "godlike",
@@ -42,8 +19,8 @@ registerCheats({
         { name: "food", message: "food deduction nullification" },
         { name: "hitchance", message: "hitchance set to 100" },
         { name: "intervention", message: "instant divine intervention" },
-        { name: "speed", message: "weapon super speed", fn: setWeaponSpeed },
-        { name: "card", message: "Efaunt, C.Efaunt, DrDef, Oak and Copper with insane stats", fn: boostTargetCards },
+        { name: "speed", message: "weapon super speed (default 9)", configurable: true },
+        { name: "card", message: "All cards get 100x stat multiplier" },
         { name: "poison", message: "instant bubo poison" },
         { name: "respawn", message: "instant mob respawn" },
         { name: "hp", message: "never lose hp, become invincible (when active)" },

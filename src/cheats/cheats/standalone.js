@@ -5,12 +5,12 @@
  * - daily, noob, jackpot, cloudz, chromedebug
  * - nomore, multiplestacks
  * - fix_save, fix_write
- * - restore, upstones, keychain
+ * - upstones, keychain, unlock
  */
 
 import { registerCheat, registerCheats } from "../core/registration.js";
-import { cheatState, dictVals, cheatConfig } from "../core/state.js";
-import { bEngine, itemDefs, monsterDefs, cList, events } from "../core/globals.js";
+import { cheatState, cheatConfig } from "../core/state.js";
+import { bEngine, itemDefs, monsterDefs, events } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
 import { keychainStatsMap } from "../constants.js";
@@ -183,67 +183,15 @@ registerCheat({
     },
 });
 
-// Restore cheats
-registerCheats({
-    name: "restore",
-    message: "Restores non-proxy changed values.",
-    subcheats: [
-        {
-            name: "save",
-            message: "Saves the current values of items and cards",
-            fn: () => {
-                dictVals.itemDefs = deepCopy(itemDefs);
-                dictVals.CardStuff = deepCopy(cList.CardStuff);
-                return "Saved the current values.";
-            },
-        },
-        {
-            name: "item",
-            message: "Restores original item values.",
-            fn: () => {
-                // Note: This doesn't work in modular version since itemDefs is a const
-                // Would need a different approach
-                return "Restored original item values.";
-            },
-        },
-        {
-            name: "card",
-            message: "Restores original card values.",
-            fn: () => {
-                cList.CardStuff = dictVals.CardStuff;
-                return "Restored original card values.";
-            },
-        },
-    ],
-});
-
-// Upgrade stones cheats
+// Upgrade stones cheats (now proxy-based - see proxies/items.js)
 registerCheats({
     name: "upstones",
     message: "upgrade stone cheats",
+    canToggleSubcheats: true,
     subcheats: [
-        {
-            name: "rng",
-            message: "100% upgrade stone success (safe)",
-            fn: () => {
-                for (const [index, element] of Object.entries(itemDefs))
-                    if (element.h.typeGen === "dStone") itemDefs[index].h.Amount = 100;
-                return "All upgrade stones have 100% success chance.";
-            },
-        },
-        {
-            name: "use",
-            message: "Upgrade stone doesn't use a slot (risky)",
-            fn: () => {
-                for (const [index, element] of Object.entries(itemDefs))
-                    if (element.h.typeGen === "dStone") itemDefs[index].h.Trigger = 0;
-                return "Using an upgrade stone doesn't deduct remaining upgrade amount on an item.";
-            },
-        },
-        {
-            name: "misc",
-            message: "upgrade stone misc cheat.",
-        },
+        { name: "rng", message: "100% upgrade stone success (safe)" },
+        { name: "use", message: "Upgrade stones don't use a slot (risky)" },
+        { name: "misc", message: "upgrade stone misc cheat." },
     ],
 });
 

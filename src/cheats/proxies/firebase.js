@@ -14,7 +14,7 @@ import { bEngine, registerCommonVariables, cList, firebase, gameContext } from "
 import { createMethodProxy } from "../utils/proxy.js";
 import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
-import { setupTimeCandyProxy } from "./misc.js";
+import { setupItemProxies } from "./items.js";
 
 /**
  * Setup Firebase storage proxy (companion, party, unban).
@@ -114,7 +114,7 @@ export function setupFirebaseProxy() {
         try {
             setupCListProxy();
             setupGameAttributeProxies();
-            setupTimeCandyProxy();
+            setupItemProxies();
         } catch (e) {
             console.error("Error re-applying proxies after character selection:", e);
         }

@@ -20,7 +20,8 @@ import { setupItemsMenuProxy } from "./events312.js";
 import { setupEvents345Proxies } from "./events345.js";
 import { setupEvents481Proxies } from "./events481.js";
 import { setupEvents579Proxies } from "./events579.js";
-import { setupAbilityProxy, setupTimeCandyProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
+import { setupAbilityProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
+import { setupItemProxies } from "./items.js";
 
 /**
  * Setup all game proxies.
@@ -59,9 +60,11 @@ export function setupAllProxies() {
     setupEvents481Proxies();
     setupEvents579Proxies();
 
-    // Misc proxies (abilities, candy, quests, smithing)
+    // Misc proxies (abilities, quests, smithing)
     setupAbilityProxy();
-    setupTimeCandyProxy();
     setupQuestProxy();
     setupSmithProxy();
+
+    // Item definition proxies (godlike speed, upstones, equipall, candytime)
+    setupItemProxies();
 }

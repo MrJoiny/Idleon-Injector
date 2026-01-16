@@ -165,6 +165,3 @@ export const knownBundles = [
     ["Santa helper bundle", "bon_p"],
 ];
 
-// Target cards to boost for godlike card cheat
-export const TARGET_CARDS = ["Boss2A", "Boss2B", "poopBig", "OakTree", "Copper"];
-

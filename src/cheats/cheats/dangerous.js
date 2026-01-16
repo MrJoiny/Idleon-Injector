@@ -133,14 +133,6 @@ function alchFn(params) {
 registerCheat({
     name: "equipall",
     message: "!danger! Equip any item at any class/level",
-    fn: (params) => {
-        for (const [index, element] of Object.entries(itemDefs)) {
-            // Any item with Class attribute is set to ALL, and any with lvlReqToEquip set to 1
-            if (element.h.Class) itemDefs[index].h.Class = "ALL";
-            if (element.h.lvReqToEquip) itemDefs[index].h.lvReqToEquip = 1;
-        }
-        return `All items can be worn by any class at any level.`;
-    },
 });
 
 // Wipe commands

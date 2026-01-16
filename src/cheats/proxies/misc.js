@@ -3,13 +3,12 @@
  *
  * Proxies that don't fit elsewhere:
  * - Ability (no cooldown, no cast time, no mana)
- * - Time candy (custom candy duration)
  * - Quest (free quest requirements)
  * - Smith (free crafting)
  */
 
-import { cheatConfig, cheatState } from "../core/state.js";
-import { cList, customMaps, itemDefs, dialogueDefs, gameContext } from "../core/globals.js";
+import { cheatState } from "../core/state.js";
+import { cList, customMaps, dialogueDefs, gameContext } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 
 /**
@@ -36,30 +35,6 @@ export function setupAbilityProxy() {
 
     const proxy = new Proxy(customMaps.atkMoveMap.h, handler);
     customMaps.atkMoveMap.h = proxy;
-}
-
-/**
- * Setup time candy proxy (custom candy duration).
- */
-export function setupTimeCandyProxy() {
-    const timeCandy = itemDefs.Timecandy1.h;
-    if (timeCandy._isPatched) return;
-
-    const originalID = timeCandy.ID;
-
-    Object.defineProperty(timeCandy, "_isPatched", { value: true, enumerable: false });
-
-    Object.defineProperty(timeCandy, "ID", {
-        get() {
-            if (cheatState.wide.candytime) {
-                const configuredValue = cheatConfig.wide.candytime;
-                return !isNaN(configuredValue) ? configuredValue : 600;
-            }
-            return originalID;
-        },
-        enumerable: true,
-        configurable: true,
-    });
 }
 
 /**
