@@ -4,6 +4,7 @@
  * Consolidated constants used across the cheats module.
  */
 
+// TODO: this is not accurate anymore, needs some changing!
 // Alchemy type indices for CauldronInfo attribute
 export const alchemyTypes = {
     orangebubbles: 0,
