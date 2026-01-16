@@ -10,13 +10,21 @@ import { cheatState } from "../core/state.js";
 import { bEngine, itemDefs, events } from "../core/globals.js";
 
 /**
+ * Setup all ActorEvents_38 proxies.
+ */
+export function setupEvents038Proxies() {
+    setupItemMoveProxy();
+    setupItemMiscProxy();
+}
+
+/**
  * Setup item move proxy (candy anywhere, divinity pearl unlock).
  *
  * NOTE: Intentionally deviates from "base first" pattern in some paths.
  * Candy cheat requires modifying game state before calling base and restoring after.
  * Divinity pearl cheat may need to call a different function entirely.
  */
-export function setupItemMoveProxy() {
+function setupItemMoveProxy() {
     const actorEvents38 = events(38);
     const InvItem4custom = actorEvents38.prototype._event_InvItem4custom;
     actorEvents38.prototype._event_InvItem4custom = function (...args) {
@@ -103,7 +111,7 @@ export function setupItemMoveProxy() {
  * Mystery stone cheat requires setting RNG state before calling base
  * to influence the random roll outcome.
  */
-export function setupItemMiscProxy() {
+function setupItemMiscProxy() {
     const actorEvents38 = events(38);
     const InventoryItem = actorEvents38.prototype._event_InventoryItem;
     actorEvents38.prototype._event_InventoryItem = function (...args) {

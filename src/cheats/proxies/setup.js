@@ -6,13 +6,13 @@
  */
 
 // Imports for setupAllProxies
-import { setupBehaviorScriptProxies, setupNodmgProxy } from "./behavior.js";
+import { setupBehaviorScriptProxies } from "./behavior.js";
 import { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementProxy } from "./firebase.js";
-import { setupGameAttributeProxies, setupTrappingProxy, setupAlchProxy } from "./gameAttributes.js";
+import { setupGameAttributeProxies } from "./gameAttributes.js";
 import { setupCListProxy } from "./clist.js";
 import { setupEvents012Proxies } from "./events012.js";
 import { setupItemGetNotificationProxy } from "./events034.js";
-import { setupItemMoveProxy, setupItemMiscProxy } from "./events038.js";
+import { setupEvents038Proxies } from "./events038.js";
 import { setupAutoLootProxy } from "./events044.js";
 import { setupEvents124Proxies } from "./events124.js";
 import { setupEvents189Proxies } from "./events189.js";
@@ -35,7 +35,6 @@ import { setupAbilityProxy, setupTimeCandyProxy, setupQuestProxy, setupSmithProx
 export function setupAllProxies() {
     // Behavior script proxies (RNG, timing, no damage)
     setupBehaviorScriptProxies();
-    setupNodmgProxy();
 
     // Firebase proxy (character selection handling, companions, party, achievements)
     setupFirebaseProxy();
@@ -44,8 +43,6 @@ export function setupAllProxies() {
 
     // Game attribute proxies (gems, HP, currencies, cloud save, trapping, alchemy)
     setupGameAttributeProxies();
-    setupTrappingProxy();
-    setupAlchProxy();
 
     // CList proxies (MTX, refinery, vials, prayers)
     setupCListProxy();
@@ -54,8 +51,7 @@ export function setupAllProxies() {
     setupEvents012Proxies();
     setupAutoLootProxy();
     setupItemGetNotificationProxy();
-    setupItemMoveProxy();
-    setupItemMiscProxy();
+    setupEvents038Proxies();
     setupEvents124Proxies();
     setupEvents189Proxies();
     setupItemsMenuProxy();

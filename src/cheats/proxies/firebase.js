@@ -12,6 +12,8 @@
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, registerCommonVariables, cList, firebase, gameContext } from "../core/globals.js";
 import { setupCListProxy } from "./clist.js";
+import { setupGameAttributeProxies } from "./gameAttributes.js";
+import { setupTimeCandyProxy } from "./misc.js";
 
 /**
  * Setup Firebase storage proxy (companion, party, unban).
@@ -96,8 +98,9 @@ export function setupSteamAchievementProxy() {
 /**
  * Setup Firebase proxy to handle character selection screen.
  *
- * When player returns from character selection, some game data is reloaded.
- * This proxy catches that and re-initializes the necessary proxies.
+ * When player returns from character selection, some game data objects
+ * are recreated. The _isPatched flag on those objects will be undefined,
+ * allowing the proxies to be re-applied to the new object references.
  */
 export function setupFirebaseProxy() {
     const playButton = firebase.playButton;
@@ -109,9 +112,13 @@ export function setupFirebaseProxy() {
         // Register common variables again
         registerCommonVariables(gameContext);
 
-        // Re-apply proxies that get reset
+        // Re-apply proxies that depend on game data objects that get
+        // recreated during character selection. The _isPatched guard
+        // in each setup function will only apply if the object is new.
         try {
             setupCListProxy();
+            setupGameAttributeProxies();
+            setupTimeCandyProxy();
         } catch (e) {
             console.error("Error re-applying proxies after character selection:", e);
         }
