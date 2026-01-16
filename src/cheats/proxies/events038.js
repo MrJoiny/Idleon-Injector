@@ -11,6 +11,10 @@ import { bEngine, itemDefs, events } from "../core/globals.js";
 
 /**
  * Setup item move proxy (candy anywhere, divinity pearl unlock).
+ *
+ * NOTE: Intentionally deviates from "base first" pattern in some paths.
+ * Candy cheat requires modifying game state before calling base and restoring after.
+ * Divinity pearl cheat may need to call a different function entirely.
  */
 export function setupItemMoveProxy() {
     const actorEvents38 = events(38);
@@ -51,10 +55,10 @@ export function setupItemMoveProxy() {
                     bEngine.setGameAttribute("AFKtarget", newTarget);
                 }
                 bEngine.setGameAttribute("CurrentMap", 1);
-                const rtn = Reflect.apply(InvItem4custom, this, args);
+                const base = Reflect.apply(InvItem4custom, this, args);
                 bEngine.setGameAttribute("CurrentMap", originalMap);
                 bEngine.setGameAttribute("AFKtarget", originalTarget);
-                return rtn;
+                return base;
             }
         }
 
@@ -94,6 +98,10 @@ export function setupItemMoveProxy() {
 
 /**
  * Setup item misc proxy (mystery stone stat targeting).
+ *
+ * NOTE: Intentionally deviates from "base first" pattern.
+ * Mystery stone cheat requires setting RNG state before calling base
+ * to influence the random roll outcome.
  */
 export function setupItemMiscProxy() {
     const actorEvents38 = events(38);
@@ -111,11 +119,11 @@ export function setupItemMiscProxy() {
             cheatState.rng = 0.85; // First random roll for Misc stat
             cheatState.rngInt = "high"; // 2nd random roll for positive value
 
-            const rtn = Reflect.apply(InventoryItem, this, args);
+            const base = Reflect.apply(InventoryItem, this, args);
 
             cheatState.rng = false;
             cheatState.rngInt = false;
-            return rtn;
+            return base;
         }
 
         return Reflect.apply(InventoryItem, this, args);

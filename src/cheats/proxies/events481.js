@@ -10,6 +10,10 @@ import { events } from "../core/globals.js";
 
 /**
  * Setup all ActorEvents_481 proxies.
+ *
+ * NOTE: WorkbenchStuff2 intentionally deviates from "base first" pattern.
+ * Better cogs cheat requires setting RNG state before calling base
+ * to influence the cog quality roll.
  */
 export function setupEvents481Proxies() {
     const ActorEvents481 = events(481);
@@ -27,11 +31,4 @@ export function setupEvents481Proxies() {
 
         return Reflect.apply(WorkbenchStuff2, this, args);
     };
-}
-
-/**
- * Initialize events481 proxies.
- */
-export function initEvents481Proxies() {
-    setupEvents481Proxies();
 }

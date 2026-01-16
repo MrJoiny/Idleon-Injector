@@ -10,12 +10,17 @@ import { bEngine, events, behavior } from "../core/globals.js";
 
 /**
  * Setup item get notification proxy (hide notifications for autoloot).
+ *
+ * NOTE: Intentionally deviates from "base first" pattern.
+ * When autoloot is active, we must intercept and recycle the actor before
+ * the original function runs to prevent the notification from showing.
  */
 export function setupItemGetNotificationProxy() {
     const hxOverrides = window.HxOverrides;
     const actorEvents34 = events(34);
     const ItemGet = actorEvents34.prototype._event_ItemGet;
     actorEvents34.prototype._event_ItemGet = function (...args) {
+        // Early return to block notification and recycle actor
         if (
             cheatState.wide.autoloot &&
             cheatConfig.wide.autoloot.hidenotifications &&

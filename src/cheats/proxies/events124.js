@@ -50,7 +50,7 @@ export function setupEvents124Proxies() {
             try {
                 rollAllObols();
             } catch (e) {
-                console.log(e.toString());
+                console.error("Error rolling obols:", e);
             }
         }
         return base;
@@ -95,11 +95,4 @@ export function setupEvents124Proxies() {
             bEngine.gameAttributes.h.DummyText3 = "nah";
         }
     };
-}
-
-/**
- * Initialize events124 proxies.
- */
-export function initEvents124Proxies() {
-    setupEvents124Proxies();
 }

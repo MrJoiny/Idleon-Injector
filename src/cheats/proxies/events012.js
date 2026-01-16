@@ -138,10 +138,3 @@ export function setupEvents012Proxies() {
         return base;
     };
 }
-
-/**
- * Initialize events012 proxies.
- */
-export function initEvents012Proxies() {
-    setupEvents012Proxies();
-}

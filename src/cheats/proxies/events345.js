@@ -21,6 +21,10 @@ import { bEngine, events } from "../core/globals.js";
 
 /**
  * Setup all ActorEvents_345 proxies.
+ *
+ * NOTE: Some proxies intentionally deviate from "base first" pattern:
+ * - WorkbenchStuff/minBookLv: modifies args before calling base to change lookup key
+ * - Breeding/PetQTYonBreed: modifies RNG state before calling base for pet breeding
  */
 export function setupEvents345Proxies() {
     const ActorEvents345 = events(345);
@@ -207,11 +211,4 @@ export function setupEvents345Proxies() {
         }
         return base;
     };
-}
-
-/**
- * Initialize events345 proxies.
- */
-export function initEvents345Proxies() {
-    setupEvents345Proxies();
 }

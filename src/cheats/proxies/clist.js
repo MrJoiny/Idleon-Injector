@@ -136,10 +136,3 @@ export function setupCListProxy() {
         });
     });
 }
-
-/**
- * Initialize cList proxies.
- */
-export function initCListProxies() {
-    setupCListProxy();
-}

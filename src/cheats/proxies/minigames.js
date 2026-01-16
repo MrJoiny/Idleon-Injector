@@ -24,18 +24,18 @@ export function setupMiningFishingProxies() {
 
     const miningGameOver = pixelHelper[4].getValue("ActorEvents_229", "_customEvent_MiningGameOver");
     const miningProxy = new Proxy(miningGameOver, {
-        apply(originalFn, context, argumentsList) {
+        apply(originalFn, context, args) {
             if (cheatState.minigame.mining) return;
-            return Reflect.apply(originalFn, context, argumentsList);
+            return Reflect.apply(originalFn, context, args);
         },
     });
     pixelHelper[4].setValue("ActorEvents_229", "_customEvent_MiningGameOver", miningProxy);
 
     const fishingGameOver = pixelHelper[4].getValue("ActorEvents_229", "_customEvent_FishingGameOver");
     const fishingProxy = new Proxy(fishingGameOver, {
-        apply(originalFn, context, argumentsList) {
+        apply(originalFn, context, args) {
             if (cheatState.minigame.fishing) return;
-            return Reflect.apply(originalFn, context, argumentsList);
+            return Reflect.apply(originalFn, context, args);
         },
     });
     pixelHelper[4].setValue("ActorEvents_229", "_customEvent_FishingGameOver", fishingProxy);

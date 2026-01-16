@@ -62,10 +62,3 @@ export function setupEvents189Proxies() {
         return base;
     };
 }
-
-/**
- * Initialize events189 proxies.
- */
-export function initEvents189Proxies() {
-    setupEvents189Proxies();
-}

@@ -10,6 +10,10 @@ import { bEngine, events } from "../core/globals.js";
 
 /**
  * Setup items menu proxy (preset reset anywhere).
+ *
+ * NOTE: Intentionally deviates from "base first" pattern.
+ * Preset reset cheat requires temporarily modifying CurrentMap before calling base
+ * to bypass the location check, then restoring the original value.
  */
 export function setupItemsMenuProxy() {
     const actorEvents312 = events(312);

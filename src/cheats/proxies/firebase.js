@@ -64,18 +64,18 @@ export function setupFirebaseStorageProxy() {
 
     const getPartyMembers = firebase.getPartyMembers;
     firebase.getPartyMembers = function (...args) {
-        const resp = Reflect.apply(getPartyMembers, this, args);
-        if (!cheatState.wide.autoparty) return resp;
+        const base = Reflect.apply(getPartyMembers, this, args);
+        if (!cheatState.wide.autoparty) return base;
 
-        if (Array.isArray(resp) && resp.length > 0 && resp.length < 10) {
-            const playersToAdd = 11 - resp.length;
+        if (Array.isArray(base) && base.length > 0 && base.length < 10) {
+            const playersToAdd = 11 - base.length;
             const otherPlayers = bEngine.gameAttributes.h.OtherPlayers.h;
             const names = Object.keys(otherPlayers).slice(1, playersToAdd);
             for (const name of names) {
-                resp.push([name, resp[0][1], 0]);
+                base.push([name, base[0][1], 0]);
             }
         }
-        return resp;
+        return base;
     };
 }
 
@@ -104,7 +104,7 @@ export function setupFirebaseProxy() {
     if (!playButton) return;
 
     firebase.playButton = function (...args) {
-        const result = Reflect.apply(playButton, this, args);
+        const base = Reflect.apply(playButton, this, args);
 
         // Register common variables again
         registerCommonVariables(gameContext);
@@ -116,6 +116,6 @@ export function setupFirebaseProxy() {
             console.error("Error re-applying proxies after character selection:", e);
         }
 
-        return result;
+        return base;
     };
 }

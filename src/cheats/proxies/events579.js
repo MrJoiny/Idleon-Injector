@@ -241,10 +241,3 @@ export function setupEvents579Proxies() {
         return base;
     };
 }
-
-/**
- * Initialize events579 proxies.
- */
-export function initEvents579Proxies() {
-    setupEvents579Proxies();
-}

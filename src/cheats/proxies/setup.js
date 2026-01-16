@@ -15,10 +15,10 @@ export { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementPro
 export { setupGameAttributeProxies, setupTrappingProxy, setupAlchProxy } from "./gameAttributes.js";
 
 // Re-export from clist.js
-export { setupCListProxy, initCListProxies } from "./clist.js";
+export { setupCListProxy } from "./clist.js";
 
 // Re-export from events012.js
-export { setupEvents012Proxies, initEvents012Proxies } from "./events012.js";
+export { setupEvents012Proxies } from "./events012.js";
 
 // Re-export from events034.js
 export { setupItemGetNotificationProxy } from "./events034.js";
@@ -30,22 +30,22 @@ export { setupItemMoveProxy, setupItemMiscProxy } from "./events038.js";
 export { setupAutoLootProxy } from "./events044.js";
 
 // Re-export from events124.js
-export { setupEvents124Proxies, initEvents124Proxies } from "./events124.js";
+export { setupEvents124Proxies } from "./events124.js";
 
 // Re-export from events189.js
-export { setupEvents189Proxies, initEvents189Proxies } from "./events189.js";
+export { setupEvents189Proxies } from "./events189.js";
 
 // Re-export from events312.js
 export { setupItemsMenuProxy } from "./events312.js";
 
 // Re-export from events345.js
-export { setupEvents345Proxies, initEvents345Proxies } from "./events345.js";
+export { setupEvents345Proxies } from "./events345.js";
 
 // Re-export from events481.js
-export { setupEvents481Proxies, initEvents481Proxies } from "./events481.js";
+export { setupEvents481Proxies } from "./events481.js";
 
 // Re-export from events579.js
-export { setupEvents579Proxies, initEvents579Proxies } from "./events579.js";
+export { setupEvents579Proxies } from "./events579.js";
 
 // Re-export from minigames.js
 export {
@@ -66,17 +66,17 @@ export { setupAbilityProxy, setupTimeCandyProxy, setupQuestProxy, setupSmithProx
 import { setupBehaviorScriptProxies, setupNodmgProxy } from "./behavior.js";
 import { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementProxy } from "./firebase.js";
 import { setupGameAttributeProxies, setupTrappingProxy, setupAlchProxy } from "./gameAttributes.js";
-import { initCListProxies } from "./clist.js";
-import { initEvents012Proxies } from "./events012.js";
+import { setupCListProxy } from "./clist.js";
+import { setupEvents012Proxies } from "./events012.js";
 import { setupItemGetNotificationProxy } from "./events034.js";
 import { setupItemMoveProxy, setupItemMiscProxy } from "./events038.js";
 import { setupAutoLootProxy } from "./events044.js";
-import { initEvents124Proxies } from "./events124.js";
-import { initEvents189Proxies } from "./events189.js";
+import { setupEvents124Proxies } from "./events124.js";
+import { setupEvents189Proxies } from "./events189.js";
 import { setupItemsMenuProxy } from "./events312.js";
-import { initEvents345Proxies } from "./events345.js";
-import { initEvents481Proxies } from "./events481.js";
-import { initEvents579Proxies } from "./events579.js";
+import { setupEvents345Proxies } from "./events345.js";
+import { setupEvents481Proxies } from "./events481.js";
+import { setupEvents579Proxies } from "./events579.js";
 import { setupAbilityProxy, setupTimeCandyProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 
 /**
@@ -105,20 +105,20 @@ export function setupAllProxies() {
     setupAlchProxy();
 
     // CList proxies (MTX, refinery, vials, prayers)
-    initCListProxies();
+    setupCListProxy();
 
     // ActorEvents proxies by event number
-    initEvents012Proxies();
+    setupEvents012Proxies();
     setupAutoLootProxy();
     setupItemGetNotificationProxy();
     setupItemMoveProxy();
     setupItemMiscProxy();
-    initEvents124Proxies();
-    initEvents189Proxies();
+    setupEvents124Proxies();
+    setupEvents189Proxies();
     setupItemsMenuProxy();
-    initEvents345Proxies();
-    initEvents481Proxies();
-    initEvents579Proxies();
+    setupEvents345Proxies();
+    setupEvents481Proxies();
+    setupEvents579Proxies();
 
     // Misc proxies (abilities, candy, quests, smithing)
     setupAbilityProxy();

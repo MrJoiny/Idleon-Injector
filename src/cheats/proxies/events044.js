@@ -17,7 +17,7 @@ export function setupAutoLootProxy() {
     const actorEvents345 = events(345);
     const init = actorEvents44.prototype.init;
     actorEvents44.prototype.init = function (...args) {
-        const rtn = Reflect.apply(init, this, args);
+        const base = Reflect.apply(init, this, args);
 
         // Easy to read boolean checks
         const dropType = this._DropType;
@@ -67,7 +67,7 @@ export function setupAutoLootProxy() {
             this._DropAmount = 0;
             this._ImageInst = null;
             behavior.recycleActor(this.actor);
-            return rtn;
+            return base;
         }
 
         // Variable setup for chest and inventory management
@@ -124,6 +124,6 @@ export function setupAutoLootProxy() {
         this._DropAmount = 0;
         this._ImageInst = null;
         behavior.recycleActor(this.actor);
-        return rtn;
+        return base;
     };
 }
