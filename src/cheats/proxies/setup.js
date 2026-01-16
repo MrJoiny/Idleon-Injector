@@ -2,65 +2,8 @@
  * Proxies Module Index
  *
  * Central orchestrator for all game proxies.
- * Exports setup functions and a unified setupAllProxies() function.
+ * Contains the unified setupAllProxies() function.
  */
-
-// Re-export from behavior.js
-export { setupBehaviorScriptProxies, setupNodmgProxy } from "./behavior.js";
-
-// Re-export from firebase.js
-export { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementProxy } from "./firebase.js";
-
-// Re-export from gameAttributes.js
-export { setupGameAttributeProxies, setupTrappingProxy, setupAlchProxy } from "./gameAttributes.js";
-
-// Re-export from clist.js
-export { setupCListProxy } from "./clist.js";
-
-// Re-export from events012.js
-export { setupEvents012Proxies } from "./events012.js";
-
-// Re-export from events034.js
-export { setupItemGetNotificationProxy } from "./events034.js";
-
-// Re-export from events038.js
-export { setupItemMoveProxy, setupItemMiscProxy } from "./events038.js";
-
-// Re-export from events044.js
-export { setupAutoLootProxy } from "./events044.js";
-
-// Re-export from events124.js
-export { setupEvents124Proxies } from "./events124.js";
-
-// Re-export from events189.js
-export { setupEvents189Proxies } from "./events189.js";
-
-// Re-export from events312.js
-export { setupItemsMenuProxy } from "./events312.js";
-
-// Re-export from events345.js
-export { setupEvents345Proxies } from "./events345.js";
-
-// Re-export from events481.js
-export { setupEvents481Proxies } from "./events481.js";
-
-// Re-export from events579.js
-export { setupEvents579Proxies } from "./events579.js";
-
-// Re-export from minigames.js
-export {
-    setupMiningFishingProxies,
-    setupCatchingMinigameProxy,
-    setupChoppingMinigameProxy,
-    setupPoingMinigameProxy,
-    setupScratchMinigameProxy,
-    setupHoopsDartsProxies,
-    setupWisdomMonumentProxy,
-    setupMinigameProxies,
-} from "./minigames.js";
-
-// Re-export from misc.js
-export { setupAbilityProxy, setupTimeCandyProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 
 // Imports for setupAllProxies
 import { setupBehaviorScriptProxies, setupNodmgProxy } from "./behavior.js";
