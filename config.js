@@ -53,9 +53,6 @@ exports.cheatConfig = {
             HoopsUpgCost: (t) => 0,
         },
     },
-    wipe: {
-        cogs: 0,
-    },
     talent: {
         168: (t) => t * 2, // orb of remembrance time doubled,
         169: (t) => 100, // 100% shockwave

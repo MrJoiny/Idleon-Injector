@@ -13,7 +13,6 @@
 
 import { registerCheats, registerCheat } from "../core/registration.js";
 import { bEngine, itemDefs, cList, itemTypes } from "../core/globals.js";
-import { cheatConfig } from "../core/state.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
 
@@ -74,27 +73,26 @@ const wipeHandlers = {
         }
         return "Overpurchased items have been set to their max safe value.";
     },
-    cogs(params) {
-        if (parseInt(params[1])) {
-            cheatConfig.wipe.cogs = parseInt(params[1]);
-        } else {
-            const cogOrder = bEngine.getGameAttribute("CogOrder");
-            const cogMap = bEngine.getGameAttribute("CogMap");
-            cogOrder.forEach((v, k) => {
-                const playerCount = (
-                    cogOrder
-                        .slice(100)
-                        .toString()
-                        .match(/Player/g) || []
-                ).length;
-                const threshold = 100 + playerCount - 1 + parseInt(cheatConfig.wipe.cogs);
-                if (typeof v === "string" && k > threshold && !v.includes("Player")) {
-                    cogOrder[k] = "Blank";
-                    cogMap[k].keys().keys.forEach((a) => delete cogMap[k].h[a]);
+    cogs() {
+        const cogOrder = bEngine.getGameAttribute("CogOrder");
+        const cogMap = bEngine.getGameAttribute("CogMap");
+        const startIndex = 108;
+
+        for (let i = startIndex; i < cogOrder.length; i++) {
+            if (typeof cogOrder[i] === "string" && cogOrder[i].includes("Player")) {
+                continue;
+            }
+
+            cogOrder[i] = "Blank";
+
+            if (cogMap[i].h) {
+                for (const key of Object.keys(cogMap[i].h)) {
+                    delete cogMap[i].h[key];
                 }
-            });
+            }
         }
-        return "Cogs wiped.";
+
+        return `Cogs wiped.`;
     },
 };
 
