@@ -81,10 +81,12 @@ const wipeHandlers = {
             const cogOrder = bEngine.getGameAttribute("CogOrder");
             const cogMap = bEngine.getGameAttribute("CogMap");
             cogOrder.forEach((v, k) => {
-                const playerCount = cogOrder
-                    .slice(100)
-                    .toString()
-                    .match(/Player/g).length;
+                const playerCount = (
+                    cogOrder
+                        .slice(100)
+                        .toString()
+                        .match(/Player/g) || []
+                ).length;
                 const threshold = 100 + playerCount - 1 + parseInt(cheatConfig.wipe.cogs);
                 if (typeof v === "string" && k > threshold && !v.includes("Player")) {
                     cogOrder[k] = "Blank";
@@ -130,7 +132,8 @@ function alchFn(params) {
 }
 
 // Equip any item at any class/level
-registerCheat({
+// note: this needs to be a registercheats, for the toggle to work
+registerCheats({
     name: "equipall",
     message: "!danger! Equip any item at any class/level",
 });
