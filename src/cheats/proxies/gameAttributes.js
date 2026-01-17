@@ -34,7 +34,7 @@ function applyMaxCap(value, configKey, handleNaN = false) {
 
 /**
  * Setup all game attribute proxies.
- * 
+ *
  * NOTE: Unlike items.js and clist.js, gameAttributes.h gets RECREATED
  * after character selection. Individual sub-object guards are required,
  * and this function is re-called from firebase.js playButton proxy.
@@ -54,16 +54,15 @@ export function setupGameAttributeProxies() {
     }
 
     // HP - always return max HP when enabled
-    if (!Object.prototype.hasOwnProperty.call(bEngine.gameAttributes.h, "_PlayerHP")) {
-        createProxy(bEngine.gameAttributes.h, "PlayerHP", {
-            get(original) {
-                return original;
-            },
-            set(value, backupKey) {
-                this[backupKey] = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value;
-            },
-        });
-    }
+    // we cannot use a guard here since the game itself is creating _PlayerHP
+    createProxy(bEngine.gameAttributes.h, "PlayerHP", {
+        get(original) {
+            return original;
+        },
+        set(value, backupKey) {
+            this[backupKey] = cheatState.godlike.hp ? events(12)._customBlock_PlayerHPmax() : value;
+        },
+    });
 
     // Free revives
     const personalValuesMap = bEngine.getGameAttribute("PersonalValuesMap");
@@ -190,7 +189,9 @@ export function setupGameAttributeProxies() {
     if (!Object.prototype.hasOwnProperty.call(bEngine.gameAttributes.h, "_MonsterRespawnTime")) {
         createProxy(bEngine.gameAttributes.h, "MonsterRespawnTime", {
             set(value, backupKey) {
-                this[backupKey] = cheatState.godlike.respawn ? cheatConfig?.godlike?.respawn?.(value) ?? value : value;
+                this[backupKey] = cheatState.godlike.respawn
+                    ? (cheatConfig?.godlike?.respawn?.(value) ?? value)
+                    : value;
             },
         });
     }
