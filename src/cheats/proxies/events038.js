@@ -28,22 +28,19 @@ function setupItemMoveProxy() {
     const actorEvents38 = events(38);
     const InvItem4custom = actorEvents38.prototype._event_InvItem4custom;
     actorEvents38.prototype._event_InvItem4custom = function (...args) {
-        const actor = this?.actor;
-        if (!actor?.getValue) {
-            return Reflect.apply(InvItem4custom, this, args);
-        }
+        const actor = this.actor;
 
         const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
         const dragId = actor.getValue("ActorEvents_38", "_ItemDragID");
         const itemKey = inventoryOrder?.[dragId];
 
         if (cheatState.wide.candy) {
-            const itemType = itemDefs[itemKey]?.h?.Type;
+            const itemType = itemDefs[itemKey].h.Type;
             if (itemType === "TIME_CANDY") {
                 const originalMap = bEngine.getGameAttribute("CurrentMap");
                 const originalTarget = bEngine.getGameAttribute("AFKtarget");
                 const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
-                const genInfo = pixelHelper?.[23]?.getValue?.("ActorEvents_577", "_GenINFO");
+                const genInfo = pixelHelper[23].getValue("ActorEvents_577", "_GenINFO");
                 if (Array.isArray(genInfo)) {
                     genInfo[86] = 1;
                 }
@@ -70,33 +67,24 @@ function setupItemMoveProxy() {
             }
         }
 
-        if (
-            cheatState.unlock.divinitypearl &&
-            actor.getValue("ActorEvents_38", "_PixelType") === 2 &&
-            actor.getValue("ActorEvents_38", "_DummyType2Dead") === 7 &&
-            itemKey === "Pearl6"
-        ) {
-            const levels = bEngine.gameAttributes?.h?.Lv0;
-            if (!levels) {
-                return Reflect.apply(InvItem4custom, this, args);
-            }
+        // cheat for divinitypearl, we skip the ingame and just set the exp to the skill
+        if (cheatState.unlock.divinitypearl && itemKey === "Pearl6") {
+            if (this._PixelType === 2 && this._DummyType2Dead === 7) {
+                const expType = bEngine.getGameAttribute("ExpType");
+                const exp0 = bEngine.getGameAttribute("Exp0");
+                const expReq0 = bEngine.getGameAttribute("ExpReq0");
+                const currentMap = bEngine.getGameAttribute("CurrentMap");
 
-            let calls = 0;
-            bEngine.gameAttributes.h.Lv0 = new Proxy(levels, {
-                get(target, name) {
-                    if (name === bEngine.getGameAttribute("DummyNumber3") && calls < 2) {
-                        calls++;
-                        if (calls === 2) {
-                            bEngine.gameAttributes.h.Lv0 = levels;
-                        }
-                        return 1;
-                    }
-                    return target[name];
-                },
-            });
+                let targetSkill;
+                if (currentMap === 0) targetSkill = 2;
+                else if (currentMap === 50) targetSkill = 5;
+                else if (currentMap === 100) targetSkill = 8;
+                else targetSkill = expType;
 
-            if (typeof args[0] === "function") {
-                return Reflect.apply(args[0], this, []);
+                // Add 40% XP to current skill
+                exp0[targetSkill] = Number(exp0[targetSkill]) + 0.4 * Number(expReq0[targetSkill]);
+
+                return; // Skip original function entirely
             }
         }
 
