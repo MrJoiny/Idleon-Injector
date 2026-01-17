@@ -90,7 +90,7 @@ export default {
         format: "iife",
         banner,
         // Preserve readable output
-        indent: "  ",
+        indent: "",
         // Don't add strict mode (game context may not support it)
         strict: false,
     },
