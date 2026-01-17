@@ -53,19 +53,6 @@ exports.cheatConfig = {
             HoopsUpgCost: (t) => 0,
         },
     },
-    talent: {
-        168: (t) => t * 2, // orb of remembrance time doubled,
-        169: (t) => 100, // 100% shockwave
-        318: (t) => 10000, // 10x hp/drop plunderous mobs
-        120: (t) => 800, // 800% shockwave damage
-        483: (t) => Math.max(t, 3.5), // Tenteycle
-        // 1: time? 2: points?
-        45: (t, args) => {
-            const fns = { 1: (t) => t, 2: (t) => t };
-            const fn = fns[args[0]];
-            return fn ? fn(t) : 0;
-        },
-    },
     w1: {
         anvil: {
             productionspeed: (t) => t * 4,

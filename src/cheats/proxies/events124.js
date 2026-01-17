@@ -51,15 +51,6 @@ export function setupEvents124Proxies() {
         return base;
     });
 
-    // Talent number modifications
-    createMethodProxy(ActorEvents124, "_customBlock_GetTalentNumber", (base, ...args) => {
-        const key = args[1];
-        if (cheatState.talent[key]) {
-            return cheatConfig.talent[key](base, args);
-        }
-        return base;
-    });
-
     // Plunderous respawn on monster kill
     createMethodProxy(ActorEvents124, "_customBlock_MonsterKill", (base, ...args) => {
         if (!cheatState.wide.plunderous) return base;
@@ -84,7 +75,7 @@ export function setupEvents124Proxies() {
             ActorEvents124._customBlock_AddStatusToMonster("StatusPlunder", behavior.getLastCreatedActor(), 36e5);
             bEngine.gameAttributes.h.DummyText3 = "nah";
         }
-        
+
         return base;
     });
 }

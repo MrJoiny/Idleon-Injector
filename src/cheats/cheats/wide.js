@@ -61,20 +61,6 @@ registerCheats({
     ],
 });
 
-// Talent cheats
-registerCheats({
-    name: "talent",
-    message: "talent value override cheats",
-    subcheats: [
-        { name: "168", message: "Orb of remembrance" },
-        { name: "169", message: "Imbuted shokwaves" },
-        { name: "318", message: "Pirate flag" },
-        { name: "120", message: "shockwave slash" },
-        { name: "483", message: "Tenteyecle" },
-        { name: "45", message: "Void trial rerun" },
-    ],
-});
-
 // Buy gem shop packs
 registerCheat({
     name: "buy",

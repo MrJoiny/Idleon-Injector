@@ -23,10 +23,8 @@ export const configDescriptions = {
     // GODLIKE
     "cheatConfig.godlike.respawn": "Mob respawn time (lower is faster).",
 
-
     // UNLOCK
     "cheatConfig.unlock.islands": "String of IDs for islands to unlock (e.g., 'abcde_').",
-
 
     // WIDE - Miscellaneous Wide Cheats
     "cheatConfig.wide.gembuylimit": "Removes daily gem purchase limits.",
@@ -41,19 +39,8 @@ export const configDescriptions = {
     "cheatConfig.wide.dartshop.DartsUpgCost": "Sets the Upgrade Cost in the Dart Shop. (lower is better)",
     "cheatConfig.wide.hoopshop.HoopsUpgCost": "Sets the Upgrade Cost in the Hoop Shop. (lower is better)",
 
-
     // WIPE
     "cheatConfig.wipe.cogs": "Wipes all cogs currently on the board.",
-
-
-    // TALENT - Talent ID Overrides
-    "cheatConfig.talent.168": "Orb of Remembrance: Active time duration.",
-    "cheatConfig.talent.169": "Shockwave: Sets the proc chance percentage.",
-    "cheatConfig.talent.318": "Plunderous Mobs: HP and drop rate.",
-    "cheatConfig.talent.120": "Shockwave: Damage percentage.",
-    "cheatConfig.talent.483": "Tenteycle: Sets the base value or multiplier.",
-    "cheatConfig.talent.45": "Custom logic for Talent 45 (1: time?, 2: points?).",
-
 
     // W1 - World 1
     "cheatConfig.w1.anvil.productionspeed": "Anvil: Item production speed.",
@@ -66,7 +53,6 @@ export const configDescriptions = {
     "cheatConfig.w1.owl.OwlFeatherRate": "Owl: Feather gain rate.",
     "cheatConfig.w1.owl.OwlBonuses": "Owl: All owl-related bonuses.",
     "cheatConfig.w1.owl.OwlFeatherShinyGe": "Owl: Not sure what that is.",
-
 
     // W2 - World 2
     "cheatConfig.w2.roo.RooCost": "Roo: Upgrade costs. (lower is better)",
@@ -91,14 +77,12 @@ export const configDescriptions = {
     "cheatConfig.w2.alchemy.LiquidHRrate": "Alchemy: Liquid generation speed.",
     "cheatConfig.w2.alchemy.sigilspeed": "Alchemy: Sigil research speed.",
 
-
     // W3 - World 3
     "cheatConfig.w3.buildspd": "Construction: Building speed.",
     "cheatConfig.w3.WorshipSpeed": "Worship: Charge generation speed.",
     "cheatConfig.w3.towerdamage": "Tower Defense: Tower damage.",
     "cheatConfig.w3.refineryspeed": "Refinery: Cycle speed. Don't go below 1! (lower is better)",
     "cheatConfig.w3.trapping": "Trapping: Trap timer speed.",
-
 
     // W4 - World 4
     "cheatConfig.w4.fasteggs": "Breeding: Egg incubation speed. (lower is better)",
@@ -207,7 +191,6 @@ export const configDescriptions = {
     "cheatConfig.w4.meals.Sailing": "",
     "cheatConfig.w4.meals.GamingExp": "",
 
-
     // W5 - World 5
     // Sailing
     "cheatConfig.w5.sailing.IslandDistance": "Sailing: Island distance (lower is closer).",
@@ -305,7 +288,6 @@ export const configDescriptions = {
     // fixobj
     "cheatConfig.w5.fixobj": "",
 
-
     // W6 - World 6
     // Farming
     "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time (lower is faster). (lower is better)",
@@ -401,7 +383,6 @@ export const configDescriptions = {
     // Sneak Symbol
     "cheatConfig.w6.sneaksymbol.SneakSymbolChanceBase": "Sneaking: Base chance for Sneak Symbol procs.",
 
-
     // W7 - World 7
     // Bubba
     "cheatConfig.w7.bubba.MeatsliceRate": "Bubba: Meat slicing speed.",
@@ -471,10 +452,8 @@ export const configDescriptions = {
     "cheatConfig.w7.zenith.ZenithMarketCost": "Zenith: Market upgrade costs. (lower is better)",
     "cheatConfig.w7.zenith.ZenithMarketBonus": "Zenith: Market-provided bonuses.",
 
-
     // MISC
     "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses.",
-
 
     // INJECTOR CONFIG
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code.",
