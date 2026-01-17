@@ -208,16 +208,22 @@ registerCheats({
         { name: "teleports", message: "free teleports." },
         { name: "tickets", message: "free colosseum tickets." },
         { name: "silvpen", message: "free silver pens." },
-        { name: "goldpen", message: "free gold pens." },
         { name: "obolfrag", message: "free obol fragments." },
         { name: "rifts", message: "Unlock rift portals" },
         { name: "revive", message: "unlimited revives" },
-        { name: "islands", message: "unlock islands" },
+        {
+            name: "islands",
+            message: "unlock fishing islands",
+            fn: () => {
+                bEngine.getGameAttribute("OptionsListAccount")[169] = cheatConfig.unlock.islands;
+            },
+        },
         {
             name: "portals",
+            message: "Unlocks all portals",
             fn: () => {
                 bEngine.getGameAttribute("KillsLeft2Advance").map((entry) => {
-                    for (let i = 0; i < entry.length; i++) entry[i] = 0;
+                    for (let i = 0; i < entry.length; i++) entry[i] = Math.min(entry[i], 0);
                     return entry;
                 });
                 return "The portals have been unlocked!";
