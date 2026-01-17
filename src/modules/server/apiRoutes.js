@@ -295,7 +295,13 @@ function setupApiRoutes(app, context, client, config) {
                     details: optionsResult.exceptionDetails.text,
                 });
             } else {
-                const data = optionsResult.result.value;
+                let data = optionsResult.result.value;
+
+                // FIX: Normalize object/map response to array
+                if (data && typeof data === "object" && !Array.isArray(data)) {
+                    data = Object.assign([], data);
+                }
+
                 if (data === null) {
                     res.status(500).json({ error: "OptionsListAccount not found in game context" });
                 } else {
