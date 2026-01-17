@@ -81,7 +81,7 @@ export function setupGameAttributeProxies() {
 
     // Gaming - snail mail (W5)
     const gaming = bEngine.getGameAttribute("Gaming");
-    if (gaming && !gaming._isPatched) {
+    if (!gaming._isPatched) {
         Object.defineProperty(gaming, "_isPatched", { value: true, enumerable: false });
         createProxy(gaming, 13, {
             get(original) {
@@ -98,7 +98,7 @@ export function setupGameAttributeProxies() {
 
     // Divinity - unlinks (W5)
     const divinity = bEngine.getGameAttribute("Divinity");
-    if (divinity && !divinity._isPatched) {
+    if (!divinity._isPatched) {
         Object.defineProperty(divinity, "_isPatched", { value: true, enumerable: false });
         createProxy(divinity, 38, {
             get(original) {
@@ -115,7 +115,7 @@ export function setupGameAttributeProxies() {
 
     // Rift - unlock (W5)
     const rift = bEngine.getGameAttribute("Rift");
-    if (rift && !rift._isPatched) {
+    if (!rift._isPatched) {
         Object.defineProperty(rift, "_isPatched", { value: true, enumerable: false });
         createProxy(rift, 1, {
             get(original) {
@@ -133,7 +133,7 @@ export function setupGameAttributeProxies() {
 
     // Currencies - teleports, tickets, obol fragments, silver pens
     const currencies = bEngine.getGameAttribute("CurrenciesOwned")?.h;
-    if (currencies && !currencies._isPatched) {
+    if (!currencies._isPatched) {
         Object.defineProperty(currencies, "_isPatched", { value: true, enumerable: false });
         bEngine.getGameAttribute("CurrenciesOwned").h = new Proxy(currencies, {
             get(obj, prop) {
@@ -165,7 +165,7 @@ export function setupGameAttributeProxies() {
 
     // Cloud save cooldown - pause cloud saving
     const cloudSave = bEngine.getGameAttribute("CloudSaveCD");
-    if (cloudSave && !cloudSave._isPatched) {
+    if (!cloudSave._isPatched) {
         Object.defineProperty(cloudSave, "_isPatched", { value: true, enumerable: false });
         bEngine.setGameAttribute(
             "CloudSaveCD",
@@ -185,20 +185,22 @@ export function setupGameAttributeProxies() {
         );
     }
 
-    // Monster respawn time
-    if (!Object.prototype.hasOwnProperty.call(bEngine.gameAttributes.h, "_MonsterRespawnTime")) {
-        createProxy(bEngine.gameAttributes.h, "MonsterRespawnTime", {
-            set(value, backupKey) {
-                this[backupKey] = cheatState.godlike.respawn
-                    ? (cheatConfig?.godlike?.respawn?.(value) ?? value)
-                    : value;
+    // Monster respawn time - proxy the array to intercept element writes
+    const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
+    if (!monsterRespawnTime._isPatched) {
+        Object.defineProperty(monsterRespawnTime, "_isPatched", { value: true, enumerable: false });
+        bEngine.gameAttributes.h.MonsterRespawnTime = new Proxy(monsterRespawnTime, {
+            set(target, prop, value) {
+                const newValue = cheatState.godlike.respawn ? cheatConfig.godlike.respawn(value) : value;
+                target[prop] = newValue;
+                return true;
             },
         });
     }
 
     // Options list account - toggles, unlocks, and caps
     const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
-    if (optionsListAccount && !optionsListAccount._isPatched) {
+    if (!optionsListAccount._isPatched) {
         Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
 
         bEngine.gameAttributes.h.OptionsListAccount = new Proxy(optionsListAccount, {
@@ -279,7 +281,7 @@ export function setupGameAttributeProxies() {
 
     // Trapping (instant trap completion)
     const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE")?.h;
-    if (playerDatabase && !playerDatabase._isPatched) {
+    if (!playerDatabase._isPatched) {
         Object.defineProperty(playerDatabase, "_isPatched", { value: true, enumerable: false });
 
         for (const name in playerDatabase) {
@@ -312,7 +314,7 @@ export function setupGameAttributeProxies() {
 
     // Alchemy (vial attempts)
     const p2w = bEngine.getGameAttribute("CauldronP2W");
-    if (p2w && !p2w._isPatched) {
+    if (!p2w._isPatched) {
         Object.defineProperty(p2w, "_isPatched", { value: true, enumerable: false });
         createProxy(p2w[5], 0, {
             get(original) {
