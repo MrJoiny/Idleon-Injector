@@ -598,7 +598,6 @@ exports.cheatConfig = {
             // BigFishCost: (t) => t,
             // isBigFishUpgUnlocked: (t) => t,
             // BigFishUpgLVREQ: (t) => t,
-            StaminaCostMulti: (t) => t,
         },
         gallery: {
             GalleryBonusMulti: (t) => t * 2,

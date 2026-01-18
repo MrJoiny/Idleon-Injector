@@ -22,16 +22,6 @@ export function setupAutoLootProxy() {
         if (handled) return;
         return base;
     });
-
-    // Proxy the core pickup function to prevent overflow loss.
-    // The game's default logic often sets _CollectedStatus = 1 even if _DropAmount > 0,
-    // which causes the actor to be recycled and the remaining stack to disappear.
-    createMethodProxy(actorEvents44.prototype, "_customEvent_ItemPickupInTheFirstPlace", function (base) {
-        if (this._DropAmount > 0 && this._CollectedStatus === 1) {
-            this._CollectedStatus = 0;
-        }
-        return base;
-    });
 }
 
 /**
