@@ -51,8 +51,8 @@ registerCheats({
             name: "perfectobols",
             message: "Roll all obols perfectly for class. Family and inventory obols update on character change.",
             fn: function () {
-                if (!cheatState.wide.perfectobols) rollAllObols();
                 cheatState.wide.perfectobols = !cheatState.wide.perfectobols;
+                if (cheatState.wide.perfectobols) rollAllObols();
                 return `${
                     cheatState.wide.perfectobols ? "Activated" : "Deactivated"
                 } Perfect obol rolls. Family and inventory obols update on character change.`;

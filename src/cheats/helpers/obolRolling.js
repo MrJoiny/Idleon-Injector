@@ -5,7 +5,7 @@
  */
 
 import { bEngine, itemDefs } from "../core/globals.js";
-import { cheatConfig } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 
 /**
  * Get primary stat for a character class.
@@ -24,8 +24,12 @@ function getPrimaryStat(characterClass) {
 /**
  * Roll all obols to perfect stats.
  * Rolls personal, family, all characters, and inventory obols.
+ *
+ * @param {boolean} [force=false] - Force roll even if cheat is inactive
  */
-export function rollAllObols() {
+export function rollAllObols(force = false) {
+    if (!force && !cheatState?.wide?.perfectobols) return;
+
     rollPersonalObols();
     rollFamilyObols();
     rollAllCharactersObols();
