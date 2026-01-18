@@ -104,8 +104,12 @@ export function setupEvents579Proxies() {
     // Bubba (W7)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Bubbastuff", [{ state: "w7.bubba" }]);
 
-    // Spelunk (W7 spelunk, big fish)
-    createConfigLookupProxy(ActorEvents579, "_customBlock_Spelunk", [{ state: "w7.spelunk" }, { state: "w7.bigfish" }]);
+    // Spelunk (W7 spelunk, big fish, spelunkmana)
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Spelunk", [
+        { state: "w7.spelunk" },
+        { state: "w7.bigfish" },
+        { state: "w7.spelunkmana" },
+    ]);
 
     // Gallery (W7)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Gallery", [{ state: "w7.gallery" }]);

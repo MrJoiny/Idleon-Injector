@@ -641,6 +641,10 @@ exports.cheatConfig = {
             ZenithMarketCost: (t) => t / 2,
             ZenithMarketBonus: (t) => t * 2,
         },
+        spelunkdepth: 0,
+        spelunkmana: {
+            StaminaCostMulti: (t) => 0,
+        },
     },
     misc: {
         keychain: (t) => t,

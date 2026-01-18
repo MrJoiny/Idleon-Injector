@@ -179,6 +179,41 @@ export function getAutoCompleteSuggestions() {
         }
     }
 
+    // w4 chips suggestions
+    if (cList.ChipDesc) {
+        choices.push({
+            value: "w4 chips all",
+            message: "Set amount for all lab chips",
+            category: "w4",
+        });
+        for (const chip of cList.ChipDesc) {
+            if (!chip[0]) continue;
+            choices.push({
+                value: `w4 chips ${chip[0].toLowerCase()}`,
+                message: (chip[1] || "") + " " + (chip[2] || ""),
+                category: "w4",
+            });
+        }
+    }
+
+    // w5 jargems suggestions
+    if (cList.HolesInfo && cList.HolesInfo[67]) {
+        choices.push({
+            value: "w5 jargems all",
+            message: "Set amount for all jar gems",
+            category: "w5",
+        });
+        for (const gem of cList.HolesInfo[67]) {
+            const parts = gem.split("|");
+            if (!parts[0]) continue;
+            choices.push({
+                value: `w5 jargems ${parts[0].toLowerCase()}`,
+                message: parts[3] || "",
+                category: "w5",
+            });
+        }
+    }
+
     return choices;
 }
 
@@ -193,6 +228,8 @@ export function getChoicesNeedingConfirmation() {
         "spawn",
         "w4 mainframe",
         "w4 chipbonuses",
+        "w4 chips",
+        "w5 jargems",
         "search",
         "wide gembuylimit",
         "wide candytime",

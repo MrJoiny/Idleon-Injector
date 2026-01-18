@@ -12,7 +12,7 @@
  */
 
 import { registerCheats } from "../core/registration.js";
-import { events } from "../core/globals.js";
+import { bEngine, cList, events } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 
@@ -41,6 +41,14 @@ registerCheats({
         { name: "vialrng", message: "vial unlock upon rolling 1+" },
         { name: "vialattempt", message: "unlimited vial attempts" },
         { name: "sigilspeed", message: "fast sigil research (see config)" },
+        {
+            name: "killroyreset",
+            message: "reset killroy weekly progress",
+            fn: () => {
+                bEngine.getGameAttribute("OptionsListAccount")[113] = 0;
+                return "Killroy weekly progress has been reset.";
+            },
+        },
     ],
 });
 
@@ -98,6 +106,56 @@ registerCheats({
         { name: "mainframe", message: "mainframe cheats" },
         { name: "chipbonuses", message: "chip bonuses" },
         { name: "meals", message: "meal bonus cheats" },
+        {
+            name: "ribbon",
+            message: "Adds a ribbon (1-20) to storage. Usage: w4 ribbon [1-20]",
+            fn: (params) => {
+                const ribbonLvl = parseInt(params[1]);
+                if (isNaN(ribbonLvl) || ribbonLvl < 1 || ribbonLvl > 20) {
+                    return "Please provide a ribbon lvl between 1 and 20.";
+                }
+
+                for (let i = 0; i <= 27; i++) {
+                    if (ribbons[i] === 0) {
+                        ribbons[i] = ribbonLvl;
+                        return `Added ribbon ${ribbonLvl} at storage index ${i}.`;
+                    }
+                }
+
+                return "No empty storage slots available in the Ribbon storage";
+            },
+        },
+        {
+            name: "chips",
+            message: "Adds to the amount of lab chips. Usage: w4 chips [chipname|all] [amount]",
+            fn: (params) => {
+                const target = params[1]?.toLowerCase();
+                const amount = parseInt(params[2]);
+                if (isNaN(amount)) {
+                    return "Please provide a valid numeric amount.";
+                }
+
+                const lab = bEngine.gameAttributes.h.Lab;
+                const chipsCount = lab[15];
+
+                const chipNames = cList.ChipDesc.map((c) => c[0].toLowerCase());
+
+                if (target === "all") {
+                    for (let i = 0; i < chipNames.length && i <= 21; i++) {
+                        chipsCount[i] += amount;
+                    }
+                    return `Added ${amount} to all ${chipNames.length} chip counts.`;
+                }
+
+                const index = chipNames.indexOf(target);
+                if (index === -1 || index >= chipNames.length) {
+                    return `Chip "${target}" not found or out of range. Valid names: ${chipNames.slice(0, 22).join(", ")}`;
+                }
+
+                chipsCount[index] += amount;
+                return `Added ${amount} to ${cList.ChipDesc[index][0]}.`;
+            },
+        },
     ],
 });
 
@@ -112,6 +170,38 @@ registerCheats({
         { name: "divinity", message: "divinity cheats" },
         { name: "collider", message: "collider cheats" },
         { name: "holes", message: "holes cheats" },
+        {
+            name: "jargems",
+            message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
+            fn: (params) => {
+                const target = params[1]?.toLowerCase();
+                const amount = parseInt(params[2]);
+                if (isNaN(amount)) {
+                    return "Please provide a valid numeric amount.";
+                }
+
+                const holes = bEngine.gameAttributes.h.Holes;
+                const gemCounts = holes[24];
+
+                const rawGems = cList.HolesInfo[67];
+                const gemNames = rawGems.map((g) => g.split("|")[0].toLowerCase());
+
+                if (target === "all") {
+                    for (let i = 0; i < gemCounts.length && i < gemNames.length; i++) {
+                        gemCounts[i] += amount;
+                    }
+                    return `Added ${amount} to all ${Math.min(gemCounts.length, gemNames.length)} jar gem counts.`;
+                }
+
+                const index = gemNames.indexOf(target);
+                if (index === -1 || index >= gemCounts.length) {
+                    return `Jar gem "${target}" not found or out of range. Valid names: ${gemNames.join(", ")}`;
+                }
+
+                gemCounts[index] += amount;
+                return `Added ${amount} to ${rawGems[index].split("|")[0]}.`;
+            },
+        },
     ],
 });
 
@@ -186,5 +276,19 @@ registerCheats({
         { name: "bigfish", message: "big fish nullify cost" },
         { name: "bubba", message: "bubba cheats" },
         { name: "zenith", message: "zenith market cheats" },
+        { name: "spelunkmana", message: "no stamina cost in spelunking" },
+        {
+            name: "spelunkdepth",
+            message: "Sets the current spelunking depth. Usage: w7 spelunkdepth [layer]",
+            fn: (params) => {
+                const depth = parseInt(params[1]);
+                if (isNaN(depth) || depth < 1) {
+                    return "Please provide a valid numeric depth (1+).";
+                }
+
+                cheatConfig.w7.spelunkdepth = depth;
+                return `Spelunking depth set to ${depth}. Go to the next layer to apply.`;
+            },
+        },
     ],
 });
