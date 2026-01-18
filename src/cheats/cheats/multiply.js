@@ -60,5 +60,6 @@ registerCheats({
             configurable: true,
         },
         { name: "printer", message: "Multiplies sample print by x, overrides lab/god bonus", configurable: true },
+        { name: "carrycap", message: "Multiplies carry capacity by the number given", configurable: true },
     ],
 });
