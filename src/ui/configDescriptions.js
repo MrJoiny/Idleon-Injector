@@ -26,6 +26,18 @@ export const configDescriptions = {
     // UNLOCK
     "cheatConfig.unlock.islands": "String of IDs for islands to unlock (e.g., 'abcde_').",
 
+    "cheatConfig.multiply.printer": "Multiplies sample print by x, overrides lab/god bonus.",
+    "cheatConfig.multiply.carrycap": "Multiplies carry capacity by the number given.",
+    "cheatConfig.multiply.damage": "Multiplies total damage by the number given.",
+    "cheatConfig.multiply.money": "Multiplies money drops by the number given.",
+    "cheatConfig.multiply.drop": "Multiplies drop rarity by the number given.",
+    "cheatConfig.multiply.afk": "Multiplies AFK gains by the number given.",
+    "cheatConfig.multiply.skillexp": "Multiplies skill XP gain by the number given.",
+    "cheatConfig.multiply.classexp": "Multiplies class XP gain by the number given.",
+    "cheatConfig.multiply.efficiency": "Multiplies skilling efficiency by the number given.",
+    "cheatConfig.multiply.crystal": "Multiplies crystal spawn chance by the number given.",
+    "cheatConfig.multiply.shopstock": "Multiplies shop stock quantity by the number given.",
+
     // WIDE - Miscellaneous Wide Cheats
     "cheatConfig.wide.gembuylimit": "Removes daily gem purchase limits.",
     "cheatConfig.wide.autoloot.itemstochest": "Automatically sends looted items to the chest.",
@@ -451,6 +463,8 @@ export const configDescriptions = {
     // Zenith
     "cheatConfig.w7.zenith.ZenithMarketCost": "Zenith: Market upgrade costs. (lower is better)",
     "cheatConfig.w7.zenith.ZenithMarketBonus": "Zenith: Market-provided bonuses.",
+    "cheatConfig.w7.spelunkdepth": "Spelunking: Current depth (one-shot, resets to 0 after use).",
+    "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking.",
 
     // MISC
     "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses.",

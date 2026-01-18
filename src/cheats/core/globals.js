@@ -54,6 +54,12 @@ export let customMaps = null;
 export let dialogueDefs = null;
 
 /**
+ * Stencyl Actor model.
+ * @type {object|null}
+ */
+export let ActorModel = null;
+
+/**
  * Firebase storage interface.
  * @type {object|null}
  */
@@ -110,6 +116,7 @@ export function registerCommonVariables(context) {
     events = (num) => context[`scripts.ActorEvents_${num}`];
     customMaps = context["scripts.CustomMaps"];
     dialogueDefs = context["scripts.DialogueDefinitions"];
+    ActorModel = context["com.stencyl.models.Actor"];
     firebase = context.FirebaseStorage;
 
     // Populate itemTypes set
@@ -143,3 +150,4 @@ export const getMonsterDefs = () => monsterDefs;
 export const getCList = () => cList;
 export const getBehavior = () => behavior;
 export const getEvents = () => events;
+export const getActorModel = () => ActorModel;

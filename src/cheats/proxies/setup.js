@@ -20,6 +20,8 @@ import { setupItemsMenuProxy } from "./events312.js";
 import { setupEvents345Proxies } from "./events345.js";
 import { setupEvents481Proxies } from "./events481.js";
 import { setupEvents579Proxies } from "./events579.js";
+import { setupEvents713Proxies } from "./events713.js";
+import { setupActorProxies } from "./actor.js";
 import { setupAbilityProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 import { setupItemProxies } from "./items.js";
 
@@ -59,6 +61,8 @@ export function setupAllProxies() {
     setupEvents345Proxies();
     setupEvents481Proxies();
     setupEvents579Proxies();
+    setupEvents713Proxies();
+    setupActorProxies();
 
     // Misc proxies (abilities, quests, smithing)
     setupAbilityProxy();
