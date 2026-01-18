@@ -65,20 +65,16 @@ export function setupEvents345Proxies() {
     });
 
     // Global shrines
-    // TODO: there is alreadya global shrine in the game new since a few release, change the code to just use the ingame one.
-    // find out where and how it works ingame.
     const shrineInfo = bEngine.getGameAttribute("ShrineInfo");
     for (const i in shrineInfo) {
-        if (typeof shrineInfo[i] === "object") {
-            shrineInfo[i] = new Proxy(shrineInfo[i], {
-                get(original, j) {
-                    if (cheatState.w3.globalshrines && j === 0) {
-                        return bEngine.getGameAttribute("CurrentMap");
-                    }
-                    return original[j];
-                },
-            });
-        }
+        shrineInfo[i] = new Proxy(shrineInfo[i], {
+            get(original, j) {
+                if (cheatState.w3.globalshrines && j === 0) {
+                    return bEngine.getGameAttribute("CurrentMap");
+                }
+                return original[j];
+            },
+        });
     }
 
     // Tower stats (tower damage)

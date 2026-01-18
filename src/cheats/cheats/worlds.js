@@ -14,7 +14,7 @@
 import { registerCheats } from "../core/registration.js";
 import { events } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
-import { cheatConfig } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 
 registerCheats({
     name: "w1",
@@ -132,7 +132,7 @@ registerCheats({
         {
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
-            fn: (params) => {
+            fn: function (params) {
                 const char = parseInt(params[1]);
                 if (isNaN(char) || char < 0 || char > 9) {
                     // TODO: make this dynamic with character count
