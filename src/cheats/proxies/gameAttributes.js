@@ -213,7 +213,9 @@ export function setupGameAttributeProxies() {
                 if (cheatState.minigames && index === 33) return 1;
                 if (cheatState.unlock.quickref && index === 34) return 0;
                 if (cheatState.w4.spiceclaim && index === 100) return 0;
+                if (cheatState.w4.arena && index === 88) return 1;
                 if (cheatState.w2.boss && index === 185 && obj[prop] === 10) return 0;
+
                 if (cheatState.wide.eventspins && index === 325) return 10;
                 if (cheatState.w6.emperor && index === 370) return -10;
                 if (cheatState.w3.jeweledcogs && index === 414) return 0;
@@ -229,7 +231,9 @@ export function setupGameAttributeProxies() {
                 if (cheatState.minigames && index === 33) return true;
                 if (cheatState.unlock.quickref && index === 34) return true;
                 if (cheatState.w4.spiceclaim && index === 100) return true;
+                if (cheatState.w4.arena && index === 88) return true;
                 if (cheatState.wide.eventspins && index === 325) return true;
+
                 if (cheatState.w6.emperor && index === 370) return true;
                 if (cheatState.w3.jeweledcogs && index === 414) return true;
 
