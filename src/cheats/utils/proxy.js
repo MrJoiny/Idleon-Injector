@@ -16,7 +16,7 @@ import { traverse } from "./traverse.js";
  */
 function resolvePath(obj, path) {
     if (!path) return undefined;
-    return path.split(".").reduce((o, i) => o?.[i], obj);
+    return path.split(".").reduce((o, i) => o[i], obj);
 }
 
 /**

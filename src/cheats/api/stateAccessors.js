@@ -10,20 +10,17 @@ import { bEngine } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
 
 export function getOLA() {
-    return bEngine?.gameAttributes?.h?.OptionsListAccount ?? null;
+    return bEngine.gameAttributes.h.OptionsListAccount;
 }
 
 export function setOLAIndex(index, value) {
     const ola = getOLA();
-    if (ola) {
-        ola[index] = value;
-        return ola[index];
-    }
-    return null;
+    ola[index] = value;
+    return ola[index];
 }
 
 export function getOLAIndex(index) {
-    return getOLA()?.[index] ?? null;
+    return getOLA()[index];
 }
 
 export function getcheatStateList() {

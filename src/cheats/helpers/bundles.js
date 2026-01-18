@@ -13,7 +13,7 @@ import { knownBundles } from "../constants.js";
  * @returns {Array<[string, string]>} Array of [displayName, bundleCode] tuples
  */
 export function getAllBundles() {
-    const bundleMessages = gameContext["scripts.CustomMapsREAL"]?.GemPopupBundleMessages()?.h || {};
+    const bundleMessages = gameContext["scripts.CustomMapsREAL"].GemPopupBundleMessages().h || {};
     const allBundles = [...knownBundles];
 
     for (const [key] of Object.entries(bundleMessages)) {

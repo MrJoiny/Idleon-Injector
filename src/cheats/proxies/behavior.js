@@ -53,7 +53,7 @@ export function setupBehaviorScriptProxies() {
                 if (cheatState.rngInt) return cheatState.rngInt;
 
                 // Force VIP book to always be max level
-                if (cheatState.w3?.book && bEngine.getGameAttribute("MenuType2") === 31 && args[0] === 1) {
+                if (cheatState.w3.book && bEngine.getGameAttribute("MenuType2") === 31 && args[0] === 1) {
                     return args[1];
                 }
 
@@ -82,6 +82,7 @@ export function setupBehaviorScriptProxies() {
         const originalRunLater = behavior.runLater;
         behavior.runLater = new Proxy(originalRunLater, {
             apply(originalFn, context, args) {
+                // needs optional chaining otherwise the game get bricked
                 const behaviorName = args[2]?.behaviors?.behaviors?.[0]?.name;
                 if (cheatState.godlike?.intervention && args[0] === 2400 && behaviorName === "ActorEvents_481") {
                     args[0] = 0;
@@ -97,8 +98,9 @@ export function setupBehaviorScriptProxies() {
         const originalRunPeriodically = behavior.runPeriodically;
         behavior.runPeriodically = new Proxy(originalRunPeriodically, {
             apply(originalFn, context, args) {
+                // needs optional chaining otherwise the game get bricked
                 const behaviorName = args[2]?.behaviors?.behaviors?.[0]?.name;
-                if (cheatState.godlike?.poison && args[0] === 2e3 && behaviorName === "ActorEvents_575") {
+                if (cheatState.godlike.poison && args[0] === 2e3 && behaviorName === "ActorEvents_575") {
                     args[0] = 5;
                 }
                 Reflect.apply(originalFn, context, args);

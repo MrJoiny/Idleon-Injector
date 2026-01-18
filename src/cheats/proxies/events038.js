@@ -32,7 +32,7 @@ function setupItemMoveProxy() {
 
         const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
         const dragId = actor.getValue("ActorEvents_38", "_ItemDragID");
-        const itemKey = inventoryOrder?.[dragId];
+        const itemKey = inventoryOrder[dragId];
 
         if (cheatState.wide.candy) {
             const itemType = itemDefs[itemKey].h.Type;

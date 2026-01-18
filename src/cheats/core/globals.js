@@ -115,7 +115,7 @@ export function registerCommonVariables(context) {
     // Populate itemTypes set
     itemTypes.clear();
     Object.values(itemDefs).forEach((entry) => {
-        const type = entry.h?.Type;
+        const type = entry.h.Type;
         if (type) itemTypes.add(type);
     });
 }

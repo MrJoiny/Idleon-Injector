@@ -60,14 +60,14 @@ export function getAutoCompleteSuggestions() {
         if (name === "cheats") return null;
         return {
             value: name,
-            message: def?.message || "",
-            category: def?.category || "general",
+            message: def.message || "",
+            category: def.category || "general",
         };
     });
 
     // item commands (drop, nomore, multiplestacks)
     addChoices(choices, itemDefs, (code, item) => {
-        if (!item?.h?.displayName) return null;
+        if (!item.h.displayName) return null;
         if (itemBlacklist.has(code)) return null;
         const name = item.h.displayName.replace(/_/g, " ");
         // filtering out ui items named strung jewels
@@ -82,7 +82,7 @@ export function getAutoCompleteSuggestions() {
 
     // monster spawns
     addChoices(choices, monsterDefs, (code, monster) => {
-        if (!monster?.h?.Name) return null;
+        if (!monster.h.Name) return null;
         const name = monster.h.Name.replace(/_/g, " ");
         return { value: `spawn ${code}`, message: name, category: "spawn" };
     });
@@ -120,7 +120,7 @@ export function getAutoCompleteSuggestions() {
     }
 
     // class names
-    if (cList?.ClassNames) {
+    if (cList.ClassNames) {
         const classNames = cList.ClassNames.slice(0, 41);
         for (const [id, name] of classNames.entries()) {
             if (!name || name.toLowerCase() === "blank") continue;
@@ -133,7 +133,7 @@ export function getAutoCompleteSuggestions() {
     }
 
     // lvl - skills from cList.SkillNames
-    if (cList?.SkillNames) {
+    if (cList.SkillNames) {
         // Special case: class level at index 0
         choices.push({
             value: "lvl class",
@@ -169,7 +169,7 @@ export function getAutoCompleteSuggestions() {
     }
 
     // game attributes (gga)
-    if (bEngine?.gameAttributes?.h) {
+    if (bEngine.gameAttributes.h) {
         for (const key of Object.keys(bEngine.gameAttributes.h)) {
             choices.push({
                 value: `gga ${key}`,

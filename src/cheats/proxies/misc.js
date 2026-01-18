@@ -82,7 +82,7 @@ export function setupQuestProxy() {
  */
 export function setupSmithProxy() {
     const customListsScript = gameContext["scripts.CustomLists"];
-    if (typeof customListsScript?.ItemToCraftCostTYPE !== "function") return;
+    if (typeof customListsScript.ItemToCraftCostTYPE !== "function") return;
     if (customListsScript.ItemToCraftCostTYPE._isPatched) return;
 
     const sizes = Object.values(cList.ItemToCraftEXP).map((element) => element.length);

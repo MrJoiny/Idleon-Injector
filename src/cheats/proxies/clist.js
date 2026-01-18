@@ -61,7 +61,7 @@ export function setupCListProxy() {
     traverse(cList.MTXinfo, 3, (data) => {
         createProxy(data, gembuylimitIndex, (original) => {
             if (cheatState.wide.gembuylimit) {
-                return Math.max(original, cheatConfig?.wide?.gembuylimit ?? original);
+                return Math.max(original, cheatConfig.wide.gembuylimit);
             }
             return original;
         });

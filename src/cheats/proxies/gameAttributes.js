@@ -17,20 +17,7 @@
 import { cheatConfig, cheatState } from "../core/state.js";
 import { bEngine, cList, events } from "../core/globals.js";
 import { createProxy } from "../utils/proxy.js";
-
-/**
- * Apply max cap to a value, with optional NaN handling.
- * @param {number} value - The value to cap
- * @param {string} configKey - Key in cheatConfig.maxval
- * @param {boolean} handleNaN - Whether to handle NaN values
- * @returns {number} The capped value
- */
-function applyMaxCap(value, configKey, handleNaN = false) {
-    if (handleNaN && isNaN(value)) {
-        return cheatConfig?.maxval?.[configKey] ?? value;
-    }
-    return Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
-}
+import { applyMaxCap } from "../helpers/values.js";
 
 /**
  * Setup all game attribute proxies.
@@ -66,7 +53,7 @@ export function setupGameAttributeProxies() {
 
     // Free revives
     const personalValuesMap = bEngine.getGameAttribute("PersonalValuesMap");
-    if (personalValuesMap?.h && !Object.prototype.hasOwnProperty.call(personalValuesMap.h, "_InstaRevives")) {
+    if (personalValuesMap.h && !Object.prototype.hasOwnProperty.call(personalValuesMap.h, "_InstaRevives")) {
         createProxy(personalValuesMap.h, "InstaRevives", {
             get(original) {
                 if (cheatState.unlock.revive) return 10;
@@ -132,7 +119,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Currencies - teleports, tickets, obol fragments, silver pens
-    const currencies = bEngine.getGameAttribute("CurrenciesOwned")?.h;
+    const currencies = bEngine.getGameAttribute("CurrenciesOwned").h;
     if (!currencies._isPatched) {
         Object.defineProperty(currencies, "_isPatched", { value: true, enumerable: false });
         bEngine.getGameAttribute("CurrenciesOwned").h = new Proxy(currencies, {
@@ -284,7 +271,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Trapping (instant trap completion)
-    const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE")?.h;
+    const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
     if (!playerDatabase._isPatched) {
         Object.defineProperty(playerDatabase, "_isPatched", { value: true, enumerable: false });
 

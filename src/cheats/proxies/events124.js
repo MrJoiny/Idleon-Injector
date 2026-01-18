@@ -10,7 +10,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, events, behavior } from "../core/globals.js";
+import { events } from "../core/globals.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
@@ -20,7 +20,6 @@ import { getMultiplyValue } from "../helpers/values.js";
  */
 export function setupEvents124Proxies() {
     const ActorEvents124 = events(124);
-    const ActorEvents12 = events(12);
 
     // Stamp cost reduction
     createMethodProxy(ActorEvents124, "_customBlock_StampCostss", (base) => {

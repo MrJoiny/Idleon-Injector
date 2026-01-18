@@ -49,7 +49,7 @@ export async function setup() {
         console.log("Exiting setup function successfully.");
 
         // Inject web UI if enabled
-        if (cheatConfig?.ingameUI) {
+        if (cheatConfig.ingameUI) {
             injectWebUI();
         }
 

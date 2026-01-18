@@ -162,7 +162,7 @@ export function setupHoopsDartsProxies() {
 
             // Hoops logic
             if (cheatState.minigame.hoops) {
-                if (bEngine.gameAttributes?.h?.OptionsListAccount?.[243] === 1) {
+                if (bEngine.gameAttributes.h.OptionsListAccount[243] === 1) {
                     bEngine.gameAttributes.h.OptionsListAccount[243] = 0;
                 }
 

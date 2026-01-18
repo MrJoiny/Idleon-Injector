@@ -24,7 +24,7 @@ const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
  */
 function createSearchFn(header, getEntries, formatResult) {
     return function (params) {
-        const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
+        const query = params.slice(1).length ? params.slice(1).join(" ").toLowerCase() : undefined;
         const results = [header];
 
         for (const entry of getEntries()) {
@@ -49,13 +49,13 @@ function gg_func(params, mode) {
         let gg = bEngine.getGameAttribute(params[0]);
 
         for (let i = 1; i < params.length; i++) {
-            if (gg?.h) gg = gg.h[params[i]];
+            if (gg.h) gg = gg.h[params[i]];
             else if (Array.isArray(gg)) gg = gg[params[i]];
             else break;
         }
 
         // Unwrap .h if present
-        if (gg?.h) gg = gg.h;
+        if (gg.h) gg = gg.h;
 
         if (typeof gg !== "object" && !Array.isArray(gg)) {
             return `${gg}`;
@@ -155,7 +155,7 @@ function createListFunction(params) {
                     const cardId = card[0];
                     const cardValue = card[4];
                     const cardEffect = card[3];
-                    const entityName = monsterDefs[cardId]?.h?.Name ?? "Unknown";
+                    const entityName = monsterDefs[cardId].h.Name;
 
                     results.push(`${cardId}, ${entityName}, ${cardValue}, ${cardEffect}`);
                 }
@@ -232,7 +232,7 @@ function createListFunction(params) {
             for (let i = 0; i < companions.length; i++) {
                 const id = companions[i][0];
                 const effects = formatText(companions[i][1]);
-                const ingameName = formatText(monsterDefs[id]?.h?.Name) ?? "Unknown";
+                const ingameName = formatText(monsterDefs[id].h.Name);
                 results.push(`${i}, ${ingameName}, ${effects}`);
             }
         },
@@ -348,7 +348,7 @@ registerCheats({
             name: "smith",
             message: "Search for an item to smith",
             fn: (params) => {
-                const query = params.slice(1)?.length ? params.slice(1).join(" ").toLowerCase() : undefined;
+                const query = params.slice(1).length ? params.slice(1).join(" ").toLowerCase() : undefined;
                 const results = ["Tab, Id, ItemId, ItemName"];
                 const ItemToCraftNAME = cList.ItemToCraftNAME;
 

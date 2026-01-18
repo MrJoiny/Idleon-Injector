@@ -167,7 +167,7 @@ registerCheat({
         let droppedCount = 0;
 
         for (const [code, entry] of Object.entries(itemDefs)) {
-            if (entry.h?.Type === type && !blackList.includes(code)) {
+            if (entry.h.Type === type && !blackList.includes(code)) {
                 dropOnChar(code, amount);
                 droppedCount++;
             }
@@ -182,7 +182,7 @@ registerCheat({
     name: "class",
     message: "!danger! Change character class. Usage: class [class_name]",
     fn: (params) => {
-        const className = params[0]?.toLowerCase();
+        const className = params[0].toLowerCase();
         if (!className) {
             const validClasses = cList.ClassNames.slice(0, 41)
                 .map((name, id) => `${name.toLowerCase()} (${id})`)
@@ -275,7 +275,7 @@ registerCheat({
     name: "lvl",
     message: "Change the lvl of a skill or alchemy type to this value",
     fn: (params) => {
-        const subcommand = params[0]?.toLowerCase();
+        const subcommand = params[0].toLowerCase();
         const value = parseInt(params[1]);
 
         if (!subcommand) {

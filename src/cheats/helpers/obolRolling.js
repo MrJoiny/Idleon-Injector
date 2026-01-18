@@ -28,7 +28,7 @@ function getPrimaryStat(characterClass) {
  * @param {boolean} [force=false] - Force roll even if cheat is inactive
  */
 export function rollAllObols(force = false) {
-    if (!force && !cheatState?.wide?.perfectobols) return;
+    if (!force && !cheatState.wide.perfectobols) return;
 
     rollPersonalObols();
     rollFamilyObols();
@@ -90,9 +90,9 @@ export function rollInventoryObols() {
 export function rollPerfectObols(obolOrder, obolMap, characterClass) {
     const primaryStat = getPrimaryStat(characterClass);
     const preferredStat =
-        cheatConfig?.wide?.perfectobols?.preferredstat === "PRIMARY"
+        cheatConfig.wide.perfectobols.preferredstat === "PRIMARY"
             ? primaryStat
-            : cheatConfig?.wide?.perfectobols?.preferredstat || primaryStat;
+            : cheatConfig.wide.perfectobols.preferredstat || primaryStat;
 
     obolOrder.forEach((obol, index) => {
         if (obol.includes("Locked") || obol.includes("Blank")) return;

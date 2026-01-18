@@ -22,7 +22,7 @@ export const getMultiplyValue = (key) => cheatConfig?.multiply?.[key] ?? 1;
  */
 export function applyMaxCap(value, configKey, handleNaN = false) {
     if (handleNaN && isNaN(value)) {
-        return cheatConfig?.maxval?.[configKey] ?? value;
+        return cheatConfig.maxval[configKey];
     }
-    return Math.min(cheatConfig?.maxval?.[configKey] ?? Infinity, value);
+    return Math.min(cheatConfig.maxval[configKey], value);
 }

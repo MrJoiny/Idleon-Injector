@@ -151,7 +151,7 @@ registerCheats({
             name: "sumunit",
             message: "Set summoning units to be always a certain type",
             fn: (params) => {
-                const unitName = params?.[1];
+                const unitName = params[1];
                 if (!unitName) {
                     return `Please input a unit name ${[...summonUnits.keys()].join(", ")} to summon as per normal.`;
                 }

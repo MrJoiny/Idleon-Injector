@@ -33,7 +33,7 @@ export function setupItemProxies() {
         // Weapon speed (godlike speed)
         if (typeGen === "aWeapon") {
             createProxy(item.h, "Speed", (original) => {
-                if (cheatState.godlike?.speed) return cheatConfig.godlike?.speed ?? 9;
+                if (cheatState.godlike.speed) return cheatConfig.godlike.speed ?? 9;
                 return original;
             });
         }
@@ -41,13 +41,13 @@ export function setupItemProxies() {
         // Upgrade stone (upstones rng + use)
         if (typeGen === "dStone") {
             createProxy(item.h, "Amount", (original) => {
-                if (cheatState.upstones?.rng) return 100;
+                if (cheatState.upstones.rng) return 100;
                 return original;
             });
 
             // Slot consumption
             createProxy(item.h, "Trigger", (original) => {
-                if (cheatState.upstones?.use) return 0;
+                if (cheatState.upstones.use) return 0;
                 return original;
             });
         }
@@ -69,10 +69,10 @@ export function setupItemProxies() {
     }
 
     // Time candy, single item
-    const timeCandy = itemDefs.Timecandy1?.h;
+    const timeCandy = itemDefs.Timecandy1.h;
     if (timeCandy) {
         createProxy(timeCandy, "ID", (original) => {
-            if (cheatState.wide?.candytime) return cheatConfig.wide?.candytime ?? 600;
+            if (cheatState.wide.candytime) return cheatConfig.wide.candytime ?? 600;
             return original;
         });
     }

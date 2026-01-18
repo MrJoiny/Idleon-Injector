@@ -35,8 +35,8 @@ export function dropOnChar(item, amount) {
 
         if (itemDefinition) {
             // Temporarily disable autoloot to chest
-            const toChest = cheatConfig?.wide?.autoloot?.itemstochest;
-            if (cheatConfig?.wide?.autoloot) {
+            const toChest = cheatConfig.wide.autoloot.itemstochest;
+            if (cheatConfig.wide.autoloot) {
                 cheatConfig.wide.autoloot.itemstochest = false;
             }
 
@@ -47,7 +47,7 @@ export function dropOnChar(item, amount) {
             else actorEvents189._customBlock_DropSomething(item, amount, 0, 0, 2, y, 0, x, y);
 
             // Restore autoloot to chest setting
-            if (cheatConfig?.wide?.autoloot) {
+            if (cheatConfig.wide.autoloot) {
                 cheatConfig.wide.autoloot.itemstochest = toChest;
             }
 
