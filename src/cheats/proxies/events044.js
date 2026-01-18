@@ -16,9 +16,20 @@ import { createMethodProxy } from "../utils/proxy.js";
 export function setupAutoLootProxy() {
     const actorEvents44 = events(44);
 
+    // Proxy init to handle instant looting and chest transfer on spawn
     createMethodProxy(actorEvents44.prototype, "init", function (base) {
         const handled = processAutoLoot(this);
         if (handled) return;
+        return base;
+    });
+
+    // Proxy the core pickup function to prevent overflow loss.
+    // The game's default logic often sets _CollectedStatus = 1 even if _DropAmount > 0,
+    // which causes the actor to be recycled and the remaining stack to disappear.
+    createMethodProxy(actorEvents44.prototype, "_customEvent_ItemPickupInTheFirstPlace", function (base) {
+        if (this._DropAmount > 0 && this._CollectedStatus === 1) {
+            this._CollectedStatus = 0;
+        }
         return base;
     });
 }
@@ -43,15 +54,12 @@ function processAutoLoot(context) {
     const actorEvents345 = events(345);
     const inDungeon = context._DungItemStatus !== 0 || (actorEvents345 && actorEvents345._customBlock_Dungon() !== -1);
 
-    // Not an item check / ingame autoloot enabled
     const autolootEnabled = !bEngine.getGameAttribute("OptionsListAccount")[83];
-    const notAnItem = !itemDefs[dropType];
 
     // Validation Pre-checks
     if (
         !cheatState.wide.autoloot ||
         inDungeon ||
-        notAnItem ||
         playerDropped ||
         blockAutoLoot ||
         !safeToLootItem ||
@@ -60,8 +68,7 @@ function processAutoLoot(context) {
         return false;
     }
 
-    // Collect item into first open inventory slot
-    // This triggers the game's internal looting logic (Floor -> Inventory/Cards/Money)
+    // Initial collection attempt
     // Note: Items must successfully enter a free inventory slot before they can be moved to the chest.
     context._CollectedStatus = 0;
     bEngine.gameAttributes.h.DummyNumber4 = 23.34;
@@ -78,27 +85,26 @@ function processAutoLoot(context) {
     if (isCoin) {
         const moneyKey = cheatConfig.wide.autoloot.moneytochest ? "MoneyBANK" : "Money";
         const currentMoney = bEngine.getGameAttribute(moneyKey) || 0;
-
         bEngine.setGameAttribute(moneyKey, currentMoney + context._DropAmount);
-
         recycleContextActor(context);
         return true;
     }
 
     const toChest = cheatConfig.wide.autoloot.itemstochest;
-
-    // Check specific farming modes that KEEP items in inventory
     const zenithFarming = (itemType === "STATUE" || dropType === "Quest110") && cheatConfig.wide.autoloot.zenithfarm;
     const materialFarming = itemType === "MONSTER_DROP" && cheatConfig.wide.autoloot.materialfarm;
 
-    if (!toChest || zenithFarming || materialFarming) {
-        recycleContextActor(context);
-        return true;
+    // Final transfer to chest for successfully picked up items if enabled
+    if (toChest && !zenithFarming && !materialFarming) {
+        transferItemToChest(dropType);
     }
 
-    // Move to Chest Logic
-    // we move only items that we picked up from inventory to chest
-    transferItemToChest(dropType);
+    // Overflow protection: if items remain (inventory or chest full),
+    // we must NOT recycle the actor or the remaining items will be lost forever.
+    if (context._DropAmount > 0) {
+        context._CollectedStatus = 0; // Reset status so it remains on ground
+        return true;
+    }
 
     recycleContextActor(context);
     return true;
