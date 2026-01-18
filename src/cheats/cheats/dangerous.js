@@ -94,6 +94,48 @@ const wipeHandlers = {
 
         return `Cogs wiped.`;
     },
+    ribbon() {
+        const ribbons = bEngine.getGameAttribute("Ribbon");
+        if (!ribbons) return "Ribbon array not found.";
+        for (let i = 0; i <= 27; i++) {
+            ribbons[i] = 0;
+        }
+        return "Ribbon storage (0-27) has been wiped.";
+    },
+    invlocked() {
+        const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
+        const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
+        const lockedSlots = bEngine.getGameAttribute("LockedSlots");
+
+        let wipedCount = 0;
+        for (let i = 0; i < inventoryOrder.length; i++) {
+            if (lockedSlots && lockedSlots[i]) continue;
+            if (inventoryOrder[i] === "Blank") continue;
+
+            inventoryOrder[i] = "Blank";
+            if (itemQuantity) itemQuantity[i] = 0;
+            wipedCount++;
+        }
+        return `Wiped ${wipedCount} non-locked inventory slots.`;
+    },
+    chips() {
+        const lab = bEngine.getGameAttribute("Lab");
+        if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found.";
+        const chipsCount = lab[15];
+        for (let i = 0; i <= 21; i++) {
+            chipsCount[i] = 0;
+        }
+        return "Lab chips have been wiped.";
+    },
+    jargems() {
+        const holes = bEngine.getGameAttribute("Holes");
+        if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found.";
+        const gemCounts = holes[24];
+        for (let i = 0; i < gemCounts.length; i++) {
+            gemCounts[i] = 0;
+        }
+        return "Jar gems have been wiped.";
+    },
 };
 
 /**
@@ -148,6 +190,10 @@ registerCheats({
         { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
         { name: "overpurchases", message: "Set overpurchased gem shop items to max safe value.", fn: wipeFunction },
         { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
+        { name: "ribbon", message: "Wipe your ribbon storage (0-27).", fn: wipeFunction },
+        { name: "invlocked", message: "Wipe your inventory slots that are NOT locked.", fn: wipeFunction },
+        { name: "chips", message: "Wipe your lab chips.", fn: wipeFunction },
+        { name: "jargems", message: "Wipe your jar gems.", fn: wipeFunction },
     ],
 });
 
