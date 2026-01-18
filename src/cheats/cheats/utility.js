@@ -253,6 +253,25 @@ function createListFunction(params) {
             }
         },
 
+        chips: () => {
+            results.push("Id, Name, Description");
+            const chips = cList.ChipDesc;
+            for (let i = 0; i < chips.length; i++) {
+                const name = chips[i][0];
+                const desc = (chips[i][1] || "") + " " + (chips[i][2] || "");
+                results.push(`${i}, ${name}, ${desc.trim()}`);
+            }
+        },
+
+        jargems: () => {
+            results.push("Id, Name, Description");
+            const rawArr = cList.HolesInfo[67];
+            for (let i = 0; i < rawArr.length; i++) {
+                const parts = rawArr[i].split("|");
+                results.push(`${i}, ${parts[0]}, ${parts[3]}`);
+            }
+        },
+
         gga: () => {
             for (const key of Object.keys(bEngine.gameAttributes.h)) {
                 results.push(key);
@@ -454,6 +473,8 @@ registerCheats({
         { name: "talent", message: "list talents. third param optional filter", fn: createListFunction },
         { name: "ability", message: "list abilities. third param optional filter", fn: createListFunction },
         { name: "smith", message: "list smithing recipes. third param optional filter", fn: createListFunction },
+        { name: "chips", message: "list lab chips", fn: createListFunction },
+        { name: "jargems", message: "list jar gems", fn: createListFunction },
         { name: "gga", message: "list game attributes. third param optional filter", fn: createListFunction },
         { name: "companion", message: "list all companions", fn: createListFunction },
         { name: "nans", message: "scan game attributes for NaN values", fn: createListFunction },
