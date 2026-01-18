@@ -198,8 +198,7 @@ registerCheats({
 // Unlock cheats
 registerCheats({
     name: "unlock",
-    message:
-        "unlock portals, rifts, pearls, presets, quickref, teleports, colloseum, silver pens, revives, storagecrafting",
+    message: "unlock cheats",
     canToggleSubcheats: true,
     subcheats: [
         { name: "divinitypearl", message: "divinity pearls > lvl50" },
@@ -216,6 +215,7 @@ registerCheats({
             message: "unlock fishing islands",
             fn: () => {
                 bEngine.getGameAttribute("OptionsListAccount")[169] = cheatConfig.unlock.islands;
+                return "All fishing islands unlocked.";
             },
         },
         {
@@ -242,6 +242,55 @@ registerCheats({
                     }
                 }
                 return "Unlocked all anvil crafts.";
+            },
+        },
+        {
+            name: "questsall",
+            message: "Unlocks/completes all quests",
+            fn: () => {
+                bEngine.gameAttributes.h.QuestComplete;
+                const questComplete = bEngine.getGameAttribute("QuestComplete");
+                if (!questComplete || !questComplete.h) return "QuestComplete not found.";
+
+                let count = 0;
+                for (const key in questComplete.h) {
+                    questComplete.h[key] = 1;
+                    count++;
+                }
+                return `Set ${count} quests to completed status.`;
+            },
+        },
+        {
+            name: "construct",
+            message: "Unlocks all towers in construction",
+            fn: () => {
+                const towerInfo = bEngine.getGameAttribute("TowerInfo");
+                if (!towerInfo) return "TowerInfo not found.";
+
+                let count = 0;
+                for (let i = 0; i <= 27; i++) {
+                    if (towerInfo[i] !== undefined) {
+                        const val = parseInt(towerInfo[i]) || 0;
+                        if (val < 1) {
+                            towerInfo[i] = 1;
+                            count++;
+                        }
+                    }
+                }
+                return `Unlocked ${count} towers in construction.`;
+            },
+        },
+        {
+            name: "bg",
+            message: "Unlocks all backgrounds",
+            fn: () => {
+                const bgUnlocked = bEngine.getGameAttribute("BGunlocked");
+                if (!bgUnlocked) return "BGunlocked not found.";
+
+                for (let i = 0; i < bgUnlocked.length; i++) {
+                    bgUnlocked[i] = 1;
+                }
+                return "All backgrounds have been unlocked!";
             },
         },
     ],
