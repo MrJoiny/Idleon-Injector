@@ -133,7 +133,7 @@ registerCheats({
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
             fn: (params) => {
-                const char = parseInt(params?.[1]);
+                const char = parseInt(params[1]);
                 if (isNaN(char) || char < 0 || char > 9) {
                     // TODO: make this dynamic with character count
                     return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
@@ -155,18 +155,18 @@ registerCheats({
                 if (!unitName) {
                     return `Please input a unit name ${[...summonUnits.keys()].join(", ")} to summon as per normal.`;
                 }
-
-                if (unitName === "reset") {
-                    cheatConfig.w6.summoning.UnitTypeDraw = (t) => t;
-                    return `summoning units has been reset to default`;
-                }
-
                 const summonUnit = summonUnits[unitName];
                 if (summonUnit === undefined) {
                     return `no such unit ${unitName} found`;
                 }
+                if (unitName === "reset") {
+                    cheatState.w6.sumunit = false;
+                    cheatConfig.w6.sumunit = { UnitTypeDraw: (t) => t };
+                    return `summoning units has been reset to default`;
+                }
 
-                cheatConfig.w6.summoning.UnitTypeDraw = () => summonUnit;
+                cheatState.w6.sumunit = true;
+                cheatConfig.w6.sumunit = { UnitTypeDraw: () => summonUnit };
                 return `${unitName} set as unit to be drawn`;
             },
         },

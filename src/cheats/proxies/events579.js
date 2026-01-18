@@ -34,6 +34,7 @@ export function setupEvents579Proxies() {
         { state: "w2.roo" },
         { state: "w6.endless", fixedKey: "EndlessModifierID", value: 1 },
         { state: "w6.summoning" },
+        { state: "w6.sumunit" },
         { state: "w6.grimoire" },
     ]);
 
