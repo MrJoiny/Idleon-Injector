@@ -82,6 +82,12 @@ export function setupEvents579Proxies() {
         { state: "w3.instantdreams", fixedKey: "BarFillReq", value: 0 },
     ]);
 
+    // Talent enhancement (plunderous mob spawn rate)
+    createMethodProxy(ActorEvents579, "_customBlock_TalentEnh", (base, key) => {
+        if (cheatState.wide.plunderous && key === 318) return 100;
+        return base;
+    });
+
     // Farming (W6)
     createConfigLookupProxy(ActorEvents579, "_customBlock_FarmingStuffs", [{ state: "w6.farming" }]);
 

@@ -50,32 +50,4 @@ export function setupEvents124Proxies() {
         }
         return base;
     });
-
-    // Plunderous respawn on monster kill
-    createMethodProxy(ActorEvents124, "_customBlock_MonsterKill", (base, ...args) => {
-        if (!cheatState.wide.plunderous) return base;
-
-        const hasPlunderBuff = ActorEvents12._customBlock_GetBuffBonuses(318, 1) > 0;
-        const allowAllChars = cheatConfig.wide.plunderous.allcharacters;
-        if (!hasPlunderBuff && !allowAllChars) return base;
-
-        const monster = args[0];
-        const monsterType = monster.getValue("ActorEvents_1", "_MonsterType");
-        const monsterNode = monster.getValue("ActorEvents_1", "_MonsterNODE");
-        const isTemp = monster.getValue("ActorEvents_1", "_TempMonster") !== 0;
-        const isNonAFK = bEngine.getGameAttribute("CustomLists").h.NonAFKmonsters.includes(monsterType);
-
-        if (bEngine.gameAttributes.h.DummyText3 === "nah" && !isNonAFK && !isTemp) {
-            bEngine.gameAttributes.h.DummyText3 = "PiratePlunderMonster";
-            ActorEvents124._customBlock_CreateMonster(
-                `${monsterType}`,
-                behavior.asNumber(monsterNode),
-                monster.getXCenter()
-            );
-            ActorEvents124._customBlock_AddStatusToMonster("StatusPlunder", behavior.getLastCreatedActor(), 36e5);
-            bEngine.gameAttributes.h.DummyText3 = "nah";
-        }
-
-        return base;
-    });
 }

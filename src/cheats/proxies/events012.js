@@ -80,6 +80,14 @@ export function setupEvents012Proxies() {
         return base;
     });
 
+    // Buff bonuses (plunderous mob spawn rate)
+    createMethodProxy(ActorEvents12, "_customBlock_GetBuffBonuses", (base, key) => {
+        if (cheatState.wide.plunderous && key === 318) {
+            if (cheatConfig.wide.plunderous.allcharacters || base > 0) return 1;
+        }
+        return base;
+    });
+
     // Shop quantity bonus multiplier
     createMethodProxy(ActorEvents12, "_customBlock_RunCodeOfTypeXforThingY", (base, key) => {
         if (cheatState.multiply.shopstock && key === "ShopQtyBonus") {
