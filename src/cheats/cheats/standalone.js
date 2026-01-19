@@ -191,7 +191,7 @@ registerCheat({
 registerCheats({
     name: "upstones",
     message: "upgrade stone cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "rng", message: "100% upgrade stone success (safe)" },
         { name: "use", message: "Upgrade stones don't use a slot (risky)" },
@@ -203,7 +203,7 @@ registerCheats({
 registerCheats({
     name: "unlock",
     message: "unlock cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "divinitypearl", message: "divinity pearls > lvl50" },
         { name: "presets", message: "preset changes everywhere" },

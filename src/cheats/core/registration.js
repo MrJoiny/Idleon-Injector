@@ -85,7 +85,7 @@ export function registerCheat({ name, fn, message, category = "general", needsPa
  * @param {Function} [cheatMap.fn] - Custom function (overrides default toggle behavior)
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
  * @param {object} [cheatMap.configurable] - Configuration options (implies needsParam: true)
- * @param {boolean} [cheatMap.canToggleSubcheats] - Allow mass toggle of subcheats
+ * @param {boolean} [cheatMap.allowToggleChildren] - Allow mass toggle of all subcheats when parent is called with no args
  * @param {boolean} [cheatMap.needsParam] - Whether this cheat needs/accepts a parameter input (auto-inferred from configurable if not set)
  * @param {string[]} [higherKeys] - Parent command keys (for recursion)
  * @param {string} [parentCategory] - Category inherited from parent
@@ -105,7 +105,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
     stateObject[cheatMap.name] = "subcheats" in cheatMap ? {} : false;
 
     // Add toggle-all state if subcheats can be mass-toggled
-    if (cheatMap.canToggleSubcheats) {
+    if (cheatMap.allowToggleChildren) {
         stateObject[cheatMap.name + "s"] = false;
     }
 
@@ -148,8 +148,8 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
             return `Set ${cmd} to ${val}`;
         }
 
-        // Handle mass toggle of subcheats
-        if (!params[0] && cheatMap.subcheats) {
+        // Handle mass toggle of subcheats (only if allowToggleChildren is set)
+        if (!params[0] && cheatMap.subcheats && cheatMap.allowToggleChildren) {
             for (const i in stateObject[cheatMap.name]) {
                 stateObject[cheatMap.name][i] = !stateObject[cheatMap.name + "s"];
             }

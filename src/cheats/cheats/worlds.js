@@ -19,7 +19,7 @@ import { cheatConfig, cheatState } from "../core/state.js";
 registerCheats({
     name: "w1",
     message: "World 1 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "anvil", message: "anvil cost and duration nullification." },
         { name: "forge", message: "forge speed and capacity multiplier check config" },
@@ -33,7 +33,7 @@ registerCheats({
 registerCheats({
     name: "w2",
     message: "World 2 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "boss", message: "unlimited boss attempts" },
         { name: "roo", message: "roo cheats, check config file" },
@@ -55,7 +55,7 @@ registerCheats({
 registerCheats({
     name: "w3",
     message: "World 3 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "mobdeath", message: "worship mobs insta-death." },
         { name: "towerdamage", message: "multiply tower damage (see config)" },
@@ -83,7 +83,7 @@ registerCheats({
 registerCheats({
     name: "w4",
     message: "World 4 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "battleslots", message: "all 6 battle slots" },
         { name: "eggcap", message: "all egg slots" },
@@ -164,7 +164,7 @@ registerCheats({
 registerCheats({
     name: "w5",
     message: "World 5 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "sailing", message: "sailing cheats" },
         { name: "endercaptains", message: "100% ender captains (requires Emporium bonus unlock)" },
@@ -211,7 +211,7 @@ registerCheats({
 registerCheats({
     name: "w6",
     message: "World 6 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "farming", message: "farming cheats" },
         { name: "ninja", message: "ninja cheats" },
@@ -270,7 +270,7 @@ registerCheats({
 registerCheats({
     name: "w7",
     message: "World 7 cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "spelunk", message: "spelunk cheats" },
         { name: "gallery", message: "gallery cheats" },

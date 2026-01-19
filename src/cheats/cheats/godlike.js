@@ -11,7 +11,7 @@ import { registerCheats } from "../core/registration.js";
 registerCheats({
     name: "godlike",
     message: "all godlike powers.",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "reach", message: "reach set to 666" },
         { name: "crit", message: "crit set to 100" },

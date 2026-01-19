@@ -18,7 +18,7 @@ import { rollAllObols } from "../helpers/obolRolling.js";
 registerCheats({
     name: "wide",
     message: "all account-wide cheats",
-    canToggleSubcheats: true,
+    allowToggleChildren: true,
     subcheats: [
         { name: "gembuylimit", message: "set max gem item purchases", configurable: true },
         { name: "mtx", message: "gem shop cost nullification" },
