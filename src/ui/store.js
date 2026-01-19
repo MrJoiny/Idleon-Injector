@@ -191,12 +191,14 @@ const AccountService = {
     loadAccountOptions: async () => {
         await Actions.withLoading(
             async () => {
+                const hasSchema = Object.keys(dataState.accountSchema).length > 0;
+
                 const [schemaRes, dataRes] = await Promise.all([
-                    fetch("optionsAccountSchema.json").catch(() => ({ ok: false })),
+                    hasSchema ? Promise.resolve(null) : fetch("optionsAccountSchema.json").catch(() => ({ ok: false })),
                     API.fetchOptionsAccount(),
                 ]);
 
-                if (schemaRes.ok) {
+                if (schemaRes?.ok) {
                     dataState.accountSchema = await schemaRes.json();
                 }
 
