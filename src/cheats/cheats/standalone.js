@@ -19,6 +19,7 @@ import { keychainStatsMap } from "../constants.js";
 registerCheat({
     name: "drop",
     message: "drop items",
+    needsParam: true,
     fn: (params) => {
         const item = params[0];
         const amount = params[1] || 1;
@@ -31,6 +32,7 @@ registerCheat({
 registerCheat({
     name: "spawn",
     message: "spawn monsters",
+    needsParam: true,
     fn: (params) => {
         const ActorEvents124 = events(124);
         const monster = params[0];
@@ -104,6 +106,7 @@ registerCheat({
 registerCheat({
     name: "nomore",
     message: "Stop dropping items from monsters, accepts regex.",
+    needsParam: true,
     fn: (params) => {
         // Init nomore config if not exists
         if (!cheatConfig.nomore) {
@@ -141,6 +144,7 @@ registerCheat({
 registerCheat({
     name: "multiplestacks",
     message: "Will make multiple stacks of specified items in chest when autochest is on.",
+    needsParam: true,
     fn: (params) => {
         // init multiplestack, removed from config because of the webui overwriting it
         if (!cheatConfig.multiplestacks) {
@@ -299,6 +303,7 @@ registerCheats({
 registerCheat({
     name: "keychain",
     message: "Generate specific keychain with double max stats when buying from Flurbo store",
+    needsParam: true,
     fn: (params) => {
         const statName = params[0];
         if (!statName) {

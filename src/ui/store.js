@@ -27,7 +27,6 @@ const appState = vanX.reactive({
 
 const dataState = vanX.reactive({
     cheats: [],
-    needsConfirmation: [],
     accountOptions: [],
     accountSchema: {},
     activeCheatStates: {},
@@ -70,9 +69,8 @@ const SystemService = {
 const CheatService = {
     loadCheats: async () => {
         await Actions.withLoading(async () => {
-            const { cheats, needsConfirmation } = await API.fetchCheatsData();
+            const cheats = await API.fetchCheatsData();
             dataState.cheats = cheats || [];
-            dataState.needsConfirmation = needsConfirmation || [];
         });
     },
 

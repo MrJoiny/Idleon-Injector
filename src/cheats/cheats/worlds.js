@@ -129,6 +129,7 @@ registerCheats({
         {
             name: "chips",
             message: "Adds to the amount of lab chips. Usage: w4 chips [chipname|all] [amount]",
+            needsParam: true,
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -174,6 +175,7 @@ registerCheats({
         {
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
+            needsParam: true,
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -223,6 +225,7 @@ registerCheats({
         {
             name: "ninjaItem",
             message: "Generates a ninja item based on the floor which ninja twin is inputted.",
+            needsParam: true,
             fn: function (params) {
                 const char = parseInt(params[1]);
                 if (isNaN(char) || char < 0 || char > 9) {

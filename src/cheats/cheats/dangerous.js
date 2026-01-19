@@ -184,9 +184,9 @@ registerCheats({
     message: "Wipe certain stuff from your account. Use with caution!",
     subcheats: [
         { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
-        { name: "invslot", message: "Wipe your inventory slot (0-indexed)", fn: wipeFunction },
+        { name: "invslot", message: "Wipe your inventory slot (0-indexed)", needsParam: true, fn: wipeFunction },
         { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
-        { name: "chestslot", message: "Wipe your chest slot (0-indexed)", fn: wipeFunction },
+        { name: "chestslot", message: "Wipe your chest slot (0-indexed)", needsParam: true, fn: wipeFunction },
         { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
         { name: "overpurchases", message: "Set overpurchased gem shop items to max safe value.", fn: wipeFunction },
         { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
@@ -201,6 +201,7 @@ registerCheats({
 registerCheat({
     name: "bulk",
     message: "Drop a collection of items at once. Usage: bulk [type] [amount]",
+    needsParam: true,
     fn: (params) => {
         const type = params[0];
         const amount = parseInt(params[1]) || 1;
@@ -227,6 +228,7 @@ registerCheat({
 registerCheat({
     name: "class",
     message: "!danger! Change character class. Usage: class [class_name]",
+    needsParam: true,
     fn: (params) => {
         const className = params[0].toLowerCase();
         if (!className) {
@@ -320,6 +322,7 @@ function handleSkillLevel(name, lvl) {
 registerCheat({
     name: "lvl",
     message: "Change the lvl of a skill or alchemy type to this value",
+    needsParam: true,
     fn: (params) => {
         const subcommand = params[0].toLowerCase();
         const value = parseInt(params[1]);

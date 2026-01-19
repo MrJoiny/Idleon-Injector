@@ -13,6 +13,7 @@ registerCheats({
     name: "multiply",
     message:
         "Multiplies stats by the number (or applies function) given. use reasonably, ridiculous numbers can cause shadowbanning!",
+    needsParam: true,
     subcheats: [
         {
             name: "damage",
@@ -59,7 +60,15 @@ registerCheats({
             message: "Multiplies town shop stock by the number given (works after daily reset)",
             configurable: true,
         },
-        { name: "printer", message: "Multiplies sample print by x, overrides lab/god bonus", configurable: true },
-        { name: "carrycap", message: "Multiplies carry capacity by the number given", configurable: true },
+        {
+            name: "printer",
+            message: "Multiplies sample print by x, overrides lab/god bonus",
+            configurable: true,
+        },
+        {
+            name: "carrycap",
+            message: "Multiplies carry capacity by the number given",
+            configurable: true,
+        },
     ],
 });

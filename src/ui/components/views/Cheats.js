@@ -176,11 +176,7 @@ export const Cheats = () => {
 };
 
 const CheatItem = (cheat) => {
-    const needsValue = van.derive(() => {
-        const list = store.data.needsConfirmation;
-        const val = cheat.value;
-        return list.some((cmd) => val === cmd || val.startsWith(cmd + " "));
-    });
+    const needsValue = cheat.needsParam === true;
 
     const inputValue = van.state("");
 
@@ -188,7 +184,7 @@ const CheatItem = (cheat) => {
 
     const handleExecute = async () => {
         let finalAction = cheat.value;
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) {
                 store.notify(`Value required for '${cheat.value}'`, "error");
                 feedbackState.val = "error";
@@ -209,7 +205,7 @@ const CheatItem = (cheat) => {
 
     const handleFavorite = () => {
         // For cheats that need a value, include the current input value for the favorite
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) {
                 store.notify(`Enter a value first to favorite '${cheat.value}'`, "error");
                 return;
@@ -223,7 +219,7 @@ const CheatItem = (cheat) => {
 
     // Check if this cheat (or parameterized variant) is favorited
     const isFavorited = () => {
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) return false;
             const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
             return store.isFavorite(fullCommand);
@@ -242,12 +238,10 @@ const CheatItem = (cheat) => {
                 onclick: handleExecute,
             },
             // Show both value and message in button
-            cheat.message && cheat.message !== cheat.value
-                ? `${cheat.value} - ${cheat.message}`
-                : cheat.value
+            cheat.message && cheat.message !== cheat.value ? `${cheat.value} - ${cheat.message}` : cheat.value
         ),
         () =>
-            needsValue.val
+            needsValue
                 ? input({
                       type: "text",
                       class: "cheat-input",

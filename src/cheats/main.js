@@ -19,7 +19,7 @@ import { setup as coreSetup } from "./core/setup.js";
 // Static cheats register automatically when this module is imported
 import "./cheats/register.js";
 import { getOLA, setOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
-import { getAutoCompleteSuggestions, getChoicesNeedingConfirmation } from "./api/suggestions.js";
+import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
@@ -55,7 +55,6 @@ window.updateCheatConfig = updateCheatConfig;
 
 // WebUI API
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;
-window.getChoicesNeedingConfirmation = getChoicesNeedingConfirmation;
 window.getOptionsListAccount = getOLA;
 window.setOptionsListAccountIndex = setOLAIndex;
 // window.getOptionsListAccountIndex = getOptionsListAccountIndex;

@@ -63,9 +63,10 @@ export function cheat(action, context) {
  * @param {Function} cheatDef.fn - The function to execute when command is called
  * @param {string} cheatDef.message - Help message describing the cheat
  * @param {string} [cheatDef.category="general"] - Category for grouping in UI
+ * @param {boolean} [cheatDef.needsParam=false] - Whether this cheat needs/accepts a parameter input
  */
-export function registerCheat({ name, fn, message, category = "general" }) {
-    cheats[name] = { fn, message, category };
+export function registerCheat({ name, fn, message, category = "general", needsParam = false }) {
+    cheats[name] = { fn, message, category, needsParam };
 }
 
 /**
@@ -83,8 +84,9 @@ export function registerCheat({ name, fn, message, category = "general" }) {
  * @param {string} [cheatMap.category] - Category for grouping (overrides inherited)
  * @param {Function} [cheatMap.fn] - Custom function (overrides default toggle behavior)
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
- * @param {object} [cheatMap.configurable] - Configuration options
+ * @param {object} [cheatMap.configurable] - Configuration options (implies needsParam: true)
  * @param {boolean} [cheatMap.canToggleSubcheats] - Allow mass toggle of subcheats
+ * @param {boolean} [cheatMap.needsParam] - Whether this cheat needs/accepts a parameter input (auto-inferred from configurable if not set)
  * @param {string[]} [higherKeys] - Parent command keys (for recursion)
  * @param {string} [parentCategory] - Category inherited from parent
  */
@@ -160,7 +162,10 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
         return `${stateObject[cheatMap.name] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
     };
 
-    registerCheat({ name: cmd, fn, message: cheatMap.message, category });
+    // Infer needsParam from configurable if not explicitly set
+    const needsParam = cheatMap.needsParam ?? cheatMap.configurable ?? false;
+
+    registerCheat({ name: cmd, fn, message: cheatMap.message, category, needsParam });
 
     // Recursively register subcheats, passing category
     if ("subcheats" in cheatMap) {

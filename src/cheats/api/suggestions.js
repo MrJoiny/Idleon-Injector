@@ -1,9 +1,8 @@
 /**
  * Suggestions API
  *
- * Functions for CLI/WebUI autocomplete and confirmation:
+ * Functions for CLI/WebUI autocomplete:
  * - getAutoCompleteSuggestions
- * - getChoicesNeedingConfirmation
  */
 
 import { cheats } from "../core/registration.js";
@@ -62,6 +61,7 @@ export function getAutoCompleteSuggestions() {
             value: name,
             message: def.message || "",
             category: def.category || "general",
+            ...(def.needsParam && { needsParam: true }),
         };
     });
 
@@ -74,9 +74,9 @@ export function getAutoCompleteSuggestions() {
         if (code !== "Quest66" && name === "Strung Jewels") return null;
 
         return [
-            { value: `drop ${code}`, message: name, category: "drop" },
+            { value: `drop ${code}`, message: name, category: "drop", needsParam: true },
             { value: `nomore ${code}`, message: name, category: "nomore" },
-            { value: `multiplestacks ${code}`, message: name, category: "multiplestacks" },
+            { value: `multiplestacks ${code}`, message: name, category: "multiplestacks", needsParam: true },
         ];
     });
 
@@ -84,7 +84,7 @@ export function getAutoCompleteSuggestions() {
     addChoices(choices, monsterDefs, (code, monster) => {
         if (!monster.h.Name) return null;
         const name = monster.h.Name.replace(/_/g, " ");
-        return { value: `spawn ${code}`, message: name, category: "spawn" };
+        return { value: `spawn ${code}`, message: name, category: "spawn", needsParam: true };
     });
 
     // summon units
@@ -107,6 +107,7 @@ export function getAutoCompleteSuggestions() {
             value: `bulk ${type}`,
             message: `Drop all ${type} items`,
             category: "bulk",
+            needsParam: true,
         });
     }
 
@@ -120,7 +121,6 @@ export function getAutoCompleteSuggestions() {
     }
 
     // class names
-
     const classNames = cList.ClassNames.slice(0, 41);
     for (const [id, name] of classNames.entries()) {
         if (!name || name.toLowerCase() === "blank") continue;
@@ -138,6 +138,7 @@ export function getAutoCompleteSuggestions() {
         value: "lvl class",
         message: "Change class level",
         category: "lvl",
+        needsParam: true,
     });
     for (const name of cList.SkillNames) {
         if (!name || name === "Blank") continue;
@@ -145,6 +146,7 @@ export function getAutoCompleteSuggestions() {
             value: `lvl ${name.toLowerCase()}`,
             message: `Change ${name} level`,
             category: "lvl",
+            needsParam: true,
         });
     }
 
@@ -154,6 +156,7 @@ export function getAutoCompleteSuggestions() {
             value: `lvl ${type}`,
             message: `Change all ${type} levels`,
             category: "lvl",
+            needsParam: true,
         });
     }
 
@@ -163,6 +166,7 @@ export function getAutoCompleteSuggestions() {
             value: `lvl ${name}`,
             message: `Change all ${name} levels`,
             category: "lvl",
+            needsParam: true,
         });
     }
 
@@ -182,13 +186,15 @@ export function getAutoCompleteSuggestions() {
             value: "w4 chips all",
             message: "Set amount for all lab chips",
             category: "w4",
+            needsParam: true,
         });
         for (const chip of cList.ChipDesc) {
             if (!chip[0]) continue;
             choices.push({
                 value: `w4 chips ${chip[0].toLowerCase()}`,
-                message: (chip[1] || "") + " " + (chip[2] || ""),
+                message: chip[1],
                 category: "w4",
+                needsParam: true,
             });
         }
     }
@@ -199,6 +205,7 @@ export function getAutoCompleteSuggestions() {
         value: "w5 jargems all",
         message: "Set amount for all jar gems",
         category: "w5",
+        needsParam: true,
     });
     for (const gem of cList.HolesInfo[67]) {
         const parts = gem.split("|");
@@ -207,40 +214,9 @@ export function getAutoCompleteSuggestions() {
             value: `w5 jargems ${parts[0].toLowerCase()}`,
             message: parts[3] || "",
             category: "w5",
+            needsParam: true,
         });
     }
 
     return choices;
-}
-
-/**
- * Get commands that need confirmation/additional input.
- * This is now also used to make a value fields for the ui
- * @returns {string[]}
- */
-export function getChoicesNeedingConfirmation() {
-    return [
-        "drop",
-        "spawn",
-        "w4 mainframe",
-        "w4 chipbonuses",
-        "w4 chips",
-        "w5 jargems",
-        "search",
-        "wide gembuylimit",
-        "wide candytime",
-        "gga",
-        "multiply",
-        "w6 summoning",
-        "w6 ninjaItem",
-        "lvl",
-        "qnty",
-        "setalch",
-        "wipe invslot",
-        "wipe chestslot",
-        "bulk",
-        "buy",
-        "class",
-        "multiplestacks",
-    ];
 }

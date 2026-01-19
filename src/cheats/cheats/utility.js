@@ -330,10 +330,12 @@ function createListFunction(params) {
 registerCheats({
     name: "search",
     message: "Search for an item, monster, talent or smithing recipe",
+    needsParam: true,
     subcheats: [
         {
             name: "item",
             message: "Search for an item",
+            needsParam: true,
             fn: createSearchFn(
                 "Id, Item",
                 () => Object.entries(itemDefs).map(([k, v]) => [k, v.h.displayName]),
@@ -343,6 +345,7 @@ registerCheats({
         {
             name: "monster",
             message: "Search for a monster",
+            needsParam: true,
             fn: createSearchFn(
                 "Id, Monster",
                 () => Object.entries(monsterDefs).map(([k, v]) => [k, v.h.Name]),
@@ -352,6 +355,7 @@ registerCheats({
         {
             name: "talent",
             message: "Search for a talent",
+            needsParam: true,
             fn: createSearchFn(
                 "Order, Id, Talent",
                 () => {
@@ -365,6 +369,7 @@ registerCheats({
         {
             name: "smith",
             message: "Search for an item to smith",
+            needsParam: true,
             fn: (params) => {
                 const query = params.slice(1).length ? params.slice(1).join(" ").toLowerCase() : undefined;
                 const results = ["Tab, Id, ItemId, ItemName"];
@@ -398,6 +403,7 @@ registerCheats({
 registerCheat({
     name: "gga",
     message: "The attribute you want to get, separated by spaces",
+    needsParam: true,
     fn: (params) => gg_func(params, 0),
 });
 

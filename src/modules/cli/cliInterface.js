@@ -4,7 +4,7 @@
  * Provides the command-line interface for the Idleon Cheat Injector.
  * Handles user interaction through an autocomplete prompt system, cheat execution,
  * and special commands like Chrome DevTools integration. Supports confirmation
- * prompts for destructive operations and maintains an interactive loop.
+ * prompts for parameter-requiring commands and maintains an interactive loop.
  */
 
 const Enquirer = require("enquirer");
@@ -41,18 +41,6 @@ async function startCliInterface(context, client, options = {}) {
         return choice;
     });
 
-    const cheatsNeedingConfirmationResult = await Runtime.evaluate({
-        expression: `getChoicesNeedingConfirmation.call(${context})`,
-        awaitPromise: true,
-        returnByValue: true,
-    });
-
-    if (cheatsNeedingConfirmationResult.exceptionDetails) {
-        console.error("Error getting confirmation choices:", cheatsNeedingConfirmationResult.exceptionDetails.text);
-        return;
-    }
-    const cheatsNeedingConfirmation = cheatsNeedingConfirmationResult.result.value || [];
-
     async function promptUser() {
         try {
             let valueChosen = false;
@@ -78,15 +66,13 @@ async function startCliInterface(context, client, options = {}) {
                         return true;
                     });
                 },
-                // Custom submit logic to handle confirmation for specific cheats
+                // Custom submit logic to handle confirmation for cheats that need parameters
                 onSubmit: function (name, value, prompt) {
                     value = this.focused ? this.focused.value : value;
-                    const choiceNeedsConfirmation = cheatsNeedingConfirmation.some(
-                        (choice) => value.indexOf(choice) === 0
-                    );
+                    const choiceNeedsParam = this.focused?.needsParam === true;
 
-                    // If confirmation needed and not yet given, re-render with the chosen value requiring a second Enter press
-                    if (choiceNeedsConfirmation && !valueChosen && this.focused) {
+                    // If parameter input needed and not yet given, re-render with the chosen value requiring a second Enter press
+                    if (choiceNeedsParam && !valueChosen && this.focused) {
                         prompt.input = value;
                         prompt.state.cursor = value.length;
                         prompt.render();

@@ -69,7 +69,7 @@ function setupApiRoutes(app, context, client, config) {
                     return !EXCLUDED_PREFIXES.some((prefix) => cmd === prefix || cmd?.startsWith(prefix + " "));
                 });
 
-                res.json(filteredCheats);
+            res.json(filteredCheats);
             }
         } catch (apiError) {
             console.error("API Error in /api/cheats:", apiError);
@@ -101,28 +101,6 @@ function setupApiRoutes(app, context, client, config) {
         } catch (apiError) {
             console.error(`API Error executing cheat '${action}':`, apiError);
             res.status(500).json({ error: `Internal server error while executing cheat '${action}'` });
-        }
-    });
-
-    app.get("/api/needs-confirmation", async (req, res) => {
-        try {
-            const confirmationResult = await Runtime.evaluate({
-                expression: `getChoicesNeedingConfirmation.call(${context})`,
-                awaitPromise: true,
-                returnByValue: true,
-            });
-            if (confirmationResult.exceptionDetails) {
-                console.error("API Error getting confirmation choices:", confirmationResult.exceptionDetails.text);
-                res.status(500).json({
-                    error: "Failed to get confirmation list from game",
-                    details: confirmationResult.exceptionDetails.text,
-                });
-            } else {
-                res.json(confirmationResult.result.value || []);
-            }
-        } catch (apiError) {
-            console.error("API Error in /api/needs-confirmation:", apiError);
-            res.status(500).json({ error: "Internal server error while fetching confirmation list" });
         }
     });
 

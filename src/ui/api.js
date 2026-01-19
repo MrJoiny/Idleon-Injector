@@ -44,13 +44,7 @@ export async function fetchCheatStates() {
 }
 
 export async function fetchCheatsData() {
-    // Parallel fetch for cheats and confirmation list
-    const [cheats, needsConfirmation] = await Promise.all([
-        _request("/cheats"),
-        _request("/needs-confirmation").catch(() => []),
-    ]);
-
-    return { cheats, needsConfirmation };
+    return _request("/cheats");
 }
 
 export async function executeCheatAction(action) {

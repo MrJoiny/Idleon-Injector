@@ -67,6 +67,7 @@ registerCheats({
 registerCheat({
     name: "buy",
     message: "Buy gem shop packs. You get items from the pack, but no gems and no pets.",
+    needsParam: true,
     fn: function (params) {
         const code = params[0];
         if (!code) {
