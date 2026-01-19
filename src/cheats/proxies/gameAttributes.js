@@ -15,7 +15,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, cList, events } from "../core/globals.js";
+import { cList, events, gga } from "../core/globals.js";
 import { createProxy } from "../utils/proxy.js";
 import { applyMaxCap, getMultiplyValue } from "../helpers/values.js";
 
@@ -28,8 +28,8 @@ import { applyMaxCap, getMultiplyValue } from "../helpers/values.js";
  */
 export function setupGameAttributeProxies() {
     // Gems - freeze when enabled
-    if (!Object.prototype.hasOwnProperty.call(bEngine.gameAttributes.h, "_GemsOwned")) {
-        createProxy(bEngine.gameAttributes.h, "GemsOwned", {
+    if (!Object.prototype.hasOwnProperty.call(gga, "_GemsOwned")) {
+        createProxy(gga, "GemsOwned", {
             get(original) {
                 return original;
             },
@@ -42,7 +42,7 @@ export function setupGameAttributeProxies() {
 
     // HP - always return max HP when enabled
     // we cannot use a guard here since the game itself is creating _PlayerHP
-    createProxy(bEngine.gameAttributes.h, "PlayerHP", {
+    createProxy(gga, "PlayerHP", {
         get(original) {
             return original;
         },
@@ -52,7 +52,7 @@ export function setupGameAttributeProxies() {
     });
 
     // Free revives
-    const personalValuesMap = bEngine.getGameAttribute("PersonalValuesMap");
+    const personalValuesMap = gga.PersonalValuesMap;
     if (personalValuesMap.h && !Object.prototype.hasOwnProperty.call(personalValuesMap.h, "_InstaRevives")) {
         createProxy(personalValuesMap.h, "InstaRevives", {
             get(original) {
@@ -67,7 +67,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Gaming - snail mail (W5)
-    const gaming = bEngine.getGameAttribute("Gaming");
+    const gaming = gga.Gaming;
     if (!gaming._isPatched) {
         Object.defineProperty(gaming, "_isPatched", { value: true, enumerable: false });
         createProxy(gaming, 13, {
@@ -84,7 +84,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Divinity - unlinks (W5)
-    const divinity = bEngine.getGameAttribute("Divinity");
+    const divinity = gga.Divinity;
     if (!divinity._isPatched) {
         Object.defineProperty(divinity, "_isPatched", { value: true, enumerable: false });
         createProxy(divinity, 38, {
@@ -101,12 +101,12 @@ export function setupGameAttributeProxies() {
     }
 
     // Rift - unlock (W5)
-    const rift = bEngine.getGameAttribute("Rift");
+    const rift = gga.Rift;
     if (!rift._isPatched) {
         Object.defineProperty(rift, "_isPatched", { value: true, enumerable: false });
         createProxy(rift, 1, {
             get(original) {
-                const riftIndex = bEngine.getGameAttribute("Rift")[0];
+                const riftIndex = gga.Rift[0];
                 if (cheatState.unlock.rifts && cList.RiftStuff[4][riftIndex] !== 9) {
                     return 1e8;
                 }
@@ -119,10 +119,10 @@ export function setupGameAttributeProxies() {
     }
 
     // Currencies - teleports, tickets, obol fragments, silver pens
-    const currencies = bEngine.getGameAttribute("CurrenciesOwned").h;
+    const currencies = gga.CurrenciesOwned.h;
     if (!currencies._isPatched) {
         Object.defineProperty(currencies, "_isPatched", { value: true, enumerable: false });
-        bEngine.getGameAttribute("CurrenciesOwned").h = new Proxy(currencies, {
+        gga.CurrenciesOwned.h = new Proxy(currencies, {
             get(obj, prop) {
                 if (cheatState.unlock.teleports && prop === "WorldTeleports") return obj.WorldTeleports || 1;
                 if (cheatState.unlock.tickets && prop === "ColosseumTickets") return obj.ColosseumTickets || 1;
@@ -151,32 +151,29 @@ export function setupGameAttributeProxies() {
     }
 
     // Cloud save cooldown - pause cloud saving
-    const cloudSave = bEngine.getGameAttribute("CloudSaveCD");
+    const cloudSave = gga.CloudSaveCD;
     if (!cloudSave._isPatched) {
         Object.defineProperty(cloudSave, "_isPatched", { value: true, enumerable: false });
-        bEngine.setGameAttribute(
-            "CloudSaveCD",
-            new Proxy(cloudSave, {
-                get(obj, prop) {
-                    if (cheatState.cloudz && Number(prop) === 0) return 235;
-                    return Reflect.get(obj, prop);
-                },
-                set(obj, prop, value) {
-                    if (cheatState.cloudz && Number(prop) === 0) {
-                        obj[0] = 235;
-                        return true;
-                    }
-                    return Reflect.set(obj, prop, value);
-                },
-            })
-        );
+        gga.CloudSaveCD = new Proxy(cloudSave, {
+            get(obj, prop) {
+                if (cheatState.cloudz && Number(prop) === 0) return 235;
+                return Reflect.get(obj, prop);
+            },
+            set(obj, prop, value) {
+                if (cheatState.cloudz && Number(prop) === 0) {
+                    obj[0] = 235;
+                    return true;
+                }
+                return Reflect.set(obj, prop, value);
+            },
+        });
     }
 
     // Monster respawn time - proxy the array to intercept element writes
-    const monsterRespawnTime = bEngine.gameAttributes.h.MonsterRespawnTime;
+    const monsterRespawnTime = gga.MonsterRespawnTime;
     if (!monsterRespawnTime._isPatched) {
         Object.defineProperty(monsterRespawnTime, "_isPatched", { value: true, enumerable: false });
-        bEngine.gameAttributes.h.MonsterRespawnTime = new Proxy(monsterRespawnTime, {
+        gga.MonsterRespawnTime = new Proxy(monsterRespawnTime, {
             set(target, prop, value) {
                 const newValue = cheatState.godlike.respawn ? cheatConfig.godlike.respawn(value) : value;
                 target[prop] = newValue;
@@ -186,7 +183,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Carry Capacity multiplier
-    const maxCarryCap = bEngine.gameAttributes.h.MaxCarryCap;
+    const maxCarryCap = gga.MaxCarryCap;
     if (maxCarryCap && maxCarryCap.h && !maxCarryCap._isPatched) {
         Object.defineProperty(maxCarryCap, "_isPatched", { value: true, enumerable: false });
         maxCarryCap.h = new Proxy(maxCarryCap.h, {
@@ -201,11 +198,11 @@ export function setupGameAttributeProxies() {
     }
 
     // Options list account - toggles, unlocks, and caps
-    const optionsListAccount = bEngine.gameAttributes.h.OptionsListAccount;
+    const optionsListAccount = gga.OptionsListAccount;
     if (!optionsListAccount._isPatched) {
         Object.defineProperty(optionsListAccount, "_isPatched", { value: true, enumerable: false });
 
-        bEngine.gameAttributes.h.OptionsListAccount = new Proxy(optionsListAccount, {
+        gga.OptionsListAccount = new Proxy(optionsListAccount, {
             get(obj, prop) {
                 const index = Number(prop);
 
@@ -286,7 +283,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Trapping (instant trap completion)
-    const playerDatabase = bEngine.getGameAttribute("PlayerDATABASE").h;
+    const playerDatabase = gga.PlayerDATABASE.h;
     if (!playerDatabase._isPatched) {
         Object.defineProperty(playerDatabase, "_isPatched", { value: true, enumerable: false });
 
@@ -319,7 +316,7 @@ export function setupGameAttributeProxies() {
     }
 
     // Alchemy (vial attempts)
-    const p2w = bEngine.getGameAttribute("CauldronP2W");
+    const p2w = gga.CauldronP2W;
     if (!p2w._isPatched) {
         Object.defineProperty(p2w, "_isPatched", { value: true, enumerable: false });
         createProxy(p2w[5], 0, {

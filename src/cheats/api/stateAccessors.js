@@ -6,11 +6,11 @@
  * - cheatState access
  */
 
-import { bEngine } from "../core/globals.js";
+import { gga } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
 
 export function getOLA() {
-    return bEngine.gameAttributes.h.OptionsListAccount;
+    return gga.OptionsListAccount;
 }
 
 export function setOLAIndex(index, value) {

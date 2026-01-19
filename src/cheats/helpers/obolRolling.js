@@ -4,7 +4,7 @@
  * Functions to roll perfect stats on obols.
  */
 
-import { bEngine, itemDefs } from "../core/globals.js";
+import { itemDefs, gga } from "../core/globals.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 
 /**
@@ -41,9 +41,9 @@ export function rollAllObols(force = false) {
  */
 export function rollPersonalObols() {
     rollPerfectObols(
-        bEngine.gameAttributes.h.ObolEquippedOrder[0],
-        bEngine.gameAttributes.h.ObolEquippedMap[0],
-        bEngine.gameAttributes.h.CharacterClass
+        gga.ObolEquippedOrder[0],
+        gga.ObolEquippedMap[0],
+        gga.CharacterClass
     );
 }
 
@@ -52,9 +52,9 @@ export function rollPersonalObols() {
  */
 export function rollFamilyObols() {
     rollPerfectObols(
-        bEngine.gameAttributes.h.ObolEquippedOrder[1],
-        bEngine.gameAttributes.h.ObolEquippedMap[1],
-        bEngine.gameAttributes.h.CharacterClass
+        gga.ObolEquippedOrder[1],
+        gga.ObolEquippedMap[1],
+        gga.CharacterClass
     );
 }
 
@@ -62,7 +62,7 @@ export function rollFamilyObols() {
  * Roll all characters' obols to perfect stats.
  */
 export function rollAllCharactersObols() {
-    Object.values(bEngine.getGameAttribute("PlayerDATABASE").h).forEach((player) => {
+    Object.values(gga.PlayerDATABASE.h).forEach((player) => {
         rollPerfectObols(player.h.ObolEquippedOrder, player.h.ObolEquippedMap, player.h.CharacterClass);
     });
 }
@@ -71,9 +71,9 @@ export function rollAllCharactersObols() {
  * Roll inventory obols to perfect stats.
  */
 export function rollInventoryObols() {
-    const inventoryOrder = bEngine.gameAttributes.h.ObolInventoryOrder;
-    const inventoryMap = bEngine.gameAttributes.h.ObolInventoryMap;
-    const characterClass = bEngine.gameAttributes.h.CharacterClass;
+    const inventoryOrder = gga.ObolInventoryOrder;
+    const inventoryMap = gga.ObolInventoryMap;
+    const characterClass = gga.CharacterClass;
 
     inventoryOrder.forEach((obolOrder, index) => {
         rollPerfectObols(obolOrder, inventoryMap[index], characterClass);

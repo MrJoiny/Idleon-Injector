@@ -20,7 +20,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, events } from "../core/globals.js";
+import { events, gga } from "../core/globals.js";
 import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
 /**
@@ -60,9 +60,9 @@ export function setupEvents579Proxies() {
 
         if (cheatState.w5.endercaptains && key === "CaptainPedastalTypeGen") {
             const hasEmporiumBonus = this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1;
-            const hasRequiredLevel = Number(bEngine.getGameAttribute("Lv0")[13]) >= 50;
+            const hasRequiredLevel = Number(gga.Lv0[13]) >= 50;
             if (hasEmporiumBonus && hasRequiredLevel) {
-                bEngine.getGameAttribute("DNSM").h.SailzDN4 = 6;
+                gga.DNSM.h.SailzDN4 = 6;
                 return 6;
             }
         }

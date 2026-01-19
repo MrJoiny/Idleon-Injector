@@ -7,7 +7,7 @@
  */
 
 import { cheatState } from "../core/state.js";
-import { bEngine, itemDefs, events } from "../core/globals.js";
+import { itemDefs, events, gga } from "../core/globals.js";
 
 /**
  * Setup all ActorEvents_38 proxies.
@@ -30,16 +30,16 @@ function setupItemMoveProxy() {
     actorEvents38.prototype._event_InvItem4custom = function (...args) {
         const actor = this.actor;
 
-        const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
+        const inventoryOrder = gga.InventoryOrder;
         const dragId = actor.getValue("ActorEvents_38", "_ItemDragID");
         const itemKey = inventoryOrder[dragId];
 
         if (cheatState.wide.candy) {
             const itemType = itemDefs[itemKey].h.Type;
             if (itemType === "TIME_CANDY") {
-                const originalMap = bEngine.getGameAttribute("CurrentMap");
-                const originalTarget = bEngine.getGameAttribute("AFKtarget");
-                const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+                const originalMap = gga.CurrentMap;
+                const originalTarget = gga.AFKtarget;
+                const pixelHelper = gga.PixelHelperActor;
                 const genInfo = pixelHelper[23].getValue("ActorEvents_577", "_GenINFO");
                 if (Array.isArray(genInfo)) {
                     genInfo[86] = 1;
@@ -52,17 +52,17 @@ function setupItemMoveProxy() {
                                 this.calls++;
                                 return "mushG";
                             }
-                            bEngine.setGameAttribute("AFKtarget", originalTarget);
+                            gga.AFKtarget = originalTarget;
                             return originalTarget;
                         },
                     };
 
-                    bEngine.setGameAttribute("AFKtarget", newTarget);
+                    gga.AFKtarget = newTarget;
                 }
-                bEngine.setGameAttribute("CurrentMap", 1);
+                gga.CurrentMap = 1;
                 const base = Reflect.apply(InvItem4custom, this, args);
-                bEngine.setGameAttribute("CurrentMap", originalMap);
-                bEngine.setGameAttribute("AFKtarget", originalTarget);
+                gga.CurrentMap = originalMap;
+                gga.AFKtarget = originalTarget;
                 return base;
             }
         }
@@ -70,10 +70,10 @@ function setupItemMoveProxy() {
         // cheat for divinitypearl, we skip the ingame and just set the exp to the skill
         if (cheatState.unlock.divinitypearl && itemKey === "Pearl6") {
             if (this._PixelType === 2 && this._DummyType2Dead === 7) {
-                const expType = bEngine.getGameAttribute("ExpType");
-                const exp0 = bEngine.getGameAttribute("Exp0");
-                const expReq0 = bEngine.getGameAttribute("ExpReq0");
-                const currentMap = bEngine.getGameAttribute("CurrentMap");
+                const expType = gga.ExpType;
+                const exp0 = gga.Exp0;
+                const expReq0 = gga.ExpReq0;
+                const currentMap = gga.CurrentMap;
 
                 let targetSkill;
                 if (currentMap === 0) targetSkill = 2;
@@ -106,7 +106,7 @@ function setupItemMiscProxy() {
         if (!cheatState.upstones.misc) return Reflect.apply(InventoryItem, this, args);
 
         const dragId = this.actor.getValue("ActorEvents_38", "_ItemDragID");
-        const inventory = bEngine.getGameAttribute("InventoryOrder");
+        const inventory = gga.InventoryOrder;
         const item = itemDefs[inventory[dragId]].h;
 
         const isMysteryStone = item.typeGen === "dStone" && item.Effect.startsWith("Mystery_Stat");

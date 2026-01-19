@@ -17,7 +17,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, events } from "../core/globals.js";
+import { events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
@@ -65,12 +65,12 @@ export function setupEvents345Proxies() {
     });
 
     // Global shrines
-    const shrineInfo = bEngine.getGameAttribute("ShrineInfo");
+    const shrineInfo = gga.ShrineInfo;
     for (const i in shrineInfo) {
         shrineInfo[i] = new Proxy(shrineInfo[i], {
             get(original, j) {
                 if (cheatState.w3.globalshrines && j === 0) {
-                    return bEngine.getGameAttribute("CurrentMap");
+                    return gga.CurrentMap;
                 }
                 return original[j];
             },

@@ -14,13 +14,13 @@
  */
 
 import { cheatState } from "../core/state.js";
-import { bEngine } from "../core/globals.js";
+import { gga } from "../core/globals.js";
 
 /**
  * Setup mining and fishing minigame proxies (never game over).
  */
 export function setupMiningFishingProxies() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
 
     const miningGameOver = pixelHelper[4].getValue("ActorEvents_229", "_customEvent_MiningGameOver");
     const miningProxy = new Proxy(miningGameOver, {
@@ -45,7 +45,7 @@ export function setupMiningFishingProxies() {
  * Setup catching minigame proxy (static fly and hoop positions).
  */
 export function setupCatchingMinigameProxy() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
     const genInfo = pixelHelper[4].getValue("ActorEvents_229", "_GenInfo");
 
     const proxy = new Proxy(genInfo, {
@@ -64,7 +64,7 @@ export function setupCatchingMinigameProxy() {
  * Setup chopping minigame proxy (whole bar filled with gold zone).
  */
 export function setupChoppingMinigameProxy() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
     const generalInfo = pixelHelper[1].getValue("ActorEvents_116", "_GeneralINFO");
 
     const proxy = new Proxy(generalInfo, {
@@ -82,7 +82,7 @@ export function setupChoppingMinigameProxy() {
  * Setup poing minigame proxy (AI paddle doesn't move).
  */
 export function setupPoingMinigameProxy() {
-    const pixelHelper = bEngine.gameAttributes.h.PixelHelperActor;
+    const pixelHelper = gga.PixelHelperActor;
     const poingGeninfo = pixelHelper[23].behaviors.behaviors[0].script._GenINFO;
 
     let aiVelocity = 0;
@@ -100,7 +100,7 @@ export function setupPoingMinigameProxy() {
  * Setup scratch minigame proxy (auto reveal all scratch zones).
  */
 export function setupScratchMinigameProxy() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
     const scratchBehavior = pixelHelper[25].behaviors.getBehavior("ActorEvents_670");
 
     const SCRATCH_ARRAY_IDX = 212;
@@ -138,7 +138,7 @@ export function setupScratchMinigameProxy() {
  * Setup hoops and darts minigame proxies (perfect positions).
  */
 export function setupHoopsDartsProxies() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
     const behavior = pixelHelper[21].behaviors.getBehavior("ActorEvents_510");
 
     // Hoops constants
@@ -162,8 +162,8 @@ export function setupHoopsDartsProxies() {
 
             // Hoops logic
             if (cheatState.minigame.hoops) {
-                if (bEngine.gameAttributes.h.OptionsListAccount[243] === 1) {
-                    bEngine.gameAttributes.h.OptionsListAccount[243] = 0;
+                if (gga.OptionsListAccount[243] === 1) {
+                    gga.OptionsListAccount[243] = 0;
                 }
 
                 switch (numericProperty) {
@@ -194,7 +194,7 @@ export function setupHoopsDartsProxies() {
  * Setup wisdom monument proxy (infinite attempts).
  */
 export function setupWisdomMonumentProxy() {
-    const pixelHelper = bEngine.getGameAttribute("PixelHelperActor");
+    const pixelHelper = gga.PixelHelperActor;
     const wisdomGenInfo = pixelHelper[25].getValue("ActorEvents_670", "_GenINFO");
 
     const proxy = new Proxy(wisdomGenInfo, {

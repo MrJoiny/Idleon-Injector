@@ -10,7 +10,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, registerCommonVariables, cList, firebase, gameContext } from "../core/globals.js";
+import { registerCommonVariables, cList, firebase, gameContext, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
@@ -70,7 +70,7 @@ export function setupFirebaseStorageProxy() {
 
         if (Array.isArray(base) && base.length > 0 && base.length < 10) {
             const playersToAdd = 11 - base.length;
-            const otherPlayers = bEngine.gameAttributes.h.OtherPlayers.h;
+            const otherPlayers = gga.OtherPlayers.h;
             const names = Object.keys(otherPlayers).slice(1, playersToAdd);
             for (const name of names) {
                 base.push([name, base[0][1], 0]);

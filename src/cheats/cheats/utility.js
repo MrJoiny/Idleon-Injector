@@ -9,7 +9,7 @@
  */
 
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
-import { bEngine, itemDefs, monsterDefs, cList } from "../core/globals.js";
+import { itemDefs, monsterDefs, cList, gga } from "../core/globals.js";
 import { traverse } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 
@@ -46,7 +46,7 @@ function createSearchFn(header, getEntries, formatResult) {
  */
 function gg_func(params, mode) {
     try {
-        let gg = bEngine.getGameAttribute(params[0]);
+        let gg = gga[params[0]];
 
         for (let i = 1; i < params.length; i++) {
             if (gg.h) gg = gg.h[params[i]];
@@ -115,7 +115,7 @@ function createListFunction(params) {
         missing_bundle: () => {
             results.push("Bundle, Message");
             const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
-            const bundlesReceived = bEngine.gameAttributes.h.BundlesReceived.h;
+            const bundlesReceived = gga.BundlesReceived.h;
 
             for (const [key, value] of Object.entries(bundleMessages)) {
                 const isNotReceived = bundlesReceived[key] !== 1;
@@ -273,7 +273,7 @@ function createListFunction(params) {
         },
 
         gga: () => {
-            for (const key of Object.keys(bEngine.gameAttributes.h)) {
+            for (const key of Object.keys(gga)) {
                 results.push(key);
             }
         },
@@ -282,7 +282,6 @@ function createListFunction(params) {
             const findings = [];
             results.push("NaNs scan:");
 
-            const gga = bEngine.gameAttributes.h;
             const globalVisited = new Set();
 
             for (const key in gga) {
@@ -417,11 +416,11 @@ registerCheat({
  */
 function eval_gg_func(params, mode) {
     try {
-        const gga = eval(params[0]);
-        const entries = Object.entries(gga);
+        const target = eval(params[0]);
+        const entries = Object.entries(target);
 
         if (typeof entries === "string" || entries.length === 0) {
-            return mode === 0 ? `${gga}` : `Non iterable value: ${gga}`;
+            return mode === 0 ? `${target}` : `Non iterable value: ${target}`;
         }
 
         return entries.map(([key, val]) => (mode === 0 ? `${key}, ${val}` : `${key}`)).join("\n");

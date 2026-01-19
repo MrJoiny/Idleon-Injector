@@ -4,7 +4,7 @@
  * Drops items directly onto the current character.
  */
 
-import { bEngine, itemDefs, events } from "../core/globals.js";
+import { itemDefs, events, gga } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 
 /**
@@ -13,8 +13,8 @@ import { cheatConfig } from "../core/state.js";
  * @returns {{ y: number, x: number }} The character's coordinates
  */
 export function getCharCords() {
-    const OtherPlayer = bEngine.getGameAttribute("OtherPlayers").h;
-    const character = OtherPlayer[bEngine.getGameAttribute("UserInfo")[0]];
+    const OtherPlayer = gga.OtherPlayers.h;
+    const character = OtherPlayer[gga.UserInfo[0]];
     const x = character.getXCenter();
     const y = character.getValue("ActorEvents_20", "_PlayerNode");
     return { y, x };

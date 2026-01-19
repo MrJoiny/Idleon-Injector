@@ -6,7 +6,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { bEngine, events, behavior } from "../core/globals.js";
+import { events, behavior, gga } from "../core/globals.js";
 
 /**
  * Setup item get notification proxy (hide notifications for autoloot).
@@ -26,7 +26,7 @@ export function setupItemGetNotificationProxy() {
             cheatConfig.wide.autoloot.hidenotifications &&
             [0, 1].includes(this._Deployment)
         ) {
-            hxOverrides.remove(bEngine.getGameAttribute("ItemGetPixelQueue"), this.actor);
+            hxOverrides.remove(gga.ItemGetPixelQueue, this.actor);
             behavior.recycleActor(this.actor);
             return;
         }

@@ -12,6 +12,12 @@
 export let bEngine = null;
 
 /**
+ * Game attributes map from the game.
+ * @type {object|null}
+ */
+export let gga = null;
+
+/**
  * Item definitions from the game.
  * @type {object|null}
  */
@@ -109,9 +115,10 @@ export async function gameReady(context) {
 export function registerCommonVariables(context) {
     gameContext = context;
     bEngine = context["com.stencyl.Engine"].engine;
-    itemDefs = bEngine.getGameAttribute("ItemDefinitionsGET").h;
-    monsterDefs = bEngine.getGameAttribute("MonsterDefinitionsGET").h;
-    cList = bEngine.getGameAttribute("CustomLists").h;
+    gga = bEngine.gameAttributes.h;
+    itemDefs = gga.ItemDefinitionsGET.h;
+    monsterDefs = gga.MonsterDefinitionsGET.h;
+    cList = gga.CustomLists.h;
     behavior = context["com.stencyl.behavior.Script"];
     events = (num) => context[`scripts.ActorEvents_${num}`];
     customMaps = context["scripts.CustomMaps"];

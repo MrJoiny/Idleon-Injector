@@ -12,7 +12,7 @@
  */
 
 import { registerCheats } from "../core/registration.js";
-import { bEngine, cList, events } from "../core/globals.js";
+import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 
@@ -45,7 +45,7 @@ registerCheats({
             name: "killroyreset",
             message: "reset killroy weekly progress",
             fn: () => {
-                bEngine.getGameAttribute("OptionsListAccount")[113] = 0;
+                gga.OptionsListAccount[113] = 0;
                 return "Killroy weekly progress has been reset.";
             },
         },
@@ -115,6 +115,7 @@ registerCheats({
                     return "Please provide a ribbon lvl between 1 and 20.";
                 }
 
+                const ribbons = gga.Ribbon;
                 for (let i = 0; i <= 27; i++) {
                     if (ribbons[i] === 0) {
                         ribbons[i] = ribbonLvl;
@@ -135,7 +136,7 @@ registerCheats({
                     return "Please provide a valid numeric amount.";
                 }
 
-                const lab = bEngine.gameAttributes.h.Lab;
+                const lab = gga.Lab;
                 const chipsCount = lab[15];
 
                 const chipNames = cList.ChipDesc.map((c) => c[0].toLowerCase());
@@ -180,7 +181,7 @@ registerCheats({
                     return "Please provide a valid numeric amount.";
                 }
 
-                const holes = bEngine.gameAttributes.h.Holes;
+                const holes = gga.Holes;
                 const gemCounts = holes[24];
 
                 const rawGems = cList.HolesInfo[67];

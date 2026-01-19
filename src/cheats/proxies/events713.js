@@ -2,7 +2,7 @@
  * ActorEvents_713 Proxies (W7 Spelunking)
  */
 
-import { bEngine, events } from "../core/globals.js";
+import { events, gga } from "../core/globals.js";
 import { cheatConfig } from "../core/state.js";
 import { createMethodProxy } from "../utils/proxy.js";
 
@@ -16,7 +16,7 @@ export function setupEvents713Proxies() {
 
     createMethodProxy(actorEvents713.prototype, "_customEvent_SpelunkStuff", function (base) {
         // Only apply when spelunking menu is active (MenuType2 === 82)
-        if (bEngine.getGameAttribute("MenuType2") !== 82) return base;
+        if (gga.MenuType2 !== 82) return base;
 
         const targetDepth = cheatConfig.w7.spelunkdepth;
         if (targetDepth && targetDepth > 0 && this._GenINFO) {

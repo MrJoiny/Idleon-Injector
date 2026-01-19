@@ -5,7 +5,7 @@
  * - Auto loot (instant item pickup and chest management)
  */
 
-import { bEngine, itemDefs, events, behavior } from "../core/globals.js";
+import { itemDefs, events, behavior, gga } from "../core/globals.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 import { lootableItemTypes } from "../constants.js";
 import { createMethodProxy } from "../utils/proxy.js";
@@ -44,7 +44,7 @@ function processAutoLoot(context) {
     const actorEvents345 = events(345);
     const inDungeon = context._DungItemStatus !== 0 || (actorEvents345 && actorEvents345._customBlock_Dungon() !== -1);
 
-    const autolootEnabled = !bEngine.getGameAttribute("OptionsListAccount")[83];
+    const autolootEnabled = !gga.OptionsListAccount[83];
 
     // Validation Pre-checks
     if (
@@ -61,7 +61,7 @@ function processAutoLoot(context) {
     // Initial collection attempt
     // Note: Items must successfully enter a free inventory slot before they can be moved to the chest.
     context._CollectedStatus = 0;
-    bEngine.gameAttributes.h.DummyNumber4 = 23.34;
+    gga.DummyNumber4 = 23.34;
     context._customEvent_ItemPickupInTheFirstPlace();
 
     const isCoin = dropType.includes("COIN");
@@ -74,8 +74,8 @@ function processAutoLoot(context) {
 
     if (isCoin) {
         const moneyKey = cheatConfig.wide.autoloot.moneytochest ? "MoneyBANK" : "Money";
-        const currentMoney = bEngine.getGameAttribute(moneyKey) || 0;
-        bEngine.setGameAttribute(moneyKey, currentMoney + context._DropAmount);
+        const currentMoney = gga[moneyKey] || 0;
+        gga[moneyKey] = currentMoney + context._DropAmount;
         recycleContextActor(context);
         return true;
     }
@@ -107,11 +107,11 @@ function processAutoLoot(context) {
  * @param {string} dropType - The internal ID of the item to move.
  */
 function transferItemToChest(dropType) {
-    const chestOrder = bEngine.getGameAttribute("ChestOrder");
-    const chestQuantity = bEngine.getGameAttribute("ChestQuantity");
-    const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
-    const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
-    const lockedSlots = bEngine.getGameAttribute("LockedSlots");
+    const chestOrder = gga.ChestOrder;
+    const chestQuantity = gga.ChestQuantity;
+    const inventoryOrder = gga.InventoryOrder;
+    const itemQuantity = gga.ItemQuantity;
+    const lockedSlots = gga.LockedSlots;
 
     if (!chestOrder || !inventoryOrder) return;
 

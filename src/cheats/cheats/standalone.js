@@ -10,7 +10,7 @@
 
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { cheatState, cheatConfig } from "../core/state.js";
-import { bEngine, itemDefs, monsterDefs, events } from "../core/globals.js";
+import { itemDefs, monsterDefs, events, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
 import { keychainStatsMap } from "../constants.js";
@@ -52,7 +52,7 @@ registerCheat({
     name: "daily",
     message: "Daily shop and post office reset",
     fn: () => {
-        bEngine.getGameAttribute("TimeAway").h.ShopRestock = 1;
+        gga.TimeAway.h.ShopRestock = 1;
         return "The daily shop restock has been triggered.";
     },
 });
@@ -63,7 +63,7 @@ registerCheat({
     message: "Kill yourself",
     fn: (params) => {
         const hpval = parseInt(params[0]) || 0;
-        bEngine.gameAttributes.h.PlayerHP = hpval;
+        gga.PlayerHP = hpval;
         return `The amount of health is set to ${hpval}`;
     },
 });
@@ -76,7 +76,7 @@ registerCheat({
         (function () {
             this._TRIGGEREDtext = "a6";
             this._customEvent_PachiStuff2();
-        }).bind(bEngine.gameAttributes.h.PixelHelperActor[21].behaviors.behaviors[0].script)();
+        }).bind(gga.PixelHelperActor[21].behaviors.behaviors[0].script)();
         return "JACKPOT!!!";
     },
 });
@@ -166,7 +166,7 @@ registerCheat({
     name: "fix_save",
     message: "Save a game attribute to memory. Use fix_write to write it back to the game.",
     fn: (params) => {
-        cheatConfig.fixobj = deepCopy(bEngine.getGameAttribute(params[0]));
+        cheatConfig.fixobj = deepCopy(gga[params[0]]);
         return "Saved";
     },
 });
@@ -178,7 +178,7 @@ registerCheat({
     fn: (params) => {
         if (!params[0]) return "No attribute specified";
         if (!cheatConfig.fixobj) return "No attribute saved";
-        bEngine.setGameAttribute(params[0], deepCopy(cheatConfig.fixobj));
+        gga[params[0]] = deepCopy(cheatConfig.fixobj);
         return "Written";
     },
 });
@@ -214,7 +214,7 @@ registerCheats({
             name: "islands",
             message: "unlock fishing islands",
             fn: () => {
-                bEngine.getGameAttribute("OptionsListAccount")[169] = cheatConfig.unlock.islands;
+                gga.OptionsListAccount[169] = cheatConfig.unlock.islands;
                 return "All fishing islands unlocked.";
             },
         },
@@ -222,7 +222,7 @@ registerCheats({
             name: "portals",
             message: "Unlocks all portals",
             fn: () => {
-                bEngine.getGameAttribute("KillsLeft2Advance").map((entry) => {
+                gga.KillsLeft2Advance.map((entry) => {
                     for (let i = 0; i < entry.length; i++) entry[i] = Math.min(entry[i], 0);
                     return entry;
                 });
@@ -233,7 +233,7 @@ registerCheats({
             name: "storagecrafting",
             message: "unlocks craft from storage feature for all items in the anvil",
             fn: () => {
-                const status = bEngine.getGameAttribute("AnvilCraftStatus");
+                const status = gga.AnvilCraftStatus;
                 for (let i = 0; i < status.length; i++) {
                     const tab = status[i];
                     if (!tab) continue;
@@ -248,8 +248,7 @@ registerCheats({
             name: "questsall",
             message: "Unlocks/completes all quests",
             fn: () => {
-                bEngine.gameAttributes.h.QuestComplete;
-                const questComplete = bEngine.getGameAttribute("QuestComplete");
+                const questComplete = gga.QuestComplete;
                 if (!questComplete || !questComplete.h) return "QuestComplete not found.";
 
                 let count = 0;
@@ -264,7 +263,7 @@ registerCheats({
             name: "construct",
             message: "Unlocks all towers in construction",
             fn: () => {
-                const towerInfo = bEngine.getGameAttribute("TowerInfo");
+                const towerInfo = gga.TowerInfo;
                 if (!towerInfo) return "TowerInfo not found.";
 
                 let count = 0;
@@ -284,7 +283,7 @@ registerCheats({
             name: "bg",
             message: "Unlocks all backgrounds",
             fn: () => {
-                const bgUnlocked = bEngine.getGameAttribute("BGunlocked");
+                const bgUnlocked = gga.BGunlocked;
                 if (!bgUnlocked) return "BGunlocked not found.";
 
                 for (let i = 0; i < bgUnlocked.length; i++) {

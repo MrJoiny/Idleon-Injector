@@ -12,19 +12,19 @@
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
-import { bEngine, itemDefs, cList, itemTypes } from "../core/globals.js";
+import { itemDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
 
 // Wipe command handlers
 const wipeHandlers = {
     inv() {
-        const wipedef = bEngine.getGameAttribute("InventoryOrder");
+        const wipedef = gga.InventoryOrder;
         for (const index of Object.keys(wipedef)) wipedef[index] = "Blank";
         return "The inventory has been wiped.";
     },
     invslot(params) {
-        const wipedef = bEngine.getGameAttribute("InventoryOrder");
+        const wipedef = gga.InventoryOrder;
         const slot = parseInt(params[1]);
         if (isNaN(slot)) return "Specify a valid slot number.";
         if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
@@ -32,12 +32,12 @@ const wipeHandlers = {
         return "Wipe inventory slot could result in a crash: Should be fine after restart.";
     },
     chest() {
-        const wipedef = bEngine.getGameAttribute("ChestOrder");
+        const wipedef = gga.ChestOrder;
         for (const index of Object.keys(wipedef)) wipedef[index] = "Blank";
         return "Wipe chest could result in a crash: Should be fine after restart.";
     },
     chestslot(params) {
-        const wipedef = bEngine.getGameAttribute("ChestOrder");
+        const wipedef = gga.ChestOrder;
         const slot = parseInt(params[1]);
         if (isNaN(slot)) return "Specify a valid slot number.";
         if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
@@ -45,8 +45,8 @@ const wipeHandlers = {
         return "Wipe chest slot could result in a crash: Should be fine after restart.";
     },
     forge() {
-        const forgeOrder = bEngine.getGameAttribute("ForgeItemOrder");
-        const forgeQty = bEngine.getGameAttribute("ForgeItemQuantity");
+        const forgeOrder = gga.ForgeItemOrder;
+        const forgeQty = gga.ForgeItemQuantity;
         for (const index of Object.keys(forgeOrder)) {
             forgeOrder[index] = "Blank";
             forgeQty[index] = 0;
@@ -54,7 +54,7 @@ const wipeHandlers = {
         return "The forge has been wiped. \nIf the game crashes, it should be fine after restart.";
     },
     overpurchases() {
-        bEngine.getGameAttribute("GemItemsPurchased");
+        const purchased = gga.GemItemsPurchased;
         const gemShopInfo = cList.MTXinfo;
         const maxItems = [];
         for (const tab of gemShopInfo) {
@@ -67,15 +67,15 @@ const wipeHandlers = {
             }
         }
         for (const [index, numberAllowed] of maxItems.entries()) {
-            if (bEngine.getGameAttribute("GemItemsPurchased")[index] > numberAllowed) {
-                bEngine.getGameAttribute("GemItemsPurchased")[index] = numberAllowed;
+            if (purchased[index] > numberAllowed) {
+                purchased[index] = numberAllowed;
             }
         }
         return "Overpurchased items have been set to their max safe value.";
     },
     cogs() {
-        const cogOrder = bEngine.getGameAttribute("CogOrder");
-        const cogMap = bEngine.getGameAttribute("CogMap");
+        const cogOrder = gga.CogOrder;
+        const cogMap = gga.CogMap;
         const startIndex = 108;
 
         for (let i = startIndex; i < cogOrder.length; i++) {
@@ -95,7 +95,7 @@ const wipeHandlers = {
         return `Cogs wiped.`;
     },
     ribbon() {
-        const ribbons = bEngine.getGameAttribute("Ribbon");
+        const ribbons = gga.Ribbon;
         if (!ribbons) return "Ribbon array not found.";
         for (let i = 0; i <= 27; i++) {
             ribbons[i] = 0;
@@ -103,9 +103,9 @@ const wipeHandlers = {
         return "Ribbon storage (0-27) has been wiped.";
     },
     invlocked() {
-        const inventoryOrder = bEngine.getGameAttribute("InventoryOrder");
-        const itemQuantity = bEngine.getGameAttribute("ItemQuantity");
-        const lockedSlots = bEngine.getGameAttribute("LockedSlots");
+        const inventoryOrder = gga.InventoryOrder;
+        const itemQuantity = gga.ItemQuantity;
+        const lockedSlots = gga.LockedSlots;
 
         let wipedCount = 0;
         for (let i = 0; i < inventoryOrder.length; i++) {
@@ -119,7 +119,7 @@ const wipeHandlers = {
         return `Wiped ${wipedCount} non-locked inventory slots.`;
     },
     chips() {
-        const lab = bEngine.getGameAttribute("Lab");
+        const lab = gga.Lab;
         if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found.";
         const chipsCount = lab[15];
         for (let i = 0; i <= 21; i++) {
@@ -128,7 +128,7 @@ const wipeHandlers = {
         return "Lab chips have been wiped.";
     },
     jargems() {
-        const holes = bEngine.getGameAttribute("Holes");
+        const holes = gga.Holes;
         if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found.";
         const gemCounts = holes[24];
         for (let i = 0; i < gemCounts.length; i++) {
@@ -160,7 +160,7 @@ function alchFn(params) {
         return `Wrong sub-command, use one of these:\n${Object.keys(alchemyTypes).join(", ")}`;
     }
 
-    const tochange = bEngine.getGameAttribute("CauldronInfo")[alchemyTypes[params[0]]];
+    const tochange = gga.CauldronInfo[alchemyTypes[params[0]]];
     if (params[0] === "upgrade") {
         for (const arr of Object.values(tochange)) {
             for (const item of Object.values(arr)) item[1] = setlvl;
@@ -246,7 +246,7 @@ registerCheat({
         }
 
         const displayName = classNames[classId];
-        bEngine.setGameAttribute("CharacterClass", classId);
+        gga.CharacterClass = classId;
         return `Class changed to ${displayName} (ID: ${classId})`;
     },
 });
@@ -254,35 +254,35 @@ registerCheat({
 // Build custom level handlers dispatch object
 const customLevelHandlers = {
     furnace: (lvl) => {
-        bEngine.setGameAttribute("FurnaceLevels", [16, lvl, lvl, lvl, lvl, lvl]);
+        gga.FurnaceLevels = [16, lvl, lvl, lvl, lvl, lvl];
         return `Furnace has been changed to ${lvl}.`;
     },
     statue: (lvl) => {
-        bEngine.getGameAttribute("StatueLevels").forEach((item) => (item[0] = lvl));
+        gga.StatueLevels.forEach((item) => (item[0] = lvl));
         return `Statue has been changed to ${lvl}.`;
     },
     anvil: (lvl) => {
-        const Levels = bEngine.getGameAttribute("AnvilPAstats");
+        const Levels = gga.AnvilPAstats;
         [3, 4, 5].forEach((i) => (Levels[i] = lvl));
-        bEngine.setGameAttribute("AnvilPAstats", Levels);
+        gga.AnvilPAstats = Levels;
         return `Anvil levels has been changed to ${lvl}.`;
     },
     talent: (lvl) => {
-        const LevelsMax = bEngine.getGameAttribute("SkillLevelsMAX");
-        const Levels = bEngine.getGameAttribute("SkillLevels");
+        const LevelsMax = gga.SkillLevelsMAX;
+        const Levels = gga.SkillLevels;
         for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
         return `Talent levels has been changed to ${lvl}.`;
     },
     stamp: (lvl) => {
-        const LevelsMax = bEngine.getGameAttribute("StampLevelMAX");
-        const Levels = bEngine.getGameAttribute("StampLevel");
+        const LevelsMax = gga.StampLevelMAX;
+        const Levels = gga.StampLevel;
         for (const [i, arr] of Object.entries(LevelsMax)) {
             for (const j of Object.keys(arr)) LevelsMax[i][j] = Levels[i][j] = lvl;
         }
         return `Stamp levels has been changed to ${lvl}.`;
     },
     shrine: (lvl) => {
-        bEngine.getGameAttribute("ShrineInfo").forEach((item) => {
+        gga.ShrineInfo.forEach((item) => {
             item[3] = lvl;
             item[4] = 0;
         });
@@ -299,7 +299,7 @@ const customLevelHandlers = {
 function handleSkillLevel(name, lvl) {
     // Special case: "class" is at index 0 in Lv0
     if (name === "class") {
-        bEngine.getGameAttribute("Lv0")[0] = lvl;
+        gga.Lv0[0] = lvl;
         return `Class level has been changed to ${lvl}.`;
     }
 
@@ -312,7 +312,7 @@ function handleSkillLevel(name, lvl) {
     }
 
     // +1 offset because Lv0[0] is class
-    bEngine.getGameAttribute("Lv0")[skillIndex + 1] = lvl;
+    gga.Lv0[skillIndex + 1] = lvl;
     return `${skillNames[skillIndex]} level has been changed to ${lvl}.`;
 }
 

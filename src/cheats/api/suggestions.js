@@ -8,7 +8,7 @@
 
 import { cheats } from "../core/registration.js";
 import { summonUnits, keychainStatsMap, alchemyTypes } from "../constants.js";
-import { bEngine, itemDefs, monsterDefs, cList, itemTypes } from "../core/globals.js";
+import { itemDefs, monsterDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { getAllBundles } from "../helpers/bundles.js";
 
 // Custom level changers for lvl command suggestions
@@ -120,34 +120,32 @@ export function getAutoCompleteSuggestions() {
     }
 
     // class names
-    if (cList.ClassNames) {
-        const classNames = cList.ClassNames.slice(0, 41);
-        for (const [id, name] of classNames.entries()) {
-            if (!name || name.toLowerCase() === "blank") continue;
-            choices.push({
-                value: `class ${name.toLowerCase()}`,
-                message: `Change to ${name} (ID: ${id})`,
-                category: "class",
-            });
-        }
+
+    const classNames = cList.ClassNames.slice(0, 41);
+    for (const [id, name] of classNames.entries()) {
+        if (!name || name.toLowerCase() === "blank") continue;
+        choices.push({
+            value: `class ${name.toLowerCase()}`,
+            message: `Change to ${name} (ID: ${id})`,
+            category: "class",
+        });
     }
 
     // lvl - skills from cList.SkillNames
-    if (cList.SkillNames) {
-        // Special case: class level at index 0
+
+    // Special case: class level at index 0
+    choices.push({
+        value: "lvl class",
+        message: "Change class level",
+        category: "lvl",
+    });
+    for (const name of cList.SkillNames) {
+        if (!name || name === "Blank") continue;
         choices.push({
-            value: "lvl class",
-            message: "Change class level",
+            value: `lvl ${name.toLowerCase()}`,
+            message: `Change ${name} level`,
             category: "lvl",
         });
-        for (const name of cList.SkillNames) {
-            if (!name || name === "Blank") continue;
-            choices.push({
-                value: `lvl ${name.toLowerCase()}`,
-                message: `Change ${name} level`,
-                category: "lvl",
-            });
-        }
     }
 
     // lvl - alchemy types (static)
@@ -169,14 +167,13 @@ export function getAutoCompleteSuggestions() {
     }
 
     // game attributes (gga)
-    if (bEngine.gameAttributes.h) {
-        for (const key of Object.keys(bEngine.gameAttributes.h)) {
-            choices.push({
-                value: `gga ${key}`,
-                message: "",
-                category: "gga",
-            });
-        }
+
+    for (const key of Object.keys(gga)) {
+        choices.push({
+            value: `gga ${key}`,
+            message: "",
+            category: "gga",
+        });
     }
 
     // w4 chips suggestions
@@ -197,21 +194,20 @@ export function getAutoCompleteSuggestions() {
     }
 
     // w5 jargems suggestions
-    if (cList.HolesInfo && cList.HolesInfo[67]) {
+
+    choices.push({
+        value: "w5 jargems all",
+        message: "Set amount for all jar gems",
+        category: "w5",
+    });
+    for (const gem of cList.HolesInfo[67]) {
+        const parts = gem.split("|");
+        if (!parts[0]) continue;
         choices.push({
-            value: "w5 jargems all",
-            message: "Set amount for all jar gems",
+            value: `w5 jargems ${parts[0].toLowerCase()}`,
+            message: parts[3] || "",
             category: "w5",
         });
-        for (const gem of cList.HolesInfo[67]) {
-            const parts = gem.split("|");
-            if (!parts[0]) continue;
-            choices.push({
-                value: `w5 jargems ${parts[0].toLowerCase()}`,
-                message: parts[3] || "",
-                category: "w5",
-            });
-        }
     }
 
     return choices;

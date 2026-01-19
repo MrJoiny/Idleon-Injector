@@ -9,7 +9,7 @@
  */
 
 import { cheatState } from "../core/state.js";
-import { bEngine, behavior } from "../core/globals.js";
+import { behavior, gga } from "../core/globals.js";
 
 /**
  * Setup behavior script proxies.
@@ -53,7 +53,7 @@ export function setupBehaviorScriptProxies() {
                 if (cheatState.rngInt) return cheatState.rngInt;
 
                 // Force VIP book to always be max level
-                if (cheatState.w3.book && bEngine.getGameAttribute("MenuType2") === 31 && args[0] === 1) {
+                if (cheatState.w3.book && gga.MenuType2 === 31 && args[0] === 1) {
                     return args[1];
                 }
 
