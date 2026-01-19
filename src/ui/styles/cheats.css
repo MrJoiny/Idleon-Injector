@@ -79,10 +79,13 @@
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid #333;
     color: var(--c-text-dim);
-    padding: 10px 12px;
+    padding: 0 12px;
+    height: 40px;
     text-align: left;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
 }
 
 .cheat-button:hover {
@@ -124,10 +127,27 @@
     background: var(--c-accent-dim);
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
-    padding: 6px 12px;
+    padding: 0;
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.quick-access-btn.is-favorite-btn {
+    padding-right: 0;
+}
+
+.quick-access-btn-text {
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+}
+
+.quick-access-btn.is-favorite-btn .quick-access-btn-text {
+    padding-right: 8px;
 }
 
 .quick-access-btn:hover {
@@ -135,29 +155,31 @@
     color: #000;
 }
 
-.quick-access-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.quick-access-remove {
-    background: transparent;
-    border: none;
-    color: var(--c-text-dim);
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 1rem;
-    opacity: 0.5;
-    transition: all 0.2s;
+.quick-access-remove-icon {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 8px;
+    align-self: stretch;
+    opacity: 0.4;
+    transition: all 0.2s;
+    border-left: 1px solid rgba(255, 183, 0, 0.2);
 }
 
-.quick-access-remove:hover {
-    opacity: 1;
-    color: var(--c-danger);
+.quick-access-btn:hover .quick-access-remove-icon {
+    border-left-color: rgba(0, 0, 0, 0.2);
+    opacity: 0.7;
+}
+
+.quick-access-remove-icon:hover {
+    color: var(--c-danger) !important;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 1 !important;
+}
+
+.quick-access-item {
+    display: flex;
+    align-items: center;
 }
 
 .quick-access-empty {
@@ -191,4 +213,50 @@
 .favorite-btn.is-favorite {
     opacity: 1;
     color: var(--c-warning);
+}
+
+/* --- CHEAT CONFIG ICON (inside cheat button) --- */
+.cheat-button.has-config {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cheat-config-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 100%;
+    opacity: 0.5;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    margin-right: -12px; /* Pull into button padding area */
+    font-size: 1.2rem; /* Increased from default ~1rem */
+}
+
+.cheat-config-icon:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--c-accent);
+}
+
+.cheat-button-text {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.control-bar {
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+    background: var(--c-void);
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

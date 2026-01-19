@@ -1,6 +1,7 @@
 import vanX from "./van-x-0.6.3.js";
 import * as API from "./api.js";
-import { IS_ELECTRON } from "./constants.js";
+import { IS_ELECTRON, VIEWS } from "./constants.js";
+import { getCheatConfigPath, configPathExists } from "./utils.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -23,6 +24,7 @@ const appState = vanX.reactive({
     toast: { message: "", type: "", id: 0 },
     config: null,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
+    configForcedPath: null,
 });
 
 const dataState = vanX.reactive({
@@ -69,9 +71,50 @@ const SystemService = {
 const CheatService = {
     loadCheats: async () => {
         await Actions.withLoading(async () => {
-            const cheats = await API.fetchCheatsData();
+            const hasConfig = appState.config !== null;
+
+            const [cheats, config] = await Promise.all([
+                API.fetchCheatsData(),
+                hasConfig ? Promise.resolve(null) : API.fetchConfig(),
+            ]);
+
             dataState.cheats = cheats || [];
+
+            if (config) {
+                appState.config = config;
+            }
         });
+    },
+
+    /**
+     * Check if a cheat has an associated config entry.
+     * @param {string} cheatValue
+     * @returns {boolean}
+     */
+    hasConfigEntry: (cheatValue) => {
+        if (!appState.config?.cheatConfig) return false;
+        const pathParts = getCheatConfigPath(cheatValue);
+        if (!pathParts) return false;
+        return configPathExists(pathParts, appState.config.cheatConfig);
+    },
+
+    /**
+     * Navigate to the Config tab with forced path display.
+     * @param {string} cheatValue
+     */
+    navigateToCheatConfig: (cheatValue) => {
+        const pathParts = getCheatConfigPath(cheatValue);
+        if (pathParts && configPathExists(pathParts, appState.config?.cheatConfig)) {
+            appState.configForcedPath = pathParts;
+            appState.activeTab = VIEWS.CONFIG.id;
+        }
+    },
+
+    /**
+     * Clear the forced config path (called when user interacts with Config filters).
+     */
+    clearForcedConfigPath: () => {
+        appState.configForcedPath = null;
     },
 
     executeCheat: async (action, message) => {
@@ -236,6 +279,9 @@ const store = {
 
     loadCheats: CheatService.loadCheats,
     executeCheat: CheatService.executeCheat,
+    hasConfigEntry: CheatService.hasConfigEntry,
+    navigateToCheatConfig: CheatService.navigateToCheatConfig,
+    clearForcedConfigPath: CheatService.clearForcedConfigPath,
     loadCheatStates: CheatStateService.loadCheatStates,
     getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 

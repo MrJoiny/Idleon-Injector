@@ -44,15 +44,25 @@ const QuickAccessSection = () => {
             { class: "quick-access-item" },
             button(
                 {
-                    class: "quick-access-btn",
+                    class: () => `quick-access-btn ${isFavorite ? "is-favorite-btn" : ""}`,
                     onclick: () => store.executeCheat(cheat.value, cheat.message),
                     title: cheat.message,
                 },
-                cheat.value
-            ),
-            isFavorite
-                ? button({ class: "quick-access-remove", onclick: () => store.toggleFavorite(cheatValue) }, Icons.X())
-                : null
+                span({ class: "quick-access-btn-text" }, cheat.value),
+                isFavorite
+                    ? span(
+                          {
+                              class: "quick-access-remove-icon",
+                              onclick: (e) => {
+                                  e.stopPropagation();
+                                  store.toggleFavorite(cheatValue);
+                              },
+                              title: "Remove from favorites",
+                          },
+                          Icons.X()
+                      )
+                    : null
+            )
         );
     };
 
@@ -127,56 +137,61 @@ export const Cheats = () => {
         { id: "cheats-tab", class: "tab-pane" },
 
         div(
-            { class: "control-bar" },
-            SearchBar({
-                placeholder: "SEARCH_COMMANDS...",
-                onInput: handleSearch,
-            })
-        ),
+            { class: "scroll-container" },
 
-        QuickAccessSection(),
-
-        () => {
-            if (store.app.isLoading && store.data.cheats.length === 0) {
-                return Loader({ text: "INITIALIZING..." });
-            }
-
-            // Get fresh snapshot of cheats and filter term
-            const cheats = [...store.data.cheats];
-            const filterTerm = ui.filter;
-            const groupedData = getGroupedCheats(cheats, filterTerm);
-            const categories = Object.keys(groupedData);
-
-            if (categories.length === 0) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO CHEATS FOUND",
-                    subtitle: filterTerm ? "Try a different search term" : "Cheats list is empty",
-                });
-            }
-
-            return div(
-                { id: "cheat-buttons", class: "grid-layout" },
-                categories.map((cat) => {
-                    return details(
-                        {
-                            class: "cheat-category",
-                            open: ui.shouldOpen,
-                        },
-                        summary(cat),
-                        div(
-                            { class: "cheat-category-content" },
-                            groupedData[cat].map((cheat) => CheatItem(cheat))
-                        )
-                    );
+            div(
+                { class: "control-bar" },
+                SearchBar({
+                    placeholder: "SEARCH_COMMANDS...",
+                    onInput: handleSearch,
                 })
-            );
-        }
+            ),
+
+            QuickAccessSection(),
+
+            () => {
+                if (store.app.isLoading && store.data.cheats.length === 0) {
+                    return Loader({ text: "INITIALIZING..." });
+                }
+
+                // Get fresh snapshot of cheats and filter term
+                const cheats = [...store.data.cheats];
+                const filterTerm = ui.filter;
+                const groupedData = getGroupedCheats(cheats, filterTerm);
+                const categories = Object.keys(groupedData);
+
+                if (categories.length === 0) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO CHEATS FOUND",
+                        subtitle: filterTerm ? "Try a different search term" : "Cheats list is empty",
+                    });
+                }
+
+                return div(
+                    { id: "cheat-buttons", class: "grid-layout" },
+                    categories.map((cat) => {
+                        return details(
+                            {
+                                class: "cheat-category",
+                                open: ui.shouldOpen,
+                            },
+                            summary(cat),
+                            div(
+                                { class: "cheat-category-content" },
+                                groupedData[cat].map((cheat) => CheatItem(cheat))
+                            )
+                        );
+                    })
+                );
+            }
+        )
     );
 };
 
 const CheatItem = (cheat) => {
     const needsValue = cheat.needsParam === true;
+    const hasConfig = store.hasConfigEntry(cheat.value);
 
     const inputValue = van.state("");
 
@@ -203,6 +218,11 @@ const CheatItem = (cheat) => {
         setTimeout(() => (feedbackState.val = null), 1000);
     };
 
+    const handleConfigClick = (e) => {
+        e.stopPropagation();
+        store.navigateToCheatConfig(cheat.value);
+    };
+
     const handleFavorite = () => {
         // For cheats that need a value, include the current input value for the favorite
         if (needsValue) {
@@ -227,18 +247,35 @@ const CheatItem = (cheat) => {
         return store.isFavorite(cheat.value);
     };
 
+    // Build button content with optional gear icon
+    const buttonContent = [
+        span(
+            { class: "cheat-button-text" },
+            cheat.message && cheat.message !== cheat.value ? `${cheat.value} - ${cheat.message}` : cheat.value
+        ),
+        hasConfig
+            ? span(
+                  {
+                      class: "cheat-config-icon",
+                      onclick: handleConfigClick,
+                      title: "Open config for this cheat",
+                  },
+                  Icons.Config()
+              )
+            : null,
+    ];
+
     return div(
         { class: "cheat-item-container" },
         button(
             {
                 class: () =>
-                    `cheat-button ${feedbackState.val === "success" ? "feedback-success" : ""} ${
-                        feedbackState.val === "error" ? "feedback-error" : ""
-                    }`,
+                    `cheat-button ${hasConfig ? "has-config" : ""} ${
+                        feedbackState.val === "success" ? "feedback-success" : ""
+                    } ${feedbackState.val === "error" ? "feedback-error" : ""}`,
                 onclick: handleExecute,
             },
-            // Show both value and message in button
-            cheat.message && cheat.message !== cheat.value ? `${cheat.value} - ${cheat.message}` : cheat.value
+            ...buttonContent
         ),
         () =>
             needsValue

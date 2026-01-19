@@ -111,7 +111,7 @@ export const AddCheatSearchBar = (onAdd, onCancel) => {
                                 handleAdd(val);
                             },
                         },
-                        `${msg} (${val})`
+                        `${val} (${msg})`
                     );
 
                     resultsContainer.appendChild(item);
