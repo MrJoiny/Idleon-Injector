@@ -1,145 +1,107 @@
 /**
- * Minigame Proxies
+ * Minigame Proxies (Prototype-Based)
  *
- * Proxies for all minigame cheats:
- * - Mining minigame (never game over)
- * - Fishing minigame (never game over)
- * - Catching minigame (static fly positions)
- * - Chopping minigame (gold zone fills bar)
- * - Poing minigame (AI doesn't move)
- * - Scratch minigame (auto reveal all)
- * - Hoops minigame (perfect position)
- * - Darts minigame (bullseye position)
- * - Wisdom monument (infinite attempts)
+ * All proxies are set up at startup via setupMinigameProxies() and controlled
+ * by cheatState toggles. This approach patches the ActorEvents prototypes once,
+ * making it more robust than instance-based patching.
+ *
+ * Supported minigames:
+ * - Mining (ActorEvents_229) - Never game over
+ * - Fishing (ActorEvents_229) - Never game over
+ * - Catching (ActorEvents_229) - Static fly/hoop positions
+ * - Choppin (ActorEvents_116) - Gold zone fills bar
+ * - Hoops (ActorEvents_510) - Perfect ball/hoop position
+ * - Darts (ActorEvents_510) - Bullseye position
+ * - Scratch (ActorEvents_670) - Auto reveal all
+ * - Wisdom (ActorEvents_670) - Infinite attempts
+ * - Poing (ActorEvents_577) - AI paddle off-screen
  */
 
 import { cheatState } from "../core/state.js";
-import { gga } from "../core/globals.js";
+import { events } from "../core/globals.js";
+import { createMethodProxy } from "../utils/proxy.js";
 
 /**
- * Setup mining and fishing minigame proxies (never game over).
+ * Wraps an array property in a Proxy when the init method is called.
+ * This ensures the proxy is applied to every instance created from the prototype.
+ *
+ * @param {object} prototype - The ActorEvents prototype to patch
+ * @param {string} initMethod - The initialization method name (e.g., "init")
+ * @param {string} arrayProp - The array property name (e.g., "_GenINFO")
+ * @param {object} handler - The Proxy handler with get/set traps
  */
-export function setupMiningFishingProxies() {
-    const pixelHelper = gga.PixelHelperActor;
+function wrapArrayOnInit(prototype, initMethod, arrayProp, handler) {
+    if (!prototype[initMethod]) return;
+    if (prototype[initMethod]._isPatched) return;
 
-    const miningGameOver = pixelHelper[4].getValue("ActorEvents_229", "_customEvent_MiningGameOver");
-    const miningProxy = new Proxy(miningGameOver, {
-        apply(originalFn, context, args) {
-            if (cheatState.minigame.mining) return;
-            return Reflect.apply(originalFn, context, args);
-        },
+    createMethodProxy(prototype, initMethod, function (base) {
+        if (this[arrayProp] && !this[arrayProp]._isProxied) {
+            this[arrayProp] = new Proxy(this[arrayProp], handler);
+            this[arrayProp]._isProxied = true;
+        }
+        return base;
     });
-    pixelHelper[4].setValue("ActorEvents_229", "_customEvent_MiningGameOver", miningProxy);
 
-    const fishingGameOver = pixelHelper[4].getValue("ActorEvents_229", "_customEvent_FishingGameOver");
-    const fishingProxy = new Proxy(fishingGameOver, {
-        apply(originalFn, context, args) {
-            if (cheatState.minigame.fishing) return;
-            return Reflect.apply(originalFn, context, args);
-        },
-    });
-    pixelHelper[4].setValue("ActorEvents_229", "_customEvent_FishingGameOver", fishingProxy);
+    prototype[initMethod]._isPatched = true;
 }
 
-/**
- * Setup catching minigame proxy (static fly and hoop positions).
- */
-export function setupCatchingMinigameProxy() {
-    const pixelHelper = gga.PixelHelperActor;
-    const genInfo = pixelHelper[4].getValue("ActorEvents_229", "_GenInfo");
+// mining, fishing, catching
+function setupEvents229Minigames() {
+    const ActorEvents229 = events(229);
+    if (!ActorEvents229) return;
 
-    const proxy = new Proxy(genInfo, {
-        get(target, property, receiver) {
+    // mining block game over
+    if (!ActorEvents229.prototype._customEvent_MiningGameOver?._isPatched) {
+        const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
+        ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
+            if (cheatState.minigame.mining) return; // Skip original entirely
+            return originalMining.call(this, ...args);
+        };
+        ActorEvents229.prototype._customEvent_MiningGameOver._isPatched = true;
+    }
+
+    // fishing block game over
+    if (!ActorEvents229.prototype._customEvent_FishingGameOver?._isPatched) {
+        const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
+        ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
+            if (cheatState.minigame.fishing) return; // Skip original entirely
+            return originalFishing.call(this, ...args);
+        };
+        ActorEvents229.prototype._customEvent_FishingGameOver._isPatched = true;
+    }
+
+    // catching proxy _GenInfo array for static positions
+    wrapArrayOnInit(ActorEvents229.prototype, "init", "_GenInfo", {
+        get(target, prop, receiver) {
             if (cheatState.minigame.catching) {
-                if (Number(property) === 31) return 70;
-                if (Number(property) === 33) return [95, 95, 95, 95, 95];
+                if (Number(prop) === 31) return 70;
+                if (Number(prop) === 33) return [95, 95, 95, 95, 95];
             }
-            return Reflect.get(target, property, receiver);
+            return Reflect.get(target, prop, receiver);
         },
     });
-    pixelHelper[4].setValue("ActorEvents_229", "_GenInfo", proxy);
 }
 
-/**
- * Setup chopping minigame proxy (whole bar filled with gold zone).
- */
-export function setupChoppingMinigameProxy() {
-    const pixelHelper = gga.PixelHelperActor;
-    const generalInfo = pixelHelper[1].getValue("ActorEvents_116", "_GeneralINFO");
+// choppin
+function setupEvents116Minigames() {
+    const ActorEvents116 = events(116);
+    if (!ActorEvents116) return;
 
-    const proxy = new Proxy(generalInfo, {
-        get(target, property, receiver) {
-            if (cheatState.minigame.choppin && Number(property) === 7) {
+    // choppin proxy _GeneralINFO for gold zone
+    wrapArrayOnInit(ActorEvents116.prototype, "init", "_GeneralINFO", {
+        get(target, prop, receiver) {
+            if (cheatState.minigame.choppin && Number(prop) === 7) {
                 return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
             }
-            return Reflect.get(target, property, receiver);
-        },
-    });
-    pixelHelper[1].setValue("ActorEvents_116", "_GeneralINFO", proxy);
-}
-
-/**
- * Setup poing minigame proxy (AI paddle doesn't move).
- */
-export function setupPoingMinigameProxy() {
-    const pixelHelper = gga.PixelHelperActor;
-    const poingGeninfo = pixelHelper[23].behaviors.behaviors[0].script._GenINFO;
-
-    let aiVelocity = 0;
-    Object.defineProperty(poingGeninfo[63], "1", {
-        get() {
-            return cheatState.minigame.poing ? 0 : aiVelocity;
-        },
-        set(value) {
-            aiVelocity = value;
+            return Reflect.get(target, prop, receiver);
         },
     });
 }
 
-/**
- * Setup scratch minigame proxy (auto reveal all scratch zones).
- */
-export function setupScratchMinigameProxy() {
-    const pixelHelper = gga.PixelHelperActor;
-    const scratchBehavior = pixelHelper[25].behaviors.getBehavior("ActorEvents_670");
-
-    const SCRATCH_ARRAY_IDX = 212;
-    const STATE_IDX = 50;
-    const COVER_IMG_ARRAY_ID = 68;
-    const COVER_IMG_ID = 1;
-
-    const originalGenInfo = scratchBehavior._GenINFO;
-    const proxy = new Proxy(originalGenInfo, {
-        get(target, property, receiver) {
-            const value = Reflect.get(target, property, receiver);
-
-            if (Number(property) === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                if (Array.isArray(value) && value[STATE_IDX] === 1) {
-                    for (let i = 25; i <= 49; i++) {
-                        if (value[i] !== 1) {
-                            value[i] = 1;
-                        }
-                    }
-
-                    const coverImage = scratchBehavior._UIinventory15?.[COVER_IMG_ARRAY_ID]?.[COVER_IMG_ID];
-                    if (coverImage?.get_alpha && coverImage.get_alpha() > 0) {
-                        coverImage.set_alpha(0);
-                    }
-                }
-            }
-
-            return value;
-        },
-    });
-    scratchBehavior._GenINFO = proxy;
-}
-
-/**
- * Setup hoops and darts minigame proxies (perfect positions).
- */
-export function setupHoopsDartsProxies() {
-    const pixelHelper = gga.PixelHelperActor;
-    const behavior = pixelHelper[21].behaviors.getBehavior("ActorEvents_510");
+// hoops and darts
+function setupEvents510Minigames() {
+    const ActorEvents510 = events(510);
+    if (!ActorEvents510) return;
 
     // Hoops constants
     const HOOP_TARGET_X = 107;
@@ -155,18 +117,13 @@ export function setupHoopsDartsProxies() {
     const BULLSEYE_X = 938;
     const BULLSEYE_Y = 292;
 
-    const originalGenInfo = behavior._GenINFO;
-    const proxy = new Proxy(originalGenInfo, {
-        get(target, property, receiver) {
-            const numericProperty = Number(property);
+    wrapArrayOnInit(ActorEvents510.prototype, "init", "_GenINFO", {
+        get(target, prop, receiver) {
+            const numProp = Number(prop);
 
             // Hoops logic
             if (cheatState.minigame.hoops) {
-                if (gga.OptionsListAccount[243] === 1) {
-                    gga.OptionsListAccount[243] = 0;
-                }
-
-                switch (numericProperty) {
+                switch (numProp) {
                     case HOOP_TARGET_X:
                     case HOOP_POS_X:
                         return 600;
@@ -180,43 +137,103 @@ export function setupHoopsDartsProxies() {
 
             // Darts logic
             if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
-                if (numericProperty === DART_X) return BULLSEYE_X;
-                if (numericProperty === DART_Y) return BULLSEYE_Y;
+                if (numProp === DART_X) return BULLSEYE_X;
+                if (numProp === DART_Y) return BULLSEYE_Y;
             }
 
-            return Reflect.get(target, property, receiver);
+            return Reflect.get(target, prop, receiver);
         },
     });
-    behavior._GenINFO = proxy;
 }
 
-/**
- * Setup wisdom monument proxy (infinite attempts).
- */
-export function setupWisdomMonumentProxy() {
-    const pixelHelper = gga.PixelHelperActor;
-    const wisdomGenInfo = pixelHelper[25].getValue("ActorEvents_670", "_GenINFO");
+// scratch and wisdom
+function setupEvents670Minigames() {
+    const ActorEvents670 = events(670);
+    if (!ActorEvents670) return;
 
-    const proxy = new Proxy(wisdomGenInfo, {
-        get(target, property, receiver) {
-            if (cheatState.minigame.wisdom && Number(property) === 194) {
+    const SCRATCH_ARRAY_IDX = 212;
+    const STATE_IDX = 50;
+    const COVER_IMG_ARRAY_ID = 68;
+    const COVER_IMG_ID = 1;
+
+    wrapArrayOnInit(ActorEvents670.prototype, "init", "_GenINFO", {
+        get(target, prop, receiver) {
+            const numProp = Number(prop);
+            const value = Reflect.get(target, prop, receiver);
+
+            // scratch logic auto reveal all scratch zones
+            if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
+                if (Array.isArray(value) && value[STATE_IDX] === 1) {
+                    for (let i = 25; i <= 49; i++) {
+                        if (value[i] !== 1) {
+                            value[i] = 1;
+                        }
+                    }
+
+                    // Hide cover image
+                    const coverImage = this._UIinventory15?.[COVER_IMG_ARRAY_ID]?.[COVER_IMG_ID];
+                    if (coverImage?.get_alpha && coverImage.get_alpha() > 0) {
+                        coverImage.set_alpha(0);
+                    }
+                }
+            }
+
+            // wisdom logic infinite attempts
+            if (cheatState.minigame.wisdom && numProp === 194) {
                 return 10;
             }
-            return Reflect.get(target, property, receiver);
+
+            return value;
         },
     });
-    pixelHelper[25].setValue("ActorEvents_670", "_GenINFO", proxy);
+}
+
+// poing
+function setupEvents577Minigames() {
+    const ActorEvents577 = events(577);
+    if (!ActorEvents577) return;
+
+    // Poing: Hook into _event_Gaming where AI paddle movement happens
+    // _GenINFO[58] is paddle positions array [playerX, aiX]
+    // We move AI paddle off-screen (999) and block game from updating it
+    if (!ActorEvents577.prototype._event_Gaming?._isPatched) {
+        const originalEventGaming = ActorEvents577.prototype._event_Gaming;
+        ActorEvents577.prototype._event_Gaming = function (...args) {
+            // Before running game logic, wrap _GenINFO[58] if cheat is enabled
+            if (cheatState.minigame.poing && this._GenINFO?.[58] && !this._GenINFO[58]._isProxied) {
+                this._GenINFO[58] = new Proxy(this._GenINFO[58], {
+                    get(t, p) {
+                        // p is the sub-index: 0 = Player, 1 = AI
+                        if (Number(p) === 1) {
+                            return 999; // Move AI paddle far off-screen
+                        }
+                        return t[p];
+                    },
+                    set(t, p, v) {
+                        // Block game from updating AI's position
+                        if (Number(p) === 1) {
+                            return true;
+                        }
+                        t[p] = v;
+                        return true;
+                    },
+                });
+                this._GenINFO[58]._isProxied = true;
+            }
+            return originalEventGaming.call(this, ...args);
+        };
+        ActorEvents577.prototype._event_Gaming._isPatched = true;
+    }
 }
 
 /**
- * Setup all minigame proxies.
+ * Setup all minigame proxies on ActorEvents prototypes.
+ * Call this once during proxy initialization in setupAllProxies().
  */
 export function setupMinigameProxies() {
-    setupMiningFishingProxies();
-    setupCatchingMinigameProxy();
-    setupChoppingMinigameProxy();
-    setupPoingMinigameProxy();
-    setupScratchMinigameProxy();
-    setupHoopsDartsProxies();
-    setupWisdomMonumentProxy();
+    setupEvents229Minigames();
+    setupEvents116Minigames();
+    setupEvents510Minigames();
+    setupEvents670Minigames();
+    setupEvents577Minigames();
 }

@@ -24,16 +24,13 @@ import { setupEvents713Proxies } from "./events713.js";
 import { setupActorProxies } from "./actor.js";
 import { setupAbilityProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 import { setupItemProxies } from "./items.js";
+import { setupMinigameProxies } from "./minigames.js";
 
 /**
  * Setup all game proxies.
  *
  * This is the main entry point for proxy initialization.
  * Call this after the game is ready and common variables are registered.
- *
- * NOTE: Minigame proxies are NOT set up here - they are lazy-loaded on-demand
- * when a minigame cheat is activated, because the game objects might not
- * be ready at initial setup time.
  */
 export function setupAllProxies() {
     // Behavior script proxies (RNG, timing, no damage)
@@ -71,4 +68,7 @@ export function setupAllProxies() {
 
     // Item definition proxies (godlike speed, upstones, equipall, candytime)
     setupItemProxies();
+
+    // Minigame proxies (mining, fishing, catching, choppin, hoops, darts, scratch, wisdom, poing)
+    setupMinigameProxies();
 }
