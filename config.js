@@ -652,9 +652,9 @@ exports.cheatConfig = {
 };
 
 exports.injectorConfig = {
+    logLevel: "info", // "debug", "info", "warn", "error"
     injreg: "\\w+\\.ApplicationMain\\s*?=",
     interceptPattern: "*N.js",
-    showConsoleLog: false,
     enableUI: true,
     webPort: 8080,
     onLinuxTimeout: 30000,

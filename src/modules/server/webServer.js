@@ -11,6 +11,9 @@ const path = require("path");
 const fs = require("fs").promises;
 const TinyRouter = require("./tinyRouter");
 const { initWebSocket } = require("./wsServer");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("WebServer");
 
 const MIME_TYPES = {
     ".html": "text/html",
@@ -61,11 +64,7 @@ function createWebServer(config) {
     const router = new TinyRouter();
     router.enableUI = config.enableUI;
 
-    if (config.enableUI) {
-        console.log("Web UI configuration initialized.");
-    } else {
-        console.log("Web UI disabled in config.");
-    }
+    log.debug(`Web UI ${config.enableUI ? "enabled" : "disabled"}`);
 
     return router;
 }
@@ -95,7 +94,7 @@ function startServer(router, port, wsConfig = null) {
             res.statusCode = 404;
             res.end("Not Found");
         } catch (err) {
-            console.error("Server error:", err);
+            log.error("Server error:", err);
             res.statusCode = 500;
             res.end("Internal Server Error");
         }
@@ -104,9 +103,7 @@ function startServer(router, port, wsConfig = null) {
     return new Promise((resolve, reject) => {
         server
             .listen(port, () => {
-                console.log(`\n--------------------------------------------------`);
-                console.log(`Web UI available at: http://localhost:${port}`);
-                console.log(`--------------------------------------------------\n`);
+                log.info(`Web UI: http://localhost:${port}`);
 
                 // Initialize WebSocket server if config provided
                 if (wsConfig && wsConfig.runtime && wsConfig.context) {
@@ -116,7 +113,7 @@ function startServer(router, port, wsConfig = null) {
                 resolve(server);
             })
             .on("error", (err) => {
-                console.error("Failed to start web server:", err);
+                log.error("Web server failed to start:", err);
                 reject(err);
             });
     });

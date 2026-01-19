@@ -6,6 +6,9 @@
  */
 
 const { WebSocketServer } = require("ws");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("WebSocket");
 
 /** @type {WebSocketServer|null} */
 let wss = null;
@@ -33,23 +36,23 @@ function initWebSocket(httpServer, runtime, context) {
 
     wss.on("connection", (ws) => {
         clients.add(ws);
-        console.log(`[WebSocket] Client connected. Total clients: ${clients.size}`);
+        log.debug(`WS client connected (${clients.size} total)`);
 
         // Push current state immediately on connection
         sendCheatStatesToClient(ws);
 
         ws.on("close", () => {
             clients.delete(ws);
-            console.log(`[WebSocket] Client disconnected. Total clients: ${clients.size}`);
+            log.debug(`WS client disconnected (${clients.size} total)`);
         });
 
         ws.on("error", (err) => {
-            console.error("[WebSocket] Client error:", err.message);
+            log.error("WS client error:", err.message);
             clients.delete(ws);
         });
     });
 
-    console.log("[WebSocket] Server initialized and attached to HTTP server");
+    log.debug("WebSocket server attached to HTTP server");
 }
 
 /**
@@ -58,7 +61,7 @@ function initWebSocket(httpServer, runtime, context) {
  */
 async function fetchCheatStates() {
     if (!runtimeRef || !contextRef) {
-        console.error("[WebSocket] Runtime or context not available");
+        log.debug("Cannot fetch cheat states - context not ready");
         return {};
     }
 
@@ -70,13 +73,13 @@ async function fetchCheatStates() {
         });
 
         if (statesResult.exceptionDetails) {
-            console.error("[WebSocket] Error fetching cheat states:", statesResult.exceptionDetails.text);
+            log.error("Failed to fetch cheat states:", statesResult.exceptionDetails.text);
             return {};
         }
 
         return statesResult.result.value || {};
     } catch (err) {
-        console.error("[WebSocket] Error fetching cheat states:", err.message);
+        log.error("Failed to fetch cheat states:", err.message);
         return {};
     }
 }
@@ -116,7 +119,7 @@ async function broadcastCheatStates() {
         }
     }
 
-    console.log(`[WebSocket] Broadcasted cheat states to ${clients.size} client(s)`);
+    log.debug(`Broadcasted states to ${clients.size} client(s)`);
 }
 
 /**
@@ -138,7 +141,7 @@ function closeWebSocket() {
         clients.clear();
         wss.close();
         wss = null;
-        console.log("[WebSocket] Server closed");
+        log.info("Server closed");
     }
 }
 

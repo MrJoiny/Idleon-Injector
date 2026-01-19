@@ -9,6 +9,9 @@
 
 const Enquirer = require("enquirer");
 const { exec } = require("child_process");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("CLI");
 
 /**
  * Start the CLI interface for user interaction
@@ -29,7 +32,7 @@ async function startCliInterface(context, client, options = {}) {
     });
 
     if (choicesResult.exceptionDetails) {
-        console.error("Error getting autocomplete suggestions:", choicesResult.exceptionDetails.text);
+        log.error("Error getting autocomplete suggestions:", choicesResult.exceptionDetails.text);
         return;
     }
     const choices = (choicesResult.result.value || []).map((choice) => {
@@ -104,9 +107,9 @@ async function startCliInterface(context, client, options = {}) {
 
                 exec(command, (error) => {
                     if (error) {
-                        console.error("Failed to open chrome debugger in default browser:", error);
+                        log.error("Failed to open chrome debugger in default browser:", error);
                     } else {
-                        console.log("Opened idleon chrome debugger in default browser");
+                        log.info("Opened idleon chrome debugger in default browser");
                     }
                 });
             } else {
@@ -116,14 +119,14 @@ async function startCliInterface(context, client, options = {}) {
                     allowUnsafeEvalBlockedByCSP: true,
                 });
                 if (cheatResponse.exceptionDetails) {
-                    console.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
+                    log.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
                 } else {
-                    console.log(`${cheatResponse.result.value}`);
+                    log.info(`${cheatResponse.result.value}`);
                 }
             }
             await promptUser();
         } catch (promptError) {
-            console.error("Error in promptUser:", promptError);
+            log.error("Error in promptUser:", promptError);
             await new Promise((res) => setTimeout(res, 1000));
             await promptUser();
         }

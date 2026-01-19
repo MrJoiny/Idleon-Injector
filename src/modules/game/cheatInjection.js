@@ -10,6 +10,9 @@ const CDP = require("chrome-remote-interface");
 const fs = require("fs").promises;
 
 const { objToString } = require("../utils/helpers");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("Injection");
 
 /**
  * Set up CDP interception and inject cheats into the game
@@ -29,7 +32,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
     const client = await CDP(options);
 
     const { DOM, Page, Network, Runtime } = client;
-    console.log("Injecting cheats...");
+    log.info("Setting up cheat injection...");
 
     let cheats = await fs.readFile("cheats.js", "utf8");
     cheats =
@@ -52,17 +55,16 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
     await Network.setCacheDisabled({ cacheDisabled: true });
 
     await Page.setBypassCSP({ enabled: true });
-    if (config.showConsoleLog) {
-        Runtime.consoleAPICalled((entry) => {
-            console.log(entry.args.map((arg) => arg.value).join(" "));
-        });
-    }
+
+    Runtime.consoleAPICalled((entry) => {
+        log.debug(entry.args.map((arg) => arg.value).join(" "));
+    });
 
     await Promise.all([Runtime.enable(), Page.enable(), Network.enable(), DOM.enable()]);
 
     Network.requestIntercepted(async ({ interceptionId, request }) => {
         try {
-            console.log(`Intercepted: ${request.url}`);
+            log.debug(`Intercepted script: ${request.url}`);
             const response = await Network.getResponseBodyForInterception({ interceptionId });
             const originalBody = Buffer.from(response.body, "base64").toString("utf8");
 
@@ -72,7 +74,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
 
             const AppMain = InjRegG.exec(originalBody);
             if (!AppMain) {
-                console.error(`Injection regex '${config.injreg}' did not match the script content. Cannot inject.`);
+                log.error(`Injection regex did not match - check injreg pattern`);
                 Network.continueInterceptedRequest({ interceptionId });
                 return;
             }
@@ -80,7 +82,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
             for (let i = 0; i < AppMain.length; i++) AppVar[i] = VarName.exec(AppMain[i])[0];
 
             // Inject cheats directly into the current context to persist across page reloads
-            console.log("Loaded cheats...");
+            log.debug("Evaluating cheat code...");
             await Runtime.evaluate({
                 expression: cheats,
                 awaitPromise: true,
@@ -91,7 +93,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
             const replacementRegex = new RegExp(config.injreg);
             let newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 
-            console.log("Updated game code...");
+            log.debug("Patching game script...");
 
             const newHeaders = [
                 `Date: ${new Date().toUTCString()}`,
@@ -108,20 +110,19 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
                 interceptionId,
                 rawResponse: newResponse,
             });
-            console.log("Sent to game...");
-            console.log("Cheat injected!");
+            log.info("Cheats injected successfully!");
         } catch (error) {
-            console.error("Error during request interception:", error);
+            log.error("Injection failed:", error);
             // Attempt to continue with original content to prevent game from hanging
             try {
                 await Network.continueInterceptedRequest({ interceptionId });
             } catch (continueError) {
-                console.error("Error trying to continue request after interception error:", continueError);
+                log.error("Failed to recover from injection error:", continueError);
             }
         }
     });
 
-    console.log("Interception listener setup complete.");
+    log.debug("Request interceptor attached");
     return client;
 }
 

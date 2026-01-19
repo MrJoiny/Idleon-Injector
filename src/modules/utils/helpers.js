@@ -6,6 +6,10 @@
  * string representations for injection and API communication.
  */
 
+const { createLogger } = require("./logger");
+
+const log = createLogger("Helpers");
+
 /**
  * Converts a JavaScript object (potentially with functions) into a string representation
  * suitable for injection into the target environment. Functions are converted to their string form.
@@ -79,8 +83,8 @@ const parseConfigFromJson = (obj) => {
                     try {
                         value = new Function(`return (${trimmedValue})`)();
                     } catch (e) {
-                        console.warn(
-                            `[Config Parse] Failed to convert arrow function string for key '${key}': ${e.message}. Keeping as string.`
+                        log.warn(
+                            `Failed to convert arrow function string for key '${key}': ${e.message}. Keeping as string.`
                         );
                     }
                 }

@@ -1,4 +1,7 @@
 const https = require("https");
+const { createLogger } = require("./utils/logger");
+
+const log = createLogger("UpdateChecker");
 
 /**
  * Compares two semantic version strings.
@@ -58,7 +61,7 @@ function checkForUpdates(currentVersion) {
                             resolve({ updateAvailable: false });
                         }
                     } catch (e) {
-                        console.error("Failed to parse update check response:", e);
+                        log.error("Failed to parse update check response:", e);
                         resolve(null);
                     }
                 } else {
@@ -69,7 +72,7 @@ function checkForUpdates(currentVersion) {
         });
 
         req.on("error", (error) => {
-            console.error("Update check failed:", error.message);
+            log.error("Update check failed:", error.message);
             resolve(null);
         });
 

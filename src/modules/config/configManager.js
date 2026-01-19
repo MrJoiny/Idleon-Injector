@@ -8,6 +8,9 @@
 
 const { deepClone, union, deepMerge } = require("../utils/objectUtils");
 const os = require("os");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("Config");
 
 let config = null;
 let defaultConfig = null;
@@ -44,12 +47,10 @@ function loadConfiguration() {
             config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
             config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
             config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
+            log.debug("Loaded custom config overrides");
         } catch (e) {
-            console.log("****** No custom config found, using default config ******");
-            console.log(
-                "****** To create a custom config, copy config.custom.example.js to config.custom.js and edit to your liking ******"
-            );
-            console.log("");
+            log.info("No config.custom.js found - using defaults");
+            log.info("Tip: Copy config.custom.example.js to config.custom.js to customize");
         }
 
         injectorConfig = config.injectorConfig;
@@ -122,7 +123,7 @@ function getWebPort() {
     if (injectorConfig && injectorConfig.webPort) {
         return injectorConfig.webPort;
     }
-    console.log("Using fallback port: " + WEB_PORT);
+    log.debug("Using fallback port: " + WEB_PORT);
     return WEB_PORT;
 }
 

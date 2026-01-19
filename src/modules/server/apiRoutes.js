@@ -18,6 +18,9 @@ const {
 } = require("../utils/helpers");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("API");
 
 /**
  * Sets up all API routes for the web UI
@@ -46,7 +49,7 @@ function setupApiRoutes(app, context, client, config) {
                 returnByValue: true,
             });
             if (suggestionsResult.exceptionDetails) {
-                console.error("API Error getting autocomplete suggestions:", suggestionsResult.exceptionDetails.text);
+                log.error("Error getting autocomplete suggestions:", suggestionsResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get cheats from game",
                     details: suggestionsResult.exceptionDetails.text,
@@ -73,7 +76,7 @@ function setupApiRoutes(app, context, client, config) {
                 res.json(filteredCheats);
             }
         } catch (apiError) {
-            console.error("API Error in /api/cheats:", apiError);
+            log.error("Error in /api/cheats:", apiError);
             res.status(500).json({ error: "Internal server error while fetching cheats" });
         }
     });
@@ -90,20 +93,20 @@ function setupApiRoutes(app, context, client, config) {
                 allowUnsafeEvalBlockedByCSP: true,
             });
             if (cheatResponse.exceptionDetails) {
-                console.error(`API Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
+                log.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
                 res.status(500).json({
                     error: `Failed to execute cheat '${action}'`,
                     details: cheatResponse.exceptionDetails.text,
                 });
             } else {
-                console.log(`[Web UI] Executed: ${action} -> ${cheatResponse.result.value}`);
+                log.debug(`Executed: ${action} -> ${cheatResponse.result.value}`);
                 res.json({ result: cheatResponse.result.value });
 
                 // Broadcast updated cheat states to all WebSocket clients
                 broadcastCheatStates();
             }
         } catch (apiError) {
-            console.error(`API Error executing cheat '${action}':`, apiError);
+            log.error(`Error executing cheat '${action}':`, apiError);
             res.status(500).json({ error: `Internal server error while executing cheat '${action}'` });
         }
     });
@@ -114,14 +117,14 @@ function setupApiRoutes(app, context, client, config) {
             if (response && response.targetInfo && response.targetInfo.targetId) {
                 const targetId = response.targetInfo.targetId;
                 const devtoolsUrl = `http://localhost:${cdpPort}/devtools/inspector.html?ws=localhost:${cdpPort}/devtools/page/${targetId}`;
-                console.log(`[Web UI] Generated DevTools URL: ${devtoolsUrl}`);
+                log.debug(`Generated DevTools URL: ${devtoolsUrl}`);
                 res.json({ url: devtoolsUrl });
             } else {
-                console.error("API Error: Could not get target info to generate DevTools URL.");
+                log.error("Could not get target info to generate DevTools URL.");
                 res.status(500).json({ error: "Failed to get target information from CDP client." });
             }
         } catch (apiError) {
-            console.error("API Error getting DevTools URL:", apiError);
+            log.error("Error getting DevTools URL:", apiError);
             res.status(500).json({
                 error: "Internal server error while fetching DevTools URL",
                 details: apiError.message,
@@ -146,7 +149,7 @@ function setupApiRoutes(app, context, client, config) {
             };
             res.json(fullConfigResponse);
         } catch (error) {
-            console.error("API Error preparing full config for JSON:", error);
+            log.error("Error preparing full config for JSON:", error);
             res.status(500).json({ error: "Internal server error while preparing configuration" });
         }
     });
@@ -171,12 +174,12 @@ function setupApiRoutes(app, context, client, config) {
             if (Array.isArray(receivedFullConfig.startupCheats)) {
                 startupCheats.length = 0;
                 startupCheats.push(...receivedFullConfig.startupCheats);
-                console.log("[Web UI] Updated server-side startupCheats.");
+                log.debug("Updated server-side startupCheats.");
             }
 
             if (receivedFullConfig.injectorConfig) {
                 deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                console.log("[Web UI] Updated server-side injectorConfig.");
+                log.debug("Updated server-side injectorConfig.");
             }
 
             const parsedCheatConfig = receivedFullConfig.cheatConfig
@@ -184,7 +187,7 @@ function setupApiRoutes(app, context, client, config) {
                 : cheatConfig;
             const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` });
             if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
-                console.error("API Error: Cheat context not found in iframe. Cannot update config in game.");
+                log.error("Cheat context not found in iframe. Cannot update config in game.");
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game (context lost).",
                 });
@@ -209,7 +212,7 @@ function setupApiRoutes(app, context, client, config) {
 
             let gameUpdateDetails = "N/A";
             if (updateResult.exceptionDetails) {
-                console.error(`API Error updating config in game:`, updateResult.exceptionDetails.text);
+                log.error("Error updating config in game:", updateResult.exceptionDetails.text);
                 gameUpdateDetails = `Failed to apply in game: ${updateResult.exceptionDetails.text}`;
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game.",
@@ -217,7 +220,7 @@ function setupApiRoutes(app, context, client, config) {
                 });
             } else {
                 gameUpdateDetails = updateResult.result.value;
-                console.log(`[Web UI] In-game config update result: ${gameUpdateDetails}`);
+                log.debug(`In-game config update result: ${gameUpdateDetails}`);
                 if (gameUpdateDetails.startsWith("Error:")) {
                     return res.status(200).json({
                         message: "Configuration updated on server, but failed to apply in game.",
@@ -228,7 +231,7 @@ function setupApiRoutes(app, context, client, config) {
 
             res.json({ message: "Configuration updated successfully.", details: gameUpdateDetails });
         } catch (apiError) {
-            console.error("API Error in /api/config/update:", apiError);
+            log.error("Error in /api/config/update:", apiError);
             res.status(500).json({
                 error: "Internal server error while updating configuration",
                 details: apiError.message,
@@ -245,7 +248,7 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (statesResult.exceptionDetails) {
-                console.error("API Error getting cheat states:", statesResult.exceptionDetails.text);
+                log.error("Error getting cheat states:", statesResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get cheat states from game",
                     details: statesResult.exceptionDetails.text,
@@ -254,7 +257,7 @@ function setupApiRoutes(app, context, client, config) {
                 res.json({ data: statesResult.result.value || {} });
             }
         } catch (apiError) {
-            console.error("API Error in /api/cheat-states:", apiError);
+            log.error("Error in /api/cheat-states:", apiError);
             res.status(500).json({
                 error: "Internal server error while fetching cheat states",
                 details: apiError.message,
@@ -271,7 +274,7 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (optionsResult.exceptionDetails) {
-                console.error("API Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
+                log.error("Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get OptionsListAccount from game",
                     details: optionsResult.exceptionDetails.text,
@@ -291,7 +294,7 @@ function setupApiRoutes(app, context, client, config) {
                 }
             }
         } catch (apiError) {
-            console.error("API Error in /api/options-account:", apiError);
+            log.error("Error in /api/options-account:", apiError);
             res.status(500).json({
                 error: "Internal server error while fetching OptionsListAccount",
                 details: apiError.message,
@@ -331,7 +334,7 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (updateResult.exceptionDetails) {
-                console.error(`API Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
+                log.error(`Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
                 res.status(500).json({
                     error: `Failed to update OptionsListAccount[${index}] in game`,
                     details: updateResult.exceptionDetails.text,
@@ -339,14 +342,14 @@ function setupApiRoutes(app, context, client, config) {
             } else {
                 const success = updateResult.result.value;
                 if (success) {
-                    console.log(`[Web UI] OptionsListAccount[${index}] updated to:`, value);
+                    log.debug(`OptionsListAccount[${index}] updated to:`, value);
                     res.json({ message: `Index ${index} updated successfully`, value: value });
                 } else {
                     res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
                 }
             }
         } catch (apiError) {
-            console.error(`API Error in /api/options-account/index POST:`, apiError);
+            log.error("Error in /api/options-account/index POST:", apiError);
             res.status(500).json({
                 error: "Internal server error while updating OptionsListAccount index",
                 details: apiError.message,
@@ -407,7 +410,7 @@ exports.injectorConfig = ${new_injectorConfig};
             const savePath = path.join(process.cwd(), "config.custom.js");
 
             await fs.writeFile(savePath, fileContentString.trim());
-            console.log(`[Web UI] Configuration saved to ${savePath}`);
+            log.info(`Configuration saved to ${savePath}`);
 
             if (uiStartupCheats) {
                 startupCheats.length = 0;
@@ -418,7 +421,7 @@ exports.injectorConfig = ${new_injectorConfig};
 
             res.json({ message: "Configuration successfully saved to config.custom.js" });
         } catch (apiError) {
-            console.error("API Error in /api/config/save:", apiError);
+            log.error("Error in /api/config/save:", apiError);
             res.status(500).json({
                 error: "Internal server error while saving configuration file",
                 details: apiError.message,
@@ -441,7 +444,7 @@ exports.injectorConfig = ${new_injectorConfig};
 
         exec(command, (error) => {
             if (error) {
-                console.error(`Failed to open URL: ${url}`, error);
+                log.error(`Failed to open URL: ${url}`, error);
                 return res.status(500).json({ error: "Failed to open URL", details: error.message });
             }
             res.json({ message: "URL opened successfully" });

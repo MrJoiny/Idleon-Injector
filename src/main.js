@@ -14,7 +14,10 @@ const { createWebServer, startServer } = require("./modules/server/webServer");
 const { setupApiRoutes } = require("./modules/server/apiRoutes");
 const { startCliInterface } = require("./modules/cli/cliInterface");
 const { checkForUpdates } = require("./modules/updateChecker");
+const { createLogger } = require("./modules/utils/logger");
 const { version } = require("../package.json");
+
+const log = createLogger("Main");
 
 /**
  * InjectCheatUI - Main application entry point
@@ -28,41 +31,31 @@ const { version } = require("../package.json");
 let servicesStarted = false;
 
 async function printHeader() {
-    console.log("------------------------------------------------------------------------------------------");
-    console.log(`InjectCheatUI v${version}`);
-    console.log("------------------------------------------------------------------------------------------");
-    console.log("");
-    console.log("  FREE & PUBLIC SOURCE SOFTWARE");
-    console.log("  If you paid for this, you were scammed.");
-    console.log("  Official Download: https://github.com/MrJoiny/Idleon-Injector");
-    console.log("");
+    log.info("=============================");
+    log.info(`InjectCheatUI v${version}`);
+    log.info("=============================");
+    log.info("FREE & PUBLIC SOURCE SOFTWARE");
+    log.info("GitHub: https://github.com/MrJoiny/Idleon-Injector");
+    log.info("");
 
     const update = await checkForUpdates(version);
     if (update && update.updateAvailable) {
-        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        console.log(`! UPDATE AVAILABLE: v${update.latestVersion}`);
-        console.log(`! Download: ${update.url}`);
-        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        console.log("");
+        log.warn(`UPDATE AVAILABLE: v${update.latestVersion} - ${update.url}`);
+        log.info("");
     }
 }
 
 function printConfiguration(injectorConfig) {
-    console.log("Options:");
     const target = (injectorConfig.target || "steam").toLowerCase();
 
-    console.log(`Regex: ${injectorConfig.injreg}`);
-    console.log(`Show idleon window console logs: ${injectorConfig.showConsoleLog}`);
-    console.log(`Web server port: ${injectorConfig.webPort || 8080}`);
-    console.log(`Target: ${target}`);
-    if (target === "web") {
-        console.log(`Web URL: ${injectorConfig.webUrl}`);
-        if (injectorConfig.browserPath) {
-            console.log(`Browser path: ${injectorConfig.browserPath}`);
-        }
+    log.debug(`Injection regex: ${injectorConfig.injreg}`);
+    log.debug(`Log level: ${injectorConfig.logLevel}`);
+    log.info(`Target platform: ${target}${target === "web" ? ` (${injectorConfig.webUrl})` : ""}`);
+    log.info(`Web UI port: ${injectorConfig.webPort || 8080}`);
+    log.debug(`OS Platform: ${os.platform()}`);
+    if (target === "web" && injectorConfig.browserPath) {
+        log.debug(`Browser: ${injectorConfig.browserPath}`);
     }
-    console.log(`Detected OS: ${os.platform()}`);
-    console.log("");
 }
 
 function initializeConfiguration() {
@@ -79,11 +72,11 @@ function initializeConfiguration() {
 }
 
 async function initializeCheatContext(Runtime, context) {
-    console.log("Initializing cheats ingame...");
+    log.debug("Initializing cheat context...");
 
     const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
     if (!contextExists.result.value) {
-        console.error("Cheat context not found. Injection might have failed.");
+        log.error("Cheat context not found - injection may have failed");
         return false;
     }
 
@@ -93,9 +86,9 @@ async function initializeCheatContext(Runtime, context) {
         allowUnsafeEvalBlockedByCSP: true,
     });
     if (init.exceptionDetails) {
-        console.error("Setup threw an error:", init.exceptionDetails.exception?.description || init.exceptionDetails.text);
+        log.error("Cheat setup failed:", init.exceptionDetails.exception?.description || init.exceptionDetails.text);
     }
-    console.log("init.result.value", init.result.value);
+    log.debug("Cheat context initialized:", init.result.value);
     return true;
 }
 
@@ -103,19 +96,20 @@ async function startWebServer(app, webPort, wsConfig = null) {
     try {
         await startServer(app, webPort, wsConfig);
     } catch (err) {
-        console.error("Failed to start web server:", err);
+        log.error("Failed to start web server:", err);
     }
 }
 
 async function handlePageLoad(gameContext, config, app) {
     const { Runtime, Page, context, client } = gameContext;
-    console.log("Page load event fired.");
+    log.debug("Page loaded, setting up cheats...");
 
     const cheatInitialized = await initializeCheatContext(Runtime, context);
     if (!cheatInitialized) return;
 
     if (!servicesStarted) {
         servicesStarted = true;
+        log.info("Cheats ready!");
 
         if (config.injectorConfig.enableUI) {
             setupApiRoutes(app, context, client, {
@@ -140,15 +134,13 @@ async function handlePageLoad(gameContext, config, app) {
 }
 
 function handleError(error) {
-    console.error("An error occurred:", error);
+    log.error("Fatal error:", error);
 
     if (error?.message?.includes("No inspectable targets")) {
-        console.log("\n>>> Specific Error Detected: Is Steam running?!");
-    } else {
-        console.log("\n>>> An unexpected error occurred.");
+        log.info("Hint: Is Steam running? Make sure the game is not already open.");
     }
 
-    console.log("\nPress Enter to exit...");
+    log.info("Press Enter to exit...");
     const readline = require("readline").createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -180,24 +172,21 @@ async function main() {
             config.cheatConfig,
             config.cdpPort
         );
-        console.log("Interceptor setup finished.");
+        log.debug("Network interceptor ready");
 
         const { Runtime, Page } = client;
 
-        console.log("Attaching Page.loadEventFired listener...");
+        log.debug("Registering page load handler...");
         Page.loadEventFired(async () => {
             try {
                 const context = createCheatContext();
                 await handlePageLoad({ Runtime, Page, context, client }, config, app);
             } catch (loadEventError) {
-                console.error("Error during Page.loadEventFired handler:", loadEventError);
+                log.error("Page load handler failed:", loadEventError);
             }
         });
 
-        console.log("Page load event listener attached.");
-
-        // Force reload to ensure cheat injection happens even if the script loaded before we attached
-        console.log("Reloading page to ensure cheat injection...");
+        log.debug("Reloading page to trigger injection...");
         await Page.reload({ ignoreCache: true });
     } catch (error) {
         handleError(error);

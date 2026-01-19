@@ -15,6 +15,9 @@ const { access } = require("fs").promises;
 const CDP = require("chrome-remote-interface");
 
 const { getCdpPort, getInjectorConfig, isLinux, getLinuxTimeout } = require("../config/configManager");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("Game");
 
 const IDLEON_APP_ID = 1476970;
 const DEFAULT_TIMEOUT = 30000;
@@ -182,11 +185,11 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
     }
 
     if (!steamCmd) {
-        console.error("[Linux] Could not find Steam executable. Please ensure Steam is installed and in your PATH.");
+        log.error("Steam not found - ensure Steam is installed");
         throw new Error("Steam not found");
     }
 
-    console.log(`[Linux] Launching Legends of Idleon using Steam (AppID: ${IDLEON_APP_ID})...`);
+    log.info("Launching Idleon via Steam...");
     const args = ["-applaunch", IDLEON_APP_ID.toString(), `--remote-debugging-port=${cdp_port}`];
 
     const child = spawn(steamCmd, args, {
@@ -202,7 +205,7 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
     try {
         return await waitForCdpEndpoint(timeout);
     } catch (e) {
-        throw new Error(`[Linux] Failed to auto-launch with Steam: ${e.message}\nStderr: ${stderr}`);
+        throw new Error(`Failed to auto-launch with Steam: ${e.message}\nStderr: ${stderr}`);
     }
 }
 
@@ -314,7 +317,7 @@ async function attachToWeb() {
         args.push("--disable-gpu");
     }
 
-    console.log("[Web] Launching browser for Idleon...");
+    log.info("Launching browser...");
     spawn(browserPath, args, { detached: true, stdio: "ignore" });
 
     await waitForCdpEndpoint(timeout);
@@ -322,7 +325,7 @@ async function attachToWeb() {
     const target = await waitForIdleonTarget(idleonUrl, timeout);
     const hook = target.webSocketDebuggerUrl || target;
 
-    console.log("[Web] Attached to Idleon browser tab.");
+    log.info("Connected to Idleon web session");
     return hook;
 }
 
@@ -368,7 +371,7 @@ async function attachToGame() {
 
     if (platform === "darwin") {
         throw new Error(
-            "[macOS] Steam target is not supported on macOS. Please set target: 'web' in your config to use the web version."
+            "Steam target is not supported on macOS. Please set target: 'web' in your config to use the web version."
         );
     }
 
@@ -378,10 +381,8 @@ async function attachToGame() {
         try {
             hook = await autoAttachLinux(timeout);
         } catch (autoErr) {
-            console.error("[Linux] Auto attach failed:", autoErr.message);
-            console.log(
-                "[Linux] Falling back to manual attach. Please launch the game via Steam with the required parameters."
-            );
+            log.warn("Steam auto-launch failed:", autoErr.message);
+            log.info("Waiting for manual game launch...");
             hook = await waitForCdpEndpoint(timeout);
         }
     } else if (platform === "win32") {
@@ -390,20 +391,20 @@ async function attachToGame() {
             try {
                 hook = await attach(exePath);
             } catch (err) {
-                console.error(`[Windows] Failed to launch Idleon EXE at ${exePath}:`, err.message);
+                log.warn(`Direct launch failed: ${err.message}`);
                 exePath = null;
             }
         }
         if (!exePath) {
-            console.log("[Windows] Could not find LegendsOfIdleon.exe. Attempting to launch via Steam protocol...");
+            log.info("Launching Idleon via Steam...");
             launchIdleonViaSteamProtocol();
             hook = await waitForCdpEndpoint(timeout);
         }
     } else {
-        throw new Error(`[${platform}] Unsupported platform for Steam target.`);
+        throw new Error(`Unsupported platform for Steam target: ${platform}`);
     }
 
-    console.log("Attached to game process.");
+    log.info("Connected to game process");
     return hook;
 }
 

@@ -5,6 +5,10 @@
  * Provides a familiar API (get, post) and helper methods for JSON handling.
  */
 
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("Router");
+
 class TinyRouter {
     constructor() {
         this.routes = {
@@ -75,7 +79,7 @@ class TinyRouter {
             try {
                 await handler(req, res);
             } catch (error) {
-                console.error(`Router error [${method} ${pathname}]:`, error);
+                log.error(`Error [${method} ${pathname}]:`, error);
                 res.status(500).json({ error: "Internal server error", details: error.message });
             }
             return true; // Handled

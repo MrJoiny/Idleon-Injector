@@ -473,9 +473,9 @@ export const configDescriptions = {
     "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses.",
 
     // INJECTOR CONFIG
+    "injectorConfig.logLevel": "Log verbosity level: debug, info, warn, or error.",
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code.",
     "injectorConfig.interceptPattern": "Script filename pattern to intercept (N.js).",
-    "injectorConfig.showConsoleLog": "Enable/disable logging to the terminal console from game logging.",
     "injectorConfig.enableUI": "Enable/disable the webui.",
     "injectorConfig.onLinuxTimeout": "Timeout in milliseconds for Linux-specific operations.",
     "injectorConfig.webPort": "Port for the webui.",
