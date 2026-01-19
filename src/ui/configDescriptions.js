@@ -391,6 +391,9 @@ export const configDescriptions = {
     "cheatConfig.w6.arcane.ExtraTachyon": "Arcane: Extra tachyon gain.",
     "cheatConfig.w6.arcane.ExtraTachyonMulti": "Arcane: Extra tachyon bonuses.",
     "cheatConfig.w6.arcane.ArcaneTachyonQTYbase": "Arcane: Tachyon quantity base value.",
+    "cheatConfig.w6.arcane.ArcaneMobSpawnQTY": "Arcane: Amount of mobs spawned from the Arcane Crystal ability.",
+    "cheatConfig.w6.arcane.CrystalChargeReq": "Arcane: Kill requirement to spawn Arcane mobs. (lower is better)",
+    "cheatConfig.w6.arcane.TimeLeft": "Arcane: Remaining time for the Arcane Barrier encounter.",
 
     // Sneak Symbol
     "cheatConfig.w6.sneaksymbol.SneakSymbolChanceBase": "Sneaking: Base chance for Sneak Symbol procs.",
