@@ -4,7 +4,7 @@
  * Provides the command-line interface for the Idleon Cheat Injector.
  * Handles user interaction through an autocomplete prompt system, cheat execution,
  * and special commands like Chrome DevTools integration. Supports confirmation
- * prompts for destructive operations and maintains an interactive loop.
+ * prompts for parameter-requiring commands and maintains an interactive loop.
  */
 
 const Enquirer = require("enquirer");
@@ -33,21 +33,13 @@ async function startCliInterface(context, client, options = {}) {
         return;
     }
     const choices = (choicesResult.result.value || []).map((choice) => {
+        // Set name to value for Enquirer display/selection
         if (!choice.name) choice.name = choice.value;
+        // Create display message: "value (description)" for CLI readability
+        choice.displayMessage = choice.message;
+        choice.message = `${choice.value} (${choice.message || ""})`;
         return choice;
     });
-
-    const cheatsNeedingConfirmationResult = await Runtime.evaluate({
-        expression: `getChoicesNeedingConfirmation.call(${context})`,
-        awaitPromise: true,
-        returnByValue: true,
-    });
-
-    if (cheatsNeedingConfirmationResult.exceptionDetails) {
-        console.error("Error getting confirmation choices:", cheatsNeedingConfirmationResult.exceptionDetails.text);
-        return;
-    }
-    const cheatsNeedingConfirmation = cheatsNeedingConfirmationResult.result.value || [];
 
     async function promptUser() {
         try {
@@ -65,21 +57,22 @@ async function startCliInterface(context, client, options = {}) {
                     const str = input.toLowerCase();
                     const mustInclude = str.split(" ");
                     return choices.filter((ch) => {
+                        const msg = (ch.message || "").toLowerCase();
+                        const val = (ch.value || "").toLowerCase();
                         for (const word of mustInclude) {
-                            if (!ch.message.toLowerCase().includes(word)) return false;
+                            // Match if word is in either value or message
+                            if (!msg.includes(word) && !val.includes(word)) return false;
                         }
                         return true;
                     });
                 },
-                // Custom submit logic to handle confirmation for specific cheats
+                // Custom submit logic to handle confirmation for cheats that need parameters
                 onSubmit: function (name, value, prompt) {
                     value = this.focused ? this.focused.value : value;
-                    const choiceNeedsConfirmation = cheatsNeedingConfirmation.some(
-                        (choice) => value.indexOf(choice) === 0
-                    );
+                    const choiceNeedsParam = this.focused?.needsParam === true;
 
-                    // If confirmation needed and not yet given, re-render with the chosen value requiring a second Enter press
-                    if (choiceNeedsConfirmation && !valueChosen && this.focused) {
+                    // If parameter input needed and not yet given, re-render with the chosen value requiring a second Enter press
+                    if (choiceNeedsParam && !valueChosen && this.focused) {
                         prompt.input = value;
                         prompt.state.cursor = value.length;
                         prompt.render();

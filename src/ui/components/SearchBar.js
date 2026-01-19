@@ -11,8 +11,9 @@ const { div, input, span } = van.tags;
  * @param {function} options.onInput - Callback when input changes (receives value)
  * @param {number} [options.debounceMs=300] - Debounce delay in ms
  * @param {any} [options.icon=Icons.ChevronRight()] - Icon to show
+ * @param {van.state} [options.value] - Optional reactive state for the input value
  */
-export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons.ChevronRight() } = {}) => {
+export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons.ChevronRight(), value } = {}) => {
     const handleInput =
         debounceMs > 0
             ? debounce((e) => onInput(e.target.value.trim()), debounceMs)
@@ -25,6 +26,7 @@ export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons
             type: "text",
             class: "global-search-input",
             placeholder: placeholder || "SEARCH...",
+            ...(value !== undefined ? { value } : {}),
             oninput: handleInput,
         })
     );

@@ -58,7 +58,7 @@ const hasMatchingChildren = (obj, searchTerm) => {
     return false;
 };
 
-export const ConfigNode = ({ data, path = "", template = null, searchTerm = "" }) => {
+export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", forceOpen = false }) => {
     const source = template || data;
     const keys = Object.keys(source);
     const termLower = searchTerm.toLowerCase();
@@ -89,8 +89,8 @@ export const ConfigNode = ({ data, path = "", template = null, searchTerm = "" }
                 return !areValuesEqual(currentSub, defaultSub);
             });
 
-            // Auto-expand when searching
-            const shouldAutoExpand = termLower && (categoryMatches || childrenMatch);
+            // Auto-expand when searching or forced
+            const shouldAutoExpand = forceOpen || (termLower && (categoryMatches || childrenMatch));
 
             return details(
                 {
@@ -105,6 +105,7 @@ export const ConfigNode = ({ data, path = "", template = null, searchTerm = "" }
                         path: currentPath,
                         template: template ? template[key] : null,
                         searchTerm,
+                        forceOpen,
                     })
                 )
             );

@@ -1,7 +1,7 @@
 import van from "../../van-1.6.0.js";
 import * as API from "../../api.js";
 
-const { div, iframe, button } = van.tags;
+const { div, iframe, button, span } = van.tags;
 
 export const DevTools = () => {
     const url = van.state("");
@@ -51,14 +51,14 @@ export const DevTools = () => {
                         class: "quick-access-btn",
                         onclick: openWebUi,
                     },
-                    "Open Web UI"
+                    span({ class: "quick-access-btn-text" }, "Open Web UI")
                 ),
                 button(
                     {
                         class: "quick-access-btn",
                         onclick: openDevTools,
                     },
-                    "Open ChromeDebug"
+                    span({ class: "quick-access-btn-text" }, "Open ChromeDebug")
                 )
             ),
 

@@ -13,7 +13,7 @@
     position: sticky;
     top: 0;
     background: var(--c-panel);
-    z-index: 1000;
+    z-index: 1001;
     padding-top: 10px;
     margin-top: -10px;
 }
@@ -107,7 +107,7 @@
 }
 
 .config-item label {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     color: var(--c-text-dim);
     letter-spacing: 0.05em;
@@ -123,7 +123,7 @@
 
 .config-description {
     flex: 1;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     color: var(--c-text-dim);
     text-align: left;
     padding-left: 10px;
@@ -137,8 +137,8 @@
     background: transparent;
     border: 1px solid var(--c-warning);
     color: var(--c-warning);
-    padding: 2px 8px;
-    font-size: 0.7rem;
+    padding: 4px 12px;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
     align-items: center;
@@ -178,4 +178,44 @@
     flex-shrink: 0;
     z-index: 5;
     box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* --- FORCED PATH INDICATOR --- */
+.forced-path-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--c-accent-dim);
+    border: 1px solid var(--c-accent);
+    border-radius: 4px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.forced-path-text {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c-accent);
+    letter-spacing: 0.05em;
+}
+
+.forced-path-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--c-accent);
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.forced-path-clear:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 }

@@ -23,10 +23,20 @@ export const configDescriptions = {
     // GODLIKE
     "cheatConfig.godlike.respawn": "Mob respawn time (lower is faster).",
 
-
     // UNLOCK
     "cheatConfig.unlock.islands": "String of IDs for islands to unlock (e.g., 'abcde_').",
 
+    "cheatConfig.multiply.printer": "Multiplies sample print by x, overrides lab/god bonus.",
+    "cheatConfig.multiply.carrycap": "Multiplies carry capacity by the number given.",
+    "cheatConfig.multiply.damage": "Multiplies total damage by the number given.",
+    "cheatConfig.multiply.money": "Multiplies money drops by the number given.",
+    "cheatConfig.multiply.drop": "Multiplies drop rarity by the number given.",
+    "cheatConfig.multiply.afk": "Multiplies AFK gains by the number given.",
+    "cheatConfig.multiply.skillexp": "Multiplies skill XP gain by the number given.",
+    "cheatConfig.multiply.classexp": "Multiplies class XP gain by the number given.",
+    "cheatConfig.multiply.efficiency": "Multiplies skilling efficiency by the number given.",
+    "cheatConfig.multiply.crystal": "Multiplies crystal spawn chance by the number given.",
+    "cheatConfig.multiply.shopstock": "Multiplies shop stock quantity by the number given.",
 
     // WIDE - Miscellaneous Wide Cheats
     "cheatConfig.wide.gembuylimit": "Removes daily gem purchase limits.",
@@ -41,19 +51,8 @@ export const configDescriptions = {
     "cheatConfig.wide.dartshop.DartsUpgCost": "Sets the Upgrade Cost in the Dart Shop. (lower is better)",
     "cheatConfig.wide.hoopshop.HoopsUpgCost": "Sets the Upgrade Cost in the Hoop Shop. (lower is better)",
 
-
     // WIPE
     "cheatConfig.wipe.cogs": "Wipes all cogs currently on the board.",
-
-
-    // TALENT - Talent ID Overrides
-    "cheatConfig.talent.168": "Orb of Remembrance: Active time duration.",
-    "cheatConfig.talent.169": "Shockwave: Sets the proc chance percentage.",
-    "cheatConfig.talent.318": "Plunderous Mobs: HP and drop rate.",
-    "cheatConfig.talent.120": "Shockwave: Damage percentage.",
-    "cheatConfig.talent.483": "Tenteycle: Sets the base value or multiplier.",
-    "cheatConfig.talent.45": "Custom logic for Talent 45 (1: time?, 2: points?).",
-
 
     // W1 - World 1
     "cheatConfig.w1.anvil.productionspeed": "Anvil: Item production speed.",
@@ -66,7 +65,6 @@ export const configDescriptions = {
     "cheatConfig.w1.owl.OwlFeatherRate": "Owl: Feather gain rate.",
     "cheatConfig.w1.owl.OwlBonuses": "Owl: All owl-related bonuses.",
     "cheatConfig.w1.owl.OwlFeatherShinyGe": "Owl: Not sure what that is.",
-
 
     // W2 - World 2
     "cheatConfig.w2.roo.RooCost": "Roo: Upgrade costs. (lower is better)",
@@ -91,14 +89,12 @@ export const configDescriptions = {
     "cheatConfig.w2.alchemy.LiquidHRrate": "Alchemy: Liquid generation speed.",
     "cheatConfig.w2.alchemy.sigilspeed": "Alchemy: Sigil research speed.",
 
-
     // W3 - World 3
     "cheatConfig.w3.buildspd": "Construction: Building speed.",
     "cheatConfig.w3.WorshipSpeed": "Worship: Charge generation speed.",
     "cheatConfig.w3.towerdamage": "Tower Defense: Tower damage.",
     "cheatConfig.w3.refineryspeed": "Refinery: Cycle speed. Don't go below 1! (lower is better)",
     "cheatConfig.w3.trapping": "Trapping: Trap timer speed.",
-
 
     // W4 - World 4
     "cheatConfig.w4.fasteggs": "Breeding: Egg incubation speed. (lower is better)",
@@ -207,7 +203,6 @@ export const configDescriptions = {
     "cheatConfig.w4.meals.Sailing": "",
     "cheatConfig.w4.meals.GamingExp": "",
 
-
     // W5 - World 5
     // Sailing
     "cheatConfig.w5.sailing.IslandDistance": "Sailing: Island distance (lower is closer).",
@@ -305,7 +300,6 @@ export const configDescriptions = {
     // fixobj
     "cheatConfig.w5.fixobj": "",
 
-
     // W6 - World 6
     // Farming
     "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time (lower is faster). (lower is better)",
@@ -397,10 +391,12 @@ export const configDescriptions = {
     "cheatConfig.w6.arcane.ExtraTachyon": "Arcane: Extra tachyon gain.",
     "cheatConfig.w6.arcane.ExtraTachyonMulti": "Arcane: Extra tachyon bonuses.",
     "cheatConfig.w6.arcane.ArcaneTachyonQTYbase": "Arcane: Tachyon quantity base value.",
+    "cheatConfig.w6.arcane.ArcaneMobSpawnQTY": "Arcane: Amount of mobs spawned from the Arcane Crystal ability.",
+    "cheatConfig.w6.arcane.CrystalChargeReq": "Arcane: Kill requirement to spawn Arcane mobs. (lower is better)",
+    "cheatConfig.w6.arcane.TimeLeft": "Arcane: Remaining time for the Arcane Barrier encounter.",
 
     // Sneak Symbol
     "cheatConfig.w6.sneaksymbol.SneakSymbolChanceBase": "Sneaking: Base chance for Sneak Symbol procs.",
-
 
     // W7 - World 7
     // Bubba
@@ -470,11 +466,11 @@ export const configDescriptions = {
     // Zenith
     "cheatConfig.w7.zenith.ZenithMarketCost": "Zenith: Market upgrade costs. (lower is better)",
     "cheatConfig.w7.zenith.ZenithMarketBonus": "Zenith: Market-provided bonuses.",
-
+    "cheatConfig.w7.spelunkdepth": "Spelunking: Current depth (one-shot, resets to 0 after use).",
+    "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking.",
 
     // MISC
     "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses.",
-
 
     // INJECTOR CONFIG
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code.",

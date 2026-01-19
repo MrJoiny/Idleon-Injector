@@ -73,12 +73,12 @@ export const Account = () => {
             );
         } else {
             return div(
-                { class: "options-account-layout" },
+                { class: "options-account-layout scroll-container" },
 
                 div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES."),
 
                 div(
-                    { class: "control-bar" },
+                    { class: "control-bar sticky-header" },
                     withTooltip(
                         button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
                         "Reload from game memory"
@@ -108,7 +108,7 @@ export const Account = () => {
                 ),
 
                 div(
-                    { id: "options-account-content", class: "scroll-container options-account-content" },
+                    { id: "options-account-content", class: "options-account-content" },
 
                     () => {
                         if (store.app.isLoading) {

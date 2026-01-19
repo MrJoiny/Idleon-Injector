@@ -53,22 +53,6 @@ exports.cheatConfig = {
             HoopsUpgCost: (t) => 0,
         },
     },
-    wipe: {
-        cogs: 0,
-    },
-    talent: {
-        168: (t) => t * 2, // orb of remembrance time doubled,
-        169: (t) => 100, // 100% shockwave
-        318: (t) => 10000, // 10x hp/drop plunderous mobs
-        120: (t) => 800, // 800% shockwave damage
-        483: (t) => Math.max(t, 3.5), // Tenteycle
-        // 1: time? 2: points?
-        45: (t, args) => {
-            const fns = { 1: (t) => t, 2: (t) => t };
-            const fn = fns[args[0]];
-            return fn ? fn(t) : 0;
-        },
-    },
     w1: {
         anvil: {
             productionspeed: (t) => t * 4,
@@ -467,18 +451,18 @@ exports.cheatConfig = {
             ExtraTachyon: (t) => t * 2,
             ExtraTachyonMulti: (t) => t * 2,
             ArcaneTachyonQTYbase: (t) => t * 2,
+            ArcaneMobSpawnQTY: (t) => t,
+            TimeLeft: (t) => t,
+            CrystalChargeReq: (t) => t,
             // Not tested and or not interesting or maybe dangerous!
             // TesseractArcanist: (t) => t,
             // ArcaneUpgUNLOCKED: (t) => t,
             // ArcaneUpgTotal: (t) => t,
             // ArcaneUpgBonus: (t) => t,
             // ArcaneMapMulti: (t) => t,
-            // ArcaneMobSpawnQTY: (t) => t,
-            // CrystalChargeReq: (t) => t,
             // ArcaneMapMulti_bon: (t) => t,
             // ArcaneMapMulti_bonMAX: (t) => t,
             // Arcane_MASTERY: (t) => t,
-            // TimeLeft: (t) => t,
             // KillsReq: (t) => t,
             // is_NBLB_on: (t) => t,
             // NBLB_bubbleQTY: (t) => t,
@@ -614,7 +598,6 @@ exports.cheatConfig = {
             // BigFishCost: (t) => t,
             // isBigFishUpgUnlocked: (t) => t,
             // BigFishUpgLVREQ: (t) => t,
-            StaminaCostMulti: (t) => t,
         },
         gallery: {
             GalleryBonusMulti: (t) => t * 2,
@@ -657,6 +640,10 @@ exports.cheatConfig = {
         zenith: {
             ZenithMarketCost: (t) => t / 2,
             ZenithMarketBonus: (t) => t * 2,
+        },
+        spelunkdepth: 0,
+        spelunkmana: {
+            StaminaCostMulti: (t) => 0,
         },
     },
     misc: {

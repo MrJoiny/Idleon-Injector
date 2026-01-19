@@ -469,10 +469,9 @@
         "AI": true
     },
     "83": {
-        "name": "Character Code S",
-        "description": "Character encoding for keyboard input (S=83)",
-        "type": "number",
-        "AI": true
+        "name": "Autoloot toggle",
+        "description": "Autoloot toggle (0 = on / 1 = off)",
+        "type": "number"
     },
     "84": {
         "name": "Character Code T",

@@ -31,6 +31,37 @@ export const Config = () => {
         }
     });
 
+    // Handle forced config path navigation from Cheats tab
+    van.derive(() => {
+        const forcedPath = store.app.configForcedPath;
+        if (forcedPath && forcedPath.length > 0) {
+            activeSubTab.val = "cheatconfig";
+            // Reset filters to defaults when navigating to a specific cheat config
+            categoryFilter.val = "all";
+            configSearchTerm.val = "";
+        }
+    });
+
+    /**
+     * Clear forced path when user manually interacts with filters.
+     */
+    const handleCategoryChange = (e) => {
+        store.clearForcedConfigPath();
+        categoryFilter.val = e.target.value;
+    };
+
+    const handleSearchInput = (val) => {
+        store.clearForcedConfigPath();
+        configSearchTerm.val = val;
+    };
+
+    /**
+     * Clear forced path button handler.
+     */
+    const handleClearForcedPath = () => {
+        store.clearForcedConfigPath();
+    };
+
     const save = (isPersistent) => {
         if (!draft) return;
 
@@ -47,6 +78,40 @@ export const Config = () => {
         }
     };
 
+    /**
+     * Build a filtered data object that only contains the specified path.
+     * e.g., pathParts = ["w1", "owl"] => { w1: { owl: {...} } }
+     * @param {object} root - The full config object
+     * @param {string[]} pathParts - Path parts to filter to
+     * @returns {object} - Filtered object containing only the path
+     */
+    const buildForcedPathData = (root, pathParts) => {
+        if (!pathParts || pathParts.length === 0 || !root) return root;
+
+        let current = root;
+        const result = {};
+        let resultCurrent = result;
+
+        for (let i = 0; i < pathParts.length; i++) {
+            const part = pathParts[i];
+            if (current === null || current === undefined || !(part in current)) {
+                return {}; // Path doesn't exist
+            }
+
+            if (i === pathParts.length - 1) {
+                // Last part - include the value
+                resultCurrent[part] = current[part];
+            } else {
+                // Intermediate part - create nested object
+                resultCurrent[part] = {};
+                resultCurrent = resultCurrent[part];
+                current = current[part];
+            }
+        }
+
+        return result;
+    };
+
     const buildContent = () => {
         const config = draft;
 
@@ -57,24 +122,38 @@ export const Config = () => {
         const rootTemplate = store.app.config.cheatConfig || {};
 
         const cheatConfigNode = div({ id: "cheatconfig-options" }, () => {
+            const forcedPath = store.app.configForcedPath;
             const filter = categoryFilter.val;
             const search = configSearchTerm.val;
-            const data = filter === "all" ? root : { [filter]: root[filter] };
-            const template = filter === "all" ? rootTemplate : { [filter]: rootTemplate[filter] };
+
+            let data, template;
+
+            if (forcedPath && forcedPath.length > 0) {
+                // Forced path mode: show only the specific config entry
+                data = buildForcedPathData(root, forcedPath);
+                template = buildForcedPathData(rootTemplate, forcedPath);
+            } else {
+                // Normal filtering mode
+                data = filter === "all" ? root : { [filter]: root[filter] };
+                template = filter === "all" ? rootTemplate : { [filter]: rootTemplate[filter] };
+            }
 
             const nodes = ConfigNode({
                 data,
                 path: "cheatConfig",
                 template,
-                searchTerm: search,
+                searchTerm: forcedPath ? "" : search, // Ignore search term when in forced path mode
+                forceOpen: !!forcedPath,
             });
 
             const hasMatches = nodes.some((node) => node !== null);
-            if (search && !hasMatches) {
+            if ((search || forcedPath) && !hasMatches) {
                 return EmptyState({
                     icon: Icons.SearchX(),
                     title: "NO CONFIG FOUND",
-                    subtitle: "Try a different search term or category",
+                    subtitle: forcedPath
+                        ? `Config path "${forcedPath.join(" ")}" not found`
+                        : "Try a different search term or category",
                 });
             }
 
@@ -119,30 +198,54 @@ export const Config = () => {
 
                 div(
                     { class: "panel-section mb-20" },
-                    div(
-                        { class: "config-filter-group" },
-                        label({ class: "config-filter-label" }, "CATEGORY FILTER"),
 
-                        select(
-                            {
-                                value: categoryFilter,
-                                onchange: (e) => (categoryFilter.val = e.target.value),
-                            },
-                            option({ value: "all" }, "ALL SECTORS"),
-                            Object.keys(config.cheatConfig || {})
-                                .sort()
-                                .map((k) => option({ value: k }, k.toUpperCase()))
-                        )
-                    ),
-                    div(
-                        { class: "config-filter-search" },
-                        SearchBar({
-                            placeholder: "SEARCH_CONFIG...",
-                            onInput: (val) => (configSearchTerm.val = val),
-                            debounceMs: 0,
-                            icon: Icons.HelpCircle(),
-                        })
-                    )
+                    // Switch between forced path indicator and normal filters
+                    () => {
+                        const forcedPath = store.app.configForcedPath;
+                        if (forcedPath && forcedPath.length > 0) {
+                            return div(
+                                { class: "forced-path-indicator" },
+                                span({ class: "forced-path-text" }, `SHOWING: ${[...forcedPath].join(" ").toUpperCase()}`),
+                                button(
+                                    {
+                                        class: "forced-path-clear",
+                                        onclick: handleClearForcedPath,
+                                        title: "Clear filter and show all",
+                                    },
+                                    Icons.X()
+                                )
+                            );
+                        }
+
+                        return div(
+                            { style: "display: contents" },
+                            div(
+                                { class: "config-filter-group" },
+                                label({ class: "config-filter-label" }, "CATEGORY FILTER"),
+
+                                select(
+                                    {
+                                        value: categoryFilter,
+                                        onchange: handleCategoryChange,
+                                    },
+                                    option({ value: "all" }, "ALL SECTORS"),
+                                    Object.keys(config.cheatConfig || {})
+                                        .sort()
+                                        .map((k) => option({ value: k }, k.toUpperCase()))
+                                )
+                            ),
+                            div(
+                                { class: "config-filter-search" },
+                                SearchBar({
+                                    placeholder: "SEARCH_CONFIG...",
+                                    onInput: handleSearchInput,
+                                    debounceMs: 0,
+                                    icon: Icons.HelpCircle(),
+                                    value: configSearchTerm,
+                                })
+                            )
+                        );
+                    }
                 ),
                 cheatConfigNode
             ),

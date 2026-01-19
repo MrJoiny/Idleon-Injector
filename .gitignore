@@ -4,8 +4,9 @@ src/node_modules/
 jspm_packages/
 zips/
 upx/
-idleon-web-profile
+idleon-web-profile/
 
+cheats.js
 config.custom.js
 InjectCheatsF5.exe
 InjectCheatsUI.exe

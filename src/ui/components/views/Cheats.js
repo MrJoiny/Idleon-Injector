@@ -9,27 +9,27 @@ import { Icons } from "../../icons.js";
 const { div, input, button, span, details, summary } = van.tags;
 
 const QuickAccessSection = () => {
+    /**
+     * Find a cheat object by its value, handling parameterized commands.
+     * @param {string} val - The cheat value to find
+     * @returns {object|null} The cheat object or a reconstructed one for parameterized commands
+     */
     const getCheatByValue = (val) => {
         const allCheats = store.data.cheats;
-        const found = allCheats.find((c) => {
-            const cheatVal = typeof c === "object" ? c.value : c;
-            return cheatVal === val;
-        });
+        // Direct match
+        const found = allCheats.find((c) => c.value === val);
         if (found) return found;
 
+        // Handle parameterized commands (e.g., "drop Copper 100" -> base "drop Copper")
         const baseParts = val.split(" ");
         if (baseParts.length > 1) {
             const baseCmd = baseParts.slice(0, -1).join(" ");
-            const paramFound = allCheats.find((c) => {
-                const cheatVal = typeof c === "object" ? c.value : c;
-                return cheatVal === baseCmd;
-            });
+            const paramFound = allCheats.find((c) => c.value === baseCmd);
             if (paramFound) {
                 return {
-                    message: `${typeof paramFound === "object" ? paramFound.message : paramFound} (${
-                        baseParts[baseParts.length - 1]
-                    })`,
                     value: val,
+                    message: `${paramFound.message} (${baseParts[baseParts.length - 1]})`,
+                    category: paramFound.category,
                 };
             }
         }
@@ -40,15 +40,29 @@ const QuickAccessSection = () => {
         const cheat = getCheatByValue(cheatValue);
         if (!cheat) return null;
 
-        const msg = typeof cheat === "object" ? cheat.message : cheat;
-        const val = typeof cheat === "object" ? cheat.value : cheat;
-
         return div(
             { class: "quick-access-item" },
-            button({ class: "quick-access-btn", onclick: () => store.executeCheat(val, msg) }, val),
-            isFavorite
-                ? button({ class: "quick-access-remove", onclick: () => store.toggleFavorite(cheatValue) }, Icons.X())
-                : null
+            button(
+                {
+                    class: () => `quick-access-btn ${isFavorite ? "is-favorite-btn" : ""}`,
+                    onclick: () => store.executeCheat(cheat.value, cheat.message),
+                    title: cheat.message,
+                },
+                span({ class: "quick-access-btn-text" }, cheat.value),
+                isFavorite
+                    ? span(
+                          {
+                              class: "quick-access-remove-icon",
+                              onclick: (e) => {
+                                  e.stopPropagation();
+                                  store.toggleFavorite(cheatValue);
+                              },
+                              title: "Remove from favorites",
+                          },
+                          Icons.X()
+                      )
+                    : null
+            )
         );
     };
 
@@ -87,122 +101,97 @@ export const Cheats = () => {
         ui.shouldOpen = val.length > 0;
     };
 
-    const derived = vanX.reactive({
-        grouped: vanX.calc(() => {
-            const list = store.data.cheats;
-            const term = ui.filter.toLowerCase();
-            // Pass 1: Identify all available categories from multi-part commands
-            const categoriesSet = new Set();
-            for (let i = 0; i < list.length; i++) {
-                const val = typeof list[i] === "object" ? list[i].value : list[i];
-                if (!val) continue;
-                const parts = val.trim().split(" ");
-                if (parts.length > 1) {
-                    categoriesSet.add(parts[0].toLowerCase());
-                }
+    /**
+     * Groups cheats by category, filtering by search term.
+     * Called fresh on each render to avoid reactivity issues.
+     */
+    const getGroupedCheats = (list, term) => {
+        const groups = {};
+        const searchTerm = term.toLowerCase();
+
+        for (let i = 0; i < list.length; i++) {
+            const cheat = list[i];
+
+            // Filter: match term against value or message
+            if (searchTerm) {
+                const msg = (cheat.message || "").toLowerCase();
+                const val = (cheat.value || "").toLowerCase();
+                if (!msg.includes(searchTerm) && !val.includes(searchTerm)) continue;
             }
 
-            const groups = {};
+            const category = cheat.category || "general";
+            if (!groups[category]) groups[category] = [];
+            groups[category].push(cheat);
+        }
 
-            const matches = (c) => {
-                if (!term) return true;
-                const msg = (typeof c === "object" ? c.message : c).toLowerCase();
-                const val = (typeof c === "object" ? c.value : c).toLowerCase();
-                return msg.includes(term) || val.includes(term);
-            };
-
-            // Pass 2: Grouping
-            for (let i = 0; i < list.length; i++) {
-                const cheat = list[i];
-                if (!matches(cheat)) continue;
-
-                const val = typeof cheat === "object" ? cheat.value : cheat;
-                const msg = typeof cheat === "object" ? cheat.message : cheat;
-                if (!val) continue;
-
-                const parts = val.trim().split(" ");
-                const firstWordRaw = parts[0];
-                const firstWordLower = firstWordRaw.toLowerCase();
-
-                let category;
-                if (parts.length > 1 || categoriesSet.has(firstWordLower)) {
-                    category = firstWordLower.charAt(0).toUpperCase() + firstWordLower.slice(1);
-                } else {
-                    category = "General";
-                }
-
-                if (!groups[category]) groups[category] = [];
-                groups[category].push({ message: msg, value: val, baseCommand: firstWordRaw });
-            }
-
-            return Object.keys(groups)
-                .sort()
-                .reduce((acc, key) => {
-                    acc[key] = groups[key];
-                    return acc;
-                }, {});
-        }),
-    });
+        // Return sorted by category name
+        const sortedKeys = Object.keys(groups).sort();
+        const result = {};
+        for (const key of sortedKeys) {
+            result[key] = groups[key];
+        }
+        return result;
+    };
 
     return div(
         { id: "cheats-tab", class: "tab-pane" },
 
         div(
-            { class: "control-bar" },
-            SearchBar({
-                placeholder: "SEARCH_COMMANDS...",
-                onInput: handleSearch,
-            })
-        ),
+            { class: "scroll-container" },
 
-        QuickAccessSection(),
-
-        () => {
-            if (store.app.isLoading && store.data.cheats.length === 0) {
-                return Loader({ text: "INITIALIZING..." });
-            }
-
-            // Accessing derived.grouped triggers dependency tracking
-            const groupedData = derived.grouped;
-            const categories = Object.keys(groupedData);
-
-            if (categories.length === 0) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO CHEATS FOUND",
-                    subtitle: ui.filter ? "Try a different search term" : "Cheats list is empty",
-                });
-            }
-
-            return div(
-                { id: "cheat-buttons", class: "grid-layout" },
-                categories.map((cat) => {
-                    return details(
-                        {
-                            class: "cheat-category",
-                            open: ui.shouldOpen,
-                        },
-                        summary(cat),
-                        div(
-                            { class: "cheat-category-content" },
-                            // Note: We are mapping standard arrays here because the 'grouped' object
-                            // is regenerated entirely on filter. vanX.list is not necessary
-                            // for the leaf nodes if the parent container is replaced anyway.
-                            groupedData[cat].map((cheat) => CheatItem(cheat))
-                        )
-                    );
+            div(
+                { class: "control-bar" },
+                SearchBar({
+                    placeholder: "SEARCH_COMMANDS...",
+                    onInput: handleSearch,
                 })
-            );
-        }
+            ),
+
+            QuickAccessSection(),
+
+            () => {
+                if (store.app.isLoading && store.data.cheats.length === 0) {
+                    return Loader({ text: "INITIALIZING..." });
+                }
+
+                // Get fresh snapshot of cheats and filter term
+                const cheats = [...store.data.cheats];
+                const filterTerm = ui.filter;
+                const groupedData = getGroupedCheats(cheats, filterTerm);
+                const categories = Object.keys(groupedData);
+
+                if (categories.length === 0) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO CHEATS FOUND",
+                        subtitle: filterTerm ? "Try a different search term" : "Cheats list is empty",
+                    });
+                }
+
+                return div(
+                    { id: "cheat-buttons", class: "grid-layout" },
+                    categories.map((cat) => {
+                        return details(
+                            {
+                                class: "cheat-category",
+                                open: ui.shouldOpen,
+                            },
+                            summary(cat),
+                            div(
+                                { class: "cheat-category-content" },
+                                groupedData[cat].map((cheat) => CheatItem(cheat))
+                            )
+                        );
+                    })
+                );
+            }
+        )
     );
 };
 
 const CheatItem = (cheat) => {
-    const needsValue = van.derive(() => {
-        const list = store.data.needsConfirmation;
-        const val = cheat.value;
-        return list.some((cmd) => val === cmd || val.startsWith(cmd + " "));
-    });
+    const needsValue = cheat.needsParam === true;
+    const hasConfig = store.hasConfigEntry(cheat.value);
 
     const inputValue = van.state("");
 
@@ -210,9 +199,9 @@ const CheatItem = (cheat) => {
 
     const handleExecute = async () => {
         let finalAction = cheat.value;
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) {
-                store.notify(`Value required for '${cheat.message}'`, "error");
+                store.notify(`Value required for '${cheat.value}'`, "error");
                 feedbackState.val = "error";
                 setTimeout(() => (feedbackState.val = null), 1000);
                 return;
@@ -229,11 +218,16 @@ const CheatItem = (cheat) => {
         setTimeout(() => (feedbackState.val = null), 1000);
     };
 
+    const handleConfigClick = (e) => {
+        e.stopPropagation();
+        store.navigateToCheatConfig(cheat.value);
+    };
+
     const handleFavorite = () => {
         // For cheats that need a value, include the current input value for the favorite
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) {
-                store.notify(`Enter a value first to favorite '${cheat.message}'`, "error");
+                store.notify(`Enter a value first to favorite '${cheat.value}'`, "error");
                 return;
             }
             const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
@@ -245,7 +239,7 @@ const CheatItem = (cheat) => {
 
     // Check if this cheat (or parameterized variant) is favorited
     const isFavorited = () => {
-        if (needsValue.val) {
+        if (needsValue) {
             if (!inputValue.val.trim()) return false;
             const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
             return store.isFavorite(fullCommand);
@@ -253,20 +247,38 @@ const CheatItem = (cheat) => {
         return store.isFavorite(cheat.value);
     };
 
+    // Build button content with optional gear icon
+    const buttonContent = [
+        span(
+            { class: "cheat-button-text" },
+            cheat.message && cheat.message !== cheat.value ? `${cheat.value} - ${cheat.message}` : cheat.value
+        ),
+        hasConfig
+            ? span(
+                  {
+                      class: "cheat-config-icon",
+                      onclick: handleConfigClick,
+                      title: "Open config for this cheat",
+                  },
+                  Icons.Config()
+              )
+            : null,
+    ];
+
     return div(
         { class: "cheat-item-container" },
         button(
             {
                 class: () =>
-                    `cheat-button ${feedbackState.val === "success" ? "feedback-success" : ""} ${
-                        feedbackState.val === "error" ? "feedback-error" : ""
-                    }`,
+                    `cheat-button ${hasConfig ? "has-config" : ""} ${
+                        feedbackState.val === "success" ? "feedback-success" : ""
+                    } ${feedbackState.val === "error" ? "feedback-error" : ""}`,
                 onclick: handleExecute,
             },
-            cheat.message
+            ...buttonContent
         ),
         () =>
-            needsValue.val
+            needsValue
                 ? input({
                       type: "text",
                       class: "cheat-input",

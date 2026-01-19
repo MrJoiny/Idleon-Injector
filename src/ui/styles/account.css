@@ -23,8 +23,15 @@
 
 .options-account-layout {
     display: flex;
-    height: 100%;
     flex-direction: column;
+}
+
+.control-bar.sticky-header {
+    background: var(--c-void);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 1001;
 }
 
 .options-account-search {
@@ -121,7 +128,9 @@
     border: 1px solid var(--c-border);
     margin-bottom: 8px;
     padding: 12px;
-    transition: border-color 0.2s, z-index 0s;
+    transition:
+        border-color 0.2s,
+        z-index 0s;
     position: relative;
 }
 
