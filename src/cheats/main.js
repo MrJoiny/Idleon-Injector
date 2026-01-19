@@ -33,7 +33,6 @@ setWebPort(webPort);
  * @param {string} action - The cheat command to execute
  * @returns {string} Result message
  */
-// TODO: maybe this can be removed and renamed.
 function cheat(action) {
     return coreCheat(action, this);
 }

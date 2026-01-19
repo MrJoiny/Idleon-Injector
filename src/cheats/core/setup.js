@@ -5,7 +5,7 @@
  */
 
 import { markSetupDone, setupDone, cheatConfig, startupCheats } from "./state.js";
-import { gameReady } from "./globals.js";
+import { gameReady, gameContext } from "./globals.js";
 import { cheat } from "./registration.js";
 
 // Imports for setup logic
@@ -35,10 +35,10 @@ export async function setup() {
         // Setup all game proxies
         setupAllProxies();
 
-        // Run startup cheats
+        // Run startupCheats using gameContext
         const rtn = [
             "--------------------",
-            ...runStartupCheats.call(this),
+            ...runStartupCheats(),
             "Cheat setup complete",
             "--------------------",
             "Hit enter to list available cheats",
@@ -66,5 +66,5 @@ export async function setup() {
  * @returns {string[]} Array of result messages
  */
 export function runStartupCheats() {
-    return startupCheats.map((c) => cheat(c, this));
+    return startupCheats.map((c) => cheat(c, gameContext));
 }

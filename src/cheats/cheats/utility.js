@@ -9,7 +9,7 @@
  */
 
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
-import { itemDefs, monsterDefs, cList, gga } from "../core/globals.js";
+import { itemDefs, monsterDefs, cList, gga, gameContext } from "../core/globals.js";
 import { traverse } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 
@@ -101,7 +101,7 @@ function createListFunction(params) {
 
         bundle: () => {
             results.push("Bundle, Message");
-            const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
+            const bundleMessages = gameContext["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
 
             for (const [key, value] of Object.entries(bundleMessages)) {
                 if (key === "Blank") continue;
@@ -114,7 +114,7 @@ function createListFunction(params) {
 
         missing_bundle: () => {
             results.push("Bundle, Message");
-            const bundleMessages = this["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
+            const bundleMessages = gameContext["scripts.CustomMapsREAL"].GemPopupBundleMessages().h;
             const bundlesReceived = gga.BundlesReceived.h;
 
             for (const [key, value] of Object.entries(bundleMessages)) {
@@ -209,7 +209,7 @@ function createListFunction(params) {
             results.push("Order, Id, Name");
             const talentOrder = cList.TalentOrder;
             const talentNames = cList.TalentIconNames;
-            const abilityMap = this["scripts.CustomMaps"].atkMoveMap.h;
+            const abilityMap = gameContext["scripts.CustomMaps"].atkMoveMap.h;
 
             for (let i = 0; i < talentOrder.length; i++) {
                 const talentId = talentOrder[i];

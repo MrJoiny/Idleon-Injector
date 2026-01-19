@@ -11,6 +11,7 @@
 
 import { registerCheats, registerCheat } from "../core/registration.js";
 import { cheatState } from "../core/state.js";
+import { firebase } from "../core/globals.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 
 // Wide (account-wide) cheats
@@ -44,7 +45,7 @@ registerCheats({
             name: "guildpoints",
             message: "Adds 1200 guild points to the guild.",
             fn: function () {
-                this.FirebaseStorage.guildPointAdjust(1200);
+                firebase.guildPointAdjust(1200);
                 return "Added 1200 guild points to the guild.";
             },
         },
@@ -72,7 +73,7 @@ registerCheat({
             return "No code was given, provide a code";
         }
 
-        this.FirebaseStorage.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
+        firebase.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
         return `${code} has been sent!`;
     },
 });
