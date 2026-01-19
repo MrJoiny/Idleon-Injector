@@ -2,6 +2,7 @@ import vanX from "./van-x-0.6.3.js";
 import * as API from "./api.js";
 import { IS_ELECTRON, VIEWS } from "./constants.js";
 import { getCheatConfigPath, configPathExists } from "./utils.js";
+import { initWebSocket, onStateUpdate, getConnectionStatus } from "./ws.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -59,7 +60,22 @@ const SystemService = {
             appState.heartbeat = true;
             return;
         }
+
+        initWebSocket();
+
+        onStateUpdate((states) => {
+            dataState.activeCheatStates = states || {};
+        });
+
+        // Use WebSocket connection status for heartbeat, with HTTP fallback
         const check = async () => {
+            // Check WebSocket connection first
+            if (getConnectionStatus()) {
+                appState.heartbeat = true;
+                return;
+            }
+
+            // Fall back to HTTP heartbeat check
             const alive = await API.checkHeartbeat();
             appState.heartbeat = !!alive;
         };
@@ -122,8 +138,8 @@ const CheatService = {
             const result = await API.executeCheatAction(action);
             Actions.notify(`Cheat ${result.result || "Success"}`);
             FavoritesService.addToRecent(action);
-            // Refresh cheat states after execution
-            CheatStateService.loadCheatStates();
+            // Note: Cheat states are now updated via WebSocket push from server
+            // No need for manual loadCheatStates() call
         } catch (e) {
             Actions.notify(`Error executing '${message}': ${e.message}`, "error");
         }

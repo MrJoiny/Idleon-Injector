@@ -10,6 +10,7 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs").promises;
 const TinyRouter = require("./tinyRouter");
+const { initWebSocket } = require("./wsServer");
 
 const MIME_TYPES = {
     ".html": "text/html",
@@ -73,9 +74,12 @@ function createWebServer(config) {
  * Starts the web server on the specified port
  * @param {Object} router - TinyRouter instance
  * @param {number} port - Port to listen on
+ * @param {Object} [wsConfig] - Optional WebSocket configuration
+ * @param {Object} [wsConfig.runtime] - CDP Runtime client for WebSocket
+ * @param {string} [wsConfig.context] - Game context expression for WebSocket
  * @returns {Promise<Object>} Server instance
  */
-function startServer(router, port) {
+function startServer(router, port, wsConfig = null) {
     const staticDir = path.join(__dirname, "../../ui");
 
     const server = http.createServer(async (req, res) => {
@@ -103,6 +107,12 @@ function startServer(router, port) {
                 console.log(`\n--------------------------------------------------`);
                 console.log(`Web UI available at: http://localhost:${port}`);
                 console.log(`--------------------------------------------------\n`);
+
+                // Initialize WebSocket server if config provided
+                if (wsConfig && wsConfig.runtime && wsConfig.context) {
+                    initWebSocket(server, wsConfig.runtime, wsConfig.context);
+                }
+
                 resolve(server);
             })
             .on("error", (err) => {

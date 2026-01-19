@@ -17,6 +17,7 @@ const {
     filterByTemplate,
 } = require("../utils/helpers");
 const { exec } = require("child_process");
+const { broadcastCheatStates } = require("./wsServer");
 
 /**
  * Sets up all API routes for the web UI
@@ -69,7 +70,7 @@ function setupApiRoutes(app, context, client, config) {
                     return !EXCLUDED_PREFIXES.some((prefix) => cmd === prefix || cmd?.startsWith(prefix + " "));
                 });
 
-            res.json(filteredCheats);
+                res.json(filteredCheats);
             }
         } catch (apiError) {
             console.error("API Error in /api/cheats:", apiError);
@@ -97,6 +98,9 @@ function setupApiRoutes(app, context, client, config) {
             } else {
                 console.log(`[Web UI] Executed: ${action} -> ${cheatResponse.result.value}`);
                 res.json({ result: cheatResponse.result.value });
+
+                // Broadcast updated cheat states to all WebSocket clients
+                broadcastCheatStates();
             }
         } catch (apiError) {
             console.error(`API Error executing cheat '${action}':`, apiError);
@@ -432,8 +436,8 @@ exports.injectorConfig = ${new_injectorConfig};
             process.platform === "win32"
                 ? `start "" "${url}"`
                 : process.platform === "darwin"
-                ? `open "${url}"`
-                : `xdg-open "${url}"`;
+                  ? `open "${url}"`
+                  : `xdg-open "${url}"`;
 
         exec(command, (error) => {
             if (error) {

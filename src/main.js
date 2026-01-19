@@ -99,9 +99,9 @@ async function initializeCheatContext(Runtime, context) {
     return true;
 }
 
-async function startWebServer(app, webPort) {
+async function startWebServer(app, webPort, wsConfig = null) {
     try {
-        await startServer(app, webPort);
+        await startServer(app, webPort, wsConfig);
     } catch (err) {
         console.error("Failed to start web server:", err);
     }
@@ -126,7 +126,10 @@ async function handlePageLoad(gameContext, config, app) {
                 cdpPort: config.cdpPort,
             });
 
-            await startWebServer(app, config.webPort);
+            await startWebServer(app, config.webPort, {
+                runtime: Runtime,
+                context: context,
+            });
         }
 
         await startCliInterface(context, client, {

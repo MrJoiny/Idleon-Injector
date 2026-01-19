@@ -27,7 +27,11 @@ const ActiveCheatList = () => {
 };
 
 export const Sidebar = () => {
-    store.loadCheatStates();
+    // Note: Initial cheat states are pushed via WebSocket on connection
+    // Keeping HTTP fallback for non-WebSocket scenarios (e.g., Electron)
+    if (typeof window !== "undefined" && IS_ELECTRON) {
+        store.loadCheatStates();
+    }
 
     const NavBtn = (viewConfig, Icon) =>
         withTooltip(

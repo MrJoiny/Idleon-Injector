@@ -15,9 +15,10 @@
         "build-macos-arm64": "npm run build:cheats && pkg . -t node18-macos-arm64 --compress Gzip --output InjectCheatsUI-macos-arm64"
     },
     "author": "MrJoiny",
-    "dependencies": {
+"dependencies": {
         "chrome-remote-interface": "^0.33.0",
-        "enquirer": "^2.3.6"
+        "enquirer": "^2.3.6",
+        "ws": "^8.18.0"
     },
     "pkg": {
         "assets": [
