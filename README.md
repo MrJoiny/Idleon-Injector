@@ -88,6 +88,10 @@ npm run build-macos-x64
 npm run build-macos-arm64
 ```
 
+## Cheat Development
+
+See `docs/cheats.md` for how to write and register new cheats.
+
 ## Troubleshooting
 
 -   **Game doesn't start**: Ensure Steam is running.
