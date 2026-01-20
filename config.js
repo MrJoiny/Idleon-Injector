@@ -29,7 +29,6 @@ exports.cheatConfig = {
         islands: "abcde_",
     },
     wide: {
-        gembuylimit: 0,
         autoloot: {
             itemstochest: true,
             moneytochest: true,

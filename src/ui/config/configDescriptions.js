@@ -39,7 +39,6 @@ export const configDescriptions = {
     "cheatConfig.multiply.shopstock": "Multiplies shop stock quantity by the number given.",
 
     // WIDE - Miscellaneous Wide Cheats
-    "cheatConfig.wide.gembuylimit": "Removes daily gem purchase limits.",
     "cheatConfig.wide.autoloot.itemstochest": "Automatically sends looted items to the chest.",
     "cheatConfig.wide.autoloot.moneytochest": "Automatically sends looted money to the chest.",
     "cheatConfig.wide.autoloot.zenithfarm": "Drops for Zenith farming are exluded from the autoloot and drop normally.",
