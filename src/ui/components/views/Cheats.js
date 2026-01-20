@@ -297,7 +297,14 @@ const CheatItem = (cheat) => {
     const hasConfig = store.hasConfigEntry(cheat.value);
 
     // Use direct DOM reference instead of van.state to save thousands of listeners
-    let inputRef = null;
+    const inputRef = needsValue
+        ? input({
+              type: "text",
+              class: "cheat-input",
+              placeholder: "Val",
+          })
+        : null;
+
     const getInputValue = () => (inputRef ? inputRef.value.trim() : "");
 
     const feedbackState = van.state(null);
@@ -381,14 +388,7 @@ const CheatItem = (cheat) => {
             },
             ...buttonContent
         ),
-        needsValue
-            ? input({
-                  type: "text",
-                  class: "cheat-input",
-                  placeholder: "Val",
-                  oncreated: (dom) => (inputRef = dom), // Capture reference
-              })
-            : null,
+        inputRef,
         button(
             {
                 class: () => `favorite-btn ${isFavorited() ? "is-favorite" : ""}`,
