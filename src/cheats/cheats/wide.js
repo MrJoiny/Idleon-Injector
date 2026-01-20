@@ -11,7 +11,8 @@
 
 import { registerCheats, registerCheat } from "../core/registration.js";
 import { cheatState } from "../core/state.js";
-import { firebase } from "../core/globals.js";
+import { firebase, gga } from "../core/globals.js";
+import { deepCopy } from "../utils/deepCopy.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 
 // Wide (account-wide) cheats
@@ -58,6 +59,22 @@ registerCheats({
                 return `${
                     cheatState.wide.perfectobols ? "Activated" : "Deactivated"
                 } Perfect obol rolls. Family and inventory obols update on character change.`;
+            },
+        },
+        {
+            name: "cardcopy",
+            message: "Copies current CardPreset to all players",
+            fn: function () {
+                const cardPreset = deepCopy(gga.CardPreset);
+                const players = gga.PlayerDATABASE.h;
+                let count = 0;
+
+                for (const playerName in players) {
+                    players[playerName].h.CardPreset = deepCopy(cardPreset);
+                    count++;
+                }
+
+                return `Copied CardPreset to ${count} player(s).`;
             },
         },
     ],
