@@ -5,6 +5,7 @@ import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { SearchBar } from "../SearchBar.js";
 import { Icons } from "../../assets/icons.js";
+import { CATEGORY_ORDER } from "../../state/constants.js";
 
 const { div, input, button, span, details, summary } = van.tags;
 
@@ -137,8 +138,18 @@ const getGroupedCheats = (list, term) => {
         groups[category].push(cheat);
     }
 
-    // Return sorted by category name
-    const sortedKeys = Object.keys(groups).sort();
+    // Return sorted by category name with specific order
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+        const indexA = CATEGORY_ORDER.indexOf(a);
+        const indexB = CATEGORY_ORDER.indexOf(b);
+
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+
+        return a.localeCompare(b);
+    });
+
     const result = {};
     for (const key of sortedKeys) {
         result[key] = groups[key];
