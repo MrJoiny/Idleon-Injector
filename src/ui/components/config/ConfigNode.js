@@ -181,7 +181,10 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
             try {
                 const parsed = JSON.parse(rawVal);
                 if (Array.isArray(parsed)) val = parsed;
-            } catch {}
+            } catch {
+                // Keep previous value if invalid JSON
+            }
+
         }
         data[key] = val;
     };
@@ -205,12 +208,6 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
         data[key] = newVal;
         localTextState.val = String(newVal);
     };
-
-    const handleFunctionChange = (newFnString) => {
-        data[key] = newFnString;
-        localTextState.val = newFnString;
-    };
-
 
     const getDefaultDisplayString = () => {
         if (isFunction(defaultVal)) {

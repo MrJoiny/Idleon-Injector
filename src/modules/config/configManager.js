@@ -48,7 +48,7 @@ function loadConfiguration() {
             config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
             config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
             log.debug("Loaded custom config overrides");
-        } catch (e) {
+        } catch {
             log.info("No config.custom.js found - using defaults");
             log.info("Tip: Copy config.custom.example.js to config.custom.js to customize");
         }

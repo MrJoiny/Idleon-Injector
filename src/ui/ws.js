@@ -93,7 +93,7 @@ function connect() {
             scheduleReconnect();
         };
 
-        ws.onerror = (err) => {
+        ws.onerror = () => {
             console.error("[WebSocket] Connection error");
             // onclose will be called after onerror, which will trigger reconnect
         };

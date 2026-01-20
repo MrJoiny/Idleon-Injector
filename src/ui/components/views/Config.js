@@ -9,7 +9,7 @@ import { SearchBar } from "../SearchBar.js";
 import { Icons } from "../../icons.js";
 import { withTooltip } from "../Tooltip.js";
 
-const { div, button, select, option, label, input, span } = van.tags;
+const { div, button, select, option, label, span } = van.tags;
 
 export const Config = () => {
     const activeSubTab = van.state("cheatconfig");

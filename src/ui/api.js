@@ -100,7 +100,7 @@ export async function updateOptionAccountIndex(index, value) {
 export async function checkHeartbeat() {
     try {
         return await _request("/heartbeat");
-    } catch (e) {
+    } catch {
         return null;
     }
 }

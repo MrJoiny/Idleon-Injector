@@ -19,20 +19,16 @@ const log = createLogger("Helpers");
 const objToString = (obj) => {
     let ret = "{";
 
-    for (let k in obj) {
+    for (const k in obj) {
         let v = obj[k];
 
         if (typeof v === "function") {
             v = v.toString();
-        } else if (typeof v === "boolean") {
-            v = v;
-        } else if (typeof v === "number") {
-            v = v;
         } else if (Array.isArray(v)) {
             v = JSON.stringify(v);
         } else if (typeof v === "object") {
             v = objToString(v);
-        } else {
+        } else if (typeof v === "string") {
             v = `"${v}"`;
         }
 

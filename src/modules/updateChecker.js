@@ -28,7 +28,7 @@ function compareVersions(v1, v2) {
  * @returns {Promise<{updateAvailable: boolean, latestVersion: string, url: string}|null>}
  */
 function checkForUpdates(currentVersion) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const options = {
             hostname: "api.github.com",
             path: "/repos/MrJoiny/Idleon-Injector/releases/latest",

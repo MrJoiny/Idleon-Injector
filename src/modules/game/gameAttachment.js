@@ -34,11 +34,11 @@ const DEFAULT_IDLEON_PATHS = [
         "Steam/steamapps/common/Legends of Idleon/LegendsOfIdleon.exe"
     ),
     path.join(
-        process.env["ProgramFiles"] || "C:/Program Files",
+        process.env.ProgramFiles || "C:/Program Files",
         "Steam/steamapps/common/Legends of Idleon/LegendsOfIdleon.exe"
     ),
     path.join(
-        process.env["ProgramW6432"] || "C:/Program Files",
+        process.env.ProgramW6432 || "C:/Program Files",
         "Steam/steamapps/common/Legends of Idleon/LegendsOfIdleon.exe"
     ),
     path.join(process.cwd(), "LegendsOfIdleon.exe"),
@@ -98,7 +98,7 @@ function waitForCdpEndpoint(timeout = DEFAULT_TIMEOUT) {
                             return resolve(json.webSocketDebuggerUrl);
                         }
                         retry();
-                    } catch (err) {
+                    } catch {
                         retry();
                     }
                 });
@@ -151,7 +151,10 @@ function attach(name) {
             if (!resolved) {
                 try {
                     idleon.kill("SIGTERM");
-                } catch (err) {}
+                    } catch {
+                        // Ignore kill errors; process may have already exited
+                    }
+
                 reject(new Error("Timeout waiting for game to start"));
             }
         }, 30000);
@@ -179,7 +182,7 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
             await access(steamPath);
             steamCmd = steamPath;
             break;
-        } catch (e) {
+        } catch {
             // Expected when path doesn't exist, continue searching
         }
     }
@@ -256,7 +259,7 @@ async function waitForIdleonTarget(idleonUrl, timeout = DEFAULT_TIMEOUT) {
             const targetHost = new URL(targetUrl).host;
             const idleonHost = new URL(idleonUrl).host;
             return targetHost === idleonHost;
-        } catch (error) {
+        } catch {
             return targetUrl.includes(idleonUrl);
         }
     };
@@ -275,7 +278,7 @@ async function waitForIdleonTarget(idleonUrl, timeout = DEFAULT_TIMEOUT) {
             if (target) {
                 return target;
             }
-        } catch (error) {
+        } catch {
             // CDP not ready yet, will retry
         }
 

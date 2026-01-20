@@ -1,10 +1,9 @@
 import van from "../../van-1.6.0.js";
-import vanX from "../../van-x-0.6.3.js";
 import store from "../../store.js";
 import { EmptyState } from "../EmptyState.js";
 import { Icons } from "../../icons.js";
 
-const { div, ul, li, input, button, span } = van.tags;
+const { div, ul, li, input, button } = van.tags;
 
 export const StartupCheats = (list) => {
     if (store.data.cheats.length === 0) store.loadCheats();

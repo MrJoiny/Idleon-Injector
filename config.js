@@ -332,7 +332,7 @@ exports.cheatConfig = {
             GrowthReq: (t) => t / 5, // time for plants to grow (base is 4 hours * 1.5 ^ seedtype (0 for basic, etc))
             OGunlocked: (t) => t, //if overgrowth unlocked in shop (0 -> locked, 1 -> unlocked)
             NextOGchance: (t) => t * 5, // chance to get next OG multi (5x chance)
-            OGmulti: (t) => (t == 1 ? 1 : Math.max(1, t * 2)), // OG bonus multiplier (1 -> no multiplier, 2 -> 2x, 4 -> 4x, etc) minimum is 1x to prevent bricking
+            OGmulti: (t) => (t === 1 ? 1 : Math.max(1, t * 2)), // OG bonus multiplier (1 -> no multiplier, 2 -> 2x, 4 -> 4x, etc) minimum is 1x to prevent bricking
             PlotOwned: (t) => Math.min(36, t + 2), // number of plots owned, additional two plots to your farm, max is 36
             MarketCostType: (t) => t, // plant type for upgrade
             MarketCostQTY: (t) => Math.floor(t / 5), // plant amount for upgrade, t => 0 for free upgrades

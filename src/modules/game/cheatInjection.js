@@ -91,7 +91,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
 
             // Assign the game variable to a global window property for cheat access
             const replacementRegex = new RegExp(config.injreg);
-            let newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
+            const newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 
             log.debug("Patching game script...");
 

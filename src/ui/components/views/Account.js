@@ -158,7 +158,7 @@ const OptionItem = (index, rawVal, schema) => {
             await store.updateAccountOption(index, val);
             status.val = "success";
             setTimeout(() => (status.val = null), 1000);
-        } catch (e) {
+        } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1000);
         }

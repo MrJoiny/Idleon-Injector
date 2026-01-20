@@ -101,7 +101,7 @@ async function startWebServer(app, webPort, wsConfig = null) {
 }
 
 async function handlePageLoad(gameContext, config, app) {
-    const { Runtime, Page, context, client } = gameContext;
+    const { Runtime, context, client } = gameContext;
     log.debug("Page loaded, setting up cheats...");
 
     const cheatInitialized = await initializeCheatContext(Runtime, context);

@@ -35,7 +35,7 @@ const MIME_TYPES = {
  */
 async function serveStatic(req, res, staticDir) {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    let pathname = url.pathname;
+    const pathname = url.pathname;
     let filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
 
     try {
@@ -49,7 +49,7 @@ async function serveStatic(req, res, staticDir) {
         res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
         res.end(content);
         return true;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

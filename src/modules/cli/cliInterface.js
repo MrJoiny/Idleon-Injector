@@ -22,7 +22,7 @@ const log = createLogger("CLI");
  * @param {number} options.cdpPort - CDP port number
  */
 async function startCliInterface(context, client, options = {}) {
-    const { injectorConfig, cdpPort } = options;
+    const { cdpPort } = options;
     const { Runtime } = client;
 
     const choicesResult = await Runtime.evaluate({
@@ -56,7 +56,7 @@ async function startCliInterface(context, client, options = {}) {
                 limit: 15,
                 choices: choices,
                 suggest: function (input, choices) {
-                    if (input.length == 0) return [choices[0]];
+                    if (input.length === 0) return [choices[0]];
                     const str = input.toLowerCase();
                     const mustInclude = str.split(" ");
                     return choices.filter((ch) => {
@@ -80,7 +80,7 @@ async function startCliInterface(context, client, options = {}) {
                         prompt.state.cursor = value.length;
                         prompt.render();
                         valueChosen = true;
-                        return new Promise(function (resolve) {});
+                        return new Promise(function () {});
                     } else {
                         this.addChoice({ name: value, value: value }, this.choices.length + 1);
                         return true;
