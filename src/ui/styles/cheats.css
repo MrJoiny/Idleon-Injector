@@ -76,7 +76,7 @@
 
 .cheat-button {
     flex: 1;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--c-panel);
     border: 1px solid #333;
     color: var(--c-text-dim);
     padding: 0 12px;
@@ -256,7 +256,106 @@
     position: sticky;
     top: 0;
     z-index: 1001;
-    background: var(--c-void);
+    background: var(--c-panel);
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 10px;
+}
+
+/* --- VIEW MODE TOGGLE --- */
+.view-mode-toggle {
+    flex: none;
+    width: 42px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    border-radius: 4px; /* Optional rounded corners */
+}
+
+.view-mode-toggle:hover {
+    color: var(--c-text);
+    border-color: var(--c-text-dim);
+}
+
+/* --- TABS MODE --- */
+.tabs-bar {
+    display: flex;
+    overflow-x: auto;
+    gap: 5px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    /* Scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-border) transparent;
+}
+
+.tabs-bar::-webkit-scrollbar {
+    height: 4px;
+}
+.tabs-bar::-webkit-scrollbar-thumb {
+    background: var(--c-border);
+    border-radius: 2px;
+}
+
+.tab-btn {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    padding: 8px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 100px; /* Pill shape */
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.tab-btn:hover {
+    border-color: var(--c-accent-dim);
+    color: var(--c-text);
+}
+
+.tab-btn.active {
+    background: var(--c-accent-dim);
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+}
+
+.tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- LOAD MORE BUTTON --- */
+.load-more-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    cursor: pointer;
+}
+
+.load-more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--c-text);
 }

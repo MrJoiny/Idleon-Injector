@@ -86,51 +86,109 @@ const QuickAccessSection = () => {
     );
 };
 
+/**
+ * Lazy Rendering Category
+ * Wraps <details> element and only renders children when opened.
+ */
+const LazyCategory = ({ category, isOpen, cheats }) => {
+    const isExpanded = van.state(isOpen);
+
+    return details(
+        {
+            class: "cheat-category",
+            open: isOpen,
+            ontoggle: (e) => {
+                isExpanded.val = e.target.open;
+            },
+        },
+        summary(category),
+        () => {
+            if (!isExpanded.val) {
+                return div({ class: "cheat-category-content", style: "display:none" });
+            }
+            return div(
+                { class: "cheat-category-content" },
+                cheats.map((cheat) => CheatItem(cheat))
+            );
+        }
+    );
+};
+
+/**
+ * Groups cheats by category, filtering by search term.
+ * Moved outside component to avoid re-creation and allow use in handlers.
+ */
+const getGroupedCheats = (list, term) => {
+    const groups = {};
+    const searchTerm = term.toLowerCase();
+
+    for (let i = 0; i < list.length; i++) {
+        const cheat = list[i];
+
+        // Filter: match term against value or message
+        if (searchTerm) {
+            const msg = (cheat.message || "").toLowerCase();
+            const val = (cheat.value || "").toLowerCase();
+            if (!msg.includes(searchTerm) && !val.includes(searchTerm)) continue;
+        }
+
+        const category = cheat.category || "general";
+        if (!groups[category]) groups[category] = [];
+        groups[category].push(cheat);
+    }
+
+    // Return sorted by category name
+    const sortedKeys = Object.keys(groups).sort();
+    const result = {};
+    for (const key of sortedKeys) {
+        result[key] = groups[key];
+    }
+    return result;
+};
+
 export const Cheats = () => {
     const ui = vanX.reactive({
         filter: "",
         shouldOpen: false,
+        activeCategory: null,
     });
 
     if (store.data.cheats.length === 0) {
         store.loadCheats();
     }
 
+    // Pagination state
+    const pagination = vanX.reactive({
+        limit: 50,
+    });
+
+    const resetPagination = () => {
+        pagination.limit = 50;
+    };
+
+    const validateActiveCategory = (filter) => {
+        const groupedData = getGroupedCheats(store.data.cheats, filter);
+        const categories = Object.keys(groupedData);
+
+        if (categories.length > 0) {
+            if (!ui.activeCategory || !categories.includes(ui.activeCategory)) {
+                ui.activeCategory = categories[0];
+            }
+        } else {
+            ui.activeCategory = null;
+        }
+    };
+
     const handleSearch = (val) => {
         ui.filter = val;
         ui.shouldOpen = val.length > 0;
+        validateActiveCategory(val);
+        resetPagination();
     };
 
-    /**
-     * Groups cheats by category, filtering by search term.
-     * Called fresh on each render to avoid reactivity issues.
-     */
-    const getGroupedCheats = (list, term) => {
-        const groups = {};
-        const searchTerm = term.toLowerCase();
-
-        for (let i = 0; i < list.length; i++) {
-            const cheat = list[i];
-
-            // Filter: match term against value or message
-            if (searchTerm) {
-                const msg = (cheat.message || "").toLowerCase();
-                const val = (cheat.value || "").toLowerCase();
-                if (!msg.includes(searchTerm) && !val.includes(searchTerm)) continue;
-            }
-
-            const category = cheat.category || "general";
-            if (!groups[category]) groups[category] = [];
-            groups[category].push(cheat);
-        }
-
-        // Return sorted by category name
-        const sortedKeys = Object.keys(groups).sort();
-        const result = {};
-        for (const key of sortedKeys) {
-            result[key] = groups[key];
-        }
-        return result;
+    const handleCategorySwitch = (cat) => {
+        ui.activeCategory = cat;
+        resetPagination();
     };
 
     return div(
@@ -144,7 +202,16 @@ export const Cheats = () => {
                 SearchBar({
                     placeholder: "SEARCH_COMMANDS...",
                     onInput: handleSearch,
-                })
+                    style: "flex: 1;",
+                }),
+                button(
+                    {
+                        class: "view-mode-toggle",
+                        onclick: store.toggleCheatsViewMode,
+                        title: "Toggle View Mode (List/Tabs)",
+                    },
+                    () => (store.app.cheatsViewMode === "tabs" ? Icons.List() : Icons.Tabs())
+                )
             ),
 
             QuickAccessSection(),
@@ -155,9 +222,8 @@ export const Cheats = () => {
                 }
 
                 // Get fresh snapshot of cheats and filter term
-                const cheats = [...store.data.cheats];
                 const filterTerm = ui.filter;
-                const groupedData = getGroupedCheats(cheats, filterTerm);
+                const groupedData = getGroupedCheats(store.data.cheats, filterTerm);
                 const categories = Object.keys(groupedData);
 
                 if (categories.length === 0) {
@@ -168,20 +234,57 @@ export const Cheats = () => {
                     });
                 }
 
+                // Initialize active category if null or invalid (subscription-free peek)
+                const rawUi = vanX.raw(ui);
+                if (!rawUi.activeCategory || !categories.includes(rawUi.activeCategory)) {
+                    ui.activeCategory = categories[0];
+                }
+
+                const isTabsMode = store.app.cheatsViewMode === "tabs";
+
+                if (isTabsMode) {
+                    return div(
+                        // Tabs Bar
+                        div(
+                            { class: "tabs-bar" },
+                            categories.map((cat) =>
+                                button(
+                                    {
+                                        class: () => `tab-btn ${ui.activeCategory === cat ? "active" : ""}`,
+                                        onclick: () => handleCategorySwitch(cat),
+                                    },
+                                    cat
+                                )
+                            )
+                        ),
+                        // Tab Content - wrapped in reactive function to respond to category/pagination changes
+                        () => {
+                            const activeCheats = groupedData[ui.activeCategory] || [];
+                            const visibleCheats = activeCheats.slice(0, pagination.limit);
+                            const hasMore = activeCheats.length > pagination.limit;
+                            return div(
+                                { class: "tab-content" },
+                                visibleCheats.map((cheat) => CheatItem(cheat)),
+                                hasMore
+                                    ? button(
+                                          { class: "load-more-btn", onclick: () => (pagination.limit += 50) },
+                                          `LOAD MORE (${activeCheats.length - pagination.limit} REMAINING)`
+                                      )
+                                    : null
+                            );
+                        }
+                    );
+                }
+
+                // List View (Accordion) with Lazy Loading
                 return div(
                     { id: "cheat-buttons", class: "grid-layout" },
                     categories.map((cat) => {
-                        return details(
-                            {
-                                class: "cheat-category",
-                                open: ui.shouldOpen,
-                            },
-                            summary(cat),
-                            div(
-                                { class: "cheat-category-content" },
-                                groupedData[cat].map((cheat) => CheatItem(cheat))
-                            )
-                        );
+                        return LazyCategory({
+                            category: cat,
+                            isOpen: ui.shouldOpen, // Force open if searching
+                            cheats: groupedData[cat],
+                        });
                     })
                 );
             }
@@ -193,20 +296,23 @@ const CheatItem = (cheat) => {
     const needsValue = cheat.needsParam === true;
     const hasConfig = store.hasConfigEntry(cheat.value);
 
-    const inputValue = van.state("");
+    // Use direct DOM reference instead of van.state to save thousands of listeners
+    let inputRef = null;
+    const getInputValue = () => (inputRef ? inputRef.value.trim() : "");
 
     const feedbackState = van.state(null);
 
     const handleExecute = async () => {
         let finalAction = cheat.value;
         if (needsValue) {
-            if (!inputValue.val.trim()) {
+            const val = getInputValue();
+            if (!val) {
                 store.notify(`Value required for '${cheat.value}'`, "error");
                 feedbackState.val = "error";
                 setTimeout(() => (feedbackState.val = null), 1000);
                 return;
             }
-            finalAction = `${cheat.value} ${inputValue.val.trim()}`;
+            finalAction = `${cheat.value} ${val}`;
         }
 
         try {
@@ -224,25 +330,23 @@ const CheatItem = (cheat) => {
     };
 
     const handleFavorite = () => {
-        // For cheats that need a value, include the current input value for the favorite
         if (needsValue) {
-            if (!inputValue.val.trim()) {
+            const val = getInputValue();
+            if (!val) {
                 store.notify(`Enter a value first to favorite '${cheat.value}'`, "error");
                 return;
             }
-            const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
-            store.toggleFavorite(fullCommand);
+            store.toggleFavorite(`${cheat.value} ${val}`);
         } else {
             store.toggleFavorite(cheat.value);
         }
     };
 
-    // Check if this cheat (or parameterized variant) is favorited
     const isFavorited = () => {
         if (needsValue) {
-            if (!inputValue.val.trim()) return false;
-            const fullCommand = `${cheat.value} ${inputValue.val.trim()}`;
-            return store.isFavorite(fullCommand);
+            const val = getInputValue();
+            if (!val) return false;
+            return store.isFavorite(`${cheat.value} ${val}`);
         }
         return store.isFavorite(cheat.value);
     };
@@ -277,15 +381,14 @@ const CheatItem = (cheat) => {
             },
             ...buttonContent
         ),
-        () =>
-            needsValue
-                ? input({
-                      type: "text",
-                      class: "cheat-input",
-                      placeholder: "Val",
-                      oninput: (e) => (inputValue.val = e.target.value),
-                  })
-                : null,
+        needsValue
+            ? input({
+                  type: "text",
+                  class: "cheat-input",
+                  placeholder: "Val",
+                  oncreated: (dom) => (inputRef = dom), // Capture reference
+              })
+            : null,
         button(
             {
                 class: () => `favorite-btn ${isFavorited() ? "is-favorite" : ""}`,

@@ -27,7 +27,7 @@
 }
 
 .control-bar.sticky-header {
-    background: var(--c-void);
+    background: var(--c-panel);
     padding-bottom: 15px;
     margin-bottom: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);

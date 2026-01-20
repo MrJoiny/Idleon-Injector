@@ -26,6 +26,7 @@ const appState = vanX.reactive({
     config: null,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
     configForcedPath: null,
+    cheatsViewMode: localStorage.getItem("cheatsViewMode") || "tabs",
 });
 
 const dataState = vanX.reactive({
@@ -301,6 +302,11 @@ const store = {
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;
         localStorage.setItem("sidebarCollapsed", appState.sidebarCollapsed);
+    },
+
+    toggleCheatsViewMode: () => {
+        appState.cheatsViewMode = appState.cheatsViewMode === "list" ? "tabs" : "list";
+        localStorage.setItem("cheatsViewMode", appState.cheatsViewMode);
     },
 
     openExternalUrl: async (url) => {
