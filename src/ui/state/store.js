@@ -1,8 +1,8 @@
-import vanX from "./van-x-0.6.3.js";
-import * as API from "./api.js";
+import vanX from "../vendor/van-x-0.6.3.js";
+import * as API from "../services/api.js";
 import { IS_ELECTRON, VIEWS } from "./constants.js";
-import { getCheatConfigPath, configPathExists } from "./utils.js";
-import { initWebSocket, onStateUpdate, getConnectionStatus } from "./ws.js";
+import { getCheatConfigPath, configPathExists } from "../utils/index.js";
+import { initWebSocket, onStateUpdate, getConnectionStatus } from "../services/ws.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -253,7 +253,9 @@ const AccountService = {
                 const hasSchema = Object.keys(dataState.accountSchema).length > 0;
 
                 const [schemaRes, dataRes] = await Promise.all([
-                    hasSchema ? Promise.resolve(null) : fetch("optionsAccountSchema.json").catch(() => ({ ok: false })),
+                    hasSchema
+                        ? Promise.resolve(null)
+                        : fetch("/config/optionsAccountSchema.json").catch(() => ({ ok: false })),
                     API.fetchOptionsAccount(),
                 ]);
 

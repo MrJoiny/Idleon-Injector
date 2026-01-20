@@ -36,7 +36,8 @@ const MIME_TYPES = {
 async function serveStatic(req, res, staticDir) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
-    let filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
+    const isRootPath = pathname === "/" || pathname === "/index.html";
+    let filePath = path.join(staticDir, isRootPath ? "entry/index.html" : pathname);
 
     try {
         const stats = await fs.stat(filePath);

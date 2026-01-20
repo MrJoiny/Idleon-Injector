@@ -1,6 +1,6 @@
-import van from "../van-1.6.0.js";
-import store from "../store.js";
-import { VIEWS } from "../constants.js";
+import van from "../vendor/van-1.6.0.js";
+import store from "../state/store.js";
+import { VIEWS } from "../state/constants.js";
 
 // Components
 import { Sidebar } from "./Sidebar.js";

@@ -1,5 +1,5 @@
-import van from "../../van-1.6.0.js";
-import * as API from "../../api.js";
+import van from "../../vendor/van-1.6.0.js";
+import * as API from "../../services/api.js";
 
 const { div, iframe, button, span } = van.tags;
 

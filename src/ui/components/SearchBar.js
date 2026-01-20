@@ -1,6 +1,6 @@
-import van from "../van-1.6.0.js";
-import { debounce } from "../utils.js";
-import { Icons } from "../icons.js";
+import van from "../vendor/van-1.6.0.js";
+import { debounce } from "../utils/index.js";
+import { Icons } from "../assets/icons.js";
 
 const { div, input, span } = van.tags;
 
@@ -19,6 +19,14 @@ export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons
             ? debounce((e) => onInput(e.target.value.trim()), debounceMs)
             : (e) => onInput(e.target.value.trim());
 
+    const clearInput = (target) => {
+        if (value && "val" in value) {
+            value.val = "";
+        }
+        target.value = "";
+        onInput("");
+    };
+
     return div(
         { class: "search-wrapper" },
         span({ class: "search-icon" }, icon),
@@ -28,6 +36,13 @@ export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons
             placeholder: placeholder || "SEARCH...",
             ...(value !== undefined ? { value } : {}),
             oninput: handleInput,
+            onkeydown: (e) => {
+                if (e.key !== "Escape") return;
+                e.preventDefault();
+                e.stopPropagation();
+                clearInput(e.currentTarget);
+                e.currentTarget.blur();
+            },
         })
     );
 };

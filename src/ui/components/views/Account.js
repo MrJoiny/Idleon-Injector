@@ -1,11 +1,11 @@
-import van from "../../van-1.6.0.js";
-import vanX from "../../van-x-0.6.3.js";
-import store from "../../store.js";
+import van from "../../vendor/van-1.6.0.js";
+import vanX from "../../vendor/van-x-0.6.3.js";
+import store from "../../state/store.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { SearchBar } from "../SearchBar.js";
 import { NumberInput } from "../NumberInput.js";
-import { Icons } from "../../icons.js";
+import { Icons } from "../../assets/icons.js";
 import { withTooltip } from "../Tooltip.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;

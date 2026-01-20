@@ -1,7 +1,7 @@
-import van from "../../van-1.6.0.js";
-import store from "../../store.js";
+import van from "../../vendor/van-1.6.0.js";
+import store from "../../state/store.js";
 import { EmptyState } from "../EmptyState.js";
-import { Icons } from "../../icons.js";
+import { Icons } from "../../assets/icons.js";
 
 const { div, ul, li, input, button } = van.tags;
 

@@ -1,5 +1,5 @@
-import van from "../van-1.6.0.js";
-import { Icons } from "../icons.js";
+import van from "../vendor/van-1.6.0.js";
+import { Icons } from "../assets/icons.js";
 
 const { div, span } = van.tags;
 

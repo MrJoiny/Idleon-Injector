@@ -5,7 +5,7 @@
  * Handles connection lifecycle, auto-reconnect, and message dispatching.
  */
 
-import { IS_ELECTRON } from "./constants.js";
+import { IS_ELECTRON } from "../state/constants.js";
 
 /** @type {WebSocket|null} */
 let ws = null;

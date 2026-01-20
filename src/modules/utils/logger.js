@@ -27,6 +27,7 @@ const ANSI = {
     dim: "\x1b[2m",
     red: "\x1b[31m",
     yellow: "\x1b[33m",
+    blue: "\x1b[34m",
     cyan: "\x1b[36m",
     gray: "\x1b[90m",
     bold: "\x1b[1m",
@@ -41,6 +42,19 @@ function colorsEnabled() {
 function colorize(text, colorCode) {
     if (!colorsEnabled()) return text;
     return colorCode + text + ANSI.reset;
+}
+
+const URL_PATTERN = /https?:\/\/[^\s]+/g;
+
+const URL_COLOR = ANSI.blue;
+
+function colorizeLinks(message) {
+    if (!colorsEnabled()) return message;
+    return message.replace(URL_PATTERN, (url) => {
+        if (url.includes("legendsofidlone")) return url;
+        if (/N\.js(?:[?#]|$)/.test(url)) return url;
+        return colorize(url, URL_COLOR);
+    });
 }
 
 function formatLevelForConsole(level) {
@@ -159,7 +173,8 @@ function formatFull(level, moduleName, message) {
 }
 
 function formatFullConsole(level, moduleName, message) {
-    return `${getTimestamp()} - ${formatLevelForConsole(level)} - ${moduleName} - ${message}`;
+    const coloredMessage = colorizeLinks(message);
+    return `${getTimestamp()} - ${formatLevelForConsole(level)} - ${moduleName} - ${coloredMessage}`;
 }
 
 /**
@@ -168,8 +183,9 @@ function formatFullConsole(level, moduleName, message) {
  * @param {string} message - Log message
  * @returns {string} Formatted log line
  */
-function formatMinimal(moduleName, message) {
-    return `${moduleName} - ${message}`;
+function formatMinimal(level, moduleName, message) {
+    const coloredMessage = colorizeLinks(message);
+    return `${moduleName} - ${coloredMessage}`;
 }
 
 /**
@@ -248,7 +264,9 @@ function createLogger(moduleName) {
         writeToFile(fullMessage);
 
         // Console output with appropriate format
-        const consoleMessage = useMinimalFormat(level) ? formatMinimal(moduleName, message) : formatFullConsole(level, moduleName, message);
+        const consoleMessage = useMinimalFormat(level)
+            ? formatMinimal(level, moduleName, message)
+            : formatFullConsole(level, moduleName, message);
 
         switch (level) {
             case "debug":

@@ -1,4 +1,4 @@
-import van from "./van-1.6.0.js";
+import van from "../vendor/van-1.6.0.js";
 
 const { svg, path, circle, line, rect, polyline, polygon } = van.tags("http://www.w3.org/2000/svg");
 

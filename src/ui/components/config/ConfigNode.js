@@ -1,11 +1,11 @@
-import van from "../../van-1.6.0.js";
-import store from "../../store.js";
+import van from "../../vendor/van-1.6.0.js";
+import store from "../../state/store.js";
 import { NumberInput } from "../NumberInput.js";
 import { FunctionInput } from "../FunctionInput.js";
-import { Icons } from "../../icons.js";
+import { Icons } from "../../assets/icons.js";
 import { withTooltip } from "../Tooltip.js";
 import { isFunction } from "../../utils/functionParser.js";
-import { configDescriptions } from "../../configDescriptions.js";
+import { configDescriptions } from "../../config/configDescriptions.js";
 
 const { div, label, input, details, summary, span, button } = van.tags;
 

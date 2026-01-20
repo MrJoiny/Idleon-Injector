@@ -1,5 +1,5 @@
-import van from "../van-1.6.0.js";
-import store from "../store.js";
+import van from "../vendor/van-1.6.0.js";
+import store from "../state/store.js";
 
 const { div } = van.tags;
 

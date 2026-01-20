@@ -1,7 +1,7 @@
-import van from "../van-1.6.0.js";
-import store from "../store.js";
-import { VIEWS, IS_ELECTRON } from "../constants.js";
-import { Icons } from "../icons.js";
+import van from "../vendor/van-1.6.0.js";
+import store from "../state/store.js";
+import { VIEWS, IS_ELECTRON } from "../state/constants.js";
+import { Icons } from "../assets/icons.js";
 import { withTooltip } from "./Tooltip.js";
 
 const { nav, div, button, span, a } = van.tags;
