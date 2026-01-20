@@ -6,6 +6,15 @@ import { withTooltip } from "./Tooltip.js";
 
 const { nav, div, button, span, a } = van.tags;
 
+const SHORTCUTS_TOOLTIP_TEXT =
+    "Keyboard shortcuts:\n" +
+    "1 - Cheats\n" +
+    "2 - Account Options\n" +
+    "3 - Config\n" +
+    "4 - Chromedebug\n" +
+    "/ - Focus search\n" +
+    "Ctrl+S - Save config (Config tab)\n";
+
 const ActiveCheatList = () => {
     return div({ class: "active-cheats" }, div({ class: "active-cheats-header" }, "ACTIVE CHEATS"), () => {
         const activeCheats = store.getActiveCheats();
@@ -102,6 +111,20 @@ export const Sidebar = () => {
                     },
                 },
                 () => (IS_ELECTRON || store.app.heartbeat ? "SYSTEM ONLINE" : "CONNECTION LOST")
+            ),
+
+            withTooltip(
+                button(
+                    {
+                        type: "button",
+                        class: "system-shortcuts-button",
+                        "aria-label": "Keyboard shortcuts",
+                    },
+                    Icons.Keyboard()
+                ),
+                SHORTCUTS_TOOLTIP_TEXT,
+                "right",
+                () => !store.app.sidebarCollapsed
             )
         ),
 

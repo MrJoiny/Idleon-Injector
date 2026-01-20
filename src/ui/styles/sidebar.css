@@ -260,6 +260,38 @@
     font-family: var(--font-mono);
 }
 
+.system-shortcuts-button {
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-dim);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s var(--ease-tech), border-color 0.2s var(--ease-tech), background 0.2s var(--ease-tech);
+}
+
+.system-shortcuts-button svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.system-shortcuts-button:hover {
+    border-color: rgba(255, 190, 0, 0.25);
+    background: rgba(255, 190, 0, 0.06);
+    color: var(--c-accent);
+}
+
+.sidebar-collapsed .system-shortcuts-button {
+    display: none;
+}
+
 .status-dot {
     width: 6px;
     height: 6px;
