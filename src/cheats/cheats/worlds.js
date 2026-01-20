@@ -283,16 +283,8 @@ registerCheats({
         { name: "spelunkmana", message: "no stamina cost in spelunking" },
         {
             name: "spelunkdepth",
-            message: "Sets the current spelunking depth. Usage: w7 spelunkdepth [layer]",
-            fn: (params) => {
-                const depth = parseInt(params[1]);
-                if (isNaN(depth) || depth < 1) {
-                    return "Please provide a valid numeric depth (1+).";
-                }
-
-                cheatConfig.w7.spelunkdepth = depth;
-                return `Spelunking depth set to ${depth}. Go to the next layer to apply.`;
-            },
+            message: "Sets the current spelunking depth. Needs a layer change to activate",
+            configurable: true,
         },
     ],
 });
