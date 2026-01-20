@@ -201,7 +201,7 @@ registerCheats({
     subcheats: [
         { name: "rng", message: "100% upgrade stone success (safe)" },
         { name: "use", message: "Upgrade stones don't use a slot (risky)" },
-        { name: "misc", message: "upgrade stone misc cheat." },
+        { name: "misc", message: "Mystery stones always hit the misc stat." },
     ],
 });
 
