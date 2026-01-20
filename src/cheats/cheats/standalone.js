@@ -10,7 +10,7 @@
 
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { cheatState, cheatConfig } from "../core/state.js";
-import { itemDefs, monsterDefs, events, gga } from "../core/globals.js";
+import { firebase, itemDefs, monsterDefs, events, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
 import { keychainStatsMap } from "../constants.js";
@@ -18,6 +18,7 @@ import { keychainStatsMap } from "../constants.js";
 // The OG-drop function that we all love
 registerCheat({
     name: "drop",
+    category: "drop",
     message: "drop items",
     needsParam: true,
     fn: (params) => {
@@ -31,6 +32,7 @@ registerCheat({
 // Spawn any monster you like: Be careful with what you spawn!
 registerCheat({
     name: "spawn",
+    category: "spawn",
     message: "spawn monsters",
     needsParam: true,
     fn: (params) => {
@@ -105,6 +107,7 @@ registerCheat({
 // Stop dropping items from monsters
 registerCheat({
     name: "nomore",
+    category: "nomore",
     message: "Stop dropping items from monsters, accepts regex.",
     needsParam: true,
     fn: (params) => {
@@ -143,6 +146,7 @@ registerCheat({
 // Multiple stacks in chest
 registerCheat({
     name: "multiplestacks",
+    category: "multiplestacks",
     message: "Will make multiple stacks of specified items in chest when autochest is on.",
     needsParam: true,
     fn: (params) => {
@@ -169,6 +173,7 @@ registerCheat({
 registerCheat({
     name: "fix_save",
     message: "Save a game attribute to memory. Use fix_write to write it back to the game.",
+    needsParam: true,
     fn: (params) => {
         cheatConfig.fixobj = deepCopy(gga[params[0]]);
         return "Saved";
@@ -179,6 +184,7 @@ registerCheat({
 registerCheat({
     name: "fix_write",
     message: "Write a game attribute from memory to the game. Use fix_save to save it to memory.",
+    needsParam: true,
     fn: (params) => {
         if (!params[0]) return "No attribute specified";
         if (!cheatConfig.fixobj) return "No attribute saved";
@@ -302,6 +308,7 @@ registerCheats({
 // Keychain cheat
 registerCheat({
     name: "keychain",
+    category: "keychain",
     message: "Generate specific keychain with double max stats when buying from Flurbo store",
     needsParam: true,
     fn: (params) => {
@@ -324,5 +331,22 @@ registerCheat({
             parseInt(selectedStat[3]),
         ];
         return `Set keychain with ${selectedStat[2]}`;
+    },
+});
+
+// Buy gem shop packs
+registerCheat({
+    name: "buy",
+    category: "buy",
+    message: "Buy gem shop packs. You get items from the pack, but no gems and no pets.",
+    needsParam: true,
+    fn: function (params) {
+        const code = params[0];
+        if (!code) {
+            return "No code was given, provide a code";
+        }
+
+        firebase.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
+        return `${code} has been sent!`;
     },
 });

@@ -9,7 +9,7 @@
  * - buy (gem shop packs)
  */
 
-import { registerCheats, registerCheat } from "../core/registration.js";
+import { registerCheats } from "../core/registration.js";
 import { cheatState } from "../core/state.js";
 import { firebase, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
@@ -81,20 +81,4 @@ registerCheats({
             },
         },
     ],
-});
-
-// Buy gem shop packs
-registerCheat({
-    name: "buy",
-    message: "Buy gem shop packs. You get items from the pack, but no gems and no pets.",
-    needsParam: true,
-    fn: function (params) {
-        const code = params[0];
-        if (!code) {
-            return "No code was given, provide a code";
-        }
-
-        firebase.addToMessageQueue("SERVER_CODE", "SERVER_ITEM_BUNDLE", code);
-        return `${code} has been sent!`;
-    },
 });

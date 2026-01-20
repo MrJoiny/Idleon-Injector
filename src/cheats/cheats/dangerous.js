@@ -200,6 +200,7 @@ registerCheats({
 // Bulk drop - drop all items of a given type
 registerCheat({
     name: "bulk",
+    category: "bulk",
     message: "Drop a collection of items at once. Usage: bulk [type] [amount]",
     needsParam: true,
     fn: (params) => {
@@ -227,6 +228,7 @@ registerCheat({
 // Class change - change character class by name
 registerCheat({
     name: "class",
+    category: "class",
     message: "!danger! Change character class. Usage: class [class_name]",
     needsParam: true,
     fn: (params) => {
@@ -321,6 +323,7 @@ function handleSkillLevel(name, lvl) {
 // Level change - unified handler for skills, alchemy, and custom changers
 registerCheat({
     name: "lvl",
+    category: "lvl",
     message: "Change the lvl of a skill or alchemy type to this value",
     needsParam: true,
     fn: (params) => {
