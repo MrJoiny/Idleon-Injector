@@ -71,6 +71,9 @@ registerCheats({
 
                 for (const playerName in players) {
                     players[playerName].h.CardPreset = deepCopy(cardPreset);
+                    const cardPresetIndex = players[playerName].h.PlayerStuff[2];
+                    players[playerName].h.CardEquip = deepCopy(cardPreset[cardPresetIndex]);
+
                     count++;
                 }
 
