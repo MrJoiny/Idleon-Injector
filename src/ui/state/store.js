@@ -148,31 +148,20 @@ const CheatService = {
 
 const getActiveCheats = (states) => {
     const activeCheats = [];
-    const processedGroups = new Set();
 
-    // Process group cheats (plural keys ending in 's' like 'w1s' indicate all sub-cheats enabled)
-    for (const key in states) {
-        const value = states[key];
-        if (key.endsWith("s") && value === true) {
-            const baseKey = key.slice(0, -1);
-            processedGroups.add(baseKey);
-            activeCheats.push(baseKey);
-        }
-    }
+    const normalizeKey = (key) => (key.endsWith("s") ? key.slice(0, -1) : key);
 
     for (const key in states) {
         const value = states[key];
-        if (key.endsWith("s") && typeof value === "boolean") continue;
-        if (processedGroups.has(key)) continue;
 
         if (typeof value === "object" && value !== null) {
             for (const subKey in value) {
                 if (value[subKey] === true) {
-                    activeCheats.push(`${key} ${subKey}`);
+                    activeCheats.push(`${normalizeKey(key)} ${subKey}`);
                 }
             }
         } else if (value === true) {
-            activeCheats.push(key);
+            activeCheats.push(normalizeKey(key));
         }
     }
 
