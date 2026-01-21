@@ -199,10 +199,55 @@ const getDeepDiff = (current, defaultObj) => {
     return Object.keys(diff).length > 0 ? diff : undefined;
 };
 
+/**
+ * Validates custom configuration against default configuration types.
+ * If a type mismatch is found, it logs an error and removes the key from source
+ * so it reverts to the default value during merge.
+ * @param {Object} target - Default configuration object (reference)
+ * @param {Object} source - Custom configuration object (to be validated and cleaned)
+ * @param {string} prefix - Path prefix for logging
+ */
+const validateConfig = (target, source, prefix = "") => {
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+        return;
+    }
+
+    for (const key in source) {
+        if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+
+        const fullPath = prefix ? `${prefix}.${key}` : key;
+        const targetValue = target[key];
+        const sourceValue = source[key];
+
+        // Only validate if the key exists in the default config
+        if (targetValue !== undefined) {
+            const targetType = typeof targetValue;
+            const sourceType = typeof sourceValue;
+
+            if (targetType !== sourceType) {
+                log.error(`${fullPath} must be a ${targetType}, received '${sourceType}'`);
+                delete source[key];
+                continue;
+            }
+
+            // Recurse for nested objects (excluding null and arrays)
+            if (
+                targetType === "object" &&
+                targetValue !== null &&
+                sourceValue !== null &&
+                !Array.isArray(targetValue)
+            ) {
+                validateConfig(targetValue, sourceValue, fullPath);
+            }
+        }
+    }
+};
+
 module.exports = {
     objToString,
     prepareConfigForJson,
     parseConfigFromJson,
     filterByTemplate,
     getDeepDiff,
+    validateConfig,
 };

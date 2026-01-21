@@ -7,6 +7,7 @@
  */
 
 const { deepClone, union, deepMerge } = require("../utils/objectUtils");
+const { validateConfig } = require("../utils/helpers");
 const os = require("os");
 const { createLogger } = require("../utils/logger");
 
@@ -44,9 +45,25 @@ function loadConfiguration() {
 
         try {
             const customConfig = require(customConfigPath);
-            config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
-            config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
-            config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
+
+            if (customConfig.injectorConfig) {
+                validateConfig(config.injectorConfig, customConfig.injectorConfig, "injectorConfig");
+                config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
+            }
+
+            if (customConfig.startupCheats) {
+                if (Array.isArray(customConfig.startupCheats)) {
+                    config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
+                } else {
+                    log.error("startupCheats must be an array, received '" + typeof customConfig.startupCheats + "'");
+                }
+            }
+
+            if (customConfig.cheatConfig) {
+                validateConfig(config.cheatConfig, customConfig.cheatConfig, "");
+                config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
+            }
+
             log.debug("Loaded custom config overrides");
         } catch {
             log.info("No config.custom.js found - using defaults");

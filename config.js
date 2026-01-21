@@ -62,9 +62,7 @@ exports.cheatConfig = {
         },
         stampcost: (t) => t / 4, // 4x cheaper stamp upgrades
         companion: {
-            // if comanions is not set in the config, it will always use all the available companions
-            // if you want to just have specific companions, you can set it to a function that returns an array of companion ids [1, 2, 3, ...]
-            companions: "", // let empty for all pets
+            companions: "", // let empty for all pets (e.g., "0,1,2")
             current: "11", //current companion - Glunko Supreme
         },
         owl: {

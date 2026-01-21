@@ -18,6 +18,7 @@ Merge rules:
 - `startupCheats` arrays are unioned.
 - `cheatConfig` is deep-merged.
 - `defaultConfig` is a deep clone of `config.js`, used for UI diffs and safe saves.
+- **Type Validation**: `config.custom.js` is validated against `config.js` types. If a mismatch is found (e.g. a string where a function is expected), the injector logs an error and reverts that key to the default value to prevent crashes.
 
 ## Top-level structure
 

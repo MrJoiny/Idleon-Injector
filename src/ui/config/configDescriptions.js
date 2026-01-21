@@ -58,7 +58,7 @@ export const configDescriptions = {
     "cheatConfig.w1.forge.speed": "Forge: Bar processing speed.",
     "cheatConfig.w1.forge.capacity": "Forge: Ore capacity.",
     "cheatConfig.w1.stampcost": "Stamps: Upgrade costs. (lower is better)",
-    "cheatConfig.w1.companion.companions": "List of companion IDs to enable. Leave empty for all.",
+    "cheatConfig.w1.companion.companions": "Comma-separated list of companion IDs to enable (e.g., '0,1,2'). Leave empty for all.",
     "cheatConfig.w1.companion.current": "The ID of the currently active companion (e.g., '11' for Glunko).",
     "cheatConfig.w1.owl.OwlCost": "Owl: Upgrade costs. (lower is better)",
     "cheatConfig.w1.owl.OwlFeatherRate": "Owl: Feather gain rate.",

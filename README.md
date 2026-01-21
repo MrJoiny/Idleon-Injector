@@ -74,6 +74,8 @@ The injector uses a hierarchical configuration system:
 - `config.js`: Default settings (do not modify).
 - `config.custom.js`: User overrides (optional).
 
+The injector includes a built-in schema validator that checks your `config.custom.js` for type errors (e.g., providing a string where a function is expected). Errors are logged to the console, and invalid settings are automatically reverted to defaults to prevent the game from crashing.
+
 ## Development
 
 Tech stack: Node.js + CDP backend, [VanJS](https://vanjs.org/) + VanX web UI,

@@ -47,7 +47,12 @@ export function setupFirebaseStorageProxy() {
                 return Array.from({ length: cList.CompanionDB.length }, (_, index) => index);
             }
             const companions = cheatConfig.w1.companion.companions;
-            if (typeof companions === "function") return companions();
+            if (typeof companions === "string") {
+                return companions
+                    .split(",")
+                    .map((id) => parseInt(id.trim()))
+                    .filter((id) => !isNaN(id));
+            }
             return companions;
         }
         return Reflect.apply(getCompanionInfoMe, this, args);
