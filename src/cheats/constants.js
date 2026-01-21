@@ -164,4 +164,3 @@ export const knownBundles = [
     ["Panda Pack", "bon_o"],
     ["Santa helper bundle", "bon_p"],
 ];
-
