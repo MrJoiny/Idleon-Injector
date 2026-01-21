@@ -91,7 +91,7 @@
 .cheat-button:hover {
     color: var(--c-accent);
     border-color: var(--c-accent);
-    background: var(--c-accent-dim);
+    background: var(--c-accent-dim-solid);
 }
 
 /* --- QUICK ACCESS SECTION (Favorites/Recent) --- */
@@ -124,7 +124,7 @@
 }
 
 .quick-access-btn {
-    background: var(--c-accent-dim);
+    background: var(--c-accent-dim-solid);
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
     padding: 0;
@@ -316,12 +316,13 @@
 }
 
 .tab-btn:hover {
-    border-color: var(--c-accent-dim);
+    background: var(--c-accent-dim-solid);
+    border-color: var(--c-accent-dim-solid);
     color: var(--c-text);
 }
 
 .tab-btn.active {
-    background: var(--c-accent-dim);
+    background: var(--c-accent-dim-solid);
     border-color: var(--c-accent);
     color: var(--c-accent);
 }

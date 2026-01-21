@@ -25,7 +25,7 @@ input[type="number"] {
     position: relative;
     border: 1px solid var(--c-border);
     border-radius: var(--radius-sm);
-    background: rgba(0, 0, 0, 0.3);
+    /* background: var(--c-accent-dim); */
 }
 
 .number-input-wrapper:focus-within {
@@ -35,7 +35,7 @@ input[type="number"] {
 
 .number-input-wrapper input {
     border: none;
-    background: transparent;
+    /* background: transparent; */
     text-align: left;
     box-shadow: none !important;
     border-radius: 0;
@@ -45,7 +45,7 @@ input[type="number"] {
 }
 
 .number-input-btn {
-    background: transparent;
+    background: var(--c-panel-dim);
     color: var(--c-accent);
     border: none;
     cursor: pointer;

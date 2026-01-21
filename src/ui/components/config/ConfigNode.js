@@ -14,10 +14,7 @@ const { div, label, input, details, summary, span, button } = van.tags;
  */
 const resolvePath = (obj, path) => {
     if (!obj || !path) return undefined;
-    return path.split(".").reduce(
-        (acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined),
-        obj
-    );
+    return path.split(".").reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
 };
 
 /**
@@ -184,7 +181,6 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
             } catch {
                 // Keep previous value if invalid JSON
             }
-
         }
         data[key] = val;
     };
@@ -301,4 +297,3 @@ const ConfigItem = ({ data, key, fullPath, initialValue }) => {
         )
     );
 };
-

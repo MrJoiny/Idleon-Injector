@@ -39,7 +39,7 @@
     color: var(--c-warning);
     border: 1px solid var(--c-warning);
     padding: 10px;
-    background: rgba(255, 183, 0, 0.1);
+    background: var(--c-accent-dim-solid);
     font-size: 0.8rem;
 }
 

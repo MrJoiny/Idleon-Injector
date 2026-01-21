@@ -91,7 +91,7 @@
 
 /* --- CONFIG ITEM --- */
 .config-item {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--c-panel);
     border: 1px solid var(--c-border);
     padding: 15px;
     margin-bottom: 10px;
@@ -153,7 +153,7 @@
 /* --- DIFF HIGHLIGHTING --- */
 .config-item.modified-config {
     border-left: 3px solid var(--c-warning);
-    background: rgba(255, 183, 0, 0.03);
+    background: var(--c-accent-dim-solid);
 }
 
 .default-value-hint {
@@ -186,7 +186,7 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    background: var(--c-accent-dim);
+    background: var(--c-accent-dim-solid);
     border: 1px solid var(--c-accent);
     border-radius: 4px;
     margin-bottom: 15px;

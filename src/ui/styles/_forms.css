@@ -7,7 +7,7 @@
 input,
 select,
 textarea {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-panel-dim);
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     font-family: var(--font-mono);
@@ -24,7 +24,7 @@ select:focus,
 textarea:focus {
     border-color: var(--c-accent);
     box-shadow: 0 0 0 1px var(--c-accent-dim);
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--c-panel-dark-dim);
 }
 
 .control-bar {

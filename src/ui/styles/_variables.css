@@ -7,6 +7,8 @@
     /* -- PALETTE: Cyber Industrial -- */
     --c-void: #050507;
     --c-panel: #0e0f14;
+    --c-panel-dim: #0b0c11;
+    --c-panel-dark-dim: #090a09;
     --c-panel-hover: #161821;
     --c-border: #2a2b36;
 
@@ -14,6 +16,7 @@
     --c-accent: #ffb700;
     /* Safety Orange/Gold */
     --c-accent-dim: rgba(255, 183, 0, 0.1);
+    --c-accent-dim-solid: #241e0f;
     --c-accent-glow: rgba(255, 183, 0, 0.3);
 
     /* States */
