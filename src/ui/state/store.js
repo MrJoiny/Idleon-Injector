@@ -1,6 +1,6 @@
 import vanX from "../vendor/van-x-0.6.3.js";
 import * as API from "../services/api.js";
-import { IS_ELECTRON, VIEWS } from "./constants.js";
+import { VIEWS } from "./constants.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
 import { initWebSocket, onStateUpdate, getConnectionStatus } from "../services/ws.js";
 
