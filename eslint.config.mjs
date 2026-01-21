@@ -59,7 +59,7 @@ export default [
         },
     },
     {
-        files: ["src/modules/**/*.js", "src/main.js", "config.js", "config.custom.example.js"],
+        files: ["src/modules/**/*.js", "src/main.js", "config.js"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "commonjs",
@@ -69,7 +69,7 @@ export default [
         },
     },
     {
-        files: ["config.js", "config.custom.example.js"],
+        files: ["config.js"],
         rules: {
             "no-unused-vars": [
                 "warn",

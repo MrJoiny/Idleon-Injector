@@ -33,10 +33,12 @@ dashboard plus CLI for debugging, modding, and account management.
 1. **Download**: Get the latest release.
 2. **Extract**: Unzip the contents to any folder on your machine.
     - _Optional: placing it next to the game executable uses the game's executable._
-3. **Configure**: Rename `config.custom.example.js` to `config.custom.js` and edit it.
-    - Set `injectorConfig.target` to `steam` or `web`.
-    - Web mode also requires `injectorConfig.webUrl`.
-4. **Run**: Execute `InjectCheatsUI.exe`.
+3. **Run**: Execute `InjectCheatsUI.exe`.
+4. **Setup**: The first time you run the injector, a CLI wizard will guide you through:
+    - Choosing the platform (Steam or Web).
+    - Setting up paths (if needed).
+    - Enabling the In-Game UI Overlay.
+    - This creates your `config.custom.js` file automatically.
 
 ## Usage
 

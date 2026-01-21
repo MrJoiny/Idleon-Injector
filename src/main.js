@@ -1,4 +1,6 @@
 const os = require("os");
+const fs = require("fs");
+const path = require("path");
 const {
     loadConfiguration,
     getInjectorConfig,
@@ -8,7 +10,9 @@ const {
     getCdpPort,
     getWebPort,
 } = require("./modules/config/configManager");
+const { runSetupWizard } = require("./modules/config/setupWizard");
 const { attachToTarget } = require("./modules/game/gameAttachment");
+
 const { setupIntercept, createCheatContext } = require("./modules/game/cheatInjection");
 const { createWebServer, startServer } = require("./modules/server/webServer");
 const { setupApiRoutes } = require("./modules/server/apiRoutes");
@@ -154,7 +158,15 @@ function handleError(error) {
 async function main() {
     try {
         await printHeader();
+
+        const customConfigPath = path.join(process.cwd(), "config.custom.js");
+
+        if (!fs.existsSync(customConfigPath)) {
+            await runSetupWizard(customConfigPath);
+        }
+
         const config = initializeConfiguration();
+
         const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
         printConfiguration(config.injectorConfig);
 

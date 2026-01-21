@@ -50,7 +50,6 @@ function loadConfiguration() {
             log.debug("Loaded custom config overrides");
         } catch {
             log.info("No config.custom.js found - using defaults");
-            log.info("Tip: Copy config.custom.example.js to config.custom.js to customize");
         }
 
         injectorConfig = config.injectorConfig;

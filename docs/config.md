@@ -8,9 +8,8 @@ The backend loads configuration in `src/modules/config/configManager.js`:
 
 - `config.js`: defaults committed to the repo.
 - `config.custom.js`: user overrides (gitignored).
-- `config.custom.example.js`: template for user overrides.
 
-`config.custom.js` is optional. When missing, the injector logs a hint and continues with defaults.
+`config.custom.js` is created by the setup wizard on the first run.
 For packaged builds, `configManager` looks in `process.cwd()` and then `../config.js`/`../config.custom.js` as a fallback.
 
 Merge rules:
