@@ -10,6 +10,7 @@
 const Enquirer = require("enquirer");
 const { exec } = require("child_process");
 const { createLogger } = require("../utils/logger");
+const { broadcastCheatStates } = require("../server/wsServer");
 
 const log = createLogger("CLI");
 
@@ -122,6 +123,7 @@ async function startCliInterface(context, client, options = {}) {
                     log.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
                 } else {
                     log.info(`${cheatResponse.result.value}`);
+                    await broadcastCheatStates();
                 }
             }
             await promptUser();
