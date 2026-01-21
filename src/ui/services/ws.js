@@ -5,8 +5,6 @@
  * Handles connection lifecycle, auto-reconnect, and message dispatching.
  */
 
-import { IS_ELECTRON } from "../state/constants.js";
-
 /** @type {WebSocket|null} */
 let ws = null;
 
@@ -66,11 +64,6 @@ function scheduleReconnect() {
  * Establishes WebSocket connection to the server
  */
 function connect() {
-    if (IS_ELECTRON) {
-        // In Electron mode, we don't use WebSocket
-        return;
-    }
-
     if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
         return;
     }
@@ -107,11 +100,6 @@ function connect() {
  * Initializes the WebSocket client and establishes connection
  */
 export function initWebSocket() {
-    if (IS_ELECTRON) {
-        console.log("[WebSocket] Skipped - running in Electron mode");
-        return;
-    }
-
     connect();
 }
 

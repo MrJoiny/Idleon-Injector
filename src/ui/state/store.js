@@ -57,11 +57,6 @@ const Actions = {
 
 const SystemService = {
     initHeartbeat: () => {
-        if (IS_ELECTRON) {
-            appState.heartbeat = true;
-            return;
-        }
-
         initWebSocket();
 
         onStateUpdate((states) => {
