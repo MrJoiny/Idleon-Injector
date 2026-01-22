@@ -1,5 +1,6 @@
 import van from "../../vendor/van-1.6.0.js";
 import * as API from "../../services/api.js";
+import { IS_ELECTRON } from "../../state/constants.js";
 
 const { div, iframe, button, span } = van.tags;
 
@@ -23,7 +24,11 @@ export const DevTools = () => {
     const openDevTools = async () => {
         try {
             const devtoolsUrl = await API.fetchDevToolsUrl();
-            await API.openExternalUrl(devtoolsUrl);
+            if (IS_ELECTRON) {
+                await API.openExternalUrl(devtoolsUrl);
+            } else {
+                window.open(devtoolsUrl, "_blank", "noopener,noreferrer");
+            }
         } catch (e) {
             error.val = `Failed to open ChromeDebug: ${e.message}`;
         }
@@ -31,7 +36,11 @@ export const DevTools = () => {
 
     const openWebUi = async () => {
         try {
-            await API.openExternalUrl(webUiUrl);
+            if (IS_ELECTRON) {
+                await API.openExternalUrl(webUiUrl);
+            } else {
+                window.open(webUiUrl, "_blank", "noopener,noreferrer");
+            }
         } catch (e) {
             error.val = `Failed to open Web UI: ${e.message}`;
         }
@@ -48,17 +57,17 @@ export const DevTools = () => {
                 { class: "devtools-actions" },
                 button(
                     {
-                        class: "quick-access-btn",
+                        class: "btn-primary",
                         onclick: openWebUi,
                     },
-                    span({ class: "quick-access-btn-text" }, "Open Web UI")
+                    "Open Web UI"
                 ),
                 button(
                     {
-                        class: "quick-access-btn",
+                        class: "btn-primary",
                         onclick: openDevTools,
                     },
-                    span({ class: "quick-access-btn-text" }, "Open ChromeDebug")
+                    "Open ChromeDebug"
                 )
             ),
 

@@ -11,7 +11,7 @@
     background: var(--c-panel);
     border: 1px solid var(--c-accent);
     color: var(--c-text-main);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     white-space: pre-wrap;
     max-width: 300px;

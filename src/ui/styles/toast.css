@@ -20,7 +20,7 @@
     opacity: 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     transition: opacity 0.3s ease;
 }
 

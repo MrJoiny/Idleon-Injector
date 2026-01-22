@@ -17,7 +17,7 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
     const isChecked = () => selectedKeys.includes(keyName);
 
     return label(
-        { class: () => `key-checkbox ${isChecked() ? "checked" : ""}` },
+        { class: () => `key-checkbox ${isChecked() ? "checked" : ""}`, title: keyName },
         input({
             type: "checkbox",
             checked: isChecked,
@@ -116,7 +116,7 @@ const KeysSection = ({ ui, handlers }) =>
             )
         ),
         div(
-            { class: "keys-content" },
+            { class: "keys-content scroll-container" },
             // Favorites section
             div({ class: "keys-group" }, div({ class: "keys-group-header" }, "★ FAVORITES"), () => {
                 if (ui.isLoading) {
@@ -284,7 +284,7 @@ const ResultsSection = ({ ui, handlers }) =>
                 Icons.Refresh()
             )
         ),
-        div({ class: "results-content" }, () => {
+        div({ class: "results-content scroll-container" }, () => {
             if (ui.isSearching) {
                 return Loader({ text: "Searching..." });
             }

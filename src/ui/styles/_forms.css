@@ -11,7 +11,7 @@ textarea {
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     outline: none;
@@ -50,7 +50,7 @@ textarea:focus {
     top: 50%;
     transform: translateY(-50%);
     color: var(--c-text-dim);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     pointer-events: none;
     display: flex;
     align-items: center;

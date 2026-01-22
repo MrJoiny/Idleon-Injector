@@ -1,12 +1,17 @@
-.monitor-view .monitor-controls {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+.monitor-controls {
+    flex-wrap: wrap;
 }
 
-.monitor-view .monitor-controls input {
+.monitor-controls input {
     flex: 1;
     min-width: 300px;
+}
+
+.monitor-table-container {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    flex: 1;
+    min-height: 0;
 }
 
 .monitor-table {
@@ -14,7 +19,7 @@
     border-collapse: collapse;
 }
 
-.monitor-table th, 
+.monitor-table th,
 .monitor-table td {
     padding: 0.75rem;
     text-align: left;
@@ -24,14 +29,14 @@
 .monitor-table th {
     font-weight: 600;
     color: var(--c-text-muted);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
 .monitor-id {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
 }
 
@@ -58,7 +63,7 @@
     background: var(--c-panel-hover);
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     border: 1px solid var(--c-border);
 }
@@ -73,4 +78,25 @@
 .monitor-table .actions-col {
     text-align: right;
     width: 50px;
+}
+
+.monitor-action-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--c-danger);
+    background: rgba(255, 0, 60, 0.1);
+    color: var(--c-danger);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.monitor-action-btn:hover {
+    background: var(--c-danger);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
 }

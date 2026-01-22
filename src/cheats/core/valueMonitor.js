@@ -83,7 +83,7 @@ class ValueMonitor {
 
     /**
      * Resolves a dotted path (supporting .h and bracket notation) into a target object and property.
-     * @param {string} path - Path like "gga.h.GemsOwned" or "gga.ItemQuantity[13]"
+     * @param {string} path - Path like "gga.GemsOwned" or "gga.ItemQuantity[13]"
      * @returns {{ target: object, prop: string } | { error: string }}
      */
     resolvePath(path) {

@@ -13,7 +13,9 @@
     padding: 20px;
     z-index: 2000;
     backdrop-filter: blur(10px);
-    transition: width 0.2s var(--ease-tech), padding 0.2s var(--ease-tech);
+    transition:
+        width 0.2s var(--ease-tech),
+        padding 0.2s var(--ease-tech);
     overflow: visible;
 }
 
@@ -47,7 +49,10 @@
 .brand-text,
 .tab-label,
 #system-status-text {
-    transition: opacity 0.2s var(--ease-tech), max-width 0.2s var(--ease-tech), margin 0.2s var(--ease-tech),
+    transition:
+        opacity 0.2s var(--ease-tech),
+        max-width 0.2s var(--ease-tech),
+        margin 0.2s var(--ease-tech),
         padding 0.2s var(--ease-tech);
     opacity: 1;
     max-width: 200px;
@@ -119,7 +124,7 @@
 }
 
 .brand-text .highlight {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     letter-spacing: 0.2em;
 }
@@ -191,7 +196,9 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    transition: opacity 0.2s var(--ease-tech), max-height 0.2s var(--ease-tech);
+    transition:
+        opacity 0.2s var(--ease-tech),
+        max-height 0.2s var(--ease-tech);
     overflow: hidden;
 }
 
@@ -202,7 +209,7 @@
 }
 
 .active-cheats-header {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     letter-spacing: 0.1em;
     margin-bottom: 10px;
@@ -220,7 +227,7 @@
 }
 
 .active-cheat-item {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     color: var(--c-accent);
     padding: 4px 8px;
@@ -248,7 +255,7 @@
 }
 
 .no-active-cheats {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     color: var(--c-text-muted);
     font-style: italic;
@@ -262,7 +269,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--c-success);
     font-family: var(--font-mono);
 }
@@ -280,7 +287,10 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: color 0.2s var(--ease-tech), border-color 0.2s var(--ease-tech), background 0.2s var(--ease-tech);
+    transition:
+        color 0.2s var(--ease-tech),
+        border-color 0.2s var(--ease-tech),
+        background 0.2s var(--ease-tech);
 }
 
 .system-shortcuts-button svg {

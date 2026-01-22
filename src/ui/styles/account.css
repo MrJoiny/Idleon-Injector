@@ -10,7 +10,7 @@
     color: var(--c-danger);
     padding: 12px;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     margin-bottom: 20px;
     letter-spacing: 0.05em;
 }
@@ -24,14 +24,6 @@
 .options-account-layout {
     display: flex;
     flex-direction: column;
-}
-
-.control-bar.sticky-header {
-    background: var(--c-panel);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 1001;
 }
 
 .options-account-search {
@@ -57,12 +49,12 @@
 
 .option-ai-label {
     color: var(--c-accent);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
 }
 
 .option-warning {
     color: var(--c-warning);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     margin-bottom: 8px;
 }
 
@@ -117,7 +109,7 @@
 }
 
 .toggle-switch .label {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     font-weight: 600;
 }
@@ -140,7 +132,7 @@
 }
 
 .option-description {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     margin-bottom: 8px;
     font-style: italic;
@@ -166,7 +158,7 @@
     background: rgba(0, 0, 0, 0.4);
     padding: 2px 6px;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     border-radius: 2px;
 }
@@ -181,7 +173,7 @@
     color: #fff;
     border: none;
     padding: 0 15px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 .option-apply-button:hover {

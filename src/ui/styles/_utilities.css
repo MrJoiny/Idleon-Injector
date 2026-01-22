@@ -40,7 +40,7 @@
     border: 1px solid var(--c-warning);
     padding: 10px;
     background: var(--c-accent-dim-solid);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 /* --- DEVTOOLS FRAME --- */

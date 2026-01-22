@@ -110,7 +110,7 @@
 }
 
 .quick-access-header {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     letter-spacing: 0.1em;
     margin-bottom: 8px;
@@ -128,7 +128,7 @@
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
     padding: 0;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -183,7 +183,7 @@
 }
 
 .quick-access-empty {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     font-style: italic;
     padding: 4px 0;
