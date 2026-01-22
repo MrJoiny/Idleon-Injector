@@ -9,7 +9,7 @@ This document explains how the Node.js backend attaches to Idleon, injects the c
 - `src/modules/game/`: CDP attachment and injection pipeline.
 - `src/modules/server/`: Web server, API routes, and WebSocket updates.
 - `src/modules/server/tinyRouter.js`: Lightweight router with `.json()` and `.status()` helpers.
-- `src/modules/server/wsServer.js`: WebSocket lifecycle and cheat-state broadcasts.
+- `src/modules/server/wsServer.js`: WebSocket lifecycle, cheat-state broadcasts, and value monitor sync.
 - `src/modules/cli/cliInterface.js`: Interactive CLI prompt.
 - `src/modules/updateChecker.js`: GitHub release check for update hints.
 - `src/modules/utils/`: Logging and helper utilities.
@@ -121,21 +121,18 @@ let webPort = 8080;
 3. Register interception using `injectorConfig.interceptPattern` (default `*N.js`).
 4. Disable cache and bypass CSP to keep interception reliable.
 5. For each intercepted response:
-   - Download the body (`Network.getResponseBodyForInterception`).
-   - Match `injectorConfig.injreg` (default `\w+\.ApplicationMain\s*?=`) to capture the game root variable.
-   - Evaluate the cheat bundle in the page context (`Runtime.evaluate`) before patching the script.
-   - Inject the game root reference into `window.__idleon_cheats__`.
-   - Return the modified response via `rawResponse` (full headers + body).
+    - Download the body (`Network.getResponseBodyForInterception`).
+    - Match `injectorConfig.injreg` (default `\w+\.ApplicationMain\s*?=`) to capture the game root variable.
+    - Evaluate the cheat bundle in the page context (`Runtime.evaluate`) before patching the script.
+    - Inject the game root reference into `window.__idleon_cheats__`.
+    - Return the modified response via `rawResponse` (full headers + body).
 6. If injection fails, the interceptor continues the original request to avoid a hanging load.
 
 Relevant snippet:
 
 ```js
 const replacementRegex = new RegExp(config.injreg);
-const newBody = originalBody.replace(
-    replacementRegex,
-    `window.__idleon_cheats__=${AppVar[0]};$&`
-);
+const newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 ```
 
 ## Cheat context and runtime init
@@ -143,13 +140,13 @@ const newBody = originalBody.replace(
 `createCheatContext()` builds the expression used by both UI and CLI:
 
 ```js
-(window.__idleon_cheats__ || window.document.querySelector("iframe")?.contentWindow?.__idleon_cheats__)
+window.__idleon_cheats__ || window.document.querySelector("iframe")?.contentWindow?.__idleon_cheats__;
 ```
 
 `initializeCheatContext()` checks the context exists, then executes:
 
 ```js
-setup.call(context)
+setup.call(context);
 ```
 
 `initializeCheatContext()` uses `allowUnsafeEvalBlockedByCSP` and returns false if the context is missing.
@@ -189,20 +186,36 @@ Successful responses return `{ result: "..." }` with the command output string.
 
 ## WebSocket updates
 
-`src/modules/server/wsServer.js` pushes cheat state updates to the UI.
+`src/modules/server/wsServer.js` pushes cheat-state and value-monitor updates to UI clients, and accepts monitor updates from the game runtime.
 
 Message format:
 
 ```json
 {
-  "type": "cheat-states",
-  "data": { "wide": { "mtx": true } }
+    "type": "cheat-states",
+    "data": { "wide": { "mtx": true } }
 }
 ```
 
 `broadcastCheatStates()` is called after cheats run so the UI stays in sync without polling.
 
-On connection, clients receive the current state immediately.
+Monitor messages:
+
+```json
+{ "type": "identify", "clientType": "ui" }
+{ "type": "monitor-subscribe", "id": "gga-GemsOwned", "path": "gga.GemsOwned" }
+{ "type": "monitor-unsubscribe", "id": "gga-GemsOwned" }
+{ "type": "monitor-update", "id": "gga-GemsOwned", "value": 123, "ts": 1700000000000 }
+{ "type": "monitor-state", "data": { "gga-GemsOwned": { "path": "gga.GemsOwned", "history": [] } } }
+```
+
+Notes:
+
+- Clients default to `ui` and the game runtime re-identifies with `identify`.
+- Monitor history stores the last 10 values per id and is broadcast as `monitor-state`.
+- `monitor-subscribe` and `monitor-unsubscribe` evaluate `window.monitorWrap` and `window.monitorUnwrap` in the game context.
+
+On connection, clients receive the current cheat state and monitor state immediately.
 
 ## CLI integration
 

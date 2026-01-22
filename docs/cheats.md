@@ -154,6 +154,9 @@ import { gga, cList } from "../core/globals.js";
 - `window.getAutoCompleteSuggestions()`: UI suggestions API.
 - `window.getOptionsListAccount()` / `window.setOptionsListAccountIndex()`: account options list helpers.
 - `window.cheatStateList`: snapshot for UI/state lists.
+- `window.monitorWrap(id, path)`: start monitoring a value for Web UI.
+- `window.monitorUnwrap(id)`: stop monitoring a value.
+- `window.monitorList()`: list active monitor ids and paths.
 - `window.cheats` / `window.cheatState`: command registry and live state.
 - `window.bEngine`, `window.itemDefs`, `window.monsterDefs`, `window.cList`, `window.behavior`, `window.events`: game
   getters defined with `Object.defineProperty`.

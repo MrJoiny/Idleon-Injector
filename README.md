@@ -12,6 +12,7 @@ dashboard plus CLI for debugging, modding, and account management.
   `http://localhost:8080` for cheats, state inspection, and DevTools.
 - **Live State Sync**: WebSocket updates keep cheat state in sync without
   polling.
+- **Value Monitor**: Track in-game values with history in the Web UI.
 - **Account Management**: Update account parameters and game attributes in
   real time.
 - **Config Editor**: Edit `cheatConfig`, `startupCheats`, and injector options
@@ -57,6 +58,7 @@ The recommended way to interact with the injector is the
     - Toggle cheats on/off.
     - View active cheat status.
     - Modify account configs.
+    - Monitor specific game values (manual path or from Search).
     - Access Chrome DevTools.
     - Apply config changes to RAM or save them to disk.
 

@@ -6,7 +6,7 @@ This document covers how the VanJS-based UI is structured, how it syncs to the b
 
 - `src/ui/entry/`: HTML entry point and CSS imports.
 - `src/ui/components/`: UI building blocks and view containers.
-- `src/ui/components/views/`: Cheats, Config, Account, DevTools tabs.
+- `src/ui/components/views/`: Cheats, Config, Account, Search, Monitor, DevTools tabs.
 - `src/ui/services/`: API and WebSocket clients.
 - `src/ui/state/`: Reactive store and constants.
 - `src/ui/styles/`: CSS partials (imported by `entry/style.css`).
@@ -36,7 +36,7 @@ van.add(document.body, App());
 State buckets:
 
 - `store.app`: UI state (active tab, loading state, heartbeat, toast, view mode).
-- `store.data`: data from the backend (cheats, config, account options, cheat states).
+- `store.data`: data from the backend (cheats, config, account options, cheat states, monitor values).
 
 Persisted UI settings:
 
@@ -72,6 +72,7 @@ API requests are centralized in `src/ui/services/api.js`:
 - `openExternalUrl()` -> `POST /api/open-url`
 
 WebSocket updates live in `src/ui/services/ws.js` and push cheat-state changes into `store.data.activeCheatStates`.
+Monitor subscriptions use the same socket, pushing `monitor-state` updates into `store.data.monitorValues`.
 
 The WebSocket client auto-reconnects every 10s in all runtimes.
 
@@ -148,7 +149,18 @@ Features:
     - Supports ranges (e.g., `100-200`).
     - Supports `true`, `false`, `null`, `undefined`.
 - **Path Copying**: Clicking a result copies the full Haxe access path (e.g., `bEngine.gameAttributes.h.PlayerDATABASE.h.Lava`) to the clipboard.
+- **Send to Monitor**: The eye icon subscribes the path in the Monitor view.
 - **Performance**: Uses a "Load more" pattern to handle large result sets without freezing the UI.
+
+### Monitor view
+
+`src/ui/components/views/Monitor.js` tracks values over WebSocket and displays change history.
+
+Features:
+
+- Add watchers by entering a full path (e.g., `gga.GemsOwned`) or sending a Search result.
+- Shows the current value and the last 10 updates per watch.
+- Removes watchers with the Unwatch action.
 
 ### DevTools view
 
@@ -175,10 +187,7 @@ const { div, button } = van.tags;
 export const MyWidget = () => {
     const count = van.state(0);
 
-    return div(
-        button({ onclick: () => count.val++ }, "Increment"),
-        () => `Count: ${count.val}`
-    );
+    return div(button({ onclick: () => count.val++ }, "Increment"), () => `Count: ${count.val}`);
 };
 ```
 
