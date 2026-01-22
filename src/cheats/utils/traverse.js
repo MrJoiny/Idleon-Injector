@@ -68,11 +68,25 @@ export function traverseAll(obj, worker, visited = new Set()) {
 
         for (const key of Object.keys(node)) {
             const descriptor = Object.getOwnPropertyDescriptor(node, key);
-            if (descriptor && "value" in descriptor) {
-                path.push(key);
-                walk(descriptor.value);
-                path.pop();
+            if (!descriptor) continue;
+
+            let value;
+            if ("value" in descriptor) {
+                value = descriptor.value;
+            } else if (descriptor.get) {
+                // Handle accessor properties (getters) created by ValueMonitor.wrap()
+                try {
+                    value = descriptor.get.call(node);
+                } catch {
+                    continue; // Skip if getter throws
+                }
+            } else {
+                continue;
             }
+
+            path.push(key);
+            walk(value);
+            path.pop();
         }
     }
 
