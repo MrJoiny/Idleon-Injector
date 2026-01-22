@@ -27,7 +27,7 @@ async function startCliInterface(context, client, options = {}) {
     const { Runtime } = client;
 
     const choicesResult = await Runtime.evaluate({
-        expression: `getAutoCompleteSuggestions.call(${context})`,
+        expression: `getAutoCompleteSuggestions()`,
         awaitPromise: true,
         returnByValue: true,
     });

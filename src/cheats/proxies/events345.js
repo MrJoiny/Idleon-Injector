@@ -69,6 +69,7 @@ export function setupEvents345Proxies() {
     for (const i in shrineInfo) {
         shrineInfo[i] = new Proxy(shrineInfo[i], {
             get(original, j) {
+                if (typeof j === "symbol") return original[j];
                 if (cheatState.w3.globalshrines && j === 0) {
                     return gga.CurrentMap;
                 }

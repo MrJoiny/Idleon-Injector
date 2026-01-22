@@ -73,6 +73,7 @@ function setupEvents229Minigames() {
     // catching proxy _GenInfo array for static positions
     wrapArrayOnInit(ActorEvents229.prototype, "init", "_GenInfo", {
         get(target, prop, receiver) {
+            if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
             if (cheatState.minigame.catching) {
                 if (Number(prop) === 31) return 70;
                 if (Number(prop) === 33) return [95, 95, 95, 95, 95];
@@ -203,6 +204,7 @@ function setupEvents577Minigames() {
             if (cheatState.minigame.poing && this._GenINFO?.[58] && !this._GenINFO[58]._isProxied) {
                 this._GenINFO[58] = new Proxy(this._GenINFO[58], {
                     get(t, p) {
+                        if (typeof p === "symbol") return t[p];
                         // p is the sub-index: 0 = Player, 1 = AI
                         if (Number(p) === 1) {
                             return 999; // Move AI paddle far off-screen

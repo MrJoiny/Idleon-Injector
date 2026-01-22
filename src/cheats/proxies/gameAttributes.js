@@ -156,6 +156,7 @@ export function setupGameAttributeProxies() {
         Object.defineProperty(cloudSave, "_isPatched", { value: true, enumerable: false });
         gga.CloudSaveCD = new Proxy(cloudSave, {
             get(obj, prop) {
+                if (typeof prop === "symbol") return Reflect.get(obj, prop);
                 if (cheatState.cloudz && Number(prop) === 0) return 235;
                 return Reflect.get(obj, prop);
             },
@@ -204,6 +205,11 @@ export function setupGameAttributeProxies() {
 
         gga.OptionsListAccount = new Proxy(optionsListAccount, {
             get(obj, prop) {
+                // Pass through Symbol properties (needed for iteration/serialization)
+                if (typeof prop === "symbol") {
+                    return obj[prop];
+                }
+
                 const index = Number(prop);
 
                 // Toggle cheats - return fixed value when enabled

@@ -44,7 +44,7 @@ function setupApiRoutes(app, context, client, config) {
     app.get("/api/cheats", async (req, res) => {
         try {
             const suggestionsResult = await Runtime.evaluate({
-                expression: `getAutoCompleteSuggestions.call(${context})`,
+                expression: `getAutoCompleteSuggestions()`,
                 awaitPromise: true,
                 returnByValue: true,
             });
@@ -242,7 +242,7 @@ function setupApiRoutes(app, context, client, config) {
     app.get("/api/cheat-states", async (req, res) => {
         try {
             const statesResult = await Runtime.evaluate({
-                expression: `cheatStateList.call(${context})`,
+                expression: `cheatStateList()`,
                 awaitPromise: true,
                 returnByValue: true,
             });
@@ -268,7 +268,7 @@ function setupApiRoutes(app, context, client, config) {
     app.get("/api/options-account", async (req, res) => {
         try {
             const optionsResult = await Runtime.evaluate({
-                expression: `getOptionsListAccount.call(${context})`,
+                expression: `getOptionsListAccount()`,
                 awaitPromise: true,
                 returnByValue: true,
             });
@@ -325,7 +325,7 @@ function setupApiRoutes(app, context, client, config) {
                 serializedValue = JSON.stringify(value);
             }
 
-            const updateExpression = `setOptionsListAccountIndex.call(${context}, ${index}, ${serializedValue})`;
+            const updateExpression = `setOptionsListAccountIndex(${index}, ${serializedValue})`;
 
             const updateResult = await Runtime.evaluate({
                 expression: updateExpression,
@@ -432,7 +432,7 @@ exports.injectorConfig = ${new_injectorConfig};
     app.get("/api/search/keys", async (req, res) => {
         try {
             const keysResult = await Runtime.evaluate({
-                expression: `getGgaKeys.call(${context})`,
+                expression: `getGgaKeys()`,
                 awaitPromise: true,
                 returnByValue: true,
             });
@@ -466,7 +466,7 @@ exports.injectorConfig = ${new_injectorConfig};
             const escapedQuery = query.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga.call(${context}, '${escapedQuery}', ${keysJson})`,
+                expression: `searchGga('${escapedQuery}', ${keysJson})`,
                 awaitPromise: true,
                 returnByValue: true,
             });

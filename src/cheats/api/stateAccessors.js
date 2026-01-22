@@ -10,11 +10,11 @@ import { gga } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
 
 export function getOLA() {
-    return gga.OptionsListAccount;
+    return [...gga.OptionsListAccount];
 }
 
 export function setOLAIndex(index, value) {
-    const ola = getOLA();
+    const ola = gga.OptionsListAccount;
     ola[index] = value;
     return ola[index];
 }
