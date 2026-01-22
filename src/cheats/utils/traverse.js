@@ -1,54 +1,80 @@
 /**
- * Traverse Utility
+ * Traverse Utilities
  *
- * Recursively traverses an object, applying a worker function at specified depths.
- * Handles circular references via a visited Set.
- *
- * @param {object} obj - The object to traverse.
- * @param {number} depth - If >= 0, only calls worker at this exact depth. If < 0, calls worker at every node.
- * @param {function(any, string[], number): void} worker - Function called with (value, path, currentDepth)
- * @param {Set} [visited] - Internal: tracked objects for circular references.
- * @param {string[]} [path] - Internal: tracked path segments.
- * @param {number} [currentDepth] - Internal: current recursion depth.
- *
- * @example
- * // Call worker at depth 2 only
- * traverse(myObject, 2, (value, path, depth) => {
- *     console.log(path.join('.'), value);
- * });
- *
- * @example
- * // Call worker at every node
- * traverse(myObject, -1, (value, path, depth) => {
- *     if (typeof value === 'number' && isNaN(value)) {
- *         console.log('NaN found at', path.join('.'));
- *     }
- * });
+ * Two distinct traversal patterns:
+ * - traverse: Visit nodes at specific depth (for cList proxies), unwraps .h
+ * - traverseAll: Visit every node with path tracking (for diagnostics), raw paths
  */
-export function traverse(obj, depth, worker, visited = new Set(), path = [], currentDepth = 0) {
-    if (obj === null || obj === undefined) return;
 
-    const isObject = typeof obj === "object";
-    const shouldCallWorker = depth < 0 || currentDepth === depth;
+/**
+ * Formats an array of path segments into a valid JS property access string.
+ * Numeric segments become bracket notation, identifiers use dot notation.
+ * @param {string[]} segments - Array of path keys
+ * @returns {string} Formatted path (e.g., "foo.bar[0].baz")
+ */
+export function buildPath(segments) {
+    return segments.reduce((path, seg, i) => {
+        if (i === 0) return seg;
+        return /^\d+$/.test(seg) ? `${path}[${seg}]` : `${path}.${seg}`;
+    }, "");
+}
 
-    if (shouldCallWorker) {
-        worker(obj, path, currentDepth);
-    }
+/**
+ * Visit nodes at a specific depth (for cList proxies).
+ * Unwraps .h properties automatically (Haxe object convention).
+ *
+ * @param {object} obj - The object to traverse
+ * @param {number} depth - Depth at which to call worker (0 = immediate children)
+ * @param {function(any): void} worker - Function called with each node at target depth
+ */
+export function traverse(obj, depth, worker) {
+    if (obj === null || obj === undefined || typeof obj !== "object") return;
 
-    // If we reached target depth and it's positive, don't go deeper
-    if (depth >= 0 && currentDepth >= depth) return;
+    const visited = new Set();
 
-    if (!isObject || visited.has(obj)) return;
+    function walk(node, d) {
+        if (node === null || node === undefined || typeof node !== "object" || visited.has(node)) return;
+        visited.add(node);
 
-    visited.add(obj);
-    const target = obj.h || obj;
-    for (const key of Object.keys(target)) {
-        const descriptor = Object.getOwnPropertyDescriptor(target, key);
-        if (!descriptor || !("value" in descriptor)) {
-            continue;
+        const target = node.h || node;
+        if (d === depth) {
+            for (const v of Object.values(target)) {
+                if (v !== null && typeof v === "object") worker(v);
+            }
+            return;
         }
-        path.push(key);
-        traverse(descriptor.value, depth, worker, visited, path, currentDepth + 1);
-        path.pop();
+        for (const v of Object.values(target)) walk(v, d + 1);
     }
+
+    walk(obj, 0);
+}
+
+/**
+ * Visit every node with path tracking (for diagnostics).
+ * Does NOT unwrap .h - shows true object paths.
+ *
+ * @param {object} obj - The object to traverse
+ * @param {function(any, string[]): void} worker - Function called with (value, path)
+ * @param {Set} [visited] - Optional: shared visited set for scanning multiple roots
+ */
+export function traverseAll(obj, worker, visited = new Set()) {
+    const path = [];
+
+    function walk(node) {
+        if (node === null || node === undefined) return;
+        worker(node, path);
+        if (typeof node !== "object" || visited.has(node)) return;
+        visited.add(node);
+
+        for (const key of Object.keys(node)) {
+            const descriptor = Object.getOwnPropertyDescriptor(node, key);
+            if (descriptor && "value" in descriptor) {
+                path.push(key);
+                walk(descriptor.value);
+                path.pop();
+            }
+        }
+    }
+
+    walk(obj);
 }

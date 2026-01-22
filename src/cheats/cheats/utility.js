@@ -10,7 +10,7 @@
 
 import { registerCheat, registerCheats, getCheats } from "../core/registration.js";
 import { itemDefs, monsterDefs, cList, gga, gameContext } from "../core/globals.js";
-import { traverse } from "../utils/traverse.js";
+import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 
 const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
@@ -288,12 +288,11 @@ function createListFunction(params) {
                 if (blacklist_gga.has(key)) continue;
                 const attributeFindingsCount = findings.length;
 
-                traverse(
+                traverseAll(
                     gga[key],
-                    -1,
                     (val, path) => {
                         if (typeof val === "number" && isNaN(val)) {
-                            findings.push([key, ...path].join(" > "));
+                            findings.push(buildPath([key, ...path]));
                         }
                     },
                     globalVisited
