@@ -255,6 +255,14 @@ Parameters:
 
 Best used for: list-style costs and requirements (MTX, prayers, tasks) that should flip to a constant when enabled.
 
+### Traversal Utilities
+
+For complex data structures, use the utilities in `src/cheats/utils/traverse.js`:
+
+- `traverse(obj, depth, worker)`: Visit nodes at a specific depth. **Automatically unwraps Haxe `.h` properties.** This is the preferred way to apply proxies to large lists like `cList`.
+- `traverseAll(obj, worker)`: Visit every node in a tree with path tracking. Used for diagnostics and search. Does NOT unwrap `.h` to show true object structure.
+- `buildPath(segments)`: Formats an array of keys into a JS property access string (e.g., `foo.bar[0].baz`).
+
 ### Patch guards with \_isPatched
 
 From `src/cheats/proxies/items.js`:

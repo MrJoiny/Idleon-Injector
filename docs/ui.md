@@ -134,6 +134,22 @@ Save behavior:
 - Rows render number inputs, boolean toggles, or raw JSON strings based on the value type.
 - Each "SET" writes to memory via `/api/options-account/index` with optimistic UI updates.
 
+### Search view
+
+`src/ui/components/views/Search.js` provides a tool for finding specific values within the game's internal data (`gga`).
+
+Features:
+
+- **Key Whitelist**: Select which top-level game attribute categories to search in (e.g., `PlayerDATABASE`, `SkillLevels`).
+- **Favorites**: Quick-select common data categories.
+- **Value Matching**:
+    - Supports strings (case-insensitive contains).
+    - Supports numbers (exact or rounding tolerance for floats).
+    - Supports ranges (e.g., `100-200`).
+    - Supports `true`, `false`, `null`, `undefined`.
+- **Path Copying**: Clicking a result copies the full Haxe access path (e.g., `bEngine.gameAttributes.h.PlayerDATABASE.h.Lava`) to the clipboard.
+- **Performance**: Uses a "Load more" pattern to handle large result sets without freezing the UI.
+
 ### DevTools view
 
 `src/ui/components/views/DevTools.js` embeds or launches Chrome DevTools:
