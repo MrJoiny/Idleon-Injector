@@ -2,7 +2,7 @@ import van from "../../vendor/van-1.6.0.js";
 import * as API from "../../services/api.js";
 import { IS_ELECTRON } from "../../state/constants.js";
 
-const { div, iframe, button, span } = van.tags;
+const { div, iframe, button } = van.tags;
 
 export const DevTools = () => {
     const url = van.state("");
