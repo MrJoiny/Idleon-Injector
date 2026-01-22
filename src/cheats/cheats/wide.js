@@ -34,6 +34,7 @@ registerCheats({
         { name: "candy", message: "candy use everywhere" },
         { name: "candytime", message: "buffs 1 hr candys in minutes", configurable: true },
         { name: "nodmg", message: "no damage numbers" },
+        { name: "hidenames", message: "hide player names in world and UI" },
         { name: "noanim", message: "stop all game animations" },
         { name: "eventitems", message: "unlimited event item drops" },
         { name: "autoloot", message: "autoloot immeditely to chest. Check config for more" },
