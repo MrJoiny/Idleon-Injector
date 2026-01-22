@@ -3,6 +3,7 @@ import store from "../state/store.js";
 import { VIEWS, IS_ELECTRON } from "../state/constants.js";
 import { Icons } from "../assets/icons.js";
 import { withTooltip } from "./Tooltip.js";
+import { NotificationHistory } from "./NotificationHistory.js";
 
 const { nav, div, button, span, a } = van.tags;
 
@@ -58,8 +59,12 @@ export const Sidebar = () => {
         },
         div(
             { class: "brand" },
-            div({ class: "brand-logo" }, Icons.Logo()),
-            div({ class: "brand-text" }, span("IDLEON"), span({ class: "highlight" }, "INJECTOR"))
+            div(
+                { class: "brand-main" },
+                div({ class: "brand-logo" }, Icons.Logo()),
+                div({ class: "brand-text" }, span("IDLEON"), span({ class: "highlight" }, "INJECTOR"))
+            ),
+            NotificationHistory()
         ),
         div(
             { class: "nav-menu" },

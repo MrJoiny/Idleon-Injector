@@ -15,7 +15,7 @@
     width: calc(var(--nav-width));
     max-width: calc(var(--nav-width));
     backdrop-filter: blur(10px);
-    z-index: 2000;
+    z-index: 10000;
     display: none;
     opacity: 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);

@@ -23,6 +23,7 @@ const appState = vanX.reactive({
     isLoading: false,
     heartbeat: false,
     toast: { message: "", type: "", id: 0 },
+    notificationHistory: [],
     config: null,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
     configForcedPath: null,
@@ -38,9 +39,17 @@ const dataState = vanX.reactive({
     recentCheats: safeParseJSON("recentCheats", []),
 });
 
+const MAX_NOTIFICATION_HISTORY = 10;
+
 const Actions = {
     notify: (message, type = "success") => {
-        appState.toast = { message, type, id: Date.now() };
+        const notification = { message, type, id: Date.now() };
+        appState.toast = notification;
+
+        appState.notificationHistory.unshift(notification);
+        if (appState.notificationHistory.length > MAX_NOTIFICATION_HISTORY) {
+            appState.notificationHistory.pop();
+        }
     },
 
     withLoading: async (fn) => {

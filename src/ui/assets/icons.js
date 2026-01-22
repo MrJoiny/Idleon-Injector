@@ -1,6 +1,6 @@
 import van from "../vendor/van-1.6.0.js";
 
-const { svg, path, circle, line, rect, polyline, polygon } = van.tags("http://www.w3.org/2000/svg");
+const { svg, path, circle, line, rect, polyline, polygon, g, defs, mask } = van.tags("http://www.w3.org/2000/svg");
 
 const SvgBase = (content, props = {}) => {
     const { class: className, ...rest } = props;
@@ -26,10 +26,31 @@ const SvgBase = (content, props = {}) => {
 export const Icons = {
     Logo: (props) =>
         SvgBase(
-            path({
-                d: "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z",
-            }),
-            { "stroke-width": "2", class: "icon-logo", ...props }
+            [
+                defs(
+                    mask({ id: "syringe-mask" }, [
+                        path({
+                            fill: "white",
+                            d: "M108.66,15 L169.34,50 Q178,55 178,65 L178,135 Q178,145 169.34,150 L108.66,185 Q100,190 91.34,185 L30.66,150 Q22,145 22,135 L22,65 Q22,55 30.66,50 L91.34,15 Q100,10 108.66,15 Z",
+                        }),
+                        g({ fill: "none", stroke: "black", "stroke-width": "8", transform: "rotate(-45 100 100)" }, [
+                            rect({ x: "85", y: "60", width: "30", height: "80", rx: "4", fill: "black", stroke: "none" }),
+                            line({ x1: "100", y1: "40", x2: "100", y2: "60" }),
+                            line({ x1: "85", y1: "40", x2: "115", y2: "40" }),
+                            line({ x1: "100", y1: "140", x2: "100", y2: "170" }),
+                        ]),
+                    ])
+                ),
+                rect({
+                    x: "0",
+                    y: "0",
+                    width: "200",
+                    height: "200",
+                    mask: "url(#syringe-mask)",
+                    fill: "currentColor",
+                }),
+            ],
+            { viewBox: "0 0 200 200", stroke: "none", "stroke-width": "0", class: "icon-logo", ...props }
         ),
 
     Cheats: (props) =>
@@ -194,4 +215,10 @@ export const Icons = {
 
     Check: (props) =>
         SvgBase(polyline({ points: "20 6 9 17 4 12" }), { "stroke-width": "2", "aria-hidden": "true", ...props }),
+
+    Bell: (props) =>
+        SvgBase(
+            [path({ d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }), path({ d: "M13.73 21a2 2 0 0 1-3.46 0" })],
+            { "stroke-width": "2", "aria-hidden": "true", ...props }
+        ),
 };

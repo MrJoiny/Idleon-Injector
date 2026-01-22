@@ -11,10 +11,10 @@
     display: flex;
     flex-direction: column;
     padding: 20px;
-    z-index: 10;
+    z-index: 2000;
     backdrop-filter: blur(10px);
     transition: width 0.2s var(--ease-tech), padding 0.2s var(--ease-tech);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .sidebar-collapsed {
@@ -59,7 +59,8 @@
 
 .sidebar-collapsed .brand-text,
 .sidebar-collapsed .tab-label,
-.sidebar-collapsed #system-status-text {
+.sidebar-collapsed #system-status-text,
+.sidebar-collapsed .notification-history {
     opacity: 0;
     max-width: 0;
     margin: 0 !important;
@@ -92,6 +93,12 @@
     padding-bottom: 20px;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand-main {
     display: flex;
     align-items: center;
     gap: 12px;
