@@ -17,6 +17,9 @@ let reconnectTimer = null;
 /** @type {Function|null} */
 let stateUpdateHandler = null;
 
+/** @type {Function|null} */
+let monitorUpdateHandler = null;
+
 /** Reconnect interval in milliseconds (same as heartbeat) */
 const RECONNECT_INTERVAL = 10000;
 
@@ -39,6 +42,8 @@ function handleMessage(event) {
 
         if (message.type === "cheat-states" && stateUpdateHandler) {
             stateUpdateHandler(message.data);
+        } else if (message.type === "monitor-state" && monitorUpdateHandler) {
+            monitorUpdateHandler(message.data);
         }
     } catch (err) {
         console.error("[WebSocket] Error parsing message:", err);
@@ -109,6 +114,35 @@ export function initWebSocket() {
  */
 export function onStateUpdate(handler) {
     stateUpdateHandler = handler;
+}
+
+/**
+ * Registers a handler for monitor updates
+ * @param {Function} handler - Callback function receiving monitor data
+ */
+export function onMonitorUpdate(handler) {
+    monitorUpdateHandler = handler;
+}
+
+/**
+ * Sends a monitor subscription request to the server
+ * @param {string} id 
+ * @param {string} path 
+ */
+export function sendMonitorSubscribe(id, path) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "monitor-subscribe", id, path }));
+    }
+}
+
+/**
+ * Sends a monitor unsubscription request to the server
+ * @param {string} id 
+ */
+export function sendMonitorUnsubscribe(id) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "monitor-unsubscribe", id }));
+    }
 }
 
 /**

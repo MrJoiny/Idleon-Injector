@@ -33,11 +33,18 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
 const ResultItem = ({ result }) => {
     const copyFeedback = van.state(null);
 
-    const handleCopy = () => {
+    const handleCopy = (e) => {
+        e.stopPropagation();
         const success = copyToClipboard(`bEngine.gameAttributes.h.${result.path}`);
         copyFeedback.val = success ? "success" : "error";
         store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
         setTimeout(() => (copyFeedback.val = null), 1500);
+    };
+
+    const handleMonitor = (e) => {
+        e.stopPropagation();
+        store.subscribeMonitor(`gga.${result.path}`);
+        store.notify(`Added ${result.path} to monitor`);
     };
 
     return div(
@@ -49,7 +56,18 @@ const ResultItem = ({ result }) => {
         span({ class: "result-path" }, result.path),
         span({ class: "result-equals" }, "="),
         span({ class: `result-value type-${result.type}` }, result.formattedValue),
-        span({ class: "result-copy-icon" }, () => (copyFeedback.val === "success" ? Icons.Check() : Icons.Copy()))
+        div(
+            { class: "result-actions" },
+            button(
+                {
+                    class: "result-action-btn monitor-btn",
+                    title: "Send to Monitor",
+                    onclick: handleMonitor,
+                },
+                Icons.Eye()
+            ),
+            span({ class: "result-copy-icon" }, () => (copyFeedback.val === "success" ? Icons.Check() : Icons.Copy()))
+        )
     );
 };
 

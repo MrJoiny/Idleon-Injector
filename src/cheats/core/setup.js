@@ -11,6 +11,7 @@ import { cheat } from "./registration.js";
 // Imports for setup logic
 import { setupAllProxies } from "../proxies/setup.js";
 import { injectWebUI } from "../ui/overlay.js";
+import { monitor } from "./valueMonitor.js";
 
 /**
  * Main setup function - initializes all cheats and proxies.
@@ -32,10 +33,10 @@ export async function setup() {
     try {
         await gameReady(this);
 
-        // Setup all game proxies
         setupAllProxies();
 
-        // Run startupCheats using gameContext
+        monitor.init();
+
         const rtn = [
             "--------------------",
             ...runStartupCheats(),
@@ -48,7 +49,6 @@ export async function setup() {
 
         console.log("Exiting setup function successfully.");
 
-        // Inject web UI if enabled
         if (cheatConfig.ingameUI) {
             injectWebUI();
         }

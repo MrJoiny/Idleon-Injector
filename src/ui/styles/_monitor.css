@@ -1,0 +1,76 @@
+.monitor-view .monitor-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.monitor-view .monitor-controls input {
+    flex: 1;
+    min-width: 300px;
+}
+
+.monitor-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.monitor-table th, 
+.monitor-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.monitor-table th {
+    font-weight: 600;
+    color: var(--c-text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.monitor-id {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--c-text-muted);
+}
+
+.monitor-path {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--c-accent);
+}
+
+.monitor-current {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--c-success);
+}
+
+.monitor-history-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    max-width: 400px;
+}
+
+.history-item {
+    background: var(--c-panel-hover);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--c-text-muted);
+    border: 1px solid var(--c-border);
+}
+
+.monitor-table .empty-msg {
+    text-align: center;
+    padding: 3rem;
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+.monitor-table .actions-col {
+    text-align: right;
+    width: 50px;
+}

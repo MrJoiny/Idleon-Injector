@@ -2,7 +2,14 @@ import vanX from "../vendor/van-x-0.6.3.js";
 import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
-import { initWebSocket, onStateUpdate, getConnectionStatus } from "../services/ws.js";
+import {
+    initWebSocket,
+    onStateUpdate,
+    onMonitorUpdate,
+    getConnectionStatus,
+    sendMonitorSubscribe,
+    sendMonitorUnsubscribe,
+} from "../services/ws.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -37,6 +44,7 @@ const dataState = vanX.reactive({
     activeCheatStates: {},
     favoriteCheats: safeParseJSON("favoriteCheats", []),
     recentCheats: safeParseJSON("recentCheats", []),
+    monitorValues: {},
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
@@ -70,6 +78,10 @@ const SystemService = {
 
         onStateUpdate((states) => {
             dataState.activeCheatStates = states || {};
+        });
+
+        onMonitorUpdate((data) => {
+            dataState.monitorValues = data || {};
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -282,6 +294,16 @@ const AccountService = {
     },
 };
 
+const MonitorService = {
+    subscribe: (path) => {
+        const id = path.replace(/[[\]]/g, "-").replace(/\./g, "-");
+        sendMonitorSubscribe(id, path);
+    },
+    unsubscribe: (id) => {
+        sendMonitorUnsubscribe(id);
+    },
+};
+
 const store = {
     app: appState,
     data: dataState,
@@ -302,6 +324,9 @@ const store = {
 
     loadAccountOptions: AccountService.loadAccountOptions,
     updateAccountOption: AccountService.updateAccountOption,
+
+    subscribeMonitor: MonitorService.subscribe,
+    unsubscribeMonitor: MonitorService.unsubscribe,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

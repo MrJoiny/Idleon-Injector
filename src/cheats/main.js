@@ -21,6 +21,7 @@ import "./cheats/register.js";
 import { getOLA, setOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
+import { monitor } from "./core/valueMonitor.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
@@ -64,6 +65,11 @@ window.cheatStateList = getcheatStateList;
 // Search API
 window.searchGga = searchGga;
 window.getGgaKeys = getGgaKeys;
+
+// Monitor API
+window.monitorWrap = (id, path) => monitor.wrap(id, path);
+window.monitorUnwrap = (id) => monitor.unwrap(id);
+window.monitorList = () => monitor.list();
 
 // State objects
 window.cheats = cheats;
