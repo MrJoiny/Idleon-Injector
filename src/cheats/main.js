@@ -20,6 +20,7 @@ import { setup as coreSetup } from "./core/setup.js";
 import "./cheats/register.js";
 import { getOLA, setOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
+import { searchGga, getGgaKeys } from "./api/search.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
@@ -59,6 +60,10 @@ window.getOptionsListAccount = getOLA;
 window.setOptionsListAccountIndex = setOLAIndex;
 // window.getOptionsListAccountIndex = getOptionsListAccountIndex;
 window.cheatStateList = getcheatStateList;
+
+// Search API
+window.searchGga = searchGga;
+window.getGgaKeys = getGgaKeys;
 
 // State objects
 window.cheats = cheats;

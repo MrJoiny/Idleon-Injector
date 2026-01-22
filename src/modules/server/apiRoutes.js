@@ -429,6 +429,64 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
+    app.get("/api/search/keys", async (req, res) => {
+        try {
+            const keysResult = await Runtime.evaluate({
+                expression: `getGgaKeys.call(${context})`,
+                awaitPromise: true,
+                returnByValue: true,
+            });
+
+            if (keysResult.exceptionDetails) {
+                log.error("Error getting GGA keys:", keysResult.exceptionDetails.text);
+                res.status(500).json({
+                    error: "Failed to get GGA keys from game",
+                    details: keysResult.exceptionDetails.text,
+                });
+            } else {
+                res.json({ keys: keysResult.result.value || [] });
+            }
+        } catch (apiError) {
+            log.error("Error in /api/search/keys:", apiError);
+            res.status(500).json({ error: "Internal server error while fetching GGA keys" });
+        }
+    });
+
+    app.post("/api/search", async (req, res) => {
+        const { query, keys } = await req.json();
+
+        if (!query || !keys || !Array.isArray(keys) || keys.length === 0) {
+            return res.status(400).json({
+                error: "Missing required parameters: query (string) and keys (array)",
+            });
+        }
+
+        try {
+            const keysJson = JSON.stringify(keys);
+            const escapedQuery = query.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+            const searchResult = await Runtime.evaluate({
+                expression: `searchGga.call(${context}, '${escapedQuery}', ${keysJson})`,
+                awaitPromise: true,
+                returnByValue: true,
+            });
+
+            if (searchResult.exceptionDetails) {
+                log.error("Error searching GGA:", searchResult.exceptionDetails.text);
+                res.status(500).json({
+                    error: "Failed to search GGA",
+                    details: searchResult.exceptionDetails.text,
+                });
+            } else {
+                const data = searchResult.result.value || { results: [], totalCount: 0 };
+                res.json(data);
+            }
+        } catch (apiError) {
+            log.error("Error in /api/search:", apiError);
+            res.status(500).json({ error: "Internal server error while searching GGA" });
+        }
+    });
+
     app.post("/api/open-url", async (req, res) => {
         const { url } = await req.json();
         if (!url) {

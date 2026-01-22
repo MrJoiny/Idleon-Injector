@@ -55,10 +55,6 @@ export async function executeCheatAction(action) {
     });
 }
 
-export async function fetchAvailableCheats() {
-    return _request("/cheats");
-}
-
 export async function fetchConfig() {
     return _request("/config");
 }
@@ -110,5 +106,18 @@ export async function openExternalUrl(url) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
+    });
+}
+
+export async function fetchGgaKeys() {
+    const data = await _request("/search/keys");
+    return data.keys || [];
+}
+
+export async function searchGga(query, keys) {
+    return _request("/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, keys }),
     });
 }

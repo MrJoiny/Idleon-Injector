@@ -1,0 +1,484 @@
+/**
+ * Search Tab Styles
+ * Layout: 1/3 left (keys) | 2/3 right (1/3 search input, 2/3 results)
+ */
+
+/* Main Layout */
+.search-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+    height: 100%;
+    min-height: 0;
+}
+
+.search-right-column {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 1rem;
+    min-height: 0;
+}
+
+/* Section Common Styles */
+.search-keys-section,
+.search-input-section,
+.search-results-section {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.search-keys-section {
+    overflow: hidden;
+}
+
+.search-results-section {
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--c-text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.section-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* Keys Section */
+.keys-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+
+.keys-group {
+    margin-bottom: 1rem;
+}
+
+.keys-group-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--c-accent);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.keys-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.25rem;
+}
+
+.keys-loading {
+    color: var(--c-text-muted);
+    font-size: 0.8rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+/* Key Checkbox */
+.key-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    font-size: 0.75rem;
+}
+
+.key-checkbox:hover {
+    background: var(--c-panel-hover);
+}
+
+.key-checkbox.checked {
+    background: var(--c-accent-dim);
+}
+
+.key-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--c-accent);
+    cursor: pointer;
+}
+
+.key-checkbox-label {
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Expandable All Keys */
+.keys-group.expandable {
+    border-top: 1px solid var(--c-border);
+    padding-top: 0.75rem;
+}
+
+.keys-group.expandable > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.keys-group.expandable > summary::-webkit-details-marker {
+    display: none;
+}
+
+.keys-group.expandable > summary::before {
+    content: "▶";
+    display: inline-block;
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+    font-size: 0.6rem;
+}
+
+.keys-group.expandable[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.keys-expand-content {
+    margin-top: 0.5rem;
+}
+
+.keys-filter {
+    margin-bottom: 0.5rem;
+}
+
+/* Inputs - Inherit global styles, only structure here */
+.keys-filter-input {
+    width: 100%;
+    /* padding/border/bg handled by _forms.css input selector */
+}
+
+.keys-footer {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.selected-count {
+    font-size: 0.7rem;
+    color: var(--c-text-muted);
+}
+
+/* Search Input Section */
+.search-input-content {
+    padding: 1rem;
+}
+
+.search-input-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-query-input {
+    flex: 1;
+    /* padding/border/bg handled by _forms.css input selector */
+}
+
+/* Buttons - Mirroring _buttons.css */
+.search-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--c-accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--c-accent-dim);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-display);
+}
+
+.search-btn:hover:not(:disabled) {
+    background: #ffe066;
+    box-shadow: 0 0 15px var(--c-accent-glow);
+    transform: translateY(-1px);
+    opacity: 1;
+}
+
+.search-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.search-btn.loading {
+    pointer-events: none;
+}
+
+.search-btn .icon-base {
+    width: 1rem;
+    height: 1rem;
+}
+
+.search-type-hint {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+}
+
+.type-label {
+    color: var(--c-text-muted);
+    text-transform: uppercase;
+}
+
+.type-value {
+    font-weight: 500;
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--c-panel-hover);
+    text-transform: uppercase;
+}
+
+.type-value.type-string {
+    color: var(--c-success);
+}
+
+.type-value.type-number {
+    color: var(--c-accent);
+}
+
+.type-value.type-boolean {
+    color: var(--c-warning);
+}
+
+.type-value.type-null,
+.type-value.type-undefined {
+    color: var(--c-text-muted);
+}
+
+/* Results Section */
+.results-count {
+    font-size: 0.7rem;
+    color: var(--c-text-muted);
+    margin-left: auto;
+    text-transform: uppercase;
+}
+
+.refresh-btn {
+    padding: 0.3rem;
+    background: transparent;
+    border: none;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    color: var(--c-accent);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.refresh-btn .icon-base {
+    width: 1rem;
+    height: 1rem;
+}
+
+.results-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Result Item - Mirroring .cheat-button from cheats.css */
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 12px;
+    height: 40px; /* Match cheat button height */
+    background: var(--c-panel);
+    border: 1px solid #333;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--c-text-dim);
+}
+
+.search-result-item:hover {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+    background: var(--c-accent-dim-solid);
+}
+
+.search-result-item.copied {
+    border-color: var(--c-success);
+    background: rgba(204, 255, 0, 0.1);
+    color: var(--c-success);
+}
+
+.result-path {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    word-break: break-all;
+    /* Inherit color from parent for hover effect */
+    color: inherit;
+}
+
+.result-equals {
+    color: var(--c-text-dim);
+    font-size: 0.75rem;
+}
+
+.result-value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.result-value.type-string {
+    color: var(--c-success);
+}
+
+.result-value.type-number {
+    color: var(--c-accent);
+}
+
+.result-value.type-boolean {
+    color: var(--c-warning);
+}
+
+.result-value.type-null,
+.result-value.type-undefined {
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+.result-copy-icon {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    /* Inherit color from parent */
+    color: inherit;
+}
+
+.search-result-item:hover .result-copy-icon {
+    opacity: 1;
+}
+
+.search-result-item.copied .result-copy-icon {
+    opacity: 1;
+    color: var(--c-success);
+}
+
+.result-copy-icon .icon-base {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+/* Small Buttons - Mirroring .btn-secondary from _buttons.css */
+.btn-small {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: transparent;
+    color: var(--c-text-main);
+    border: 1px solid var(--c-text-dim);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-display);
+}
+
+.btn-small:hover {
+    border-color: var(--c-text-main);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--c-text-main);
+}
+
+.btn-small.active {
+    background: var(--c-accent);
+    color: #000;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 10px var(--c-accent-dim);
+}
+
+/* Load More Button - Mirroring .load-more-btn from cheats.css */
+.search-results-section .load-more-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    cursor: pointer;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.search-results-section .load-more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--c-text-main);
+}
+
+/* Range Mode Styles */
+.range-toggle {
+    margin-left: auto;
+}
+
+.range-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.range-separator {
+    color: var(--c-text-muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}

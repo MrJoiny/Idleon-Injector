@@ -11,7 +11,8 @@ const SHORTCUTS_TOOLTIP_TEXT =
     "1 - Cheats\n" +
     "2 - Account Options\n" +
     "3 - Config\n" +
-    "4 - Chromedebug\n" +
+    "4 - Search\n" +
+    "5 - Chromedebug\n" +
     "/ - Focus search\n" +
     "Ctrl+S - Save config (Config tab)\n";
 
@@ -65,6 +66,7 @@ export const Sidebar = () => {
             NavBtn(VIEWS.CHEATS, Icons.Cheats),
             NavBtn(VIEWS.ACCOUNT, Icons.Account),
             NavBtn(VIEWS.CONFIG, Icons.Config),
+            NavBtn(VIEWS.SEARCH, Icons.Search),
             NavBtn(VIEWS.DEVTOOLS, Icons.DevTools),
             withTooltip(
                 a(

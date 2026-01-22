@@ -56,3 +56,45 @@ export function configPathExists(pathParts, cheatConfig) {
     // Path exists if we reached a value (could be object, boolean, function, etc.)
     return current !== undefined;
 }
+
+/**
+ * Detect the type of a search query string for display.
+ * @param {string} query - The search query
+ * @returns {string} The detected type name
+ */
+export function detectQueryType(query) {
+    const trimmed = query.trim();
+    if (trimmed === "") return "empty";
+    if (trimmed === "null") return "null";
+    if (trimmed === "undefined") return "undefined";
+    if (trimmed === "true" || trimmed === "false") return "boolean";
+    // Check for range query format: "min-max"
+    const rangeMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/);
+    if (rangeMatch) return "range";
+    if (!isNaN(Number(trimmed))) return "number";
+    return "string";
+}
+
+/**
+ * Copy text to clipboard using fallback method for cross-origin iframes.
+ * Uses a temporary textarea element since Clipboard API is blocked.
+ * @param {string} text - Text to copy
+ * @returns {boolean} Whether copy succeeded
+ */
+export function copyToClipboard(text) {
+    try {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const success = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return success;
+    } catch {
+        return false;
+    }
+}

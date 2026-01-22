@@ -10,6 +10,7 @@ import { Cheats } from "./views/Cheats.js";
 import { Config } from "./views/Config.js";
 import { Account } from "./views/Account.js";
 import { DevTools } from "./views/DevTools.js";
+import { Search } from "./views/Search.js";
 
 const { div, main, header, h2 } = van.tags;
 
@@ -18,6 +19,7 @@ const viewFactories = {
     [VIEWS.CONFIG.id]: Config,
     [VIEWS.ACCOUNT.id]: Account,
     [VIEWS.DEVTOOLS.id]: DevTools,
+    [VIEWS.SEARCH.id]: Search,
 };
 
 const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
@@ -37,7 +39,8 @@ export const App = () => {
         if (e.key === "1") store.app.activeTab = VIEWS.CHEATS.id;
         if (e.key === "2") store.app.activeTab = VIEWS.ACCOUNT.id;
         if (e.key === "3") store.app.activeTab = VIEWS.CONFIG.id;
-        if (e.key === "4") store.app.activeTab = VIEWS.DEVTOOLS.id;
+        if (e.key === "4") store.app.activeTab = VIEWS.SEARCH.id;
+        if (e.key === "5") store.app.activeTab = VIEWS.DEVTOOLS.id;
 
         if (e.key === "/") {
             e.preventDefault();
