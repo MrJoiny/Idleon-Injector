@@ -151,9 +151,9 @@ function attach(name) {
             if (!resolved) {
                 try {
                     idleon.kill("SIGTERM");
-                    } catch {
-                        // Ignore kill errors; process may have already exited
-                    }
+                } catch {
+                    // Ignore kill errors; process may have already exited
+                }
 
                 reject(new Error("Timeout waiting for game to start"));
             }
@@ -192,7 +192,7 @@ async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {
         throw new Error("Steam not found");
     }
 
-    log.info("Launching Idleon via Steam...");
+    log.info("Launching Idleon via Steam");
     const args = ["-applaunch", IDLEON_APP_ID.toString(), `--remote-debugging-port=${cdp_port}`];
 
     const child = spawn(steamCmd, args, {
@@ -233,7 +233,7 @@ function resolveBrowserPath(injectorConfig = getInjectorConfig()) {
         }
     }
 
-    throw new Error("Could not find a compatible Chromium-based browser.");
+    throw new Error("Could not find a compatible Chromium-based browser");
 }
 
 /**
@@ -297,7 +297,7 @@ async function attachToWeb() {
     const idleonUrl = injectorConfig.webUrl;
 
     if (!idleonUrl) {
-        throw new Error("webUrl is required when target is 'web'.");
+        throw new Error("webUrl is required when target is 'web'");
     }
 
     const timeout = isLinux() ? getLinuxTimeout() : DEFAULT_TIMEOUT;
@@ -320,7 +320,7 @@ async function attachToWeb() {
         args.push("--disable-gpu");
     }
 
-    log.info("Launching browser...");
+    log.info("Launching browser");
     spawn(browserPath, args, { detached: true, stdio: "ignore" });
 
     await waitForCdpEndpoint(timeout);
@@ -374,7 +374,7 @@ async function attachToGame() {
 
     if (platform === "darwin") {
         throw new Error(
-            "Steam target is not supported on macOS. Please set target: 'web' in your config to use the web version."
+            "Steam target is not supported on macOS. Please set target: 'web' in your config to use the web version"
         );
     }
 
@@ -385,7 +385,7 @@ async function attachToGame() {
             hook = await autoAttachLinux(timeout);
         } catch (autoErr) {
             log.warn("Steam auto-launch failed:", autoErr.message);
-            log.info("Waiting for manual game launch...");
+            log.info("Waiting for manual game launch");
             hook = await waitForCdpEndpoint(timeout);
         }
     } else if (platform === "win32") {
@@ -399,7 +399,7 @@ async function attachToGame() {
             }
         }
         if (!exePath) {
-            log.info("Launching Idleon via Steam...");
+            log.info("Launching Idleon via Steam");
             launchIdleonViaSteamProtocol();
             hook = await waitForCdpEndpoint(timeout);
         }

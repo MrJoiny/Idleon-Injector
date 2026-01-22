@@ -305,7 +305,7 @@ function createListFunction(params) {
                     }
                 }
             }
-            results.push(findings.length === 0 ? "No NaNs found." : `${findings.length} NaNs found.`);
+            results.push(findings.length === 0 ? "No NaNs found" : `${findings.length} NaNs found`);
         },
     };
 
@@ -438,14 +438,14 @@ function eval_gg_func(params, mode) {
 // Evaluate Get Game Attributes
 registerCheat({
     name: "egga",
-    message: "Show the game attribute, separate with spaces.",
+    message: "Show the game attribute, separate with spaces",
     fn: (params) => eval_gg_func(params, 0),
 });
 
 // Evaluate Get Game Key
 registerCheat({
     name: "eggk",
-    message: "Show the game key, separate with spaces.",
+    message: "Show the game key, separate with spaces",
     fn: (params) => eval_gg_func(params, 1),
 });
 

@@ -59,7 +59,7 @@ function scheduleReconnect() {
     reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         if (!isConnected) {
-            console.log("[WebSocket] Attempting to reconnect...");
+            console.log("[WebSocket] Attempting to reconnect");
             connect();
         }
     }, RECONNECT_INTERVAL);
@@ -126,8 +126,8 @@ export function onMonitorUpdate(handler) {
 
 /**
  * Sends a monitor subscription request to the server
- * @param {string} id 
- * @param {string} path 
+ * @param {string} id
+ * @param {string} path
  */
 export function sendMonitorSubscribe(id, path) {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -137,7 +137,7 @@ export function sendMonitorSubscribe(id, path) {
 
 /**
  * Sends a monitor unsubscription request to the server
- * @param {string} id 
+ * @param {string} id
  */
 export function sendMonitorUnsubscribe(id) {
     if (ws && ws.readyState === WebSocket.OPEN) {

@@ -53,7 +53,7 @@ export const AddCheatSearchBar = (onAdd, onCancel) => {
     const searchInput = input({
         type: "text",
         class: "cheat-search-input",
-        placeholder: "Search cheats...",
+        placeholder: "Search cheats",
 
         value: searchTerm,
         oninput: (e) => (searchTerm.val = e.target.value),

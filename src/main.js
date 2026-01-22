@@ -76,7 +76,7 @@ function initializeConfiguration() {
 }
 
 async function initializeCheatContext(Runtime, context) {
-    log.debug("Initializing cheat context...");
+    log.debug("Initializing cheat context");
 
     const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
     if (!contextExists.result.value) {
@@ -106,7 +106,7 @@ async function startWebServer(app, webPort, wsConfig = null) {
 
 async function handlePageLoad(gameContext, config, app) {
     const { Runtime, context, client } = gameContext;
-    log.debug("Page loaded, setting up cheats...");
+    log.debug("Page loaded, setting up cheats");
 
     const cheatInitialized = await initializeCheatContext(Runtime, context);
     if (!cheatInitialized) return;
@@ -141,10 +141,10 @@ function handleError(error) {
     log.error("Fatal error:", error);
 
     if (error?.message?.includes("No inspectable targets")) {
-        log.info("Hint: Is Steam running? Make sure the game is not already open.");
+        log.info("Hint: Is Steam running? Make sure the game is not already open");
     }
 
-    log.info("Press Enter to exit...");
+    log.info("Press Enter to exit");
     const readline = require("readline").createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -172,7 +172,7 @@ async function main() {
 
         const target = (config.injectorConfig.target || "steam").toLowerCase();
         if (os.platform() === "darwin" && target !== "web") {
-            throw new Error("macOS only supports the 'web' target. Set injectorConfig.target to 'web'.");
+            throw new Error("macOS only supports the 'web' target. Set injectorConfig.target to 'web'");
         }
 
         const hook = await attachToTarget();
@@ -188,7 +188,7 @@ async function main() {
 
         const { Runtime, Page } = client;
 
-        log.debug("Registering page load handler...");
+        log.debug("Registering page load handler");
         Page.loadEventFired(async () => {
             try {
                 const context = createCheatContext();
@@ -198,7 +198,7 @@ async function main() {
             }
         });
 
-        log.debug("Reloading page to trigger injection...");
+        log.debug("Reloading page to trigger injection");
         await Page.reload({ ignoreCache: true });
     } catch (error) {
         handleError(error);

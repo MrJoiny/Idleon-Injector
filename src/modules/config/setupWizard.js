@@ -15,7 +15,7 @@ async function runSetupWizard(targetPath) {
     log.info("\n=============================");
     log.info("   Setup Wizard   ");
     log.info("=============================\n");
-    log.info("It looks like this is your first time running the injector.");
+    log.info("It looks like this is your first time running the injector");
     log.info("Let's set up your basic configuration.\n");
     try {
         const isMac = os.platform() === "darwin";
@@ -76,7 +76,7 @@ exports.cheatConfig = ${JSON.stringify(newCheatConfig, null, 4)};
         return true;
     } catch {
         // Handle Ctrl+C or other interruptions
-        log.warn("Setup cancelled. Using default configuration.");
+        log.warn("Setup cancelled. Using default configuration");
         return false;
     }
 }

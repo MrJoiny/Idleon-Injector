@@ -21,28 +21,28 @@ const wipeHandlers = {
     inv() {
         const wipedef = gga.InventoryOrder;
         for (const index of Object.keys(wipedef)) wipedef[index] = "Blank";
-        return "The inventory has been wiped.";
+        return "The inventory has been wiped";
     },
     invslot(params) {
         const wipedef = gga.InventoryOrder;
         const slot = parseInt(params[1]);
-        if (isNaN(slot)) return "Specify a valid slot number.";
-        if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
+        if (isNaN(slot)) return "Specify a valid slot number";
+        if (slot < 0 || slot >= wipedef.length) return "Invalid slot";
         wipedef[slot] = "Blank";
-        return "Wipe inventory slot could result in a crash: Should be fine after restart.";
+        return "Wipe inventory slot could result in a crash: Should be fine after restart";
     },
     chest() {
         const wipedef = gga.ChestOrder;
         for (const index of Object.keys(wipedef)) wipedef[index] = "Blank";
-        return "Wipe chest could result in a crash: Should be fine after restart.";
+        return "Wipe chest could result in a crash: Should be fine after restart";
     },
     chestslot(params) {
         const wipedef = gga.ChestOrder;
         const slot = parseInt(params[1]);
-        if (isNaN(slot)) return "Specify a valid slot number.";
-        if (slot < 0 || slot >= wipedef.length) return "Invalid slot.";
+        if (isNaN(slot)) return "Specify a valid slot number";
+        if (slot < 0 || slot >= wipedef.length) return "Invalid slot";
         wipedef[slot] = "Blank";
-        return "Wipe chest slot could result in a crash: Should be fine after restart.";
+        return "Wipe chest slot could result in a crash: Should be fine after restart";
     },
     forge() {
         const forgeOrder = gga.ForgeItemOrder;
@@ -51,7 +51,7 @@ const wipeHandlers = {
             forgeOrder[index] = "Blank";
             forgeQty[index] = 0;
         }
-        return "The forge has been wiped. \nIf the game crashes, it should be fine after restart.";
+        return "The forge has been wiped. \nIf the game crashes, it should be fine after restart";
     },
     overpurchases() {
         const purchased = gga.GemItemsPurchased;
@@ -71,7 +71,7 @@ const wipeHandlers = {
                 purchased[index] = numberAllowed;
             }
         }
-        return "Overpurchased items have been set to their max safe value.";
+        return "Overpurchased items have been set to their max safe value";
     },
     cogs() {
         const cogOrder = gga.CogOrder;
@@ -96,11 +96,11 @@ const wipeHandlers = {
     },
     ribbon() {
         const ribbons = gga.Ribbon;
-        if (!ribbons) return "Ribbon array not found.";
+        if (!ribbons) return "Ribbon array not found";
         for (let i = 0; i <= 27; i++) {
             ribbons[i] = 0;
         }
-        return "Ribbon storage (0-27) has been wiped.";
+        return "Ribbon storage (0-27) has been wiped";
     },
     invlocked() {
         const inventoryOrder = gga.InventoryOrder;
@@ -120,21 +120,21 @@ const wipeHandlers = {
     },
     chips() {
         const lab = gga.Lab;
-        if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found.";
+        if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found";
         const chipsCount = lab[15];
         for (let i = 0; i <= 21; i++) {
             chipsCount[i] = 0;
         }
-        return "Lab chips have been wiped.";
+        return "Lab chips have been wiped";
     },
     jargems() {
         const holes = gga.Holes;
-        if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found.";
+        if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found";
         const gemCounts = holes[24];
         for (let i = 0; i < gemCounts.length; i++) {
             gemCounts[i] = 0;
         }
-        return "Jar gems have been wiped.";
+        return "Jar gems have been wiped";
     },
 };
 
@@ -146,7 +146,7 @@ const wipeHandlers = {
 function wipeFunction(params) {
     const handler = wipeHandlers[params[0]];
     if (handler) return handler(params);
-    return "Unknown sub-command given\nKnown sub-commands are 'inv', 'chest', 'forge'.";
+    return "Unknown sub-command given\nKnown sub-commands are 'inv', 'chest', 'forge'";
 }
 
 /**
@@ -183,17 +183,17 @@ registerCheats({
     name: "wipe",
     message: "Wipe certain stuff from your account. Use with caution!",
     subcheats: [
-        { name: "inv", message: "Wipe your inventory.", fn: wipeFunction },
+        { name: "inv", message: "Wipe your inventory", fn: wipeFunction },
         { name: "invslot", message: "Wipe your inventory slot (0-indexed)", needsParam: true, fn: wipeFunction },
-        { name: "chest", message: "Wipe your chest.", fn: wipeFunction },
+        { name: "chest", message: "Wipe your chest", fn: wipeFunction },
         { name: "chestslot", message: "Wipe your chest slot (0-indexed)", needsParam: true, fn: wipeFunction },
-        { name: "forge", message: "Wipe your forge.", fn: wipeFunction },
-        { name: "overpurchases", message: "Set overpurchased gem shop items to max safe value.", fn: wipeFunction },
+        { name: "forge", message: "Wipe your forge", fn: wipeFunction },
+        { name: "overpurchases", message: "Set overpurchased gem shop items to max safe value", fn: wipeFunction },
         { name: "cogs", message: "Remove all unused cogs", fn: wipeFunction },
-        { name: "ribbon", message: "Wipe your ribbon storage (0-27).", fn: wipeFunction },
-        { name: "invlocked", message: "Wipe your inventory slots that are NOT locked.", fn: wipeFunction },
-        { name: "chips", message: "Wipe your lab chips.", fn: wipeFunction },
-        { name: "jargems", message: "Wipe your jar gems.", fn: wipeFunction },
+        { name: "ribbon", message: "Wipe your ribbon storage (0-27)", fn: wipeFunction },
+        { name: "invlocked", message: "Wipe your inventory slots that are NOT locked", fn: wipeFunction },
+        { name: "chips", message: "Wipe your lab chips", fn: wipeFunction },
+        { name: "jargems", message: "Wipe your jar gems", fn: wipeFunction },
     ],
 });
 

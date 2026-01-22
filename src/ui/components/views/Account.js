@@ -65,9 +65,9 @@ export const Account = () => {
                 div({ class: "modal-header" }, h3("⚠ CRITICAL WARNING")),
                 div(
                     { class: "modal-body" },
-                    p("You are entering the Options List Editor."),
-                    p("Modifying these indices directly bypasses game logic safety checks."),
-                    p("Proceed with caution.")
+                    p("You are entering the Options List Editor"),
+                    p("Modifying these indices directly bypasses game logic safety checks"),
+                    p("Proceed with caution")
                 ),
                 div({ class: "modal-footer" }, button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS"))
             );
@@ -75,7 +75,7 @@ export const Account = () => {
             return div(
                 { class: "options-account-layout scroll-container" },
 
-                div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES."),
+                div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
 
                 div(
                     { class: "control-bar sticky-header" },
@@ -101,7 +101,7 @@ export const Account = () => {
                         { class: "options-account-search" },
 
                         SearchBar({
-                            placeholder: "FILTER_INDEX...",
+                            placeholder: "FILTER_INDEX",
                             onInput: (val) => (ui.filterText = val),
                         })
                     )
@@ -112,7 +112,7 @@ export const Account = () => {
 
                     () => {
                         if (store.app.isLoading) {
-                            return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING..." }));
+                            return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }));
                         }
 
                         if (ui.displayList.length === 0) {
@@ -195,19 +195,19 @@ const OptionItem = (index, rawVal, schema) => {
                       onchange: (e) => (currentVal.val = e.target.checked),
                   })
                 : type === "number"
-                ? NumberInput({
-                      class: "option-input",
-                      value: currentVal,
-                      oninput: (e) => (currentVal.val = e.target.value),
-                      onDecrement: () => (currentVal.val = Number(currentVal.val) - 1),
-                      onIncrement: () => (currentVal.val = Number(currentVal.val) + 1),
-                  })
-                : input({
-                      type: "text",
-                      class: "option-input",
-                      value: currentVal,
-                      oninput: (e) => (currentVal.val = e.target.value),
-                  }),
+                  ? NumberInput({
+                        class: "option-input",
+                        value: currentVal,
+                        oninput: (e) => (currentVal.val = e.target.value),
+                        onDecrement: () => (currentVal.val = Number(currentVal.val) - 1),
+                        onIncrement: () => (currentVal.val = Number(currentVal.val) + 1),
+                    })
+                  : input({
+                        type: "text",
+                        class: "option-input",
+                        value: currentVal,
+                        oninput: (e) => (currentVal.val = e.target.value),
+                    }),
             withTooltip(button({ class: "option-apply-button", onclick: handleApply }, "SET"), "Write to game memory")
         )
     );

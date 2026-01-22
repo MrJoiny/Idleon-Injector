@@ -45,15 +45,15 @@ registerCheats({
         { name: "dartshop", message: "dartshop cost nullify" },
         {
             name: "guildpoints",
-            message: "Adds 1200 guild points to the guild.",
+            message: "Adds 1200 guild points to the guild",
             fn: function () {
                 firebase.guildPointAdjust(1200);
-                return "Added 1200 guild points to the guild.";
+                return "Added 1200 guild points to the guild";
             },
         },
         {
             name: "perfectobols",
-            message: "Roll all obols perfectly for class. Family and inventory obols update on character change.",
+            message: "Roll all obols perfectly for class. Family and inventory obols update on character change",
             fn: function () {
                 cheatState.wide.perfectobols = !cheatState.wide.perfectobols;
                 if (cheatState.wide.perfectobols) rollAllObols();

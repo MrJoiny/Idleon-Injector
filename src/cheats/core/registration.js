@@ -46,7 +46,7 @@ export function cheat(action, context) {
 
         if (foundCheat) {
             const result = foundCheat.fn.call(context, params);
-            return result ?? "Done.";
+            return result ?? "Done";
         } else {
             return `${action.split(" ")[0]} is not a valid option.`;
         }
@@ -124,7 +124,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
                         cheatMap.subcheats.map((p) => `${cmd} ${p.name} (${p.message})`).join("\n")
                     );
                 }
-                return "This cheat doesn't accept values.";
+                return "This cheat doesn't accept values";
             }
 
             const config = higherKeys.reduce((obj, key) => (obj[key] ??= {}), cheatConfig);

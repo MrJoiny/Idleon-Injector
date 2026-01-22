@@ -205,7 +205,10 @@ export const Config = () => {
                         if (forcedPath && forcedPath.length > 0) {
                             return div(
                                 { class: "forced-path-indicator" },
-                                span({ class: "forced-path-text" }, `SHOWING: ${[...forcedPath].join(" ").toUpperCase()}`),
+                                span(
+                                    { class: "forced-path-text" },
+                                    `SHOWING: ${[...forcedPath].join(" ").toUpperCase()}`
+                                ),
                                 button(
                                     {
                                         class: "forced-path-clear",
@@ -237,7 +240,7 @@ export const Config = () => {
                             div(
                                 { class: "config-filter-search" },
                                 SearchBar({
-                                    placeholder: "SEARCH_CONFIG...",
+                                    placeholder: "SEARCH_CONFIG",
                                     onInput: handleSearchInput,
                                     debounceMs: 0,
                                     icon: Icons.HelpCircle(),
@@ -274,7 +277,7 @@ export const Config = () => {
 
         () => {
             if (store.app.isLoading || !draftReady.val) {
-                return Loader({ text: "LOADING CONFIG..." });
+                return Loader({ text: "LOADING CONFIG" });
             }
             return buildContent();
         },

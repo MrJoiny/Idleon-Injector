@@ -51,8 +51,8 @@ export const DevTools = () => {
             { class: "danger-zone-header" },
             div({ class: "devtools-popout-title" }, "⚠ DEVTOOLS POP-OUT"),
 
-            div("Embedded DevTools is disabled inside the game UI to prevent crashes."),
-            div("Use the pop-out window for full DevTools access."),
+            div("Embedded DevTools is disabled inside the game UI to prevent crashes"),
+            div("Use the pop-out window for full DevTools access"),
             div(
                 { class: "devtools-actions" },
                 button(
@@ -88,7 +88,7 @@ export const DevTools = () => {
         }
 
         if (!url.val) {
-            return div({ id: "devtools-message" }, "ESTABLISHING UPLINK...");
+            return div({ id: "devtools-message" }, "ESTABLISHING UPLINK");
         }
 
         return iframe({

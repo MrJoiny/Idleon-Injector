@@ -185,7 +185,7 @@ export const Cheats = () => {
             div(
                 { class: "control-bar" },
                 SearchBar({
-                    placeholder: "SEARCH_COMMANDS...",
+                    placeholder: "SEARCH_COMMANDS",
                     onInput: handleSearch,
                     style: "flex: 1;",
                 }),
@@ -203,7 +203,7 @@ export const Cheats = () => {
 
             () => {
                 if (store.app.isLoading && store.data.cheats.length === 0) {
-                    return Loader({ text: "INITIALIZING..." });
+                    return Loader({ text: "INITIALIZING" });
                 }
 
                 // Get fresh snapshot of cheats and filter term

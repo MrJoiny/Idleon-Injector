@@ -77,7 +77,7 @@ export function setupCListProxy() {
     // Prayer description override (part of prayer cheat)
     traverse(cList.PrayerInfo, 1, (data) => {
         createProxy(data, 2, (original) => {
-            if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then.";
+            if (cheatState.w3.prayer) return "None._Even_curses_need_time_off_every_now_and_then";
             return original;
         });
     });

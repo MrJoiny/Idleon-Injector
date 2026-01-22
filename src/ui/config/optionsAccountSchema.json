@@ -492,7 +492,7 @@
     },
     "87": {
         "name": "W4 Breeding Egg Incubation Timer",
-        "description": "Elapsed egg incubation time in seconds; increases by 1 every second.",
+        "description": "Elapsed egg incubation time in seconds; increases by 1 every second",
         "type": "number"
     },
     "88": {
@@ -1705,19 +1705,19 @@
     },
     "312": {
         "name": "Villager Selection Tracking",
-        "description": "Part of Villager management system, tracks selected villager and increments selection count.",
+        "description": "Part of Villager management system, tracks selected villager and increments selection count",
         "type": "number",
         "AI": true
     },
     "313": {
         "name": "Villager Action Flag",
-        "description": "Set to 1 when villager actions are available; controls UI display conditions for villager interactions.",
+        "description": "Set to 1 when villager actions are available; controls UI display conditions for villager interactions",
         "type": "number",
         "AI": true
     },
     "314": {
         "name": "Coordinate/Length Value",
-        "description": "Used as X/Y coordinate for portal positioning and in monster/scene element placement calculations.",
+        "description": "Used as X/Y coordinate for portal positioning and in monster/scene element placement calculations",
         "type": "number",
         "AI": true
     },
@@ -1794,7 +1794,7 @@
     },
     "328": {
         "name": "Worship Totem Calculation Factor",
-        "description": "Used as a key ('_Plunderous_Kills') in the achievement system and as a division factor in worship/trial calculations (stores Meal Bonus).",
+        "description": "Used as a key ('_Plunderous_Kills') in the achievement system and as a division factor in worship/trial calculations (stores Meal Bonus)",
         "type": "number",
         "AI": true
     },
@@ -1840,7 +1840,7 @@
     },
     "337": {
         "name": "Ribbon Shelf/Event Activation Flag",
-        "description": "Tracks Ribbon Shelf unlock status and is set to 1 when a specific server event (e.g., 'ValOn') is active.",
+        "description": "Tracks Ribbon Shelf unlock status and is set to 1 when a specific server event (e.g., 'ValOn') is active",
         "type": "number",
         "AI": true
     },
@@ -1852,7 +1852,7 @@
     },
     "339": {
         "name": "Tutorial Hint Dismissal Flag",
-        "description": "Tracks tutorial hints/prompts; set to 1 upon interaction to dismiss the hint UI.",
+        "description": "Tracks tutorial hints/prompts; set to 1 upon interaction to dismiss the hint UI",
         "type": "number",
         "AI": true
     },
@@ -2205,7 +2205,7 @@
     },
     "404": {
         "name": "Asset Positioning Literal 404",
-        "description": "Literal numeric value used heavily in asset loading, coordinate layout, and UI element positioning (NOTE: Acts as a literal, not an array index).",
+        "description": "Literal numeric value used heavily in asset loading, coordinate layout, and UI element positioning (NOTE: Acts as a literal, not an array index)",
         "type": "number",
         "AI": true
     },
@@ -2448,7 +2448,7 @@
     },
     "449": {
         "name": "Unused",
-        "description": "unused index.",
+        "description": "unused index",
         "type": "number",
         "AI": true
     },
@@ -2615,37 +2615,37 @@
     },
     "480": {
         "name": "Progression Counter for Upgrades",
-        "description": "Progression counter for major upgrades (Grimoire, Compass, Legend Points) with complex calculation formulas.",
+        "description": "Progression counter for major upgrades (Grimoire, Compass, Legend Points) with complex calculation formulas",
         "type": "number",
         "AI": true
     },
     "481": {
         "name": "Weekly Time Tracking System",
-        "description": "Weekly time tracking system for shop and divinity resets (week number calculations).",
+        "description": "Weekly time tracking system for shop and divinity resets (week number calculations)",
         "type": "number",
         "AI": true
     },
     "482": {
         "name": "Spelunking Tutorial Completion Flag",
-        "description": "Tutorial completion flag for Spelunking tutorial system with progress tracking.",
+        "description": "Tutorial completion flag for Spelunking tutorial system with progress tracking",
         "type": "number",
         "AI": true
     },
     "483": {
         "name": "New Player Bundle System Flag",
-        "description": "Bundle system flag for new player rewards and premium content access.",
+        "description": "Bundle system flag for new player rewards and premium content access",
         "type": "number",
         "AI": true
     },
     "484": {
         "name": "Event Counter with Math Formulas",
-        "description": "Event counter with mathematical formulas for reward calculations and progression tracking.",
+        "description": "Event counter with mathematical formulas for reward calculations and progression tracking",
         "type": "number",
         "AI": true
     },
     "485": {
         "name": "Event Management Timer System",
-        "description": "Timer system for event management and talent calculations with time-sensitive mechanics.",
+        "description": "Timer system for event management and talent calculations with time-sensitive mechanics",
         "type": "number",
         "AI": true
     },

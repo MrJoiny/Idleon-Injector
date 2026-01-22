@@ -33,7 +33,7 @@ export const SearchBar = ({ placeholder, onInput, debounceMs = 300, icon = Icons
         input({
             type: "text",
             class: "global-search-input",
-            placeholder: placeholder || "SEARCH...",
+            placeholder: placeholder || "SEARCH",
             ...(value !== undefined ? { value } : {}),
             oninput: handleInput,
             onkeydown: (e) => {

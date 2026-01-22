@@ -21,10 +21,10 @@ registerCheats({
     message: "World 1 cheats",
     allowToggleChildren: true,
     subcheats: [
-        { name: "anvil", message: "anvil cost and duration nullification." },
+        { name: "anvil", message: "anvil cost and duration nullification" },
         { name: "forge", message: "forge speed and capacity multiplier check config" },
         { name: "stampcost", message: "stamp cost reduction multiplier check config" },
-        { name: "smith", message: "smithing cost nullification (change maps to apply)." },
+        { name: "smith", message: "smithing cost nullification (change maps to apply)" },
         { name: "companion", message: "companions cheat" },
         { name: "owl", message: "owl cheats, check config file" },
     ],
@@ -46,7 +46,7 @@ registerCheats({
             message: "reset killroy weekly progress",
             fn: () => {
                 gga.OptionsListAccount[113] = 0;
-                return "Killroy weekly progress has been reset.";
+                return "Killroy weekly progress has been reset";
             },
         },
     ],
@@ -57,20 +57,20 @@ registerCheats({
     message: "World 3 cheats",
     allowToggleChildren: true,
     subcheats: [
-        { name: "mobdeath", message: "worship mobs insta-death." },
+        { name: "mobdeath", message: "worship mobs insta-death" },
         { name: "towerdamage", message: "multiply tower damage (see config)" },
-        { name: "flagreq", message: "flag unlock time nullification." },
-        { name: "freebuildings", message: "free tower upgrades." },
-        { name: "instabuild", message: "insta-build of buildings." },
-        { name: "booktime", message: "book per second." },
-        { name: "totalflags", message: "10 total flags." },
+        { name: "flagreq", message: "flag unlock time nullification" },
+        { name: "freebuildings", message: "free tower upgrades" },
+        { name: "instabuild", message: "insta-build of buildings" },
+        { name: "booktime", message: "book per second" },
+        { name: "totalflags", message: "10 total flags" },
         { name: "buildspd", message: "multiply build speed (see config)" },
-        { name: "saltlick", message: "Salt Lick upgrade cost nullification." },
-        { name: "refinery", message: "refinery cost nullification." },
+        { name: "saltlick", message: "Salt Lick upgrade cost nullification" },
+        { name: "refinery", message: "refinery cost nullification" },
         { name: "refineryspeed", message: "reduces refinery time (see config)" },
         { name: "trapping", message: "multiply trapping time, make the traps faster by adding more time" },
-        { name: "book", message: "always max lvl talent book." },
-        { name: "prayer", message: "Prayer curse nullification." },
+        { name: "book", message: "always max lvl talent book" },
+        { name: "prayer", message: "Prayer curse nullification" },
         { name: "worshipspeed", message: "multiply worship charge speed (see config)" },
         { name: "freeworship", message: "nullification of worship charge cost" },
         { name: "globalshrines", message: "global shrines" },
@@ -112,7 +112,7 @@ registerCheats({
             fn: (params) => {
                 const ribbonLvl = parseInt(params[1]);
                 if (isNaN(ribbonLvl) || ribbonLvl < 1 || ribbonLvl > 20) {
-                    return "Please provide a ribbon lvl between 1 and 20.";
+                    return "Please provide a ribbon lvl between 1 and 20";
                 }
 
                 const ribbons = gga.Ribbon;
@@ -134,7 +134,7 @@ registerCheats({
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
                 if (isNaN(amount)) {
-                    return "Please provide a valid numeric amount.";
+                    return "Please provide a valid numeric amount";
                 }
 
                 const lab = gga.Lab;
@@ -180,7 +180,7 @@ registerCheats({
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
                 if (isNaN(amount)) {
-                    return "Please provide a valid numeric amount.";
+                    return "Please provide a valid numeric amount";
                 }
 
                 const holes = gga.Holes;
@@ -224,7 +224,7 @@ registerCheats({
         { name: "sneaksymbol", message: "sneaksymbol 100% chance" },
         {
             name: "ninjaItem",
-            message: "Generates a ninja item based on the floor which ninja twin is inputted.",
+            message: "Generates a ninja item based on the floor which ninja twin is inputted",
             needsParam: true,
             fn: function (params) {
                 const char = parseInt(params[1]);

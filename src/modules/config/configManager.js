@@ -85,7 +85,7 @@ function loadConfiguration() {
  */
 function getInjectorConfig() {
     if (!injectorConfig) {
-        throw new Error("Configuration not loaded. Call loadConfiguration() first.");
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
     }
     return injectorConfig;
 }
@@ -96,7 +96,7 @@ function getInjectorConfig() {
  */
 function getStartupCheats() {
     if (!startupCheats) {
-        throw new Error("Configuration not loaded. Call loadConfiguration() first.");
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
     }
     return startupCheats;
 }
@@ -107,7 +107,7 @@ function getStartupCheats() {
  */
 function getCheatConfig() {
     if (!cheatConfig) {
-        throw new Error("Configuration not loaded. Call loadConfiguration() first.");
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
     }
     return cheatConfig;
 }
@@ -118,7 +118,7 @@ function getCheatConfig() {
  */
 function getDefaultConfig() {
     if (!defaultConfig) {
-        throw new Error("Configuration not loaded. Call loadConfiguration() first.");
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
     }
     return defaultConfig;
 }
@@ -157,7 +157,7 @@ function isLinux() {
  */
 function getLinuxTimeout() {
     if (!injectorConfig) {
-        throw new Error("Configuration not loaded. Call loadConfiguration() first.");
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
     }
     return injectorConfig.onLinuxTimeout;
 }

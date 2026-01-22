@@ -78,7 +78,7 @@ export async function saveConfigFile(configToSave) {
 export async function fetchDevToolsUrl() {
     const data = await _request("/devtools-url");
     if (data && data.url) return data.url;
-    throw new Error("No URL received from backend.");
+    throw new Error("No URL received from backend");
 }
 
 export async function fetchOptionsAccount() {

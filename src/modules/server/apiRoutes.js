@@ -120,8 +120,8 @@ function setupApiRoutes(app, context, client, config) {
                 log.debug(`Generated DevTools URL: ${devtoolsUrl}`);
                 res.json({ url: devtoolsUrl });
             } else {
-                log.error("Could not get target info to generate DevTools URL.");
-                res.status(500).json({ error: "Failed to get target information from CDP client." });
+                log.error("Could not get target info to generate DevTools URL");
+                res.status(500).json({ error: "Failed to get target information from CDP client" });
             }
         } catch (apiError) {
             log.error("Error getting DevTools URL:", apiError);
@@ -159,7 +159,7 @@ function setupApiRoutes(app, context, client, config) {
 
         if (!receivedFullConfig || typeof receivedFullConfig !== "object") {
             return res.status(400).json({
-                error: "Invalid configuration data received.",
+                error: "Invalid configuration data received",
             });
         }
 
@@ -174,12 +174,12 @@ function setupApiRoutes(app, context, client, config) {
             if (Array.isArray(receivedFullConfig.startupCheats)) {
                 startupCheats.length = 0;
                 startupCheats.push(...receivedFullConfig.startupCheats);
-                log.debug("Updated server-side startupCheats.");
+                log.debug("Updated server-side startupCheats");
             }
 
             if (receivedFullConfig.injectorConfig) {
                 deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                log.debug("Updated server-side injectorConfig.");
+                log.debug("Updated server-side injectorConfig");
             }
 
             const parsedCheatConfig = receivedFullConfig.cheatConfig
@@ -187,9 +187,9 @@ function setupApiRoutes(app, context, client, config) {
                 : cheatConfig;
             const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` });
             if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
-                log.error("Cheat context not found in iframe. Cannot update config in game.");
+                log.error("Cheat context not found in iframe. Cannot update config in game");
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game (context lost).",
+                    message: "Configuration updated on server, but failed to apply in game (context lost)",
                 });
             }
 
@@ -215,7 +215,7 @@ function setupApiRoutes(app, context, client, config) {
                 log.error("Error updating config in game:", updateResult.exceptionDetails.text);
                 gameUpdateDetails = `Failed to apply in game: ${updateResult.exceptionDetails.text}`;
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game.",
+                    message: "Configuration updated on server, but failed to apply in game",
                     details: gameUpdateDetails,
                 });
             } else {
@@ -223,13 +223,13 @@ function setupApiRoutes(app, context, client, config) {
                 log.debug(`In-game config update result: ${gameUpdateDetails}`);
                 if (gameUpdateDetails.startsWith("Error:")) {
                     return res.status(200).json({
-                        message: "Configuration updated on server, but failed to apply in game.",
+                        message: "Configuration updated on server, but failed to apply in game",
                         details: gameUpdateDetails,
                     });
                 }
             }
 
-            res.json({ message: "Configuration updated successfully.", details: gameUpdateDetails });
+            res.json({ message: "Configuration updated successfully", details: gameUpdateDetails });
         } catch (apiError) {
             log.error("Error in /api/config/update:", apiError);
             res.status(500).json({
@@ -313,7 +313,7 @@ function setupApiRoutes(app, context, client, config) {
 
         if (typeof index !== "number" || index < 0) {
             return res.status(400).json({
-                error: "Invalid index. Must be a non-negative number.",
+                error: "Invalid index. Must be a non-negative number",
             });
         }
 
@@ -367,7 +367,7 @@ function setupApiRoutes(app, context, client, config) {
             !Array.isArray(receivedFullConfig.startupCheats)
         ) {
             return res.status(400).json({
-                error: "Invalid configuration data received for saving. Expected { startupCheats: [...], cheatConfig: {...} }.",
+                error: "Invalid configuration data received for saving. Expected { startupCheats: [...], cheatConfig: {...} }",
             });
         }
 

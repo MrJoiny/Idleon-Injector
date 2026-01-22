@@ -57,7 +57,7 @@ registerCheat({
     message: "Daily shop and post office reset",
     fn: () => {
         gga.TimeAway.h.ShopRestock = 1;
-        return "The daily shop restock has been triggered.";
+        return "The daily shop restock has been triggered";
     },
 });
 
@@ -108,7 +108,7 @@ registerCheat({
 registerCheat({
     name: "nomore",
     category: "nomore",
-    message: "Stop dropping items from monsters, accepts regex.",
+    message: "Stop dropping items from monsters, accepts regex",
     needsParam: true,
     fn: (params) => {
         // Init nomore config if not exists
@@ -147,7 +147,7 @@ registerCheat({
 registerCheat({
     name: "multiplestacks",
     category: "multiplestacks",
-    message: "Will make multiple stacks of specified items in chest when autochest is on.",
+    message: "Will make multiple stacks of specified items in chest when autochest is on",
     needsParam: true,
     fn: (params) => {
         // init multiplestack, removed from config because of the webui overwriting it
@@ -172,7 +172,7 @@ registerCheat({
 // Save game attribute to memory
 registerCheat({
     name: "fix_save",
-    message: "Save a game attribute to memory. Use fix_write to write it back to the game.",
+    message: "Save a game attribute to memory. Use fix_write to write it back to the game",
     needsParam: true,
     fn: (params) => {
         cheatConfig.fixobj = deepCopy(gga[params[0]]);
@@ -183,7 +183,7 @@ registerCheat({
 // Write game attribute from memory
 registerCheat({
     name: "fix_write",
-    message: "Write a game attribute from memory to the game. Use fix_save to save it to memory.",
+    message: "Write a game attribute from memory to the game. Use fix_save to save it to memory",
     needsParam: true,
     fn: (params) => {
         if (!params[0]) return "No attribute specified";
@@ -201,7 +201,7 @@ registerCheats({
     subcheats: [
         { name: "rng", message: "100% upgrade stone success (safe)" },
         { name: "use", message: "Upgrade stones don't use a slot (risky)" },
-        { name: "misc", message: "Mystery stones always hit the misc stat." },
+        { name: "misc", message: "Mystery stones always hit the misc stat" },
     ],
 });
 
@@ -213,11 +213,11 @@ registerCheats({
     subcheats: [
         { name: "divinitypearl", message: "divinity pearls > lvl50" },
         { name: "presets", message: "preset changes everywhere" },
-        { name: "quickref", message: "quickref." },
-        { name: "teleports", message: "free teleports." },
-        { name: "tickets", message: "free colosseum tickets." },
-        { name: "silvpen", message: "free silver pens." },
-        { name: "obolfrag", message: "free obol fragments." },
+        { name: "quickref", message: "quickref" },
+        { name: "teleports", message: "free teleports" },
+        { name: "tickets", message: "free colosseum tickets" },
+        { name: "silvpen", message: "free silver pens" },
+        { name: "obolfrag", message: "free obol fragments" },
         { name: "rifts", message: "Unlock rift portals" },
         { name: "revive", message: "unlimited revives" },
         {
@@ -225,7 +225,7 @@ registerCheats({
             message: "unlock fishing islands",
             fn: () => {
                 gga.OptionsListAccount[169] = cheatConfig.unlock.islands;
-                return "All fishing islands unlocked.";
+                return "All fishing islands unlocked";
             },
         },
         {
@@ -251,7 +251,7 @@ registerCheats({
                         if (tab[j] === 0) tab[j] = 1;
                     }
                 }
-                return "Unlocked all anvil crafts.";
+                return "Unlocked all anvil crafts";
             },
         },
         {
@@ -259,7 +259,7 @@ registerCheats({
             message: "Unlocks/completes all quests",
             fn: () => {
                 const questComplete = gga.QuestComplete;
-                if (!questComplete || !questComplete.h) return "QuestComplete not found.";
+                if (!questComplete || !questComplete.h) return "QuestComplete not found";
 
                 let count = 0;
                 for (const key in questComplete.h) {
@@ -274,7 +274,7 @@ registerCheats({
             message: "Unlocks all towers in construction",
             fn: () => {
                 const towerInfo = gga.TowerInfo;
-                if (!towerInfo) return "TowerInfo not found.";
+                if (!towerInfo) return "TowerInfo not found";
 
                 let count = 0;
                 for (let i = 0; i <= 27; i++) {
@@ -294,7 +294,7 @@ registerCheats({
             message: "Unlocks all backgrounds",
             fn: () => {
                 const bgUnlocked = gga.BGunlocked;
-                if (!bgUnlocked) return "BGunlocked not found.";
+                if (!bgUnlocked) return "BGunlocked not found";
 
                 for (let i = 0; i < bgUnlocked.length; i++) {
                     bgUnlocked[i] = 1;
@@ -338,7 +338,7 @@ registerCheat({
 registerCheat({
     name: "buy",
     category: "buy",
-    message: "Buy gem shop packs. You get items from the pack, but no gems and no pets.",
+    message: "Buy gem shop packs. You get items from the pack, but no gems and no pets",
     needsParam: true,
     fn: function (params) {
         const code = params[0];

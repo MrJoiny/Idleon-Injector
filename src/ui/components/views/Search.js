@@ -120,7 +120,7 @@ const KeysSection = ({ ui, handlers }) =>
             // Favorites section
             div({ class: "keys-group" }, div({ class: "keys-group-header" }, "★ FAVORITES"), () => {
                 if (ui.isLoading) {
-                    return div({ class: "keys-loading" }, "Loading...");
+                    return div({ class: "keys-loading" }, "Loading");
                 }
                 const validFavorites = handlers.getValidFavorites();
                 if (validFavorites.length === 0) {
@@ -152,7 +152,7 @@ const KeysSection = ({ ui, handlers }) =>
                         input({
                             type: "text",
                             class: "keys-filter-input",
-                            placeholder: "FILTER KEYS...",
+                            placeholder: "FILTER KEYS",
                             value: () => ui.allKeysFilter,
                             oninput: (e) => (ui.allKeysFilter = e.target.value),
                         })
@@ -206,7 +206,7 @@ const SearchInputSection = ({ ui, handlers }) =>
                         input({
                             type: "text",
                             class: "search-query-input range-input",
-                            placeholder: "MIN...",
+                            placeholder: "MIN",
                             value: () => ui.range.min,
                             oninput: (e) => (ui.range.min = e.target.value),
                             onkeydown: handlers.handleKeyDown,
@@ -215,7 +215,7 @@ const SearchInputSection = ({ ui, handlers }) =>
                         input({
                             type: "text",
                             class: "search-query-input range-input",
-                            placeholder: "MAX...",
+                            placeholder: "MAX",
                             value: () => ui.range.max,
                             oninput: (e) => (ui.range.max = e.target.value),
                             onkeydown: handlers.handleKeyDown,
@@ -232,7 +232,7 @@ const SearchInputSection = ({ ui, handlers }) =>
                     input({
                         type: "text",
                         class: "search-query-input",
-                        placeholder: "SEARCH_VALUE...",
+                        placeholder: "SEARCH_VALUE",
                         value: () => ui.searchQuery,
                         oninput: handlers.handleQueryInput,
                         onkeydown: handlers.handleKeyDown,
@@ -286,7 +286,7 @@ const ResultsSection = ({ ui, handlers }) =>
         ),
         div({ class: "results-content scroll-container" }, () => {
             if (ui.isSearching) {
-                return Loader({ text: "Searching..." });
+                return Loader({ text: "Searching" });
             }
 
             if (ui.error) {

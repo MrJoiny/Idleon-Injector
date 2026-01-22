@@ -10,12 +10,12 @@ import { registerCheats } from "../core/registration.js";
 
 registerCheats({
     name: "godlike",
-    message: "all godlike powers.",
+    message: "all godlike powers",
     allowToggleChildren: true,
     subcheats: [
         { name: "reach", message: "reach set to 666" },
         { name: "crit", message: "crit set to 100" },
-        { name: "ability", message: "no cooldown, no mana cost, cast time 0.1s." },
+        { name: "ability", message: "no cooldown, no mana cost, cast time 0.1s" },
         { name: "food", message: "food deduction nullification" },
         { name: "hitchance", message: "hitchance set to 100" },
         { name: "intervention", message: "instant divine intervention" },

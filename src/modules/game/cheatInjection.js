@@ -32,7 +32,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
     const client = await CDP(options);
 
     const { DOM, Page, Network, Runtime } = client;
-    log.info("Setting up cheat injection...");
+    log.info("Setting up cheat injection");
 
     let cheats = await fs.readFile("cheats.js", "utf8");
     cheats =
@@ -82,7 +82,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
             for (let i = 0; i < AppMain.length; i++) AppVar[i] = VarName.exec(AppMain[i])[0];
 
             // Inject cheats directly into the current context to persist across page reloads
-            log.debug("Evaluating cheat code...");
+            log.debug("Evaluating cheat code");
             await Runtime.evaluate({
                 expression: cheats,
                 awaitPromise: true,
@@ -93,7 +93,7 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
             const replacementRegex = new RegExp(config.injreg);
             const newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 
-            log.debug("Patching game script...");
+            log.debug("Patching game script");
 
             const newHeaders = [
                 `Date: ${new Date().toUTCString()}`,

@@ -52,7 +52,7 @@ export const Monitor = () => {
                 return table(
                     { class: "monitor-table" },
                     thead(headerRow),
-                    tbody(tr(td({ colspan: 5, class: "empty-msg" }, "No values being monitored.")))
+                    tbody(tr(td({ colspan: 5, class: "empty-msg" }, "No values being monitored")))
                 );
             }
 

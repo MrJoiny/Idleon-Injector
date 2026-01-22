@@ -27,7 +27,7 @@ import { monitor } from "./valueMonitor.js";
  */
 export async function setup() {
     if (setupDone) return "Cheat setup complete";
-    console.log("Entering setup function...");
+    console.log("Entering setup function");
     markSetupDone();
 
     try {
@@ -47,7 +47,7 @@ export async function setup() {
             "--------------------",
         ];
 
-        console.log("Exiting setup function successfully.");
+        console.log("Exiting setup function successfully");
 
         if (cheatConfig.ingameUI) {
             injectWebUI();
@@ -56,7 +56,7 @@ export async function setup() {
         return rtn.join("\n");
     } catch (setupError) {
         console.error("Error occurred during setup function:", setupError.stack || setupError);
-        return "Error during cheat setup.";
+        return "Error during cheat setup";
     }
 }
 
