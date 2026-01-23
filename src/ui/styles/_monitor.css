@@ -17,6 +17,7 @@
 .monitor-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .monitor-table th,
@@ -32,6 +33,28 @@
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Fixed column widths to prevent layout shift */
+.monitor-table th:nth-child(1),
+.monitor-table td:nth-child(1) {
+    width: 30%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monitor-table th:nth-child(2),
+.monitor-table td:nth-child(2) {
+    width: 30%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monitor-table th:nth-child(3),
+.monitor-table td:nth-child(3) {
+    width: 20%;
 }
 
 .monitor-id {
@@ -77,7 +100,7 @@
 
 .monitor-table .actions-col {
     text-align: right;
-    width: 50px;
+    width: 60px;
 }
 
 .monitor-action-btn {
@@ -99,4 +122,38 @@
     background: var(--c-danger);
     color: #fff;
     box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+}
+
+/* Sparkline graph styles */
+.sparkline {
+    display: block;
+}
+
+.sparkline-line {
+    fill: none;
+    stroke: var(--c-accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sparkline-dot {
+    fill: var(--c-accent);
+    transition:
+        r 0.15s ease,
+        fill 0.15s ease;
+}
+
+.sparkline-dot:hover {
+    fill: var(--c-success);
+    r: 5;
+}
+
+.sparkline-empty {
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+.sparkline-dot-padded {
+    opacity: 0.4;
 }

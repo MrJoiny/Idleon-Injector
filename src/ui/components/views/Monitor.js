@@ -1,6 +1,7 @@
 import van from "../../vendor/van-1.6.0.js";
 import store from "../../state/store.js";
 import { Icons } from "../../assets/icons.js";
+import { Sparkline, canGraph } from "../Sparkline.js";
 
 const { div, table, thead, tbody, tr, th, td, span, button, input } = van.tags;
 
@@ -38,62 +39,55 @@ export const Monitor = () => {
             }),
             button({ class: "btn-primary", onclick: handleAdd }, "Add Watcher")
         ),
-        div({ class: "monitor-table-container scroll-container" }, () => {
-            const entries = Object.entries(store.data.monitorValues);
-            const headerRow = tr(
-                th("ID"),
-                th("Path"),
-                th("Current Value"),
-                th("History (Last 10)"),
-                th({ class: "actions-col" }, "")
-            );
-
-            if (entries.length === 0) {
-                return table(
-                    { class: "monitor-table" },
-                    thead(headerRow),
-                    tbody(tr(td({ colspan: 5, class: "empty-msg" }, "No values being monitored")))
-                );
-            }
-
-            return table(
+        div(
+            { class: "monitor-table-container scroll-container" },
+            table(
                 { class: "monitor-table" },
-                thead(headerRow),
-                tbody(
-                    ...entries.map(([id, data]) => {
-                        const current = data.history[0]?.value;
-                        const historyItems = data.history.slice(1);
-
-                        return tr(
-                            td(span({ class: "monitor-id" }, id)),
-                            td(span({ class: "monitor-path" }, data.path)),
-                            td(div({ class: "monitor-current" }, formatValue(current))),
-                            td(
-                                div(
-                                    { class: "monitor-history-list" },
-                                    ...historyItems.map((h) =>
-                                        span(
-                                            { class: "history-item", title: new Date(h.ts).toLocaleTimeString() },
-                                            formatValue(h.value)
-                                        )
+                thead(tr(th("Path"), th("Current Value"), th("History (Last 10)"), th({ class: "actions-col" }, ""))),
+                () => {
+                    const entries = Object.entries(store.data.monitorValues);
+                    if (entries.length === 0) {
+                        return tbody(tr(td({ colspan: 4, class: "empty-msg" }, "No values being monitored")));
+                    }
+                    return tbody(
+                        ...entries.map(([id, data]) => {
+                            const current = data.history[0]?.value;
+                            const historyItems = data.history.slice(1);
+                            return tr(
+                                td(span({ class: "monitor-path" }, data.path)),
+                                td(div({ class: "monitor-current" }, formatValue(current))),
+                                td(
+                                    canGraph(data.history)
+                                        ? Sparkline({ data: data.history })
+                                        : div(
+                                              { class: "monitor-history-list" },
+                                              ...historyItems.map((h) =>
+                                                  span(
+                                                      {
+                                                          class: "history-item",
+                                                          title: new Date(h.ts).toLocaleTimeString(),
+                                                      },
+                                                      formatValue(h.value)
+                                                  )
+                                              )
+                                          )
+                                ),
+                                td(
+                                    { class: "actions-col" },
+                                    button(
+                                        {
+                                            class: "monitor-action-btn",
+                                            title: "Unwatch",
+                                            onclick: () => store.unsubscribeMonitor(id),
+                                        },
+                                        Icons.X()
                                     )
                                 )
-                            ),
-                            td(
-                                { class: "actions-col" },
-                                button(
-                                    {
-                                        class: "monitor-action-btn",
-                                        title: "Unwatch",
-                                        onclick: () => store.unsubscribeMonitor(id),
-                                    },
-                                    Icons.X()
-                                )
-                            )
-                        );
-                    })
-                )
-            );
-        })
+                            );
+                        })
+                    );
+                }
+            )
+        )
     );
 };
