@@ -157,8 +157,6 @@ function handleError(error) {
 
 async function main() {
     try {
-        await printHeader();
-
         const customConfigPath = path.join(process.cwd(), "config.custom.js");
 
         if (!fs.existsSync(customConfigPath)) {
@@ -167,8 +165,10 @@ async function main() {
 
         const config = initializeConfiguration();
 
-        const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
+        await printHeader();
         printConfiguration(config.injectorConfig);
+
+        const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
 
         const target = (config.injectorConfig.target || "steam").toLowerCase();
         if (os.platform() === "darwin" && target !== "web") {
