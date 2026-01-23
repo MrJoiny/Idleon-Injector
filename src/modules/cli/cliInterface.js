@@ -14,6 +14,49 @@ const { broadcastCheatStates } = require("../server/wsServer");
 
 const log = createLogger("CLI");
 
+const commandHistory = [];
+let historyIndex = -1;
+
+const platformOpenCommands = {
+    win32: (url) => `start "" "${url}"`,
+    darwin: (url) => `open "${url}"`,
+};
+
+/**
+ * Add command to history if it differs from the last entry
+ * @param {string} command - Command to add
+ */
+function addToHistory(command) {
+    if (commandHistory[commandHistory.length - 1] !== command) {
+        commandHistory.push(command);
+    }
+}
+
+/**
+ * Navigate command history and return the value to use
+ * @param {string} direction - "up" or "down"
+ * @returns {string} History value to display
+ */
+function navigateHistory(direction) {
+    if (commandHistory.length === 0) return null;
+
+    if (direction === "up") {
+        if (historyIndex === -1) {
+            historyIndex = commandHistory.length - 1;
+        } else if (historyIndex > 0) {
+            historyIndex--;
+        }
+    } else {
+        if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+        } else {
+            historyIndex = -1;
+            return "";
+        }
+    }
+    return commandHistory[historyIndex] || "";
+}
+
 /**
  * Start the CLI interface for user interaction
  * @param {string} context - JavaScript expression for game context
@@ -26,6 +69,8 @@ async function startCliInterface(context, client, options = {}) {
     const { cdpPort } = options;
     const { Runtime } = client;
 
+    log.info("CLI initialized. Type to filter, Enter to select. (Ctrl+Up/Down for history)");
+
     const choicesResult = await Runtime.evaluate({
         expression: `getAutoCompleteSuggestions()`,
         awaitPromise: true,
@@ -36,12 +81,14 @@ async function startCliInterface(context, client, options = {}) {
         log.error("Error getting autocomplete suggestions:", choicesResult.exceptionDetails.text);
         return;
     }
+
     const choices = (choicesResult.result.value || []).map((choice) => {
         // Set name to value for Enquirer display/selection
         if (!choice.name) choice.name = choice.value;
         // Create display message: "value (description)" for CLI readability
         choice.displayMessage = choice.message;
-        choice.message = `${choice.value} (${choice.message || ""})`;
+        const paramHint = choice.needsParam ? " [+param]" : "";
+        choice.message = `${choice.value}${paramHint} (${choice.message || ""})`;
         return choice;
     });
 
@@ -49,6 +96,9 @@ async function startCliInterface(context, client, options = {}) {
         try {
             let valueChosen = false;
             const enquirer = new Enquirer();
+
+            historyIndex = -1;
+
             const { action } = await enquirer.prompt({
                 name: "action",
                 message: "Action",
@@ -88,25 +138,32 @@ async function startCliInterface(context, client, options = {}) {
                     }
                 },
                 onRun: async function () {
+                    const prompt = this;
+                    this.on("keypress", (char, key) => {
+                        if (!key?.ctrl || (key.name !== "up" && key.name !== "down")) return;
+                        const historyValue = navigateHistory(key.name);
+                        if (historyValue === null) return;
+                        // Use setImmediate to set input after Enquirer's default handler
+                        setImmediate(async () => {
+                            prompt.input = historyValue;
+                            prompt.cursor = historyValue.length;
+                            await prompt.complete();
+                            prompt.render();
+                        });
+                    });
                     await this.complete();
                 },
                 cancel: function () {},
             });
 
+            addToHistory(action);
+
             if (action === "chromedebug") {
                 const response = await client.Target.getTargetInfo();
                 const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
-                let command;
+                const getCommand = platformOpenCommands[process.platform] || ((u) => `xdg-open "${u}"`);
 
-                if (process.platform === "win32") {
-                    command = `start "" "${url}"`;
-                } else if (process.platform === "darwin") {
-                    command = `open "${url}"`;
-                } else {
-                    command = `xdg-open "${url}"`;
-                }
-
-                exec(command, (error) => {
+                exec(getCommand(url), (error) => {
                     if (error) {
                         log.error("Failed to open chrome debugger in default browser:", error);
                     } else {

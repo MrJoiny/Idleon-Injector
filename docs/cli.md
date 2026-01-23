@@ -15,8 +15,18 @@ Because the CLI uses the same cheat dispatcher as the UI, any cheat registered i
 
 - Filtering checks both the command value and its description.
 - Input is case-insensitive and supports multi-word matching (space-separated tokens must all match).
+- Commands that require parameters display a `[+param]` hint (e.g., `buy [+param] (Purchase items)`).
 - The first match is selected by default when input is empty.
 - If you type a custom command not in the list, it is appended and executed as-is.
+
+## Command History
+
+The CLI maintains a history of executed commands during the current session:
+
+- **Ctrl+Up**: Navigate backwards through previous commands.
+- **Ctrl+Down**: Navigate forwards through previous commands (clears input when reaching the end).
+- Consecutive duplicate commands are not stored in history.
+- Autocomplete suggestions update automatically as you scroll through history.
 
 ## Parameterized cheats
 
