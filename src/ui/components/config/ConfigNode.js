@@ -55,7 +55,7 @@ const hasMatchingChildren = (obj, searchTerm) => {
     return false;
 };
 
-export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", forceOpen = false }) => {
+export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", forceOpen = false, parentMatched = false }) => {
     const source = template || data;
     const keys = Object.keys(source);
     const termLower = searchTerm.toLowerCase();
@@ -68,7 +68,7 @@ export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", 
             const categoryMatches = !termLower || key.toLowerCase().includes(termLower);
             const childrenMatch = hasMatchingChildren(data[key] || {}, searchTerm);
 
-            if (termLower && !categoryMatches && !childrenMatch) {
+            if (termLower && !parentMatched && !categoryMatches && !childrenMatch) {
                 return null;
             }
 
@@ -103,12 +103,13 @@ export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", 
                         template: template ? template[key] : null,
                         searchTerm,
                         forceOpen,
+                        parentMatched: parentMatched || (termLower && categoryMatches),
                     })
                 )
             );
         }
 
-        const matchesSearch = !termLower || key.toLowerCase().includes(termLower);
+        const matchesSearch = parentMatched || !termLower || key.toLowerCase().includes(termLower);
         if (!matchesSearch) {
             return null;
         }
