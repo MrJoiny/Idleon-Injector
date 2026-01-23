@@ -13,7 +13,7 @@ if (!startupCheats || !cheatConfig || !webPort || !window) {
 }
 
 import { cheatState, setCheatConfig, setStartupCheats, setWebPort, updateCheatConfig } from "./core/state.js";
-import { getBEngine, getItemDefs, getMonsterDefs, getCList, getBehavior, getEvents } from "./core/globals.js";
+import { getBEngine, getItemDefs, getMonsterDefs, getCList, getBehavior, getEvents, getGGA } from "./core/globals.js";
 import { cheats, cheat as coreCheat } from "./core/registration.js";
 import { setup as coreSetup } from "./core/setup.js";
 // Static cheats register automatically when this module is imported
@@ -83,3 +83,4 @@ Object.defineProperty(window, "monsterDefs", { get: getMonsterDefs, enumerable: 
 Object.defineProperty(window, "cList", { get: getCList, enumerable: true, configurable: true });
 Object.defineProperty(window, "behavior", { get: getBehavior, enumerable: true, configurable: true });
 Object.defineProperty(window, "events", { get: getEvents, enumerable: true, configurable: true });
+Object.defineProperty(window, "gga", { get: getGGA, enumerable: true, configurable: true });

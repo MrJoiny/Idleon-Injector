@@ -158,3 +158,4 @@ export const getCList = () => cList;
 export const getBehavior = () => behavior;
 export const getEvents = () => events;
 export const getActorModel = () => ActorModel;
+export const getGGA = () => gga;
