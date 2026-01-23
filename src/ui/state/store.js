@@ -285,7 +285,7 @@ const AccountService = {
             // Optimistic UI Update
             dataState.accountOptions[index] = value;
             await API.updateOptionAccountIndex(index, value);
-            Actions.notify(`INDEX ${index} WROTE TO MEMORY`);
+            Actions.notify(`WROTE "${value}" TO INDEX ${index}`);
         } catch (e) {
             Actions.notify(`Failed to update Index ${index}: ${e.message}`, "error");
             // Re-throw to allow component to handle local error state (e.g., red border)

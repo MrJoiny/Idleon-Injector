@@ -340,8 +340,8 @@ function setupApiRoutes(app, context, client, config) {
                     details: updateResult.exceptionDetails.text,
                 });
             } else {
-                const success = updateResult.result.value;
-                if (success) {
+                const result = updateResult.result.value;
+                if (result !== undefined) {
                     log.debug(`OptionsListAccount[${index}] updated to:`, value);
                     res.json({ message: `Index ${index} updated successfully`, value: value });
                 } else {
