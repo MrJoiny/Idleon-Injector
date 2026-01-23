@@ -9,7 +9,7 @@
 
 const Enquirer = require("enquirer");
 const { exec } = require("child_process");
-const { createLogger } = require("../utils/logger");
+const { createLogger, setActivePrompt } = require("../utils/logger");
 const { broadcastCheatStates } = require("../server/wsServer");
 
 const log = createLogger("CLI");
@@ -138,6 +138,7 @@ async function startCliInterface(context, client, options = {}) {
                     }
                 },
                 onRun: async function () {
+                    setActivePrompt(this);
                     const prompt = this;
                     this.on("keypress", (char, key) => {
                         if (!key?.ctrl || (key.name !== "up" && key.name !== "down")) return;
@@ -157,6 +158,7 @@ async function startCliInterface(context, client, options = {}) {
             });
 
             addToHistory(action);
+            setActivePrompt(null);
 
             if (action === "chromedebug") {
                 const response = await client.Target.getTargetInfo();

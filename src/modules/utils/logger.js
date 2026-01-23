@@ -78,6 +78,16 @@ const LOG_DIR = path.join(process.cwd(), "logs");
 let configuredLevel = null;
 let configLoaded = false;
 let logDirCreated = false;
+let activePrompt = null;
+
+/**
+ * Sets the active CLI prompt for log rendering.
+ * When set, logs will clear and re-render the prompt to appear above it.
+ * @param {Object|null} prompt - The active Enquirer prompt instance, or null to clear
+ */
+function setActivePrompt(prompt) {
+    activePrompt = prompt;
+}
 
 /**
  * Gets the configured log level from injectorConfig.
@@ -268,6 +278,9 @@ function createLogger(moduleName) {
             ? formatMinimal(level, moduleName, message)
             : formatFullConsole(level, moduleName, message);
 
+        // Clear active prompt before logging, re-render after
+        if (activePrompt) activePrompt.clear();
+
         switch (level) {
             case "debug":
             case "info":
@@ -280,6 +293,8 @@ function createLogger(moduleName) {
                 console.error(consoleMessage);
                 break;
         }
+
+        if (activePrompt) activePrompt.render();
     };
 
     return {
@@ -293,4 +308,5 @@ function createLogger(moduleName) {
 module.exports = {
     createLogger,
     resetLogLevel,
+    setActivePrompt,
 };
