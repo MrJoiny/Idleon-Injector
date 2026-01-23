@@ -1,0 +1,49 @@
+/**
+ * Tooltip Component
+ * Fixed position tooltip and position variants
+ */
+
+/* --- FIXED POSITION TOOLTIP (JS-managed) --- */
+.tooltip-fixed {
+    position: fixed;
+    z-index: 10000;
+    padding: 6px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-accent);
+    color: var(--c-text-main);
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+    max-width: 300px;
+    line-height: 1.35;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    left: var(--tooltip-x, -9999px);
+    top: var(--tooltip-y, -9999px);
+    transition: opacity 0.15s, visibility 0.15s;
+}
+
+.tooltip-fixed.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Position variants - transform based on position */
+.tooltip-fixed.tooltip-top {
+    transform: translateX(-50%) translateY(-100%);
+}
+
+.tooltip-fixed.tooltip-bottom {
+    transform: translateX(-50%);
+}
+
+.tooltip-fixed.tooltip-left {
+    transform: translateX(-100%) translateY(-50%);
+}
+
+.tooltip-fixed.tooltip-right {
+    transform: translateY(-50%);
+}

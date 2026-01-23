@@ -1,0 +1,63 @@
+/**
+ * Form Styles
+ * Inputs, selects, textareas, control bar, and search
+ */
+
+/* --- INPUTS & CONTROLS --- */
+input,
+select,
+textarea {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-main);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: 0.2s;
+    width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+    background: var(--c-panel-dark-dim);
+}
+
+.control-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    align-items: center;
+    background: var(--c-panel);
+    padding: 15px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+}
+
+/* Search Box Styling */
+.search-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+.search-wrapper .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--c-text-dim);
+    font-size: 0.875rem;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-wrapper input {
+    padding-left: 30px;
+    border-color: #333;
+}

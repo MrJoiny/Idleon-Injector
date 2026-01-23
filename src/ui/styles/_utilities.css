@@ -1,0 +1,68 @@
+/**
+ * Utility Classes
+ * Hidden, icons, margin helpers, warning banner, devtools
+ */
+
+/* --- VISIBILITY --- */
+.hidden {
+    display: none !important;
+}
+
+/* Logic for "Hide AI Options" */
+.hide-ai-mode .is-ai-option {
+    display: none !important;
+}
+
+/* Logic for Search Filters */
+.filtered-out {
+    display: none !important;
+}
+
+/* --- ICON HELPERS --- */
+.icon-base {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-logo {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+/* --- SPACING --- */
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* --- WARNING BANNER --- */
+.warning-banner {
+    color: var(--c-warning);
+    border: 1px solid var(--c-warning);
+    padding: 10px;
+    background: var(--c-accent-dim-solid);
+    font-size: 0.875rem;
+}
+
+/* --- DEVTOOLS FRAME --- */
+#devtools-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+    /* DevTools usually needs light bg */
+    display: block;
+}
+
+.terminal-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#devtools-message {
+    padding: 20px;
+    text-align: center;
+    font-family: var(--font-mono);
+    color: var(--c-text-dim);
+}

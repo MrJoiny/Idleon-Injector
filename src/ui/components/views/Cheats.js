@@ -1,167 +1,278 @@
-import van from '../../van-1.6.0.js';
-import vanX from '../../van-x-0.6.3.js';
-import store from '../../store.js';
-import { Loader } from '../Loader.js';
-import { debounce } from '../../utils.js';
+import van from "../../vendor/van-1.6.0.js";
+import vanX from "../../vendor/van-x-0.6.3.js";
+import store from "../../state/store.js";
+import { Loader } from "../Loader.js";
+import { EmptyState } from "../EmptyState.js";
+import { SearchBar } from "../SearchBar.js";
+import { Icons } from "../../assets/icons.js";
+import { CATEGORY_ORDER } from "../../state/constants.js";
+import { CheatItem } from "../CheatItem.js";
+import { LazyCategory } from "../LazyCategory.js";
 
-const { div, input, button, span, details, summary } = van.tags;
+const { div, button, span } = van.tags;
 
-export const Cheats = () => {
-    // Local Reactive UI State
-    const ui = vanX.reactive({
-        filter: '',
-        shouldOpen: false
+const QuickAccessSection = () => {
+    /**
+     * Find a cheat object by its value, handling parameterized commands.
+     * @param {string} val - The cheat value to find
+     * @returns {object|null} The cheat object or a reconstructed one for parameterized commands
+     */
+    const getCheatByValue = (val) => {
+        const allCheats = store.data.cheats;
+        // Direct match
+        const found = allCheats.find((c) => c.value === val);
+        if (found) return found;
+
+        // Handle parameterized commands (e.g., "drop Copper 100" -> base "drop Copper")
+        const baseParts = val.split(" ");
+        if (baseParts.length > 1) {
+            const baseCmd = baseParts.slice(0, -1).join(" ");
+            const paramFound = allCheats.find((c) => c.value === baseCmd);
+            if (paramFound) {
+                return {
+                    value: val,
+                    message: `${paramFound.message} (${baseParts[baseParts.length - 1]})`,
+                    category: paramFound.category,
+                };
+            }
+        }
+        return null;
+    };
+
+    const QuickAccessBtn = (cheatValue, isFavorite = false) => {
+        const cheat = getCheatByValue(cheatValue);
+        if (!cheat) return null;
+
+        return div(
+            { class: "quick-access-item" },
+            button(
+                {
+                    class: () => `quick-access-btn ${isFavorite ? "is-favorite-btn" : ""}`,
+                    onclick: () => store.executeCheat(cheat.value, cheat.message),
+                    title: cheat.message,
+                },
+                span({ class: "quick-access-btn-text" }, cheat.value),
+                isFavorite
+                    ? span(
+                          {
+                              class: "quick-access-remove-icon",
+                              onclick: (e) => {
+                                  e.stopPropagation();
+                                  store.toggleFavorite(cheatValue);
+                              },
+                              title: "Remove from favorites",
+                          },
+                          Icons.X()
+                      )
+                    : null
+            )
+        );
+    };
+
+    return div(
+        { class: "quick-access-section" },
+        div({ class: "quick-access-group" }, div({ class: "quick-access-header" }, "★ FAVORITES"), () => {
+            const favorites = [...store.data.favoriteCheats];
+            if (favorites.length === 0) {
+                return div({ class: "quick-access-empty" }, "No favorites yet");
+            }
+            return div({ class: "quick-access-items" }, ...favorites.map((val) => QuickAccessBtn(val, true)));
+        }),
+
+        div({ class: "quick-access-group" }, div({ class: "quick-access-header" }, "↻ RECENT"), () => {
+            const recent = [...store.data.recentCheats];
+            if (recent.length === 0) {
+                return div({ class: "quick-access-empty" }, "No recent cheats");
+            }
+            return div({ class: "quick-access-items" }, ...recent.slice(0, 5).map((val) => QuickAccessBtn(val, false)));
+        })
+    );
+};
+
+/**
+ * Groups cheats by category, filtering by search term.
+ * Moved outside component to avoid re-creation and allow use in handlers.
+ */
+const getGroupedCheats = (list, term) => {
+    const groups = {};
+    const searchTerm = term.toLowerCase();
+
+    for (let i = 0; i < list.length; i++) {
+        const cheat = list[i];
+
+        // Filter: match term against value or message
+        if (searchTerm) {
+            const msg = (cheat.message || "").toLowerCase();
+            const val = (cheat.value || "").toLowerCase();
+            if (!msg.includes(searchTerm) && !val.includes(searchTerm)) continue;
+        }
+
+        const category = cheat.category || "general";
+        if (!groups[category]) groups[category] = [];
+        groups[category].push(cheat);
+    }
+
+    // Return sorted by category name with specific order
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+        const indexA = CATEGORY_ORDER.indexOf(a);
+        const indexB = CATEGORY_ORDER.indexOf(b);
+
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+
+        return a.localeCompare(b);
     });
 
-    // Initial Load
+    const result = {};
+    for (const key of sortedKeys) {
+        result[key] = groups[key];
+    }
+    return result;
+};
+
+export const Cheats = () => {
+    const ui = vanX.reactive({
+        filter: "",
+        shouldOpen: false,
+        activeCategory: null,
+    });
+
     if (store.data.cheats.length === 0) {
         store.loadCheats();
     }
 
-    // Debounce Input
-    const handleInput = debounce((e) => {
-        const val = e.target.value.trim();
-        ui.filter = val;
-        // Auto-expand if searching, otherwise collapse
-        ui.shouldOpen = val.length > 0;
-    }, 300);
-
-    // Derived State: Grouped Cheats
-    // vanX.calc creates a readonly reactive object derived from other states
-    // When store.data.cheats OR ui.filter changes, this re-runs.
-    const derived = vanX.reactive({
-        grouped: vanX.calc(() => {
-            const list = store.data.cheats;
-            const term = ui.filter.toLowerCase();
-            // Pass 1: Identify all available categories from multi-part commands
-            const categoriesSet = new Set();
-            for (let i = 0; i < list.length; i++) {
-                const val = typeof list[i] === 'object' ? list[i].value : list[i];
-                if (!val) continue;
-                const parts = val.trim().split(' ');
-                if (parts.length > 1) {
-                    categoriesSet.add(parts[0].toLowerCase());
-                }
-            }
-
-            const groups = {};
-
-            const matches = (c) => {
-                if (!term) return true;
-                const msg = (typeof c === 'object' ? c.message : c).toLowerCase();
-                const val = (typeof c === 'object' ? c.value : c).toLowerCase();
-                return msg.includes(term) || val.includes(term);
-            };
-
-            // Pass 2: Grouping
-            for (let i = 0; i < list.length; i++) {
-                const cheat = list[i];
-                if (!matches(cheat)) continue;
-
-                const val = typeof cheat === 'object' ? cheat.value : cheat;
-                const msg = typeof cheat === 'object' ? cheat.message : cheat;
-                if (!val) continue;
-
-                const parts = val.trim().split(' ');
-                const firstWordRaw = parts[0];
-                const firstWordLower = firstWordRaw.toLowerCase();
-
-                let category;
-                // If it's multi-part, or if the single word is a known category name
-                if (parts.length > 1 || categoriesSet.has(firstWordLower)) {
-                    category = firstWordLower.charAt(0).toUpperCase() + firstWordLower.slice(1);
-                } else {
-                    category = 'General';
-                }
-
-                if (!groups[category]) groups[category] = [];
-                groups[category].push({ message: msg, value: val, baseCommand: firstWordRaw });
-            }
-
-            // Sort keys
-            return Object.keys(groups).sort().reduce((acc, key) => {
-                acc[key] = groups[key];
-                return acc;
-            }, {});
-        })
+    // Pagination state
+    const pagination = vanX.reactive({
+        limit: 50,
     });
 
-    return div({ id: 'cheats-tab', class: 'tab-pane' },
-
-        div({ class: 'control-bar' },
-            div({ class: 'search-wrapper' },
-                span({ class: 'search-icon' }, "ᐳ"),
-                input({
-                    type: 'text',
-                    placeholder: 'SEARCH_COMMANDS...',
-                    oninput: handleInput
-                })
-            )
-        ),
-
-        // Content Area
-        () => {
-            if (store.app.isLoading && store.data.cheats.length === 0) {
-                return Loader({ text: "INITIALIZING..." });
-            }
-
-            // Accessing derived.grouped triggers dependency tracking
-            const groupedData = derived.grouped;
-            const categories = Object.keys(groupedData);
-
-            if (categories.length === 0) {
-                return div({ style: 'padding: 20px; color: var(--c-text-dim);' }, "NO CHEATS FOUND.");
-            }
-
-            // Grid Layout
-            return div({ id: 'cheat-buttons', class: 'grid-layout' },
-                categories.map(cat => {
-                    return details({ class: 'cheat-category', open: () => ui.shouldOpen },
-                        summary(cat),
-                        div({ class: 'cheat-category-content' },
-                            // Note: We are mapping standard arrays here because the 'grouped' object
-                            // is regenerated entirely on filter. vanX.list is not necessary
-                            // for the leaf nodes if the parent container is replaced anyway.
-                            groupedData[cat].map(cheat => CheatItem(cheat))
-                        )
-                    );
-                })
-            );
-        }
-    );
-};
-
-const CheatItem = (cheat) => {
-    // Check global confirmation list (Reactive access)
-    // We use a derived check to ensure reactivity if the list updates
-    const needsValue = van.derive(() => {
-        const list = store.data.needsConfirmation;
-        const val = cheat.value;
-        return list.some(cmd => val === cmd || val.startsWith(cmd + ' '));
-    });
-
-    // Local state for the input
-    const inputValue = van.state("");
-
-    const handleExecute = () => {
-        let finalAction = cheat.value;
-        if (needsValue.val) {
-            if (!inputValue.val.trim()) {
-                store.notify(`Value required for '${cheat.message}'`, 'error');
-                return;
-            }
-            finalAction = `${cheat.value} ${inputValue.val.trim()}`;
-        }
-        store.executeCheat(finalAction, cheat.message);
+    const resetPagination = () => {
+        pagination.limit = 50;
     };
 
-    return div({ class: 'cheat-item-container' },
-        button({ class: 'cheat-button', onclick: handleExecute }, cheat.message),
-        () => needsValue.val ? input({
-            type: 'text',
-            class: 'cheat-input',
-            placeholder: 'Val',
-            oninput: e => inputValue.val = e.target.value
-        }) : null,
+    const validateActiveCategory = (filter) => {
+        const groupedData = getGroupedCheats(store.data.cheats, filter);
+        const categories = Object.keys(groupedData);
+
+        if (categories.length > 0) {
+            if (!ui.activeCategory || !categories.includes(ui.activeCategory)) {
+                ui.activeCategory = categories[0];
+            }
+        } else {
+            ui.activeCategory = null;
+        }
+    };
+
+    const handleSearch = (val) => {
+        ui.filter = val;
+        ui.shouldOpen = val.length > 0;
+        validateActiveCategory(val);
+        resetPagination();
+    };
+
+    const handleCategorySwitch = (cat) => {
+        ui.activeCategory = cat;
+        resetPagination();
+    };
+
+    return div(
+        { id: "cheats-tab", class: "tab-pane" },
+
+        div(
+            { class: "scroll-container" },
+
+            div(
+                { class: "control-bar" },
+                SearchBar({
+                    placeholder: "SEARCH_COMMANDS",
+                    onInput: handleSearch,
+                    style: "flex: 1;",
+                }),
+                button(
+                    {
+                        class: "view-mode-toggle",
+                        onclick: store.toggleCheatsViewMode,
+                        title: "Toggle View Mode (List/Tabs)",
+                    },
+                    () => (store.app.cheatsViewMode === "tabs" ? Icons.List() : Icons.Tabs())
+                )
+            ),
+
+            QuickAccessSection(),
+
+            () => {
+                if (store.app.isLoading && store.data.cheats.length === 0) {
+                    return Loader({ text: "INITIALIZING" });
+                }
+
+                // Get fresh snapshot of cheats and filter term
+                const filterTerm = ui.filter;
+                const groupedData = getGroupedCheats(store.data.cheats, filterTerm);
+                const categories = Object.keys(groupedData);
+
+                if (categories.length === 0) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO CHEATS FOUND",
+                        subtitle: filterTerm ? "Try a different search term" : "Cheats list is empty",
+                    });
+                }
+
+                // Initialize active category if null or invalid (subscription-free peek)
+                const rawUi = vanX.raw(ui);
+                if (!rawUi.activeCategory || !categories.includes(rawUi.activeCategory)) {
+                    ui.activeCategory = categories[0];
+                }
+
+                const isTabsMode = store.app.cheatsViewMode === "tabs";
+
+                if (isTabsMode) {
+                    return div(
+                        // Tabs Bar
+                        div(
+                            { class: "tabs-bar" },
+                            categories.map((cat) =>
+                                button(
+                                    {
+                                        class: () => `tab-btn ${ui.activeCategory === cat ? "active" : ""}`,
+                                        onclick: () => handleCategorySwitch(cat),
+                                    },
+                                    cat
+                                )
+                            )
+                        ),
+                        // Tab Content - wrapped in reactive function to respond to category/pagination changes
+                        () => {
+                            const activeCheats = groupedData[ui.activeCategory] || [];
+                            const visibleCheats = activeCheats.slice(0, pagination.limit);
+                            const hasMore = activeCheats.length > pagination.limit;
+                            return div(
+                                { class: "tab-content" },
+                                visibleCheats.map((cheat) => CheatItem(cheat)),
+                                hasMore
+                                    ? button(
+                                          { class: "load-more-btn", onclick: () => (pagination.limit += 50) },
+                                          `LOAD MORE (${activeCheats.length - pagination.limit} REMAINING)`
+                                      )
+                                    : null
+                            );
+                        }
+                    );
+                }
+
+                // List View (Accordion) with Lazy Loading
+                return div(
+                    { id: "cheat-buttons", class: "grid-layout" },
+                    categories.map((cat) => {
+                        return LazyCategory({
+                            category: cat,
+                            isOpen: ui.shouldOpen, // Force open if searching
+                            cheats: groupedData[cat],
+                        });
+                    })
+                );
+            }
+        )
     );
 };

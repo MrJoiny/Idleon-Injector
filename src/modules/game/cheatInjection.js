@@ -1,18 +1,18 @@
 /**
  * Cheat Injection Module
- * 
+ *
  * Handles Chrome DevTools Protocol interception and script modification for injecting
  * cheat functionality into the game. Intercepts specific script requests, modifies their
  * content to include cheat hooks, and manages the injection of cheat code into the game context.
  */
 
-const CDP = require('chrome-remote-interface');
-const fs = require('fs').promises;
-const atob = require('atob');
-const btoa = require('btoa');
+const CDP = require("chrome-remote-interface");
+const fs = require("fs").promises;
 
-// Import utility functions
-const { objToString } = require('../utils/helpers');
+const { objToString } = require("../utils/helpers");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("Injection");
 
 /**
  * Set up CDP interception and inject cheats into the game
@@ -24,137 +24,106 @@ const { objToString } = require('../utils/helpers');
  * @returns {Promise<Object>} CDP client instance
  */
 async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort) {
-  const options = {
-    tab: hook,
-    port: cdpPort
-  };
+    const options = {
+        tab: hook,
+        port: cdpPort,
+    };
 
-  const client = await CDP(options);
+    const client = await CDP(options);
 
-  const { DOM, Page, Network, Runtime } = client;
-  console.log('Injecting cheats...');
+    const { DOM, Page, Network, Runtime } = client;
+    log.info("Setting up cheat injection");
 
-  let cheats = await fs.readFile('cheats.js', 'utf8');
-  cheats = `let startupCheats = ${JSON.stringify(startupCheats)};\nlet cheatConfig = ${objToString(cheatConfig)};\nlet webPort = ${config.webPort};\n${cheats}`;
+    let cheats = await fs.readFile("cheats.js", "utf8");
+    cheats =
+        `let startupCheats = ${JSON.stringify(startupCheats)};\n` +
+        `let cheatConfig = ${objToString(cheatConfig)};\n` +
+        `let webPort = ${config.webPort};\n` +
+        `${cheats}`;
 
-  // Intercept specific script requests to modify their content before execution.
-  // This targets the main game script based on the configured URL pattern
-  await Network.setRequestInterception(
-    {
-      patterns: [
-        {
-          urlPattern: config.interceptPattern,
-          resourceType: 'Script',
-          interceptionStage: 'HeadersReceived',
-        },
-      ],
-    }
-  );
-
-  // Disable cache to ensure we always intercept the network request for the game script
-  // Might help for a specific case where the game script is cached and can't be intercepted.
-  // Not sure if it's helps.
-  await Network.setCacheDisabled({ cacheDisabled: true });
-
-  // Disable Content Security Policy to allow injecting and executing modified/external scripts.
-  await Page.setBypassCSP({ enabled: true });
-  // Optionally forward console messages from the game window to this script's console.
-  if (config.showConsoleLog) {
-    Runtime.consoleAPICalled((entry) => {
-      console.log(entry.args.map(arg => arg.value).join(" "));
+    await Network.setRequestInterception({
+        patterns: [
+            {
+                urlPattern: config.interceptPattern,
+                resourceType: "Script",
+                interceptionStage: "HeadersReceived",
+            },
+        ],
     });
-  }
 
-  await Promise.all([Runtime.enable(), Page.enable(), Network.enable(), DOM.enable()]);
+    // Disable cache to ensure network interception works reliably
+    await Network.setCacheDisabled({ cacheDisabled: true });
 
+    await Page.setBypassCSP({ enabled: true });
 
-  // Define the handler for intercepted requests. This runs for each matched script.
-  Network.requestIntercepted(async ({ interceptionId, request }) => {
-    // Wrap in try-catch to prevent unhandled errors in the interception callback from crashing the injector.
-    try {
-      console.log(`Intercepted: ${request.url}`);
-      const response = await Network.getResponseBodyForInterception({ interceptionId });
-      const originalBody = atob(response.body);
+    Runtime.consoleAPICalled((entry) => {
+        log.debug(entry.args.map((arg) => arg.value).join(" "));
+    });
 
-      // Regex to find the main application variable assignment in the game's code.
-      // This is crucial for hooking the cheats into the game's context.
-      const InjRegG = new RegExp(config.injreg, "g");
-      const VarName = new RegExp("^\\w+"); // Extracts the variable name itself.
+    await Promise.all([Runtime.enable(), Page.enable(), Network.enable(), DOM.enable()]);
 
-      const AppMain = InjRegG.exec(originalBody);
-      if (!AppMain) {
-        console.error(`Injection regex '${config.injreg}' did not match the script content. Cannot inject.`);
-        // Allow the original script to load if injection point isn't found.
-        Network.continueInterceptedRequest({ interceptionId });
-        return;
-      }
-      // Extract the variable name found by the regex.
-      const AppVar = Array(AppMain.length).fill("");
-      for (let i = 0; i < AppMain.length; i++) AppVar[i] = VarName.exec(AppMain[i])[0];
+    Network.requestIntercepted(async ({ interceptionId, request }) => {
+        try {
+            log.debug(`Intercepted script: ${request.url}`);
+            const response = await Network.getResponseBodyForInterception({ interceptionId });
+            const originalBody = Buffer.from(response.body, "base64").toString("utf8");
 
-      // Inject cheats directly into the current context
-      // This ensures cheats are loaded even after page reloads
-      console.log('Loaded cheats...');
-      await Runtime.evaluate({
-        expression: cheats,
-        awaitPromise: true,
-        allowUnsafeEvalBlockedByCSP: true
-      });
+            // Find the main application variable assignment to hook cheats into
+            const InjRegG = new RegExp(config.injreg, "g");
+            const VarName = new RegExp("^\\w+");
 
-      let manipulatorResult = await Runtime.evaluate({ expression: 'getZJSManipulator()', awaitPromise: true });
-      let newBody;
+            const AppMain = InjRegG.exec(originalBody);
+            if (!AppMain) {
+                log.error(`Injection regex did not match - check injreg pattern`);
+                Network.continueInterceptedRequest({ interceptionId });
+                return;
+            }
+            const AppVar = Array(AppMain.length).fill("");
+            for (let i = 0; i < AppMain.length; i++) AppVar[i] = VarName.exec(AppMain[i])[0];
 
-      if (manipulatorResult.result && manipulatorResult.result.type === 'string') {
-        // Execute the manipulator function fetched from the target context.
-        let manipulator = new Function("return " + manipulatorResult.result.value)();
-        newBody = manipulator(originalBody);
-      } else {
-        // If no manipulator is defined or it's invalid, use the original script body.
-        console.warn('getZJSManipulator() did not return a valid function string. Applying basic injection only.');
-        newBody = originalBody;
-      }
+            // Inject cheats directly into the current context to persist across page reloads
+            log.debug("Evaluating cheat code");
+            await Runtime.evaluate({
+                expression: cheats,
+                awaitPromise: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
 
-      // Core injection: Assign the found game variable to a global window property (`__idleon_cheats__`)
-      // This makes the game's main object accessible to the cheat script.
-      // Use a non-global regex for replacement to ensure only the first match is replaced.
-      const replacementRegex = new RegExp(config.injreg);
-      newBody = newBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
+            // Assign the game variable to a global window property for cheat access
+            const replacementRegex = new RegExp(config.injreg);
+            const newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
 
-      console.log('Updated game code...');
+            log.debug("Patching game script");
 
-      const newHeaders = [
-        `Date: ${(new Date()).toUTCString()}`,
-        `Connection: closed`,
-        `Content-Length: ${newBody.length}`,
-        `Content-Type: text/javascript`,
-      ];
-      const newResponse = btoa(
-        "HTTP/1.1 200 OK\r\n" +
-        newHeaders.join('\r\n') +
-        "\r\n\r\n" +
-        newBody
-      );
+            const newHeaders = [
+                `Date: ${new Date().toUTCString()}`,
+                `Connection: closed`,
+                `Content-Length: ${newBody.length}`,
+                `Content-Type: text/javascript`,
+            ];
+            const newResponse = Buffer.from(
+                "HTTP/1.1 200 OK\r\n" + newHeaders.join("\r\n") + "\r\n\r\n" + newBody
+            ).toString("base64");
 
-      await Network.continueInterceptedRequest({ // Make sure to await this
-        interceptionId,
-        rawResponse: newResponse,
-      });
-      console.log('Sent to game...');
-      console.log('Cheat injected!');
-    } catch (error) {
-      console.error("Error during request interception:", error);
-      // Attempt to continue the request with the original content if modification fails,
-      // to prevent the game from potentially hanging.
-      try {
-        await Network.continueInterceptedRequest({ interceptionId });
-      } catch (continueError) {
-        console.error("Error trying to continue request after interception error:", continueError);
-      }
-    }
-  });
+            await Network.continueInterceptedRequest({
+                // Make sure to await this
+                interceptionId,
+                rawResponse: newResponse,
+            });
+            log.info("Cheats injected successfully!");
+        } catch (error) {
+            log.error("Injection failed:", error);
+            // Attempt to continue with original content to prevent game from hanging
+            try {
+                await Network.continueInterceptedRequest({ interceptionId });
+            } catch (continueError) {
+                log.error("Failed to recover from injection error:", continueError);
+            }
+        }
+    });
 
-  console.log("Interception listener setup complete.");
-  return client; // Return the CDP client for further interaction.
+    log.debug("Request interceptor attached");
+    return client;
 }
 
 /**
@@ -162,10 +131,10 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
  * @returns {string} JavaScript expression for the cheat context
  */
 function createCheatContext() {
-  return `window.document.querySelector('iframe').contentWindow.__idleon_cheats__`;
+    return "(window.__idleon_cheats__ || window.document.querySelector('iframe')?.contentWindow?.__idleon_cheats__)";
 }
 
 module.exports = {
-  setupIntercept,
-  createCheatContext
+    setupIntercept,
+    createCheatContext,
 };

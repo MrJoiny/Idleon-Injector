@@ -1,0 +1,247 @@
+/**
+ * Function Input Component
+ * Type selector, slider, presets, value inputs
+ */
+
+/* --- FUNCTION INPUT COMPONENT --- */
+.function-input {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Main row: dropdown + value input on same line */
+.function-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.function-type-select {
+    width: auto;
+    min-width: 130px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-main);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.function-type-select:hover {
+    border-color: var(--c-accent);
+}
+
+.function-type-select:focus {
+    border-color: var(--c-accent);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+}
+
+/* Slider Group: slider + editable number input */
+.function-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.function-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: var(--c-border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+.function-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--c-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--c-accent-glow);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.function-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 10px var(--c-accent);
+}
+
+.function-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--c-accent);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--c-accent-glow);
+}
+
+/* Editable value input next to slider */
+.function-value-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    padding: 0 8px 0 0;
+}
+
+.function-value-input-wrapper:focus-within {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+}
+
+.function-value-input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 4px 6px 8px;
+    box-shadow: none !important;
+}
+
+.function-value-input:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+.function-value-suffix {
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Preset Buttons */
+.function-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-left: 164px;
+}
+
+.function-preset-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    padding: 3px 8px;
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.function-preset-btn:hover {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+    background: var(--c-accent-dim);
+}
+
+.function-preset-btn.active {
+    background: var(--c-accent);
+    color: #000;
+    border-color: var(--c-accent);
+    font-weight: 600;
+}
+
+/* Passthrough Label */
+.function-passthrough-label {
+    font-size: 0.875rem;
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+/* Number Input Wrapper with inline +/- buttons for Fixed/Max/Min */
+.function-number-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    flex: 1;
+    min-width: 100px;
+    max-width: 160px;
+}
+
+.function-number-input-wrapper:focus-within {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+}
+
+.function-number-btn {
+    background: transparent;
+    border: none;
+    color: var(--c-accent);
+    font-size: 1rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.function-number-btn:hover {
+    background: rgba(255, 183, 0, 0.1);
+    color: #fff;
+}
+
+.function-number-btn:active {
+    background: rgba(255, 183, 0, 0.2);
+}
+
+.function-number-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--c-text-main);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 6px 0;
+    min-width: 40px;
+    box-shadow: none !important;
+}
+
+.function-number-input:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+/* Raw Function Text Input (single line) */
+.function-raw-input {
+    flex: 1;
+    min-width: 150px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-main);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+}
+
+.function-raw-input:focus {
+    border-color: var(--c-accent);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--c-accent-dim);
+}

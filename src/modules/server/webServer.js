@@ -1,63 +1,126 @@
 /**
  * Web Server Module
- * 
- * Creates and manages the Express web server for the Idleon Cheat Injector UI.
+ *
+ * Creates and manages the built-in Node.js HTTP server for the Idleon Cheat Injector UI.
  * Handles static file serving, middleware configuration, and server startup.
  * Provides the foundation for the web-based cheat management interface.
  */
 
-const express = require('express');
-const path = require('path');
+const http = require("http");
+const path = require("path");
+const fs = require("fs").promises;
+const TinyRouter = require("./tinyRouter");
+const { initWebSocket } = require("./wsServer");
+const { createLogger } = require("../utils/logger");
+
+const log = createLogger("WebServer");
+
+const MIME_TYPES = {
+    ".html": "text/html",
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+};
 
 /**
- * Creates and configures the Express web server
+ * Serves static files from the specified directory
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ * @param {string} staticDir - Directory to serve files from
+ * @returns {Promise<boolean>} Whether the file was served
+ */
+async function serveStatic(req, res, staticDir) {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = url.pathname;
+    const isRootPath = pathname === "/" || pathname === "/index.html";
+    let filePath = path.join(staticDir, isRootPath ? "entry/index.html" : pathname);
+
+    try {
+        const stats = await fs.stat(filePath);
+        if (stats.isDirectory()) {
+            filePath = path.join(filePath, "index.html");
+        }
+
+        const content = await fs.readFile(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
+        res.end(content);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Creates and configures the TinyRouter
  * @param {Object} config - Configuration object
  * @param {boolean} config.enableUI - Whether to enable the web UI
- * @returns {Object} Express app instance
+ * @returns {Object} TinyRouter instance
  */
 function createWebServer(config) {
-  const app = express();
-  
-  // Middleware to parse JSON request bodies
-  app.use(express.json());
+    const router = new TinyRouter();
+    router.enableUI = config.enableUI;
 
-  if (config.enableUI) {
-    // Serve static files (CSS, JS) from the 'ui' directory
-    app.use(express.static(path.join(__dirname, '../../ui')));
+    log.debug(`Web UI ${config.enableUI ? "enabled" : "disabled"}`);
 
-    // Explicitly serve index.html for the root path
-    app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, '../../ui', 'index.html'));
-    });
-    console.log('Web UI enabled. Static files and root route configured.');
-  } else {
-    console.log('Web UI disabled in config.');
-  }
-
-  return app;
+    return router;
 }
 
 /**
  * Starts the web server on the specified port
- * @param {Object} app - Express app instance
+ * @param {Object} router - TinyRouter instance
  * @param {number} port - Port to listen on
+ * @param {Object} [wsConfig] - Optional WebSocket configuration
+ * @param {Object} [wsConfig.runtime] - CDP Runtime client for WebSocket
+ * @param {string} [wsConfig.context] - Game context expression for WebSocket
  * @returns {Promise<Object>} Server instance
  */
-function startServer(app, port) {
-  return new Promise((resolve, reject) => {
-    const server = app.listen(port, () => {
-      console.log(`\n--------------------------------------------------`);
-      console.log(`Web UI available at: http://localhost:${port}`);
-      console.log(`--------------------------------------------------\n`);
-      resolve(server);
-    }).on('error', (err) => {
-      console.error('Failed to start web server:', err);
-      reject(err);
+function startServer(router, port, wsConfig = null) {
+    const staticDir = path.join(__dirname, "../../ui");
+
+    const server = http.createServer(async (req, res) => {
+        try {
+            const handledByRouter = await router.handle(req, res);
+            if (handledByRouter) return;
+
+            if (router.enableUI) {
+                const handledByStatic = await serveStatic(req, res, staticDir);
+                if (handledByStatic) return;
+            }
+
+            res.statusCode = 404;
+            res.end("Not Found");
+        } catch (err) {
+            log.error("Server error:", err);
+            res.statusCode = 500;
+            res.end("Internal Server Error");
+        }
     });
-  });
+
+    return new Promise((resolve, reject) => {
+        server
+            .listen(port, () => {
+                log.info(`Web UI: http://localhost:${port}`);
+
+                // Initialize WebSocket server if config provided
+                if (wsConfig && wsConfig.runtime && wsConfig.context) {
+                    initWebSocket(server, wsConfig.runtime, wsConfig.context);
+                }
+
+                resolve(server);
+            })
+            .on("error", (err) => {
+                log.error("Web server failed to start:", err);
+                reject(err);
+            });
+    });
 }
 
 module.exports = {
-  createWebServer,
-  startServer
+    createWebServer,
+    startServer,
 };

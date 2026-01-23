@@ -1,0 +1,41 @@
+/**
+ * CSS Custom Properties (Design Tokens)
+ * Cyber Industrial Theme - Amber Palette
+ */
+
+:root {
+    /* -- PALETTE: Cyber Industrial -- */
+    --c-void: #050507;
+    --c-panel: #0e0f14;
+    --c-panel-dim: #0b0c11;
+    --c-panel-dark-dim: #090a09;
+    --c-panel-hover: #161821;
+    --c-border: #2a2b36;
+
+    /* -- AMBER THEME -- */
+    --c-accent: #ffb700;
+    /* Safety Orange/Gold */
+    --c-accent-dim: rgba(255, 183, 0, 0.1);
+    --c-accent-dim-solid: #241e0f;
+    --c-accent-glow: rgba(255, 183, 0, 0.3);
+
+    /* States */
+    --c-success: #ccff00;
+    --c-warning: #ffb700;
+    --c-danger: #ff003c;
+
+    /* Text */
+    --c-text-main: #e0e6ed;
+    --c-text-dim: #e0e6edee;
+    --c-text-muted: #e0e6ede0;
+
+    /* -- DIMENSIONS & FONTS -- */
+    --nav-width: 240px;
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --font-display: "Rajdhani", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+
+    /* -- TRANSITIONS -- */
+    --ease-tech: cubic-bezier(0.2, 0.6, 0.3, 1);
+}

@@ -1,0 +1,64 @@
+/**
+ * Toast Component
+ * Status messages, loader box, spinner
+ */
+
+/* --- TOAST MESSAGES --- */
+#status-message {
+    position: fixed;
+    bottom: 55px;
+    left: 0px;
+    background: rgba(14, 15, 20, 0.95);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-main);
+    padding: 15px 20px;
+    width: calc(var(--nav-width));
+    max-width: calc(var(--nav-width));
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: none;
+    opacity: 1;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    transition: opacity 0.3s ease;
+}
+
+#status-message.is-visible {
+    display: block;
+}
+
+#status-message.fade-out {
+    opacity: 0;
+}
+
+#status-message.status-success {
+    border-left: 4px solid var(--c-success);
+}
+
+#status-message.status-error {
+    border-left: 4px solid var(--c-danger);
+    color: #ffcccc;
+}
+
+/* --- LOADING & STATUS --- */
+.loader-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 15px;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 200, 0, 0.1);
+    border-top-color: var(--c-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}

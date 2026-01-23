@@ -1,4 +1,7 @@
-const https = require('https');
+const https = require("https");
+const { createLogger } = require("./utils/logger");
+
+const log = createLogger("UpdateChecker");
 
 /**
  * Compares two semantic version strings.
@@ -7,8 +10,8 @@ const https = require('https');
  * @returns {number} - 1 if v1 > v2, -1 if v1 < v2, 0 if equal
  */
 function compareVersions(v1, v2) {
-    const p1 = v1.replace(/^v/, '').split('.').map(Number);
-    const p2 = v2.replace(/^v/, '').split('.').map(Number);
+    const p1 = v1.replace(/^v/, "").split(".").map(Number);
+    const p2 = v2.replace(/^v/, "").split(".").map(Number);
 
     for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
         const n1 = p1[i] || 0;
@@ -25,24 +28,24 @@ function compareVersions(v1, v2) {
  * @returns {Promise<{updateAvailable: boolean, latestVersion: string, url: string}|null>}
  */
 function checkForUpdates(currentVersion) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const options = {
-            hostname: 'api.github.com',
-            path: '/repos/MrJoiny/Idleon-Injector/releases/latest',
-            method: 'GET',
+            hostname: "api.github.com",
+            path: "/repos/MrJoiny/Idleon-Injector/releases/latest",
+            method: "GET",
             headers: {
-                'User-Agent': 'Idleon-Injector-Update-Checker'
-            }
+                "User-Agent": "Idleon-Injector-Update-Checker",
+            },
         };
 
         const req = https.request(options, (res) => {
-            let data = '';
+            let data = "";
 
-            res.on('data', (chunk) => {
+            res.on("data", (chunk) => {
                 data += chunk;
             });
 
-            res.on('end', () => {
+            res.on("end", () => {
                 if (res.statusCode === 200) {
                     try {
                         const release = JSON.parse(data);
@@ -52,13 +55,13 @@ function checkForUpdates(currentVersion) {
                             resolve({
                                 updateAvailable: true,
                                 latestVersion: latestVersion,
-                                url: release.html_url
+                                url: release.html_url,
                             });
                         } else {
                             resolve({ updateAvailable: false });
                         }
                     } catch (e) {
-                        console.error('Failed to parse update check response:', e);
+                        log.error("Failed to parse update check response:", e);
                         resolve(null);
                     }
                 } else {
@@ -68,8 +71,8 @@ function checkForUpdates(currentVersion) {
             });
         });
 
-        req.on('error', (error) => {
-            console.error('Update check failed:', error.message);
+        req.on("error", (error) => {
+            log.error("Update check failed:", error.message);
             resolve(null);
         });
 

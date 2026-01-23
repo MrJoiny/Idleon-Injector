@@ -1,0 +1,35 @@
+/**
+ * Events 034 Proxies
+ *
+ * Proxies for ActorEvents_34 (item get notifications):
+ * - Hide item pickup notifications for autoloot
+ */
+
+import { cheatConfig, cheatState } from "../core/state.js";
+import { events, behavior, gga } from "../core/globals.js";
+
+/**
+ * Setup item get notification proxy (hide notifications for autoloot).
+ *
+ * NOTE: Intentionally deviates from "base first" pattern.
+ * When autoloot is active, we must intercept and recycle the actor before
+ * the original function runs to prevent the notification from showing.
+ */
+export function setupItemGetNotificationProxy() {
+    const hxOverrides = window.HxOverrides;
+    const actorEvents34 = events(34);
+    const ItemGet = actorEvents34.prototype._event_ItemGet;
+    actorEvents34.prototype._event_ItemGet = function (...args) {
+        // Early return to block notification and recycle actor
+        if (
+            cheatState.wide.autoloot &&
+            cheatConfig.wide.autoloot.hidenotifications &&
+            [0, 1].includes(this._Deployment)
+        ) {
+            hxOverrides.remove(gga.ItemGetPixelQueue, this.actor);
+            behavior.recycleActor(this.actor);
+            return;
+        }
+        return Reflect.apply(ItemGet, this, args);
+    };
+}

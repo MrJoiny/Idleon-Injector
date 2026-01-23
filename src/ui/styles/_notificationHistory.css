@@ -1,0 +1,107 @@
+/**
+ * Notification History Dropdown
+ */
+
+.notification-history {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    transition: opacity 0.2s ease, max-width 0.2s ease;
+}
+
+.notification-history-toggle {
+    background: transparent;
+    border: none;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.notification-history-toggle:hover {
+    color: var(--c-accent);
+    background: rgba(255, 200, 0, 0.1);
+}
+
+.notification-history-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+.notification-history-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: -100px;
+    min-width: 300px;
+    max-width: 350px;
+    background: rgba(14, 15, 20, 0.98);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-history-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
+.notification-history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--c-border);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
+.notification-history-item:last-child {
+    border-bottom: none;
+}
+
+.notification-history-indicator {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+}
+
+.notification-history-item.is-success .notification-history-indicator {
+    background: var(--c-success);
+    box-shadow: 0 0 6px var(--c-success);
+}
+
+.notification-history-item.is-error .notification-history-indicator {
+    background: var(--c-danger);
+    box-shadow: 0 0 6px var(--c-danger);
+}
+
+.notification-history-message {
+    flex: 1;
+    color: var(--c-text-main);
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.notification-history-item.is-error .notification-history-message {
+    color: #ffcccc;
+}
+
+.notification-history-time {
+    flex-shrink: 0;
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    opacity: 0.7;
+}

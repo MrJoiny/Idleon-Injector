@@ -1,22 +1,24 @@
 /**
  * Configuration Management Module
- * 
+ *
  * Handles loading, merging, and accessing configuration data for the Idleon Cheat Injector.
  * Manages the hierarchy of base config and custom user overrides, providing a centralized
  * interface for all configuration-related operations throughout the application.
  */
 
-const _ = require('lodash');
-const os = require('os');
+const { deepClone, union, deepMerge } = require("../utils/objectUtils");
+const { validateConfig } = require("../utils/helpers");
+const os = require("os");
+const { createLogger } = require("../utils/logger");
 
-// Configuration state - holds loaded configuration data in memory
+const log = createLogger("Config");
+
 let config = null;
-let defaultConfig = null; // Store the original default configuration
+let defaultConfig = null;
 let injectorConfig = null;
 let startupCheats = null;
 let cheatConfig = null;
 
-// Application constants - default ports for CDP and web server
 const CDP_PORT = 32123;
 const WEB_PORT = 8080;
 
@@ -25,46 +27,56 @@ const WEB_PORT = 8080;
  * @returns {Object} The loaded configuration object
  */
 function loadConfiguration() {
-  try {
-    // Load base configuration - check if we're in src directory or root
-    const path = require('path');
-    const fs = require('fs');
-
-    let configPath = process.cwd() + '/config.js';
-    let customConfigPath = process.cwd() + '/config.custom.js';
-
-    // If we're in the src directory, look in parent directory
-    if (!fs.existsSync(configPath)) {
-      configPath = path.join(process.cwd(), '../config.js');
-      customConfigPath = path.join(process.cwd(), '../config.custom.js');
-    }
-
-    config = require(configPath);
-
-    // Deep clone for defaultConfig to ensure it stays pristine
-    defaultConfig = _.cloneDeep(config);
-
-    // Try to load custom configuration and merge
     try {
-      const customConfig = require(customConfigPath);
-      config.injectorConfig = _.merge(config.injectorConfig, customConfig.injectorConfig);
-      config.startupCheats = _.union(config.startupCheats, customConfig.startupCheats);
-      config.cheatConfig = _.merge(config.cheatConfig, customConfig.cheatConfig);
-    } catch (e) {
-      console.log('****** No custom config found, using default config ******');
-      console.log('****** To create a custom config, copy config.custom.example.js to config.custom.js and edit to your liking ******');
-      console.log('');
+        const path = require("path");
+        const fs = require("fs");
+
+        let configPath = process.cwd() + "/config.js";
+        let customConfigPath = process.cwd() + "/config.custom.js";
+
+        if (!fs.existsSync(configPath)) {
+            configPath = path.join(process.cwd(), "../config.js");
+            customConfigPath = path.join(process.cwd(), "../config.custom.js");
+        }
+
+        config = require(configPath);
+
+        defaultConfig = deepClone(config);
+
+        try {
+            const customConfig = require(customConfigPath);
+
+            if (customConfig.injectorConfig) {
+                validateConfig(config.injectorConfig, customConfig.injectorConfig, "injectorConfig");
+                config.injectorConfig = deepMerge(config.injectorConfig, customConfig.injectorConfig);
+            }
+
+            if (customConfig.startupCheats) {
+                if (Array.isArray(customConfig.startupCheats)) {
+                    config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
+                } else {
+                    log.error("startupCheats must be an array, received '" + typeof customConfig.startupCheats + "'");
+                }
+            }
+
+            if (customConfig.cheatConfig) {
+                validateConfig(config.cheatConfig, customConfig.cheatConfig, "");
+                config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
+            }
+
+            log.debug("Loaded custom config overrides");
+        } catch {
+            log.info("No config.custom.js found - using defaults");
+        }
+
+        injectorConfig = config.injectorConfig;
+        startupCheats = config.startupCheats;
+        cheatConfig = config.cheatConfig;
+
+        return config;
+    } catch (error) {
+        throw new Error(`Failed to load configuration: ${error.message}`);
     }
-
-    // Extract configuration sections
-    injectorConfig = config.injectorConfig;
-    startupCheats = config.startupCheats;
-    cheatConfig = config.cheatConfig;
-
-    return config;
-  } catch (error) {
-    throw new Error(`Failed to load configuration: ${error.message}`);
-  }
 }
 
 /**
@@ -72,10 +84,10 @@ function loadConfiguration() {
  * @returns {Object} The injector configuration object
  */
 function getInjectorConfig() {
-  if (!injectorConfig) {
-    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
-  }
-  return injectorConfig;
+    if (!injectorConfig) {
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
+    }
+    return injectorConfig;
 }
 
 /**
@@ -83,10 +95,10 @@ function getInjectorConfig() {
  * @returns {Array} The startup cheats array
  */
 function getStartupCheats() {
-  if (!startupCheats) {
-    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
-  }
-  return startupCheats;
+    if (!startupCheats) {
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
+    }
+    return startupCheats;
 }
 
 /**
@@ -94,10 +106,10 @@ function getStartupCheats() {
  * @returns {Object} The cheat configuration object
  */
 function getCheatConfig() {
-  if (!cheatConfig) {
-    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
-  }
-  return cheatConfig;
+    if (!cheatConfig) {
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
+    }
+    return cheatConfig;
 }
 
 /**
@@ -105,10 +117,10 @@ function getCheatConfig() {
  * @returns {Object} The default configuration object
  */
 function getDefaultConfig() {
-  if (!defaultConfig) {
-    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
-  }
-  return defaultConfig;
+    if (!defaultConfig) {
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
+    }
+    return defaultConfig;
 }
 
 /**
@@ -116,7 +128,7 @@ function getDefaultConfig() {
  * @returns {number} The CDP port number
  */
 function getCdpPort() {
-  return CDP_PORT;
+    return CDP_PORT;
 }
 
 /**
@@ -124,11 +136,11 @@ function getCdpPort() {
  * @returns {number} The web server port number
  */
 function getWebPort() {
-  if (injectorConfig && injectorConfig.webPort) {
-    return injectorConfig.webPort;
-  }
-  console.log("Using fallback port: " + WEB_PORT);
-  return WEB_PORT;
+    if (injectorConfig && injectorConfig.webPort) {
+        return injectorConfig.webPort;
+    }
+    log.debug("Using fallback port: " + WEB_PORT);
+    return WEB_PORT;
 }
 
 /**
@@ -136,7 +148,7 @@ function getWebPort() {
  * @returns {boolean} True if running on Linux
  */
 function isLinux() {
-  return os.platform() === 'linux';
+    return os.platform() === "linux";
 }
 
 /**
@@ -144,21 +156,20 @@ function isLinux() {
  * @returns {number} The Linux timeout in milliseconds
  */
 function getLinuxTimeout() {
-  if (!injectorConfig) {
-    throw new Error('Configuration not loaded. Call loadConfiguration() first.');
-  }
-  return injectorConfig.onLinuxTimeout;
+    if (!injectorConfig) {
+        throw new Error("Configuration not loaded. Call loadConfiguration() first");
+    }
+    return injectorConfig.onLinuxTimeout;
 }
 
 module.exports = {
-  loadConfiguration,
-  getInjectorConfig,
-  getStartupCheats,
-  getCheatConfig,
-  getCheatConfig,
-  getDefaultConfig,
-  getCdpPort,
-  getWebPort,
-  isLinux,
-  getLinuxTimeout
+    loadConfiguration,
+    getInjectorConfig,
+    getStartupCheats,
+    getCheatConfig,
+    getDefaultConfig,
+    getCdpPort,
+    getWebPort,
+    isLinux,
+    getLinuxTimeout,
 };

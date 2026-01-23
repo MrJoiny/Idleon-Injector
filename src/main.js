@@ -1,195 +1,208 @@
-const os = require('os');
+const os = require("os");
+const fs = require("fs");
+const path = require("path");
 const {
-  loadConfiguration,
-  getInjectorConfig,
-  getStartupCheats,
-  getCheatConfig,
-  getDefaultConfig,
-  getCdpPort,
-  getWebPort
-} = require('./modules/config/configManager');
-const { attachToGame } = require('./modules/game/gameAttachment');
-const { setupIntercept, createCheatContext } = require('./modules/game/cheatInjection');
-const { createWebServer, startServer } = require('./modules/server/webServer');
-const { setupApiRoutes } = require('./modules/server/apiRoutes');
-const { startCliInterface } = require('./modules/cli/cliInterface');
-const { checkForUpdates } = require('./modules/updateChecker');
-const { version } = require('../package.json');
+    loadConfiguration,
+    getInjectorConfig,
+    getStartupCheats,
+    getCheatConfig,
+    getDefaultConfig,
+    getCdpPort,
+    getWebPort,
+} = require("./modules/config/configManager");
+const { runSetupWizard } = require("./modules/config/setupWizard");
+const { attachToTarget } = require("./modules/game/gameAttachment");
 
-let servicesStarted = false;
+const { setupIntercept, createCheatContext } = require("./modules/game/cheatInjection");
+const { createWebServer, startServer } = require("./modules/server/webServer");
+const { setupApiRoutes } = require("./modules/server/apiRoutes");
+const { startCliInterface } = require("./modules/cli/cliInterface");
+const { checkForUpdates } = require("./modules/updateChecker");
+const { createLogger } = require("./modules/utils/logger");
+const { version } = require("../package.json");
+
+const log = createLogger("Main");
 
 /**
  * InjectCheatUI - Main application entry point
- * 
+ *
  * This application injects cheats into a game by:
  * 1. Attaching to the game process via Chrome DevTools Protocol
  * 2. Intercepting and modifying game resources during load
  * 3. Providing both web UI and CLI interfaces for cheat management
  */
 
-async function printHeader() {
-  console.log('------------------------------------------------------------------------------------------');
-  console.log(`InjectCheatUI v${version}`);
-  console.log('------------------------------------------------------------------------------------------');
-  console.log('');
+let servicesStarted = false;
 
-  const update = await checkForUpdates(version);
-  if (update && update.updateAvailable) {
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    console.log(`! UPDATE AVAILABLE: v${update.latestVersion}`);
-    console.log(`! Download: ${update.url}`);
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    console.log('');
-  }
+async function printHeader() {
+    log.info("=============================");
+    log.info(`InjectCheatUI v${version}`);
+    log.info("=============================");
+    log.info("FREE & PUBLIC SOURCE SOFTWARE");
+    log.info("GitHub: https://github.com/MrJoiny/Idleon-Injector");
+    log.info("");
+
+    const update = await checkForUpdates(version);
+    if (update && update.updateAvailable) {
+        log.warn(`UPDATE AVAILABLE: v${update.latestVersion} - ${update.url}`);
+        log.info("");
+    }
 }
 
 function printConfiguration(injectorConfig) {
-  console.log('Options:');
-  console.log(`Regex: ${injectorConfig.injreg}`);
-  console.log(`Show idleon window console logs: ${injectorConfig.showConsoleLog}`);
-  console.log(`Chrome location: ${injectorConfig.chrome}`);
-  console.log(`Web server port: ${injectorConfig.webPort || 8080}`);
-  console.log(`Detected OS: ${os.platform()}`);
-  console.log('');
+    const target = (injectorConfig.target || "steam").toLowerCase();
+
+    log.debug(`Injection regex: ${injectorConfig.injreg}`);
+    log.debug(`Log level: ${injectorConfig.logLevel}`);
+    log.info(`Target platform: ${target}${target === "web" ? ` (${injectorConfig.webUrl})` : ""}`);
+    log.info(`Web UI port: ${injectorConfig.webPort || 8080}`);
+    log.debug(`OS Platform: ${os.platform()}`);
+    if (target === "web" && injectorConfig.browserPath) {
+        log.debug(`Browser: ${injectorConfig.browserPath}`);
+    }
 }
 
-/**
- * Loads and consolidates all configuration settings needed for the application.
- * This centralizes config access and ensures all settings are loaded before use.
- */
 function initializeConfiguration() {
-  loadConfiguration();
+    loadConfiguration();
 
-  const injectorConfig = getInjectorConfig();
-  const startupCheats = getStartupCheats();
-  const cheatConfig = getCheatConfig();
-  const defaultConfig = getDefaultConfig();
-  const cdpPort = getCdpPort();
-  const webPort = getWebPort();
+    const injectorConfig = getInjectorConfig();
+    const startupCheats = getStartupCheats();
+    const cheatConfig = getCheatConfig();
+    const defaultConfig = getDefaultConfig();
+    const cdpPort = getCdpPort();
+    const webPort = getWebPort();
 
-  return { injectorConfig, startupCheats, cheatConfig, defaultConfig, cdpPort, webPort };
+    return { injectorConfig, startupCheats, cheatConfig, defaultConfig, cdpPort, webPort };
 }
 
-
-/**
- * Verifies the cheat context exists in the game's iframe and initializes the cheat system.
- * The context must be successfully injected before cheats can be activated.
- */
 async function initializeCheatContext(Runtime, context) {
-  console.log('Initializing cheats ingame...');
+    log.debug("Initializing cheat context");
 
-  // Verify the injected cheat context is accessible in the game's iframe
-  const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
-  if (!contextExists.result.value) {
-    console.error("Cheat context not found in iframe. Injection might have failed.");
-    return false;
-  }
-
-  // Execute the setup function from cheats.js within the game's context
-  const init = await Runtime.evaluate({
-    expression: `setup.call(${context})`,
-    awaitPromise: true,
-    allowUnsafeEvalBlockedByCSP: true
-  });
-  console.log("init.result.value", init.result.value);
-  return true;
-}
-
-async function startWebServer(app, webPort) {
-  try {
-    await startServer(app, webPort);
-  } catch (err) {
-    console.error('Failed to start web server:', err);
-  }
-}
-
-/**
- * Handles the game page load event by initializing cheats and starting user interfaces.
- * This is triggered after the game's DOM is fully loaded and ready for cheat injection.
- */
-async function handlePageLoad(gameContext, config, app) {
-  const { Runtime, Page, context, client } = gameContext;
-  console.log("Page load event fired.");
-
-  const cheatInitialized = await initializeCheatContext(Runtime, context);
-  if (!cheatInitialized) return;
-
-  if (!servicesStarted) {
-    servicesStarted = true;
-
-    // Start web UI if enabled in configuration
-    if (config.injectorConfig.enableUI) {
-      setupApiRoutes(app, context, client, {
-        cheatConfig: config.cheatConfig,
-        defaultConfig: config.defaultConfig,
-        startupCheats: config.startupCheats,
-        injectorConfig: config.injectorConfig,
-        cdpPort: config.cdpPort
-      });
-
-      await startWebServer(app, config.webPort);
+    const contextExists = await Runtime.evaluate({ expression: `!!${context}` });
+    if (!contextExists.result.value) {
+        log.error("Cheat context not found - injection may have failed");
+        return false;
     }
 
-    // Always start CLI interface for user interaction
-    await startCliInterface(context, client, {
-      injectorConfig: config.injectorConfig,
-      cdpPort: config.cdpPort
+    const init = await Runtime.evaluate({
+        expression: `setup.call(${context})`,
+        awaitPromise: true,
+        allowUnsafeEvalBlockedByCSP: true,
     });
-  }
+    if (init.exceptionDetails) {
+        log.error("Cheat setup failed:", init.exceptionDetails.exception?.description || init.exceptionDetails.text);
+    }
+    log.debug("Cheat context initialized:", init.result.value);
+    return true;
+}
+
+async function startWebServer(app, webPort, wsConfig = null) {
+    try {
+        await startServer(app, webPort, wsConfig);
+    } catch (err) {
+        log.error("Failed to start web server:", err);
+    }
+}
+
+async function handlePageLoad(gameContext, config, app) {
+    const { Runtime, context, client } = gameContext;
+    log.debug("Page loaded, setting up cheats");
+
+    const cheatInitialized = await initializeCheatContext(Runtime, context);
+    if (!cheatInitialized) return;
+
+    if (!servicesStarted) {
+        servicesStarted = true;
+        log.info("Cheats ready!");
+
+        if (config.injectorConfig.enableUI) {
+            setupApiRoutes(app, context, client, {
+                cheatConfig: config.cheatConfig,
+                defaultConfig: config.defaultConfig,
+                startupCheats: config.startupCheats,
+                injectorConfig: config.injectorConfig,
+                cdpPort: config.cdpPort,
+            });
+
+            await startWebServer(app, config.webPort, {
+                runtime: Runtime,
+                context: context,
+            });
+        }
+
+        await startCliInterface(context, client, {
+            injectorConfig: config.injectorConfig,
+            cdpPort: config.cdpPort,
+        });
+    }
 }
 
 function handleError(error) {
-  console.error("An error occurred:", error);
+    log.error("Fatal error:", error);
 
-  if (error?.message?.includes('No inspectable targets')) {
-    console.log("\n>>> Specific Error Detected: Is Steam running?!");
-  } else {
-    console.log("\n>>> An unexpected error occurred.");
-  }
+    if (error?.message?.includes("No inspectable targets")) {
+        log.info("Hint: Is Steam running? Make sure the game is not already open");
+    }
 
-  console.log("\nPress Enter to exit...");
-  const readline = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  readline.question('', () => {
-    readline.close();
-    process.exit(1);
-  });
+    log.info("Press Enter to exit");
+    const readline = require("readline").createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    readline.question("", () => {
+        readline.close();
+        process.exit(1);
+    });
 }
 
 async function main() {
-  try {
-    await printHeader();
-    const config = initializeConfiguration();
-    const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
-    printConfiguration(config.injectorConfig);
+    try {
+        const customConfigPath = path.join(process.cwd(), "config.custom.js");
 
-    const hook = await attachToGame();
-    const client = await setupIntercept(hook, config.injectorConfig, config.startupCheats, config.cheatConfig, config.cdpPort);
-    console.log("Interceptor setup finished.");
+        if (!fs.existsSync(customConfigPath)) {
+            await runSetupWizard(customConfigPath);
+        }
 
-    const { Runtime, Page } = client;
+        const config = initializeConfiguration();
 
-    console.log("Attaching Page.loadEventFired listener...");
-    Page.loadEventFired(async () => {
-      try {
-        const context = createCheatContext();
-        await handlePageLoad({ Runtime, Page, context, client }, config, app);
-      } catch (loadEventError) {
-        console.error("Error during Page.loadEventFired handler:", loadEventError);
-      }
-    });
+        await printHeader();
+        printConfiguration(config.injectorConfig);
 
-    console.log("Page load event listener attached.");
+        const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
 
-    // Force a reload to ensure the script is intercepted, even if it loaded before we attached
-    // possible fix for iframe not found error
-    console.log("Reloading page to ensure cheat injection...");
-    await Page.reload({ ignoreCache: true });
-  } catch (error) {
-    handleError(error);
-  }
+        const target = (config.injectorConfig.target || "steam").toLowerCase();
+        if (os.platform() === "darwin" && target !== "web") {
+            throw new Error("macOS only supports the 'web' target. Set injectorConfig.target to 'web'");
+        }
+
+        const hook = await attachToTarget();
+
+        const client = await setupIntercept(
+            hook,
+            config.injectorConfig,
+            config.startupCheats,
+            config.cheatConfig,
+            config.cdpPort
+        );
+        log.debug("Network interceptor ready");
+
+        const { Runtime, Page } = client;
+
+        log.debug("Registering page load handler");
+        Page.loadEventFired(async () => {
+            try {
+                const context = createCheatContext();
+                await handlePageLoad({ Runtime, Page, context, client }, config, app);
+            } catch (loadEventError) {
+                log.error("Page load handler failed:", loadEventError);
+            }
+        });
+
+        log.debug("Reloading page to trigger injection");
+        await Page.reload({ ignoreCache: true });
+    } catch (error) {
+        handleError(error);
+    }
 }
 
 main();

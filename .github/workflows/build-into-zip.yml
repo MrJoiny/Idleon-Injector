@@ -13,8 +13,17 @@ jobs:
             build-command: build
           - os: ubuntu-latest
             artifact-name: InjectCheatsUI-Linux
-            binary-name: InjectCheatsUI
+            binary-name: InjectCheatsUI-linux
             build-command: build-unix
+          - os: macos-15-intel
+            artifact-name: InjectCheatsUI-macOS-x64
+            binary-name: InjectCheatsUI-macos-x64
+            build-command: build-macos-x64
+          - os: macos-15
+            artifact-name: InjectCheatsUI-macOS-arm64
+            binary-name: InjectCheatsUI-macos-arm64
+            build-command: build-macos-arm64
+
 
     runs-on: ${{ matrix.os }}
 

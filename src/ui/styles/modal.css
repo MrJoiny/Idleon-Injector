@@ -1,0 +1,50 @@
+/**
+ * Modal Component
+ * Modal overlay, box, header, body, footer
+ */
+
+/* --- MODAL --- */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.modal-box {
+    background: var(--c-panel);
+    border: 1px solid var(--c-danger);
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 0 30px rgba(255, 0, 60, 0.2);
+    animation: scaleIn 0.3s var(--ease-tech);
+}
+
+.modal-header {
+    background: rgba(255, 0, 60, 0.1);
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--c-danger);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--c-danger);
+    font-size: 1.2rem;
+}
+
+.modal-body {
+    padding: 20px;
+    color: var(--c-text-main);
+}
+
+.modal-footer {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.2);
+}

@@ -1,6 +1,7 @@
-import van from '../../van-1.6.0.js';
-import vanX from '../../van-x-0.6.3.js';
-import store from '../../store.js';
+import van from "../../vendor/van-1.6.0.js";
+import store from "../../state/store.js";
+import { EmptyState } from "../EmptyState.js";
+import { Icons } from "../../assets/icons.js";
 
 const { div, ul, li, input, button } = van.tags;
 
@@ -12,22 +13,31 @@ export const StartupCheats = (list) => {
         list.push(val);
     };
 
-    const element = div({ class: 'startup-cheats-editor' },
-        vanX.list(ul({ class: 'startup-cheats-list' }), list, (v, deleter, index) => {
-            return li({ class: 'cheat-item-row' },
-                input({
-                    type: 'text',
-                    class: 'startup-cheat-input',
-                    value: () => v.val,
-                    onchange: e => v.val = e.target.value
-                }),
-                button({
-                    class: 'remove-cheat-button',
-                    onclick: () => list.splice(index, 1)
-                }, "✕")
-            );
-        })
-    );
+    const element = div({ class: "startup-cheats-editor" }, () => {
+        // Accessing length triggers reactivity when items are added/removed
+        if (list.length === 0) {
+            return EmptyState({
+                icon: Icons.Lightning(),
+                title: "NO STARTUP CHEATS",
+                subtitle: "Add cheats that will run automatically on injection",
+            });
+        }
+        return ul(
+            { class: "startup-cheats-list" },
+            ...list.map((v, i) =>
+                li(
+                    { class: "cheat-item-row" },
+                    input({
+                        type: "text",
+                        class: "startup-cheat-input",
+                        value: v,
+                        onchange: (e) => (list[i] = e.target.value),
+                    }),
+                    button({ class: "remove-cheat-button", onclick: () => list.splice(i, 1) }, Icons.X())
+                )
+            )
+        );
+    });
 
     return { element, addItem };
 };
@@ -41,62 +51,68 @@ export const AddCheatSearchBar = (onAdd, onCancel) => {
     };
 
     const searchInput = input({
-        type: 'text',
-        class: 'cheat-search-input',
-        placeholder: 'Search cheats...',
-        style: 'flex:1;',
+        type: "text",
+        class: "cheat-search-input",
+        placeholder: "Search cheats",
+
         value: searchTerm,
-        oninput: e => searchTerm.val = e.target.value,
-        onkeydown: e => {
-            if (e.key === 'Enter' && searchTerm.val) handleAdd(searchTerm.val);
-            if (e.key === 'Escape') onCancel();
-        }
+        oninput: (e) => (searchTerm.val = e.target.value),
+        onkeydown: (e) => {
+            if (e.key === "Enter" && searchTerm.val) handleAdd(searchTerm.val);
+            if (e.key === "Escape") onCancel();
+        },
     });
 
     setTimeout(() => searchInput.focus(), 0);
 
-    return div({ class: 'add-cheat-search-bar', style: 'position:relative; display:flex; gap:10px; flex:1; align-items:center;' },
+    return div(
+        { class: "add-cheat-search-bar" },
+
         searchInput,
-        button({ class: 'btn-secondary', onclick: onCancel }, "CANCEL"),
+        button({ class: "btn-secondary", onclick: onCancel }, "CANCEL"),
         (() => {
             const resultsContainer = ul({
-                class: 'cheat-search-results',
-                style: 'display:none; position:absolute; bottom:100%; left:0; width:100%; z-index:1000; background:var(--c-panel); border:1px solid var(--c-accent); box-shadow:0 -5px 20px rgba(0,0,0,0.5); max-height:200px; overflow-y:auto; list-style:none; padding:0; margin-bottom:5px;'
+                class: "cheat-search-results",
             });
 
             van.derive(() => {
                 const term = searchTerm.val.toLowerCase().trim();
                 const allCheats = store.data.cheats;
-                resultsContainer.innerHTML = '';
+                resultsContainer.innerHTML = "";
 
                 if (term.length < 2) {
-                    resultsContainer.style.display = 'none';
+                    resultsContainer.style.display = "none";
                     return;
                 }
 
-                const matches = allCheats.filter(c => {
-                    const val = typeof c === 'object' ? c.value : c;
-                    const msg = typeof c === 'object' ? c.message : c;
-                    return (val.toLowerCase().includes(term) || msg.toLowerCase().includes(term));
-                }).slice(0, 10);
+                const matches = allCheats
+                    .filter((c) => {
+                        const val = typeof c === "object" ? c.value : c;
+                        const msg = typeof c === "object" ? c.message : c;
+                        return val.toLowerCase().includes(term) || msg.toLowerCase().includes(term);
+                    })
+                    .slice(0, 10);
 
                 if (matches.length === 0) {
-                    resultsContainer.style.display = 'none';
+                    resultsContainer.style.display = "none";
                     return;
                 }
 
-                resultsContainer.style.display = 'block';
+                resultsContainer.style.display = "block";
 
-                matches.forEach(c => {
-                    const val = typeof c === 'object' ? c.value : c;
-                    const msg = typeof c === 'object' ? c.message : c;
-                    const item = li({
-                        onmousedown: (e) => {
-                            e.preventDefault();
-                            handleAdd(val);
+                matches.forEach((c) => {
+                    const val = typeof c === "object" ? c.value : c;
+                    const msg = typeof c === "object" ? c.message : c;
+                    const item = li(
+                        {
+                            onmousedown: (e) => {
+                                e.preventDefault();
+                                handleAdd(val);
+                            },
                         },
-                        style: 'cursor:pointer; padding:10px; border-bottom:1px solid var(--c-border); color:var(--c-text-main);'
-                    }, `${msg} (${val})`);
+                        `${val} (${msg})`
+                    );
+
                     resultsContainer.appendChild(item);
                 });
             });

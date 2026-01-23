@@ -6,25 +6,29 @@
     "bin": "src/main.js",
     "scripts": {
         "start": "node src/main.js",
-        "validate": "node --check cheats.js config.js && node -e \"require('./src/ui/optionsAccountSchema.json')\"",
-        "build": "pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
-        "build-unix": "pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI"
+        "build:cheats": "rollup -c",
+        "watch:cheats": "rollup -c --watch",
+        "validate": "npm run build:cheats && node --check cheats.js config.js && npx eslint . && node -e \"require('./src/ui/config/optionsAccountSchema.json')\"",
+        "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
+        "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
+        "build-macos-x64": "npm run build:cheats && pkg . -t node18-macos-x64 --compress Gzip --output InjectCheatsUI-macos-x64",
+        "build-macos-arm64": "npm run build:cheats && pkg . -t node18-macos-arm64 --compress Gzip --output InjectCheatsUI-macos-arm64"
     },
     "author": "MrJoiny",
-    "dependencies": {
-        "atob": "^2.1.2",
-        "btoa": "^1.2.1",
+"dependencies": {
         "chrome-remote-interface": "^0.33.0",
-        "data-store": "^3.1.0",
         "enquirer": "^2.3.6",
-        "express": "^4.18.2",
-        "lodash": "^4.17.21",
-        "prompt": "^1.3.0",
-        "ws": "^8.13.0"
+        "ws": "^8.18.0"
     },
     "pkg": {
         "assets": [
             "src/ui/**/*"
         ]
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "eslint": "^9.39.2",
+        "globals": "^17.0.0",
+        "rollup": "^4.41.0"
     }
 }
