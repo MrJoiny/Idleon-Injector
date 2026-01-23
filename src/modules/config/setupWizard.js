@@ -12,7 +12,7 @@ const log = createLogger("SetupWizard");
  * initial config.custom.js file if it doesn't exist.
  */
 async function runSetupWizard(targetPath) {
-    log.info("\n=============================");
+    log.info("=============================");
     log.info("   Setup Wizard   ");
     log.info("=============================\n");
     log.info("It looks like this is your first time running the injector");
@@ -71,7 +71,7 @@ exports.injectorConfig = ${JSON.stringify(newInjectorConfig, null, 4)};
 exports.cheatConfig = ${JSON.stringify(newCheatConfig, null, 4)};
 `;
         fs.writeFileSync(targetPath, content, "utf8");
-        log.info(`\nConfiguration saved to: ${targetPath}`);
+        log.info(`Configuration saved to: ${targetPath}`);
         log.info("You can edit this file later to add startup cheats or more advanced settings.\n");
         return true;
     } catch {
