@@ -27,12 +27,12 @@ export function setupEvents091Proxies() {
     const actorEvents91 = events(91);
 
     createMethodProxy(actorEvents91.prototype, "_event_Updating", function (base) {
-        if (cheatState.wide.hidenames()) hideNameImages(this);
+        if (cheatState.wide.hidenames) hideNameImages(this);
         return base;
     });
 
     createMethodProxy(actorEvents91.prototype, "init", function (base) {
-        if (cheatState.wide.hidenames()) hideNameImages(this);
+        if (cheatState.wide.hidenames) hideNameImages(this);
         return base;
     });
 }
