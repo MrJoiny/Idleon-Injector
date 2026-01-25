@@ -104,8 +104,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
     const stateObject = higherKeys.reduce((obj, key) => obj[key], cheatState);
     stateObject[cheatMap.name] = "subcheats" in cheatMap ? {} : false;
 
-    // Add toggle-all state if subcheats can be mass-toggled
-    if (cheatMap.allowToggleChildren) {
+    if ("subcheats" in cheatMap) {
         stateObject[cheatMap.name + "s"] = false;
     }
 
@@ -157,7 +156,10 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
             return `${stateObject[cheatMap.name + "s"] ? "Activated" : "Deactivated"} ${cheatMap.message}`;
         }
 
-        // Simple toggle
+        if ("subcheats" in cheatMap) {
+            stateObject[cheatMap.name + "s"] = !stateObject[cheatMap.name + "s"];
+            return `${stateObject[cheatMap.name + "s"] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
+        }
         stateObject[cheatMap.name] = !stateObject[cheatMap.name];
         return `${stateObject[cheatMap.name] ? "Activated" : "Deactivated"} ${cheatMap.message}.`;
     };
