@@ -161,11 +161,13 @@ function alchFn(params) {
     }
 
     const tochange = gga.CauldronInfo[alchemyTypes[params[0]]];
-    if (params[0] === "upgrade") {
-        for (const arr of Object.values(tochange)) {
-            for (const item of Object.values(arr)) item[1] = setlvl;
+    if (params[0] === "cauldronratecap") {
+        for (let i = 4; i <= 7; i++) {
+            for (let j = 2; j <= 3; j++) {
+                tochange[i][j][1] = setlvl;
+            }
         }
-        return `All cauldron upgrades set to lvl ${setlvl}`;
+        return `All cauldron rate and cap set to lvl ${setlvl}`;
     }
     for (const index of Object.keys(tochange)) tochange[index] = setlvl;
     return `All ${params[0]} levels have changed to ${setlvl}.`;

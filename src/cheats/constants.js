@@ -13,8 +13,8 @@ export const alchemyTypes = {
     yellowbubbles: 3,
     vials: 4,
     color: 5,
-    liquids: 6,
-    cauldrons: 8,
+    liquidsamt: 6,
+    cauldronratecap: 8,
 };
 
 // Summon unit name to ID mapping for W6 summoning system
