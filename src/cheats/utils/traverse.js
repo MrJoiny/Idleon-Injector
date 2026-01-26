@@ -38,9 +38,7 @@ export function traverse(obj, depth, worker) {
 
         const target = node.h || node;
         if (d === depth) {
-            for (const v of Object.values(target)) {
-                if (v !== null && typeof v === "object") worker(v);
-            }
+            worker(node);
             return;
         }
         for (const v of Object.values(target)) walk(v, d + 1);
