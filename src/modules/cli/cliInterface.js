@@ -113,6 +113,9 @@ async function startCliInterface(context, client, options = {}) {
                     return choices.filter((ch) => {
                         const msg = (ch.message || "").toLowerCase();
                         const val = (ch.value || "").toLowerCase();
+
+                        if (str.startsWith(val + " ")) return false;
+
                         for (const word of mustInclude) {
                             // Match if word is in either value or message
                             if (!msg.includes(word) && !val.includes(word)) return false;
