@@ -109,6 +109,7 @@ registerCheats({
         {
             name: "ribbon",
             message: "Adds a ribbon (1-20) to storage. Usage: w4 ribbon [1-20]",
+            needsParam: true,
             fn: (params) => {
                 const ribbonLvl = parseInt(params[1]);
                 if (isNaN(ribbonLvl) || ribbonLvl < 1 || ribbonLvl > 20) {
