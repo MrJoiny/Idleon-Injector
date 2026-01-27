@@ -36,7 +36,6 @@ export function setupEvents579Proxies() {
         { state: "w6.summoning" },
         { state: "w6.sumunit" },
         { state: "w6.grimoire" },
-        { state: "wide.eventshop", fixedKey: "EventShopOwned", value: 1 },
     ]);
 
     createConfigLookupProxy(ActorEvents579, "_customBlock_Thingies", [

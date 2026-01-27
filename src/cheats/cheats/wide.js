@@ -43,7 +43,6 @@ registerCheats({
         { name: "eventspins", message: "Infinite event spins" },
         { name: "hoopshop", message: "hoopshop cost nullify" },
         { name: "dartshop", message: "dartshop cost nullify" },
-        { name: "eventshop", message: "all eventshop items while on" },
         {
             name: "guildpoints",
             message: "Adds 1200 guild points to the guild",
