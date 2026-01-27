@@ -152,10 +152,11 @@ function createListFunction(params) {
                     if (!card[0]) continue;
 
                     const mobId = card[0];
+                    if (mobId === "Blank") continue;
                     const cardId = card[1];
                     const cardValue = card[4];
-                    const cardEffect = card[3];
-                    const entityName = monsterDefs[mobId].h.Name;
+                    const cardEffect = formatText(card[3]);
+                    const entityName = monsterDefs[mobId]?.h.Name ?? "Unknown";
 
                     results.push(`Cards${cardId}, ${entityName}, ${cardValue}, ${cardEffect}`);
                 }
