@@ -4,7 +4,6 @@
  * Consolidated constants used across the cheats module.
  */
 
-// TODO: this is not accurate anymore, needs some changing!
 // Alchemy type indices for CauldronInfo attribute
 export const alchemyTypes = {
     orangebubbles: 0,
@@ -13,8 +12,8 @@ export const alchemyTypes = {
     yellowbubbles: 3,
     vials: 4,
     color: 5,
-    liquids: 6,
-    cauldrons: 8,
+    liquidsamt: 6,
+    cauldronratecap: 8,
 };
 
 // Summon unit name to ID mapping for W6 summoning system

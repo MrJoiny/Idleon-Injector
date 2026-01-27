@@ -6,7 +6,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { events, behavior, gga } from "../core/globals.js";
+import { events, behavior, gga, gameContext } from "../core/globals.js";
 
 /**
  * Setup item get notification proxy (hide notifications for autoloot).
@@ -16,7 +16,7 @@ import { events, behavior, gga } from "../core/globals.js";
  * the original function runs to prevent the notification from showing.
  */
 export function setupItemGetNotificationProxy() {
-    const hxOverrides = window.HxOverrides;
+    const hxOverrides = gameContext.HxOverrides;
     const actorEvents34 = events(34);
     const ItemGet = actorEvents34.prototype._event_ItemGet;
     actorEvents34.prototype._event_ItemGet = function (...args) {
@@ -27,8 +27,7 @@ export function setupItemGetNotificationProxy() {
             [0, 1].includes(this._Deployment)
         ) {
             hxOverrides.remove(gga.ItemGetPixelQueue, this.actor);
-            behavior.recycleActor(this.actor);
-            return;
+            return behavior.recycleActor(this.actor);
         }
         return Reflect.apply(ItemGet, this, args);
     };

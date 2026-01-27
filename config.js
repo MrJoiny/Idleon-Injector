@@ -322,7 +322,6 @@ exports.cheatConfig = {
             JarEnchantChance: (t) => t * 2, // 2x jar enchant chance
             JarNewCollectibleChance: (t) => t * 2, // 2x jar new collectible chance
         },
-        fixobj: false,
     },
     w6: {
         farming: {
@@ -641,9 +640,6 @@ exports.cheatConfig = {
         spelunkmana: {
             StaminaCostMulti: (t) => 0,
         },
-    },
-    misc: {
-        keychain: (t) => t,
     },
 };
 

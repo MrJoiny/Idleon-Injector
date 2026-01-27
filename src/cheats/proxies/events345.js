@@ -175,13 +175,4 @@ export function setupEvents345Proxies() {
         }
         return base;
     });
-
-    // Keychain stats
-    // TODO: this cheat has no cheat attached to it. It always runs.
-    createMethodProxy(ActorEvents345, "_customBlock_keychainn", (base) => {
-        if ("keychain" in cheatConfig.misc) {
-            return cheatConfig.misc.keychain(base);
-        }
-        return base;
-    });
 }
