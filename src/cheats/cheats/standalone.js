@@ -10,7 +10,7 @@
 
 import { registerCheat, registerCheats } from "../core/registration.js";
 import { cheatState, cheatConfig } from "../core/state.js";
-import { firebase, itemDefs, monsterDefs, events, gga } from "../core/globals.js";
+import { firebase, itemDefs, monsterDefs, events, gga, cList } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { dropOnChar, getCharCords } from "../helpers/dropOnChar.js";
 import { keychainStatsMap } from "../constants.js";
@@ -220,6 +220,20 @@ registerCheats({
         { name: "obolfrag", message: "free obol fragments" },
         { name: "rifts", message: "Unlock rift portals" },
         { name: "revive", message: "unlimited revives" },
+        {
+            name: "eventshop",
+            message: "unlocks all eventshop items",
+            fn: () => {
+                // the array is name, cost, name
+                const length = cList.NinjaInfo[39].length / 2;
+                let eventshopstring = "";
+                for (let num = 0; num < length; num++) {
+                    eventshopstring += gga.Number2Letter[num];
+                }
+                gga.OptionsListAccount[311] = eventshopstring;
+                return `Unlocked ${length} event shop items!`;
+            },
+        },
         {
             name: "achievements",
             message: "unlocks all achievements",
