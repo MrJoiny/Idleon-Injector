@@ -221,6 +221,20 @@ registerCheats({
         { name: "rifts", message: "Unlock rift portals" },
         { name: "revive", message: "unlimited revives" },
         {
+            name: "achievements",
+            message: "unlocks all achievements",
+            fn: () => {
+                const regAchieves = gga.CustomLists.h.RegAchieves;
+                for (let index = 0; index < regAchieves.length; index++) {
+                    const achieve = regAchieves[index];
+                    if (achieve[0] !== "FILLERZZZ_ACH") {
+                        events(345)._customBlock_Reg_ach_add_status(index, achieve[1]);
+                    }
+                }
+                return "All achievements unlocked";
+            },
+        },
+        {
             name: "islands",
             message: "unlock fishing islands",
             fn: () => {
