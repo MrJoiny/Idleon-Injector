@@ -229,9 +229,9 @@ registerCheats({
             needsParam: true,
             fn: function (params) {
                 const char = parseInt(params[1]);
-                if (isNaN(char) || char < 0 || char > 9) {
-                    // TODO: make this dynamic with character count
-                    return `Please choose a ninja twin to generate item, 0 -> first char, 1 -> second char.`;
+                const charCount = gga.GetPlayersUsernames.length;
+                if (isNaN(char) || char < 0 || char >= charCount) {
+                    return `Please choose a ninja twin to generate item (0-${charCount - 1}).`;
                 }
 
                 const loopTimes = Math.max(1, parseInt(params[2]) || 1);

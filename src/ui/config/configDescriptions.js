@@ -296,9 +296,6 @@ export const configDescriptions = {
     "cheatConfig.w5.holes.JarEnchantChance": "Sneaking: Jar enchantment success chance",
     "cheatConfig.w5.holes.JarNewCollectibleChance": "Sneaking: New jar collectible discovery chance",
 
-    // fixobj
-    "cheatConfig.w5.fixobj": "",
-
     // W6 - World 6
     // Farming
     "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time (lower is faster). (lower is better)",

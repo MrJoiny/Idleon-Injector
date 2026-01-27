@@ -143,7 +143,6 @@ function createListFunction(params) {
             }
         },
 
-        // TODO: show the itemid CardsXXX
         card: () => {
             results.push("Id, Entity, Value, Effect");
             const cardData = cList.CardStuff;
@@ -152,12 +151,13 @@ function createListFunction(params) {
                 for (const card of Object.values(category)) {
                     if (!card[0]) continue;
 
-                    const cardId = card[0];
+                    const mobId = card[0];
+                    const cardId = card[1];
                     const cardValue = card[4];
                     const cardEffect = card[3];
-                    const entityName = monsterDefs[cardId].h.Name;
+                    const entityName = monsterDefs[mobId].h.Name;
 
-                    results.push(`${cardId}, ${entityName}, ${cardValue}, ${cardEffect}`);
+                    results.push(`Cards${cardId}, ${entityName}, ${cardValue}, ${cardEffect}`);
                 }
             }
         },
@@ -166,7 +166,7 @@ function createListFunction(params) {
             results.push("Id, ClassName, PromotesTo");
             for (const [index, className] of cList.ClassNames.entries()) {
                 const promotions = cList.ClassPromotionChoices[index];
-                results.push(`${index}, ${className}, [${promotions}]`);
+                results.push(`${index}, ${className}, [${promotions || "Unknown"}]`);
             }
         },
 
@@ -257,8 +257,8 @@ function createListFunction(params) {
             results.push("Id, Name, Description");
             const chips = cList.ChipDesc;
             for (let i = 0; i < chips.length; i++) {
-                const name = chips[i][0];
-                const desc = (chips[i][1] || "") + " " + (chips[i][2] || "");
+                const name = formatText(chips[i][0]);
+                const desc = formatText((chips[i][1] || "") + " " + (chips[i][2] || ""));
                 results.push(`${i}, ${name}, ${desc.trim()}`);
             }
         },
@@ -268,7 +268,9 @@ function createListFunction(params) {
             const rawArr = cList.HolesInfo[67];
             for (let i = 0; i < rawArr.length; i++) {
                 const parts = rawArr[i].split("|");
-                results.push(`${i}, ${parts[0]}, ${parts[3]}`);
+                const name = formatText(parts[0]);
+                const desc = formatText(parts[3]);
+                results.push(`${i}, ${name}, ${desc}`);
             }
         },
 
