@@ -15,6 +15,7 @@ import { registerCheats, registerCheat } from "../core/registration.js";
 import { itemDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
+import { cheatConfig } from "../core/state.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -359,3 +360,22 @@ registerCheat({
         return `Invalid skill/type: ${subcommand}`;
     },
 });
+
+// A highly dangerous function that lets you manually change in-game variables, like:
+// > chng bEngine.getGameAttribute("QuestComplete").h["Secretkeeper1"]=1
+registerCheat(
+    "chng",
+    function (params) {
+        if (!cheatConfig.chng_enabled) {
+            return "chng command is currently disabled in config.js Enable it ONLY if you know what you are doing.";
+        }
+
+        try {
+            eval(params[0]);
+            return `${params[0]}`;
+        } catch (error) {
+            return `Error: ${error}`;
+        }
+    },
+    "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead"
+);
