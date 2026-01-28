@@ -2,12 +2,11 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, chest, forge, overpurchases, cogs)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
  * - chng (execute arbitrary code)
- * - qnty (change item quantities)
  * - equipall (equip any item at any class/level)
  */
 
@@ -363,9 +362,10 @@ registerCheat({
 
 // A highly dangerous function that lets you manually change in-game variables, like:
 // > chng bEngine.getGameAttribute("QuestComplete").h["Secretkeeper1"]=1
-registerCheat(
-    "chng",
-    function (params) {
+registerCheat({
+    name: "chng",
+    message: "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead",
+    fn: (params) => {
         if (!cheatConfig.chng_enabled) {
             return "chng command is currently disabled in config.js Enable it ONLY if you know what you are doing.";
         }
@@ -377,5 +377,4 @@ registerCheat(
             return `Error: ${error}`;
         }
     },
-    "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead"
-);
+});
