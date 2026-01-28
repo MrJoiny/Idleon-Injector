@@ -2,8 +2,8 @@
  * Standalone Cheats
  *
  * Simple one-off cheats that don't fit into other categories:
- * - daily, noob, jackpot, cloudz, chromedebug
- * - nomore, multiplestacks
+ * - drop, spawn, daily, noob, jackpot, cloudz, chromedebug
+ * - nomore, multiplestacks, buy
  * - fix_save, fix_write
  * - upstones, keychain, unlock
  */

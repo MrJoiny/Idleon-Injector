@@ -3,12 +3,12 @@
  *
  * World-specific cheats organized by world (W1-W7):
  * - W1: anvil, forge, stampcost, smith, companion, owl
- * - W2: boss, roo, alchemy, vialrng, vialattempt, sigilspeed
- * - W3: construction, worship, trapping, cogs, etc.
- * - W4: breeding, cooking, lab, etc.
- * - W5: sailing, gaming, divinity, holes
- * - W6: farming, ninja, summoning, etc.
- * - W7: spelunk, gallery, reef, clam, etc.
+ * - W2: boss, roo, alchemy, vialrng, vialattempt, sigilspeed, killroyreset
+ * - W3: mobdeath, towerdamage, refinery, trapping, prayer, shrines, etc.
+ * - W4: breeding, spice, kitchens, lab, arena, mainframe, ribbon, chips, etc.
+ * - W5: sailing, endercaptains, gaming, divinity, collider, holes, jargems
+ * - W6: farming, ninja, summoning, grimoire, endless, ninjaitem, sumunit, etc.
+ * - W7: spelunk, gallery, reef, clam, zenith, spelunkmana, spelunkdepth, etc.
  */
 
 import { registerCheats } from "../core/registration.js";
