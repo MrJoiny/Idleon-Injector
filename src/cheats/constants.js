@@ -129,6 +129,7 @@ export const blacklist_gga = new Set([
     "Player",
     "DummyNumbersStatManager",
     "PixelHelperActor",
+    "ItemGetPixelQueue",
     "OriginPixelActor",
     "OtherPlayers",
     "PlayerImgInst",

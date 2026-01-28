@@ -171,7 +171,6 @@ export function getAutoCompleteSuggestions() {
     }
 
     // game attributes (gga)
-
     for (const key of Object.keys(gga)) {
         choices.push({
             value: `gga ${key}`,
