@@ -102,6 +102,28 @@ export const lootableItemTypes = [
     "QUEST_ITEM",
 ];
 
+// Keys used for carry capacity multiplier checks in events012
+export const carryCapKeys = new Set([
+    "HardCappy",
+    "bOre",
+    "bBar",
+    "cOil",
+    "dFish",
+    "dBugs",
+    "bLog",
+    "bLeaf",
+    "cFood",
+    "dCritters",
+    "dSouls",
+    "dCurrency",
+    "dQuest",
+    "dStatueStone",
+    "dStone",
+    "dFishToolkit",
+    "bCraft",
+    "bCraftOtherPlayer",
+]);
+
 // Game attribute keys to skip when scanning for NaN values
 export const blacklist_gga = new Set([
     "Player",

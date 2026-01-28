@@ -18,6 +18,7 @@ import { cheatConfig, cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
+import { carryCapKeys } from "../constants.js";
 
 /**
  * Setup all ActorEvents_12 proxies (combat stats, damage, multipliers).
@@ -114,6 +115,14 @@ export function setupEvents012Proxies() {
     createMethodProxy(ActorEvents12, "_customBlock_ExpMulti", (base, key) => {
         if (cheatState.multiply.classexp && key === 0) {
             return base * getMultiplyValue("classexp");
+        }
+        return base;
+    });
+
+    // Carry capacity multiplier
+    createMethodProxy(ActorEvents12, "_customBlock_MaxCapacity", (base, key) => {
+        if (cheatState.multiply.carrycap && carryCapKeys.has(key)) {
+            return base * getMultiplyValue("carrycap");
         }
         return base;
     });

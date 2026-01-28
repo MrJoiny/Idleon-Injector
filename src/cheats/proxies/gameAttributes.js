@@ -183,21 +183,6 @@ export function setupGameAttributeProxies() {
         });
     }
 
-    // Carry Capacity multiplier
-    const maxCarryCap = gga.MaxCarryCap;
-    if (maxCarryCap && maxCarryCap.h && !maxCarryCap._isPatched) {
-        Object.defineProperty(maxCarryCap, "_isPatched", { value: true, enumerable: false });
-        maxCarryCap.h = new Proxy(maxCarryCap.h, {
-            get(target, prop) {
-                const base = target[prop];
-                if (cheatState.multiply.carrycap && typeof base === "number") {
-                    return base * getMultiplyValue("carrycap");
-                }
-                return base;
-            },
-        });
-    }
-
     // Options list account - toggles, unlocks, and caps
     const optionsListAccount = gga.OptionsListAccount;
     if (!optionsListAccount._isPatched) {
