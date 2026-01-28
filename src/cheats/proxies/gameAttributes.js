@@ -17,7 +17,7 @@
 import { cheatConfig, cheatState } from "../core/state.js";
 import { cList, events, gga } from "../core/globals.js";
 import { createProxy } from "../utils/proxy.js";
-import { applyMaxCap, getMultiplyValue } from "../helpers/values.js";
+import { applyMaxCap } from "../helpers/values.js";
 
 /**
  * Setup all game attribute proxies.
