@@ -213,11 +213,12 @@ registerCheat({
             return `Invalid type. Valid types:\n${Array.from(itemTypes).sort().join(", ")}`;
         }
 
-        const blackList = cList.RANDOlist[64];
+        const blackList = new Set(cList.RANDOlist[64]);
+        const itemBlacklist = new Set(cList.RANDOlist[17]);
         let droppedCount = 0;
 
         for (const [code, entry] of Object.entries(itemDefs)) {
-            if (entry.h.Type === type && !blackList.includes(code)) {
+            if (entry.h.Type === type && !blackList.has(code) && !itemBlacklist.has(code)) {
                 dropOnChar(code, amount);
                 droppedCount++;
             }

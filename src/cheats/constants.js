@@ -186,3 +186,6 @@ export const knownBundles = [
     ["Panda Pack", "bon_o"],
     ["Santa helper bundle", "bon_p"],
 ];
+
+// Item types to exclude from bulk commands (invalid or problematic types)
+export const bulkTypeBlacklist = new Set(["Bits", "SAIL_TREASURE", "SPICE", "WHAT", "BOX", "UNKNOWN", "ERROR"]);
