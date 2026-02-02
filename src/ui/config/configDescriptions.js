@@ -213,7 +213,7 @@ export const configDescriptions = {
     "cheatConfig.w5.sailing.BoatValue": "Sailing: Loot quantity gained from boats",
     "cheatConfig.w5.sailing.BoatSpeed": "Sailing: Boat travel speed",
     "cheatConfig.w5.sailing.CloudDiscoverBonus": "Sailing: Cloud discovery bonuses",
-    "cheatConfig.w5.sailing.ArtifactChance": "Sailing: Artifact discovery chance. (lower is better)",
+    "cheatConfig.w5.sailing.ArtifactRarity": "Sailing: Artifact discovery chance. (lower is better)",
     "cheatConfig.w5.sailing.AncientChances": "Sailing: Ancient artifact chance. (lower is better)",
     "cheatConfig.w5.sailing.EldritchChances": "Sailing: Eldritch artifact chance. (lower is better)",
     "cheatConfig.w5.sailing.SovereignChances": "Sailing: Sovereign artifact chance. (lower is better)",
