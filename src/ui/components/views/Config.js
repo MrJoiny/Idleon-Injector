@@ -79,34 +79,38 @@ export const Config = () => {
     };
 
     /**
-     * Build a filtered data object that only contains the specified path.
-     * e.g., pathParts = ["w1", "owl"] => { w1: { owl: {...} } }
-     * @param {object} root - The full config object
-     * @param {string[]} pathParts - Path parts to filter to
-     * @returns {object} - Filtered object containing only the path
+     * Wraps only the first path level, keeping reactive references intact for edits.
+     * @param {object} root - Reactive config object
+     * @param {string[]} pathParts - Path segments
+     * @returns {object}
      */
-    const buildForcedPathData = (root, pathParts) => {
-        if (!pathParts || pathParts.length === 0 || !root) return root;
+    const getForcedPathData = (root, pathParts) => {
+        if (!pathParts?.length || !root) return root;
+        const first = pathParts[0];
+        return first in root ? { [first]: root[first] } : {};
+    };
+
+    /**
+     * Builds a filtered template with only the specified path for display.
+     * @param {object} root - Template object
+     * @param {string[]} pathParts - Path segments (e.g., ["w1", "owl"])
+     * @returns {object} Filtered structure (e.g., { w1: { owl: {...} } })
+     */
+    const buildForcedPathTemplate = (root, pathParts) => {
+        if (!pathParts?.length || !root) return root;
 
         let current = root;
         const result = {};
-        let resultCurrent = result;
+        let node = result;
 
         for (let i = 0; i < pathParts.length; i++) {
             const part = pathParts[i];
-            if (current === null || current === undefined || !(part in current)) {
-                return {}; // Path doesn't exist
-            }
+            if (!(part in current)) return {};
 
-            if (i === pathParts.length - 1) {
-                // Last part - include the value
-                resultCurrent[part] = current[part];
-            } else {
-                // Intermediate part - create nested object
-                resultCurrent[part] = {};
-                resultCurrent = resultCurrent[part];
-                current = current[part];
-            }
+            const isLast = i === pathParts.length - 1;
+            node[part] = isLast ? current[part] : {};
+            node = node[part];
+            current = current[part];
         }
 
         return result;
@@ -130,8 +134,8 @@ export const Config = () => {
 
             if (forcedPath && forcedPath.length > 0) {
                 // Forced path mode: show only the specific config entry
-                data = buildForcedPathData(root, forcedPath);
-                template = buildForcedPathData(rootTemplate, forcedPath);
+                data = getForcedPathData(root, forcedPath);
+                template = buildForcedPathTemplate(rootTemplate, forcedPath);
             } else {
                 // Normal filtering mode
                 data = filter === "all" ? root : { [filter]: root[filter] };
