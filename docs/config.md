@@ -1,24 +1,24 @@
 # Configuration and Schema
 
-Idleon Injector uses layered configuration plus UI schema metadata to render and validate settings. This document explains the config files, runtime behavior, and how to add new fields safely.
+Layered configuration plus UI schema metadata for rendering and validating settings.
 
 ## Config files
 
-The backend loads configuration in `src/modules/config/configManager.js`:
+Backend loads configuration in `src/modules/config/configManager.js`:
 
 - `config.js`: defaults committed to the repo.
 - `config.custom.js`: user overrides (gitignored).
 
-`config.custom.js` is created by the setup wizard on the first run.
-For packaged builds, `configManager` looks in `process.cwd()` and then `../config.js`/`../config.custom.js` as a fallback.
+`config.custom.js` is created by the setup wizard on first run.
+For packaged builds, `configManager` checks `process.cwd()` then `../config.js`/`../config.custom.js` as fallback.
 
 Merge rules:
 
 - `injectorConfig` is deep-merged.
 - `startupCheats` arrays are unioned.
 - `cheatConfig` is deep-merged.
-- `defaultConfig` is a deep clone of `config.js`, used for UI diffs and safe saves.
-- **Type Validation**: `config.custom.js` is validated against `config.js` types. If a mismatch is found (e.g. a string where a function is expected), the injector logs an error and reverts that key to the default value to prevent crashes.
+- `defaultConfig` is a deep clone of `config.js`, used for UI diffs and saves.
+- **Type Validation**: `config.custom.js` is validated against `config.js` types. Mismatches (e.g., string where function expected) are logged and reverted to defaults.
 
 ## Top-level structure
 
@@ -47,11 +47,11 @@ exports.injectorConfig = {
 };
 ```
 
-`config.custom.js` can omit any of these exports; only the provided keys override defaults.
+`config.custom.js` can omit any export; only provided keys override defaults.
 
 ## Startup cheats
 
-`startupCheats` is an array of command strings run after injection succeeds.
+`startupCheats` is an array of command strings run after injection.
 
 Example (`config.custom.js`):
 
@@ -59,15 +59,15 @@ Example (`config.custom.js`):
 exports.startupCheats = ["wide mtx", "unlock quickref", "wide autoloot"];
 ```
 
-These map to the same command list shown in the Cheats tab and CLI.
+These map to the same commands shown in the Cheats tab and CLI.
 
 ## Cheat config values
 
 `cheatConfig` controls parameterized cheats and proxy overrides. Values can be:
 
 - Primitives (`true`, `false`, numbers, strings).
-- Functions that take the original game value (`t`) and return a modified value.
-- Functions that accept extra arguments (`(t, args) => ...`) for cheats that pass parameters.
+- Functions taking the original game value (`t`) and returning a modified value.
+- Functions with extra arguments (`(t, args) => ...`) for cheats that pass parameters.
 
 Example overrides:
 
@@ -85,7 +85,7 @@ exports.cheatConfig = {
 
 ### Function editing in the UI
 
-The Config view recognizes simple function patterns and exposes sliders and dropdowns via `FunctionInput`:
+The Config view recognizes simple function patterns and exposes sliders/dropdowns via `FunctionInput`:
 
 - Multiply: `(t) => t * 2`
 - Divide: `(t) => t / 2`
@@ -94,12 +94,12 @@ The Config view recognizes simple function patterns and exposes sliders and drop
 - Min/Max: `(t) => Math.min(t, 1)` / `(t) => Math.max(t, 10)`
 - Complex: any other form, shown as raw source.
 
-Parsing logic lives in `src/ui/utils/functionParser.js` and feeds the `FunctionInput` UI.
-Multiply/divide functions get slider presets (1, 2, 4, 5, 10, 20) with a default range of 1-20.
+Parsing logic lives in `src/ui/utils/functionParser.js` and feeds `FunctionInput`.
+Multiply/divide functions get slider presets (1, 2, 4, 5, 10, 20) with default range 1-20.
 
 ## Injector config
 
-`injectorConfig` controls how the injector attaches and injects:
+`injectorConfig` controls attachment and injection:
 
 - `logLevel`: `debug`, `info`, `warn`, `error`.
 - `injreg`: regex that finds the injection point in `N.js`.
@@ -124,13 +124,12 @@ exports.injectorConfig = {
 
 ## Runtime updates vs saved config
 
-The UI supports two update modes:
+Two update modes:
 
 - Session-only updates: `POST /api/config/update` updates in-memory config and calls `updateCheatConfig` in the game context.
 - Persistent updates: `POST /api/config/save` writes `config.custom.js` with only the diff from defaults.
 
-`apiRoutes.js` uses `prepareConfigForJson` to serialize functions, then `parseConfigFromJson` to restore them.
-It also uses `filterByTemplate` and `getDeepDiff` to ensure only valid keys are persisted.
+`apiRoutes.js` uses `prepareConfigForJson` to serialize functions, then `parseConfigFromJson` to restore them. Uses `filterByTemplate` and `getDeepDiff` to persist only valid keys.
 
 ## Descriptions and schema
 
@@ -151,11 +150,11 @@ Schema fields:
 
 1. Add the default to `config.js`.
 2. Add a tooltip description in `src/ui/config/configDescriptions.js`.
-3. If the field should be user-editable, ensure `ConfigNode` renders it correctly (number, boolean, or function).
-4. Remember: any keys not present in `config.js` are dropped when saving via the UI (template filtering).
-5. Document any risks in the description or warning fields.
+3. If user-editable, ensure `ConfigNode` renders it correctly (number, boolean, or function).
+4. Keys not in `config.js` are dropped when saving via the UI (template filtering).
+5. Document risks in description or warning fields.
 
 ## Safety notes
 
-- `cheatConfig.chng_enabled` exposes the dangerous `chng` command. Keep it `false` unless you understand the risk.
-- Some cheats use hard caps (like `maxval`) to prevent save corruption. Adjust with care.
+- `cheatConfig.chng_enabled` exposes the dangerous `chng` command. Keep `false` unless you understand the risk.
+- Some cheats use hard caps (like `maxval`) to prevent save corruption. Adjust carefully.

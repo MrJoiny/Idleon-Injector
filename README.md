@@ -17,8 +17,8 @@ dashboard plus CLI for debugging, modding, and account management.
   real time.
 - **Config Editor**: Edit `cheatConfig`, `startupCheats`, and injector options
   with safe defaults and function helpers.
-- **Cross-Platform**: Windows and Linux support (Steam Proton). macOS uses web mode.
-- **Portable**: Runs from any directory; no game files are overwritten.
+- **Cross-Platform**: Windows, Linux (Steam Proton), and macOS (web mode only).
+- **Portable**: Runs from any directory; no game files modified.
 
 ## Installation
 
@@ -26,20 +26,19 @@ dashboard plus CLI for debugging, modding, and account management.
 
 - **Steam (Steam mode)**: The Steam client must be running.
 - **Legends of Idleon**: Installed via Steam or accessible in the web client.
-- **Chromium-based browser (Web mode)**: A compatible browser executable is
-  required or set in `injectorConfig.browserPath`.
+- **Chromium-based browser (Web mode)**
 
 ### Steps
 
 1. **Download**: Get the latest release.
-2. **Extract**: Unzip the contents to any folder on your machine.
-    - _Optional: placing it next to the game executable uses the game's executable._
+2. **Extract**: Unzip to any folder.
+    - _Optional: place next to the game executable to use its bundled Chromium._
 3. **Run**: Execute `InjectCheatsUI.exe`.
-4. **Setup**: The first time you run the injector, a CLI wizard will guide you through:
-    - Choosing the platform (Steam or Web).
-    - Setting up paths (if needed).
-    - Enabling the In-Game UI Overlay.
-    - This creates your `config.custom.js` file automatically.
+4. **Setup**: On first run, a CLI wizard guides you through:
+    - Platform choice (Steam or Web).
+    - Path setup (if needed).
+    - In-Game UI Overlay toggle.
+    - Creates `config.custom.js` automatically.
 
 ## Usage
 
@@ -50,8 +49,9 @@ dashboard plus CLI for debugging, modding, and account management.
 
 ### Web Interface
 
-The recommended way to interact with the injector is the
-[VanJS](https://vanjs.org/)-powered Web UI inside the game.
+The recommended way to interact is via the [VanJS](https://vanjs.org/)-powered Web UI.
+
+<img src="docs/UI.png" alt="Web UI Screenshot" width="600">
 
 - **URL**: [http://localhost:8080](http://localhost:8080)
 - **Capabilities**:
@@ -64,8 +64,7 @@ The recommended way to interact with the injector is the
 
 ### Command Line
 
-You can type commands directly into the injector's console window if you prefer
-a CLI experience. Autocomplete is provided by the game runtime.
+Type commands directly into the console window. Autocomplete is provided by the game runtime.
 
 - Type `chromedebug` to open the DevTools URL.
 
@@ -76,7 +75,7 @@ The injector uses a hierarchical configuration system:
 - `config.js`: Default settings (do not modify).
 - `config.custom.js`: User overrides (optional).
 
-The injector includes a built-in schema validator that checks your `config.custom.js` for type errors (e.g., providing a string where a function is expected). Errors are logged to the console, and invalid settings are automatically reverted to defaults to prevent the game from crashing.
+The injector validates `config.custom.js` for type errors (e.g., string where a function is expected). Invalid settings are logged and reverted to defaults.
 
 ## Development
 
@@ -117,6 +116,16 @@ npm run validate
 ## Cheat Development
 
 See `docs/cheats.md` for how to write and register new cheats.
+
+## Documentation
+
+- [Backend Architecture](docs/backend.md) - Server, CDP, and module structure.
+- [Build Guide](docs/build.md) - Building from source for all platforms.
+- [Cheats Guide](docs/cheats.md) - Writing and registering cheats.
+- [CLI Reference](docs/cli.md) - Console commands and autocomplete.
+- [Configuration](docs/config.md) - Config files, schema, and validation.
+- [Platforms](docs/platforms.md) - Steam, web, and OS-specific setup.
+- [Web UI](docs/ui.md) - VanJS dashboard and components.
 
 ## Troubleshooting
 

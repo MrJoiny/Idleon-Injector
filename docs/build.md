@@ -1,12 +1,12 @@
 # Build and Release
 
-This guide covers bundling cheats, validating changes, and packaging the injector for each platform.
+Bundling cheats, validating changes, and packaging for each platform.
 
 ## Prerequisites
 
-- Install dependencies with `npm install`.
-- Use Node 18 when packaging (the `pkg` targets are Node 18).
-- Ensure `cheats.js` exists before running the app (build it once or use the watcher).
+- Run `npm install`.
+- Use Node 18 for packaging (`pkg` targets Node 18).
+- Build `cheats.js` before running (build once or use the watcher).
 
 ## Development loop
 
@@ -17,10 +17,10 @@ npm run start
 ```
 
 - `npm run start` launches the injector and web server using the existing `cheats.js` bundle.
-- The start script does not rebuild cheats; rebuild and restart after cheat changes.
-- There is no hot reload for the injected game context.
+- Start does not rebuild cheats; rebuild and restart after changes.
+- No hot reload for the injected game context.
 
-For cheat development, run the watcher so `cheats.js` stays current:
+For cheat development, run the watcher to keep `cheats.js` current:
 
 ```bash
 npm run watch:cheats
@@ -50,16 +50,16 @@ Note: `cheats.js` is gitignored and generated during builds.
 
 ## Validation
 
-`npm run validate` performs the standard checks:
+`npm run validate` runs these checks:
 
-1. `npm run build:cheats` (ensures bundle is up to date).
-2. `node --check cheats.js config.js` (syntax validation).
+1. `npm run build:cheats` (ensures bundle is current).
+2. `node --check cheats.js config.js` (syntax check).
 3. `npx eslint .` (lint).
-4. `node -e "require('./src/ui/config/optionsAccountSchema.json')"` (schema JSON validity).
+4. `node -e "require('./src/ui/config/optionsAccountSchema.json')"` (schema validity).
 
 Run this before packaging or releasing.
 
-If you only need to lint cheats, use `npx eslint src/cheats/`.
+To lint only cheats: `npx eslint src/cheats/`.
 
 ## Packaging binaries
 
@@ -72,25 +72,25 @@ npm run build-macos-x64 # macOS Intel: InjectCheatsUI-macos-x64
 npm run build-macos-arm64 # macOS Apple Silicon: InjectCheatsUI-macos-arm64
 ```
 
-Each build script runs `npm run build:cheats` first and then packages with `--compress Gzip`.
+Each script runs `npm run build:cheats` first, then packages with `--compress Gzip`.
 
-`pkg` includes `src/ui/**/*` as assets so the web UI is packaged with the binary.
-If you add new UI assets, keep them under `src/ui` or update the `pkg.assets` list.
+`pkg` includes `src/ui/**/*` as assets so the web UI ships with the binary.
+New UI assets should go under `src/ui` or be added to `pkg.assets`.
 
 ## Release checklist
 
 1. Run `npm run validate`.
-2. Rebuild cheats (`npm run build:cheats`) if you are not using the watcher.
-3. Build the target binaries.
+2. Rebuild cheats if not using the watcher.
+3. Build target binaries.
 4. Run `InjectCheatsUI` and verify:
    - UI loads at `http://localhost:8080`.
-   - Cheats list and config load successfully.
-   - A sample cheat executes correctly.
-   - CLI autocomplete is populated and can execute commands.
+   - Cheats list and config load.
+   - A sample cheat executes.
+   - CLI autocomplete works.
 
 ## Troubleshooting
 
 - Syntax errors in `cheats.js` or `config.js` will fail `node --check`.
-- `ENOENT: cheats.js` means the cheat bundle was not built (run `npm run build:cheats`).
-- If `pkg` fails, verify Node 18 compatibility and that dependencies are installed.
-- When the UI fails to load in packaged builds, check that `src/ui/**/*` is listed under `pkg.assets` in `package.json`.
+- `ENOENT: cheats.js` means the bundle was not built (run `npm run build:cheats`).
+- If `pkg` fails, check Node 18 compatibility and that dependencies are installed.
+- If the UI fails to load in packaged builds, check that `src/ui/**/*` is in `pkg.assets`.

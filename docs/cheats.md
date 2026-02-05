@@ -1,11 +1,11 @@
 # Cheat Development Guide
 
-This doc is for contributors adding new cheats to Idleon Injector. It assumes you are comfortable working in the browser runtime and reading the game's scripts.
+For contributors adding new cheats. Assumes familiarity with the browser runtime and game scripts.
 
 ## Cheat system overview
 
 - Cheats are ES modules in `src/cheats/` bundled into `cheats.js` via `npm run build:cheats`.
-- Runtime entry is `src/cheats/main.js`; see "Runtime globals" for the full list of exposed helpers and getters.
+- Runtime entry is `src/cheats/main.js`; see "Runtime globals" for exposed helpers and getters.
 - `src/cheats/core/setup.js` waits for `gameReady` before installing proxies and running `startupCheats`.
 
 ## Where code goes
@@ -82,7 +82,7 @@ Fields:
 - `category`: optional category override (inherits for subcheats if not set).
 - `fn`: custom handler (overrides default toggle). When provided, you control `cheatState` updates manually.
 - `subcheats`: array of subcheat definitions (same shape as a `registerCheats` node).
-- `configurable`: allows numeric/boolean value input; writes to `cheatConfig` at the same path.
+- `configurable`: allows numeric/boolean input; writes to `cheatConfig` at the same path.
 - `allowToggleChildren`: toggles all subcheats when called without args.
 - `needsParam`: optional override for parameter expectation.
 
@@ -136,8 +136,7 @@ exports.cheatConfig = {
 
 ## Game globals and context
 
-- `src/cheats/core/globals.js` exposes `gga`, `itemDefs`, `monsterDefs`, `cList`, `customMaps`, `dialogueDefs`, and
-  others once `gameReady` completes.
+- `src/cheats/core/globals.js` exposes `gga`, `itemDefs`, `monsterDefs`, `cList`, `customMaps`, `dialogueDefs`, and others once `gameReady` completes.
 - Import the globals from `core/globals.js` instead of walking window properties directly.
 
 ```js
@@ -163,7 +162,7 @@ import { gga, cList } from "../core/globals.js";
 
 ## Proxy patterns (advanced)
 
-Use a proxy when you need to intercept game logic consistently (per tick or per call). All proxies are wired into `src/cheats/proxies/setup.js`, which imports per-module setup functions (names vary, e.g. `setupEvents012Proxies`, `setupFirebaseProxy`). Prefer the helpers in `src/cheats/utils/proxy.js` (`createMethodProxy`, `createProxy`, `createConfigLookupProxy`, `nullifyListCost`) to keep the patterns consistent.
+Use a proxy to intercept game logic consistently (per tick or per call). All proxies are wired in `src/cheats/proxies/setup.js`, which imports per-module setup functions (e.g., `setupEvents012Proxies`, `setupFirebaseProxy`). Prefer helpers in `src/cheats/utils/proxy.js` (`createMethodProxy`, `createProxy`, `createConfigLookupProxy`, `nullifyListCost`) for consistency.
 
 ### Base-first helper pattern (recommended)
 
@@ -182,14 +181,14 @@ createMethodProxy(ActorEvents12, "_customBlock_PlayerReach", (base) => {
 Parameters:
 
 - `target`: object that owns the method.
-- `methodName`: (games) method name to wrap.
+- `methodName`: method name to wrap.
 - `handler`: `(baseResult, ...args) => newResult`, called after the original method runs (base-first).
 
-Best used for: intercepting game methods that must run for side effects, while selectively overriding their return values.
+Best used for: intercepting methods that must run for side effects while selectively overriding return values.
 
 ### Property proxy helper
 
-Use `createProxy` for data objects or list entries that should return a modified value while a cheat is enabled.
+Use `createProxy` for data objects or list entries that return a modified value while a cheat is enabled.
 
 ```js
 import { cheatState } from "../core/state.js";
@@ -204,11 +203,11 @@ createProxy(cList, "AlchemyVialItemsPCT", (original) => {
 
 Parameters:
 
-- `targetObj`: object that owns the property you want to proxy.
+- `targetObj`: object owning the property to proxy.
 - `index`: property name or array index to intercept.
 - `callback`: either a simple getter (`(original) => newValue`) or `{ get, set }` handlers for more control.
 
-Best used for: static data lookups (defs, cList entries) where you want conditional values without changing the original object structure.
+Best used for: static data lookups (defs, cList entries) where you want conditional values without changing the object structure.
 
 ### Config lookup helper
 
@@ -235,7 +234,7 @@ Mapping fields:
 - `fixedKey`: optional key to match against `args[0]` before applying.
 - `value`: optional constant to return when `fixedKey` matches.
 
-Best used for: method hooks that need to map key-based lookups to `cheatConfig` functions without repeating large if / else blocks.
+Best used for: method hooks that map key-based lookups to `cheatConfig` functions without large if/else blocks.
 
 ### List cost helper
 
@@ -256,7 +255,7 @@ Parameters:
 - `statePath`: dot-path in `cheatState` that enables the override.
 - `zeroValue`: optional replacement value (defaults to "0").
 
-Best used for: list-style costs and requirements (MTX, prayers, tasks) that should flip to a constant when enabled.
+Best used for: list-style costs and requirements (MTX, prayers, tasks) that flip to a constant when enabled.
 
 ### Traversal Utilities
 
@@ -282,8 +281,7 @@ export function setupItemProxies() {
 }
 ```
 
-The `_isPatched` flag prevents double-wrapping if setup is called more than once. This matters because the character selection flow recreates game data objects (lists, item defs, etc.), so `setupFirebaseProxy()` re-runs select setup functions on play button to restore lost proxies. The guard makes those setups idempotent: it skips re-wrapping when
-the same object is still in memory, but allows re-application when the game has replaced the underlying object. In practice the re-run setup functions are `setupCListProxy`, `setupGameAttributeProxies`, and `setupItemProxies`.
+The `_isPatched` flag prevents double-wrapping if setup runs more than once. Character selection recreates game data objects (lists, item defs, etc.), so `setupFirebaseProxy()` re-runs select setup functions on play button to restore lost proxies. The guard makes those setups idempotent: it skips re-wrapping when the same object is still in memory, but allows re-application when the game has replaced the underlying object. The re-run functions are `setupCListProxy`, `setupGameAttributeProxies`, and `setupItemProxies`.
 
 ## Build and verify
 
