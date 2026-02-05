@@ -47,6 +47,10 @@ dashboard plus CLI for debugging, modding, and account management.
    profile.
 3. Once the game loads, you can interact via the **Web UI** or the **Console**.
 
+## Cheat List
+
+- [Project Wiki Cheat List](https://github.com/MrJoiny/Idleon-Injector/wiki) - Full cheat command list for quick lookup.
+
 ### Web Interface
 
 The recommended way to interact is via the [VanJS](https://vanjs.org/)-powered Web UI.

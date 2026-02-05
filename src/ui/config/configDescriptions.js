@@ -465,9 +465,6 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunkdepth": "Spelunking: Current depth (one-shot, resets to 0 after use)",
     "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking",
 
-    // MISC
-    "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses",
-
     // INJECTOR CONFIG
     "injectorConfig.logLevel": "Log verbosity level: debug, info, warn, or error",
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code",
