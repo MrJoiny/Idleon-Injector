@@ -5,10 +5,12 @@
  * - Auto loot (instant item pickup and chest management)
  */
 
-import { itemDefs, events, behavior, gga } from "../core/globals.js";
+import { behavior, events, gga, itemDefs } from "../core/globals.js";
 import { cheatConfig, cheatState } from "../core/state.js";
 import { lootableItemTypes } from "../constants.js";
 import { createMethodProxy } from "../utils/proxy.js";
+
+const MULTI_STACK_SLOT_LIMIT = 1050000000;
 
 /**
  * Setup auto loot proxy (instant item pickup and chest management).
@@ -18,8 +20,7 @@ export function setupAutoLootProxy() {
 
     // Proxy init to handle instant looting and chest transfer on spawn
     createMethodProxy(actorEvents44.prototype, "init", function (base) {
-        const handled = processAutoLoot(this);
-        if (handled) return;
+        if (processAutoLoot(this)) return;
         return base;
     });
 }
@@ -58,8 +59,7 @@ function processAutoLoot(context) {
         return false;
     }
 
-    // Initial collection attempt
-    // Note: Items must successfully enter a free inventory slot before they can be moved to the chest.
+    // Let ingame pickup run first; overflow can still go to chest.
     context._CollectedStatus = 0;
     gga.DummyNumber4 = 23.34;
     context._customEvent_ItemPickupInTheFirstPlace();
@@ -84,8 +84,15 @@ function processAutoLoot(context) {
     const zenithFarming = (itemType === "STATUE" || dropType === "Quest110") && cheatConfig.wide.autoloot.zenithfarm;
     const materialFarming = itemType === "MONSTER_DROP" && cheatConfig.wide.autoloot.materialfarm;
 
-    // Final transfer to chest for successfully picked up items if enabled
+    // Move pickup overflow directly to chest, then transfer picked inventory stacks.
     if (toChest && !zenithFarming && !materialFarming) {
+        if (context._DropAmount > 0) {
+            transferDropRemainderToChest(context);
+            if (context._DropAmount === 0) {
+                context._CollectedStatus = 1;
+            }
+        }
+
         transferItemToChest(dropType);
     }
 
@@ -112,42 +119,114 @@ function transferItemToChest(dropType) {
     const inventoryOrder = gga.InventoryOrder;
     const itemQuantity = gga.ItemQuantity;
     const lockedSlots = gga.LockedSlots;
+    const multiStackLimit = getMultiStackLimit(dropType);
 
-    if (!chestOrder || !inventoryOrder) return;
+    for (let inventorySlot = 0; inventorySlot < inventoryOrder.length; inventorySlot++) {
+        if (inventoryOrder[inventorySlot] !== dropType) continue;
+        if (lockedSlots && lockedSlots[inventorySlot]) continue;
 
-    // Find first blank slot in chest
-    const blankSlot = chestOrder.indexOf("Blank");
-    const existingSlot = chestOrder.indexOf(dropType);
-    let targetChestSlot = existingSlot !== -1 ? existingSlot : blankSlot;
+        const quantityInSlot = Number(itemQuantity[inventorySlot]) || 0;
+        if (quantityInSlot <= 0) {
+            inventoryOrder[inventorySlot] = "Blank";
+            continue;
+        }
 
-    // Handle "Multiple Stacks" cheat config
-    const multiStackItems = cheatConfig.multiplestacks?.items;
-    if (multiStackItems && multiStackItems.has(dropType)) {
-        targetChestSlot = findMultiStackSlot(
-            dropType,
-            chestOrder,
-            chestQuantity,
-            multiStackItems.get(dropType),
-            blankSlot
-        );
+        const remainingInSlot = moveAmountToChest(dropType, quantityInSlot, chestOrder, chestQuantity, multiStackLimit);
+        itemQuantity[inventorySlot] = remainingInSlot;
+
+        if (remainingInSlot === 0) {
+            inventoryOrder[inventorySlot] = "Blank";
+            continue;
+        }
+
+        // No chest room left for this drop type.
+        break;
     }
+}
 
-    if (targetChestSlot === -1) return; // No room in chest
+/**
+ * Moves the on-ground remainder from a drop directly into chest storage.
+ *
+ * @param {object} context - The drop context from ActorEvents_44.init.
+ */
+function transferDropRemainderToChest(context) {
+    const chestOrder = gga.ChestOrder;
+    const chestQuantity = gga.ChestQuantity;
+    const multiStackLimit = getMultiStackLimit(context._DropType);
 
-    // Move all instances from inventory to chest
-    let inventorySlot;
-    while ((inventorySlot = inventoryOrder.indexOf(dropType)) !== -1) {
-        if (lockedSlots && lockedSlots[inventorySlot]) break;
+    if (context._DropAmount <= 0) return;
+
+    context._DropAmount = moveAmountToChest(
+        context._DropType,
+        context._DropAmount,
+        chestOrder,
+        chestQuantity,
+        multiStackLimit
+    );
+}
+
+/**
+ * Moves an amount of a single item type to chest and returns any remainder.
+ */
+function moveAmountToChest(dropType, amount, chestOrder, chestQuantity, multiStackLimit) {
+    let remaining = Number(amount) || 0;
+
+    while (remaining > 0) {
+        const targetChestSlot = findChestSlotForDrop(dropType, chestOrder, chestQuantity, multiStackLimit);
+        if (targetChestSlot === -1) break;
 
         if (chestOrder[targetChestSlot] === "Blank") {
             chestOrder[targetChestSlot] = dropType;
         }
 
-        chestQuantity[targetChestSlot] += itemQuantity[inventorySlot];
+        const currentQuantity = Number(chestQuantity[targetChestSlot]) || 0;
+        const transferable = getTransferableChestAmount(remaining, currentQuantity, multiStackLimit);
+        if (transferable <= 0) break;
 
-        itemQuantity[inventorySlot] = 0;
-        inventoryOrder[inventorySlot] = "Blank";
+        chestQuantity[targetChestSlot] = currentQuantity + transferable;
+        remaining -= transferable;
     }
+
+    return remaining;
+}
+
+/**
+ * Resolves a chest slot for the given drop type.
+ */
+function findChestSlotForDrop(dropType, chestOrder, chestQuantity, multiStackLimit) {
+    const blankSlot = chestOrder.indexOf("Blank");
+    const existingSlot = chestOrder.indexOf(dropType);
+    if (multiStackLimit == null) {
+        return existingSlot !== -1 ? existingSlot : blankSlot;
+    }
+
+    return findMultiStackSlot(dropType, chestOrder, chestQuantity, multiStackLimit, blankSlot);
+}
+
+/**
+ * Calculates how much can be inserted into the resolved chest slot.
+ */
+function getTransferableChestAmount(remaining, currentQuantity, multiStackLimit) {
+    if (multiStackLimit == null) {
+        return remaining;
+    }
+
+    const freeSpace = MULTI_STACK_SLOT_LIMIT - currentQuantity;
+    if (freeSpace <= 0) return 0;
+
+    return Math.min(remaining, freeSpace);
+}
+
+/**
+ * Returns max stack count for multiplestack item, or null when item is not configured.
+ */
+function getMultiStackLimit(dropType) {
+    const multiStackItems = cheatConfig.multiplestacks?.items;
+    if (!multiStackItems || !multiStackItems.has(dropType)) {
+        return null;
+    }
+
+    return multiStackItems.get(dropType);
 }
 
 /**
@@ -155,19 +234,20 @@ function transferItemToChest(dropType) {
  */
 function findMultiStackSlot(dropType, chestOrder, chestQuantity, maxStacks, blankSlot) {
     let stackCount = 0;
+    const maxStackCount = Math.max(Number(maxStacks) || 1, 1);
 
     for (let i = 0; i < chestOrder.length; i++) {
         if (chestOrder[i] !== dropType) continue;
 
         stackCount++;
         // Check if stack is full (1.05B limit is standard safe max)
-        if (chestQuantity[i] < 1050000000) {
+        if ((Number(chestQuantity[i]) || 0) < MULTI_STACK_SLOT_LIMIT) {
             return i;
         }
+    }
 
-        if (stackCount >= maxStacks) {
-            return i; // Return full stack if we hit limit, standard fallback
-        }
+    if (stackCount >= maxStackCount) {
+        return -1;
     }
 
     return blankSlot;
