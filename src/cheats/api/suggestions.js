@@ -95,6 +95,11 @@ export function getAutoCompleteSuggestions() {
     }));
 
     // keychain stats
+    choices.push({
+        value: "keychain reset",
+        message: "Reset keychain override",
+        category: "keychain",
+    });
     addChoices(choices, keychainStatsMap, (stat) => ({
         value: `keychain ${stat}`,
         message: "",

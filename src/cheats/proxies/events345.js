@@ -175,4 +175,14 @@ export function setupEvents345Proxies() {
         }
         return base;
     });
+
+    // Keychain stats override (Flurbo store)
+    if (ActorEvents345._customBlock_keychainn) {
+        createMethodProxy(ActorEvents345, "_customBlock_keychainn", (base) => {
+            if (typeof cheatConfig.misc?.keychain === "function") {
+                return cheatConfig.misc.keychain(base);
+            }
+            return base;
+        });
+    }
 }

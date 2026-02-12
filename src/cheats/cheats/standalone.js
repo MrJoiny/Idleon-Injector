@@ -337,20 +337,23 @@ registerCheats({
 registerCheat({
     name: "keychain",
     category: "keychain",
-    message: "Generate specific keychain with double max stats when buying from Flurbo store",
+    message: "Generate a specific maxed keychain stat from Flurbo store",
     needsParam: true,
     fn: (params) => {
-        const statName = params[0];
-        if (!statName) {
-            cheatConfig.misc.keychain = (t) => t;
-            return `Reset to default rng, input a stat to set keychain stats`;
+        const statName = params[0]?.toLowerCase();
+        if (!statName || statName === "reset") {
+            if (cheatConfig.misc) {
+                delete cheatConfig.misc.keychain;
+            }
+            return "Reset keychain override to default RNG";
         }
 
         const selectedStat = keychainStatsMap[statName];
         if (!selectedStat) {
-            return `Unknown stat: ${statName}`;
+            return `Unknown keychain stat: ${statName}. Use one of: ${Object.keys(keychainStatsMap).join(", ")}`;
         }
 
+        cheatConfig.misc ??= {};
         cheatConfig.misc.keychain = () => [
             selectedStat[1],
             selectedStat[2],
