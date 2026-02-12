@@ -1,6 +1,6 @@
 # UI Development
 
-This document covers how the VanJS-based UI is structured, how it syncs to the backend, and how to extend it safely.
+How the VanJS-based UI is structured, syncs to the backend, and how to extend it.
 
 ## Directory map
 
@@ -25,7 +25,7 @@ import { App } from "/components/App.js";
 van.add(document.body, App());
 ```
 
-`src/ui/entry/style.css` is the CSS entry. Add new partials in `src/ui/styles/` and import them there.
+`src/ui/entry/style.css` is the CSS entry. Add new partials in `src/ui/styles/` and import there.
 
 `src/ui/components/App.js` initializes heartbeat monitoring, keyboard shortcuts, and mounts the tab content.
 
@@ -46,19 +46,19 @@ Persisted UI settings:
 Core flows:
 
 - `store.initHeartbeat()` opens the WebSocket and checks `/api/heartbeat`.
-- `store.loadCheats()` requests `/api/cheats` and lazily fetches `/api/config` if it is not loaded.
+- `store.loadCheats()` requests `/api/cheats` and lazily fetches `/api/config` if not loaded.
 - `store.loadConfig()` fetches `/api/config` for the Config tab.
 - `store.loadAccountOptions()` fetches `/api/options-account` and `/config/optionsAccountSchema.json`.
 
 Heartbeat details:
 
-- WebSocket connection status is treated as the primary heartbeat signal.
-- A 10s interval falls back to `/api/heartbeat` when WS is disconnected.
-- Electron mode uses the same WebSocket + heartbeat flow as the browser UI.
+- WebSocket connection status is the primary heartbeat signal.
+- 10s interval falls back to `/api/heartbeat` when WS is disconnected.
+- Electron mode uses the same WebSocket + heartbeat flow as browser UI.
 
 ## Services layer
 
-API requests are centralized in `src/ui/services/api.js`:
+API requests centralized in `src/ui/services/api.js`:
 
 - `fetchCheatsData()` -> `GET /api/cheats`
 - `executeCheatAction()` -> `POST /api/toggle`
@@ -74,7 +74,7 @@ API requests are centralized in `src/ui/services/api.js`:
 WebSocket updates live in `src/ui/services/ws.js` and push cheat-state changes into `store.data.activeCheatStates`.
 Monitor subscriptions use the same socket, pushing `monitor-state` updates into `store.data.monitorValues`.
 
-The WebSocket client auto-reconnects every 10s in all runtimes.
+WebSocket client auto-reconnects every 10s in all runtimes.
 
 ## Core views
 
@@ -84,21 +84,21 @@ The WebSocket client auto-reconnects every 10s in all runtimes.
 
 Features:
 
-- Favorites and recent commands are stored in `localStorage`.
-- The quick-access section surfaces favorites and recents for one-click execution.
-- Categories are ordered by `CATEGORY_ORDER` in `src/ui/state/constants.js`.
+- Favorites and recents stored in `localStorage`.
+- Quick-access section surfaces favorites and recents for one-click execution.
+- Categories ordered by `CATEGORY_ORDER` in `src/ui/state/constants.js`.
 - `SearchBar` filters by command value or description.
 - Supports list and tab layouts (stored in `store.app.cheatsViewMode`).
-- Tabs view paginates with a "Load more" button (50 items per page).
-- List view uses lazy `<details>` categories and auto-expands on search.
-- Parameterized cheats render an inline input ("Val"); missing values block execution.
-- Favorites support parameterized commands by storing the full action string.
+- Tabs view paginates with "Load more" (50 items per page).
+- List view uses lazy `<details>` categories, auto-expands on search.
+- Parameterized cheats render inline input ("Val"); missing values block execution.
+- Favorites support parameterized commands by storing full action string.
 
 Useful helpers:
 
 - `store.executeCheat(action, message)` triggers `/api/toggle` and shows toast feedback.
 - `store.navigateToCheatConfig(cheatValue)` jumps to Config with a focused path.
-- `store.getActiveCheats()` flattens active cheat state into a display list (if used by UI components).
+- `store.getActiveCheats()` flattens active cheat state into a display list.
 
 ### Config view
 
@@ -106,19 +106,19 @@ Useful helpers:
 
 Key behaviors:
 
-- Builds a local `draft` via `vanX.reactive` to avoid direct edits on the live config.
+- Builds a local `draft` via `vanX.reactive` to avoid direct edits on live config.
 - Sub-tabs: Cheat Config, Startup Cheats, Injector Config.
 - Supports category filtering and search on cheat config keys.
 - Uses `ConfigNode` to recursively render object trees.
-- Uses a forced-path mode when coming from the Cheats gear icon, with a "SHOWING" banner.
-- Saves can apply to RAM (`/api/config/update`) or persist to disk (`/api/config/save`).
-- Injector config shows a "restart required" warning banner.
+- Uses forced-path mode when coming from Cheats gear icon, with "SHOWING" banner.
+- Saves apply to RAM (`/api/config/update`) or persist to disk (`/api/config/save`).
+- Injector config shows "restart required" warning banner.
 
 Function values (like `(t) => t * 2`) are edited through `FunctionInput`:
 
 - Parsing logic lives in `src/ui/utils/functionParser.js`.
 - Recognizes multiply, divide, fixed, passthrough, min, max, and complex forms.
-- Sliders are provided for multiply/divide values; raw editor is used for complex.
+- Sliders provided for multiply/divide values; raw editor for complex.
 
 Save behavior:
 
@@ -129,50 +129,50 @@ Save behavior:
 
 `src/ui/components/views/Account.js` exposes `OptionsListAccount` editing.
 
-- Users must confirm a warning before data is loaded.
+- Users must confirm a warning before data loads.
 - Uses `src/ui/config/optionsAccountSchema.json` for labels, types, warnings, and AI flags.
-- `Hide AI` filters out `schema.AI` entries for easier manual work.
-- Rows render number inputs, boolean toggles, or raw JSON strings based on the value type.
-- Each "SET" writes to memory via `/api/options-account/index` with optimistic UI updates.
+- `Hide AI` filters out `schema.AI` entries for easier manual editing.
+- Rows render number inputs, boolean toggles, or raw JSON based on value type.
+- Each "SET" writes to memory via `/api/options-account/index` with optimistic updates.
 
 ### Search view
 
-`src/ui/components/views/Search.js` provides a tool for finding specific values within the game's internal data (`gga`).
+`src/ui/components/views/Search.js` provides a tool for finding values in the game's internal data (`gga`).
 
 Features:
 
-- **Key Whitelist**: Select which top-level game attribute categories to search in (e.g., `PlayerDATABASE`, `SkillLevels`).
+- **Key Whitelist**: Select top-level game attribute categories to search (e.g., `PlayerDATABASE`, `SkillLevels`).
 - **Favorites**: Quick-select common data categories.
 - **Value Matching**:
     - Supports strings (case-insensitive contains).
     - Supports numbers (exact or rounding tolerance for floats).
     - Supports ranges (e.g., `100-200`).
     - Supports `true`, `false`, `null`, `undefined`.
-- **Path Copying**: Clicking a result copies the full Haxe access path (e.g., `bEngine.gameAttributes.h.PlayerDATABASE.h.Lava`) to the clipboard.
+- **Path Copying**: Clicking a result copies the full Haxe access path to clipboard.
 - **Send to Monitor**: The eye icon subscribes the path in the Monitor view.
-- **Performance**: Uses a "Load more" pattern to handle large result sets without freezing the UI.
+- **Performance**: "Load more" pattern handles large result sets without freezing.
 
 ### Monitor view
 
-`src/ui/components/views/Monitor.js` tracks values over WebSocket and displays change history.
+`src/ui/components/views/Monitor.js` tracks values over WebSocket and displays history.
 
 Features:
 
-- Add watchers by entering a full path (e.g., `gga.GemsOwned`) or sending a Search result.
-- Shows the current value and the last 10 updates per watch.
-- Removes watchers with the Unwatch action.
+- Add watchers by entering a path (e.g., `gga.GemsOwned`) or sending a Search result.
+- Shows current value and last 10 updates per watch.
+- Remove watchers with Unwatch action.
 
 ### DevTools view
 
 `src/ui/components/views/DevTools.js` embeds or launches Chrome DevTools:
 
 - Calls `/api/devtools-url` and loads it in an iframe.
-- When embedded in the in-game UI, it prompts for pop-out to avoid crashes.
-- Embedded mode can open the Web UI or DevTools in an external window via `/api/open-url`.
+- When embedded in the in-game UI, prompts for pop-out to avoid crashes.
+- Embedded mode can open Web UI or DevTools in external window via `/api/open-url`.
 
 ## Components and patterns
 
-Common components live in `src/ui/components/`:
+Common components in `src/ui/components/`:
 
 - `Sidebar`: tab navigation and quick actions.
 - `SearchBar`: shared filter input used by Cheats and Account.
@@ -211,6 +211,6 @@ const viewFactories = {
 
 ## Embedded vs desktop behavior
 
-`IS_ELECTRON` in `src/ui/state/constants.js` is used for Electron-specific UI behavior (like external link handling). WebSocket updates are available in Electron and browser modes.
+`IS_ELECTRON` in `src/ui/state/constants.js` handles Electron-specific UI behavior (like external link handling). WebSocket updates available in Electron and browser modes.
 
-`window.parent !== window` is used to detect embedded mode for the DevTools view, which forces a pop-out workflow.
+`window.parent !== window` detects embedded mode for DevTools view, forcing pop-out workflow.

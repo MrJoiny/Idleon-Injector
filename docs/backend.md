@@ -1,6 +1,6 @@
 # Backend Architecture
 
-This document explains how the Node.js backend attaches to Idleon, injects the cheat bundle, and serves the UI, API, and CLI.
+How the Node.js backend attaches to Idleon, injects the cheat bundle, and serves the UI/API/CLI.
 
 ## Repository layout
 
@@ -54,7 +54,7 @@ Ports are fixed by helpers:
 
 ## CDP attachment
 
-`src/modules/game/gameAttachment.js` handles all platform-specific attachment.
+`src/modules/game/gameAttachment.js` handles platform-specific attachment.
 
 `waitForCdpEndpoint()` polls `http://localhost:<cdpPort>/json/version` until a WebSocket URL appears.
 
@@ -73,7 +73,7 @@ steam://run/1476970//--remote-debugging-port=32123
 Linux:
 
 - `autoAttachLinux()` tries `steam -applaunch 1476970 --remote-debugging-port=32123`.
-- If Steam auto-launch fails, it waits for a manual game launch and polls the CDP endpoint.
+- If Steam auto-launch fails, it waits for manual launch and polls the CDP endpoint.
 
 macOS:
 
@@ -186,7 +186,7 @@ Successful responses return `{ result: "..." }` with the command output string.
 
 ## WebSocket updates
 
-`src/modules/server/wsServer.js` pushes cheat-state and value-monitor updates to UI clients, and accepts monitor updates from the game runtime.
+`src/modules/server/wsServer.js` pushes cheat-state and monitor updates to UI clients, and accepts updates from the game runtime.
 
 Message format:
 
@@ -211,11 +211,11 @@ Monitor messages:
 
 Notes:
 
-- Clients default to `ui` and the game runtime re-identifies with `identify`.
-- Monitor history stores the last 10 values per id and is broadcast as `monitor-state`.
+- Clients default to `ui`; the game runtime re-identifies with `identify`.
+- Monitor history stores the last 10 values per id, broadcast as `monitor-state`.
 - `monitor-subscribe` and `monitor-unsubscribe` evaluate `window.monitorWrap` and `window.monitorUnwrap` in the game context.
 
-On connection, clients receive the current cheat state and monitor state immediately.
+On connection, clients receive current cheat state and monitor state immediately.
 
 ## CLI integration
 
@@ -224,7 +224,7 @@ On connection, clients receive the current cheat state and monitor state immedia
 - Autocomplete list comes from `getAutoCompleteSuggestions.call(context)`.
 - Commands execute via `cheat.call(context, '<action>')`.
 - A built-in `chromedebug` command opens the DevTools URL directly.
-- The CLI uses Enquirer autocomplete with token matching and a two-step confirm for cheats needing params.
+- The CLI uses Enquirer autocomplete with token matching and a two-step confirm for parameterized cheats.
 
 ## Error handling and troubleshooting
 
@@ -235,7 +235,7 @@ On connection, clients receive the current cheat state and monitor state immedia
 - `Could not find a compatible Chromium-based browser` means auto-detection failed.
 - `Cheat context not found` means the page loaded but `window.__idleon_cheats__` was never created.
 
-When adding new API routes, always wrap runtime calls in `try/catch` and return JSON errors:
+When adding API routes, wrap runtime calls in `try/catch` and return JSON errors:
 
 ```js
 res.status(500).json({ error: error.message });

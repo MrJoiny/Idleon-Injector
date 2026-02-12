@@ -102,11 +102,34 @@ export const lootableItemTypes = [
     "QUEST_ITEM",
 ];
 
+// Keys used for carry capacity multiplier checks in events012
+export const carryCapKeys = new Set([
+    "HardCappy",
+    "bOre",
+    "bBar",
+    "cOil",
+    "dFish",
+    "dBugs",
+    "bLog",
+    "bLeaf",
+    "cFood",
+    "dCritters",
+    "dSouls",
+    "dCurrency",
+    "dQuest",
+    "dStatueStone",
+    "dStone",
+    "dFishToolkit",
+    "bCraft",
+    "bCraftOtherPlayer",
+]);
+
 // Game attribute keys to skip when scanning for NaN values
 export const blacklist_gga = new Set([
     "Player",
     "DummyNumbersStatManager",
     "PixelHelperActor",
+    "ItemGetPixelQueue",
     "OriginPixelActor",
     "OtherPlayers",
     "PlayerImgInst",
@@ -163,3 +186,6 @@ export const knownBundles = [
     ["Panda Pack", "bon_o"],
     ["Santa helper bundle", "bon_p"],
 ];
+
+// Item types to exclude from bulk commands (invalid or problematic types)
+export const bulkTypeBlacklist = new Set(["Bits", "SAIL_TREASURE", "SPICE", "WHAT", "BOX", "UNKNOWN", "ERROR"]);

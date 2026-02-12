@@ -140,6 +140,7 @@ export function searchGga(query, keys) {
 
     const parsedQuery = parseQuery(query);
     const results = [];
+    const seenPaths = new Set();
 
     for (const key of keys) {
         if (!(key in gga) || blacklist_gga.has(key)) continue;
@@ -154,6 +155,7 @@ export function searchGga(query, keys) {
                 formattedValue: formatValue(rootValue),
                 type: typeof rootValue,
             });
+            seenPaths.add(key);
         }
 
         // Traverse nested structure
@@ -163,6 +165,9 @@ export function searchGga(query, keys) {
 
             if (matchesQuery(value, parsedQuery)) {
                 const fullPath = buildPath([key, ...pathArray]);
+                if (seenPaths.has(fullPath)) return;
+                seenPaths.add(fullPath);
+
                 results.push({
                     path: fullPath,
                     value: value,

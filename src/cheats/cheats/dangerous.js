@@ -2,12 +2,11 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, chest, forge, overpurchases, cogs)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
  * - chng (execute arbitrary code)
- * - qnty (change item quantities)
  * - equipall (equip any item at any class/level)
  */
 
@@ -15,6 +14,7 @@ import { registerCheats, registerCheat } from "../core/registration.js";
 import { itemDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
+import { cheatConfig } from "../core/state.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -213,11 +213,12 @@ registerCheat({
             return `Invalid type. Valid types:\n${Array.from(itemTypes).sort().join(", ")}`;
         }
 
-        const blackList = cList.RANDOlist[64];
+        const blackList = new Set(cList.RANDOlist[64]);
+        const itemBlacklist = new Set(cList.RANDOlist[17]);
         let droppedCount = 0;
 
         for (const [code, entry] of Object.entries(itemDefs)) {
-            if (entry.h.Type === type && !blackList.includes(code)) {
+            if (entry.h.Type === type && !blackList.has(code) && !itemBlacklist.has(code)) {
                 dropOnChar(code, amount);
                 droppedCount++;
             }
@@ -357,5 +358,24 @@ registerCheat({
         }
 
         return `Invalid skill/type: ${subcommand}`;
+    },
+});
+
+// A highly dangerous function that lets you manually change in-game variables, like:
+// > chng bEngine.getGameAttribute("QuestComplete").h["Secretkeeper1"]=1
+registerCheat({
+    name: "chng",
+    message: "!danger! Execute arbitrary code. Caution advised. Consider chromedebug instead",
+    fn: (params) => {
+        if (!cheatConfig.chng_enabled) {
+            return "chng command is currently disabled in config.js Enable it ONLY if you know what you are doing.";
+        }
+
+        try {
+            eval(params[0]);
+            return `${params[0]}`;
+        } catch (error) {
+            return `Error: ${error}`;
+        }
     },
 });

@@ -150,8 +150,9 @@ class ValueMonitor {
 
         // Store the current value for simple data properties
         // For accessor properties, we delegate to the original getter/setter
-        let storedValue = original && original.get ? undefined : target[prop];
         const hasOriginalAccessor = original && (original.get || original.set);
+        let storedValue = hasOriginalAccessor ? undefined : target[prop];
+        const getStoredValue = () => storedValue;
 
         const self = this;
         Object.defineProperty(target, prop, {
@@ -181,7 +182,7 @@ class ValueMonitor {
             configurable: true,
         });
 
-        this.watchers.set(id, { target, prop, original, path });
+        this.watchers.set(id, { target, prop, original, path, getStoredValue });
         console.log(`[ValueMonitor] Now watching: ${path} (id: ${id})`);
 
         const initialValue = hasOriginalAccessor && original.get ? original.get.call(target) : storedValue;
@@ -198,14 +199,12 @@ class ValueMonitor {
         const watcher = this.watchers.get(id);
         if (!watcher) return { error: "ID not found" };
 
-        const { target, prop, original } = watcher;
+        const { target, prop, original, getStoredValue } = watcher;
 
         if (original) {
             Object.defineProperty(target, prop, original);
         } else {
-            // If it was a plain property, we might need to delete the descriptor
-            // and just set the value back to avoid keeping our getter/setter
-            const val = target[prop];
+            const val = getStoredValue();
             delete target[prop];
             target[prop] = val;
         }

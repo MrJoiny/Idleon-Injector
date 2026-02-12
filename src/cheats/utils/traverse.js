@@ -59,7 +59,10 @@ export function traverseAll(obj, worker, visited = new Set()) {
     const path = [];
 
     function walk(node) {
-        if (node === null || node === undefined) return;
+        if (node === null || node === undefined) {
+            worker(node, path);
+            return;
+        }
         worker(node, path);
         if (typeof node !== "object" || visited.has(node)) return;
         visited.add(node);

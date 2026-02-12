@@ -5,7 +5,7 @@
 export const configDescriptions = {
 
     // CHEAT CONFIG - Top Level
-    "cheatConfig.unban": "Prevents accounts from being banned. Might not work anymore, since there are multiple ways for a ban",
+    "cheatConfig.unban": "Prevents accounts from being banned. May not work due to multiple ban methods",
     "cheatConfig.ingameUI": "Enables the in-game UI overlay",
     "cheatConfig.steamachieve": "Allows unlocking Steam achievements",
     "cheatConfig.chng_enabled": "⚠ DANGER: If true, 'chng' command becomes available. ONLY enable if you know what you are doing!",
@@ -27,28 +27,28 @@ export const configDescriptions = {
     "cheatConfig.unlock.islands": "String of IDs for islands to unlock (e.g., 'abcde_')",
 
     "cheatConfig.multiply.printer": "Multiplies sample print by x, overrides lab/god bonus",
-    "cheatConfig.multiply.carrycap": "Multiplies carry capacity by the number given",
-    "cheatConfig.multiply.damage": "Multiplies total damage by the number given",
-    "cheatConfig.multiply.money": "Multiplies money drops by the number given",
-    "cheatConfig.multiply.drop": "Multiplies drop rarity by the number given",
-    "cheatConfig.multiply.afk": "Multiplies AFK gains by the number given",
-    "cheatConfig.multiply.skillexp": "Multiplies skill XP gain by the number given",
-    "cheatConfig.multiply.classexp": "Multiplies class XP gain by the number given",
-    "cheatConfig.multiply.efficiency": "Multiplies skilling efficiency by the number given",
-    "cheatConfig.multiply.crystal": "Multiplies crystal spawn chance by the number given",
-    "cheatConfig.multiply.shopstock": "Multiplies shop stock quantity by the number given",
+    "cheatConfig.multiply.carrycap": "Carry capacity multiplier",
+    "cheatConfig.multiply.damage": "Total damage multiplier",
+    "cheatConfig.multiply.money": "Money drops multiplier",
+    "cheatConfig.multiply.drop": "Drop rarity multiplier",
+    "cheatConfig.multiply.afk": "AFK gains multiplier",
+    "cheatConfig.multiply.skillexp": "Skill XP gain multiplier",
+    "cheatConfig.multiply.classexp": "Class XP gain multiplier",
+    "cheatConfig.multiply.efficiency": "Skilling efficiency multiplier",
+    "cheatConfig.multiply.crystal": "Crystal spawn chance multiplier",
+    "cheatConfig.multiply.shopstock": "Shop stock quantity multiplier",
 
     // WIDE - Miscellaneous Wide Cheats
     "cheatConfig.wide.autoloot.itemstochest": "Automatically sends looted items to the chest",
     "cheatConfig.wide.autoloot.moneytochest": "Automatically sends looted money to the chest",
-    "cheatConfig.wide.autoloot.zenithfarm": "Drops for Zenith farming are exluded from the autoloot and drop normally",
-    "cheatConfig.wide.autoloot.materialfarm": "Drops for monster materials are exlucded from the autoloot and drop normally",
+    "cheatConfig.wide.autoloot.zenithfarm": "Zenith farming drops are excluded from autoloot and drop normally",
+    "cheatConfig.wide.autoloot.materialfarm": "Monster material drops are excluded from autoloot and drop normally",
     "cheatConfig.wide.autoloot.hidenotifications": "Hides loot and money notifications",
     "cheatConfig.wide.perfectobols.preferredstat": "The stats that should be rolled when using perfectobols (e.g., PRIMARY, STR)",
     "cheatConfig.wide.plunderous.allcharacters": "Enables plunderous mob bonuses for all characters",
-    "cheatConfig.wide.arcade.ArcadeCost": "Sets the Cost in the Arcade Shop. (lower is better)",
-    "cheatConfig.wide.dartshop.DartsUpgCost": "Sets the Upgrade Cost in the Dart Shop. (lower is better)",
-    "cheatConfig.wide.hoopshop.HoopsUpgCost": "Sets the Upgrade Cost in the Hoop Shop. (lower is better)",
+    "cheatConfig.wide.arcade.ArcadeCost": "Arcade Shop costs. (lower is better)",
+    "cheatConfig.wide.dartshop.DartsUpgCost": "Dart Shop upgrade costs. (lower is better)",
+    "cheatConfig.wide.hoopshop.HoopsUpgCost": "Hoop Shop upgrade costs. (lower is better)",
 
     // WIPE
     "cheatConfig.wipe.cogs": "Wipes all cogs currently on the board",
@@ -59,11 +59,11 @@ export const configDescriptions = {
     "cheatConfig.w1.forge.capacity": "Forge: Ore capacity",
     "cheatConfig.w1.stampcost": "Stamps: Upgrade costs. (lower is better)",
     "cheatConfig.w1.companion.companions": "Comma-separated list of companion IDs to enable (e.g., '0,1,2'). Leave empty for all",
-    "cheatConfig.w1.companion.current": "The ID of the currently active companion (e.g., '11' for Glunko)",
+    "cheatConfig.w1.companion.current": "Active companion ID (e.g., '11' for Glunko)",
     "cheatConfig.w1.owl.OwlCost": "Owl: Upgrade costs. (lower is better)",
     "cheatConfig.w1.owl.OwlFeatherRate": "Owl: Feather gain rate",
     "cheatConfig.w1.owl.OwlBonuses": "Owl: All owl-related bonuses",
-    "cheatConfig.w1.owl.OwlFeatherShinyGe": "Owl: Not sure what that is",
+    "cheatConfig.w1.owl.OwlFeatherShinyGe": "Owl: Shiny feather generation (unknown effect)",
 
     // W2 - World 2
     "cheatConfig.w2.roo.RooCost": "Roo: Upgrade costs. (lower is better)",
@@ -82,7 +82,7 @@ export const configDescriptions = {
     "cheatConfig.w2.alchemy.ResearchSpeed": "Alchemy: Brewing speed",
     "cheatConfig.w2.alchemy.VialCosts": "Alchemy: Vial costs. (lower is better)",
     "cheatConfig.w2.alchemy.VialBonus": "Alchemy: Vial effects",
-    "cheatConfig.w2.alchemy.PctChanceNewBubble": "Alchemy: The chance of discovering a new bubble",
+    "cheatConfig.w2.alchemy.PctChanceNewBubble": "Alchemy: New bubble discovery chance",
     "cheatConfig.w2.alchemy.CauldronLvsBrewREQ": "Alchemy: Cauldron level requirements. (lower is better)",
     "cheatConfig.w2.alchemy.LiquidCap": "Alchemy: Liquid storage capacity",
     "cheatConfig.w2.alchemy.LiquidHRrate": "Alchemy: Liquid generation speed",
@@ -208,12 +208,12 @@ export const configDescriptions = {
     "cheatConfig.w5.sailing.MaxChests": "Sailing: Maximum chest limit (Warning: too high may break cloud saves)",
     "cheatConfig.w5.sailing.RareTreasureChance": "Sailing: Rare treasure find chance",
     "cheatConfig.w5.sailing.Minimumtraveltime": "Sailing: Minimum travel time in minutes. (lower is better)",
-    "cheatConfig.w5.sailing.BoatUpgCostType": "Sailing: The loot type ID required for boat upgrades",
-    "cheatConfig.w5.sailing.BoatUpgCostQty": "Sailing: Loot quantity required for upgrades. (lower is better)",
+    "cheatConfig.w5.sailing.BoatUpgCostType": "Sailing: Loot type ID for boat upgrades",
+    "cheatConfig.w5.sailing.BoatUpgCostQty": "Sailing: Loot quantity for upgrades. (lower is better)",
     "cheatConfig.w5.sailing.BoatValue": "Sailing: Loot quantity gained from boats",
     "cheatConfig.w5.sailing.BoatSpeed": "Sailing: Boat travel speed",
     "cheatConfig.w5.sailing.CloudDiscoverBonus": "Sailing: Cloud discovery bonuses",
-    "cheatConfig.w5.sailing.ArtifactChance": "Sailing: Artifact discovery chance. (lower is better)",
+    "cheatConfig.w5.sailing.ArtifactRarity": "Sailing: Artifact discovery chance. (lower is better)",
     "cheatConfig.w5.sailing.AncientChances": "Sailing: Ancient artifact chance. (lower is better)",
     "cheatConfig.w5.sailing.EldritchChances": "Sailing: Eldritch artifact chance. (lower is better)",
     "cheatConfig.w5.sailing.SovereignChances": "Sailing: Sovereign artifact chance. (lower is better)",
@@ -224,14 +224,14 @@ export const configDescriptions = {
 
     // Gaming
     "cheatConfig.w5.gaming.FertilizerUpgCosts": "Gaming: Fertilizer upgrade costs. (lower is better)",
-    "cheatConfig.w5.gaming.SproutCapacity": "Gaming: Maximum number of sprout slots",
+    "cheatConfig.w5.gaming.SproutCapacity": "Gaming: Max sprout slots",
     "cheatConfig.w5.gaming.MutateUpgCosts": "Gaming: Mutation upgrade costs. (lower is better)",
     "cheatConfig.w5.gaming.LogBookBitBonus": "Gaming: Bit bonuses from the logbook",
     "cheatConfig.w5.gaming.GamingExpPCT": "Gaming: Gaming XP gain percentage",
     "cheatConfig.w5.gaming.NewMutantChanceDEC": "Gaming: Decimal new mutant chance (1 = guaranteed)",
     "cheatConfig.w5.gaming.SproutGrowthCHANCEperMUT": "Gaming: Growth chance per mutation",
     "cheatConfig.w5.gaming.SproutGrowthTime": "Gaming: Sprout growth speed. (lower is better)",
-    "cheatConfig.w5.gaming.SaveSprinkler": "Gaming: Probability of not consuming water when using the sprinkler",
+    "cheatConfig.w5.gaming.SaveSprinkler": "Gaming: Chance to save water when using sprinkler",
     "cheatConfig.w5.gaming.ImportItemCOST": "Gaming: Import item costs. (lower is better)",
     "cheatConfig.w5.gaming.AcornShopCost": "Gaming: Acorn shop upgrade costs. (lower is better)",
     "cheatConfig.w5.gaming.BoxCost": "Gaming: New box costs. (lower is better)",
@@ -252,7 +252,7 @@ export const configDescriptions = {
     "cheatConfig.w5.divinity.OfferingOdds": "Divinity: Success probability for offerings",
 
     // Collider
-    "cheatConfig.w5.collider.AtomsUnlocked": "Collider: Sets the number of unlocked atoms (max 10)",
+    "cheatConfig.w5.collider.AtomsUnlocked": "Collider: Number of unlocked atoms (max 10)",
     "cheatConfig.w5.collider.AtomCost": "Collider: Atom collider upgrade costs. (lower is better)",
     "cheatConfig.w5.collider.AtomBonuses": "Collider: Bonuses provided by atoms",
     "cheatConfig.w5.collider.AtomBubbleUpgCost": "Collider: Atom bubble upgrade costs. (lower is better)",
@@ -269,9 +269,9 @@ export const configDescriptions = {
     "cheatConfig.w5.holes.MonumentROGbonuses": "Sneaking: Right-side monument rewards",
     "cheatConfig.w5.holes.Bravery_MinDMG": "Bravery: Minimum bravery damage",
     "cheatConfig.w5.holes.Bravery_MaxDMG": "Bravery: Maximum bravery damage",
-    "cheatConfig.w5.holes.Bravery_SwordsOwned": "Bravery: Sets the number of swords owned",
-    "cheatConfig.w5.holes.MaxRerolls": "Bravery: Maximum number of rerolls allowed",
-    "cheatConfig.w5.holes.MaxRevisions": "Bravery: Maximum number of revisions allowed",
+    "cheatConfig.w5.holes.Bravery_SwordsOwned": "Bravery: Number of swords owned",
+    "cheatConfig.w5.holes.MaxRerolls": "Bravery: Max rerolls allowed",
+    "cheatConfig.w5.holes.MaxRevisions": "Bravery: Max revisions allowed",
     "cheatConfig.w5.holes.Bravery_MonsterHP": "Bravery: Monster HP. (lower is better)",
     "cheatConfig.w5.holes.Bravery_BlueChestChanceDEC": "Bravery: Probability of blue chest spawn. (lower is better)",
     "cheatConfig.w5.holes.BellCosts": "Sneaking: Bell improvement costs. (lower is better)",
@@ -298,30 +298,30 @@ export const configDescriptions = {
 
     // W6 - World 6
     // Farming
-    "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time (lower is faster). (lower is better)",
+    "cheatConfig.w6.farming.GrowthReq": "Farming: Plant growth time. (lower is better)",
     "cheatConfig.w6.farming.OGunlocked": "Farming: Overgrowth shop unlock state (0 = locked, 1 = unlocked)",
     "cheatConfig.w6.farming.NextOGchance": "Farming: Next overgrowth discovery chance",
     "cheatConfig.w6.farming.OGmulti": "Farming: Overgrowth bonuses",
-    "cheatConfig.w6.farming.PlotOwned": "Farming: Sets the number of plots owned (max 36)",
-    "cheatConfig.w6.farming.MarketCostType": "Farming: The plant type ID required for market upgrades",
-    "cheatConfig.w6.farming.MarketCostQTY": "Farming: Plant quantity required for upgrades. (lower is better)",
+    "cheatConfig.w6.farming.PlotOwned": "Farming: Number of plots owned (max 36)",
+    "cheatConfig.w6.farming.MarketCostType": "Farming: Plant type ID for market upgrades",
+    "cheatConfig.w6.farming.MarketCostQTY": "Farming: Plant quantity for upgrades. (lower is better)",
     "cheatConfig.w6.farming.NextCropChance": "Farming: Next plant evolution discovery chance",
-    "cheatConfig.w6.farming.CropsBonusValue": "Farming: The value/bonus of each crop",
-    "cheatConfig.w6.farming.CropsOnVine": "Farming: The number of crops on each plant",
+    "cheatConfig.w6.farming.CropsBonusValue": "Farming: Crop value/bonus",
+    "cheatConfig.w6.farming.CropsOnVine": "Farming: Crops per plant",
     "cheatConfig.w6.farming.GrowthRate": "Farming: Base growth rate multiplier",
-    "cheatConfig.w6.farming.ExoticPurchasesAllowed": "Farming: Sets the number of allowed exotic purchases (max 8)",
+    "cheatConfig.w6.farming.ExoticPurchasesAllowed": "Farming: Allowed exotic purchases (max 8)",
     "cheatConfig.w6.farming.ExoticLVQTY": "Farming: Exotic level quantities",
 
     // Ninja
     "cheatConfig.w6.ninja.EmporiumCost": "Ninja: Emporium upgrade costs. (lower is better)",
-    "cheatConfig.w6.ninja.KOtime": "Ninja: Knockout duration (lower is faster). (lower is better)",
-    "cheatConfig.w6.ninja.ActionSpd": "Ninja: Ninja action speed",
-    "cheatConfig.w6.ninja.Stealth": "Ninja: Ninja stealth rating",
+    "cheatConfig.w6.ninja.KOtime": "Ninja: Knockout duration. (lower is better)",
+    "cheatConfig.w6.ninja.ActionSpd": "Ninja: Action speed",
+    "cheatConfig.w6.ninja.Stealth": "Ninja: Stealth rating",
     "cheatConfig.w6.ninja.DetectionDEC": "Ninja: Detection rate. (lower is better)",
-    "cheatConfig.w6.ninja.DoorMaxHP": "Ninja: Sets the maximum HP for doors",
+    "cheatConfig.w6.ninja.DoorMaxHP": "Ninja: Door max HP",
     "cheatConfig.w6.ninja.JadeUpgCost": "Ninja: Jade upgrade costs. (lower is better)",
-    "cheatConfig.w6.ninja.ItemStat": "Ninja: Ninja item stats",
-    "cheatConfig.w6.ninja.ItemFindOdds": "Ninja: Ninja item find chance",
+    "cheatConfig.w6.ninja.ItemStat": "Ninja: Item stats",
+    "cheatConfig.w6.ninja.ItemFindOdds": "Ninja: Item find chance",
     "cheatConfig.w6.ninja.PristineBon": "Ninja: Pristine Charm bonuses",
 
     // Summoning
@@ -367,7 +367,7 @@ export const configDescriptions = {
     "cheatConfig.w6.windwalker.TempestRingDropChance": "Windwalker: Probability of Tempest ring drops",
     "cheatConfig.w6.windwalker.TempestStoneDropChance": "Windwalker: Probability of Tempest stone drops",
     "cheatConfig.w6.windwalker.TempestMedallionDropChance": "Windwalker: Probability of Tempest medallion drops",
-    "cheatConfig.w6.windwalker.PortalCostQTY": "Windwalker: Sets the quantity of items required for portal access. (lower is better)",
+    "cheatConfig.w6.windwalker.PortalCostQTY": "Windwalker: Items required for portal access. (lower is better)",
 
     // Arcane
     "cheatConfig.w6.arcane.ArcaneUpgCost": "Arcane: Arcane upgrade costs. (lower is better)",
@@ -379,7 +379,7 @@ export const configDescriptions = {
     "cheatConfig.w6.arcane.Arcane_CRITDMG": "Arcane: Crit Damage",
     "cheatConfig.w6.arcane.Arcane_AttackSpdPCT": "Arcane: Attack Speed",
     "cheatConfig.w6.arcane.ArcaneMultishotPCT": "Arcane: Arcane multishot chance",
-    "cheatConfig.w6.arcane.TenteyeclePCT": "Arcane: Sets the Tenteyecle proc chance",
+    "cheatConfig.w6.arcane.TenteyeclePCT": "Arcane: Tenteyecle proc chance",
     "cheatConfig.w6.arcane.PrismaBubDropChance": "Arcane: Probability of Prisma Bubble drops",
     "cheatConfig.w6.arcane.WepDropChance": "Arcane: Probability of weapon drops",
     "cheatConfig.w6.arcane.RingDropChance": "Arcane: Probability of ring drops",
@@ -387,7 +387,7 @@ export const configDescriptions = {
     "cheatConfig.w6.arcane.ExtraTachyon": "Arcane: Extra tachyon gain",
     "cheatConfig.w6.arcane.ExtraTachyonMulti": "Arcane: Extra tachyon bonuses",
     "cheatConfig.w6.arcane.ArcaneTachyonQTYbase": "Arcane: Tachyon quantity base value",
-    "cheatConfig.w6.arcane.ArcaneMobSpawnQTY": "Arcane: Amount of mobs spawned from the Arcane Crystal ability",
+    "cheatConfig.w6.arcane.ArcaneMobSpawnQTY": "Arcane: Mobs spawned by Arcane Crystal ability",
     "cheatConfig.w6.arcane.CrystalChargeReq": "Arcane: Kill requirement to spawn Arcane mobs. (lower is better)",
     "cheatConfig.w6.arcane.TimeLeft": "Arcane: Remaining time for the Arcane Barrier encounter",
 
@@ -398,7 +398,7 @@ export const configDescriptions = {
     // Bubba
     "cheatConfig.w7.bubba.MeatsliceRate": "Bubba: Meat slicing speed",
     "cheatConfig.w7.bubba.UpgCost": "Bubba: Upgrade costs. (lower is better)",
-    "cheatConfig.w7.bubba.DoubleLVchancePCT": "Bubba: Probability of gaining double levels on upgrade",
+    "cheatConfig.w7.bubba.DoubleLVchancePCT": "Bubba: Double level chance on upgrade",
     "cheatConfig.w7.bubba.DailyPetting": "Bubba: Daily petting limit",
     "cheatConfig.w7.bubba.DailyPet_HappinessQTY": "Bubba: Happiness gained from petting",
     "cheatConfig.w7.bubba.DailyPet_HappinessFromUpg": "Bubba: Happiness gained from upgrades",
@@ -419,7 +419,7 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunk.AmberGain": "Spelunking: Amber gain",
     "cheatConfig.w7.spelunk.AmberDropChance": "Spelunking: Probability of primary amber drops",
     "cheatConfig.w7.spelunk.AmberDropChance2nd": "Spelunking: Probability of secondary amber drops",
-    "cheatConfig.w7.spelunk.EscapeRopeChance": "Spelunking: Probability of finding an escape rope",
+    "cheatConfig.w7.spelunk.EscapeRopeChance": "Spelunking: Escape rope find chance",
     "cheatConfig.w7.spelunk.TollExitTax": "Spelunking: Toll exit tax. (lower is better)",
     "cheatConfig.w7.spelunk.SpelunkingEfficiency": "Spelunking: Spelunking efficiency",
     "cheatConfig.w7.spelunk.SpelunkingSpeed": "Spelunking: Spelunking speed. (lower is better)",
@@ -430,7 +430,7 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunk.w7itemDropChance": "Spelunking: Probability of World 7 item drops",
     "cheatConfig.w7.spelunk.blingbagDropChance": "Spelunking: Probability of bling bag drops",
     "cheatConfig.w7.spelunk.ShadowStrikeChance": "Spelunking: Probability of Shadow Strike procs",
-    "cheatConfig.w7.spelunk.GrandDiscoveries_FindChance": "Spelunking: Probability of finding Grand Discoveries",
+    "cheatConfig.w7.spelunk.GrandDiscoveries_FindChance": "Spelunking: Grand Discovery find chance",
     "cheatConfig.w7.spelunk.RockPOWreq": "Spelunking: Rock power requirements. (lower is better)",
     "cheatConfig.w7.spelunk.RockHP": "Spelunking: Rock HP. (lower is better)",
     "cheatConfig.w7.spelunk.StaminaCostMulti": "Spelunking: Stamina costs. (lower is better)",
@@ -439,10 +439,10 @@ export const configDescriptions = {
     "cheatConfig.w7.gallery.GalleryBonusMulti": "Gallery: All gallery-provided bonuses",
     "cheatConfig.w7.gallery.InitializeTrophyBonuses": "Gallery: Logic for initializing trophy bonuses",
     "cheatConfig.w7.gallery.InitializeNametagBonuses": "Gallery: Logic for initializing nametag bonuses",
-    "cheatConfig.w7.gallery.PodiumsOwned_Lv4": "Gallery: Sets the number of Level 4 podiums owned (max 19)",
+    "cheatConfig.w7.gallery.PodiumsOwned_Lv4": "Gallery: Level 4 podiums owned (max 19)",
 
     // Reef
-    "cheatConfig.w7.reef.ReefCost": "Reef: Reef-related costs. (lower is better)",
+    "cheatConfig.w7.reef.ReefCost": "Reef: Costs. (lower is better)",
 
     // Clam
     "cheatConfig.w7.clam.ClamPromochance": "Clams: Probability of clam promotion",
@@ -457,16 +457,13 @@ export const configDescriptions = {
     "cheatConfig.w7.coralkid.CoralKidUpgCost": "Coral Kid: Upgrade costs. (lower is better)",
 
     // Big Fish
-    "cheatConfig.w7.bigfish.BigFishCost": "Big Fish: Costs related to Big Fish. (lower is better)",
+    "cheatConfig.w7.bigfish.BigFishCost": "Big Fish: Costs. (lower is better)",
 
     // Zenith
     "cheatConfig.w7.zenith.ZenithMarketCost": "Zenith: Market upgrade costs. (lower is better)",
     "cheatConfig.w7.zenith.ZenithMarketBonus": "Zenith: Market-provided bonuses",
     "cheatConfig.w7.spelunkdepth": "Spelunking: Current depth (one-shot, resets to 0 after use)",
     "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking",
-
-    // MISC
-    "cheatConfig.misc.keychain": "Miscellaneous: Keychain bonuses",
 
     // INJECTOR CONFIG
     "injectorConfig.logLevel": "Log verbosity level: debug, info, warn, or error",

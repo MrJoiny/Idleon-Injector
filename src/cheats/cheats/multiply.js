@@ -3,7 +3,7 @@
  *
  * Stat multiplier cheats:
  * - damage, efficiency, afk, drop, money
- * - classexp, crystal, skillexp, shopstock, printer
+ * - classexp, crystal, skillexp, shopstock, printer, carrycap
  */
 
 import { registerCheats } from "../core/registration.js";

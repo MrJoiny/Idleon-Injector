@@ -3,7 +3,7 @@
  *
  * Information and utility commands:
  * - search (item, monster, talent, smith)
- * - list (bundle, missing_bundle, item, monster, class, card, quest, map, talent, ability, smith, gga, companion, nans)
+ * - list (bundle, missing_bundle, item, monster, class, card, quest, map, talent, ability, smith, chips, jargems, gga, companion, nans)
  * - gga, ggk, egga, eggk (game attribute inspection)
  * - cheats (list available cheats)
  */

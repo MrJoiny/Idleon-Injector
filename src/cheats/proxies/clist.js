@@ -92,4 +92,14 @@ export function setupCListProxy() {
             return original;
         });
     });
+
+    // Artifact rarity
+    traverse(cList.ArtifactInfo, 1, (artifact) => {
+        createProxy(artifact, 2, (original) => {
+            if (cheatState.w5.sailing) {
+                return cheatConfig.w5.sailing.ArtifactRarity(original);
+            }
+            return original;
+        });
+    });
 }

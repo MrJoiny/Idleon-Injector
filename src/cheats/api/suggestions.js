@@ -6,7 +6,7 @@
  */
 
 import { cheats } from "../core/registration.js";
-import { summonUnits, keychainStatsMap, alchemyTypes } from "../constants.js";
+import { summonUnits, keychainStatsMap, alchemyTypes, bulkTypeBlacklist } from "../constants.js";
 import { itemDefs, monsterDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { getAllBundles } from "../helpers/bundles.js";
 
@@ -95,6 +95,11 @@ export function getAutoCompleteSuggestions() {
     }));
 
     // keychain stats
+    choices.push({
+        value: "keychain reset",
+        message: "Reset keychain override",
+        category: "keychain",
+    });
     addChoices(choices, keychainStatsMap, (stat) => ({
         value: `keychain ${stat}`,
         message: "",
@@ -103,6 +108,7 @@ export function getAutoCompleteSuggestions() {
 
     // bulk item types
     for (const type of itemTypes) {
+        if (bulkTypeBlacklist.has(type)) continue;
         choices.push({
             value: `bulk ${type}`,
             message: `Drop all ${type} items`,
@@ -171,7 +177,6 @@ export function getAutoCompleteSuggestions() {
     }
 
     // game attributes (gga)
-
     for (const key of Object.keys(gga)) {
         choices.push({
             value: `gga ${key}`,

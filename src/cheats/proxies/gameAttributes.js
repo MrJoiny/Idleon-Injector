@@ -17,7 +17,7 @@
 import { cheatConfig, cheatState } from "../core/state.js";
 import { cList, events, gga } from "../core/globals.js";
 import { createProxy } from "../utils/proxy.js";
-import { applyMaxCap, getMultiplyValue } from "../helpers/values.js";
+import { applyMaxCap } from "../helpers/values.js";
 
 /**
  * Setup all game attribute proxies.
@@ -179,21 +179,6 @@ export function setupGameAttributeProxies() {
                 const newValue = cheatState.godlike.respawn ? cheatConfig.godlike.respawn(value) : value;
                 target[prop] = newValue;
                 return true;
-            },
-        });
-    }
-
-    // Carry Capacity multiplier
-    const maxCarryCap = gga.MaxCarryCap;
-    if (maxCarryCap && maxCarryCap.h && !maxCarryCap._isPatched) {
-        Object.defineProperty(maxCarryCap, "_isPatched", { value: true, enumerable: false });
-        maxCarryCap.h = new Proxy(maxCarryCap.h, {
-            get(target, prop) {
-                const base = target[prop];
-                if (cheatState.multiply.carrycap && typeof base === "number") {
-                    return base * getMultiplyValue("carrycap");
-                }
-                return base;
             },
         });
     }

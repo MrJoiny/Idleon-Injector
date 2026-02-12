@@ -4,9 +4,8 @@
  * Account-wide cheats:
  * - gembuylimit, mtx, post, guild, task, quest, star
  * - giant, gems, plunderous, candy, candytime, nodmg
- * - eventitems, autoloot, perfectobols, autoparty
- * - arcade, eventspins, hoopshop, dartshop, guildpoints
- * - buy (gem shop packs)
+ * - hidenames, noanim, eventitems, autoloot, perfectobols, autoparty
+ * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy
  */
 
 import { registerCheats } from "../core/registration.js";
