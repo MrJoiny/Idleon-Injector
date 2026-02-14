@@ -30,7 +30,7 @@ dashboard plus CLI for debugging, modding, and account management.
 
 ### Steps
 
-1. **Download**: Get the latest release.
+1. **Download**: Get the latest release from the [releases page](https://github.com/MrJoiny/Idleon-Injector/releases).
 2. **Extract**: Unzip to any folder.
     - _Optional: place next to the game executable to use its bundled Chromium._
 3. **Run**: Execute `InjectCheatsUI.exe`.
