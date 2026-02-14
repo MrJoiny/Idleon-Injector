@@ -42,7 +42,7 @@ const DEFAULT_IDLEON_PATHS = [
         process.env.ProgramW6432 || "C:/Program Files",
         "Steam/steamapps/common/Legends of Idleon/LegendsOfIdleon.exe"
     ),
-    path.join(process.cwd(), "LegendsOfIdleon.exe"),
+    getRuntimePath("LegendsOfIdleon.exe"),
 ];
 const DEFAULT_BROWSER_PATHS = {
     win32: [
