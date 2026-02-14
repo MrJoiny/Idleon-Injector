@@ -196,7 +196,7 @@ function moveAmountToChest(dropType, amount, chestOrder, chestQuantity, multiSta
 function findChestSlotForDrop(dropType, chestOrder, chestQuantity, multiStackLimit) {
     const blankSlot = chestOrder.indexOf("Blank");
     const existingSlot = chestOrder.indexOf(dropType);
-    if (multiStackLimit == null) {
+    if (multiStackLimit === null || multiStackLimit === undefined) {
         return existingSlot !== -1 ? existingSlot : blankSlot;
     }
 
@@ -207,7 +207,7 @@ function findChestSlotForDrop(dropType, chestOrder, chestQuantity, multiStackLim
  * Calculates how much can be inserted into the resolved chest slot.
  */
 function getTransferableChestAmount(remaining, currentQuantity, multiStackLimit) {
-    if (multiStackLimit == null) {
+    if (multiStackLimit === null || multiStackLimit === undefined) {
         return remaining;
     }
 
