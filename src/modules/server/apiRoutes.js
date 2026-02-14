@@ -8,7 +8,6 @@
 
 const { deepMerge } = require("../utils/objectUtils");
 const fs = require("fs").promises;
-const path = require("path");
 const {
     objToString,
     prepareConfigForJson,
@@ -16,6 +15,7 @@ const {
     getDeepDiff,
     filterByTemplate,
 } = require("../utils/helpers");
+const { getRuntimePath } = require("../utils/runtimePaths");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
 const { createLogger } = require("../utils/logger");
@@ -407,7 +407,7 @@ exports.cheatConfig = ${objToString(cheatConfigDiff)};
 
 exports.injectorConfig = ${new_injectorConfig};
 `;
-            const savePath = path.join(process.cwd(), "config.custom.js");
+            const savePath = getRuntimePath("config.custom.js");
 
             await fs.writeFile(savePath, fileContentString.trim());
             log.info(`Configuration saved to ${savePath}`);

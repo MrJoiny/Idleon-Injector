@@ -8,6 +8,7 @@
 
 const { deepClone, union, deepMerge } = require("../utils/objectUtils");
 const { validateConfig } = require("../utils/helpers");
+const { getRuntimePath } = require("../utils/runtimePaths");
 const os = require("os");
 const { createLogger } = require("../utils/logger");
 
@@ -28,16 +29,8 @@ const WEB_PORT = 8080;
  */
 function loadConfiguration() {
     try {
-        const path = require("path");
-        const fs = require("fs");
-
-        let configPath = process.cwd() + "/config.js";
-        let customConfigPath = process.cwd() + "/config.custom.js";
-
-        if (!fs.existsSync(configPath)) {
-            configPath = path.join(process.cwd(), "../config.js");
-            customConfigPath = path.join(process.cwd(), "../config.custom.js");
-        }
+        const configPath = getRuntimePath("config.js");
+        const customConfigPath = getRuntimePath("config.custom.js");
 
         config = require(configPath);
 

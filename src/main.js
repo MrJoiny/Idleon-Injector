@@ -1,6 +1,6 @@
 const os = require("os");
 const fs = require("fs");
-const path = require("path");
+const { getRuntimePath } = require("./modules/utils/runtimePaths");
 const {
     loadConfiguration,
     getInjectorConfig,
@@ -157,7 +157,7 @@ function handleError(error) {
 
 async function main() {
     try {
-        const customConfigPath = path.join(process.cwd(), "config.custom.js");
+        const customConfigPath = getRuntimePath("config.custom.js");
 
         if (!fs.existsSync(customConfigPath)) {
             await runSetupWizard(customConfigPath);

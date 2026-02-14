@@ -13,6 +13,7 @@ const os = require("os");
 const { existsSync } = require("fs");
 const { access } = require("fs").promises;
 const CDP = require("chrome-remote-interface");
+const { getRuntimePath } = require("../utils/runtimePaths");
 
 const { getCdpPort, getInjectorConfig, isLinux, getLinuxTimeout } = require("../config/configManager");
 const { createLogger } = require("../utils/logger");
@@ -303,7 +304,7 @@ async function attachToWeb() {
     const timeout = isLinux() ? getLinuxTimeout() : DEFAULT_TIMEOUT;
     const cdpPort = getCdpPort();
     const browserPath = resolveBrowserPath(injectorConfig);
-    const userDataDir = injectorConfig.browserUserDataDir || path.join(process.cwd(), "idleon-web-profile");
+    const userDataDir = injectorConfig.browserUserDataDir || getRuntimePath("idleon-web-profile");
     const args = [
         `--remote-debugging-port=${cdpPort}`,
         `--user-data-dir=${userDataDir}`,
