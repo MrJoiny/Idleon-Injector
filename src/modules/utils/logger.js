@@ -14,6 +14,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { getRuntimePath } = require("./runtimePaths");
 
 const LOG_LEVELS = {
     debug: 0,
@@ -73,7 +74,7 @@ function formatLevelForConsole(level) {
     }
 }
 
-const LOG_DIR = path.join(process.cwd(), "logs");
+const LOG_DIR = getRuntimePath("logs");
 
 let configuredLevel = null;
 let configLoaded = false;

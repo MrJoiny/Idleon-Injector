@@ -1,6 +1,6 @@
 const os = require("os");
 const fs = require("fs");
-const path = require("path");
+const { getRuntimePath } = require("./modules/utils/runtimePaths");
 const {
     loadConfiguration,
     getInjectorConfig,
@@ -33,6 +33,7 @@ const log = createLogger("Main");
  */
 
 let servicesStarted = false;
+let uiServicesStarted = false;
 
 async function printHeader() {
     log.info("=============================");
@@ -108,27 +109,29 @@ async function handlePageLoad(gameContext, config, app) {
     const { Runtime, context, client } = gameContext;
     log.debug("Page loaded, setting up cheats");
 
+    if (config.injectorConfig.enableUI && !uiServicesStarted) {
+        uiServicesStarted = true;
+
+        setupApiRoutes(app, context, client, {
+            cheatConfig: config.cheatConfig,
+            defaultConfig: config.defaultConfig,
+            startupCheats: config.startupCheats,
+            injectorConfig: config.injectorConfig,
+            cdpPort: config.cdpPort,
+        });
+
+        await startWebServer(app, config.webPort, {
+            runtime: Runtime,
+            context: context,
+        });
+    }
+
     const cheatInitialized = await initializeCheatContext(Runtime, context);
     if (!cheatInitialized) return;
 
     if (!servicesStarted) {
         servicesStarted = true;
         log.info("Cheats ready!");
-
-        if (config.injectorConfig.enableUI) {
-            setupApiRoutes(app, context, client, {
-                cheatConfig: config.cheatConfig,
-                defaultConfig: config.defaultConfig,
-                startupCheats: config.startupCheats,
-                injectorConfig: config.injectorConfig,
-                cdpPort: config.cdpPort,
-            });
-
-            await startWebServer(app, config.webPort, {
-                runtime: Runtime,
-                context: context,
-            });
-        }
 
         await startCliInterface(context, client, {
             injectorConfig: config.injectorConfig,
@@ -157,7 +160,7 @@ function handleError(error) {
 
 async function main() {
     try {
-        const customConfigPath = path.join(process.cwd(), "config.custom.js");
+        const customConfigPath = getRuntimePath("config.custom.js");
 
         if (!fs.existsSync(customConfigPath)) {
             await runSetupWizard(customConfigPath);

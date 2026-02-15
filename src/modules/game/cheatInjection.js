@@ -8,6 +8,7 @@
 
 const CDP = require("chrome-remote-interface");
 const fs = require("fs").promises;
+const { getRuntimePath } = require("../utils/runtimePaths");
 
 const { objToString } = require("../utils/helpers");
 const { createLogger } = require("../utils/logger");
@@ -34,7 +35,8 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
     const { DOM, Page, Network, Runtime } = client;
     log.info("Setting up cheat injection");
 
-    let cheats = await fs.readFile("cheats.js", "utf8");
+    const cheatsPath = getRuntimePath("cheats.js");
+    let cheats = await fs.readFile(cheatsPath, "utf8");
     cheats =
         `let startupCheats = ${JSON.stringify(startupCheats)};\n` +
         `let cheatConfig = ${objToString(cheatConfig)};\n` +
