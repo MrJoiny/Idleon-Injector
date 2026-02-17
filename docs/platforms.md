@@ -80,7 +80,7 @@ Spawns the browser with:
 
 Linux adds `--disable-gpu` for stability.
 
-If `injectorConfig.browserUserDataDir` is empty, defaults to `idleon-web-profile` in the repo root.
+If `injectorConfig.browserUserDataDir` is empty, defaults to `idleon-web-profile` in the runtime base directory (executable directory in packaged builds, `process.cwd()` in source runs).
 
 ### Target matching
 
