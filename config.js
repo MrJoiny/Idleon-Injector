@@ -236,6 +236,7 @@ exports.cheatConfig = {
             EldritchChances: (t) => t / 5, // eldritch chance (is lower is better)
             SovereignChances: (t) => t / 5, // sovereign chance (is lower is better)
             OmnipotentChances: (t) => t / 5, // omnipotent chance (is lower is better)
+            TranscendentChances: (t) => t / 5, // transcendent chance (is lower is better)
             NewCaptBoatSlot: (t) => 0, // free boat and captain slots
             BuyCaptainCost: (t) => 0, // free captains
             ArtifactBonus: (t) => t, // bonus from the artifact, needs investigation as to what can be done here!
@@ -262,6 +263,12 @@ exports.cheatConfig = {
             // new w7 update stuff
             PaletteLuck: (t) => t * 2, // 2x palette luck
             PaletteBonus: (t) => t * 2, // 2x palette bonus
+            // new 20.02.2026
+            RatBitMulti: (t) => t,
+            RatCrownOdds: (t) => t,
+            RatCurrencyGain: (t) => t,
+            RatShopCost: (t) => t,
+            RatShopBonuses: (t) => t,
         },
         divinity: {
             unlinks: true,
@@ -339,6 +346,15 @@ exports.cheatConfig = {
             // new w7 stuff
             ExoticPurchasesAllowed: (t) => Math.max(t, 8), // Exotic purchases allowed 8 are only available
             ExoticLVQTY: (t) => t * 2, // Exotic LV QTY
+            // new 20.02.2026
+            StickerDMGmulti: (t) => t,
+            StickersPerRow: (t) => t,
+            StickerOdds: (t) => t,
+            AttemptMegacropGrowth: (t) => t,
+            StickerBonus: (t) => t,
+            // StickerOddsMulti: (t) => t,
+            // TotalStickers: (t) => t,
+            // NumberOfBigStickers: (t) => t,
         },
         ninja: {
             EmporiumCost: (t) => t / 5, // emporium cost are 5x cheaper
@@ -639,6 +655,86 @@ exports.cheatConfig = {
         },
         spelunkmana: {
             StaminaCostMulti: (t) => 0,
+        },
+        minehead: {
+            UpgCost: (t) => t / 2, // free upgrades
+            DailyTries: (t) => t * 2, // lots of tries
+            MaxHP_You: (t) => t * 2, // 2x max health
+            BaseDMG: (t) => t * 2, // 2x base damage
+            CurrentOutgoingDMG: (t) => t * 2, // 2x outgoing dmg
+            CurrencyGain: (t) => t * 2, // 2x currency
+            BluecrownOdds: (t) => t * 2, // 2x crown odds
+            JackpotOdds: (t) => t * 2, // 2x jackpot
+            JackpotTiles: (t) => t * 2, // 2x jackpot tiles
+            InstaRevealsTotal: (t) => t * 2, // 2x reveals
+            // BonusQTY: (t) => t,
+            // WepPowDmgPCT: (t) => t,
+            // CanWeBuyUpg: (t) => t,
+            // BonusDMGperTilePCT: (t) => t,
+            // MineheadID: (t) => t,
+            // MaxHP_Opp: (t) => t,
+            // Mines_Opp: (t) => t,
+            // UpgradeQTY: (t) => t,
+            // BluecrownMulti: (t) => t,
+            // Tiles_RowCol: (t) => t,
+            // Tiles_XY: (t) => t,
+            // TotalTiles: (t) => t,
+            // GoldTilesTotal: (t) => t,
+            // BlocksTotal: (t) => t,
+            // FlagsTotal: (t) => t,
+        },
+        glimbo: {
+            Glimbo_Cost: (t) => t / 2, // half cost
+            GlimboDRmulti: (t) => t * 2, // 2x glimbo dr
+            // Glimbo_CanAfford: (t) => t,
+            // GlimboTotalTrades: (t) => t,
+        },
+        research: {
+            AFKgainsRatePCT: (t) => t * 2, // 2x research afk gains
+            MaxRoll: (t) => t * 2, // 2x max roll
+            RollsPerDay: (t) => t * 2, // 2x rolls per day
+            MagnifiersOwned: (t) => t * 2, // always have magnifiers
+            ResearchEXPrateObj: (t) => t * 2, // 2x exp obj
+            ObservationInsightExpRate: (t) => t * 2, // 2x insight exprate
+            Kalei_MultiBase: (t) => t * 2, // 2x kalei base multi
+            TinyCogsPerDay: (t) => t * 2, // lots of cogs
+            MSA_BonusRewards: (t) => t * 2, // 2x rewards
+            SmallCogBonus: (t) => t * 2, // 2x cog bonus
+            SmallCogBonusTOTAL: (t) => t * 2, // 2x cog bonus total
+            // TotalOccurrencesFound: (t) => t,
+            // MagnifiersPerSlot: (t) => t,
+            // ObservationInsightExpREQ: (t) => t,
+            // ResearchEXPrateTOT: (t) => t,
+            // ResearchEXPmulti: (t) => t,
+            // Kalei_MultiTot: (t) => t,
+            // Grid_MaxLV: (t) => t,
+            // CanRotateShapes: (t) => t,
+            // Grid_PTSearned: (t) => t,
+            // Grid_PTSspent: (t) => t,
+            // Grid_PTSavailable: (t) => t,
+            // Grid_Bonus: (t) => t,
+            // Grid_CanWeUseButton: (t) => t,
+            // Grid_CanWeUpgrade: (t) => t,
+            // TranscendentArtifactsUnlocked: (t) => t,
+            // GreenSigilsUnlocked: (t) => t,
+            // GreenSigilTrueDMG: (t) => t,
+            // RefineryTab3Unlocked: (t) => t,
+            // RefineryTabsOwned: (t) => t,
+            // TinyCogsUnlocked: (t) => t,
+            // FarmingStickersUnlocked: (t) => t,
+            // FarmingStickerDMG_unlocked: (t) => t,
+            // KingRatUnlocked: (t) => t,
+            // ZuperBitsUnlocked: (t) => t,
+            // SmallCogSlotsUnlocked: (t) => t,
+            // CanWeLevelUpObservations: (t) => t,
+            // OccurrencesToBeFound: (t) => t,
+            // OccurrenceYspacing: (t) => t,
+            // OpticalMonocleOwned: (t) => t,
+            // KaleidoscopeOwned: (t) => t,
+            // ShapesOwned: (t) => t,
+            // PostyNotesOwned: (t) => t,
+            // Grid_ShapeVertices: (t) => t,
+            // Grid_CanWeSelect: (t) => t,
         },
     },
 };

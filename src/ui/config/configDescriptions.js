@@ -465,6 +465,35 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunkdepth": "Spelunking: Current depth (one-shot, resets to 0 after use)",
     "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking",
 
+    // Minehead
+    "cheatConfig.w7.minehead.UpgCost": "Minehead: Upgrade costs. (lower is better)",
+    "cheatConfig.w7.minehead.DailyTries": "Minehead: Daily tries",
+    "cheatConfig.w7.minehead.MaxHP_You": "Minehead: Max HP",
+    "cheatConfig.w7.minehead.BaseDMG": "Minehead: Base damage",
+    "cheatConfig.w7.minehead.CurrentOutgoingDMG": "Minehead: Outgoing damage",
+    "cheatConfig.w7.minehead.CurrencyGain": "Minehead: Currency gain",
+    "cheatConfig.w7.minehead.BluecrownOdds": "Minehead: Blue crown odds",
+    "cheatConfig.w7.minehead.JackpotOdds": "Minehead: Jackpot odds",
+    "cheatConfig.w7.minehead.JackpotTiles": "Minehead: Jackpot tiles",
+    "cheatConfig.w7.minehead.InstaRevealsTotal": "Minehead: Total insta reveals",
+
+    // Glimbo
+    "cheatConfig.w7.glimbo.Glimbo_Cost": "Glimbo: Glimbo cost. (lower is better)",
+    "cheatConfig.w7.glimbo.GlimboDRmulti": "Glimbo: Drop rate multiplier",
+
+    // Research
+    "cheatConfig.w7.research.AFKgainsRatePCT": "Research: AFK gains rate",
+    "cheatConfig.w7.research.MaxRoll": "Research: Max roll",
+    "cheatConfig.w7.research.RollsPerDay": "Research: Rolls per day",
+    "cheatConfig.w7.research.MagnifiersOwned": "Research: Magnifiers owned",
+    "cheatConfig.w7.research.ResearchEXPrateObj": "Research: EXP rate object",
+    "cheatConfig.w7.research.ObservationInsightExpRate": "Research: Insight EXP rate",
+    "cheatConfig.w7.research.Kalei_MultiBase": "Research: Kaleidoscope base multi",
+    "cheatConfig.w7.research.TinyCogsPerDay": "Research: Tiny cogs per day",
+    "cheatConfig.w7.research.MSA_BonusRewards": "Research: MSA bonus rewards",
+    "cheatConfig.w7.research.SmallCogBonus": "Research: Small cog bonuses",
+    "cheatConfig.w7.research.SmallCogBonusTOTAL": "Research: Total small cog bonuses",
+
     // INJECTOR CONFIG
     "injectorConfig.logLevel": "Log verbosity level: debug, info, warn, or error",
     "injectorConfig.injreg": "Regex pattern used to find the injection point in the game code",

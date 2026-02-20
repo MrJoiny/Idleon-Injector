@@ -2683,5 +2683,65 @@
         "name": "Daily lock for Glimmerwick candle",
         "description": "Is Glimmerwick usable today, 0=usable, 1=locked",
         "type": "number"
+    },
+    "493": {
+        "name": "Tournament Match Day Lock",
+        "description": "Last Played/Claimed Player Match Day lock for Pet Tournaments",
+        "type": "number",
+        "AI": true
+    },
+    "494": {
+        "name": "Tournament UI Selected Player Index",
+        "description": "Currently Selected Player Index for Companion/Tournament UI",
+        "type": "number",
+        "AI": true
+    },
+    "495": {
+        "name": "Tournament League Badge",
+        "description": "Player's Tournament League / Ranked Bracket badge",
+        "type": "number",
+        "AI": true
+    },
+    "496": {
+        "name": "Tournament Match Fetch Tracker",
+        "description": "Last Fetched Tournament Day Tracker",
+        "type": "number",
+        "AI": true
+    },
+    "497": {
+        "name": "Gaming Minigame High Score",
+        "description": "Highest Round Reached High Score in the Log Game Minigame",
+        "type": "number",
+        "AI": true
+    },
+    "498": {
+        "name": "Tournament Lifetime Participation Counter",
+        "description": "Lifetime counter for Pet Tournaments Participated In",
+        "type": "number",
+        "AI": true
+    },
+    "499": {
+        "name": "Summoning Grimoire Cost Reduction (%)",
+        "description": "Cumulative Grimoire First 3 Mana Colors Upgrade Cost Reduction percentage",
+        "type": "number",
+        "AI": true
+    },
+    "500": {
+        "name": "Cumulative Spelunking/Sneaking Bonus (%)",
+        "description": "Cumulative Spelunking / Sneaking Bonus percentage from Grid Bonus 151",
+        "type": "number",
+        "AI": true
+    },
+    "501": {
+        "name": "Daily MSA Bonus Claimed Flag",
+        "description": "Daily Miniature Soul Apparatus (MSA) Bonus Claimed Boolean flag",
+        "type": "number",
+        "AI": true
+    },
+    "502": {
+        "name": "Tournament Unread Notification Flag",
+        "description": "Unread Tournament Notification UI marker ('NEW' bubble flag)",
+        "type": "number",
+        "AI": true
     }
 }
