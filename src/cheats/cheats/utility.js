@@ -233,7 +233,7 @@ function createListFunction(params) {
             for (let i = 0; i < companions.length; i++) {
                 const id = companions[i][0];
                 const effects = formatText(companions[i][1]);
-                const ingameName = formatText(monsterDefs[id].h.Name);
+                const ingameName = formatText(monsterDefs[id]?.h.Name ?? "Unknown");
                 results.push(`${i}, ${ingameName}, ${effects}`);
             }
         },
