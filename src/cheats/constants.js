@@ -184,7 +184,10 @@ export const knownBundles = [
     ["Bunny Pack", "bon_m"],
     ["Hedgehog Pack", "bon_n"],
     ["Panda Pack", "bon_o"],
-    ["Santa helper bundle", "bon_p"],
+    ["Santa helper Pack", "bon_p"],
+    ["Robot Pack", "bon_q"],
+    ["Glimbo Pack", "bon_r"],
+    ["Heavy Metals Armor Pack", "bon_s"],
 ];
 
 // Item types to exclude from bulk commands (invalid or problematic types)
