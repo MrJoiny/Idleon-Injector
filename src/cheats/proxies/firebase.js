@@ -10,7 +10,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { registerCommonVariables, cList, firebase, gameContext, gga } from "../core/globals.js";
+import { registerCommonVariables, cList, firebase, gameContext, gga, monsterDefs } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
@@ -44,7 +44,9 @@ export function setupFirebaseStorageProxy() {
     firebase.getCompanionInfoMe = function (...args) {
         if (cheatState.w1.companion) {
             if (!cheatConfig.w1.companion.companions) {
-                return Array.from({ length: cList.CompanionDB.length }, (_, index) => index);
+                return Array.from({ length: cList.CompanionDB.length }, (_, index) => index).filter(
+                    (index) => monsterDefs[cList.CompanionDB[index][0]]?.h.Name
+                );
             }
             const companions = cheatConfig.w1.companion.companions;
             if (typeof companions === "string") {

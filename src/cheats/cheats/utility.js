@@ -233,7 +233,7 @@ function createListFunction(params) {
             for (let i = 0; i < companions.length; i++) {
                 const id = companions[i][0];
                 const effects = formatText(companions[i][1]);
-                const ingameName = formatText(monsterDefs[id].h.Name);
+                const ingameName = formatText(monsterDefs[id]?.h.Name ?? "Unknown");
                 results.push(`${i}, ${ingameName}, ${effects}`);
             }
         },
@@ -272,6 +272,19 @@ function createListFunction(params) {
                 const name = formatText(parts[0]);
                 const desc = formatText(parts[3]);
                 results.push(`${i}, ${name}, ${desc}`);
+            }
+        },
+
+        eventshop: () => {
+            results.push("Letter, Name, Effect, Cost");
+            const length = cList.NinjaInfo[39].length / 2;
+            for (let num = 0; num < length; num++) {
+                const letter = gga.Number2Letter[num];
+                const info = cList.NinjaInfo[39][num * 2].split("@");
+                const name = formatText(info[0]);
+                const effect = formatText(info[1] || "");
+                const cost = cList.NinjaInfo[39][num * 2 + 1];
+                results.push(`${letter}, ${name}, ${effect}, ${cost}`);
             }
         },
 
@@ -482,6 +495,7 @@ registerCheats({
         { name: "smith", message: "list smithing recipes. third param optional filter", fn: createListFunction },
         { name: "chips", message: "list lab chips", fn: createListFunction },
         { name: "jargems", message: "list jar gems", fn: createListFunction },
+        { name: "eventshop", message: "list eventshop items", fn: createListFunction },
         { name: "gga", message: "list game attributes. third param optional filter", fn: createListFunction },
         { name: "companion", message: "list all companions", fn: createListFunction },
         { name: "nans", message: "scan game attributes for NaN values", fn: createListFunction },

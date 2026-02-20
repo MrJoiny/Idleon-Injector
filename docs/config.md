@@ -10,7 +10,10 @@ Backend loads configuration in `src/modules/config/configManager.js`:
 - `config.custom.js`: user overrides (gitignored).
 
 `config.custom.js` is created by the setup wizard on first run.
-For packaged builds, `configManager` checks `process.cwd()` then `../config.js`/`../config.custom.js` as fallback.
+Config files are loaded from the runtime base directory:
+
+- Packaged builds: directory of the injector executable.
+- Source runs (`npm run start`): `process.cwd()`.
 
 Merge rules:
 
@@ -110,7 +113,7 @@ Multiply/divide functions get slider presets (1, 2, 4, 5, 10, 20) with default r
 - `target`: `steam` or `web`.
 - `webUrl`: Idleon web URL for browser injection.
 - `browserPath`: explicit Chromium executable.
-- `browserUserDataDir`: custom profile directory (defaults to `idleon-web-profile`).
+- `browserUserDataDir`: custom profile directory (defaults to `idleon-web-profile` in the runtime base directory).
 - `gameExePath`: optional Windows override for the Steam exe search.
 
 Example `config.custom.js` targeting Steam:

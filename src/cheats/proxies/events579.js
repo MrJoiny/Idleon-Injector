@@ -104,6 +104,15 @@ export function setupEvents579Proxies() {
     // Bubba (W7)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Bubbastuff", [{ state: "w7.bubba" }]);
 
+    // Minehead & Glimbo (W7)
+    createConfigLookupProxy(ActorEvents579, "_customBlock_Minehead", [
+        { state: "w7.minehead" },
+        { state: "w7.glimbo" },
+    ]);
+
+    // Research (W7)
+    createConfigLookupProxy(ActorEvents579, "_customBlock_ResearchStuff", [{ state: "w7.research" }]);
+
     // Spelunk (W7 spelunk, big fish, spelunkmana)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Spelunk", [
         { state: "w7.spelunk" },

@@ -281,6 +281,9 @@ registerCheats({
         { name: "bigfish", message: "big fish nullify cost" },
         { name: "bubba", message: "bubba cheats" },
         { name: "zenith", message: "zenith market cheats" },
+        { name: "minehead", message: "minehead cheats" },
+        { name: "research", message: "research cheats" },
+        { name: "glimbo", message: "glimbo cheats" },
         { name: "spelunkmana", message: "no stamina cost in spelunking" },
         {
             name: "spelunkdepth",

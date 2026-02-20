@@ -80,6 +80,10 @@ async function handleMessage(ws, msg) {
         case "identify":
             ws.clientType = msg.clientType;
             log.debug(`Client identified as: ${ws.clientType}`);
+            if (msg.clientType === "game") {
+                await broadcastCheatStates();
+                broadcastMonitorState();
+            }
             break;
 
         case "monitor-update":

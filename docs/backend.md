@@ -25,16 +25,20 @@ How the Node.js backend attaches to Idleon, injects the cheat bundle, and serves
 5. `setupIntercept()` installs request interception and injects `cheats.js`.
 6. Registers `Page.loadEventFired` handler to initialize the cheat context.
 7. `Page.reload({ ignoreCache: true })` triggers the first intercepted load.
-8. `initializeCheatContext()` runs `setup.call(context)` in the game.
-9. Starts API routes, WebSocket server, and CLI once the first page load completes.
+8. On first page load, starts API routes and the web server (if UI is enabled).
+9. `initializeCheatContext()` runs `setup.call(context)` in the game.
+10. Starts CLI once cheat setup succeeds.
 
-The `servicesStarted` flag prevents multiple UI/CLI startups when the page reloads.
+The `uiServicesStarted` and `servicesStarted` flags prevent duplicate startups on page reload.
 
 `handleError()` logs fatal failures, prints CDP hints, and waits for Enter before exiting.
 
 ## Configuration loading
 
-`configManager.js` loads two files in order (relative to `process.cwd()`, with a parent fallback for packaged builds):
+`configManager.js` loads two files in order from the runtime base directory:
+
+- Packaged builds: executable directory.
+- Source runs: `process.cwd()`.
 
 - `config.js` (defaults)
 - `config.custom.js` (overrides, optional)
@@ -84,7 +88,7 @@ macOS:
 `attachToWeb()` launches a Chromium-based browser and attaches to the Idleon tab.
 
 - `resolveBrowserPath()` checks `injectorConfig.browserPath` or common install locations by OS.
-- Uses `injectorConfig.browserUserDataDir` or defaults to `idleon-web-profile`.
+- Uses `injectorConfig.browserUserDataDir` or defaults to `idleon-web-profile` in the runtime base directory.
 - Spawns the browser with CDP and browser safety flags:
 
 ```text
@@ -168,7 +172,7 @@ setup.call(context);
 - `POST /api/toggle`: executes a cheat command.
 - `GET /api/config`: startupCheats + cheatConfig + injectorConfig + defaultConfig.
 - `POST /api/config/update`: updates runtime config in memory and in-game.
-- `POST /api/config/save`: writes `config.custom.js` with diffs only.
+- `POST /api/config/save`: writes `config.custom.js` with diffs only in the runtime base directory.
 - `GET /api/options-account`: reads `OptionsListAccount` from game memory.
 - `POST /api/options-account/index`: writes a single options list entry.
 - `GET /api/cheat-states`: returns current cheat states via `cheatStateList`.
