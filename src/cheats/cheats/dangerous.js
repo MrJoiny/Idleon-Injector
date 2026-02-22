@@ -412,7 +412,7 @@ registerCheat({
     name: "fix_magnifier",
     message: "Fix magnifier data",
     fn: () => {
-        if (cheatState.w5.research) {
+        if (cheatState.w7.research) {
             return "Cannot fix while w5 research cheat is active!";
         }
 
