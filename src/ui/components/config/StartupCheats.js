@@ -42,7 +42,7 @@ export const StartupCheats = (list) => {
     return { element, addItem };
 };
 
-export const AddCheatSearchBar = (onAdd, onCancel) => {
+export const AddCheatSearchBar = (onAdd, onCancel, currentCheats = []) => {
     const searchTerm = van.state("");
 
     const handleAdd = (val) => {
@@ -88,6 +88,8 @@ export const AddCheatSearchBar = (onAdd, onCancel) => {
                 const matches = allCheats
                     .filter((c) => {
                         const val = typeof c === "object" ? c.value : c;
+                        if (currentCheats.includes(val)) return false;
+
                         const msg = typeof c === "object" ? c.message : c;
                         return val.toLowerCase().includes(term) || msg.toLowerCase().includes(term);
                     })

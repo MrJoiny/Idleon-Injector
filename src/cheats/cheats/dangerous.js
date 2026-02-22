@@ -2,7 +2,7 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted, sumdoubler)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
@@ -11,10 +11,10 @@
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
-import { itemDefs, cList, itemTypes, gga } from "../core/globals.js";
+import { itemDefs, cList, itemTypes, gga, events } from "../core/globals.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
-import { cheatConfig } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -96,7 +96,6 @@ const wipeHandlers = {
     },
     ribbon() {
         const ribbons = gga.Ribbon;
-        if (!ribbons) return "Ribbon array not found";
         for (let i = 0; i <= 27; i++) {
             ribbons[i] = 0;
         }
@@ -120,7 +119,6 @@ const wipeHandlers = {
     },
     chips() {
         const lab = gga.Lab;
-        if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found";
         const chipsCount = lab[15];
         for (let i = 0; i <= 21; i++) {
             chipsCount[i] = 0;
@@ -129,12 +127,38 @@ const wipeHandlers = {
     },
     jargems() {
         const holes = gga.Holes;
-        if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found";
         const gemCounts = holes[24];
         for (let i = 0; i < gemCounts.length; i++) {
             gemCounts[i] = 0;
         }
         return "Jar gems have been wiped";
+    },
+    legends() {
+        const spelunk = gga.Spelunk;
+        const legendsArray = spelunk[18];
+        for (let i = 0; i < legendsArray.length; i++) {
+            legendsArray[i] = 0;
+        }
+        return "Legend talents have been wiped";
+    },
+    prisma() {
+        const prismaArray = gga.OptionsListAccount[384];
+        const prismaAmount = prismaArray.split(",").length - 1;
+        gga.OptionsListAccount[383] += prismaAmount * 10;
+        gga.OptionsListAccount[384] = "0";
+
+        return "Prisma bubbles have been wiped";
+    },
+    exalted() {
+        gga.Compass[4] = [];
+        return "Exalted stamps have been wiped";
+    },
+    sumdoubler() {
+        const sumdoublerArray = gga.Holes[28];
+        for (let i = 0; i < sumdoublerArray.length; i++) {
+            sumdoublerArray[i] = -1;
+        }
+        return "Summoning doublers have been wiped";
     },
 };
 
@@ -196,6 +220,10 @@ registerCheats({
         { name: "invlocked", message: "Wipe your inventory slots that are NOT locked", fn: wipeFunction },
         { name: "chips", message: "Wipe your lab chips", fn: wipeFunction },
         { name: "jargems", message: "Wipe your jar gems", fn: wipeFunction },
+        { name: "legends", message: "Wipe your legends", fn: wipeFunction },
+        { name: "prisma", message: "Wipe your prisma", fn: wipeFunction },
+        { name: "exalted", message: "Wipe your exalted", fn: wipeFunction },
+        { name: "sumdoubler", message: "Wipe your summoning doublers", fn: wipeFunction },
     ],
 });
 
@@ -377,5 +405,53 @@ registerCheat({
         } catch (error) {
             return `Error: ${error}`;
         }
+    },
+});
+
+registerCheat({
+    name: "fix_magnifier",
+    message: "Fix magnifier data",
+    fn: () => {
+        if (cheatState.w7.research) {
+            return "Cannot fix while w7 research cheat is active!";
+        }
+
+        const total = events(579)._customBlock_ResearchStuff("MagnifiersOwned");
+        const monocles = events(579)._customBlock_ResearchStuff("OpticalMonocleOwned");
+        const kaleidoscopes = events(579)._customBlock_ResearchStuff("KaleidoscopeOwned");
+
+        const researchArray = gga.Research[5];
+
+        let currentIndex = 3;
+
+        // The first one (index 3) is always 0
+        if (total > 0) {
+            researchArray[currentIndex] = 0;
+            currentIndex += 4;
+        }
+
+        let count = 1;
+
+        for (let i = 0; i < monocles; i++) {
+            if (count >= total) break;
+            researchArray[currentIndex] = 1;
+            currentIndex += 4;
+            count++;
+        }
+
+        for (let i = 0; i < kaleidoscopes; i++) {
+            if (count >= total) break;
+            researchArray[currentIndex] = 2;
+            currentIndex += 4;
+            count++;
+        }
+
+        while (count < total) {
+            researchArray[currentIndex] = 0;
+            currentIndex += 4;
+            count++;
+        }
+
+        return `Fixed ${total} magnifiers (1st default, ${monocles} monocles, ${kaleidoscopes} kaleidoscopes).`;
     },
 });
