@@ -11,10 +11,10 @@
  */
 
 import { registerCheats, registerCheat } from "../core/registration.js";
-import { itemDefs, cList, itemTypes, gga } from "../core/globals.js";
+import { itemDefs, cList, itemTypes, gga, events } from "../core/globals.js";
 import { dropOnChar } from "../helpers/dropOnChar.js";
 import { alchemyTypes } from "../constants.js";
-import { cheatConfig } from "../core/state.js";
+import { cheatConfig, cheatState } from "../core/state.js";
 
 // Wipe command handlers
 const wipeHandlers = {
@@ -405,5 +405,53 @@ registerCheat({
         } catch (error) {
             return `Error: ${error}`;
         }
+    },
+});
+
+registerCheat({
+    name: "fix_magnifier",
+    message: "Fix magnifier data",
+    fn: () => {
+        if (cheatState.w5.research) {
+            return "Cannot fix while w5 research cheat is active!";
+        }
+
+        const total = events(579)._customBlock_ResearchStuff("MagnifiersOwned");
+        const monocles = events(579)._customBlock_ResearchStuff("OpticalMonocleOwned");
+        const kaleidoscopes = events(579)._customBlock_ResearchStuff("KaleidoscopeOwned");
+
+        const researchArray = gga.Research[5];
+
+        let currentIndex = 3;
+
+        // The first one (index 3) is always 0
+        if (total > 0) {
+            researchArray[currentIndex] = 0;
+            currentIndex += 4;
+        }
+
+        let count = 1;
+
+        for (let i = 0; i < monocles; i++) {
+            if (count >= total) break;
+            researchArray[currentIndex] = 1;
+            currentIndex += 4;
+            count++;
+        }
+
+        for (let i = 0; i < kaleidoscopes; i++) {
+            if (count >= total) break;
+            researchArray[currentIndex] = 2;
+            currentIndex += 4;
+            count++;
+        }
+
+        while (count < total) {
+            researchArray[currentIndex] = 0;
+            currentIndex += 4;
+            count++;
+        }
+
+        return `Fixed ${total} magnifiers (1st default, ${monocles} monocles, ${kaleidoscopes} kaleidoscopes).`;
     },
 });
