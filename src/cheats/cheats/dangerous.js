@@ -2,7 +2,7 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
@@ -96,7 +96,6 @@ const wipeHandlers = {
     },
     ribbon() {
         const ribbons = gga.Ribbon;
-        if (!ribbons) return "Ribbon array not found";
         for (let i = 0; i <= 27; i++) {
             ribbons[i] = 0;
         }
@@ -120,7 +119,6 @@ const wipeHandlers = {
     },
     chips() {
         const lab = gga.Lab;
-        if (!lab || !lab[15]) return "Lab chips array (Lab[15]) not found";
         const chipsCount = lab[15];
         for (let i = 0; i <= 21; i++) {
             chipsCount[i] = 0;
@@ -129,12 +127,27 @@ const wipeHandlers = {
     },
     jargems() {
         const holes = gga.Holes;
-        if (!holes || !holes[24]) return "Jar gems array (Holes[24]) not found";
         const gemCounts = holes[24];
         for (let i = 0; i < gemCounts.length; i++) {
             gemCounts[i] = 0;
         }
         return "Jar gems have been wiped";
+    },
+    legends() {
+        const spelunk = gga.Spelunk;
+        const legendsArray = spelunk[18];
+        for (let i = 0; i < legendsArray.length; i++) {
+            legendsArray[i] = 0;
+        }
+        return "Legend talents have been wiped";
+    },
+    prisma() {
+        gga.OptionsListAccount[384] = "0";
+        return "Prisma bubbles has been wiped";
+    },
+    exalted() {
+        gga.Compass[4] = [];
+        return "Exalted stamps has been wiped";
     },
 };
 
@@ -196,6 +209,9 @@ registerCheats({
         { name: "invlocked", message: "Wipe your inventory slots that are NOT locked", fn: wipeFunction },
         { name: "chips", message: "Wipe your lab chips", fn: wipeFunction },
         { name: "jargems", message: "Wipe your jar gems", fn: wipeFunction },
+        { name: "legends", message: "Wipe your legends", fn: wipeFunction },
+        { name: "prisma", message: "Wipe your prisma", fn: wipeFunction },
+        { name: "exalted", message: "Wipe your exalted", fn: wipeFunction },
     ],
 });
 
