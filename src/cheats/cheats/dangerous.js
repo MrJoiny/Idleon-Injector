@@ -142,7 +142,11 @@ const wipeHandlers = {
         return "Legend talents have been wiped";
     },
     prisma() {
+        const prismaArray = gga.OptionsListAccount[384];
+        const prismaAmount = prismaArray.split(",").length - 1;
+        gga.OptionsListAccount[383] += prismaAmount * 10;
         gga.OptionsListAccount[384] = "0";
+
         return "Prisma bubbles has been wiped";
     },
     exalted() {
