@@ -413,7 +413,7 @@ registerCheat({
     message: "Fix magnifier data",
     fn: () => {
         if (cheatState.w7.research) {
-            return "Cannot fix while w5 research cheat is active!";
+            return "Cannot fix while w7 research cheat is active!";
         }
 
         const total = events(579)._customBlock_ResearchStuff("MagnifiersOwned");
