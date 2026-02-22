@@ -89,8 +89,8 @@ jobs:
               env:
                   GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
               run: |
-                  gh release create "v${{ steps.version.outputs.version }}" \
-                    --title "v${{ steps.version.outputs.version }}" \
+                  gh release create "${{ steps.version.outputs.version }}" \
+                    --title "${{ steps.version.outputs.version }}" \
                     --generate-notes \
                     "binaries/InjectCheatsUI-Windows/InjectCheatsUI-Windows.zip" \
                     "binaries/InjectCheatsUI-Linux/InjectCheatsUI-Linux.zip" \
