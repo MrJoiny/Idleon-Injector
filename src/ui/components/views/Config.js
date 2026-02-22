@@ -307,7 +307,14 @@ export const Config = () => {
                         }`,
                 },
 
-                () => (isAddingCheat.val ? AddCheatSearchBar(handleAddCheat, () => (isAddingCheat.val = false)) : div())
+                () =>
+                    isAddingCheat.val
+                        ? AddCheatSearchBar(
+                              handleAddCheat,
+                              () => (isAddingCheat.val = false),
+                              draft?.startupCheats || []
+                          )
+                        : div()
             ),
 
             div({ class: () => `spacer ${activeSubTab.val === "startupcheats" && isAddingCheat.val ? "hidden" : ""}` }),
