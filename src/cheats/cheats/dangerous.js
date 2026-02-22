@@ -2,7 +2,7 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted, sumdoubler)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
@@ -147,11 +147,18 @@ const wipeHandlers = {
         gga.OptionsListAccount[383] += prismaAmount * 10;
         gga.OptionsListAccount[384] = "0";
 
-        return "Prisma bubbles has been wiped";
+        return "Prisma bubbles have been wiped";
     },
     exalted() {
         gga.Compass[4] = [];
-        return "Exalted stamps has been wiped";
+        return "Exalted stamps have been wiped";
+    },
+    sumdoubler() {
+        const sumdoublerArray = gga.Holes[28];
+        for (let i = 0; i < sumdoublerArray.length; i++) {
+            sumdoublerArray[i] = -1;
+        }
+        return "Summoning doublers have been wiped";
     },
 };
 
@@ -216,6 +223,7 @@ registerCheats({
         { name: "legends", message: "Wipe your legends", fn: wipeFunction },
         { name: "prisma", message: "Wipe your prisma", fn: wipeFunction },
         { name: "exalted", message: "Wipe your exalted", fn: wipeFunction },
+        { name: "sumdoubler", message: "Wipe your summoning doublers", fn: wipeFunction },
     ],
 });
 
