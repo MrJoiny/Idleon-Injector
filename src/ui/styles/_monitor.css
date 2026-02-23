@@ -109,7 +109,7 @@
     padding: 0;
     border-radius: var(--radius-sm);
     border: 1px solid var(--c-danger);
-    background: rgba(255, 0, 60, 0.1);
+    background: var(--c-danger-10);
     color: var(--c-danger);
     display: inline-flex;
     align-items: center;
@@ -120,8 +120,8 @@
 
 .monitor-action-btn:hover {
     background: var(--c-danger);
-    color: #fff;
-    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+    color: var(--c-white);
+    box-shadow: 0 0 10px var(--c-danger-40);
 }
 
 /* Sparkline graph styles */

@@ -59,5 +59,5 @@ textarea:focus {
 
 .search-wrapper input {
     padding-left: 30px;
-    border-color: #333;
+    border-color: var(--c-control-border-strong);
 }

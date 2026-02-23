@@ -8,7 +8,7 @@
     position: fixed;
     bottom: 55px;
     left: 0px;
-    background: rgba(14, 15, 20, 0.95);
+    background: var(--c-panel-95);
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     padding: 15px 20px;
@@ -18,7 +18,7 @@
     z-index: 10000;
     display: none;
     opacity: 1;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 30px var(--c-black-50);
     font-family: var(--font-mono);
     font-size: 0.875rem;
     transition: opacity 0.3s ease;
@@ -38,7 +38,7 @@
 
 #status-message.status-error {
     border-left: 4px solid var(--c-danger);
-    color: #ffcccc;
+    color: var(--c-danger-soft-text);
 }
 
 /* --- LOADING & STATUS --- */
@@ -57,7 +57,7 @@
 .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255, 200, 0, 0.1);
+    border: 3px solid var(--c-warning-10);
     border-top-color: var(--c-accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;

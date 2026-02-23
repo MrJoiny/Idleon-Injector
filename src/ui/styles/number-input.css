@@ -61,10 +61,10 @@ input[type="number"] {
 }
 
 .number-input-btn:hover {
-    background: rgba(255, 183, 0, 0.1);
-    color: #fff;
+    background: var(--c-accent-dim);
+    color: var(--c-white);
 }
 
 .number-input-btn:active {
-    background: rgba(255, 183, 0, 0.2);
+    background: var(--c-accent-20);
 }

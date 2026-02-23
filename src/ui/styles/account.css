@@ -6,7 +6,7 @@
 /* --- DANGER ZONE HEADER --- */
 .danger-zone-header {
     border: 1px dashed var(--c-danger);
-    background: rgba(255, 0, 60, 0.05);
+    background: var(--c-danger-05);
     color: var(--c-danger);
     padding: 12px;
     text-align: center;
@@ -78,7 +78,7 @@
 .toggle-switch .slider {
     width: 36px;
     height: 18px;
-    background: #333;
+    background: var(--c-control-border-strong);
     border-radius: 20px;
     position: relative;
     transition: 0.3s;
@@ -92,13 +92,13 @@
     height: 12px;
     left: 2px;
     top: 2px;
-    background: #888;
+    background: var(--c-control-thumb);
     border-radius: 50%;
     transition: 0.3s;
 }
 
 .toggle-switch input:checked + .slider {
-    background: rgba(200, 145, 0, 0.2);
+    background: var(--c-accent-20);
     border-color: var(--c-accent);
 }
 
@@ -127,7 +127,7 @@
 }
 
 .option-item:hover {
-    border-color: #444;
+    border-color: var(--c-border-strong);
     z-index: 100;
 }
 
@@ -155,7 +155,7 @@
 }
 
 .option-index {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--c-black-40);
     padding: 2px 6px;
     font-family: var(--font-mono);
     font-size: 0.875rem;
@@ -169,8 +169,8 @@
 }
 
 .option-apply-button {
-    background: #333;
-    color: #fff;
+    background: var(--c-control-border-strong);
+    color: var(--c-white);
     border: none;
     padding: 0 15px;
     font-size: 0.875rem;
@@ -178,5 +178,5 @@
 
 .option-apply-button:hover {
     background: var(--c-success);
-    color: #000;
+    color: var(--c-black);
 }

@@ -39,7 +39,7 @@
     padding: 0;
     margin: 0 0 5px 0;
     z-index: 100;
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -5px 20px var(--c-black-50);
 }
 
 .cheat-search-results li {

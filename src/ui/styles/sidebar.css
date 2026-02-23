@@ -6,7 +6,7 @@
 /* --- SIDEBAR --- */
 .sidebar {
     width: var(--nav-width);
-    background: rgba(10, 11, 16, 0.95);
+    background: var(--c-sidebar-bg);
     border-right: 1px solid var(--c-border);
     display: flex;
     flex-direction: column;
@@ -155,8 +155,8 @@
 }
 
 .github-link:hover {
-    color: #fff !important;
-    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--c-white) !important;
+    background: var(--c-white-10) !important;
 }
 
 .tab-button svg {
@@ -168,7 +168,7 @@
 
 .tab-button:hover {
     color: var(--c-text-main);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--c-white-03);
 }
 
 .tab-button:hover svg {
@@ -177,7 +177,7 @@
 
 .tab-button.active {
     background: var(--c-accent-dim);
-    border-color: rgba(255, 190, 0, 0.2);
+    border-color: var(--c-accent-20);
     color: var(--c-accent);
     box-shadow: inset 2px 0 0 var(--c-accent);
 }
@@ -275,7 +275,6 @@
 }
 
 .system-shortcuts-button {
-    margin-left: auto;
     width: 28px;
     height: 28px;
     padding: 0;
@@ -293,6 +292,44 @@
         background 0.2s var(--ease-tech);
 }
 
+.system-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.system-theme-picker {
+    width: 28px;
+    height: 28px;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    transition:
+        border-color 0.2s var(--ease-tech),
+        background 0.2s var(--ease-tech);
+}
+
+.system-theme-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.system-theme-picker::-webkit-color-swatch,
+.system-theme-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 1px;
+}
+
+.system-theme-picker:hover {
+    border-color: var(--c-accent-25);
+    background: var(--c-accent-06);
+}
+
 .system-shortcuts-button svg {
     width: 16px;
     height: 16px;
@@ -300,12 +337,12 @@
 }
 
 .system-shortcuts-button:hover {
-    border-color: rgba(255, 190, 0, 0.25);
-    background: rgba(255, 190, 0, 0.06);
+    border-color: var(--c-accent-25);
+    background: var(--c-accent-06);
     color: var(--c-accent);
 }
 
-.sidebar-collapsed .system-shortcuts-button {
+.sidebar-collapsed .system-actions {
     display: none;
 }
 

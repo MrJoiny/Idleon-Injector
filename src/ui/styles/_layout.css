@@ -8,24 +8,24 @@
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(circle at 70% 30%, #10121a 0%, var(--c-void) 70%);
+    background: radial-gradient(circle at 70% 30%, var(--c-void-soft) 0%, var(--c-void) 70%);
 }
 
 .grid-overlay {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(var(--c-white-03) 1px, transparent 1px),
+        linear-gradient(90deg, var(--c-white-03) 1px, transparent 1px);
     background-size: 40px 40px;
-    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    mask-image: radial-gradient(circle at center, var(--c-black) 40%, transparent 100%);
     pointer-events: none;
 }
 
 .vignette {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle, transparent 50%, black 120%);
+    background: radial-gradient(circle, transparent 50%, var(--c-black) 120%);
     pointer-events: none;
 }
 
@@ -51,7 +51,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(5, 5, 7, 0.8);
+    background: var(--c-header-bg);
     border-bottom: 1px solid var(--c-border);
     backdrop-filter: blur(5px);
 }

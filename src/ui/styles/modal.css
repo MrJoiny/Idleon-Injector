@@ -7,7 +7,7 @@
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--c-black-80);
     backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
@@ -20,12 +20,12 @@
     border: 1px solid var(--c-danger);
     width: 90%;
     max-width: 500px;
-    box-shadow: 0 0 30px rgba(255, 0, 60, 0.2);
+    box-shadow: 0 0 30px var(--c-danger-20);
     animation: scaleIn 0.3s var(--ease-tech);
 }
 
 .modal-header {
-    background: rgba(255, 0, 60, 0.1);
+    background: var(--c-danger-10);
     padding: 15px 20px;
     border-bottom: 1px solid var(--c-danger);
 }
@@ -46,5 +46,5 @@
     display: flex;
     justify-content: flex-end;
     gap: 15px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--c-black-20);
 }

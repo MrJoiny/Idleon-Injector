@@ -33,7 +33,7 @@
 
 .config-sub-tab-button:hover {
     color: var(--c-text-main);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--c-white-03);
 }
 
 .config-sub-tab-button.active::after {
@@ -135,8 +135,8 @@
 .config-reset-btn {
     display: inline-flex;
     background: transparent;
-    border: 1px solid var(--c-warning);
-    color: var(--c-warning);
+    border: 1px solid var(--c-accent);
+    color: var(--c-accent);
     padding: 4px 12px;
     font-size: 1rem;
     cursor: pointer;
@@ -146,25 +146,25 @@
 }
 
 .config-reset-btn:hover {
-    background: var(--c-warning);
-    color: #000;
+    background: var(--c-accent);
+    color: var(--c-black);
 }
 
 /* --- DIFF HIGHLIGHTING --- */
 .config-item.modified-config {
-    border-left: 3px solid var(--c-warning);
+    border-left: 3px solid var(--c-accent);
     background: var(--c-accent-dim-solid);
 }
 
 .default-value-hint {
     font-size: 0.875rem;
-    color: var(--c-warning);
+    color: var(--c-accent);
     font-family: var(--font-mono);
     margin-top: 5px;
 }
 
 .modified-category > summary {
-    color: var(--c-warning);
+    color: var(--c-accent);
 }
 
 /* --- ACTION BAR (Fixed Footer for Config) --- */
@@ -177,7 +177,7 @@
     gap: 15px;
     flex-shrink: 0;
     z-index: 5;
-    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -10px 20px var(--c-black-50);
 }
 
 /* --- FORCED PATH INDICATOR --- */
@@ -216,6 +216,6 @@
 
 .forced-path-clear:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--c-white-10);
     border-radius: 4px;
 }

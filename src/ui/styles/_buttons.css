@@ -20,7 +20,7 @@ button {
 #load-options-button,
 #update-config-button {
     background: var(--c-accent);
-    color: #000;
+    color: var(--c-black);
     border: none;
     padding: 8px 20px;
     box-shadow: 0 0 10px var(--c-accent-dim);
@@ -29,7 +29,7 @@ button {
 .btn-primary:hover,
 #load-options-button:hover,
 #update-config-button:hover {
-    background: #ffe066;
+    background: var(--c-accent-hover);
     box-shadow: 0 0 15px var(--c-accent-glow);
     transform: translateY(-1px);
 }
@@ -52,20 +52,20 @@ button {
 .cancel-add-cheat-button:hover,
 .add-cheat-button:hover {
     border-color: var(--c-text-main);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--c-white-05);
 }
 
 /* --- DANGER BUTTON --- */
 .btn-danger,
 #modal-accept {
-    background: rgba(255, 0, 60, 0.1);
+    background: var(--c-danger-10);
     border: 1px solid var(--c-danger);
     color: var(--c-danger);
     padding: 8px 20px;
 }
 
 .remove-cheat-button {
-    background: rgba(255, 0, 60, 0.1);
+    background: var(--c-danger-10);
     border: 1px solid var(--c-danger);
     color: var(--c-danger);
     padding: 8px 20px;
@@ -78,6 +78,6 @@ button {
 #modal-accept:hover,
 .remove-cheat-button:hover {
     background: var(--c-danger);
-    color: white;
-    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+    color: var(--c-white);
+    box-shadow: 0 0 10px var(--c-danger-40);
 }

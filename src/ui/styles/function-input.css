@@ -24,7 +24,7 @@
     min-width: 130px;
     padding: 6px 10px;
     font-size: 0.875rem;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--c-black-40);
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     cursor: pointer;
@@ -94,7 +94,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-black-30);
     border: 1px solid var(--c-border);
     border-radius: var(--radius-sm);
     padding: 0 8px 0 0;
@@ -139,7 +139,7 @@
 }
 
 .function-preset-btn {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-black-30);
     border: 1px solid var(--c-border);
     color: var(--c-text-dim);
     padding: 3px 8px;
@@ -157,7 +157,7 @@
 
 .function-preset-btn.active {
     background: var(--c-accent);
-    color: #000;
+    color: var(--c-black);
     border-color: var(--c-accent);
     font-weight: 600;
 }
@@ -173,7 +173,7 @@
 .function-number-input-wrapper {
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-black-30);
     border: 1px solid var(--c-border);
     border-radius: var(--radius-sm);
     flex: 1;
@@ -201,12 +201,12 @@
 }
 
 .function-number-btn:hover {
-    background: rgba(255, 183, 0, 0.1);
-    color: #fff;
+    background: var(--c-accent-dim);
+    color: var(--c-white);
 }
 
 .function-number-btn:active {
-    background: rgba(255, 183, 0, 0.2);
+    background: var(--c-accent-20);
 }
 
 .function-number-input {
@@ -231,7 +231,7 @@
 .function-raw-input {
     flex: 1;
     min-width: 150px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-black-30);
     border: 1px solid var(--c-border);
     color: var(--c-text-main);
     font-family: var(--font-mono);

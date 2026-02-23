@@ -17,7 +17,7 @@
     max-width: 300px;
     line-height: 1.35;
     text-align: left;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 12px var(--c-black-50);
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
