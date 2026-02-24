@@ -6,7 +6,7 @@
  */
 
 import { cheats } from "../core/registration.js";
-import { summonUnits, keychainStatsMap, alchemyTypes, bulkTypeBlacklist } from "../constants.js";
+import { summonUnits, keychainStatsMap, alchemyTypes, bulkTypeBlacklist, HIDE_BARE_COMMANDS } from "../constants.js";
 import { itemDefs, monsterDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { getAllBundles } from "../helpers/bundles.js";
 
@@ -57,6 +57,7 @@ export function getAutoCompleteSuggestions() {
     // cheat commands (skip "cheats" since it's already added as first)
     addChoices(choices, cheats, (name, def) => {
         if (name === "cheats") return null;
+        if (HIDE_BARE_COMMANDS.has(name)) return null;
         return {
             value: name,
             message: def.message || "",
