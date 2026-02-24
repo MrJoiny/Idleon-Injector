@@ -77,6 +77,7 @@ export function registerCheat({ name, fn, message, category = "general", needsPa
  * - Configurable cheats (with value input)
  * - Nested subcheats (hierarchical commands)
  * - Mass toggle of all subcheats
+ * - Namespace-only parents (children without callable parent)
  *
  * @param {object} cheatMap - Cheat definition object
  * @param {string} cheatMap.name - Command name
@@ -86,6 +87,7 @@ export function registerCheat({ name, fn, message, category = "general", needsPa
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
  * @param {object} [cheatMap.configurable] - Configuration options (implies needsParam: true)
  * @param {boolean} [cheatMap.allowToggleChildren] - Allow mass toggle of all subcheats when parent is called with no args
+ * @param {boolean} [cheatMap.registerParent=true] - Register this node as a callable command (set false for namespace-only parents)
  * @param {boolean} [cheatMap.needsParam] - Whether this cheat needs/accepts a parameter input (auto-inferred from configurable if not set)
  * @param {string[]} [higherKeys] - Parent command keys (for recursion)
  * @param {string} [parentCategory] - Category inherited from parent
@@ -166,8 +168,11 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
     // Infer needsParam from configurable if not explicitly set
     const needsParam = cheatMap.needsParam ?? cheatMap.configurable ?? false;
+    const registerParent = cheatMap.registerParent ?? true;
 
-    registerCheat({ name: cmd, fn, message: cheatMap.message, category, needsParam });
+    if (registerParent) {
+        registerCheat({ name: cmd, fn, message: cheatMap.message, category, needsParam });
+    }
 
     // Recursively register subcheats, passing category
     if ("subcheats" in cheatMap) {

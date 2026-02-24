@@ -77,6 +77,7 @@ registerCheats({
     name: "qnty",
     category: "general",
     message: "Change the quantity of the first item in inventory/chest",
+    registerParent: false,
     subcheats: [
         {
             name: "inv",

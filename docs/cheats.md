@@ -84,7 +84,26 @@ Fields:
 - `subcheats`: array of subcheat definitions (same shape as a `registerCheats` node).
 - `configurable`: allows numeric/boolean input; writes to `cheatConfig` at the same path.
 - `allowToggleChildren`: toggles all subcheats when called without args.
+- `registerParent`: optional (default `true`). Set `false` to register only subcommands and keep the parent as a namespace.
 - `needsParam`: optional override for parameter expectation.
+
+### Namespace-only parent example
+
+Use `registerParent: false` when only subcommands should be callable:
+
+```js
+registerCheats({
+    name: "qnty",
+    message: "Change first inventory/chest slot quantity",
+    registerParent: false,
+    subcheats: [
+        { name: "inv", needsParam: true, fn: () => {} },
+        { name: "chest", needsParam: true, fn: () => {} },
+    ],
+});
+```
+
+With this setup, `qnty inv` and `qnty chest` are valid, but plain `qnty` is not registered.
 
 ### Parameterized command example
 

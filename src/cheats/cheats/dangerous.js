@@ -208,6 +208,7 @@ registerCheats({
 registerCheats({
     name: "wipe",
     message: "Wipe certain stuff from your account. Use with caution!",
+    registerParent: false,
     subcheats: [
         { name: "inv", message: "Wipe your inventory", fn: wipeFunction },
         { name: "invslot", message: "Wipe your inventory slot (0-indexed)", needsParam: true, fn: wipeFunction },
