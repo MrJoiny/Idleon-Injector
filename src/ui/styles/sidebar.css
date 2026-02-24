@@ -31,6 +31,11 @@
     margin-bottom: 10px;
 }
 
+.sidebar-collapsed .brand-main {
+    justify-content: center;
+    gap: 0;
+}
+
 .sidebar-collapsed .tab-button,
 .sidebar-collapsed .system-status {
     justify-content: center;
@@ -275,6 +280,7 @@
 }
 
 .system-shortcuts-button {
+    margin-left: auto;
     width: 28px;
     height: 28px;
     padding: 0;
@@ -343,6 +349,10 @@
 }
 
 .sidebar-collapsed .system-actions {
+    display: none;
+}
+
+.sidebar-collapsed .system-shortcuts-button {
     display: none;
 }
 
