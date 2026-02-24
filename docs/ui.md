@@ -108,6 +108,7 @@ Key behaviors:
 
 - Builds a local `draft` via `vanX.reactive` to avoid direct edits on live config.
 - Sub-tabs: Cheat Config, Startup Cheats, Injector Config.
+- Startup Cheats auto-show a separate `Value` input when a selected command has `needsParam`.
 - Supports category filtering and search on cheat config keys.
 - Uses `ConfigNode` to recursively render object trees.
 - Uses forced-path mode when coming from Cheats gear icon, with "SHOWING" banner.
