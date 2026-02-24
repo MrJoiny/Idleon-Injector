@@ -2,7 +2,7 @@
  * Dangerous Cheats
  *
  * High-risk cheats that can damage your account:
- * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted, sumdoubler)
+ * - wipe (inv, invslot, chest, chestslot, forge, overpurchases, cogs, ribbon, invlocked, chips, jargems, legends, prisma, exalted, sumdoubler, exp)
  * - class (change character class)
  * - lvl (change skill/alchemy levels)
  * - bulk (drop items by type)
@@ -160,6 +160,38 @@ const wipeHandlers = {
         }
         return "Summoning doublers have been wiped";
     },
+    exp(params) {
+        const target = (params[1] || "").toLowerCase();
+        if (!target) return "Usage: wipe exp [skill_name|all]";
+
+        const skillNames = cList.SkillNames || [];
+
+        if (target === "all") {
+            let count = 0;
+            for (let i = 1; i < gga.Exp0.length; i++) {
+                if (Number(gga.Exp0[i]) > 0) {
+                    gga.Exp0[i] = 0;
+                    count++;
+                }
+            }
+            return `Reset XP to 0 for ${count} skill(s). Use 'lvl' to restore levels if needed.`;
+        }
+
+        if (target === "class") {
+            gga.Exp0[0] = 0;
+            return "Class XP has been reset to 0.";
+        }
+
+        const skillIndex = skillNames.findIndex((s) => s.toLowerCase() === target);
+        if (skillIndex === -1) {
+            const valid = skillNames.map((s) => s.toLowerCase()).join(", ");
+            return `Unknown skill: ${target}\nValid skills: ${valid}`;
+        }
+
+        // +1 offset because Exp0[0] is class XP
+        gga.Exp0[skillIndex + 1] = 0;
+        return `${skillNames[skillIndex]} XP reset to 0. If you also modified ExpReq0 as a workaround, use 'lvl ${target} [level]' to restore normal leveling.`;
+    },
 };
 
 /**
@@ -224,6 +256,7 @@ registerCheats({
         { name: "prisma", message: "Wipe your prisma", fn: wipeFunction },
         { name: "exalted", message: "Wipe your exalted", fn: wipeFunction },
         { name: "sumdoubler", message: "Wipe your summoning doublers", fn: wipeFunction },
+        { name: "exp", message: "Reset corrupted skill XP. Usage: wipe exp [skill_name|all]", needsParam: true, fn: wipeFunction },
     ],
 });
 
