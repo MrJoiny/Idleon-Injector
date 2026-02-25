@@ -10,7 +10,9 @@
 
 body {
     margin: 0;
+    background-color: #10121a;
     background-color: var(--c-void);
+    color: #eceff8;
     color: var(--c-text-main);
     font-family: var(--font-display);
     height: 100vh;

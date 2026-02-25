@@ -10,6 +10,7 @@ import { webPort } from "../core/state.js";
 // UI constants
 const Z_INDEX_BASE = 1000000;
 const TRANSITION_SETTINGS = "0.6s cubic-bezier(0.05, 0.7, 0.1, 1)";
+const LOAD_HINT_DELAY_MS = 2500;
 
 const STYLES = {
     container: `
@@ -31,6 +32,28 @@ const STYLES = {
         box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         pointer-events: auto;
         z-index: ${Z_INDEX_BASE + 1};
+    `,
+    loadHint: `
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        max-width: min(90vw, 680px);
+        width: max-content;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 183, 0, 0.4);
+        background: rgba(8, 10, 16, 0.86);
+        color: #f4f6ff;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 14px;
+        line-height: 1.3;
+        letter-spacing: 0.3px;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: ${Z_INDEX_BASE + 3};
     `,
     buttonBase: `
         font-family: 'Rajdhani', sans-serif;
@@ -83,6 +106,7 @@ const STYLES = {
 let uiContainer = null;
 let uiIframe = null;
 let isUiExpanded = false;
+let loadHintTimer = null;
 
 /**
  * Inject the web UI overlay into the game.
@@ -98,6 +122,45 @@ export function injectWebUI() {
     uiIframe = document.createElement("iframe");
     uiIframe.src = `http://localhost:${webPort}`;
     uiIframe.style.cssText = STYLES.iframe;
+
+    const loadHint = document.createElement("div");
+    loadHint.id = "cheat-ui-load-hint";
+    loadHint.style.cssText = STYLES.loadHint;
+    loadHint.textContent = "";
+
+    let iframeLoaded = false;
+
+    const hideLoadHint = () => {
+        if (loadHintTimer) {
+            clearTimeout(loadHintTimer);
+            loadHintTimer = null;
+        }
+        loadHint.style.opacity = "0";
+        loadHint.style.pointerEvents = "none";
+    };
+
+    const showLoadHint = (message) => {
+        loadHint.innerHTML = message;
+        loadHint.style.opacity = "1";
+        loadHint.style.pointerEvents = "auto";
+    };
+
+    loadHintTimer = setTimeout(() => {
+        if (!iframeLoaded) {
+            showLoadHint(
+                `UI is taking longer than expected. If the panel stays black, open <b>http://localhost:${webPort}</b> in your browser to verify it.`
+            );
+        }
+    }, LOAD_HINT_DELAY_MS);
+
+    uiIframe.onload = () => {
+        iframeLoaded = true;
+        hideLoadHint();
+    };
+
+    uiIframe.onerror = () => {
+        showLoadHint(`Unable to load UI from <b>http://localhost:${webPort}</b>. Check the web server status.`);
+    };
 
     const toggleBtn = document.createElement("div");
     toggleBtn.id = "cheat-ui-toggle";
@@ -142,6 +205,7 @@ export function injectWebUI() {
     };
 
     uiContainer.appendChild(uiIframe);
+    uiContainer.appendChild(loadHint);
     uiContainer.appendChild(toggleBtn);
     document.body.appendChild(uiContainer);
 }

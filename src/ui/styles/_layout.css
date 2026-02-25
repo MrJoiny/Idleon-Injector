@@ -8,6 +8,7 @@
     position: fixed;
     inset: 0;
     z-index: -1;
+    background: radial-gradient(circle at 70% 30%, #1a1e2a 0%, #10121a 70%);
     background: radial-gradient(circle at 70% 30%, var(--c-void-soft) 0%, var(--c-void) 70%);
 }
 
@@ -25,6 +26,7 @@
 .vignette {
     position: absolute;
     inset: 0;
+    background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.85) 120%);
     background: radial-gradient(circle, transparent 50%, var(--c-black) 120%);
     pointer-events: none;
 }

@@ -1,71 +1,71 @@
 /**
  * CSS Custom Properties (Design Tokens)
- * Cyber Industrial Theme - OKLCH Palette
+ * Includes legacy-safe fallbacks for older embedded Chromium runtimes.
  */
 
 :root {
     /* -- BASE NEUTRALS -- */
-    --c-white: oklch(100% 0 0);
-    --c-black: oklch(0% 0 0);
+    --c-white: #ffffff;
+    --c-black: #000000;
 
     /* -- CORE PALETTE -- */
-    --c-void: oklch(11.63% 0.0062 285.40);
-    --c-void-soft: oklch(18.40% 0.0167 273.73);
-    --c-panel: oklch(16.97% 0.0105 276.32);
-    --c-panel-dim: oklch(15.57% 0.0108 276.20);
-    --c-panel-dark-dim: oklch(14.31% 0.0028 145.43);
-    --c-panel-hover: oklch(21.12% 0.0181 274.98);
-    --c-border: oklch(29.28% 0.0200 281.00);
-    --c-border-strong: oklch(38.67% 0 89.88);
+    --c-void: #10121a;
+    --c-void-soft: #1a1e2a;
+    --c-panel: #171b25;
+    --c-panel-dim: #151923;
+    --c-panel-dark-dim: #13171f;
+    --c-panel-hover: #202534;
+    --c-border: #30384a;
+    --c-border-strong: #505050;
 
     /* -- THEME ACCENT (runtime-overridable) -- */
-    --c-accent: oklch(82.53% 0.1709 80.01);
-    --c-accent-dim: color-mix(in oklch, var(--c-accent) 10%, transparent);
-    --c-accent-dim-solid: color-mix(in oklch, var(--c-accent) 15%, var(--c-panel) 85%);
-    --c-accent-glow: color-mix(in oklch, var(--c-accent) 30%, transparent);
-    --c-accent-hover: color-mix(in oklch, var(--c-accent) 65%, var(--c-white) 35%);
-    --c-accent-06: color-mix(in oklch, var(--c-accent) 6%, transparent);
-    --c-accent-20: color-mix(in oklch, var(--c-accent) 20%, transparent);
-    --c-accent-25: color-mix(in oklch, var(--c-accent) 25%, transparent);
+    --c-accent: #ffb700;
+    --c-accent-dim: rgba(255, 183, 0, 0.1);
+    --c-accent-dim-solid: rgba(57, 48, 26, 0.9);
+    --c-accent-glow: rgba(255, 183, 0, 0.3);
+    --c-accent-hover: #ffc94a;
+    --c-accent-06: rgba(255, 183, 0, 0.06);
+    --c-accent-20: rgba(255, 183, 0, 0.2);
+    --c-accent-25: rgba(255, 183, 0, 0.25);
 
     /* -- SEMANTIC STATES (fixed) -- */
-    --c-success: oklch(93.07% 0.2286 123.09);
-    --c-warning: oklch(82.53% 0.1709 80.01);
-    --c-danger: oklch(63.17% 0.2544 21.75);
-    --c-success-10: color-mix(in oklch, var(--c-success) 10%, transparent);
-    --c-success-40: color-mix(in oklch, var(--c-success) 40%, transparent);
-    --c-danger-05: color-mix(in oklch, var(--c-danger) 5%, transparent);
-    --c-danger-10: color-mix(in oklch, var(--c-danger) 10%, transparent);
-    --c-danger-20: color-mix(in oklch, var(--c-danger) 20%, transparent);
-    --c-danger-40: color-mix(in oklch, var(--c-danger) 40%, transparent);
-    --c-warning-10: color-mix(in oklch, var(--c-warning) 10%, transparent);
+    --c-success: #59f57d;
+    --c-warning: #ffb700;
+    --c-danger: #f34747;
+    --c-success-10: rgba(89, 245, 125, 0.1);
+    --c-success-40: rgba(89, 245, 125, 0.4);
+    --c-danger-05: rgba(243, 71, 71, 0.05);
+    --c-danger-10: rgba(243, 71, 71, 0.1);
+    --c-danger-20: rgba(243, 71, 71, 0.2);
+    --c-danger-40: rgba(243, 71, 71, 0.4);
+    --c-warning-10: rgba(255, 183, 0, 0.1);
 
     /* -- TEXT -- */
-    --c-text-main: oklch(92.24% 0.0115 252.09);
-    --c-text-dim: color-mix(in oklch, var(--c-text-main) 93%, transparent);
-    --c-text-muted: color-mix(in oklch, var(--c-text-main) 88%, transparent);
+    --c-text-main: #eceff8;
+    --c-text-dim: #d8dbe5;
+    --c-text-muted: #bec3d1;
     --c-text: var(--c-text-main);
-    --c-danger-soft-text: oklch(88.97% 0.0580 18.30);
+    --c-danger-soft-text: #ffb2a5;
 
     /* -- OVERLAYS & EFFECTS -- */
-    --c-white-02: color-mix(in oklch, var(--c-white) 2%, transparent);
-    --c-white-03: color-mix(in oklch, var(--c-white) 3%, transparent);
-    --c-white-05: color-mix(in oklch, var(--c-white) 5%, transparent);
-    --c-white-10: color-mix(in oklch, var(--c-white) 10%, transparent);
-    --c-black-10: color-mix(in oklch, var(--c-black) 10%, transparent);
-    --c-black-20: color-mix(in oklch, var(--c-black) 20%, transparent);
-    --c-black-30: color-mix(in oklch, var(--c-black) 30%, transparent);
-    --c-black-40: color-mix(in oklch, var(--c-black) 40%, transparent);
-    --c-black-50: color-mix(in oklch, var(--c-black) 50%, transparent);
-    --c-black-60: color-mix(in oklch, var(--c-black) 60%, transparent);
-    --c-black-80: color-mix(in oklch, var(--c-black) 80%, transparent);
-    --c-sidebar-bg: oklch(15.09% 0.0109 276.17 / 0.95);
-    --c-header-bg: oklch(11.63% 0.0062 285.40 / 0.8);
-    --c-panel-95: oklch(16.97% 0.0105 276.32 / 0.95);
-    --c-panel-98: oklch(16.97% 0.0105 276.32 / 0.98);
-    --c-control-border-strong: oklch(32.11% 0 89.88);
-    --c-control-thumb: oklch(62.68% 0 89.88);
-    --c-scrollbar-thumb: oklch(32.11% 0 89.88);
+    --c-white-02: rgba(255, 255, 255, 0.02);
+    --c-white-03: rgba(255, 255, 255, 0.03);
+    --c-white-05: rgba(255, 255, 255, 0.05);
+    --c-white-10: rgba(255, 255, 255, 0.1);
+    --c-black-10: rgba(0, 0, 0, 0.1);
+    --c-black-20: rgba(0, 0, 0, 0.2);
+    --c-black-30: rgba(0, 0, 0, 0.3);
+    --c-black-40: rgba(0, 0, 0, 0.4);
+    --c-black-50: rgba(0, 0, 0, 0.5);
+    --c-black-60: rgba(0, 0, 0, 0.6);
+    --c-black-80: rgba(0, 0, 0, 0.8);
+    --c-sidebar-bg: rgba(22, 24, 33, 0.95);
+    --c-header-bg: rgba(16, 18, 26, 0.8);
+    --c-panel-95: rgba(23, 27, 37, 0.95);
+    --c-panel-98: rgba(23, 27, 37, 0.98);
+    --c-control-border-strong: #505050;
+    --c-control-thumb: #9a9a9a;
+    --c-scrollbar-thumb: #505050;
 
     /* -- DIMENSIONS & FONTS -- */
     --nav-width: 240px;
@@ -76,4 +76,59 @@
 
     /* -- TRANSITIONS -- */
     --ease-tech: cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+@supports (color: oklch(50% 0 0)) and (color: color-mix(in oklch, white 50%, black)) {
+    :root {
+        --c-white: oklch(100% 0 0);
+        --c-black: oklch(0% 0 0);
+        --c-void: oklch(11.63% 0.0062 285.4);
+        --c-void-soft: oklch(18.4% 0.0167 273.73);
+        --c-panel: oklch(16.97% 0.0105 276.32);
+        --c-panel-dim: oklch(15.57% 0.0108 276.2);
+        --c-panel-dark-dim: oklch(14.31% 0.0028 145.43);
+        --c-panel-hover: oklch(21.12% 0.0181 274.98);
+        --c-border: oklch(29.28% 0.02 281);
+        --c-border-strong: oklch(38.67% 0 89.88);
+        --c-accent: oklch(82.53% 0.1709 80.01);
+        --c-accent-dim: color-mix(in oklch, var(--c-accent) 10%, transparent);
+        --c-accent-dim-solid: color-mix(in oklch, var(--c-accent) 15%, var(--c-panel) 85%);
+        --c-accent-glow: color-mix(in oklch, var(--c-accent) 30%, transparent);
+        --c-accent-hover: color-mix(in oklch, var(--c-accent) 65%, var(--c-white) 35%);
+        --c-accent-06: color-mix(in oklch, var(--c-accent) 6%, transparent);
+        --c-accent-20: color-mix(in oklch, var(--c-accent) 20%, transparent);
+        --c-accent-25: color-mix(in oklch, var(--c-accent) 25%, transparent);
+        --c-success: oklch(93.07% 0.2286 123.09);
+        --c-warning: oklch(82.53% 0.1709 80.01);
+        --c-danger: oklch(63.17% 0.2544 21.75);
+        --c-success-10: color-mix(in oklch, var(--c-success) 10%, transparent);
+        --c-success-40: color-mix(in oklch, var(--c-success) 40%, transparent);
+        --c-danger-05: color-mix(in oklch, var(--c-danger) 5%, transparent);
+        --c-danger-10: color-mix(in oklch, var(--c-danger) 10%, transparent);
+        --c-danger-20: color-mix(in oklch, var(--c-danger) 20%, transparent);
+        --c-danger-40: color-mix(in oklch, var(--c-danger) 40%, transparent);
+        --c-warning-10: color-mix(in oklch, var(--c-warning) 10%, transparent);
+        --c-text-main: oklch(92.24% 0.0115 252.09);
+        --c-text-dim: color-mix(in oklch, var(--c-text-main) 93%, transparent);
+        --c-text-muted: color-mix(in oklch, var(--c-text-main) 88%, transparent);
+        --c-danger-soft-text: oklch(88.97% 0.058 18.3);
+        --c-white-02: color-mix(in oklch, var(--c-white) 2%, transparent);
+        --c-white-03: color-mix(in oklch, var(--c-white) 3%, transparent);
+        --c-white-05: color-mix(in oklch, var(--c-white) 5%, transparent);
+        --c-white-10: color-mix(in oklch, var(--c-white) 10%, transparent);
+        --c-black-10: color-mix(in oklch, var(--c-black) 10%, transparent);
+        --c-black-20: color-mix(in oklch, var(--c-black) 20%, transparent);
+        --c-black-30: color-mix(in oklch, var(--c-black) 30%, transparent);
+        --c-black-40: color-mix(in oklch, var(--c-black) 40%, transparent);
+        --c-black-50: color-mix(in oklch, var(--c-black) 50%, transparent);
+        --c-black-60: color-mix(in oklch, var(--c-black) 60%, transparent);
+        --c-black-80: color-mix(in oklch, var(--c-black) 80%, transparent);
+        --c-sidebar-bg: oklch(15.09% 0.0109 276.17 / 0.95);
+        --c-header-bg: oklch(11.63% 0.0062 285.4 / 0.8);
+        --c-panel-95: oklch(16.97% 0.0105 276.32 / 0.95);
+        --c-panel-98: oklch(16.97% 0.0105 276.32 / 0.98);
+        --c-control-border-strong: oklch(32.11% 0 89.88);
+        --c-control-thumb: oklch(62.68% 0 89.88);
+        --c-scrollbar-thumb: oklch(32.11% 0 89.88);
+    }
 }
