@@ -216,6 +216,15 @@ export const Icons = {
     Check: (props) =>
         SvgBase(polyline({ points: "20 6 9 17 4 12" }), { "stroke-width": "2", "aria-hidden": "true", ...props }),
 
+    Edit: (props) =>
+        SvgBase(
+            [
+                path({ d: "M12 20h9" }),
+                path({ d: "M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" }),
+            ],
+            { "stroke-width": "2", "aria-hidden": "true", ...props }
+        ),
+
     Bell: (props) =>
         SvgBase(
             [path({ d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }), path({ d: "M13.73 21a2 2 0 0 1-3.46 0" })],

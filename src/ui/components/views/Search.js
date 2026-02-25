@@ -8,6 +8,29 @@ import { EmptyState } from "../EmptyState.js";
 import { Sparkline, canGraph } from "../Sparkline.js";
 import { Icons } from "../../assets/icons.js";
 import * as API from "../../services/api.js";
+import {
+    NEW_SCAN_TYPES,
+    NEXT_SCAN_TYPES,
+    getScanTypeLabel,
+    isInputlessScanType,
+    requiresSecondaryInput,
+    needsPreviousSnapshot,
+    buildSnapshotFromResults,
+    filterResultsByScanType,
+} from "./search/scanUtils.js";
+import {
+    seedEditValue,
+    expectedUiType,
+    validateEditDraft,
+    monitorPathForSearchResult,
+    formatMonitorValue,
+    getMonitorHistory,
+    getMonitorCurrentValue,
+    resolveMonitorEntry,
+    getUiTypeFromRawValue,
+    getDraftFromRawValue,
+    getResultValue,
+} from "./search/valueUtils.js";
 
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
 
@@ -28,303 +51,6 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
     );
 };
 
-function seedEditValue(result) {
-    const fv = String(result.formattedValue ?? "");
-    if (result.type === "string") {
-        if ((fv.startsWith('"') && fv.endsWith('"')) || (fv.startsWith("'") && fv.endsWith("'"))) {
-            return fv.slice(1, -1);
-        }
-        return fv;
-    }
-    return fv;
-}
-
-function expectedUiType(result) {
-    if (result.type === "object" && String(result.formattedValue).toLowerCase() === "null") return "null";
-    return result.type;
-}
-
-function validateEditDraft(type, raw) {
-    const trimmed = String(raw ?? "").trim();
-
-    if (type === "number" && (trimmed === "" || Number.isNaN(Number(trimmed)))) {
-        return { ok: false, error: "Not a valid number" };
-    }
-
-    if (type === "boolean" && !/^(true|false)$/i.test(trimmed)) {
-        return { ok: false, error: 'Use "true" or "false"' };
-    }
-
-    if (type === "null" && trimmed.toLowerCase() !== "null") {
-        return { ok: false, error: 'Use "null"' };
-    }
-
-    if (type === "undefined" && trimmed.toLowerCase() !== "undefined") {
-        return { ok: false, error: 'Use "undefined"' };
-    }
-
-    return {
-        ok: true,
-        valueToSend: type === "string" ? raw : trimmed,
-    };
-}
-
-const NEW_SCAN_TYPES = ["exact_value", "bigger_than", "smaller_than", "value_between"];
-const NEXT_SCAN_TYPES = [
-    "exact_value",
-    "bigger_than",
-    "smaller_than",
-    "value_between",
-    "increased_value",
-    "increased_value_by",
-    "decreased_value",
-    "decreased_value_by",
-    "changed_value",
-    "unchanged_value",
-];
-
-const INPUTLESS_SCAN_TYPES = new Set(["increased_value", "decreased_value", "changed_value", "unchanged_value"]);
-const SECONDARY_INPUT_SCAN_TYPES = new Set(["value_between"]);
-const NEXT_COMPARISON_SCAN_TYPES = new Set([
-    "increased_value",
-    "increased_value_by",
-    "decreased_value",
-    "decreased_value_by",
-    "changed_value",
-    "unchanged_value",
-]);
-
-const SCAN_TYPE_LABELS = {
-    exact_value: "Exact Value",
-    bigger_than: "Bigger Than",
-    smaller_than: "Smaller Than",
-    value_between: "Value Between",
-    increased_value: "Increased Value",
-    increased_value_by: "Increased Value By",
-    decreased_value: "Decreased Value",
-    decreased_value_by: "Decreased Value By",
-    changed_value: "Changed Value",
-    unchanged_value: "Unchanged Value",
-};
-
-function getScanTypeLabel(scanType) {
-    return SCAN_TYPE_LABELS[scanType] || scanType;
-}
-
-function isInputlessScanType(scanType) {
-    return INPUTLESS_SCAN_TYPES.has(scanType);
-}
-
-function requiresSecondaryInput(scanType) {
-    return SECONDARY_INPUT_SCAN_TYPES.has(scanType);
-}
-
-function needsPreviousSnapshot(scanType) {
-    return NEXT_COMPARISON_SCAN_TYPES.has(scanType);
-}
-
-function parseSnapshotValue(snapshotEntry) {
-    if (!snapshotEntry || typeof snapshotEntry !== "object") {
-        return { exists: false, type: "undefined", value: undefined };
-    }
-
-    if (snapshotEntry.type === "undefined") {
-        return { exists: true, type: "undefined", value: undefined };
-    }
-
-    return {
-        exists: true,
-        type: snapshotEntry.type,
-        value: snapshotEntry.value,
-    };
-}
-
-function buildSnapshotFromResults(results) {
-    const snapshot = {};
-
-    for (const entry of results || []) {
-        if (!entry || !entry.path) continue;
-
-        const next = {
-            type: entry.type,
-            value: entry.value,
-        };
-
-        if (entry.type === "undefined") {
-            delete next.value;
-        }
-
-        snapshot[entry.path] = next;
-    }
-
-    return snapshot;
-}
-
-function monitorPathForSearchResult(path) {
-    return "gga." + path;
-}
-
-function monitorIdFromMonitorPath(path) {
-    return path.replace(/[[\]]/g, "-").replace(/\./g, "-");
-}
-
-function formatMonitorValue(value) {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") return "'" + value + "'";
-    if (typeof value === "object") return "[obj]";
-    return String(value);
-}
-
-function getMonitorHistory(monitorEntry) {
-    return Array.isArray(monitorEntry?.history) ? monitorEntry.history : [];
-}
-
-function getMonitorCurrentValue(monitorEntry) {
-    return getMonitorHistory(monitorEntry)[0]?.value;
-}
-
-function resolveMonitorEntry(path) {
-    const monitorValues = store.data.monitorValues || {};
-    const expectedId = monitorIdFromMonitorPath(path);
-
-    if (monitorValues[expectedId]) {
-        return { id: expectedId, entry: monitorValues[expectedId] };
-    }
-
-    for (const [id, entry] of Object.entries(monitorValues)) {
-        if (entry?.path === path) {
-            return { id, entry };
-        }
-    }
-
-    return { id: expectedId, entry: null };
-}
-
-function getUiTypeFromRawValue(value, fallback = "string") {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") return "string";
-    if (typeof value === "number") return "number";
-    if (typeof value === "boolean") return "boolean";
-    return fallback;
-}
-
-function getDraftFromRawValue(value, fallback = "") {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") return value;
-    if (typeof value === "number" || typeof value === "boolean") return String(value);
-    return fallback;
-}
-
-function getResultValue(result) {
-    if (!result || typeof result !== "object") return undefined;
-    if (result.type === "undefined") return undefined;
-    return Object.prototype.hasOwnProperty.call(result, "value") ? result.value : undefined;
-}
-
-function parseExactScanQuery(query) {
-    const trimmed = String(query ?? "").trim();
-
-    if (trimmed === "") return { type: "any", value: null };
-    if (trimmed === "null") return { type: "null", value: null };
-    if (trimmed === "undefined") return { type: "undefined", value: undefined };
-    if (trimmed === "true") return { type: "boolean", value: true };
-    if (trimmed === "false") return { type: "boolean", value: false };
-
-    const num = Number(trimmed);
-    if (!Number.isNaN(num) && trimmed !== "") return { type: "number", value: num };
-
-    return { type: "string", value: trimmed };
-}
-
-function matchesExactValue(currentType, currentValue, parsedQuery) {
-    if (parsedQuery.type === "any") return true;
-
-    if (parsedQuery.type === "string") {
-        return currentType === "string" && String(currentValue).toLowerCase().includes(parsedQuery.value.toLowerCase());
-    }
-
-    if (parsedQuery.type === "number") {
-        if (currentType !== "number" || typeof currentValue !== "number") return false;
-        if (currentValue === parsedQuery.value) return true;
-
-        if (Number.isInteger(parsedQuery.value)) {
-            const floor = Math.floor(currentValue);
-            const ceil = Math.ceil(currentValue);
-            return floor === parsedQuery.value || ceil === parsedQuery.value;
-        }
-
-        return false;
-    }
-
-    if (parsedQuery.type === "null") return currentValue === null;
-    if (parsedQuery.type === "undefined") return currentType === "undefined";
-
-    return currentValue === parsedQuery.value;
-}
-
-function filterResultsByScanType(results, options) {
-    const scanType = options.scanType;
-    const query = String(options.query ?? "");
-    const query2 = String(options.query2 ?? "");
-    const previousSnapshot = options.previousSnapshot && typeof options.previousSnapshot === "object" ? options.previousSnapshot : {};
-
-    const parsedExact = parseExactScanQuery(query);
-    const qNum = Number(query.trim());
-    const q2Num = Number(query2.trim());
-    const min = Math.min(qNum, q2Num);
-    const max = Math.max(qNum, q2Num);
-
-    return (results || []).filter((entry) => {
-        const path = entry.path;
-        const currentType = entry.type;
-        const currentValue = getResultValue(entry);
-
-        if (scanType === "exact_value") {
-            return matchesExactValue(currentType, currentValue, parsedExact);
-        }
-
-        if (scanType === "bigger_than") {
-            return typeof currentValue === "number" && !Number.isNaN(qNum) && currentValue > qNum;
-        }
-
-        if (scanType === "smaller_than") {
-            return typeof currentValue === "number" && !Number.isNaN(qNum) && currentValue < qNum;
-        }
-
-        if (scanType === "value_between") {
-            return typeof currentValue === "number" && !Number.isNaN(min) && !Number.isNaN(max) && currentValue >= min && currentValue <= max;
-        }
-
-        const previous = parseSnapshotValue(previousSnapshot[path]);
-        if (!previous.exists) return false;
-
-        const prevValue = previous.value;
-        const prevType = previous.type;
-
-        if (scanType === "changed_value") {
-            return prevType !== currentType || !Object.is(prevValue, currentValue);
-        }
-
-        if (scanType === "unchanged_value") {
-            return prevType === currentType && Object.is(prevValue, currentValue);
-        }
-
-        if (typeof currentValue !== "number" || prevType !== "number" || typeof prevValue !== "number") {
-            return false;
-        }
-
-        if (scanType === "increased_value") return currentValue > prevValue;
-        if (scanType === "increased_value_by") return !Number.isNaN(qNum) && currentValue - prevValue === qNum;
-        if (scanType === "decreased_value") return currentValue < prevValue;
-        if (scanType === "decreased_value_by") return !Number.isNaN(qNum) && prevValue - currentValue === qNum;
-
-        return false;
-    });
-}
-
 /**
  * Search result item component.
  */
@@ -340,12 +66,6 @@ const ResultItem = ({ result, ui, handlers }) => {
         copyFeedback.val = success ? "success" : "error";
         store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
         setTimeout(() => (copyFeedback.val = null), 1500);
-    };
-
-    const handleMonitor = (e) => {
-        e.stopPropagation();
-        store.subscribeMonitor("gga." + result.path);
-        store.notify("Added " + result.path + " to monitor");
     };
 
     const handleAddToList = (e) => {
@@ -398,14 +118,14 @@ const ResultItem = ({ result, ui, handlers }) => {
             () => {
                 if (isEditing()) {
                     return div(
-                        { style: "display:flex; gap:8px; align-items:center;" },
+                        { class: "result-action-group" },
                         button(
                             {
                                 class: "result-action-btn save-btn",
                                 title: "Save",
                                 onclick: handleSave,
                             },
-                            "\u2714"
+                            Icons.Check()
                         ),
                         button(
                             {
@@ -413,28 +133,20 @@ const ResultItem = ({ result, ui, handlers }) => {
                                 title: "Cancel",
                                 onclick: handleCancel,
                             },
-                            "\u2716"
+                            Icons.X()
                         )
                     );
                 }
 
                 return div(
-                    { style: "display:flex; gap:8px; align-items:center;" },
+                    { class: "result-action-group" },
                     button(
                         {
                             class: "result-action-btn edit-btn",
                             title: "Edit value",
                             onclick: handleStartEdit,
                         },
-                        "\u270e"
-                    ),
-                    button(
-                        {
-                            class: "result-action-btn monitor-btn",
-                            title: "Enable Watcher",
-                            onclick: handleMonitor,
-                        },
-                        Icons.Eye()
+                        Icons.Edit()
                     ),
                     button(
                         {
@@ -468,7 +180,6 @@ const SearchButton = ({
     label = "SEARCH",
     title = "",
     className = "",
-    style = "",
     icon = Icons.Search,
 }) =>
     button(
@@ -477,7 +188,6 @@ const SearchButton = ({
             onclick: onClick,
             disabled: () => isSearching() || disabled(),
             title,
-            style,
         },
         () => (isSearching() ? "..." : typeof label === "function" ? label() : label),
         icon()
@@ -791,7 +501,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
     };
 
     const monitorPath = () => monitorPathForSearchResult(entry.path);
-    const monitorData = () => resolveMonitorEntry(monitorPath()).entry;
+    const monitorData = () => resolveMonitorEntry(monitorPath(), store.data.monitorValues || {}).entry;
     const isMonitorEnabled = () => entry.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const liveMonitorHistory = () => (isMonitorEnabled() ? getMonitorHistory(monitorData()) : []);
@@ -917,14 +627,14 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
             () => {
                 if (isEditing()) {
                     return div(
-                        { style: 'display:flex; gap:8px; align-items:center;' },
+                        { class: "result-action-group" },
                         button(
                             {
                                 class: 'result-action-btn save-btn',
                                 title: 'Save',
                                 onclick: handleSave,
                             },
-                            "SAVE"
+                            Icons.Check()
                         ),
                         button(
                             {
@@ -932,20 +642,20 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                                 title: 'Cancel',
                                 onclick: handleCancel,
                             },
-                            "CANCEL"
+                            Icons.X()
                         )
                     );
                 }
 
                 return div(
-                    { style: 'display:flex; gap:8px; align-items:center;' },
+                    { class: "result-action-group" },
                     button(
                         {
                             class: 'result-action-btn edit-btn',
                             title: 'Edit value',
                             onclick: handleStartEdit,
                         },
-                        "EDIT"
+                        Icons.Edit()
                     ),
                     button(
                         {
@@ -1044,7 +754,6 @@ export const Search = () => {
         isLoading: false,
         isSearching: false,
         results: [],
-        totalCount: 0,
         displayLimit: 50,
         error: null,
         allKeysExpanded: false,
@@ -1056,7 +765,6 @@ export const Search = () => {
         edit: { path: null, draft: "", type: "" },
         isSettingValue: false,
 
-        // NEW: track if user already ran a search at least once
         hasSearched: false,
 
         // saved list state
@@ -1088,6 +796,10 @@ export const Search = () => {
             const removeSet = new Set(keys);
             ui.selectedKeys = ui.selectedKeys.filter((k) => !removeSet.has(k));
         }
+    };
+
+    const getResolvedMonitorEntry = (path) => {
+        return resolveMonitorEntry(path, store.data.monitorValues || {});
     };
 
     const updateValueInUi = (path, payload) => {
@@ -1144,7 +856,6 @@ export const Search = () => {
             ui.scopePaths = [];
             ui.previousSnapshot = {};
             ui.results = [];
-            ui.totalCount = 0;
             ui.displayLimit = 50;
             ui.error = null;
             ui.hasSearched = false;
@@ -1203,7 +914,7 @@ export const Search = () => {
             }
 
             const monitorPath = monitorPathForSearchResult(result.path);
-            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             const initialHistory = getMonitorHistory(resolvedMonitor.entry).slice(0, 10);
 
             ui.savedResults = [
@@ -1228,7 +939,7 @@ export const Search = () => {
 
         toggleSavedMonitor: (path, enabled) => {
             const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             const currentHistory = getMonitorHistory(resolvedMonitor.entry);
             const hasCurrentLive = currentHistory.length > 0;
             const currentLiveRaw = hasCurrentLive ? currentHistory[0].value : undefined;
@@ -1266,7 +977,7 @@ export const Search = () => {
 
         removeSavedResult: (path) => {
             const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             store.unsubscribeMonitor(resolvedMonitor.id);
 
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
@@ -1279,7 +990,7 @@ export const Search = () => {
 
             for (const entry of ui.savedResults) {
                 const monitorPath = monitorPathForSearchResult(entry.path);
-                const resolvedMonitor = resolveMonitorEntry(monitorPath);
+                const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
                 store.unsubscribeMonitor(resolvedMonitor.id);
             }
 
@@ -1331,7 +1042,7 @@ export const Search = () => {
             ui.savedEdit.path = entry.path;
 
             const monitorPath = monitorPathForSearchResult(entry.path);
-            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             const liveHistory = getMonitorHistory(resolvedMonitor.entry);
 
             if (entry.monitorEnabled && liveHistory.length > 0) {
@@ -1522,14 +1233,12 @@ export const Search = () => {
                           });
 
                 ui.results = filteredResults;
-                ui.totalCount = filteredResults.length;
                 ui.scopePaths = filteredResults.map((r) => r.path);
                 ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
                 ui.scanSessionActive = true;
             } catch (err) {
                 ui.error = err.message || "Search failed";
                 ui.results = [];
-                ui.totalCount = 0;
                 ui.scopePaths = [];
             } finally {
                 ui.isSearching = false;

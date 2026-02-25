@@ -198,6 +198,28 @@ function getValueAtPath(root, path) {
 }
 
 /**
+ * Resolve parent object and property key for a path.
+ * @param {any} root
+ * @param {string} path
+ * @returns {{ parent: any, key: string } | null}
+ */
+function getParentAndKey(root, path) {
+    const parts = splitPath(path);
+    if (parts.length === 0) return null;
+
+    const key = parts[parts.length - 1];
+    let parent = root;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (parent === null || parent === undefined) return null;
+        parent = parent[parts[i]];
+    }
+
+    if (parent === null || parent === undefined) return null;
+    return { parent, key };
+}
+
+/**
  * Search within an existing list of result paths (NEXT search).
  * This re-reads the current value from `gga` at each path, so it works after in-game changes.
  * @param {string} query - The search query
@@ -322,4 +344,81 @@ export function searchGga(query, keys, optionsOrWithinPaths = null) {
 export function detectQueryType(query) {
     const parsed = parseQuery(query);
     return parsed.type;
+}
+
+/**
+ * Type-safe set of a searched GGA path.
+ * Input value is always a string and converted to the current runtime type.
+ * @param {string} path
+ * @param {string} rawValue
+ * @returns {{ success: boolean, path: string, type?: string, value?: any, formattedValue?: string, error?: string }}
+ */
+export function setGgaValue(path, rawValue) {
+    if (typeof path !== "string" || path.trim() === "") {
+        return { success: false, path: String(path || ""), error: "Path is required" };
+    }
+
+    if (typeof rawValue !== "string") {
+        return { success: false, path, error: "Value must be a string" };
+    }
+
+    const currentValue = getValueAtPath(gga, path);
+
+    if (typeof currentValue === "object" && currentValue !== null) {
+        return { success: false, path, error: "This value is an object/array and cannot be edited here" };
+    }
+
+    const expectedType = currentValue === null ? "null" : typeof currentValue;
+    const trimmed = rawValue.trim();
+    let parsed;
+
+    if (expectedType === "number") {
+        const nextNumber = Number(trimmed);
+        if (trimmed === "" || Number.isNaN(nextNumber)) {
+            return { success: false, path, error: "Value must be a valid number" };
+        }
+        parsed = nextNumber;
+    } else if (expectedType === "boolean") {
+        const lower = trimmed.toLowerCase();
+        if (lower === "true") parsed = true;
+        else if (lower === "false") parsed = false;
+        else return { success: false, path, error: 'Value must be "true" or "false"' };
+    } else if (expectedType === "null") {
+        if (trimmed.toLowerCase() !== "null") return { success: false, path, error: 'Value must be "null"' };
+        parsed = null;
+    } else if (expectedType === "undefined") {
+        if (trimmed.toLowerCase() !== "undefined") {
+            return { success: false, path, error: 'Value must be "undefined"' };
+        }
+        parsed = undefined;
+    } else if (expectedType === "string") {
+        let nextString = rawValue;
+        if (nextString.length >= 2) {
+            const start = nextString[0];
+            const end = nextString[nextString.length - 1];
+            if ((start === '"' && end === '"') || (start === "'" && end === "'")) {
+                nextString = nextString.slice(1, -1);
+            }
+        }
+        parsed = String(nextString);
+    } else {
+        return { success: false, path, error: "Unsupported type" };
+    }
+
+    const target = getParentAndKey(gga, path);
+    if (!target) return { success: false, path, error: "Path not found" };
+
+    try {
+        target.parent[target.key] = parsed;
+    } catch {
+        return { success: false, path, error: "Failed to set value at path" };
+    }
+
+    return {
+        success: true,
+        path,
+        type: parsed === null ? "object" : typeof parsed,
+        value: parsed,
+        formattedValue: formatValue(parsed),
+    };
 }

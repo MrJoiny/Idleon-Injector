@@ -147,7 +147,7 @@
 }
 
 .keys-group.expandable > summary::before {
-    content: "\\25B6";
+    content: ">";
     display: inline-block;
     margin-right: 0.5rem;
     transition: transform 0.2s ease;
@@ -219,7 +219,9 @@
 }
 
 .search-btn-group .search-btn {
+    padding: 6px 14px;
     min-width: 96px;
+    font-size: 0.85rem;
     justify-content: center;
 }
 
@@ -450,6 +452,12 @@
     margin-left: auto;
     flex-shrink: 0;
     align-self: stretch;
+}
+
+.result-action-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .result-action-btn {

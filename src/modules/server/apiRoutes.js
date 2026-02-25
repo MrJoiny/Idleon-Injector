@@ -412,12 +412,8 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
-    // Fixed: empty string query handled here (no dependency on injected search.js)
     app.post("/api/search", async (req, res) => {
         const { query, keys, withinPaths } = await req.json();
-
-        const qStr = typeof query === "string" ? query : "";
-        const isEmptyQuery = qStr.trim() === "";
 
         const hasKeys = Array.isArray(keys) && keys.length > 0;
         const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
@@ -429,162 +425,12 @@ exports.injectorConfig = ${new_injectorConfig};
         }
 
         try {
+            const queryJson = JSON.stringify(query);
             const keysJson = JSON.stringify(hasKeys ? keys : []);
-            const withinPathsJson = hasWithinPaths ? JSON.stringify(withinPaths) : "null";
-
-            if (isEmptyQuery) {
-                const expr = `
-(() => {
-  const keys = ${keysJson};
-  const withinPaths = ${withinPathsJson};
-
-  const ggaRoot =
-    (typeof bEngine !== "undefined" && bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h)
-      ? bEngine.gameAttributes.h
-      : null;
-
-  if (!ggaRoot) return { results: [], totalCount: 0 };
-
-  const results = [];
-  const seen = new Set();
-
-  const isPrimitive = (v) =>
-    v === null || v === undefined || typeof v === "number" || typeof v === "string" || typeof v === "boolean";
-
-  const formatValue = (v) => {
-    if (v === null) return "null";
-    if (v === undefined) return "undefined";
-    if (typeof v === "string") {
-      const s = v.length > 100 ? (v.slice(0, 100) + "...") : v;
-      return JSON.stringify(s);
-    }
-    if (typeof v === "object") return "[object]";
-    return String(v);
-  };
-
-  const splitPath = (p) => {
-    if (typeof p !== "string" || !p) return [];
-    const parts = [];
-    let buf = "";
-    let i = 0;
-    const flush = () => {
-      const t = buf.trim();
-      if (t) parts.push(t);
-      buf = "";
-    };
-    while (i < p.length) {
-      const ch = p[i];
-      if (ch === ".") { flush(); i += 1; continue; }
-      if (ch === "[") {
-        flush();
-        const end = p.indexOf("]", i);
-        if (end === -1) { buf += ch; i += 1; continue; }
-        let inside = p.slice(i + 1, end).trim();
-        if ((inside.startsWith('"') && inside.endsWith('"')) || (inside.startsWith("'") && inside.endsWith("'"))) {
-          inside = inside.slice(1, -1);
-        }
-        if (inside) parts.push(inside);
-        i = end + 1;
-        continue;
-      }
-      buf += ch; i += 1;
-    }
-    flush();
-    return parts;
-  };
-
-  const getValueAtPath = (root, p) => {
-    const parts = splitPath(p);
-    let cur = root;
-    for (const k of parts) {
-      if (cur === null || cur === undefined) return undefined;
-      cur = cur[k];
-    }
-    return cur;
-  };
-
-  const pushResult = (path, val) => {
-    if (!isPrimitive(val)) return;
-    if (seen.has(path)) return;
-    seen.add(path);
-    results.push({
-      path,
-      value: val,
-      formattedValue: formatValue(val),
-      type: (val === null ? "object" : typeof val)
-    });
-  };
-
-  if (Array.isArray(withinPaths) && withinPaths.length) {
-    for (const p of withinPaths) {
-      if (typeof p !== "string" || !p) continue;
-      pushResult(p, getValueAtPath(ggaRoot, p));
-    }
-    return { results, totalCount: results.length };
-  }
-
-  const safeIdent = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
-  const joinKey = (base, key) => {
-    const ks = String(key);
-    if (/^\\d+$/.test(ks)) return base + "[" + ks + "]";
-    if (safeIdent.test(ks)) return base ? (base + "." + ks) : ks;
-    return base + "[" + JSON.stringify(ks) + "]";
-  };
-
-  const stack = [];
-  for (const k of keys) {
-    if (typeof k !== "string" || !k) continue;
-    if (!(k in ggaRoot)) continue;
-    stack.push({ path: k, val: ggaRoot[k] });
-  }
-
-  while (stack.length) {
-    const { path, val } = stack.pop();
-
-    if (isPrimitive(val)) {
-      pushResult(path, val);
-      continue;
-    }
-
-    if (typeof val === "object" && val !== null) {
-      if (Array.isArray(val)) {
-        for (let i = 0; i < val.length; i++) {
-          stack.push({ path: path + "[" + i + "]", val: val[i] });
-        }
-      } else {
-        const ks = Object.keys(val);
-        for (let i = 0; i < ks.length; i++) {
-          const childKey = ks[i];
-          stack.push({ path: joinKey(path, childKey), val: val[childKey] });
-        }
-      }
-    }
-  }
-
-  return { results, totalCount: results.length };
-})()
-                `;
-
-                const r = await Runtime.evaluate({
-                    expression: expr,
-                    awaitPromise: true,
-                    returnByValue: true,
-                    allowUnsafeEvalBlockedByCSP: true,
-                });
-
-                if (r.exceptionDetails) {
-                    const detail = r.exceptionDetails.text || r.exceptionDetails.exception?.description || "Unknown";
-                    log.error("Error searching GGA (match-all):", detail);
-                    return res.status(500).json({ error: "Failed to search GGA (match-all)", details: detail });
-                }
-
-                return res.json(r.result.value || { results: [], totalCount: 0 });
-            }
-
-            const escapedQuery = String(qStr).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+            const optionsJson = hasWithinPaths ? JSON.stringify({ withinPaths }) : "null";
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga('${escapedQuery}', ${keysJson}, ${withinPathsJson})`,
+                expression: `searchGga(${queryJson}, ${keysJson}, ${optionsJson})`,
                 awaitPromise: true,
                 returnByValue: true,
                 allowUnsafeEvalBlockedByCSP: true,
@@ -605,7 +451,6 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
-    // /api/search/set (unchanged)
     app.post("/api/search/set", async (req, res) => {
         const { path, value } = await req.json();
 
@@ -619,145 +464,8 @@ exports.injectorConfig = ${new_injectorConfig};
             const pathJson = JSON.stringify(path);
             const valueJson = JSON.stringify(value);
 
-            const setExpression = `
-(() => {
-  const path = ${pathJson};
-  const raw = ${valueJson};
-
-  try {
-    if (typeof setGgaValue === "function") return setGgaValue(path, raw);
-  } catch (e) {}
-
-  const gga = (typeof bEngine !== "undefined" && bEngine && bEngine.gameAttributes && bEngine.gameAttributes.h)
-    ? bEngine.gameAttributes.h
-    : null;
-
-  if (!gga) return { success: false, path, error: "GGA not available" };
-
-  const splitPath = (p) => {
-    if (typeof p !== "string" || !p) return [];
-    const parts = [];
-    let buf = "";
-    let i = 0;
-    const flush = () => {
-      const t = buf.trim();
-      if (t) parts.push(t);
-      buf = "";
-    };
-    while (i < p.length) {
-      const ch = p[i];
-      if (ch === ".") { flush(); i += 1; continue; }
-      if (ch === "[") {
-        flush();
-        const end = p.indexOf("]", i);
-        if (end === -1) { buf += ch; i += 1; continue; }
-        let inside = p.slice(i + 1, end).trim();
-        if ((inside.startsWith('"') && inside.endsWith('"')) || (inside.startsWith("'") && inside.endsWith("'"))) {
-          inside = inside.slice(1, -1);
-        }
-        if (inside) parts.push(inside);
-        i = end + 1;
-        continue;
-      }
-      buf += ch;
-      i += 1;
-    }
-    flush();
-    return parts;
-  };
-
-  const getValueAtPath = (root, p) => {
-    const parts = splitPath(p);
-    let cur = root;
-    for (const k of parts) {
-      if (cur === null || cur === undefined) return undefined;
-      cur = cur[k];
-    }
-    return cur;
-  };
-
-  const getParentAndKey = (root, p) => {
-    const parts = splitPath(p);
-    if (parts.length === 0) return null;
-    const key = parts[parts.length - 1];
-    let parent = root;
-    for (let i = 0; i < parts.length - 1; i++) {
-      if (parent === null || parent === undefined) return null;
-      parent = parent[parts[i]];
-    }
-    if (parent === null || parent === undefined) return null;
-    return { parent, key };
-  };
-
-  const formatValue = (v) => {
-    if (v === null) return "null";
-    if (v === undefined) return "undefined";
-    if (typeof v === "string") {
-      const maxLen = 100;
-      const s = v.length > maxLen ? v.substring(0, maxLen) + "..." : v;
-      return JSON.stringify(s);
-    }
-    if (typeof v === "object") return "[object]";
-    return String(v);
-  };
-
-  const cur = getValueAtPath(gga, path);
-
-  if (typeof cur === "object" && cur !== null) {
-    return { success: false, path, error: "This value is an object/array and cannot be edited here" };
-  }
-
-  const expectedType = (cur === null) ? "null" : typeof cur;
-
-  const trimmed = (typeof raw === "string") ? raw.trim() : "";
-  let parsed;
-
-  if (expectedType === "number") {
-    const n = Number(trimmed);
-    if (trimmed === "" || Number.isNaN(n)) return { success: false, path, error: "Value must be a valid number" };
-    parsed = n;
-  } else if (expectedType === "boolean") {
-    const low = trimmed.toLowerCase();
-    if (low === "true") parsed = true;
-    else if (low === "false") parsed = false;
-    else return { success: false, path, error: 'Value must be "true" or "false"' };
-  } else if (expectedType === "null") {
-    if (trimmed.toLowerCase() !== "null") return { success: false, path, error: 'Value must be "null"' };
-    parsed = null;
-  } else if (expectedType === "undefined") {
-    if (trimmed.toLowerCase() !== "undefined") return { success: false, path, error: 'Value must be "undefined"' };
-    parsed = undefined;
-  } else if (expectedType === "string") {
-    let s = raw;
-    if (typeof s === "string" && s.length >= 2) {
-      const a = s[0], b = s[s.length - 1];
-      if ((a === '"' && b === '"') || (a === "'" && b === "'")) s = s.slice(1, -1);
-    }
-    parsed = String(s);
-  } else {
-    return { success: false, path, error: "Unsupported type" };
-  }
-
-  const target = getParentAndKey(gga, path);
-  if (!target) return { success: false, path, error: "Path not found" };
-
-  try {
-    target.parent[target.key] = parsed;
-  } catch (e) {
-    return { success: false, path, error: "Failed to set value at path" };
-  }
-
-  return {
-    success: true,
-    path,
-    type: (parsed === null) ? "object" : typeof parsed,
-    formattedValue: formatValue(parsed),
-  };
-})()
-            `;
-
             const setResult = await Runtime.evaluate({
-                expression: setExpression,
+                expression: `setGgaValue(${pathJson}, ${valueJson})`,
                 awaitPromise: true,
                 returnByValue: true,
                 allowUnsafeEvalBlockedByCSP: true,
@@ -771,8 +479,7 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = setResult.result.value || { success: false, error: "No response from game context" };
-
-            if (data && data.success === false) {
+            if (data.success === false) {
                 return res.status(400).json({ error: data.error || "Failed to set value" });
             }
 
