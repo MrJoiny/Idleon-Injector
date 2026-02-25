@@ -3,7 +3,7 @@
  *
  * Simple one-off cheats that don't fit into other categories:
  * - drop, spawn, daily, noob, jackpot, cloudz, chromedebug
- * - nomore, multiplestacks, buy
+ * - qnty, nomore, multiplestacks, buy
  * - fix_save, fix_write
  * - upstones, keychain, unlock
  */
@@ -70,6 +70,36 @@ registerCheat({
         gga.PlayerHP = hpval;
         return `The amount of health is set to ${hpval}`;
     },
+});
+
+// Quantity cheat (first inventory/chest slot)
+registerCheats({
+    name: "qnty",
+    category: "general",
+    message: "Change the quantity of the first item in inventory/chest",
+    registerParent: false,
+    subcheats: [
+        {
+            name: "inv",
+            message: "Change the quantity of the first inventory slot to this value",
+            needsParam: true,
+            fn: function (params) {
+                const setqnty = parseInt(params[1]) || 1;
+                gga.ItemQuantity[0] = setqnty;
+                return `Inventory slot 1 qty: ${setqnty}`;
+            },
+        },
+        {
+            name: "chest",
+            message: "Change the quantity of the first chest slot to this value",
+            needsParam: true,
+            fn: function (params) {
+                const setqnty = parseInt(params[1]) || 1;
+                gga.ChestQuantity[0] = setqnty;
+                return `Chest slot 1 qty: ${setqnty}`;
+            },
+        },
+    ],
 });
 
 // Hit the jackpot in the arcade

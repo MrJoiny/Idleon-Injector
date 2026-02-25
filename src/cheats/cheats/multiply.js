@@ -13,6 +13,7 @@ registerCheats({
     name: "multiply",
     message:
         "Multiplies stats by the number (or applies function) given. use reasonably, ridiculous numbers can cause shadowbanning!",
+    registerParent: false,
     needsParam: true,
     subcheats: [
         {

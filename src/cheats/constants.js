@@ -192,3 +192,18 @@ export const knownBundles = [
 
 // Item types to exclude from bulk commands (invalid or problematic types)
 export const bulkTypeBlacklist = new Set(["Bits", "SAIL_TREASURE", "SPICE", "WHAT", "BOX", "UNKNOWN", "ERROR"]);
+
+// Commands that stay executable, but should not be suggested as bare commands.
+// They have richer suggestion variants like "buy <code>" or "lvl <skill>".
+export const HIDE_BARE_COMMANDS = new Set([
+    "buy",
+    "drop",
+    "spawn",
+    "nomore",
+    "multiplestacks",
+    "keychain",
+    "bulk",
+    "class",
+    "lvl",
+    "gga",
+]);

@@ -25,7 +25,7 @@
 
 .notification-history-toggle:hover {
     color: var(--c-accent);
-    background: rgba(255, 200, 0, 0.1);
+    background: var(--c-warning-10);
 }
 
 .notification-history-toggle svg {
@@ -39,10 +39,10 @@
     right: -100px;
     min-width: 300px;
     max-width: 350px;
-    background: rgba(14, 15, 20, 0.98);
+    background: var(--c-panel-98);
     border: 1px solid var(--c-border);
     border-radius: 6px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 10px 40px var(--c-black-60);
     z-index: 9999;
     max-height: 400px;
     overflow-y: auto;
@@ -96,7 +96,7 @@
 }
 
 .notification-history-item.is-error .notification-history-message {
-    color: #ffcccc;
+    color: var(--c-danger-soft-text);
 }
 
 .notification-history-time {

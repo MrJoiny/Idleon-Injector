@@ -77,8 +77,9 @@ const wipeHandlers = {
         const cogOrder = gga.CogOrder;
         const cogMap = gga.CogMap;
         const startIndex = 108;
+        const maxInvSlots = events(345)._customBlock_WorkbenchStuff("CogSlots");
 
-        for (let i = startIndex; i < cogOrder.length; i++) {
+        for (let i = startIndex; i < startIndex + maxInvSlots; i++) {
             if (typeof cogOrder[i] === "string" && cogOrder[i].includes("Player")) {
                 continue;
             }
@@ -240,6 +241,7 @@ registerCheats({
 registerCheats({
     name: "wipe",
     message: "Wipe certain stuff from your account. Use with caution!",
+    registerParent: false,
     subcheats: [
         { name: "inv", message: "Wipe your inventory", fn: wipeFunction },
         { name: "invslot", message: "Wipe your inventory slot (0-indexed)", needsParam: true, fn: wipeFunction },

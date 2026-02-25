@@ -33,7 +33,7 @@
 .cheat-category summary {
     padding: 12px 15px;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--c-white-02);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -77,7 +77,7 @@
 .cheat-button {
     flex: 1;
     background: var(--c-panel);
-    border: 1px solid #333;
+    border: 1px solid var(--c-control-border-strong);
     color: var(--c-text-dim);
     padding: 0 12px;
     height: 40px;
@@ -152,7 +152,7 @@
 
 .quick-access-btn:hover {
     background: var(--c-accent);
-    color: #000;
+    color: var(--c-black);
 }
 
 .quick-access-remove-icon {
@@ -163,17 +163,17 @@
     align-self: stretch;
     opacity: 0.4;
     transition: all 0.2s;
-    border-left: 1px solid rgba(255, 183, 0, 0.2);
+    border-left: 1px solid var(--c-accent-20);
 }
 
 .quick-access-btn:hover .quick-access-remove-icon {
-    border-left-color: rgba(0, 0, 0, 0.2);
+    border-left-color: var(--c-black-20);
     opacity: 0.7;
 }
 
 .quick-access-remove-icon:hover {
     color: var(--c-danger) !important;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--c-black-10);
     opacity: 1 !important;
 }
 
@@ -207,12 +207,12 @@
 
 .favorite-btn:hover {
     opacity: 1;
-    color: var(--c-warning);
+    color: var(--c-accent);
 }
 
 .favorite-btn.is-favorite {
     opacity: 1;
-    color: var(--c-warning);
+    color: var(--c-accent);
 }
 
 /* --- CHEAT CONFIG ICON (inside cheat button) --- */
@@ -232,14 +232,14 @@
     transition: all 0.2s;
     flex-shrink: 0;
     cursor: pointer;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 1px solid var(--c-white-05);
     margin-right: -12px; /* Pull into button padding area */
     font-size: 1.2rem; /* Increased from default ~1rem */
 }
 
 .cheat-config-icon:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--c-white-10);
     color: var(--c-accent);
 }
 
@@ -262,11 +262,43 @@
     gap: 10px;
 }
 
+.config-drawer-toggle {
+    flex: none;
+    width: 42px;
+    background: var(--c-black-30);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.config-drawer-toggle svg {
+    width: 1em;
+    height: 1em;
+}
+
+.config-drawer-toggle:hover {
+    color: var(--c-text-main);
+    border-color: var(--c-accent-25);
+    background: var(--c-accent-06);
+}
+
+.config-drawer-toggle.active {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+    background: var(--c-accent-dim-solid);
+}
+
 /* --- VIEW MODE TOGGLE --- */
 .view-mode-toggle {
     flex: none;
     width: 42px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--c-black-30);
     border: 1px solid var(--c-border);
     color: var(--c-text-dim);
     cursor: pointer;
@@ -279,7 +311,7 @@
 }
 
 .view-mode-toggle:hover {
-    color: var(--c-text);
+    color: var(--c-text-main);
     border-color: var(--c-text-dim);
 }
 
@@ -318,7 +350,7 @@
 .tab-btn:hover {
     background: var(--c-accent-dim-solid);
     border-color: var(--c-accent-dim-solid);
-    color: var(--c-text);
+    color: var(--c-text-main);
 }
 
 .tab-btn.active {
@@ -350,13 +382,13 @@
     margin-top: 10px;
     width: 100%;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--c-white-05);
     border: 1px solid var(--c-border);
     color: var(--c-text-dim);
     cursor: pointer;
 }
 
 .load-more-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--c-text);
+    background: var(--c-white-10);
+    color: var(--c-text-main);
 }

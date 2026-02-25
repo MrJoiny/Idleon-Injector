@@ -18,7 +18,7 @@ import { cheatConfig, cheatState } from "../core/state.js";
 
 registerCheats({
     name: "w1",
-    message: "World 1 cheats",
+    message: "Activate all World 1 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "anvil", message: "anvil cost and duration nullification" },
@@ -32,7 +32,7 @@ registerCheats({
 
 registerCheats({
     name: "w2",
-    message: "World 2 cheats",
+    message: "Activate all World 2 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "boss", message: "unlimited boss attempts" },
@@ -54,7 +54,7 @@ registerCheats({
 
 registerCheats({
     name: "w3",
-    message: "World 3 cheats",
+    message: "Activate all World 3 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "mobdeath", message: "worship mobs insta-death" },
@@ -82,7 +82,7 @@ registerCheats({
 
 registerCheats({
     name: "w4",
-    message: "World 4 cheats",
+    message: "Activate all World 4 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "battleslots", message: "all 6 battle slots" },
@@ -164,7 +164,7 @@ registerCheats({
 
 registerCheats({
     name: "w5",
-    message: "World 5 cheats",
+    message: "Activate all World 5 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "sailing", message: "sailing cheats" },
@@ -211,7 +211,7 @@ registerCheats({
 
 registerCheats({
     name: "w6",
-    message: "World 6 cheats",
+    message: "Activate all World 6 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "farming", message: "farming cheats" },
@@ -270,7 +270,7 @@ registerCheats({
 
 registerCheats({
     name: "w7",
-    message: "World 7 cheats",
+    message: "Activate all World 7 cheats",
     allowToggleChildren: true,
     subcheats: [
         { name: "spelunk", message: "spelunk cheats" },

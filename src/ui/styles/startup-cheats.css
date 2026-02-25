@@ -39,7 +39,7 @@
     padding: 0;
     margin: 0 0 5px 0;
     z-index: 100;
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -5px 20px var(--c-black-50);
 }
 
 .cheat-search-results li {
@@ -59,6 +59,32 @@
     display: flex;
     gap: 10px;
     margin-bottom: 8px;
+}
+
+.startup-cheat-param-row {
+    align-items: center;
+}
+
+.startup-cheat-command-input {
+    flex: 1;
+}
+
+.startup-cheat-value-input {
+    flex: 0 0 180px;
+}
+
+@media (max-width: 900px) {
+    .startup-cheat-param-row {
+        flex-wrap: wrap;
+    }
+
+    .startup-cheat-param-row .remove-cheat-button {
+        width: 100%;
+    }
+
+    .startup-cheat-value-input {
+        flex: 1 1 100%;
+    }
 }
 
 /* --- STARTUP CHEATS LIST --- */

@@ -345,6 +345,7 @@ function createListFunction(params) {
 registerCheats({
     name: "search",
     message: "Search for an item, monster, talent or smithing recipe",
+    registerParent: false,
     needsParam: true,
     subcheats: [
         {
@@ -481,6 +482,7 @@ registerCheat({
 registerCheats({
     name: "list",
     message: "list something. third param optional filter",
+    registerParent: false,
     subcheats: [
         { name: "bundle", message: "list bundles. third param optional filter", fn: createListFunction },
         { name: "missing_bundle", message: "list missing bundles", fn: createListFunction },

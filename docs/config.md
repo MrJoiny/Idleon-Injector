@@ -64,6 +64,8 @@ exports.startupCheats = ["wide mtx", "unlock quickref", "wide autoloot"];
 
 These map to the same commands shown in the Cheats tab and CLI.
 
+In the Web UI Startup tab, commands marked with `needsParam` display a separate `Value` field for clarity. The saved config format is unchanged: each row is still stored as a single command string (for example, `"drop Copper 100"`).
+
 ## Cheat config values
 
 `cheatConfig` controls parameterized cheats and proxy overrides. Values can be:

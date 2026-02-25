@@ -29,7 +29,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #333;
+    background: var(--c-scrollbar-thumb);
     border-radius: 3px;
 }
 

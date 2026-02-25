@@ -47,7 +47,7 @@
 
 @keyframes flashGreen {
     0% {
-        background-color: rgba(255, 183, 0, 0.2);
+        background-color: var(--c-accent-20);
     }
 
     100% {
@@ -57,7 +57,7 @@
 
 @keyframes flashRed {
     0% {
-        background-color: rgba(255, 0, 60, 0.2);
+        background-color: var(--c-danger-20);
     }
 
     100% {
@@ -67,29 +67,29 @@
 
 @keyframes pulseSuccess {
     0% {
-        box-shadow: 0 0 0 0 rgba(204, 255, 0, 0.4);
+        box-shadow: 0 0 0 0 var(--c-success-40);
     }
 
     70% {
-        box-shadow: 0 0 0 10px rgba(204, 255, 0, 0);
+        box-shadow: 0 0 0 10px transparent;
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(204, 255, 0, 0);
+        box-shadow: 0 0 0 0 transparent;
     }
 }
 
 @keyframes pulseError {
     0% {
-        box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.4);
+        box-shadow: 0 0 0 0 var(--c-danger-40);
     }
 
     70% {
-        box-shadow: 0 0 0 10px rgba(255, 0, 60, 0);
+        box-shadow: 0 0 0 10px transparent;
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(255, 0, 60, 0);
+        box-shadow: 0 0 0 0 transparent;
     }
 }
 
@@ -97,13 +97,13 @@
 .feedback-success {
     animation: pulseSuccess 0.5s ease-out;
     border-color: var(--c-success) !important;
-    background: rgba(204, 255, 0, 0.1) !important;
+    background: var(--c-success-10) !important;
 }
 
 .feedback-error {
     animation: pulseError 0.5s ease-out;
     border-color: var(--c-danger) !important;
-    background: rgba(255, 0, 60, 0.1) !important;
+    background: var(--c-danger-10) !important;
 }
 
 .save-success {

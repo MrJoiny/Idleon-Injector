@@ -8,24 +8,24 @@
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(circle at 70% 30%, #10121a 0%, var(--c-void) 70%);
+    background: radial-gradient(circle at 70% 30%, var(--c-void-soft) 0%, var(--c-void) 70%);
 }
 
 .grid-overlay {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(var(--c-white-03) 1px, transparent 1px),
+        linear-gradient(90deg, var(--c-white-03) 1px, transparent 1px);
     background-size: 40px 40px;
-    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    mask-image: radial-gradient(circle at center, var(--c-black) 40%, transparent 100%);
     pointer-events: none;
 }
 
 .vignette {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle, transparent 50%, black 120%);
+    background: radial-gradient(circle, transparent 50%, var(--c-black) 120%);
     pointer-events: none;
 }
 
@@ -51,7 +51,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(5, 5, 7, 0.8);
+    background: var(--c-header-bg);
     border-bottom: 1px solid var(--c-border);
     backdrop-filter: blur(5px);
 }
@@ -68,6 +68,32 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+}
+
+#cheats-tab {
+    transition: padding-right 0.25s var(--ease-tech);
+}
+
+#cheats-tab.drawer-host-open {
+    padding-right: clamp(360px, 42vw, 560px);
+}
+
+#config-tab.drawer-open {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: clamp(360px, 42vw, 560px);
+    padding: 20px;
+    background: var(--c-panel-98);
+    border-left: 1px solid var(--c-border);
+    box-shadow: -14px 0 28px var(--c-black-50);
+    z-index: 1200;
+    animation: scaleIn 0.2s var(--ease-tech);
+}
+
+#config-tab.drawer-open .scroll-container {
+    padding-right: 4px;
 }
 
 .tab-pane {
@@ -125,4 +151,18 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+}
+
+@media (max-width: 1200px) {
+    #cheats-tab.drawer-host-open {
+        padding-right: 0;
+    }
+
+    #config-tab.drawer-open {
+        width: 100%;
+        max-width: none;
+        border-left: none;
+        box-shadow: none;
+        background: var(--c-panel-95);
+    }
 }

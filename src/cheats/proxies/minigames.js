@@ -15,6 +15,7 @@
  * - Scratch (ActorEvents_670) - Auto reveal all
  * - Wisdom (ActorEvents_670) - Infinite attempts
  * - Poing (ActorEvents_577) - AI paddle off-screen
+ * - Minehead (ActorEvents_741) - In-game mine tile reveal
  */
 
 import { cheatState } from "../core/state.js";
@@ -228,6 +229,57 @@ function setupEvents577Minigames() {
     }
 }
 
+// minehead
+function setupEvents741Minigames() {
+    const ActorEvents741 = events(741);
+    if (!ActorEvents741) return;
+
+    if (ActorEvents741.prototype._event_Minehead?._isPatched) return;
+
+    const TILE_LAYERS = [27, 28, 29];
+    const MINE_ALPHA = 0.2;
+    const DEFAULT_ALPHA = 1;
+    const mineRevealActive = new WeakMap();
+
+    createMethodProxy(ActorEvents741.prototype, "_event_Minehead", function (base) {
+        const mineGrid = this?._GenINFO?.[32];
+        const revealedTiles = this?._GenINFO?.[33];
+        const uiInventory = this?._UIinventory17;
+
+        if (!Array.isArray(mineGrid) || !uiInventory) return base;
+
+        const inMineRound = this?._GenINFO?.[28] === 1;
+        const shouldReveal = cheatState.minigame.minehead && inMineRound;
+        const wasRevealActive = mineRevealActive.get(this) === true;
+
+        if (!shouldReveal && !wasRevealActive) return base;
+
+        for (let tileIndex = 0; tileIndex < mineGrid.length; tileIndex++) {
+            if (mineGrid[tileIndex] !== 0) continue;
+
+            const isRevealed = Array.isArray(revealedTiles) && revealedTiles[tileIndex] === 1;
+            const alpha = shouldReveal && !isRevealed ? MINE_ALPHA : DEFAULT_ALPHA;
+
+            for (const layer of TILE_LAYERS) {
+                const image = uiInventory[layer]?.[tileIndex];
+                if (image?.set_alpha) {
+                    image.set_alpha(alpha);
+                }
+            }
+        }
+
+        if (shouldReveal) {
+            mineRevealActive.set(this, true);
+        } else {
+            mineRevealActive.delete(this);
+        }
+
+        return base;
+    });
+
+    ActorEvents741.prototype._event_Minehead._isPatched = true;
+}
+
 /**
  * Setup all minigame proxies on ActorEvents prototypes.
  * Call this once during proxy initialization in setupAllProxies().
@@ -238,4 +290,5 @@ export function setupMinigameProxies() {
     setupEvents510Minigames();
     setupEvents670Minigames();
     setupEvents577Minigames();
+    setupEvents741Minigames();
 }

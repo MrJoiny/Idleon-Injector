@@ -38,10 +38,13 @@ State buckets:
 - `store.app`: UI state (active tab, loading state, heartbeat, toast, view mode).
 - `store.data`: data from the backend (cheats, config, account options, cheat states, monitor values).
 
+Notable `store.app` UI flags include `configForcedPath` (focused config path from cheat gear icon) and `configDrawerOpen` (side drawer state while on Cheats).
+
 Persisted UI settings:
 
 - Sidebar collapsed state and cheat view mode (tabs/list) are stored in `localStorage`.
 - Favorites and recents are stored in `localStorage` via the Cheats view.
+- Config drawer open/closed state is session-only (not persisted).
 
 Core flows:
 
@@ -93,11 +96,12 @@ Features:
 - List view uses lazy `<details>` categories, auto-expands on search.
 - Parameterized cheats render inline input ("Val"); missing values block execution.
 - Favorites support parameterized commands by storing full action string.
+- Includes a Config drawer toggle so Cheat commands stay visible while editing Config side-by-side.
 
 Useful helpers:
 
 - `store.executeCheat(action, message)` triggers `/api/toggle` and shows toast feedback.
-- `store.navigateToCheatConfig(cheatValue)` jumps to Config with a focused path.
+- `store.navigateToCheatConfig(cheatValue)` focuses Config for that cheat path (opens the side drawer when on Cheats, otherwise switches to full Config tab).
 - `store.getActiveCheats()` flattens active cheat state into a display list.
 
 ### Config view
@@ -108,9 +112,11 @@ Key behaviors:
 
 - Builds a local `draft` via `vanX.reactive` to avoid direct edits on live config.
 - Sub-tabs: Cheat Config, Startup Cheats, Injector Config.
+- Startup Cheats auto-show a separate `Value` input when a selected command has `needsParam`.
 - Supports category filtering and search on cheat config keys.
 - Uses `ConfigNode` to recursively render object trees.
 - Uses forced-path mode when coming from Cheats gear icon, with "SHOWING" banner.
+- Can run as a right-side drawer while Cheats stays open; close from drawer header or toggle button in Cheats.
 - Saves apply to RAM (`/api/config/update`) or persist to disk (`/api/config/save`).
 - Injector config shows "restart required" warning banner.
 
