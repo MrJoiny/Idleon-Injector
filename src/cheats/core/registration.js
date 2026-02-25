@@ -85,7 +85,7 @@ export function registerCheat({ name, fn, message, category = "general", needsPa
  * @param {string} [cheatMap.category] - Category for grouping (overrides inherited)
  * @param {Function} [cheatMap.fn] - Custom function (overrides default toggle behavior)
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
- * @param {object} [cheatMap.configurable] - Configuration options (implies needsParam: true)
+ * @param {boolean} [cheatMap.configurable] - Configuration options (implies needsParam: true)
  * @param {boolean} [cheatMap.allowToggleChildren] - Allow mass toggle of all subcheats when parent is called with no args
  * @param {boolean} [cheatMap.registerParent=true] - Register this node as a callable command (set false for namespace-only parents)
  * @param {boolean} [cheatMap.needsParam] - Whether this cheat needs/accepts a parameter input (auto-inferred from configurable if not set)
