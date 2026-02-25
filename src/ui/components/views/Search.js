@@ -5,10 +5,11 @@ import { FAVORITE_KEYS } from "../../state/constants.js";
 import { detectQueryType, copyToClipboard } from "../../utils/index.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
+import { Sparkline, canGraph } from "../Sparkline.js";
 import { Icons } from "../../assets/icons.js";
 import * as API from "../../services/api.js";
 
-const { div, input, button, span, label, details, summary } = van.tags;
+const { div, input, button, span, label, details, summary, select, option } = van.tags;
 
 /**
  * Key checkbox component for the whitelist.
@@ -27,15 +28,315 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
     );
 };
 
+function seedEditValue(result) {
+    const fv = String(result.formattedValue ?? "");
+    if (result.type === "string") {
+        if ((fv.startsWith('"') && fv.endsWith('"')) || (fv.startsWith("'") && fv.endsWith("'"))) {
+            return fv.slice(1, -1);
+        }
+        return fv;
+    }
+    return fv;
+}
+
+function expectedUiType(result) {
+    if (result.type === "object" && String(result.formattedValue).toLowerCase() === "null") return "null";
+    return result.type;
+}
+
+function validateEditDraft(type, raw) {
+    const trimmed = String(raw ?? "").trim();
+
+    if (type === "number" && (trimmed === "" || Number.isNaN(Number(trimmed)))) {
+        return { ok: false, error: "Not a valid number" };
+    }
+
+    if (type === "boolean" && !/^(true|false)$/i.test(trimmed)) {
+        return { ok: false, error: 'Use "true" or "false"' };
+    }
+
+    if (type === "null" && trimmed.toLowerCase() !== "null") {
+        return { ok: false, error: 'Use "null"' };
+    }
+
+    if (type === "undefined" && trimmed.toLowerCase() !== "undefined") {
+        return { ok: false, error: 'Use "undefined"' };
+    }
+
+    return {
+        ok: true,
+        valueToSend: type === "string" ? raw : trimmed,
+    };
+}
+
+const NEW_SCAN_TYPES = ["exact_value", "bigger_than", "smaller_than", "value_between"];
+const NEXT_SCAN_TYPES = [
+    "exact_value",
+    "bigger_than",
+    "smaller_than",
+    "value_between",
+    "increased_value",
+    "increased_value_by",
+    "decreased_value",
+    "decreased_value_by",
+    "changed_value",
+    "unchanged_value",
+];
+
+const INPUTLESS_SCAN_TYPES = new Set(["increased_value", "decreased_value", "changed_value", "unchanged_value"]);
+const SECONDARY_INPUT_SCAN_TYPES = new Set(["value_between"]);
+const NEXT_COMPARISON_SCAN_TYPES = new Set([
+    "increased_value",
+    "increased_value_by",
+    "decreased_value",
+    "decreased_value_by",
+    "changed_value",
+    "unchanged_value",
+]);
+
+const SCAN_TYPE_LABELS = {
+    exact_value: "Exact Value",
+    bigger_than: "Bigger Than",
+    smaller_than: "Smaller Than",
+    value_between: "Value Between",
+    increased_value: "Increased Value",
+    increased_value_by: "Increased Value By",
+    decreased_value: "Decreased Value",
+    decreased_value_by: "Decreased Value By",
+    changed_value: "Changed Value",
+    unchanged_value: "Unchanged Value",
+};
+
+function getScanTypeLabel(scanType) {
+    return SCAN_TYPE_LABELS[scanType] || scanType;
+}
+
+function isInputlessScanType(scanType) {
+    return INPUTLESS_SCAN_TYPES.has(scanType);
+}
+
+function requiresSecondaryInput(scanType) {
+    return SECONDARY_INPUT_SCAN_TYPES.has(scanType);
+}
+
+function needsPreviousSnapshot(scanType) {
+    return NEXT_COMPARISON_SCAN_TYPES.has(scanType);
+}
+
+function parseSnapshotValue(snapshotEntry) {
+    if (!snapshotEntry || typeof snapshotEntry !== "object") {
+        return { exists: false, type: "undefined", value: undefined };
+    }
+
+    if (snapshotEntry.type === "undefined") {
+        return { exists: true, type: "undefined", value: undefined };
+    }
+
+    return {
+        exists: true,
+        type: snapshotEntry.type,
+        value: snapshotEntry.value,
+    };
+}
+
+function buildSnapshotFromResults(results) {
+    const snapshot = {};
+
+    for (const entry of results || []) {
+        if (!entry || !entry.path) continue;
+
+        const next = {
+            type: entry.type,
+            value: entry.value,
+        };
+
+        if (entry.type === "undefined") {
+            delete next.value;
+        }
+
+        snapshot[entry.path] = next;
+    }
+
+    return snapshot;
+}
+
+function monitorPathForSearchResult(path) {
+    return "gga." + path;
+}
+
+function monitorIdFromMonitorPath(path) {
+    return path.replace(/[[\]]/g, "-").replace(/\./g, "-");
+}
+
+function formatMonitorValue(value) {
+    if (value === null) return "null";
+    if (value === undefined) return "undefined";
+    if (typeof value === "string") return "'" + value + "'";
+    if (typeof value === "object") return "[obj]";
+    return String(value);
+}
+
+function getMonitorHistory(monitorEntry) {
+    return Array.isArray(monitorEntry?.history) ? monitorEntry.history : [];
+}
+
+function getMonitorCurrentValue(monitorEntry) {
+    return getMonitorHistory(monitorEntry)[0]?.value;
+}
+
+function resolveMonitorEntry(path) {
+    const monitorValues = store.data.monitorValues || {};
+    const expectedId = monitorIdFromMonitorPath(path);
+
+    if (monitorValues[expectedId]) {
+        return { id: expectedId, entry: monitorValues[expectedId] };
+    }
+
+    for (const [id, entry] of Object.entries(monitorValues)) {
+        if (entry?.path === path) {
+            return { id, entry };
+        }
+    }
+
+    return { id: expectedId, entry: null };
+}
+
+function getUiTypeFromRawValue(value, fallback = "string") {
+    if (value === null) return "null";
+    if (value === undefined) return "undefined";
+    if (typeof value === "string") return "string";
+    if (typeof value === "number") return "number";
+    if (typeof value === "boolean") return "boolean";
+    return fallback;
+}
+
+function getDraftFromRawValue(value, fallback = "") {
+    if (value === null) return "null";
+    if (value === undefined) return "undefined";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    return fallback;
+}
+
+function getResultValue(result) {
+    if (!result || typeof result !== "object") return undefined;
+    if (result.type === "undefined") return undefined;
+    return Object.prototype.hasOwnProperty.call(result, "value") ? result.value : undefined;
+}
+
+function parseExactScanQuery(query) {
+    const trimmed = String(query ?? "").trim();
+
+    if (trimmed === "") return { type: "any", value: null };
+    if (trimmed === "null") return { type: "null", value: null };
+    if (trimmed === "undefined") return { type: "undefined", value: undefined };
+    if (trimmed === "true") return { type: "boolean", value: true };
+    if (trimmed === "false") return { type: "boolean", value: false };
+
+    const num = Number(trimmed);
+    if (!Number.isNaN(num) && trimmed !== "") return { type: "number", value: num };
+
+    return { type: "string", value: trimmed };
+}
+
+function matchesExactValue(currentType, currentValue, parsedQuery) {
+    if (parsedQuery.type === "any") return true;
+
+    if (parsedQuery.type === "string") {
+        return currentType === "string" && String(currentValue).toLowerCase().includes(parsedQuery.value.toLowerCase());
+    }
+
+    if (parsedQuery.type === "number") {
+        if (currentType !== "number" || typeof currentValue !== "number") return false;
+        if (currentValue === parsedQuery.value) return true;
+
+        if (Number.isInteger(parsedQuery.value)) {
+            const floor = Math.floor(currentValue);
+            const ceil = Math.ceil(currentValue);
+            return floor === parsedQuery.value || ceil === parsedQuery.value;
+        }
+
+        return false;
+    }
+
+    if (parsedQuery.type === "null") return currentValue === null;
+    if (parsedQuery.type === "undefined") return currentType === "undefined";
+
+    return currentValue === parsedQuery.value;
+}
+
+function filterResultsByScanType(results, options) {
+    const scanType = options.scanType;
+    const query = String(options.query ?? "");
+    const query2 = String(options.query2 ?? "");
+    const previousSnapshot = options.previousSnapshot && typeof options.previousSnapshot === "object" ? options.previousSnapshot : {};
+
+    const parsedExact = parseExactScanQuery(query);
+    const qNum = Number(query.trim());
+    const q2Num = Number(query2.trim());
+    const min = Math.min(qNum, q2Num);
+    const max = Math.max(qNum, q2Num);
+
+    return (results || []).filter((entry) => {
+        const path = entry.path;
+        const currentType = entry.type;
+        const currentValue = getResultValue(entry);
+
+        if (scanType === "exact_value") {
+            return matchesExactValue(currentType, currentValue, parsedExact);
+        }
+
+        if (scanType === "bigger_than") {
+            return typeof currentValue === "number" && !Number.isNaN(qNum) && currentValue > qNum;
+        }
+
+        if (scanType === "smaller_than") {
+            return typeof currentValue === "number" && !Number.isNaN(qNum) && currentValue < qNum;
+        }
+
+        if (scanType === "value_between") {
+            return typeof currentValue === "number" && !Number.isNaN(min) && !Number.isNaN(max) && currentValue >= min && currentValue <= max;
+        }
+
+        const previous = parseSnapshotValue(previousSnapshot[path]);
+        if (!previous.exists) return false;
+
+        const prevValue = previous.value;
+        const prevType = previous.type;
+
+        if (scanType === "changed_value") {
+            return prevType !== currentType || !Object.is(prevValue, currentValue);
+        }
+
+        if (scanType === "unchanged_value") {
+            return prevType === currentType && Object.is(prevValue, currentValue);
+        }
+
+        if (typeof currentValue !== "number" || prevType !== "number" || typeof prevValue !== "number") {
+            return false;
+        }
+
+        if (scanType === "increased_value") return currentValue > prevValue;
+        if (scanType === "increased_value_by") return !Number.isNaN(qNum) && currentValue - prevValue === qNum;
+        if (scanType === "decreased_value") return currentValue < prevValue;
+        if (scanType === "decreased_value_by") return !Number.isNaN(qNum) && prevValue - currentValue === qNum;
+
+        return false;
+    });
+}
+
 /**
  * Search result item component.
  */
-const ResultItem = ({ result }) => {
+const ResultItem = ({ result, ui, handlers }) => {
     const copyFeedback = van.state(null);
+
+    const isEditing = () => ui.edit.path === result.path;
+    const isInSavedList = () => ui.savedResults.some((entry) => entry.path === result.path);
 
     const handleCopy = (e) => {
         e.stopPropagation();
-        const success = copyToClipboard(`bEngine.gameAttributes.h.${result.path}`);
+        const success = copyToClipboard("bEngine.gameAttributes.h." + result.path);
         copyFeedback.val = success ? "success" : "error";
         store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
         setTimeout(() => (copyFeedback.val = null), 1500);
@@ -43,46 +344,143 @@ const ResultItem = ({ result }) => {
 
     const handleMonitor = (e) => {
         e.stopPropagation();
-        store.subscribeMonitor(`gga.${result.path}`);
-        store.notify(`Added ${result.path} to monitor`);
+        store.subscribeMonitor("gga." + result.path);
+        store.notify("Added " + result.path + " to monitor");
+    };
+
+    const handleAddToList = (e) => {
+        e.stopPropagation();
+        handlers.addToSavedResults(result);
+    };
+
+    const handleStartEdit = (e) => {
+        e.stopPropagation();
+        handlers.startEdit(result);
+    };
+
+    const handleCancel = (e) => {
+        e.stopPropagation();
+        handlers.cancelEdit();
+    };
+
+    const handleSave = (e) => {
+        e.stopPropagation();
+        handlers.saveEdit();
     };
 
     return div(
         {
-            class: () => `search-result-item ${copyFeedback.val === "success" ? "copied" : ""}`,
-            onclick: handleCopy,
-            title: "Click to copy full access path",
+            class: () => "search-result-item " + (copyFeedback.val === "success" ? "copied" : ""),
         },
         span({ class: "result-path" }, result.path),
         span({ class: "result-equals" }, "="),
-        span({ class: `result-value type-${result.type}` }, result.formattedValue),
+
+        () => {
+            if (!isEditing()) {
+                return span({ class: "result-value type-" + result.type }, result.formattedValue);
+            }
+
+            return input({
+                class: "result-edit-input",
+                value: () => ui.edit.draft,
+                oninput: (e) => (ui.edit.draft = e.target.value),
+                onclick: (e) => e.stopPropagation(),
+                onkeydown: (e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") handlers.saveEdit();
+                    if (e.key === "Escape") handlers.cancelEdit();
+                },
+            });
+        },
+
         div(
             { class: "result-actions" },
-            button(
-                {
-                    class: "result-action-btn monitor-btn",
-                    title: "Send to Monitor",
-                    onclick: handleMonitor,
-                },
-                Icons.Eye()
-            ),
-            span({ class: "result-copy-icon" }, () => (copyFeedback.val === "success" ? Icons.Check() : Icons.Copy()))
+            () => {
+                if (isEditing()) {
+                    return div(
+                        { style: "display:flex; gap:8px; align-items:center;" },
+                        button(
+                            {
+                                class: "result-action-btn save-btn",
+                                title: "Save",
+                                onclick: handleSave,
+                            },
+                            "\u2714"
+                        ),
+                        button(
+                            {
+                                class: "result-action-btn cancel-btn",
+                                title: "Cancel",
+                                onclick: handleCancel,
+                            },
+                            "\u2716"
+                        )
+                    );
+                }
+
+                return div(
+                    { style: "display:flex; gap:8px; align-items:center;" },
+                    button(
+                        {
+                            class: "result-action-btn edit-btn",
+                            title: "Edit value",
+                            onclick: handleStartEdit,
+                        },
+                        "\u270e"
+                    ),
+                    button(
+                        {
+                            class: "result-action-btn monitor-btn",
+                            title: "Enable Watcher",
+                            onclick: handleMonitor,
+                        },
+                        Icons.Eye()
+                    ),
+                    button(
+                        {
+                            class: () => "result-action-btn copy-btn " + (copyFeedback.val === "success" ? "copied" : ""),
+                            title: "Copy full access path",
+                            onclick: handleCopy,
+                        },
+                        () => (copyFeedback.val === "success" ? Icons.Check() : Icons.Copy())
+                    ),
+                    button(
+                        {
+                            class: () => "result-action-btn save-to-list-btn " + (isInSavedList() ? "active" : ""),
+                            title: () => (isInSavedList() ? "Already in saved list" : "Add to saved list"),
+                            onclick: handleAddToList,
+                            disabled: isInSavedList,
+                        },
+                        Icons.List()
+                    )
+                );
+            }
         )
     );
 };
-
 /**
  * Reusable search button component.
  */
-const SearchButton = ({ isSearching, disabled, onClick }) =>
+const SearchButton = ({
+    isSearching,
+    disabled,
+    onClick,
+    label = "SEARCH",
+    title = "",
+    className = "",
+    style = "",
+    icon = Icons.Search,
+}) =>
     button(
         {
-            class: () => `search-btn ${isSearching() ? "loading" : ""}`,
+            class: () => `search-btn ${className} ${isSearching() ? "loading" : ""}`.trim(),
             onclick: onClick,
             disabled: () => isSearching() || disabled(),
+            title,
+            style,
         },
-        () => (isSearching() ? "..." : "SEARCH"),
-        Icons.Search()
+        () => (isSearching() ? "..." : typeof label === "function" ? label() : label),
+        icon()
     );
 
 /**
@@ -117,8 +515,7 @@ const KeysSection = ({ ui, handlers }) =>
         ),
         div(
             { class: "keys-content scroll-container" },
-            // Favorites section
-            div({ class: "keys-group" }, div({ class: "keys-group-header" }, "★ FAVORITES"), () => {
+            div({ class: "keys-group" }, div({ class: "keys-group-header" }, "* FAVORITES"), () => {
                 if (ui.isLoading) {
                     return div({ class: "keys-loading" }, "Loading");
                 }
@@ -137,7 +534,6 @@ const KeysSection = ({ ui, handlers }) =>
                     )
                 );
             }),
-            // All keys expandable section
             details(
                 {
                     class: "keys-group expandable",
@@ -173,10 +569,7 @@ const KeysSection = ({ ui, handlers }) =>
                 )
             )
         ),
-        // Selected count
-        div({ class: "keys-footer" }, () =>
-            span({ class: "selected-count" }, `${ui.selectedKeys.length} keys selected`)
-        )
+        div({ class: "keys-footer" }, () => span({ class: "selected-count" }, `${ui.selectedKeys.length} keys selected`))
     );
 
 /**
@@ -185,74 +578,123 @@ const KeysSection = ({ ui, handlers }) =>
 const SearchInputSection = ({ ui, handlers }) =>
     div(
         { class: "search-input-section" },
-        div(
-            { class: "section-header" },
-            span({ class: "section-title" }, "SEARCH VALUE"),
-            button(
-                {
-                    class: () => `btn-small range-toggle ${ui.range.enabled ? "active" : ""}`,
-                    onclick: handlers.toggleRangeMode,
-                    title: "Toggle range search mode",
-                },
-                () => (ui.range.enabled ? "RANGE: ON" : "RANGE: OFF")
-            )
-        ),
+        div({ class: "section-header" }, span({ class: "section-title" }, "SEARCH VALUE")),
         div(
             { class: "search-input-content" },
+            div(
+                { class: "scan-type-row" },
+                div(
+                    { class: "scan-type-group" },
+                    span({ class: "type-label" }, "NEW SCAN TYPE"),
+                    select(
+                        {
+                            class: "scan-type-select",
+                            value: () => ui.scanTypeNew,
+                            onchange: handlers.handleNewScanTypeChange,
+                            disabled: () => ui.scanSessionActive,
+                        },
+                        ...NEW_SCAN_TYPES.map((scanType) => option({ value: scanType }, getScanTypeLabel(scanType)))
+                    )
+                ),
+                div(
+                    { class: "scan-type-group" },
+                    span({ class: "type-label" }, "NEXT SCAN TYPE"),
+                    select(
+                        {
+                            class: "scan-type-select",
+                            value: () => ui.scanTypeNext,
+                            onchange: handlers.handleNextScanTypeChange,
+                            disabled: () => !ui.scanSessionActive,
+                        },
+                        ...NEXT_SCAN_TYPES.map((scanType) => option({ value: scanType }, getScanTypeLabel(scanType)))
+                    )
+                )
+            ),
             () => {
-                if (ui.range.enabled) {
-                    return div(
-                        { class: "search-input-row range-row" },
-                        input({
-                            type: "text",
-                            class: "search-query-input range-input",
-                            placeholder: "MIN",
-                            value: () => ui.range.min,
-                            oninput: (e) => (ui.range.min = e.target.value),
-                            onkeydown: handlers.handleKeyDown,
-                        }),
-                        span({ class: "range-separator" }, "TO"),
-                        input({
-                            type: "text",
-                            class: "search-query-input range-input",
-                            placeholder: "MAX",
-                            value: () => ui.range.max,
-                            oninput: (e) => (ui.range.max = e.target.value),
-                            onkeydown: handlers.handleKeyDown,
+                const activeScanType = ui.scanSessionActive ? ui.scanTypeNext : ui.scanTypeNew;
+                const showPrimaryInput = !isInputlessScanType(activeScanType);
+                const showSecondaryInput = requiresSecondaryInput(activeScanType);
+
+                return div(
+                    { class: "search-input-row" },
+                    div(
+                        {
+                            class: () => `scan-value-inputs ${showSecondaryInput ? "has-secondary" : ""}`.trim(),
+                        },
+                        showPrimaryInput
+                            ? input({
+                                  type: "text",
+                                  class: "search-query-input",
+                                  placeholder: handlers.getPrimaryPlaceholder(activeScanType),
+                                  value: () => ui.searchQuery,
+                                  oninput: handlers.handleQueryInput,
+                                  onkeydown: handlers.handleKeyDown,
+                              })
+                            : div(
+                                  { class: "scan-inputless-note" },
+                                  "No input needed for " + getScanTypeLabel(activeScanType).toUpperCase()
+                              ),
+                        showSecondaryInput
+                            ? input({
+                                  type: "text",
+                                  class: "search-query-input secondary-query-input",
+                                  placeholder: "SECOND VALUE",
+                                  value: () => ui.searchQuery2,
+                                  oninput: handlers.handleQuery2Input,
+                                  onkeydown: handlers.handleKeyDown,
+                              })
+                            : null
+                    ),
+                    div(
+                        { class: "search-btn-group" },
+                        SearchButton({
+                            isSearching: () => ui.isSearching,
+                            disabled: () => (ui.scanSessionActive ? false : ui.selectedKeys.length === 0),
+                            onClick: () => (ui.scanSessionActive ? handlers.startNewScan() : handlers.handleSearch("new")),
+                            label: () => (ui.scanSessionActive ? "NEW SCAN" : "FIRST"),
+                            title: () => (ui.scanSessionActive ? "Reset and prepare a fresh first scan" : "First scan (search all selected keys)"),
+                            icon: () => (ui.scanSessionActive ? Icons.Refresh() : Icons.Search()),
                         }),
                         SearchButton({
                             isSearching: () => ui.isSearching,
-                            disabled: () => ui.selectedKeys.length === 0,
-                            onClick: handlers.handleSearch,
+                            disabled: () => !ui.scanSessionActive || ui.scopePaths.length === 0,
+                            onClick: () => handlers.handleSearch("next"),
+                            label: "NEXT",
+                            className: "secondary next-search-btn",
+                            title: () =>
+                                ui.scopePaths.length
+                                    ? `Next search (search inside ${ui.scopePaths.length} current results)`
+                                    : "Next search (run a new search first)",
+                            icon: Icons.ChevronRight,
                         })
-                    );
-                }
-                return div(
-                    { class: "search-input-row" },
-                    input({
-                        type: "text",
-                        class: "search-query-input",
-                        placeholder: "SEARCH_VALUE",
-                        value: () => ui.searchQuery,
-                        oninput: handlers.handleQueryInput,
-                        onkeydown: handlers.handleKeyDown,
-                    }),
-                    SearchButton({
-                        isSearching: () => ui.isSearching,
-                        disabled: () => ui.selectedKeys.length === 0,
-                        onClick: handlers.handleSearch,
-                    })
+                    )
                 );
             },
             div({ class: "search-type-hint" }, () => {
-                if (ui.range.enabled) {
-                    return span({ class: "type-label" }, "MODE: NUMBER RANGE (MIN ≤ VALUE ≤ MAX)");
+                const activeScanType = ui.scanSessionActive ? ui.scanTypeNext : ui.scanTypeNew;
+
+                if (isInputlessScanType(activeScanType)) {
+                    const suffix =
+                        activeScanType === "changed_value" || activeScanType === "unchanged_value"
+                            ? "(COMPARES AGAINST PREVIOUS RESULT LIST)"
+                            : "(NUMBERS ONLY; COMPARES AGAINST PREVIOUS RESULT LIST)";
+
+                    return span({ class: "type-label" }, "MODE: " + getScanTypeLabel(activeScanType).toUpperCase() + " " + suffix);
                 }
+
+                if (activeScanType !== "exact_value") {
+                    return span(
+                        { class: "type-label" },
+                        "MODE: " + getScanTypeLabel(activeScanType).toUpperCase() + " (NUMBERS ONLY; STRINGS ARE IGNORED)"
+                    );
+                }
+
                 return span(
                     span({ class: "type-label" }, "DETECTED TYPE: "),
                     span({ class: () => `type-value type-${ui.detectedType}` }, () => ui.detectedType.toUpperCase())
                 );
-            })
+            }),
+
         )
     );
 
@@ -265,23 +707,23 @@ const ResultsSection = ({ ui, handlers }) =>
         div(
             { class: "section-header" },
             span({ class: "section-title" }, "RESULTS"),
-            () => {
-                if (ui.totalCount > 0) {
-                    return span(
-                        { class: "results-count" },
-                        `FOUND ${ui.totalCount} MATCH${ui.totalCount === 1 ? "" : "ES"}`
-                    );
-                }
-                return null;
-            },
             button(
                 {
                     class: "btn-icon refresh-btn",
-                    onclick: handlers.handleSearch,
-                    disabled: () => ui.isSearching || !handlers.hasValidQuery(),
-                    title: "Refresh search",
+                    onclick: () => handlers.handleSearch(ui.lastSearchMode),
+                    disabled: () =>
+                        ui.isSearching ||
+                        !ui.hasSearched ||
+                        (ui.lastSearchMode === "next"
+                            ? ui.scopePaths.length === 0
+                            : ui.selectedKeys.length === 0),
+                    title: () => (ui.lastSearchMode === "next" ? "Refresh NEXT search" : "Refresh NEW search"),
                 },
                 Icons.Refresh()
+            ),
+            span(
+                { class: "results-scope-badge" },
+                () => `${ui.scopePaths.length} RESULT${ui.scopePaths.length === 1 ? "" : "S"}`
             )
         ),
         div({ class: "results-content scroll-container" }, () => {
@@ -298,7 +740,7 @@ const ResultsSection = ({ ui, handlers }) =>
             }
 
             if (ui.results.length === 0) {
-                if (handlers.hasValidQuery()) {
+                if (ui.hasSearched) {
                     return EmptyState({
                         icon: Icons.SearchX(),
                         title: "NO RESULTS",
@@ -308,7 +750,7 @@ const ResultsSection = ({ ui, handlers }) =>
                 return EmptyState({
                     icon: Icons.Search(),
                     title: "SEARCH GGA",
-                    subtitle: "Enter a value and click Search to find where it's stored",
+                    subtitle: "Enter a value and click Search to find where it's stored (empty = show all)",
                 });
             }
 
@@ -318,7 +760,7 @@ const ResultsSection = ({ ui, handlers }) =>
 
             return div(
                 { class: "results-list" },
-                ...visibleResults.map((result) => ResultItem({ result })),
+                ...visibleResults.map((result) => ResultItem({ result, ui, handlers })),
                 hasMore
                     ? button(
                           {
@@ -332,14 +774,273 @@ const ResultsSection = ({ ui, handlers }) =>
         })
     );
 
+/**
+ * Saved result item component.
+ */
+const SavedResultItem = ({ entry, ui, handlers }) => {
+    const copyFeedback = van.state(null);
+
+    const isEditing = () => ui.savedEdit.path === entry.path;
+
+    const handleCopy = (e) => {
+        e.stopPropagation();
+        const success = copyToClipboard('bEngine.gameAttributes.h.' + entry.path);
+        copyFeedback.val = success ? 'success' : 'error';
+        store.notify(success ? 'Path copied to clipboard' : 'Failed to copy', success ? 'success' : 'error');
+        setTimeout(() => (copyFeedback.val = null), 1500);
+    };
+
+    const monitorPath = () => monitorPathForSearchResult(entry.path);
+    const monitorData = () => resolveMonitorEntry(monitorPath()).entry;
+    const isMonitorEnabled = () => entry.monitorEnabled === true;
+    const isMonitored = () => isMonitorEnabled() && !!monitorData();
+    const liveMonitorHistory = () => (isMonitorEnabled() ? getMonitorHistory(monitorData()) : []);
+    const cachedMonitorHistory = () => (Array.isArray(entry.lastHistory) ? entry.lastHistory : []);
+    const monitorHistory = () => {
+        if (!isMonitorEnabled()) return [];
+
+        const liveHistory = liveMonitorHistory();
+        if (liveHistory.length > 0) return liveHistory;
+
+        return cachedMonitorHistory();
+    };
+    const hasLiveValue = () => liveMonitorHistory().length > 0;
+    const liveRawValue = () => getMonitorCurrentValue(monitorData());
+    const hasCachedLive = () =>
+        Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw") ||
+        Object.prototype.hasOwnProperty.call(entry, "lastLiveFormatted");
+    const cachedLiveDisplayValue = () => entry.lastLiveFormatted ?? entry.formattedValue;
+    const liveDisplayValue = () => {
+        if (hasLiveValue()) return formatMonitorValue(liveRawValue());
+        return cachedLiveDisplayValue();
+    };
+    const liveStatusClass = () => {
+        if (isMonitorEnabled()) return hasLiveValue() ? "live-active" : "live-pending";
+        return hasCachedLive() ? "live-paused" : "live-idle";
+    };
+
+    const handleMonitor = (e) => {
+        e.stopPropagation();
+        handlers.toggleSavedMonitor(entry.path, !isMonitorEnabled());
+    };
+
+    const handleStartEdit = (e) => {
+        e.stopPropagation();
+        handlers.startSavedEdit(entry);
+    };
+
+    const handleCancel = (e) => {
+        e.stopPropagation();
+        handlers.cancelSavedEdit();
+    };
+
+    const handleSave = (e) => {
+        e.stopPropagation();
+        handlers.saveSavedEdit();
+    };
+
+    const handleRemove = (e) => {
+        e.stopPropagation();
+        handlers.removeSavedResult(entry.path);
+    };
+
+    return div(
+        {
+            class: () =>
+                "search-result-item saved-result-item " +
+                (isMonitorEnabled() ? "monitor-enabled " : "") +
+                (isMonitored() ? "monitored " : "") +
+                (copyFeedback.val === "success" ? "copied" : ""),
+        },
+        span({ class: 'result-path' }, entry.path),
+        span({ class: 'result-equals' }, '='),
+
+        () => {
+            if (!isEditing()) {
+                return div(
+                    { class: "saved-result-body" },
+                    div(
+                        { class: "saved-live-wrap" },
+                        span(
+                            {
+                                class: () => "result-value saved-live-value " + liveStatusClass(),
+                            },
+                            liveDisplayValue
+                        )
+                    ),
+                    div(
+                        { class: "saved-history" },
+                        () => {
+                            const history = monitorHistory();
+
+                            if (!isMonitorEnabled() || history.length === 0) {
+                                return null;
+                            }
+
+                            if (canGraph(history)) {
+                                return div({ class: "saved-history-content" }, Sparkline({ data: history, width: 136, height: 26 }));
+                            }
+
+                            return div(
+                                { class: "saved-history-list" },
+                                ...history.slice(0, 10).map((h) =>
+                                    span(
+                                        {
+                                            class: "saved-history-item",
+                                            title: new Date(h.ts).toLocaleTimeString(),
+                                        },
+                                        formatMonitorValue(h.value)
+                                    )
+                                )
+                            );
+
+                        }
+                    )
+                );
+            }
+
+            return input({
+                class: 'result-edit-input',
+                value: () => ui.savedEdit.draft,
+                oninput: (e) => (ui.savedEdit.draft = e.target.value),
+                onclick: (e) => e.stopPropagation(),
+                onkeydown: (e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') handlers.saveSavedEdit();
+                    if (e.key === 'Escape') handlers.cancelSavedEdit();
+                },
+            });
+        },
+
+        div(
+            { class: 'result-actions' },
+            () => {
+                if (isEditing()) {
+                    return div(
+                        { style: 'display:flex; gap:8px; align-items:center;' },
+                        button(
+                            {
+                                class: 'result-action-btn save-btn',
+                                title: 'Save',
+                                onclick: handleSave,
+                            },
+                            "SAVE"
+                        ),
+                        button(
+                            {
+                                class: 'result-action-btn cancel-btn',
+                                title: 'Cancel',
+                                onclick: handleCancel,
+                            },
+                            "CANCEL"
+                        )
+                    );
+                }
+
+                return div(
+                    { style: 'display:flex; gap:8px; align-items:center;' },
+                    button(
+                        {
+                            class: 'result-action-btn edit-btn',
+                            title: 'Edit value',
+                            onclick: handleStartEdit,
+                        },
+                        "EDIT"
+                    ),
+                    button(
+                        {
+                            class: () => "result-action-btn monitor-btn " + (isMonitorEnabled() ? "active" : ""),
+                            title: () => (isMonitorEnabled() ? "Stop Watcher" : "Enable Watcher"),
+                            onclick: handleMonitor,
+                        },
+                        Icons.Eye()
+                    ),
+                    button(
+                        {
+                            class: () => 'result-action-btn copy-btn ' + (copyFeedback.val === 'success' ? 'copied' : ''),
+                            title: 'Copy full access path',
+                            onclick: handleCopy,
+                        },
+                        () => (copyFeedback.val === 'success' ? Icons.Check() : Icons.Copy())
+                    ),
+                    button(
+                        {
+                            class: 'result-action-btn remove-btn',
+                            title: 'Remove from saved list',
+                            onclick: handleRemove,
+                        },
+                        Icons.X()
+                    )
+                );
+            }
+        )
+    );
+};
+
+/**
+ * Saved results section (bottom list).
+ */
+const SavedResultsSection = ({ ui, handlers }) =>
+    div(
+        { class: 'saved-results-section' },
+        div(
+            { class: 'section-header' },
+            span({ class: 'section-title' }, 'SAVED LIST'),
+            button(
+                {
+                    class: 'btn-icon refresh-btn',
+                    onclick: handlers.refreshSavedResults,
+                    disabled: () => ui.isRefreshingSavedResults || ui.savedResults.length === 0,
+                    title: 'Refresh saved values',
+                },
+                Icons.Refresh()
+            ),
+            () =>
+                ui.savedResults.length
+                    ? span(
+                          { class: 'results-count' },
+                          ui.savedResults.length + ' ITEM' + (ui.savedResults.length === 1 ? '' : 'S')
+                      )
+                    : null,
+            div(
+                { class: 'section-actions' },
+                button(
+                    {
+                        class: 'btn-small',
+                        onclick: handlers.clearSavedResults,
+                        disabled: () => ui.savedResults.length === 0,
+                        title: 'Clear saved list',
+                    },
+                    'CLEAR'
+                )
+            )
+        ),
+        div({ class: 'saved-results-content scroll-container' }, () => {
+            if (ui.savedResults.length === 0) {
+                return EmptyState({
+                    icon: Icons.List(),
+                    title: 'NO SAVED RESULTS',
+                    subtitle: 'Use the list button on a search result to pin it here',
+                });
+            }
+
+            return div(
+                { class: 'saved-results-list' },
+                ...ui.savedResults.map((entry) => SavedResultItem({ entry, ui, handlers }))
+            );
+        })
+    );
 export const Search = () => {
-    // Consolidated state
     const ui = vanX.reactive({
         allKeys: [],
         selectedKeys: [],
         searchQuery: "",
-        range: { enabled: false, min: "", max: "" },
+        searchQuery2: "",
         detectedType: "empty",
+        scanTypeNew: "exact_value",
+        scanTypeNext: "exact_value",
+        scanSessionActive: false,
+        previousSnapshot: {},
         isLoading: false,
         isSearching: false,
         results: [],
@@ -348,9 +1049,22 @@ export const Search = () => {
         error: null,
         allKeysExpanded: false,
         allKeysFilter: "",
+        scopePaths: [],
+        lastSearchMode: "new",
+
+        // inline edit state
+        edit: { path: null, draft: "", type: "" },
+        isSettingValue: false,
+
+        // NEW: track if user already ran a search at least once
+        hasSearched: false,
+
+        // saved list state
+        savedResults: [],
+        savedEdit: { path: null, draft: "", type: "" },
+        isRefreshingSavedResults: false,
     });
 
-    // Derived values
     const getValidFavorites = () => FAVORITE_KEYS.filter((k) => ui.allKeys.includes(k));
 
     const getOtherKeys = () => {
@@ -365,9 +1079,6 @@ export const Search = () => {
 
     const areAllSelected = () => ui.allKeys.length > 0 && ui.selectedKeys.length === ui.allKeys.length;
 
-    const hasValidQuery = () => (ui.range.enabled ? ui.range.min.trim() && ui.range.max.trim() : ui.searchQuery.trim());
-
-    // Generic key selection handler
     const updateSelection = (keys, select) => {
         if (select) {
             const newKeys = new Set(ui.selectedKeys);
@@ -379,35 +1090,78 @@ export const Search = () => {
         }
     };
 
-    // Handlers
+    const updateValueInUi = (path, payload) => {
+        const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
+
+        ui.results = ui.results.map((r) =>
+            r.path === path
+                ? {
+                      ...r,
+                      formattedValue: payload.formattedValue ?? r.formattedValue,
+                      type: payload.type ?? r.type,
+                      ...(hasPayloadValue ? { value: payload.value } : {}),
+                  }
+                : r
+        );
+
+        ui.savedResults = ui.savedResults.map((entry) => {
+            if (entry.path !== path) return entry;
+
+            const nextEntry = {
+                ...entry,
+                formattedValue: payload.formattedValue ?? entry.formattedValue,
+                type: payload.type ?? entry.type,
+                ...(hasPayloadValue ? { value: payload.value } : {}),
+            };
+
+            nextEntry.lastLiveRaw = hasPayloadValue ? payload.value : nextEntry.lastLiveRaw;
+            nextEntry.lastLiveFormatted =
+                payload.formattedValue ?? nextEntry.lastLiveFormatted ?? nextEntry.formattedValue;
+            nextEntry.lastLiveType = payload.type ?? nextEntry.lastLiveType ?? nextEntry.type;
+
+            return nextEntry;
+        });
+    };
+
     const handlers = {
         getValidFavorites,
         getOtherKeys,
         areAllSelected,
-        hasValidQuery,
 
         handleKeyChange: (keyName, isChecked) => updateSelection([keyName], isChecked),
 
         toggleAll: () => {
-            if (areAllSelected()) {
-                ui.selectedKeys = [];
-            } else {
-                ui.selectedKeys = [...ui.allKeys];
-            }
+            if (areAllSelected()) ui.selectedKeys = [];
+            else ui.selectedKeys = [...ui.allKeys];
         },
 
         selectKeys: (keys) => updateSelection(keys, true),
         clearSelection: () => (ui.selectedKeys = []),
 
-        toggleRangeMode: () => {
-            ui.range.enabled = !ui.range.enabled;
-            if (ui.range.enabled) {
-                ui.searchQuery = "";
-                ui.detectedType = "empty";
-            } else {
-                ui.range.min = "";
-                ui.range.max = "";
-            }
+        startNewScan: () => {
+            ui.scanSessionActive = false;
+            ui.lastSearchMode = "new";
+            ui.scopePaths = [];
+            ui.previousSnapshot = {};
+            ui.results = [];
+            ui.totalCount = 0;
+            ui.displayLimit = 50;
+            ui.error = null;
+            ui.hasSearched = false;
+            ui.searchQuery = "";
+            ui.searchQuery2 = "";
+            ui.detectedType = "empty";
+            handlers.cancelEdit();
+            handlers.cancelSavedEdit();
+            store.notify("Scan reset. Ready for first scan.", "success");
+        },
+
+        handleNewScanTypeChange: (e) => {
+            ui.scanTypeNew = e.target.value;
+        },
+
+        handleNextScanTypeChange: (e) => {
+            ui.scanTypeNext = e.target.value;
         },
 
         handleQueryInput: (e) => {
@@ -415,56 +1169,374 @@ export const Search = () => {
             ui.detectedType = detectQueryType(e.target.value);
         },
 
-        handleKeyDown: (e) => {
-            if (e.key === "Enter") handlers.handleSearch();
+        handleQuery2Input: (e) => {
+            ui.searchQuery2 = e.target.value;
         },
 
-        handleSearch: async () => {
-            if (ui.selectedKeys.length === 0) {
+        getPrimaryPlaceholder: (scanType) => {
+            switch (scanType) {
+                case "bigger_than":
+                    return "BIGGER THAN";
+                case "smaller_than":
+                    return "SMALLER THAN";
+                case "value_between":
+                    return "MIN VALUE";
+                case "increased_value_by":
+                    return "INCREASED BY";
+                case "decreased_value_by":
+                    return "DECREASED BY";
+                default:
+                    return "VALUE";
+            }
+        },
+
+        handleKeyDown: (e) => {
+            if (e.key === "Enter") handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
+        },
+
+        addToSavedResults: (result) => {
+            if (!result?.path) return;
+
+            if (ui.savedResults.some((entry) => entry.path === result.path)) {
+                store.notify("Already in saved list");
+                return;
+            }
+
+            const monitorPath = monitorPathForSearchResult(result.path);
+            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const initialHistory = getMonitorHistory(resolvedMonitor.entry).slice(0, 10);
+
+            ui.savedResults = [
+                ...ui.savedResults,
+                {
+                    path: result.path,
+                    formattedValue: result.formattedValue,
+                    value: getResultValue(result),
+                    type: result.type,
+                    lastLiveRaw: getResultValue(result),
+                    lastLiveFormatted: result.formattedValue,
+                    lastLiveType: result.type,
+                    lastHistory: initialHistory,
+                    monitorEnabled: true,
+                },
+            ];
+
+            store.subscribeMonitor(monitorPath);
+
+            store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
+        },
+
+        toggleSavedMonitor: (path, enabled) => {
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const currentHistory = getMonitorHistory(resolvedMonitor.entry);
+            const hasCurrentLive = currentHistory.length > 0;
+            const currentLiveRaw = hasCurrentLive ? currentHistory[0].value : undefined;
+
+            ui.savedResults = ui.savedResults.map((entry) => {
+                if (entry.path !== path) return entry;
+
+                const nextEntry = {
+                    ...entry,
+                    monitorEnabled: enabled,
+                };
+
+                if (!enabled && hasCurrentLive) {
+                    nextEntry.lastLiveRaw = currentLiveRaw;
+                    nextEntry.lastLiveFormatted = formatMonitorValue(currentLiveRaw);
+                    nextEntry.lastLiveType = getUiTypeFromRawValue(currentLiveRaw, entry.type);
+                }
+
+                if (!enabled && currentHistory.length > 0) {
+                    nextEntry.lastHistory = currentHistory.slice(0, 10);
+                }
+
+                return nextEntry;
+            });
+
+            if (enabled) {
+                store.subscribeMonitor(monitorPath);
+                store.notify("Enabled watcher for " + path);
+                return;
+            }
+
+            store.unsubscribeMonitor(resolvedMonitor.id);
+            store.notify("Stopped watcher for " + path);
+        },
+
+        removeSavedResult: (path) => {
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            store.unsubscribeMonitor(resolvedMonitor.id);
+
+            ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
+            if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
+            store.notify(`Removed ${path} from saved list`);
+        },
+
+        clearSavedResults: () => {
+            if (ui.savedResults.length === 0) return;
+
+            for (const entry of ui.savedResults) {
+                const monitorPath = monitorPathForSearchResult(entry.path);
+                const resolvedMonitor = resolveMonitorEntry(monitorPath);
+                store.unsubscribeMonitor(resolvedMonitor.id);
+            }
+
+            ui.savedResults = [];
+            handlers.cancelSavedEdit();
+            store.notify("Saved list cleared");
+        },
+
+        refreshSavedResults: async () => {
+            if (ui.savedResults.length === 0) return;
+
+            const withinPaths = ui.savedResults.map((entry) => entry.path);
+
+            try {
+                ui.isRefreshingSavedResults = true;
+
+                const data = await API.searchGga("", ui.selectedKeys, { withinPaths });
+                const nextByPath = new Map((data.results || []).map((entry) => [entry.path, entry]));
+
+                ui.savedResults = ui.savedResults.map((entry) => {
+                    const next = nextByPath.get(entry.path);
+                    if (!next) return entry;
+
+                    const nextValue = getResultValue(next);
+                    const nextType = next.type ?? entry.type;
+                    const nextFormatted = next.formattedValue ?? entry.formattedValue;
+
+                    return {
+                        ...entry,
+                        formattedValue: nextFormatted,
+                        value: nextValue,
+                        type: nextType,
+                        lastLiveRaw: nextValue,
+                        lastLiveFormatted: nextFormatted,
+                        lastLiveType: nextType,
+                    };
+                });
+
+                store.notify("Saved list refreshed", "success");
+            } catch (e) {
+                store.notify(e?.message || "Failed to refresh saved list", "error");
+            } finally {
+                ui.isRefreshingSavedResults = false;
+            }
+        },
+
+        startSavedEdit: (entry) => {
+            handlers.cancelEdit();
+            ui.savedEdit.path = entry.path;
+
+            const monitorPath = monitorPathForSearchResult(entry.path);
+            const resolvedMonitor = resolveMonitorEntry(monitorPath);
+            const liveHistory = getMonitorHistory(resolvedMonitor.entry);
+
+            if (entry.monitorEnabled && liveHistory.length > 0) {
+                const liveRaw = liveHistory[0].value;
+                ui.savedEdit.draft = getDraftFromRawValue(liveRaw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(liveRaw, expectedUiType(entry));
+                return;
+            }
+
+            const hasCachedLive = Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw");
+            if (hasCachedLive) {
+                const raw = entry.lastLiveRaw;
+                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(raw, entry.lastLiveType ?? expectedUiType(entry));
+                return;
+            }
+
+            const hasStoredValue = Object.prototype.hasOwnProperty.call(entry, "value") || entry.type === "undefined";
+            if (hasStoredValue) {
+                const raw = entry.type === "undefined" ? undefined : entry.value;
+                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(raw, expectedUiType(entry));
+                return;
+            }
+
+            ui.savedEdit.draft = seedEditValue(entry);
+            ui.savedEdit.type = expectedUiType(entry);
+        },
+
+        cancelSavedEdit: () => {
+            ui.savedEdit.path = null;
+            ui.savedEdit.draft = "";
+            ui.savedEdit.type = "";
+        },
+
+        saveSavedEdit: async () => {
+            if (!ui.savedEdit.path) return;
+
+            const type = ui.savedEdit.type;
+            const raw = ui.savedEdit.draft;
+            const validation = validateEditDraft(type, raw);
+
+            if (!validation.ok) {
+                store.notify(validation.error, "error");
+                return;
+            }
+
+            try {
+                ui.isSettingValue = true;
+                const resp = await API.setGgaValue(ui.savedEdit.path, validation.valueToSend);
+                updateValueInUi(ui.savedEdit.path, resp);
+                store.notify(`Updated ${ui.savedEdit.path}`, "success");
+                handlers.cancelSavedEdit();
+            } catch (e) {
+                store.notify(e?.message || "Failed to update value", "error");
+            } finally {
+                ui.isSettingValue = false;
+            }
+        },
+
+        startEdit: (result) => {
+            handlers.cancelSavedEdit();
+            ui.edit.path = result.path;
+            ui.edit.draft = seedEditValue(result);
+            ui.edit.type = expectedUiType(result);
+        },
+
+        cancelEdit: () => {
+            ui.edit.path = null;
+            ui.edit.draft = "";
+            ui.edit.type = "";
+        },
+
+        saveEdit: async () => {
+            if (!ui.edit.path) return;
+
+            const type = ui.edit.type;
+            const raw = ui.edit.draft;
+            const validation = validateEditDraft(type, raw);
+
+            if (!validation.ok) {
+                store.notify(validation.error, "error");
+                return;
+            }
+
+            try {
+                ui.isSettingValue = true;
+                const resp = await API.setGgaValue(ui.edit.path, validation.valueToSend);
+                updateValueInUi(ui.edit.path, resp);
+
+                store.notify(`Updated ${ui.edit.path}`, "success");
+                handlers.cancelEdit();
+            } catch (e) {
+                store.notify(e?.message || "Failed to update value", "error");
+            } finally {
+                ui.isSettingValue = false;
+            }
+        },
+
+        handleSearch: async (mode = "new") => {
+            handlers.cancelEdit();
+            handlers.cancelSavedEdit();
+
+            const isNext = mode === "next";
+            const scanType = isNext ? ui.scanTypeNext : ui.scanTypeNew;
+            const allowedScanTypes = isNext ? NEXT_SCAN_TYPES : NEW_SCAN_TYPES;
+
+            if (!allowedScanTypes.includes(scanType)) {
+                store.notify(
+                    isNext
+                        ? "This scan type is only available for NEW scans"
+                        : "This scan type is only available for NEXT scans",
+                    "error"
+                );
+                return;
+            }
+
+            if (isNext) {
+                if (!ui.scopePaths || ui.scopePaths.length === 0) {
+                    store.notify("Run a NEW search first to build a list for NEXT search", "error");
+                    return;
+                }
+            } else if (ui.selectedKeys.length === 0) {
                 store.notify("Select at least one key to search in", "error");
                 return;
             }
 
-            let query;
-            if (ui.range.enabled) {
-                const min = ui.range.min.trim();
-                const max = ui.range.max.trim();
-                if (!min || !max) {
-                    store.notify("Enter both min and max values for range search", "error");
+            const query = String(ui.searchQuery ?? "");
+            const queryTrimmed = query.trim();
+            const query2 = String(ui.searchQuery2 ?? "");
+            const query2Trimmed = query2.trim();
+            const inputless = isInputlessScanType(scanType);
+            const hasSecondaryInput = requiresSecondaryInput(scanType);
+
+            if (!inputless && scanType !== "exact_value" && queryTrimmed === "") {
+                store.notify("Enter a value for this scan type", "error");
+                return;
+            }
+
+            if ((scanType === "bigger_than" || scanType === "smaller_than" || scanType === "increased_value_by" || scanType === "decreased_value_by") && (queryTrimmed === "" || Number.isNaN(Number(queryTrimmed)))) {
+                store.notify("This scan type requires a numeric value", "error");
+                return;
+            }
+
+            if (hasSecondaryInput) {
+                if (queryTrimmed === "" || query2Trimmed === "") {
+                    store.notify("Enter both values for VALUE BETWEEN", "error");
                     return;
                 }
-                if (isNaN(Number(min)) || isNaN(Number(max))) {
-                    store.notify("Range values must be numbers", "error");
-                    return;
-                }
-                query = `${min}-${max}`;
-            } else {
-                query = ui.searchQuery.trim();
-                if (!query) {
-                    store.notify("Enter a search value", "error");
+
+                if (Number.isNaN(Number(queryTrimmed)) || Number.isNaN(Number(query2Trimmed))) {
+                    store.notify("VALUE BETWEEN requires numeric bounds", "error");
                     return;
                 }
             }
 
+            if (isNext && needsPreviousSnapshot(scanType) && Object.keys(ui.previousSnapshot || {}).length === 0) {
+                store.notify("This NEXT scan type needs a previous result baseline", "error");
+                return;
+            }
+
+            ui.hasSearched = true;
             ui.isSearching = true;
             ui.error = null;
             ui.displayLimit = 50;
+            ui.lastSearchMode = mode;
+
+            const requestOptions = isNext ? { withinPaths: [...ui.scopePaths] } : null;
 
             try {
-                const data = await API.searchGga(query, ui.selectedKeys);
-                ui.results = data.results || [];
-                ui.totalCount = data.totalCount || 0;
+                const baseData =
+                    scanType === "exact_value"
+                        ? isNext
+                            ? await API.searchGga(query, ui.selectedKeys, requestOptions)
+                            : await API.searchGga(query, ui.selectedKeys)
+                        : isNext
+                          ? await API.searchGga("", ui.selectedKeys, requestOptions)
+                          : await API.searchGga("", ui.selectedKeys);
+
+                const filteredResults =
+                    scanType === "exact_value"
+                        ? baseData.results || []
+                        : filterResultsByScanType(baseData.results || [], {
+                              scanType,
+                              query: inputless ? "" : query,
+                              query2: hasSecondaryInput ? query2 : "",
+                              previousSnapshot: ui.previousSnapshot,
+                          });
+
+                ui.results = filteredResults;
+                ui.totalCount = filteredResults.length;
+                ui.scopePaths = filteredResults.map((r) => r.path);
+                ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
+                ui.scanSessionActive = true;
             } catch (err) {
                 ui.error = err.message || "Search failed";
                 ui.results = [];
                 ui.totalCount = 0;
+                ui.scopePaths = [];
             } finally {
                 ui.isSearching = false;
             }
         },
     };
 
-    // Load keys on mount
     (async () => {
         ui.isLoading = true;
         ui.error = null;
@@ -488,7 +1560,8 @@ export const Search = () => {
             div(
                 { class: "search-right-column" },
                 SearchInputSection({ ui, handlers }),
-                ResultsSection({ ui, handlers })
+                ResultsSection({ ui, handlers }),
+                SavedResultsSection({ ui, handlers })
             )
         )
     );

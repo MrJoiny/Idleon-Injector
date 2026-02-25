@@ -140,6 +140,29 @@ export const blacklist_gga = new Set([
     // "DialogueDefGET",
     "MapMonstersList",
     "dummyActor",
+    "DummyList",
+    "DummyList2",
+    "DummyList3",
+    "DummyListDMGpixel",
+    "DummyMap",
+    "DummyMap2",
+    "DummyNumber",
+    "DummyNumber2",
+    "DummyNumber3",
+    "DummyNumber4",
+    "DummyNumber5",
+    "DummyNumberSafe",
+    "DummyPixelType",
+    "DummyText",
+    "DummyText2",
+    "DummyText3",
+    "dummyCritDmgMulti",
+    "dummyDamageDealt",
+    "dummyDisplayEXPTYPE",
+    "dummyDisplayPopup",
+    "dummyMonsterID",
+    "dummyMonsterNODE",
+    "dummyMonsterTYPE",
 ]);
 
 // Known gem shop bundles: [displayName, bundleCode]
@@ -192,9 +215,8 @@ export const knownBundles = [
 
 // Item types to exclude from bulk commands (invalid or problematic types)
 export const bulkTypeBlacklist = new Set(["Bits", "SAIL_TREASURE", "SPICE", "WHAT", "BOX", "UNKNOWN", "ERROR"]);
-
 // Commands that stay executable, but should not be suggested as bare commands.
-// They have richer suggestion variants like "buy <code>" or "lvl <skill>".
+// They have richer suggestion variants like buy/code or lvl/skill forms.
 export const HIDE_BARE_COMMANDS = new Set([
     "buy",
     "drop",

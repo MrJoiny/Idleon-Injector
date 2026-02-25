@@ -149,11 +149,26 @@ async function handleMonitorSubscribe(id, path) {
             return;
         }
 
-        if (result.result.value && result.result.value.success) {
+        const payload = result.result.value || {};
+
+        if (payload.success) {
             // State already exists, just broadcast
             broadcastMonitorState();
-        } else if (result.result.value && result.result.value.error) {
-            log.error(`Monitor subscribe error for ${id}:`, result.result.value.error);
+        } else if (payload.error) {
+            const errorText = String(payload.error);
+
+            if (errorText.includes("Already watching this ID")) {
+                const existing = monitorState.get(id);
+                if (existing) {
+                    existing.path = path;
+                } else {
+                    monitorState.set(id, { path, history: [] });
+                }
+                broadcastMonitorState();
+                return;
+            }
+
+            log.error(`Monitor subscribe error for ${id}:`, payload.error);
             monitorState.delete(id);
         }
     } catch (err) {

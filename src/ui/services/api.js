@@ -114,10 +114,43 @@ export async function fetchGgaKeys() {
     return data.keys || [];
 }
 
-export async function searchGga(query, keys) {
+/**
+ * Search GGA values.
+ * - NEW search: searchGga(query, keys)
+ * - NEXT search: searchGga(query, keys, { withinPaths: [...] })
+ * - Extra options: scanType, query2, previousSnapshot
+ */
+export async function searchGga(query, keys, options = null) {
+    const body = { query, keys };
+
+    const withinPaths = options && Array.isArray(options.withinPaths) ? options.withinPaths : null;
+    const scanType = options && typeof options.scanType === "string" ? options.scanType : null;
+    const query2 = options && typeof options.query2 === "string" ? options.query2 : null;
+    const previousSnapshot =
+        options && options.previousSnapshot && typeof options.previousSnapshot === "object"
+            ? options.previousSnapshot
+            : null;
+
+    if (withinPaths && withinPaths.length) body.withinPaths = withinPaths;
+    if (scanType) body.scanType = scanType;
+    if (query2 !== null) body.query2 = query2;
+    if (previousSnapshot) body.previousSnapshot = previousSnapshot;
+
     return _request("/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, keys }),
+        body: JSON.stringify(body),
+    });
+}
+
+/**
+ * Type-safe set of a found path.
+ * value is sent as a STRING; backend enforces type based on current value type in-game.
+ */
+export async function setGgaValue(path, value) {
+    return _request("/search/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, value }),
     });
 }

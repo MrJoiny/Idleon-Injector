@@ -4,15 +4,17 @@ import { webPort } from "./state.js";
 /**
  * Value Monitor Module
  *
- * Intercepts sets to arbitrary game values and broadcasts them via WebSocket.
+ * Polls arbitrary game values and broadcasts updates via WebSocket.
  */
 class ValueMonitor {
     constructor() {
-        /** @type {Map<string, { target: object, prop: string, original: PropertyDescriptor, path: string }>} */
+        /** @type {Map<string, { path: string, hasLastValue: boolean, lastComparable: string }>} */
         this.watchers = new Map();
         this.ws = null;
         this.lastUpdates = new Map(); // For throttling
         this.throttleMs = 50;
+        this.pollMs = 120;
+        this.pollTimer = null;
     }
 
     /**
@@ -26,6 +28,8 @@ class ValueMonitor {
         this.ws.onopen = () => {
             console.log("[ValueMonitor] Connected to server");
             this.ws.send(JSON.stringify({ type: "identify", clientType: "game" }));
+            this.flushWatchers();
+            this.ensurePolling();
         };
 
         this.ws.onclose = () => {
@@ -38,6 +42,21 @@ class ValueMonitor {
         this.ws.onerror = (err) => {
             console.error("[ValueMonitor] WS error:", err);
         };
+    }
+
+    ensurePolling() {
+        if (this.pollTimer) return;
+
+        this.pollTimer = setInterval(() => {
+            this.pollWatchers();
+        }, this.pollMs);
+    }
+
+    stopPollingIfIdle() {
+        if (this.watchers.size > 0 || !this.pollTimer) return;
+
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
     }
 
     /**
@@ -134,82 +153,48 @@ class ValueMonitor {
      * @param {string} path - Property path
      */
     wrap(id, path) {
-        if (this.watchers.has(id)) {
-            return { error: "Already watching this ID" };
-        }
+        if (!id) return { error: "Missing monitor id" };
+        if (!path) return { error: "Empty path" };
 
         const resolved = this.resolvePath(path);
         if (resolved.error) return resolved;
 
-        const { target, prop } = resolved;
-        const original = Object.getOwnPropertyDescriptor(target, prop);
-
-        if (original && original.configurable === false) {
-            return { error: "Property is not configurable" };
+        const existing = this.watchers.get(id);
+        if (existing) {
+            existing.path = path;
+            this.init();
+            this.ensurePolling();
+            this.pollWatcher(id, existing, true);
+            return { success: true };
         }
 
-        // Store the current value for simple data properties
-        // For accessor properties, we delegate to the original getter/setter
-        const hasOriginalAccessor = original && (original.get || original.set);
-        let storedValue = hasOriginalAccessor ? undefined : target[prop];
-        const getStoredValue = () => storedValue;
-
-        const self = this;
-        Object.defineProperty(target, prop, {
-            get() {
-                if (hasOriginalAccessor && original.get) {
-                    return original.get.call(this);
-                }
-                return storedValue;
-            },
-            set(newVal) {
-                let valueToReport;
-
-                if (hasOriginalAccessor) {
-                    if (original.set) {
-                        original.set.call(this, newVal);
-                    }
-                    // For accessor properties, read from original getter to get actual value
-                    valueToReport = original.get ? original.get.call(this) : newVal;
-                } else {
-                    storedValue = newVal;
-                    valueToReport = newVal;
-                }
-
-                self.broadcast(id, valueToReport);
-            },
-            enumerable: original ? original.enumerable : true,
-            configurable: true,
+        this.watchers.set(id, {
+            path,
+            hasLastValue: false,
+            lastComparable: "",
         });
 
-        this.watchers.set(id, { target, prop, original, path, getStoredValue });
+        this.init();
+        this.ensurePolling();
+
+        const watcher = this.watchers.get(id);
+        this.pollWatcher(id, watcher, true);
+
         console.log(`[ValueMonitor] Now watching: ${path} (id: ${id})`);
-
-        const initialValue = hasOriginalAccessor && original.get ? original.get.call(target) : storedValue;
-        this.broadcast(id, initialValue);
-
         return { success: true };
     }
 
     /**
-     * Restores the original property descriptor.
+     * Stops watching a value path.
      * @param {string} id - Unique identifier
      */
     unwrap(id) {
-        const watcher = this.watchers.get(id);
-        if (!watcher) return { error: "ID not found" };
-
-        const { target, prop, original, getStoredValue } = watcher;
-
-        if (original) {
-            Object.defineProperty(target, prop, original);
-        } else {
-            const val = getStoredValue();
-            delete target[prop];
-            target[prop] = val;
-        }
+        if (!this.watchers.has(id)) return { error: "ID not found" };
 
         this.watchers.delete(id);
+        this.lastUpdates.delete(id);
+        this.stopPollingIfIdle();
+
         console.log(`[ValueMonitor] Unwatched: id ${id}`);
         return { success: true };
     }
@@ -218,9 +203,74 @@ class ValueMonitor {
      * Unwraps all watchers.
      */
     unwrapAll() {
-        for (const id of this.watchers.keys()) {
+        for (const id of Array.from(this.watchers.keys())) {
             this.unwrap(id);
         }
+    }
+
+    toComparable(value) {
+        if (value === undefined) return "undefined";
+        if (value === null) return "null";
+
+        const type = typeof value;
+
+        if (type === "number") {
+            if (Number.isNaN(value)) return "number:NaN";
+            if (!Number.isFinite(value)) return value > 0 ? "number:Infinity" : "number:-Infinity";
+            return "number:" + value;
+        }
+
+        if (type === "string" || type === "boolean" || type === "bigint" || type === "symbol") {
+            return type + ":" + String(value);
+        }
+
+        if (type === "function") {
+            return "function:" + String(value);
+        }
+
+        try {
+            return "object:" + JSON.stringify(value);
+        } catch {
+            return "object:[unserializable]";
+        }
+    }
+
+    readPathValue(path) {
+        const resolved = this.resolvePath(path);
+        if (resolved.error) return { error: resolved.error };
+
+        try {
+            return { value: resolved.target[resolved.prop] };
+        } catch (err) {
+            return { error: err?.message || "Failed to read value" };
+        }
+    }
+
+    pollWatcher(id, watcher, force = false) {
+        if (!watcher) return;
+
+        const next = this.readPathValue(watcher.path);
+        if (next.error) return;
+
+        const comparable = this.toComparable(next.value);
+
+        if (!force && watcher.hasLastValue && watcher.lastComparable === comparable) return;
+
+        watcher.hasLastValue = true;
+        watcher.lastComparable = comparable;
+        this.broadcast(id, next.value);
+    }
+
+    pollWatchers(force = false) {
+        if (this.watchers.size === 0) return;
+
+        for (const [id, watcher] of this.watchers.entries()) {
+            this.pollWatcher(id, watcher, force);
+        }
+    }
+
+    flushWatchers() {
+        this.pollWatchers(true);
     }
 
     /**

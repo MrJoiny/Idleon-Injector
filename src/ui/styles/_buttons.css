@@ -81,3 +81,17 @@ button {
     color: var(--c-white);
     box-shadow: 0 0 10px var(--c-danger-40);
 }
+
+/* --- SEARCH TAB BUTTONS (NEW / NEXT) --- */
+/* More specific + !important so it beats any existing .search-btn rules */
+#search-tab button.search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    /* size knobs */
+    padding: 6px 14px !important;  /* <-- change these */
+    min-width: 96px !important;    /* <-- and this */
+    font-size: 0.85rem !important;
+}

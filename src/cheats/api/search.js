@@ -21,46 +21,45 @@ export function getGgaKeys() {
 
 /**
  * Parse a search query string into a typed value.
+ * Empty string => match ALL leaf values.
  * @param {string} query - The search query string
  * @returns {{ value: any, type: string, isContains: boolean, min?: number, max?: number }}
  */
 function parseQuery(query) {
-    const trimmed = query.trim();
+    const trimmed = String(query ?? "").trim();
 
-    // Check for range query format: "min-max" (e.g., "100-200")
-    // Must have exactly one dash with numbers on both sides
+    // empty => match-all
+    if (trimmed === "") {
+        return { value: null, type: "any", isContains: false };
+    }
+
+    // Range query: "min-max"
     const rangeMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/);
     if (rangeMatch) {
         const min = Number(rangeMatch[1]);
         const max = Number(rangeMatch[2]);
         if (!isNaN(min) && !isNaN(max)) {
-            return { value: null, type: "range", isContains: false, min: Math.min(min, max), max: Math.max(min, max) };
+            return {
+                value: null,
+                type: "range",
+                isContains: false,
+                min: Math.min(min, max),
+                max: Math.max(min, max),
+            };
         }
     }
 
-    // Check for explicit null/undefined
-    if (trimmed === "null") {
-        return { value: null, type: "null", isContains: false };
-    }
-    if (trimmed === "undefined") {
-        return { value: undefined, type: "undefined", isContains: false };
-    }
+    if (trimmed === "null") return { value: null, type: "null", isContains: false };
+    if (trimmed === "undefined") return { value: undefined, type: "undefined", isContains: false };
+    if (trimmed === "true") return { value: true, type: "boolean", isContains: false };
+    if (trimmed === "false") return { value: false, type: "boolean", isContains: false };
 
-    // Check for booleans
-    if (trimmed === "true") {
-        return { value: true, type: "boolean", isContains: false };
-    }
-    if (trimmed === "false") {
-        return { value: false, type: "boolean", isContains: false };
-    }
-
-    // Check for numbers
     const num = Number(trimmed);
     if (!isNaN(num) && trimmed !== "") {
         return { value: num, type: "number", isContains: false };
     }
 
-    // Default to string with contains matching
+    // Default: string contains
     return { value: trimmed, type: "string", isContains: true };
 }
 
@@ -73,36 +72,31 @@ function parseQuery(query) {
  * @returns {boolean}
  */
 function matchesQuery(value, parsedQuery) {
+    // match-all
+    if (parsedQuery.type === "any") return true;
+
     if (parsedQuery.isContains && parsedQuery.type === "string") {
-        // String contains matching (case-insensitive)
         if (typeof value === "string") {
-            return value.toLowerCase().includes(parsedQuery.value.toLowerCase());
+            return value.toLowerCase().includes(String(parsedQuery.value).toLowerCase());
         }
         return false;
     }
 
-    // Range matching for numbers
     if (parsedQuery.type === "range" && typeof value === "number") {
         return value >= parsedQuery.min && value <= parsedQuery.max;
     }
 
-    // Number matching with int/float tolerance
     if (parsedQuery.type === "number" && typeof value === "number") {
-        // Exact match
         if (value === parsedQuery.value) return true;
 
-        // If searching for an integer, also match floats that round to it
-        // e.g., searching for 131 matches 131.1 (floor) and 130.9 (ceil)
         if (Number.isInteger(parsedQuery.value)) {
             const floor = Math.floor(value);
             const ceil = Math.ceil(value);
             return floor === parsedQuery.value || ceil === parsedQuery.value;
         }
-
         return false;
     }
 
-    // Exact match for booleans, null, undefined
     return value === parsedQuery.value;
 }
 
@@ -128,13 +122,151 @@ function formatValue(value) {
 }
 
 /**
- * Search GGA for values matching the query within specified keys.
+ * Resolve a value inside `gga` from a result path like:
+ *   "player.health", "inventory.items[0].count", "foo['bar']"
+ * Supports dot-notation and [index]/["key"] bracket notation.
+ * @param {string} path
+ * @returns {string[]} path segments
+ */
+function splitPath(path) {
+    if (typeof path !== "string" || !path) return [];
+
+    const parts = [];
+    let buf = "";
+    let i = 0;
+
+    const flush = () => {
+        const t = buf.trim();
+        if (t) parts.push(t);
+        buf = "";
+    };
+
+    while (i < path.length) {
+        const ch = path[i];
+
+        if (ch === ".") {
+            flush();
+            i += 1;
+            continue;
+        }
+
+        if (ch === "[") {
+            flush();
+            const end = path.indexOf("]", i);
+            if (end === -1) {
+                buf += ch;
+                i += 1;
+                continue;
+            }
+
+            let inside = path.slice(i + 1, end).trim();
+            if (
+                (inside.startsWith('"') && inside.endsWith('"')) ||
+                (inside.startsWith("'") && inside.endsWith("'"))
+            ) {
+                inside = inside.slice(1, -1);
+            }
+            if (inside) parts.push(inside);
+            i = end + 1;
+            continue;
+        }
+
+        buf += ch;
+        i += 1;
+    }
+
+    flush();
+    return parts;
+}
+
+/**
+ * Get a value from an object using a split path.
+ * @param {any} root
+ * @param {string} path
+ * @returns {any}
+ */
+function getValueAtPath(root, path) {
+    const parts = splitPath(path);
+    let cur = root;
+
+    for (const key of parts) {
+        if (cur === null || cur === undefined) return undefined;
+        cur = cur[key];
+    }
+
+    return cur;
+}
+
+/**
+ * Search within an existing list of result paths (NEXT search).
+ * This re-reads the current value from `gga` at each path, so it works after in-game changes.
  * @param {string} query - The search query
- * @param {string[]} keys - Array of top-level GGA keys to search in
+ * @param {string[]} withinPaths - Paths to check (from previous results)
  * @returns {{ results: Array<{ path: string, value: any, formattedValue: string, type: string }>, totalCount: number }}
  */
-export function searchGga(query, keys) {
-    if (!gga || !query || !keys || keys.length === 0) {
+function searchGgaWithinPaths(query, withinPaths) {
+    if (!gga || !Array.isArray(withinPaths) || withinPaths.length === 0) {
+        return { results: [], totalCount: 0 };
+    }
+
+    const parsedQuery = parseQuery(query);
+    const results = [];
+    const seenPaths = new Set();
+
+    for (const fullPath of withinPaths) {
+        if (typeof fullPath !== "string" || !fullPath) continue;
+
+        const topKey = splitPath(fullPath)[0];
+        if (!topKey) continue;
+        if (!(topKey in gga) || blacklist_gga.has(topKey)) continue;
+
+        const value = getValueAtPath(gga, fullPath);
+
+        // Only leaf primitives (null allowed)
+        if (typeof value === "object" && value !== null) continue;
+
+        if (matchesQuery(value, parsedQuery)) {
+            if (seenPaths.has(fullPath)) continue;
+            seenPaths.add(fullPath);
+
+            results.push({
+                path: fullPath,
+                value,
+                formattedValue: formatValue(value),
+                type: typeof value,
+            });
+        }
+    }
+
+    return { results, totalCount: results.length };
+}
+
+/**
+ * Search GGA for values matching the query within specified keys (NEW search),
+ * OR refine an existing result list when `withinPaths` is provided (NEXT search).
+ *
+ * @param {string} query - The search query ("" means match-all)
+ * @param {string[]} keys - Array of top-level GGA keys to search in
+ * @param {string[] | { withinPaths?: string[] } | null} [optionsOrWithinPaths] - Optional refinement scope
+ * @returns {{ results: Array<{ path: string, value: any, formattedValue: string, type: string }>, totalCount: number }}
+ */
+export function searchGga(query, keys, optionsOrWithinPaths = null) {
+    // allow empty-string; only reject null/undefined
+    if (!gga || query === undefined || query === null) {
+        return { results: [], totalCount: 0 };
+    }
+
+    const withinPaths = Array.isArray(optionsOrWithinPaths)
+        ? optionsOrWithinPaths
+        : optionsOrWithinPaths && Array.isArray(optionsOrWithinPaths.withinPaths)
+          ? optionsOrWithinPaths.withinPaths
+          : null;
+
+    if (withinPaths && withinPaths.length > 0) {
+        return searchGgaWithinPaths(query, withinPaths);
+    }
+
+    if (!keys || keys.length === 0) {
         return { results: [], totalCount: 0 };
     }
 
@@ -147,8 +279,8 @@ export function searchGga(query, keys) {
 
         const rootValue = gga[key];
 
-        // Check if root value itself matches
-        if (matchesQuery(rootValue, parsedQuery)) {
+        // Don't include objects/arrays as results (keeps match-all sane)
+        if ((typeof rootValue !== "object" || rootValue === null) && matchesQuery(rootValue, parsedQuery)) {
             results.push({
                 path: key,
                 value: rootValue,
@@ -158,9 +290,7 @@ export function searchGga(query, keys) {
             seenPaths.add(key);
         }
 
-        // Traverse nested structure
         traverseAll(rootValue, (value, pathArray) => {
-            // Skip objects, we only want leaf values
             if (typeof value === "object" && value !== null) return;
 
             if (matchesQuery(value, parsedQuery)) {
