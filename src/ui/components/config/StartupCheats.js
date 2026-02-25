@@ -79,7 +79,10 @@ export const StartupCheats = (list) => {
                             type: "text",
                             class: "startup-cheat-input startup-cheat-command-input",
                             value: parsed.command,
-                            onchange: (e) => (list[i] = buildStartupAction(e.target.value, parsed.value)),
+                            onchange: (e) => {
+                                const current = parseStartupAction(list[i]);
+                                list[i] = buildStartupAction(e.target.value, current.value);
+                            },
                         }),
                         input({
                             type: "text",
@@ -87,7 +90,10 @@ export const StartupCheats = (list) => {
                             placeholder: "Value",
                             title: "This startup cheat requires a value",
                             value: parsed.value,
-                            onchange: (e) => (list[i] = buildStartupAction(parsed.command, e.target.value)),
+                            onchange: (e) => {
+                                const current = parseStartupAction(list[i]);
+                                list[i] = buildStartupAction(current.command, e.target.value);
+                            },
                         }),
                         button({ class: "remove-cheat-button", onclick: () => list.splice(i, 1) }, Icons.X())
                     );
