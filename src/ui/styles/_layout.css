@@ -70,6 +70,32 @@
     position: relative;
 }
 
+#cheats-tab {
+    transition: padding-right 0.25s var(--ease-tech);
+}
+
+#cheats-tab.drawer-host-open {
+    padding-right: clamp(360px, 42vw, 560px);
+}
+
+#config-tab.drawer-open {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: clamp(360px, 42vw, 560px);
+    padding: 20px;
+    background: var(--c-panel-98);
+    border-left: 1px solid var(--c-border);
+    box-shadow: -14px 0 28px var(--c-black-50);
+    z-index: 1200;
+    animation: scaleIn 0.2s var(--ease-tech);
+}
+
+#config-tab.drawer-open .scroll-container {
+    padding-right: 4px;
+}
+
 .tab-pane {
     height: 100%;
     padding: 30px;
@@ -125,4 +151,18 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+}
+
+@media (max-width: 1200px) {
+    #cheats-tab.drawer-host-open {
+        padding-right: 0;
+    }
+
+    #config-tab.drawer-open {
+        width: 100%;
+        max-width: none;
+        border-left: none;
+        box-shadow: none;
+        background: var(--c-panel-95);
+    }
 }

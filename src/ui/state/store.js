@@ -27,6 +27,7 @@ const safeParseJSON = (key, fallback = []) => {
 
 const appState = vanX.reactive({
     activeTab: "cheats-tab",
+    configDrawerOpen: false,
     isLoading: false,
     heartbeat: false,
     toast: { message: "", type: "", id: 0 },
@@ -137,10 +138,17 @@ const CheatService = {
      */
     navigateToCheatConfig: (cheatValue) => {
         const pathParts = getCheatConfigPath(cheatValue);
-        if (pathParts && configPathExists(pathParts, appState.config?.cheatConfig)) {
-            appState.configForcedPath = pathParts;
-            appState.activeTab = VIEWS.CONFIG.id;
+        if (!pathParts || !configPathExists(pathParts, appState.config?.cheatConfig)) return;
+
+        appState.configForcedPath = pathParts;
+
+        if (appState.activeTab === VIEWS.CHEATS.id) {
+            appState.configDrawerOpen = true;
+            return;
         }
+
+        appState.configDrawerOpen = false;
+        appState.activeTab = VIEWS.CONFIG.id;
     },
 
     /**
@@ -148,6 +156,14 @@ const CheatService = {
      */
     clearForcedConfigPath: () => {
         appState.configForcedPath = null;
+    },
+
+    openConfigDrawer: () => {
+        appState.configDrawerOpen = true;
+    },
+
+    closeConfigDrawer: () => {
+        appState.configDrawerOpen = false;
     },
 
     executeCheat: async (action, message) => {
@@ -316,6 +332,8 @@ const store = {
     hasConfigEntry: CheatService.hasConfigEntry,
     navigateToCheatConfig: CheatService.navigateToCheatConfig,
     clearForcedConfigPath: CheatService.clearForcedConfigPath,
+    openConfigDrawer: CheatService.openConfigDrawer,
+    closeConfigDrawer: CheatService.closeConfigDrawer,
     loadCheatStates: CheatStateService.loadCheatStates,
     getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 

@@ -53,7 +53,11 @@ export const App = () => {
 
         if (e.ctrlKey && e.key === "s") {
             e.preventDefault();
-            if (store.app.activeTab === VIEWS.CONFIG.id) {
+            const isConfigActive =
+                store.app.activeTab === VIEWS.CONFIG.id ||
+                (store.app.activeTab === VIEWS.CHEATS.id && store.app.configDrawerOpen);
+
+            if (isConfigActive) {
                 document.getElementById("save-config-button")?.click();
             }
         }
@@ -64,19 +68,32 @@ export const App = () => {
 
     van.derive(() => {
         const activeId = store.app.activeTab;
+        const isCheatsTab = activeId === VIEWS.CHEATS.id;
 
-        if (!viewInstances[activeId] && viewFactories[activeId]) {
-            const instance = viewFactories[activeId]();
-            viewInstances[activeId] = instance;
-            van.add(tabContent, instance);
+        if (!isCheatsTab && store.app.configDrawerOpen) {
+            store.closeConfigDrawer();
         }
 
-        Object.entries(viewInstances).forEach(([id, domNode]) => {
-            if (id === activeId) {
-                domNode.classList.add("active");
-            } else {
-                domNode.classList.remove("active");
+        const isDrawerVisible = isCheatsTab && store.app.configDrawerOpen;
+        const visibleViewIds = new Set([activeId]);
+        if (isDrawerVisible) visibleViewIds.add(VIEWS.CONFIG.id);
+
+        visibleViewIds.forEach((viewId) => {
+            if (!viewInstances[viewId] && viewFactories[viewId]) {
+                const instance = viewFactories[viewId]();
+                viewInstances[viewId] = instance;
+                van.add(tabContent, instance);
             }
+        });
+
+        Object.entries(viewInstances).forEach(([id, domNode]) => {
+            const isConfigDrawerNode = id === VIEWS.CONFIG.id && isDrawerVisible;
+            const isActiveNode = visibleViewIds.has(id);
+
+            domNode.classList.toggle("active", isActiveNode);
+            domNode.classList.toggle("drawer-open", isConfigDrawerNode);
+
+            domNode.classList.toggle("drawer-host-open", id === VIEWS.CHEATS.id && isDrawerVisible);
         });
     });
 

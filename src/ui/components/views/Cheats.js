@@ -176,6 +176,17 @@ export const Cheats = () => {
         resetPagination();
     };
 
+    const handleConfigDrawerToggle = () => {
+        store.clearForcedConfigPath();
+
+        if (store.app.configDrawerOpen) {
+            store.closeConfigDrawer();
+            return;
+        }
+
+        store.openConfigDrawer();
+    };
+
     return div(
         { id: "cheats-tab", class: "tab-pane" },
 
@@ -189,6 +200,14 @@ export const Cheats = () => {
                     onInput: handleSearch,
                     style: "flex: 1;",
                 }),
+                button(
+                    {
+                        class: () => `config-drawer-toggle ${store.app.configDrawerOpen ? "active" : ""}`,
+                        onclick: handleConfigDrawerToggle,
+                        title: "Toggle config drawer",
+                    },
+                    Icons.Config()
+                ),
                 button(
                     {
                         class: "view-mode-toggle",

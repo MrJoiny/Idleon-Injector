@@ -262,6 +262,38 @@
     gap: 10px;
 }
 
+.config-drawer-toggle {
+    flex: none;
+    width: 42px;
+    background: var(--c-black-30);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.config-drawer-toggle svg {
+    width: 1em;
+    height: 1em;
+}
+
+.config-drawer-toggle:hover {
+    color: var(--c-text-main);
+    border-color: var(--c-accent-25);
+    background: var(--c-accent-06);
+}
+
+.config-drawer-toggle.active {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+    background: var(--c-accent-dim-solid);
+}
+
 /* --- VIEW MODE TOGGLE --- */
 .view-mode-toggle {
     flex: none;

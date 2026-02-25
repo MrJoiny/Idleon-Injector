@@ -62,6 +62,11 @@ export const Config = () => {
         store.clearForcedConfigPath();
     };
 
+    const handleCloseDrawer = () => {
+        store.closeConfigDrawer();
+        store.clearForcedConfigPath();
+    };
+
     const save = (isPersistent) => {
         if (!draft) return;
 
@@ -174,6 +179,27 @@ export const Config = () => {
 
         return div(
             { id: "config-sub-tab-content", class: "scroll-container" },
+
+            div(
+                {
+                    class: () => `config-drawer-header ${store.app.configDrawerOpen ? "" : "hidden"}`,
+                },
+                span(
+                    { class: "config-drawer-title" },
+                    () =>
+                        store.app.configForcedPath?.length
+                            ? `EDITING: ${store.app.configForcedPath.join(" ").toUpperCase()}`
+                            : "CONFIG DRAWER"
+                ),
+                button(
+                    {
+                        class: "config-drawer-close",
+                        onclick: handleCloseDrawer,
+                        title: "Close config drawer",
+                    },
+                    Icons.X()
+                )
+            ),
 
             div(
                 { class: "sub-nav" },
