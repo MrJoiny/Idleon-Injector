@@ -84,7 +84,7 @@ registerCheats({
             message: "Change the quantity of the first inventory slot to this value",
             needsParam: true,
             fn: function (params) {
-                const setqnty = params[1] || 1;
+                const setqnty = parseInt(params[1]) || 1;
                 gga.ItemQuantity[0] = setqnty;
                 return `Inventory slot 1 qty: ${setqnty}`;
             },
@@ -94,7 +94,7 @@ registerCheats({
             message: "Change the quantity of the first chest slot to this value",
             needsParam: true,
             fn: function (params) {
-                const setqnty = params[1] || 1;
+                const setqnty = parseInt(params[1]) || 1;
                 gga.ChestQuantity[0] = setqnty;
                 return `Chest slot 1 qty: ${setqnty}`;
             },
