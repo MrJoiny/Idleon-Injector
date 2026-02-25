@@ -36,6 +36,7 @@ const appState = vanX.reactive({
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
     configForcedPath: null,
     cheatsViewMode: localStorage.getItem("cheatsViewMode") || "tabs",
+    appVersion: null,
 });
 
 const dataState = vanX.reactive({
@@ -49,6 +50,18 @@ const dataState = vanX.reactive({
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
+
+const splitConfigPayload = (payload) => {
+    if (!payload || typeof payload !== "object") {
+        return { config: payload, appVersion: null };
+    }
+
+    const { appVersion, ...config } = payload;
+    return {
+        config,
+        appVersion: typeof appVersion === "string" ? appVersion : null,
+    };
+};
 
 const Actions = {
     notify: (message, type = "success") => {
@@ -115,7 +128,11 @@ const CheatService = {
             dataState.cheats = cheats || [];
 
             if (config) {
-                appState.config = config;
+                const next = splitConfigPayload(config);
+                appState.config = next.config;
+                if (next.appVersion) {
+                    appState.appVersion = next.appVersion;
+                }
             }
         });
     },
@@ -244,7 +261,11 @@ const ConfigService = {
         try {
             appState.isLoading = true;
             const data = await API.fetchConfig();
-            appState.config = data;
+            const next = splitConfigPayload(data);
+            appState.config = next.config;
+            if (next.appVersion) {
+                appState.appVersion = next.appVersion;
+            }
         } catch (e) {
             Actions.notify(`Config Load Error: ${e.message}`, "error");
         } finally {

@@ -63,7 +63,12 @@ export const Sidebar = () => {
             div(
                 { class: "brand-main" },
                 div({ class: "brand-logo" }, Icons.Logo()),
-                div({ class: "brand-text" }, span("IDLEON"), span({ class: "highlight" }, "INJECTOR"))
+                div(
+                    { class: "brand-text" },
+                    span("IDLEON"),
+                    span({ class: "highlight" }, "INJECTOR"),
+                    span({ class: "brand-version" }, () => (store.app.appVersion ? `v${store.app.appVersion}` : ""))
+                )
             ),
             NotificationHistory()
         ),

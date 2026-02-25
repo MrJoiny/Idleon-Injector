@@ -19,6 +19,7 @@ const { getRuntimePath } = require("../utils/runtimePaths");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
 const { createLogger } = require("../utils/logger");
+const { version: appVersion } = require("../../../package.json");
 
 const log = createLogger("API");
 
@@ -133,6 +134,7 @@ function setupApiRoutes(app, context, client, config) {
                 cheatConfig: serializableCheatConfig,
                 injectorConfig: injectorConfig,
                 defaultConfig: serializableDefaultConfig,
+                appVersion,
             });
         } catch (error) {
             log.error("Error preparing full config for JSON:", error);

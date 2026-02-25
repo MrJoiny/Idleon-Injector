@@ -859,9 +859,6 @@ export const Search = () => {
             ui.displayLimit = 50;
             ui.error = null;
             ui.hasSearched = false;
-            ui.searchQuery = "";
-            ui.searchQuery2 = "";
-            ui.detectedType = "empty";
             handlers.cancelEdit();
             handlers.cancelSavedEdit();
             store.notify("Scan reset. Ready for first scan.", "success");
