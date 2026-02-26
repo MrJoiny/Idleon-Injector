@@ -23,19 +23,21 @@ const PAGES = [
 
 // ── StampRow ──────────────────────────────────────────────────────────────
 
-const StampRow = ({ page, order, name, levels, maxLevels, onLocalUpdate }) => {
+const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate }) => {
     const inputVal = van.state(String(levels?.[page]?.[order] ?? 0));
     const status   = van.state(null); // "loading" | "success" | "error" | null
 
     const doSet = async (targetLevel) => {
         const lvl = Math.max(0, Number(targetLevel));
         if (isNaN(lvl)) return;
+        // Max level unlocks in steps — round up to the next step boundary
+        const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
             await writeAttr(`bEngine.getGameAttribute("StampLevel")[${page}][${order}] = ${lvl}`);
-            await writeAttr(`bEngine.getGameAttribute("StampLevelMAX")[${page}][${order}] = ${lvl}`);
+            await writeAttr(`bEngine.getGameAttribute("StampLevelMAX")[${page}][${order}] = ${maxLvl}`);
             inputVal.val = String(lvl);
-            onLocalUpdate?.(page, order, lvl);
+            onLocalUpdate?.(page, order, lvl, maxLvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -105,7 +107,7 @@ export const StampsTab = () => {
     const loading    = van.state(false);
     const error      = van.state(null);
 
-    const updateLocal = (page, order, lvl) => {
+    const updateLocal = (page, order, lvl, maxLvl) => {
         const cur = gameData.val;
         if (!cur) return;
 
@@ -118,7 +120,7 @@ export const StampsTab = () => {
 
         if (Array.isArray(cur.maxLevels)) {
             next.maxLevels = cur.maxLevels.map((pg, i) => (i === page && Array.isArray(pg) ? [...pg] : pg));
-            if (Array.isArray(next.maxLevels?.[page])) next.maxLevels[page][order] = lvl;
+            if (Array.isArray(next.maxLevels?.[page])) next.maxLevels[page][order] = maxLvl ?? lvl;
         }
 
         gameData.val = next;
@@ -141,6 +143,20 @@ export const StampsTab = () => {
                                         names.push(entry.h.displayName.replace(/_/g, ' '));
                                     }
                                     return names;
+                                });
+                            })()`,
+                steps:     `(function(){
+                                var pages = ['A', 'B', 'C'];
+                                return pages.map(function(letter) {
+                                    var steps = [];
+                                    for (var i = 1; ; i++) {
+                                        var entry = itemDefs['Stamp' + letter + i];
+                                        if (!entry) break;
+                                        // desc_line1 CSV: BonusType,op,base,?,STEP,material,...
+                                        var parts = (entry.h.desc_line1 || '').split(',');
+                                        steps.push(parseInt(parts[4]) || 0);
+                                    }
+                                    return steps;
                                 });
                             })()`,
             });
@@ -200,6 +216,7 @@ export const StampsTab = () => {
 
             const page      = activePage.val;
             const names     = data.names?.[page] ?? [];
+            const steps     = data.steps?.[page] ?? [];
             const count     = Math.max(names.length, data.levels?.[page]?.length ?? 0);
 
             if (count === 0) {
@@ -220,6 +237,7 @@ export const StampsTab = () => {
                         page,
                         order,
                         name: names[order] ?? `Stamp ${['A','B','C'][page]}${order + 1}`,
+                        step: steps[order] ?? 0,
                         levels:    data.levels,
                         maxLevels: data.maxLevels,
                         onLocalUpdate: updateLocal,
