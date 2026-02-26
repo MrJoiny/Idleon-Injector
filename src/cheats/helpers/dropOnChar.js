@@ -79,7 +79,7 @@ export function dropOnChar(item, amount) {
         behavior.createRecycledActor(
             behavior.getActorType(44),
             x,
-            bEngine.getGameAttribute("NodeY")[y | 0] - 36,
+            gga.NodeY[y | 0] - 36,
             0
         );
 
