@@ -214,3 +214,55 @@
 /* Anvil — info row (Points Remaining banner) */
 .feature-row--info                          { border-color: var(--c-accent) !important; background: var(--c-accent-06); }
 .feature-row__badge--highlight              { color: var(--c-accent); font-weight: 700; }
+
+/* ── Statue tiers ─────────────────────────────────────────────────────── */
+.statue-tier-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+}
+.tier--stone  { color: #8a9bb0; }
+.tier--gold   { color: #ffb700; }
+.tier--onyx   { color: #b06aff; }
+.tier--zenith { color: #00e5ff; }
+
+.feature-row.tier--gold   { border-color: rgba(255,183,0,0.35); }
+.feature-row.tier--onyx   { border-color: rgba(176,106,255,0.35); }
+.feature-row.tier--zenith { border-color: rgba(0,229,255,0.35); }
+
+.statue-tier-select {
+    background: var(--c-panel);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 0 6px;
+    height: 32px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.statue-tier-select:focus { outline: none; border-color: var(--c-accent); }
+
+/* ── Statue stacked controls ──────────────────────────────────────────── */
+.feature-row__controls--stack {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.statue-control-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.statue-control-label {
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 60px;
+    text-align: right;
+}
