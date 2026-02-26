@@ -23,6 +23,9 @@ const HISTORY_LIMIT = 10;
 /** @type {Map<string, { path: string, formattedValue: string, type: string, monitorEnabled: boolean, value?: any, lastLiveRaw?: any, lastLiveFormatted?: string, lastLiveType?: string, lastHistory?: Array<{ value: any, ts: number }> }>} */
 const savedListState = new Map();
 
+/** @type {Array<string>} */
+const searchFavoriteKeysState = [];
+
 /** @type {Object|null} CDP Runtime reference for fetching cheat states */
 let runtimeRef = null;
 
@@ -89,6 +92,21 @@ function normalizeSavedEntry(entry) {
     return normalized;
 }
 
+function normalizeFavoriteKeys(keys) {
+    if (!Array.isArray(keys)) return [];
+    const unique = [];
+    const seen = new Set();
+
+    for (const key of keys) {
+        if (typeof key !== "string" || !key) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(key);
+    }
+
+    return unique;
+}
+
 function setSavedEntry(path, updater) {
     const previous = savedListState.get(path) || null;
     const next = updater(previous);
@@ -127,6 +145,7 @@ function initWebSocket(httpServer, runtime, context) {
         sendCheatStatesToClient(ws);
         sendMonitorStateToClient(ws);
         sendSavedListStateToClient(ws);
+        sendFavoriteKeysStateToClient(ws);
 
         ws.on("message", async (message) => {
             try {
@@ -185,6 +204,14 @@ async function handleMessage(ws, msg) {
 
         case "saved-list-event":
             handleSavedListEvent(msg.event);
+            break;
+
+        case "favorite-keys-sync":
+            handleFavoriteKeysSync(msg.keys);
+            break;
+
+        case "favorite-keys-event":
+            handleFavoriteKeysEvent(msg.event);
             break;
     }
 }
@@ -482,6 +509,61 @@ function handleSavedListEvent(event) {
     }
 }
 
+function handleFavoriteKeysSync(keys) {
+    const incoming = normalizeFavoriteKeys(keys);
+    if (incoming.length === 0) return;
+
+    const known = new Set(searchFavoriteKeysState);
+    let changed = false;
+
+    for (const key of incoming) {
+        if (known.has(key)) continue;
+        searchFavoriteKeysState.push(key);
+        known.add(key);
+        changed = true;
+    }
+
+    if (changed) {
+        broadcastFavoriteKeysState();
+    }
+}
+
+function handleFavoriteKeysEvent(event) {
+    if (!event || typeof event !== "object") return;
+
+    let changed = false;
+
+    if (event.action === "add" && typeof event.key === "string" && event.key) {
+        if (!searchFavoriteKeysState.includes(event.key)) {
+            searchFavoriteKeysState.push(event.key);
+            changed = true;
+        }
+    }
+
+    if (event.action === "remove" && typeof event.key === "string" && event.key) {
+        const index = searchFavoriteKeysState.indexOf(event.key);
+        if (index !== -1) {
+            searchFavoriteKeysState.splice(index, 1);
+            changed = true;
+        }
+    }
+
+    if ((event.action === "restore" || event.action === "set") && Array.isArray(event.keys)) {
+        const next = normalizeFavoriteKeys(event.keys);
+        const prev = JSON.stringify(searchFavoriteKeysState);
+        const after = JSON.stringify(next);
+        if (prev !== after) {
+            searchFavoriteKeysState.length = 0;
+            searchFavoriteKeysState.push(...next);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        broadcastFavoriteKeysState();
+    }
+}
+
 /**
  * Fetches current cheat states from game context via CDP
  * @returns {Promise<Object>} Cheat states object
@@ -555,6 +637,17 @@ function sendSavedListStateToClient(ws) {
     }
 }
 
+function sendFavoriteKeysStateToClient(ws) {
+    const message = JSON.stringify({
+        type: "favorite-keys-state",
+        data: [...searchFavoriteKeysState],
+    });
+
+    if (ws.readyState === ws.OPEN) {
+        ws.send(message);
+    }
+}
+
 /**
  * Broadcasts current cheat states to all connected UI clients
  * Called after cheat execution to push updated state
@@ -615,6 +708,22 @@ function broadcastSavedListState() {
     }
 }
 
+function broadcastFavoriteKeysState() {
+    const uiClients = Array.from(clients).filter((c) => c.clientType === "ui");
+    if (uiClients.length === 0) return;
+
+    const message = JSON.stringify({
+        type: "favorite-keys-state",
+        data: [...searchFavoriteKeysState],
+    });
+
+    for (const client of uiClients) {
+        if (client.readyState === client.OPEN) {
+            client.send(message);
+        }
+    }
+}
+
 /**
  * Gets the number of connected WebSocket clients
  * @returns {number} Number of connected clients
@@ -634,6 +743,7 @@ function closeWebSocket() {
         clients.clear();
         monitorState.clear();
         savedListState.clear();
+        searchFavoriteKeysState.length = 0;
         wss.close();
         wss = null;
         log.info("Server closed");

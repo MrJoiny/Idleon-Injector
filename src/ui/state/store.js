@@ -7,11 +7,14 @@ import {
     onStateUpdate,
     onMonitorUpdate,
     onSavedListState,
+    onFavoriteKeysState,
     getConnectionStatus,
     sendMonitorSubscribe,
     sendMonitorUnsubscribe,
     sendSavedListSync,
     sendSavedListEvent,
+    sendFavoriteKeysSync,
+    sendFavoriteKeysEvent,
 } from "../services/ws.js";
 
 /**
@@ -52,6 +55,8 @@ const dataState = vanX.reactive({
     monitorValues: {},
     savedListState: [],
     savedListStateReady: false,
+    searchFavoriteKeysState: [],
+    searchFavoriteKeysStateReady: false,
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
@@ -106,6 +111,11 @@ const SystemService = {
         onSavedListState((entries) => {
             dataState.savedListState = Array.isArray(entries) ? entries : [];
             dataState.savedListStateReady = true;
+        });
+
+        onFavoriteKeysState((keys) => {
+            dataState.searchFavoriteKeysState = Array.isArray(keys) ? keys : [];
+            dataState.searchFavoriteKeysStateReady = true;
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -361,6 +371,16 @@ const SavedListSyncService = {
     },
 };
 
+const FavoriteKeysSyncService = {
+    sync: (keys) => {
+        sendFavoriteKeysSync(Array.isArray(keys) ? keys : []);
+    },
+    emit: (event) => {
+        if (!event || typeof event !== "object") return;
+        sendFavoriteKeysEvent(event);
+    },
+};
+
 const store = {
     app: appState,
     data: dataState,
@@ -388,6 +408,8 @@ const store = {
     unsubscribeMonitor: MonitorService.unsubscribe,
     syncSavedList: SavedListSyncService.sync,
     emitSavedListEvent: SavedListSyncService.emit,
+    syncSearchFavoriteKeys: FavoriteKeysSyncService.sync,
+    emitSearchFavoriteKeysEvent: FavoriteKeysSyncService.emit,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

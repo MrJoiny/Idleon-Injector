@@ -23,6 +23,9 @@ let monitorUpdateHandler = null;
 /** @type {Function|null} */
 let savedListStateHandler = null;
 
+/** @type {Function|null} */
+let favoriteKeysStateHandler = null;
+
 /** Reconnect interval in milliseconds (same as heartbeat) */
 const RECONNECT_INTERVAL = 10000;
 
@@ -49,6 +52,8 @@ function handleMessage(event) {
             monitorUpdateHandler(message.data);
         } else if (message.type === "saved-list-state" && savedListStateHandler) {
             savedListStateHandler(message.data);
+        } else if (message.type === "favorite-keys-state" && favoriteKeysStateHandler) {
+            favoriteKeysStateHandler(message.data);
         }
     } catch (err) {
         console.error("[WebSocket] Error parsing message:", err);
@@ -138,6 +143,14 @@ export function onSavedListState(handler) {
 }
 
 /**
+ * Registers a handler for shared favorite-keys state updates.
+ * @param {Function} handler - Callback function receiving favorite keys array
+ */
+export function onFavoriteKeysState(handler) {
+    favoriteKeysStateHandler = handler;
+}
+
+/**
  * Sends a monitor subscription request to the server
  * @param {string} id
  * @param {string} path
@@ -175,6 +188,26 @@ export function sendSavedListSync(entries) {
 export function sendSavedListEvent(event) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "saved-list-event", event }));
+    }
+}
+
+/**
+ * Sends a local favorite-keys snapshot to merge with shared session state.
+ * @param {Array<string>} keys
+ */
+export function sendFavoriteKeysSync(keys) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "favorite-keys-sync", keys }));
+    }
+}
+
+/**
+ * Sends an explicit favorite-keys mutation event.
+ * @param {Object} event
+ */
+export function sendFavoriteKeysEvent(event) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "favorite-keys-event", event }));
     }
 }
 

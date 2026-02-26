@@ -36,11 +36,37 @@ const { div, input, button, span, label, details, summary, select, option } = va
 
 const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
 const SEARCH_WORKSPACE_VERSION = 1;
+const SEARCH_FAVORITE_KEYS_STORAGE_KEY = "searchFavoriteKeys";
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
 const entryFilterTextCache = new WeakMap();
 
 function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
+}
+
+function normalizeFavoriteKeys(keys) {
+    return uniqueStrings(keys);
+}
+
+function loadLocalFavoriteKeys() {
+    try {
+        const raw = localStorage.getItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY);
+        if (!raw) return [...FAVORITE_KEYS];
+
+        const parsed = JSON.parse(raw);
+        const normalized = normalizeFavoriteKeys(parsed);
+        return normalized.length > 0 ? normalized : [...FAVORITE_KEYS];
+    } catch {
+        return [...FAVORITE_KEYS];
+    }
+}
+
+function saveLocalFavoriteKeys(keys) {
+    try {
+        localStorage.setItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY, JSON.stringify(normalizeFavoriteKeys(keys)));
+    } catch {
+        // Ignore storage write failures
+    }
 }
 
 function normalizeSavedEntry(entry) {
@@ -174,8 +200,9 @@ function matchesEntryFilter(entry, query) {
 /**
  * Key checkbox component for the whitelist.
  */
-const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
+const KeyCheckbox = ({ keyName, selectedKeys, onChange, isFavorite, onToggleFavorite }) => {
     const isChecked = () => selectedKeys.includes(keyName);
+    const favorite = () => (typeof isFavorite === "function" ? isFavorite(keyName) : false);
 
     return label(
         { class: () => `key-checkbox ${isChecked() ? "checked" : ""}`, title: keyName },
@@ -184,7 +211,19 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
             checked: isChecked,
             onchange: (e) => onChange(keyName, e.target.checked),
         }),
-        span({ class: "key-checkbox-label" }, keyName)
+        span({ class: "key-checkbox-label" }, keyName),
+        button(
+            {
+                class: () => `key-favorite-btn ${favorite() ? "active" : ""}`,
+                title: () => (favorite() ? "Remove from favorites" : "Add to favorites"),
+                onclick: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleFavorite(keyName);
+                },
+            },
+            Icons.Star()
+        )
     );
 };
 
@@ -365,6 +404,14 @@ const KeysSection = ({ ui, handlers }) =>
                     },
                     "FAV"
                 ),
+                button(
+                    {
+                        class: "btn-small",
+                        onclick: handlers.restoreFavoriteKeys,
+                        title: "Restore default favorites",
+                    },
+                    "RESTORE FAV"
+                ),
                 button({ class: "btn-small", onclick: handlers.clearSelection, title: "Clear selection" }, "CLEAR")
             )
         ),
@@ -385,6 +432,8 @@ const KeysSection = ({ ui, handlers }) =>
                             keyName: key,
                             selectedKeys: ui.selectedKeys,
                             onChange: handlers.handleKeyChange,
+                            isFavorite: handlers.isFavoriteKey,
+                            onToggleFavorite: handlers.toggleFavoriteKey,
                         })
                     )
                 );
@@ -417,6 +466,8 @@ const KeysSection = ({ ui, handlers }) =>
                                     keyName: key,
                                     selectedKeys: ui.selectedKeys,
                                     onChange: handlers.handleKeyChange,
+                                    isFavorite: handlers.isFavoriteKey,
+                                    onToggleFavorite: handlers.toggleFavoriteKey,
                                 })
                             )
                         );
@@ -965,10 +1016,12 @@ const SavedResultsSection = ({ ui, handlers }) =>
     );
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
+    const localFavoriteKeys = loadLocalFavoriteKeys();
     const initialSearchQuery = "";
 
     const ui = vanX.reactive({
         allKeys: [],
+        favoriteKeys: normalizeFavoriteKeys(localFavoriteKeys),
         selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
         searchQuery: initialSearchQuery,
         searchQuery2: "",
@@ -1005,10 +1058,10 @@ export const Search = () => {
         isRefreshingSavedResults: false,
     });
 
-    const getValidFavorites = () => FAVORITE_KEYS.filter((k) => ui.allKeys.includes(k));
+    const getValidFavorites = () => normalizeFavoriteKeys(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
 
     const getOtherKeys = () => {
-        const favSet = new Set(FAVORITE_KEYS);
+        const favSet = new Set(getValidFavorites());
         let keys = ui.allKeys.filter((k) => !favSet.has(k));
         if (ui.allKeysFilter) {
             const filter = ui.allKeysFilter.toLowerCase();
@@ -1041,6 +1094,8 @@ export const Search = () => {
     let workspacePersistTimer = null;
     let initialSavedSyncCompleted = false;
     let initialSavedSyncTimer = null;
+    let initialFavoriteSyncCompleted = false;
+    let initialFavoriteSyncTimer = null;
     const subscribedMonitorPaths = new Set();
     const pendingMonitorIntentByPath = new Map();
     const PENDING_MONITOR_INTENT_TTL_MS = 5000;
@@ -1096,6 +1151,23 @@ export const Search = () => {
         }
 
         return { changed, next };
+    };
+
+    const applySharedFavoriteKeys = (sharedKeys, currentKeys) => {
+        const next = normalizeFavoriteKeys(sharedKeys);
+        const current = normalizeFavoriteKeys(currentKeys);
+
+        if (next.length !== current.length) {
+            return { changed: true, next };
+        }
+
+        for (let i = 0; i < next.length; i++) {
+            if (next[i] !== current[i]) {
+                return { changed: true, next };
+            }
+        }
+
+        return { changed: false, next: current };
     };
 
     const reconcileMonitorSubscriptions = () => {
@@ -1156,6 +1228,33 @@ export const Search = () => {
         }, 500);
     };
 
+    const startInitialFavoriteKeysSync = (seedKeys) => {
+        const normalizedSeed = normalizeFavoriteKeys(seedKeys);
+        if (normalizedSeed.length === 0) {
+            initialFavoriteSyncCompleted = true;
+            return;
+        }
+
+        const sendSeed = () => {
+            store.syncSearchFavoriteKeys(normalizedSeed);
+        };
+
+        sendSeed();
+
+        let attempts = 0;
+        const maxAttempts = 20;
+        initialFavoriteSyncTimer = setInterval(() => {
+            if (initialFavoriteSyncCompleted || store.data.searchFavoriteKeysStateReady || attempts >= maxAttempts) {
+                clearInterval(initialFavoriteSyncTimer);
+                initialFavoriteSyncTimer = null;
+                return;
+            }
+
+            sendSeed();
+            attempts += 1;
+        }, 500);
+    };
+
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
 
@@ -1200,6 +1299,35 @@ export const Search = () => {
             workspacePersistTimer = null;
             saveSearchWorkspace(snapshot);
         }, 180);
+    });
+
+    van.derive(() => {
+        saveLocalFavoriteKeys(ui.favoriteKeys);
+    });
+
+    van.derive(() => {
+        if (!store.data.searchFavoriteKeysStateReady) {
+            return;
+        }
+
+        const sharedKeys = normalizeFavoriteKeys(store.data.searchFavoriteKeysState);
+
+        if (!initialFavoriteSyncCompleted && sharedKeys.length === 0 && ui.favoriteKeys.length > 0) {
+            store.syncSearchFavoriteKeys(ui.favoriteKeys);
+            return;
+        }
+
+        initialFavoriteSyncCompleted = true;
+
+        if (initialFavoriteSyncTimer !== null) {
+            clearInterval(initialFavoriteSyncTimer);
+            initialFavoriteSyncTimer = null;
+        }
+
+        const applied = applySharedFavoriteKeys(sharedKeys, ui.favoriteKeys);
+        if (applied.changed) {
+            ui.favoriteKeys = applied.next;
+        }
     });
 
     van.derive(() => {
@@ -1282,6 +1410,27 @@ export const Search = () => {
 
         selectKeys: (keys) => updateSelection(keys, true),
         clearSelection: () => (ui.selectedKeys = []),
+
+        isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
+
+        toggleFavoriteKey: (keyName) => {
+            const hasKey = ui.favoriteKeys.includes(keyName);
+            if (hasKey) {
+                ui.favoriteKeys = ui.favoriteKeys.filter((key) => key !== keyName);
+                store.emitSearchFavoriteKeysEvent({ action: "remove", key: keyName });
+                return;
+            }
+
+            ui.favoriteKeys = [...ui.favoriteKeys, keyName];
+            store.emitSearchFavoriteKeysEvent({ action: "add", key: keyName });
+        },
+
+        restoreFavoriteKeys: () => {
+            const restored = normalizeFavoriteKeys(FAVORITE_KEYS);
+            ui.favoriteKeys = restored;
+            store.emitSearchFavoriteKeysEvent({ action: "restore", keys: restored });
+            store.notify("Restored default favorites", "success");
+        },
 
         handleResultsFilterInput: (e) => {
             const value = e.target.value;
@@ -1785,6 +1934,7 @@ export const Search = () => {
         }
 
         startInitialSavedSync(ui.savedResults);
+        startInitialFavoriteKeysSync(ui.favoriteKeys);
     })();
 
     return div(

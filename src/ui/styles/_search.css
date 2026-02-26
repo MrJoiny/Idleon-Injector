@@ -85,7 +85,7 @@
 
 .keys-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
     gap: 0.25rem;
 }
 
@@ -101,7 +101,8 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.25rem 0.5rem;
+    position: relative;
+    padding: 0.25rem 1.25rem 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background-color 0.15s ease;
@@ -119,15 +120,58 @@
 .key-checkbox input[type="checkbox"] {
     width: 14px;
     height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    margin: 0;
+    flex: 0 0 14px;
     accent-color: var(--c-accent);
     cursor: pointer;
 }
 
 .key-checkbox-label {
+    flex: 1 1 auto;
     color: var(--c-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.key-favorite-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--c-text-dim);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.key-favorite-btn .icon-base {
+    width: 0.7rem;
+    height: 0.7rem;
+}
+
+.key-favorite-btn:hover {
+    opacity: 1;
+    color: var(--c-accent);
+    background: var(--c-white-05);
+}
+
+.key-checkbox:hover .key-favorite-btn {
+    opacity: 0.9;
+}
+
+.key-favorite-btn.active {
+    opacity: 1;
+    color: var(--c-accent);
 }
 
 /* Expandable All Keys */
