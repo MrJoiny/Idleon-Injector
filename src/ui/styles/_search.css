@@ -371,6 +371,17 @@
     gap: 0.25rem;
 }
 
+.list-filter-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.list-filter-input {
+    width: 100%;
+}
+
 /* Result Item - Mirroring .cheat-button from cheats.css */
 .search-result-item {
     display: flex;

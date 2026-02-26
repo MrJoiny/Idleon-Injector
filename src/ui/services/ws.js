@@ -20,6 +20,9 @@ let stateUpdateHandler = null;
 /** @type {Function|null} */
 let monitorUpdateHandler = null;
 
+/** @type {Function|null} */
+let savedListStateHandler = null;
+
 /** Reconnect interval in milliseconds (same as heartbeat) */
 const RECONNECT_INTERVAL = 10000;
 
@@ -44,6 +47,8 @@ function handleMessage(event) {
             stateUpdateHandler(message.data);
         } else if (message.type === "monitor-state" && monitorUpdateHandler) {
             monitorUpdateHandler(message.data);
+        } else if (message.type === "saved-list-state" && savedListStateHandler) {
+            savedListStateHandler(message.data);
         }
     } catch (err) {
         console.error("[WebSocket] Error parsing message:", err);
@@ -125,6 +130,14 @@ export function onMonitorUpdate(handler) {
 }
 
 /**
+ * Registers a handler for shared saved list state updates.
+ * @param {Function} handler - Callback function receiving saved list entries array
+ */
+export function onSavedListState(handler) {
+    savedListStateHandler = handler;
+}
+
+/**
  * Sends a monitor subscription request to the server
  * @param {string} id
  * @param {string} path
@@ -142,6 +155,26 @@ export function sendMonitorSubscribe(id, path) {
 export function sendMonitorUnsubscribe(id) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "monitor-unsubscribe", id }));
+    }
+}
+
+/**
+ * Sends a local saved-list snapshot to merge with shared session state.
+ * @param {Array<Object>} entries
+ */
+export function sendSavedListSync(entries) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "saved-list-sync", entries }));
+    }
+}
+
+/**
+ * Sends an explicit saved-list mutation event.
+ * @param {Object} event
+ */
+export function sendSavedListEvent(event) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "saved-list-event", event }));
     }
 }
 

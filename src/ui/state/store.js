@@ -6,9 +6,12 @@ import {
     initWebSocket,
     onStateUpdate,
     onMonitorUpdate,
+    onSavedListState,
     getConnectionStatus,
     sendMonitorSubscribe,
     sendMonitorUnsubscribe,
+    sendSavedListSync,
+    sendSavedListEvent,
 } from "../services/ws.js";
 
 /**
@@ -47,6 +50,8 @@ const dataState = vanX.reactive({
     favoriteCheats: safeParseJSON("favoriteCheats", []),
     recentCheats: safeParseJSON("recentCheats", []),
     monitorValues: {},
+    savedListState: [],
+    savedListStateReady: false,
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
@@ -96,6 +101,11 @@ const SystemService = {
 
         onMonitorUpdate((data) => {
             dataState.monitorValues = data || {};
+        });
+
+        onSavedListState((entries) => {
+            dataState.savedListState = Array.isArray(entries) ? entries : [];
+            dataState.savedListStateReady = true;
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -341,6 +351,16 @@ const MonitorService = {
     },
 };
 
+const SavedListSyncService = {
+    sync: (entries) => {
+        sendSavedListSync(Array.isArray(entries) ? entries : []);
+    },
+    emit: (event) => {
+        if (!event || typeof event !== "object") return;
+        sendSavedListEvent(event);
+    },
+};
+
 const store = {
     app: appState,
     data: dataState,
@@ -366,6 +386,8 @@ const store = {
 
     subscribeMonitor: MonitorService.subscribe,
     unsubscribeMonitor: MonitorService.unsubscribe,
+    syncSavedList: SavedListSyncService.sync,
+    emitSavedListEvent: SavedListSyncService.emit,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

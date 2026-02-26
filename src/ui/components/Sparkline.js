@@ -8,7 +8,21 @@ const { span } = van.tags;
  * @param {any} val - Value to check
  * @returns {boolean}
  */
-const isNumeric = (val) => typeof val === "number" && Number.isFinite(val);
+const toNumeric = (val) => {
+    if (typeof val === "number" && Number.isFinite(val)) return val;
+
+    if (typeof val === "string") {
+        const trimmed = val.trim();
+        if (trimmed === "") return null;
+
+        const parsed = Number(trimmed);
+        if (Number.isFinite(parsed)) return parsed;
+    }
+
+    return null;
+};
+
+const isNumeric = (val) => toNumeric(val) !== null;
 
 const POINT_COUNT = 10;
 
@@ -24,7 +38,14 @@ const POINT_COUNT = 10;
  */
 export const Sparkline = ({ data, width = 150, height = 30 }) => {
     // Filter to numeric values and reverse so oldest is first (left)
-    const numericData = data.filter((d) => isNumeric(d.value)).reverse();
+    const numericData = data
+        .map((d) => {
+            const numericValue = toNumeric(d.value);
+            if (numericValue === null) return null;
+            return { ...d, value: numericValue };
+        })
+        .filter(Boolean)
+        .reverse();
 
     if (numericData.length === 0) {
         return span({ class: "sparkline-empty" }, "—");

@@ -37,6 +37,7 @@ const { div, input, button, span, label, details, summary, select, option } = va
 const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
 const SEARCH_WORKSPACE_VERSION = 1;
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
+const entryFilterTextCache = new WeakMap();
 
 function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
@@ -97,6 +98,8 @@ function loadSearchWorkspace() {
             selectedKeys: uniqueStrings(data.selectedKeys),
             searchQuery: typeof data.searchQuery === "string" ? data.searchQuery : "",
             searchQuery2: typeof data.searchQuery2 === "string" ? data.searchQuery2 : "",
+            resultsFilter: typeof data.resultsFilter === "string" ? data.resultsFilter : "",
+            savedFilter: typeof data.savedFilter === "string" ? data.savedFilter : "",
             scanTypeNew: sanitizeScanType(data.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
             scanTypeNext: sanitizeScanType(data.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
             allKeysExpanded: data.allKeysExpanded === true,
@@ -115,6 +118,8 @@ function buildSearchWorkspace(ui) {
         selectedKeys: uniqueStrings(ui.selectedKeys),
         searchQuery: String(ui.searchQuery ?? ""),
         searchQuery2: String(ui.searchQuery2 ?? ""),
+        resultsFilter: String(ui.resultsFilter ?? ""),
+        savedFilter: String(ui.savedFilter ?? ""),
         scanTypeNew: sanitizeScanType(ui.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
         scanTypeNext: sanitizeScanType(ui.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
         allKeysExpanded: ui.allKeysExpanded === true,
@@ -146,6 +151,42 @@ function pickInitialSelectedKeys(allKeys, persistedKeys, favoriteKeys) {
     if (fromFavorites.length > 0) return fromFavorites.slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
 
     return (allKeys || []).slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
+}
+
+function normalizeFilterText(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+function formatValueForFilter(entry) {
+    if (!entry || typeof entry !== "object") return "";
+
+    if (typeof entry.formattedValue === "string" && entry.formattedValue) {
+        return entry.formattedValue;
+    }
+
+    if (entry.type === "undefined") return "undefined";
+    if (Object.prototype.hasOwnProperty.call(entry, "value")) {
+        return String(entry.value);
+    }
+
+    return "";
+}
+
+function matchesEntryFilter(entry, query) {
+    const normalized = normalizeFilterText(query);
+    if (!normalized) return true;
+
+    if (!entry || typeof entry !== "object") return false;
+
+    let searchable = entryFilterTextCache.get(entry);
+    if (!searchable) {
+        const path = String(entry.path || "").toLowerCase();
+        const value = String(formatValueForFilter(entry)).toLowerCase();
+        searchable = `${path}\n${value}`;
+        entryFilterTextCache.set(entry, searchable);
+    }
+
+    return searchable.includes(normalized);
 }
 
 /**
@@ -184,6 +225,15 @@ const ResultItem = ({ result, ui, handlers }) => {
 
     const handleAddToList = (e) => {
         e.stopPropagation();
+        if (e.currentTarget && typeof e.currentTarget.blur === "function") {
+            e.currentTarget.blur();
+        }
+
+        if (isInSavedList()) {
+            handlers.removeSavedResult(result.path);
+            return;
+        }
+
         handlers.addToSavedResults(result);
     };
 
@@ -273,9 +323,8 @@ const ResultItem = ({ result, ui, handlers }) => {
                     button(
                         {
                             class: () => "result-action-btn save-to-list-btn " + (isInSavedList() ? "active" : ""),
-                            title: () => (isInSavedList() ? "Already in saved list" : "Add to saved list"),
+                            title: () => (isInSavedList() ? "Remove from saved list" : "Add to saved list"),
                             onclick: handleAddToList,
-                            disabled: isInSavedList,
                         },
                         Icons.List()
                     )
@@ -547,55 +596,95 @@ const ResultsSection = ({ ui, handlers }) =>
             ),
             span(
                 { class: "results-scope-badge" },
-                () => `${ui.scopePaths.length} RESULT${ui.scopePaths.length === 1 ? "" : "S"}`
+                () => {
+                    const filteredCount = handlers.getFilteredResults().length;
+                    const totalCount = ui.results.length;
+                    if (!ui.resultsFilterApplied) {
+                        return `${totalCount} RESULT${totalCount === 1 ? "" : "S"}`;
+                    }
+                    return `${filteredCount} / ${totalCount} SHOWN`;
+                }
             )
         ),
-        div({ class: "results-content scroll-container" }, () => {
-            if (ui.isSearching) {
-                return Loader({ text: "Searching" });
-            }
+        div(
+            { class: "results-content scroll-container" },
+            div(
+                { class: "list-filter-row" },
+                input({
+                    type: "text",
+                    class: "list-filter-input",
+                    placeholder: "FILTER RESULTS (PATH OR VALUE)",
+                    value: () => ui.resultsFilter,
+                    oninput: handlers.handleResultsFilterInput,
+                    disabled: () => ui.isSearching || ui.results.length === 0,
+                }),
+                () =>
+                    ui.resultsFilter
+                        ? button(
+                              {
+                                  class: "btn-small",
+                                  onclick: handlers.clearResultsFilter,
+                                  title: "Clear results filter",
+                              },
+                              "CLEAR"
+                          )
+                        : null
+            ),
+            () => {
+                if (ui.isSearching) {
+                    return Loader({ text: "Searching" });
+                }
 
-            if (ui.error) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "SEARCH ERROR",
-                    subtitle: ui.error,
-                });
-            }
-
-            if (ui.results.length === 0) {
-                if (ui.hasSearched) {
+                if (ui.error) {
                     return EmptyState({
                         icon: Icons.SearchX(),
-                        title: "NO RESULTS",
-                        subtitle: "Try a different search value or select more keys",
+                        title: "SEARCH ERROR",
+                        subtitle: ui.error,
                     });
                 }
-                return EmptyState({
-                    icon: Icons.Search(),
-                    title: "SEARCH GGA",
-                    subtitle: "Enter a value and click Search to find where it's stored (empty = show all)",
-                });
+
+                if (ui.results.length === 0) {
+                    if (ui.hasSearched) {
+                        return EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "NO RESULTS",
+                            subtitle: "Try a different search value or select more keys",
+                        });
+                    }
+                    return EmptyState({
+                        icon: Icons.Search(),
+                        title: "SEARCH GGA",
+                        subtitle: "Enter a value and click Search to find where it's stored (empty = show all)",
+                    });
+                }
+
+                const filteredResults = handlers.getFilteredResults();
+                const visibleResults = filteredResults.slice(0, ui.displayLimit);
+                const hasMore = filteredResults.length > ui.displayLimit;
+                const remaining = filteredResults.length - ui.displayLimit;
+
+                return div(
+                    { class: "results-list" },
+                    filteredResults.length === 0
+                        ? EmptyState({
+                              icon: Icons.SearchX(),
+                              title: "NO FILTER MATCH",
+                              subtitle: "Try a different path/value filter",
+                          })
+                        : null,
+                    ...visibleResults.map((result) => ResultItem({ result, ui, handlers })),
+                    hasMore
+                        ? button(
+                              {
+                                  class: "load-more-btn",
+                                  onclick: () => (ui.displayLimit += 50),
+                              },
+                              `LOAD MORE (${remaining} REMAINING)`
+                          )
+                        : null
+                );
             }
-
-            const visibleResults = ui.results.slice(0, ui.displayLimit);
-            const hasMore = ui.results.length > ui.displayLimit;
-            const remaining = ui.results.length - ui.displayLimit;
-
-            return div(
-                { class: "results-list" },
-                ...visibleResults.map((result) => ResultItem({ result, ui, handlers })),
-                hasMore
-                    ? button(
-                          {
-                              class: "load-more-btn",
-                              onclick: () => (ui.displayLimit += 50),
-                          },
-                          `LOAD MORE (${remaining} REMAINING)`
-                      )
-                    : null
-            );
-        })
+        )
     );
 
 /**
@@ -639,7 +728,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
         return cachedLiveDisplayValue();
     };
     const liveStatusClass = () => {
-        if (isMonitorEnabled()) return hasLiveValue() ? "live-active" : "live-pending";
+        if (isMonitorEnabled()) return hasLiveValue() || hasCachedLive() ? "live-active" : "live-pending";
         return hasCachedLive() ? "live-paused" : "live-idle";
     };
 
@@ -819,13 +908,17 @@ const SavedResultsSection = ({ ui, handlers }) =>
                 },
                 Icons.Refresh()
             ),
-            () =>
-                ui.savedResults.length
-                    ? span(
-                          { class: 'results-count' },
-                          ui.savedResults.length + ' ITEM' + (ui.savedResults.length === 1 ? '' : 'S')
-                      )
-                    : null,
+            span(
+                { class: 'results-count' },
+                () => {
+                    const filteredCount = handlers.getFilteredSavedResults().length;
+                    const totalCount = ui.savedResults.length;
+                    if (!ui.savedFilterApplied) {
+                        return totalCount + ' ITEM' + (totalCount === 1 ? '' : 'S');
+                    }
+                    return `${filteredCount} / ${totalCount} SHOWN`;
+                }
+            ),
             div(
                 { class: 'section-actions' },
                 button(
@@ -839,20 +932,54 @@ const SavedResultsSection = ({ ui, handlers }) =>
                 )
             )
         ),
-        div({ class: 'saved-results-content scroll-container' }, () => {
-            if (ui.savedResults.length === 0) {
-                return EmptyState({
-                    icon: Icons.List(),
-                    title: 'NO SAVED RESULTS',
-                    subtitle: 'Use the list button on a search result to pin it here',
-                });
-            }
+        div(
+            { class: 'saved-results-content scroll-container' },
+            div(
+                { class: "list-filter-row" },
+                input({
+                    type: "text",
+                    class: "list-filter-input",
+                    placeholder: "FILTER SAVED (PATH OR VALUE)",
+                    value: () => ui.savedFilter,
+                    oninput: handlers.handleSavedFilterInput,
+                    disabled: () => ui.savedResults.length === 0,
+                }),
+                () =>
+                    ui.savedFilter
+                        ? button(
+                              {
+                                  class: "btn-small",
+                                  onclick: handlers.clearSavedFilter,
+                                  title: "Clear saved filter",
+                              },
+                              "CLEAR"
+                          )
+                        : null
+            ),
+            () => {
+                if (ui.savedResults.length === 0) {
+                    return EmptyState({
+                        icon: Icons.List(),
+                        title: 'NO SAVED RESULTS',
+                        subtitle: 'Use the list button on a search result to pin it here',
+                    });
+                }
 
-            return div(
-                { class: 'saved-results-list' },
-                ...ui.savedResults.map((entry) => SavedResultItem({ entry, ui, handlers }))
-            );
-        })
+                const filteredSavedResults = handlers.getFilteredSavedResults();
+
+                return div(
+                    { class: 'saved-results-list' },
+                    filteredSavedResults.length === 0
+                        ? EmptyState({
+                              icon: Icons.List(),
+                              title: "NO FILTER MATCH",
+                              subtitle: "Try a different path/value filter",
+                          })
+                        : null,
+                    ...filteredSavedResults.map((entry) => SavedResultItem({ entry, ui, handlers }))
+                );
+            }
+        )
     );
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
@@ -863,6 +990,10 @@ export const Search = () => {
         selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
         searchQuery: initialSearchQuery,
         searchQuery2: typeof restoredWorkspace.searchQuery2 === "string" ? restoredWorkspace.searchQuery2 : "",
+        resultsFilter: typeof restoredWorkspace.resultsFilter === "string" ? restoredWorkspace.resultsFilter : "",
+        savedFilter: typeof restoredWorkspace.savedFilter === "string" ? restoredWorkspace.savedFilter : "",
+        resultsFilterApplied: typeof restoredWorkspace.resultsFilter === "string" ? restoredWorkspace.resultsFilter : "",
+        savedFilterApplied: typeof restoredWorkspace.savedFilter === "string" ? restoredWorkspace.savedFilter : "",
         detectedType: detectQueryType(initialSearchQuery),
         scanTypeNew: sanitizeScanType(restoredWorkspace.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
         scanTypeNext: sanitizeScanType(restoredWorkspace.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
@@ -921,33 +1052,127 @@ export const Search = () => {
         return resolveMonitorEntry(path, store.data.monitorValues || {});
     };
 
-    const subscribeSavedMonitors = () => {
+    let resultsFilterTimer = null;
+    let savedFilterTimer = null;
+    let resultsFilterSeq = 0;
+    let savedFilterSeq = 0;
+    let workspacePersistTimer = null;
+    let initialSavedSyncCompleted = false;
+    let initialSavedSyncTimer = null;
+    const subscribedMonitorPaths = new Set();
+    const pendingMonitorIntentByPath = new Map();
+    const PENDING_MONITOR_INTENT_TTL_MS = 5000;
+    const filterCache = {
+        results: { source: null, query: "", values: [] },
+        saved: { source: null, query: "", values: [] },
+    };
+
+    const getPendingMonitorIntent = (path) => {
+        const pending = pendingMonitorIntentByPath.get(path);
+        if (!pending) return null;
+
+        if (Date.now() - pending.ts > PENDING_MONITOR_INTENT_TTL_MS) {
+            pendingMonitorIntentByPath.delete(path);
+            return null;
+        }
+
+        return pending;
+    };
+
+    const setPendingMonitorIntent = (path, enabled) => {
+        pendingMonitorIntentByPath.set(path, { enabled: enabled === true, ts: Date.now() });
+    };
+
+    const normalizeSavedResults = (entries) => {
+        return Array.isArray(entries) ? entries.map(normalizeSavedEntry).filter(Boolean) : [];
+    };
+
+    const applySharedSavedResults = (sharedEntries, currentEntries) => {
+        const currentByPath = new Map((currentEntries || []).map((entry) => [entry.path, entry]));
+        const next = [];
+        let changed = (sharedEntries || []).length !== (currentEntries || []).length;
+
+        for (const sharedEntry of sharedEntries || []) {
+            const current = currentByPath.get(sharedEntry.path);
+
+            const pending = getPendingMonitorIntent(sharedEntry.path);
+            if (pending) {
+                if (sharedEntry.monitorEnabled === pending.enabled) {
+                    pendingMonitorIntentByPath.delete(sharedEntry.path);
+                } else if (current) {
+                    next.push(current);
+                    continue;
+                }
+            }
+
+            if (current && JSON.stringify(current) === JSON.stringify(sharedEntry)) {
+                next.push(current);
+            } else {
+                next.push(sharedEntry);
+                changed = true;
+            }
+        }
+
+        return { changed, next };
+    };
+
+    const reconcileMonitorSubscriptions = () => {
+        const desiredPaths = new Set();
+
         for (const entry of ui.savedResults) {
-            if (!entry?.path || entry.monitorEnabled === false) continue;
-            store.subscribeMonitor(monitorPathForSearchResult(entry.path));
+            if (!entry?.path) continue;
+
+            const pending = getPendingMonitorIntent(entry.path);
+            const monitorEnabled = pending ? pending.enabled : entry.monitorEnabled;
+            if (monitorEnabled === false) continue;
+
+            desiredPaths.add(entry.path);
+        }
+
+        for (const path of desiredPaths) {
+            if (subscribedMonitorPaths.has(path)) continue;
+            store.subscribeMonitor(monitorPathForSearchResult(path));
+            subscribedMonitorPaths.add(path);
+        }
+
+        for (const path of [...subscribedMonitorPaths]) {
+            if (desiredPaths.has(path)) continue;
+
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            if (resolvedMonitor.id) {
+                store.unsubscribeMonitor(resolvedMonitor.id);
+            }
+            subscribedMonitorPaths.delete(path);
         }
     };
 
-    const restoreSavedMonitorsWithRetry = () => {
-        if (ui.savedResults.length === 0) return;
+    const startInitialSavedSync = (seedEntries) => {
+        const normalizedSeed = normalizeSavedResults(seedEntries);
+        if (normalizedSeed.length === 0) {
+            initialSavedSyncCompleted = true;
+            return;
+        }
 
-        let attempts = 0;
-        const maxAttempts = 10;
-
-        const trySubscribe = () => {
-            subscribeSavedMonitors();
-            attempts += 1;
-            if (attempts < maxAttempts) {
-                setTimeout(trySubscribe, 1500);
-            }
+        const sendSeed = () => {
+            store.syncSavedList(normalizedSeed);
         };
 
-        trySubscribe();
-    };
+        sendSeed();
 
-    van.derive(() => {
-        saveSearchWorkspace(buildSearchWorkspace(ui));
-    });
+        let attempts = 0;
+        const maxAttempts = 20;
+        initialSavedSyncTimer = setInterval(() => {
+            if (initialSavedSyncCompleted || store.data.savedListStateReady || attempts >= maxAttempts) {
+                clearInterval(initialSavedSyncTimer);
+                initialSavedSyncTimer = null;
+                return;
+            }
+
+            sendSeed();
+            attempts += 1;
+        }, 500);
+    };
 
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
@@ -982,10 +1207,89 @@ export const Search = () => {
         });
     };
 
+    van.derive(() => {
+        const snapshot = buildSearchWorkspace(ui);
+
+        if (workspacePersistTimer !== null) {
+            clearTimeout(workspacePersistTimer);
+        }
+
+        workspacePersistTimer = setTimeout(() => {
+            workspacePersistTimer = null;
+            saveSearchWorkspace(snapshot);
+        }, 180);
+    });
+
+    van.derive(() => {
+        if (!store.data.savedListStateReady) {
+            return;
+        }
+
+        const sharedEntries = normalizeSavedResults(store.data.savedListState);
+
+        if (!initialSavedSyncCompleted && sharedEntries.length === 0 && ui.savedResults.length > 0) {
+            store.syncSavedList(ui.savedResults);
+            return;
+        }
+
+        initialSavedSyncCompleted = true;
+
+        if (initialSavedSyncTimer !== null) {
+            clearInterval(initialSavedSyncTimer);
+            initialSavedSyncTimer = null;
+        }
+
+        if (sharedEntries.length === 0 && ui.savedResults.length === 0) {
+            reconcileMonitorSubscriptions();
+            return;
+        }
+
+        const applied = applySharedSavedResults(sharedEntries, ui.savedResults);
+        if (applied.changed) {
+            ui.savedResults = applied.next;
+        }
+
+        reconcileMonitorSubscriptions();
+    });
+
+    const getFilteredResults = () => {
+        const source = ui.results;
+        const query = normalizeFilterText(ui.resultsFilterApplied);
+        const cache = filterCache.results;
+
+        if (cache.source === source && cache.query === query) {
+            return cache.values;
+        }
+
+        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
+        cache.source = source;
+        cache.query = query;
+        cache.values = values;
+        return values;
+    };
+
+    const getFilteredSavedResults = () => {
+        const source = ui.savedResults;
+        const query = normalizeFilterText(ui.savedFilterApplied);
+        const cache = filterCache.saved;
+
+        if (cache.source === source && cache.query === query) {
+            return cache.values;
+        }
+
+        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
+        cache.source = source;
+        cache.query = query;
+        cache.values = values;
+        return values;
+    };
+
     const handlers = {
         getValidFavorites,
         getOtherKeys,
         areAllSelected,
+        getFilteredResults,
+        getFilteredSavedResults,
 
         handleKeyChange: (keyName, isChecked) => updateSelection([keyName], isChecked),
 
@@ -996,6 +1300,58 @@ export const Search = () => {
 
         selectKeys: (keys) => updateSelection(keys, true),
         clearSelection: () => (ui.selectedKeys = []),
+
+        handleResultsFilterInput: (e) => {
+            const value = e.target.value;
+            const seq = ++resultsFilterSeq;
+
+            ui.resultsFilter = value;
+            if (resultsFilterTimer !== null) clearTimeout(resultsFilterTimer);
+
+            resultsFilterTimer = setTimeout(() => {
+                if (seq !== resultsFilterSeq) return;
+                resultsFilterTimer = null;
+                ui.resultsFilterApplied = value;
+                ui.displayLimit = 50;
+            }, 120);
+        },
+
+        clearResultsFilter: () => {
+            if (resultsFilterTimer !== null) {
+                clearTimeout(resultsFilterTimer);
+                resultsFilterTimer = null;
+            }
+
+            resultsFilterSeq += 1;
+            ui.resultsFilter = "";
+            ui.resultsFilterApplied = "";
+            ui.displayLimit = 50;
+        },
+
+        handleSavedFilterInput: (e) => {
+            const value = e.target.value;
+            const seq = ++savedFilterSeq;
+
+            ui.savedFilter = value;
+            if (savedFilterTimer !== null) clearTimeout(savedFilterTimer);
+
+            savedFilterTimer = setTimeout(() => {
+                if (seq !== savedFilterSeq) return;
+                savedFilterTimer = null;
+                ui.savedFilterApplied = value;
+            }, 120);
+        },
+
+        clearSavedFilter: () => {
+            if (savedFilterTimer !== null) {
+                clearTimeout(savedFilterTimer);
+                savedFilterTimer = null;
+            }
+
+            savedFilterSeq += 1;
+            ui.savedFilter = "";
+            ui.savedFilterApplied = "";
+        },
 
         startNewScan: () => {
             ui.scanSessionActive = false;
@@ -1060,28 +1416,36 @@ export const Search = () => {
             const monitorPath = monitorPathForSearchResult(result.path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             const initialHistory = getMonitorHistory(resolvedMonitor.entry).slice(0, 10);
+            const seededHistory =
+                initialHistory.length > 0
+                    ? initialHistory
+                    : [{ value: getResultValue(result), ts: Date.now() }];
 
-            ui.savedResults = [
-                ...ui.savedResults,
-                {
-                    path: result.path,
-                    formattedValue: result.formattedValue,
-                    value: getResultValue(result),
-                    type: result.type,
-                    lastLiveRaw: getResultValue(result),
-                    lastLiveFormatted: result.formattedValue,
-                    lastLiveType: result.type,
-                    lastHistory: initialHistory,
-                    monitorEnabled: true,
-                },
-            ];
+            const entry = {
+                path: result.path,
+                formattedValue: result.formattedValue,
+                value: getResultValue(result),
+                type: result.type,
+                lastLiveRaw: getResultValue(result),
+                lastLiveFormatted: result.formattedValue,
+                lastLiveType: result.type,
+                lastHistory: seededHistory,
+                monitorEnabled: true,
+            };
 
+            ui.savedResults = [...ui.savedResults, entry];
+
+            pendingMonitorIntentByPath.delete(result.path);
             store.subscribeMonitor(monitorPath);
+            subscribedMonitorPaths.add(result.path);
+            store.emitSavedListEvent({ action: "upsert", entry });
 
             store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
         },
 
         toggleSavedMonitor: (path, enabled) => {
+            setPendingMonitorIntent(path, enabled);
+
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             const currentHistory = getMonitorHistory(resolvedMonitor.entry);
@@ -1111,18 +1475,29 @@ export const Search = () => {
 
             if (enabled) {
                 store.subscribeMonitor(monitorPath);
+                subscribedMonitorPaths.add(path);
+                store.emitSavedListEvent({ action: "set-monitor-enabled", path, enabled: true });
                 store.notify("Enabled watcher for " + path);
                 return;
             }
 
-            store.unsubscribeMonitor(resolvedMonitor.id);
+            if (resolvedMonitor.id) {
+                store.unsubscribeMonitor(resolvedMonitor.id);
+            }
+            subscribedMonitorPaths.delete(path);
+            store.emitSavedListEvent({ action: "set-monitor-enabled", path, enabled: false });
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
+            pendingMonitorIntentByPath.delete(path);
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            store.unsubscribeMonitor(resolvedMonitor.id);
+            if (resolvedMonitor.id) {
+                store.unsubscribeMonitor(resolvedMonitor.id);
+            }
+            subscribedMonitorPaths.delete(path);
+            store.emitSavedListEvent({ action: "remove", path });
 
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
             if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
@@ -1133,10 +1508,16 @@ export const Search = () => {
             if (ui.savedResults.length === 0) return;
 
             for (const entry of ui.savedResults) {
+                pendingMonitorIntentByPath.delete(entry.path);
                 const monitorPath = monitorPathForSearchResult(entry.path);
                 const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-                store.unsubscribeMonitor(resolvedMonitor.id);
+                if (resolvedMonitor.id) {
+                    store.unsubscribeMonitor(resolvedMonitor.id);
+                }
+                subscribedMonitorPaths.delete(entry.path);
             }
+
+            store.emitSavedListEvent({ action: "clear" });
 
             ui.savedResults = [];
             handlers.cancelSavedEdit();
@@ -1154,6 +1535,8 @@ export const Search = () => {
                 const data = await API.searchGga("", ui.selectedKeys, { withinPaths });
                 const nextByPath = new Map((data.results || []).map((entry) => [entry.path, entry]));
 
+                const updatedEntries = [];
+
                 ui.savedResults = ui.savedResults.map((entry) => {
                     const next = nextByPath.get(entry.path);
                     if (!next) return entry;
@@ -1162,7 +1545,7 @@ export const Search = () => {
                     const nextType = next.type ?? entry.type;
                     const nextFormatted = next.formattedValue ?? entry.formattedValue;
 
-                    return {
+                    const updated = {
                         ...entry,
                         formattedValue: nextFormatted,
                         value: nextValue,
@@ -1171,7 +1554,14 @@ export const Search = () => {
                         lastLiveFormatted: nextFormatted,
                         lastLiveType: nextType,
                     };
+
+                    updatedEntries.push(updated);
+                    return updated;
                 });
+
+                for (const entry of updatedEntries) {
+                    store.emitSavedListEvent({ action: "upsert", entry });
+                }
 
                 store.notify("Saved list refreshed", "success");
             } catch (e) {
@@ -1238,6 +1628,10 @@ export const Search = () => {
                 ui.isSettingValue = true;
                 const resp = await API.setGgaValue(ui.savedEdit.path, validation.valueToSend);
                 updateValueInUi(ui.savedEdit.path, resp);
+                const updatedSavedEntry = ui.savedResults.find((entry) => entry.path === ui.savedEdit.path);
+                if (updatedSavedEntry) {
+                    store.emitSavedListEvent({ action: "upsert", entry: updatedSavedEntry });
+                }
                 store.notify(`Updated ${ui.savedEdit.path}`, "success");
                 handlers.cancelSavedEdit();
             } catch (e) {
@@ -1276,6 +1670,10 @@ export const Search = () => {
                 ui.isSettingValue = true;
                 const resp = await API.setGgaValue(ui.edit.path, validation.valueToSend);
                 updateValueInUi(ui.edit.path, resp);
+                const updatedSavedEntry = ui.savedResults.find((entry) => entry.path === ui.edit.path);
+                if (updatedSavedEntry) {
+                    store.emitSavedListEvent({ action: "upsert", entry: updatedSavedEntry });
+                }
 
                 store.notify(`Updated ${ui.edit.path}`, "success");
                 handlers.cancelEdit();
@@ -1404,7 +1802,7 @@ export const Search = () => {
             ui.isLoading = false;
         }
 
-        restoreSavedMonitorsWithRetry();
+        startInitialSavedSync(ui.savedResults);
     })();
 
     return div(
