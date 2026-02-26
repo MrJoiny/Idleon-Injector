@@ -26,6 +26,9 @@ const savedListState = new Map();
 /** @type {Array<string>} */
 const searchFavoriteKeysState = [];
 
+/** @type {Array<string>} */
+const searchSelectedKeysState = [];
+
 /** @type {Object|null} CDP Runtime reference for fetching cheat states */
 let runtimeRef = null;
 
@@ -146,6 +149,7 @@ function initWebSocket(httpServer, runtime, context) {
         sendMonitorStateToClient(ws);
         sendSavedListStateToClient(ws);
         sendFavoriteKeysStateToClient(ws);
+        sendSelectedKeysStateToClient(ws);
 
         ws.on("message", async (message) => {
             try {
@@ -213,6 +217,14 @@ async function handleMessage(ws, msg) {
         case "favorite-keys-event":
             handleFavoriteKeysEvent(msg.event);
             break;
+
+        case "selected-keys-sync":
+            handleSelectedKeysSync(msg.keys);
+            break;
+
+        case "selected-keys-event":
+            handleSelectedKeysEvent(msg.event);
+            break;
     }
 }
 
@@ -236,32 +248,7 @@ function handleMonitorUpdate(msg) {
         state.history.pop();
     }
 
-    const savedPath = getSavedPathFromMonitorPath(state.path);
-    if (savedPath && savedListState.has(savedPath)) {
-        setSavedEntry(savedPath, (previous) => {
-            const base = previous || {
-                path: savedPath,
-                formattedValue: formatMonitorValue(value),
-                type: getUiTypeFromRawValue(value, "undefined"),
-                monitorEnabled: true,
-            };
-
-            return {
-                ...base,
-                monitorEnabled: base.monitorEnabled,
-                value,
-                type: getUiTypeFromRawValue(value, base.type),
-                formattedValue: formatMonitorValue(value),
-                lastLiveRaw: value,
-                lastLiveFormatted: formatMonitorValue(value),
-                lastLiveType: getUiTypeFromRawValue(value, base.type),
-                lastHistory: state.history.slice(0, HISTORY_LIMIT),
-            };
-        });
-    }
-
     broadcastMonitorState();
-    broadcastSavedListState();
 }
 
 /**
@@ -272,14 +259,26 @@ function handleMonitorUpdate(msg) {
 async function handleMonitorSubscribe(id, path) {
     if (!runtimeRef || !contextRef) return;
 
+    if (typeof id !== "string" || !id || typeof path !== "string" || !path) {
+        return;
+    }
+
+    const existingState = monitorState.get(id);
+    if (existingState && existingState.path !== path) {
+        log.warn(`Monitor id collision detected for id '${id}': '${existingState.path}' vs '${path}'`);
+    }
+
     // Pre-create the state entry so initial broadcast from wrap() is captured
     if (!monitorState.has(id)) {
         monitorState.set(id, { path, history: [] });
     }
 
+    const idJson = JSON.stringify(id);
+    const pathJson = JSON.stringify(path);
+
     try {
         const result = await runtimeRef.evaluate({
-            expression: `window.monitorWrap("${id}", "${path}")`,
+            expression: `window.monitorWrap(${idJson}, ${pathJson})`,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -362,12 +361,14 @@ async function handleMonitorSubscribe(id, path) {
  */
 async function handleMonitorUnsubscribe(id) {
     if (!runtimeRef || !contextRef) return;
+    if (typeof id !== "string" || !id) return;
 
     try {
         const existing = monitorState.get(id);
+        const idJson = JSON.stringify(id);
 
         await runtimeRef.evaluate({
-            expression: `window.monitorUnwrap("${id}")`,
+            expression: `window.monitorUnwrap(${idJson})`,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -564,6 +565,39 @@ function handleFavoriteKeysEvent(event) {
     }
 }
 
+function handleSelectedKeysSync(keys) {
+    const incoming = normalizeFavoriteKeys(keys);
+    if (incoming.length === 0) return;
+
+    const known = new Set(searchSelectedKeysState);
+    let changed = false;
+
+    for (const key of incoming) {
+        if (known.has(key)) continue;
+        searchSelectedKeysState.push(key);
+        known.add(key);
+        changed = true;
+    }
+
+    if (changed) {
+        broadcastSelectedKeysState();
+    }
+}
+
+function handleSelectedKeysEvent(event) {
+    if (!event || typeof event !== "object") return;
+    if (event.action !== "set" || !Array.isArray(event.keys)) return;
+
+    const next = normalizeFavoriteKeys(event.keys);
+    const prev = JSON.stringify(searchSelectedKeysState);
+    const after = JSON.stringify(next);
+    if (prev !== after) {
+        searchSelectedKeysState.length = 0;
+        searchSelectedKeysState.push(...next);
+        broadcastSelectedKeysState();
+    }
+}
+
 /**
  * Fetches current cheat states from game context via CDP
  * @returns {Promise<Object>} Cheat states object
@@ -648,6 +682,17 @@ function sendFavoriteKeysStateToClient(ws) {
     }
 }
 
+function sendSelectedKeysStateToClient(ws) {
+    const message = JSON.stringify({
+        type: "selected-keys-state",
+        data: [...searchSelectedKeysState],
+    });
+
+    if (ws.readyState === ws.OPEN) {
+        ws.send(message);
+    }
+}
+
 /**
  * Broadcasts current cheat states to all connected UI clients
  * Called after cheat execution to push updated state
@@ -724,6 +769,22 @@ function broadcastFavoriteKeysState() {
     }
 }
 
+function broadcastSelectedKeysState() {
+    const uiClients = Array.from(clients).filter((c) => c.clientType === "ui");
+    if (uiClients.length === 0) return;
+
+    const message = JSON.stringify({
+        type: "selected-keys-state",
+        data: [...searchSelectedKeysState],
+    });
+
+    for (const client of uiClients) {
+        if (client.readyState === client.OPEN) {
+            client.send(message);
+        }
+    }
+}
+
 /**
  * Gets the number of connected WebSocket clients
  * @returns {number} Number of connected clients
@@ -744,6 +805,7 @@ function closeWebSocket() {
         monitorState.clear();
         savedListState.clear();
         searchFavoriteKeysState.length = 0;
+        searchSelectedKeysState.length = 0;
         wss.close();
         wss = null;
         log.info("Server closed");

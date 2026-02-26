@@ -49,7 +49,7 @@ export function monitorPathForSearchResult(path) {
 }
 
 export function monitorIdFromMonitorPath(path) {
-    return path.replace(/[[\]]/g, "-").replace(/\./g, "-");
+    return "mon:" + encodeURIComponent(path);
 }
 
 export function formatMonitorValue(value) {

@@ -8,6 +8,7 @@ import {
     onMonitorUpdate,
     onSavedListState,
     onFavoriteKeysState,
+    onSelectedKeysState,
     getConnectionStatus,
     sendMonitorSubscribe,
     sendMonitorUnsubscribe,
@@ -15,6 +16,8 @@ import {
     sendSavedListEvent,
     sendFavoriteKeysSync,
     sendFavoriteKeysEvent,
+    sendSelectedKeysSync,
+    sendSelectedKeysEvent,
 } from "../services/ws.js";
 
 /**
@@ -57,6 +60,8 @@ const dataState = vanX.reactive({
     savedListStateReady: false,
     searchFavoriteKeysState: [],
     searchFavoriteKeysStateReady: false,
+    searchSelectedKeysState: [],
+    searchSelectedKeysStateReady: false,
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
@@ -116,6 +121,11 @@ const SystemService = {
         onFavoriteKeysState((keys) => {
             dataState.searchFavoriteKeysState = Array.isArray(keys) ? keys : [];
             dataState.searchFavoriteKeysStateReady = true;
+        });
+
+        onSelectedKeysState((keys) => {
+            dataState.searchSelectedKeysState = Array.isArray(keys) ? keys : [];
+            dataState.searchSelectedKeysStateReady = true;
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -353,7 +363,7 @@ const AccountService = {
 
 const MonitorService = {
     subscribe: (path) => {
-        const id = path.replace(/[[\]]/g, "-").replace(/\./g, "-");
+        const id = "mon:" + encodeURIComponent(path);
         sendMonitorSubscribe(id, path);
     },
     unsubscribe: (id) => {
@@ -378,6 +388,16 @@ const FavoriteKeysSyncService = {
     emit: (event) => {
         if (!event || typeof event !== "object") return;
         sendFavoriteKeysEvent(event);
+    },
+};
+
+const SelectedKeysSyncService = {
+    sync: (keys) => {
+        sendSelectedKeysSync(Array.isArray(keys) ? keys : []);
+    },
+    emit: (event) => {
+        if (!event || typeof event !== "object") return;
+        sendSelectedKeysEvent(event);
     },
 };
 
@@ -410,6 +430,8 @@ const store = {
     emitSavedListEvent: SavedListSyncService.emit,
     syncSearchFavoriteKeys: FavoriteKeysSyncService.sync,
     emitSearchFavoriteKeysEvent: FavoriteKeysSyncService.emit,
+    syncSearchSelectedKeys: SelectedKeysSyncService.sync,
+    emitSearchSelectedKeysEvent: SelectedKeysSyncService.emit,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

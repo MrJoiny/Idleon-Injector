@@ -23,6 +23,7 @@ import {
     expectedUiType,
     validateEditDraft,
     monitorPathForSearchResult,
+    monitorIdFromMonitorPath,
     formatMonitorValue,
     getMonitorHistory,
     getMonitorCurrentValue,
@@ -767,6 +768,14 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
 
     const handleMonitor = (e) => {
         e.stopPropagation();
+        if (e.currentTarget && typeof e.currentTarget.blur === "function") {
+            e.currentTarget.blur();
+        }
+
+        if (handlers.isMonitorToggleLocked(entry.path)) {
+            return;
+        }
+
         handlers.toggleSavedMonitor(entry.path, !isMonitorEnabled());
     };
 
@@ -898,6 +907,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                             class: () => "result-action-btn monitor-btn " + (isMonitorEnabled() ? "active" : ""),
                             title: () => (isMonitorEnabled() ? "Stop Watcher" : "Enable Watcher"),
                             onclick: handleMonitor,
+                            disabled: () => handlers.isMonitorToggleLocked(entry.path),
                         },
                         Icons.Eye()
                     ),
@@ -1056,6 +1066,7 @@ export const Search = () => {
             : [],
         savedEdit: { path: null, draft: "", type: "" },
         isRefreshingSavedResults: false,
+        monitorToggleNonce: 0,
     });
 
     const getValidFavorites = () => normalizeFavoriteKeys(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
@@ -1073,6 +1084,8 @@ export const Search = () => {
     const areAllSelected = () => ui.allKeys.length > 0 && ui.selectedKeys.length === ui.allKeys.length;
 
     const updateSelection = (keys, select) => {
+        const before = JSON.stringify(ui.selectedKeys);
+
         if (select) {
             const newKeys = new Set(ui.selectedKeys);
             keys.forEach((k) => newKeys.add(k));
@@ -1081,10 +1094,18 @@ export const Search = () => {
             const removeSet = new Set(keys);
             ui.selectedKeys = ui.selectedKeys.filter((k) => !removeSet.has(k));
         }
+
+        if (JSON.stringify(ui.selectedKeys) !== before) {
+            queueSelectedKeysSync();
+        }
     };
 
     const getResolvedMonitorEntry = (path) => {
         return resolveMonitorEntry(path, store.data.monitorValues || {});
+    };
+
+    const getMonitorUnsubscribeId = (monitorPath, resolvedMonitor) => {
+        return resolvedMonitor?.id || monitorIdFromMonitorPath(monitorPath);
     };
 
     let resultsFilterTimer = null;
@@ -1096,9 +1117,14 @@ export const Search = () => {
     let initialSavedSyncTimer = null;
     let initialFavoriteSyncCompleted = false;
     let initialFavoriteSyncTimer = null;
+    let initialSelectedSyncCompleted = false;
+    let initialSelectedSyncTimer = null;
+    let selectedKeysSyncTimer = null;
     const subscribedMonitorPaths = new Set();
+    const monitorToggleLocksByPath = new Map();
     const pendingMonitorIntentByPath = new Map();
     const PENDING_MONITOR_INTENT_TTL_MS = 5000;
+    const MONITOR_TOGGLE_LOCK_MS = 280;
     const filterCache = {
         results: { source: null, query: "", values: [] },
         saved: { source: null, query: "", values: [] },
@@ -1118,6 +1144,34 @@ export const Search = () => {
 
     const setPendingMonitorIntent = (path, enabled) => {
         pendingMonitorIntentByPath.set(path, { enabled: enabled === true, ts: Date.now() });
+    };
+
+    const isMonitorToggleLocked = (path) => {
+        ui.monitorToggleNonce;
+
+        const lockUntil = monitorToggleLocksByPath.get(path);
+        if (!lockUntil) return false;
+
+        if (Date.now() >= lockUntil) {
+            monitorToggleLocksByPath.delete(path);
+            return false;
+        }
+
+        return true;
+    };
+
+    const lockMonitorToggle = (path) => {
+        const lockUntil = Date.now() + MONITOR_TOGGLE_LOCK_MS;
+        monitorToggleLocksByPath.set(path, lockUntil);
+        ui.monitorToggleNonce += 1;
+
+        setTimeout(() => {
+            const current = monitorToggleLocksByPath.get(path);
+            if (current !== lockUntil) return;
+
+            monitorToggleLocksByPath.delete(path);
+            ui.monitorToggleNonce += 1;
+        }, MONITOR_TOGGLE_LOCK_MS + 20);
     };
 
     const normalizeSavedResults = (entries) => {
@@ -1170,6 +1224,29 @@ export const Search = () => {
         return { changed: false, next: current };
     };
 
+    const normalizeSelectedKeysForAll = (keys) => {
+        if (!Array.isArray(keys)) return [];
+        const available = new Set(ui.allKeys || []);
+        return normalizeFavoriteKeys(keys).filter((key) => available.has(key));
+    };
+
+    const applySharedSelectedKeys = (sharedKeys, currentKeys) => {
+        const next = normalizeSelectedKeysForAll(sharedKeys);
+        const current = normalizeSelectedKeysForAll(currentKeys);
+
+        if (next.length !== current.length) {
+            return { changed: true, next };
+        }
+
+        for (let i = 0; i < next.length; i++) {
+            if (next[i] !== current[i]) {
+                return { changed: true, next };
+            }
+        }
+
+        return { changed: false, next: current };
+    };
+
     const reconcileMonitorSubscriptions = () => {
         const desiredPaths = new Set();
 
@@ -1194,9 +1271,7 @@ export const Search = () => {
 
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            if (resolvedMonitor.id) {
-                store.unsubscribeMonitor(resolvedMonitor.id);
-            }
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
             subscribedMonitorPaths.delete(path);
         }
     };
@@ -1253,6 +1328,44 @@ export const Search = () => {
             sendSeed();
             attempts += 1;
         }, 500);
+    };
+
+    const startInitialSelectedKeysSync = (seedKeys) => {
+        const normalizedSeed = normalizeSelectedKeysForAll(seedKeys);
+        if (normalizedSeed.length === 0) {
+            initialSelectedSyncCompleted = true;
+            return;
+        }
+
+        const sendSeed = () => {
+            store.syncSearchSelectedKeys(normalizedSeed);
+        };
+
+        sendSeed();
+
+        let attempts = 0;
+        const maxAttempts = 20;
+        initialSelectedSyncTimer = setInterval(() => {
+            if (initialSelectedSyncCompleted || store.data.searchSelectedKeysStateReady || attempts >= maxAttempts) {
+                clearInterval(initialSelectedSyncTimer);
+                initialSelectedSyncTimer = null;
+                return;
+            }
+
+            sendSeed();
+            attempts += 1;
+        }, 500);
+    };
+
+    const queueSelectedKeysSync = () => {
+        if (selectedKeysSyncTimer !== null) {
+            clearTimeout(selectedKeysSyncTimer);
+        }
+
+        selectedKeysSyncTimer = setTimeout(() => {
+            selectedKeysSyncTimer = null;
+            store.emitSearchSelectedKeysEvent({ action: "set", keys: ui.selectedKeys });
+        }, 90);
     };
 
     const updateValueInUi = (path, payload) => {
@@ -1327,6 +1440,31 @@ export const Search = () => {
         const applied = applySharedFavoriteKeys(sharedKeys, ui.favoriteKeys);
         if (applied.changed) {
             ui.favoriteKeys = applied.next;
+        }
+    });
+
+    van.derive(() => {
+        if (!store.data.searchSelectedKeysStateReady || ui.allKeys.length === 0) {
+            return;
+        }
+
+        const sharedKeys = normalizeSelectedKeysForAll(store.data.searchSelectedKeysState);
+
+        if (!initialSelectedSyncCompleted && sharedKeys.length === 0 && ui.selectedKeys.length > 0) {
+            store.syncSearchSelectedKeys(ui.selectedKeys);
+            return;
+        }
+
+        initialSelectedSyncCompleted = true;
+
+        if (initialSelectedSyncTimer !== null) {
+            clearInterval(initialSelectedSyncTimer);
+            initialSelectedSyncTimer = null;
+        }
+
+        const applied = applySharedSelectedKeys(sharedKeys, ui.selectedKeys);
+        if (applied.changed) {
+            ui.selectedKeys = applied.next;
         }
     });
 
@@ -1406,10 +1544,16 @@ export const Search = () => {
         toggleAll: () => {
             if (areAllSelected()) ui.selectedKeys = [];
             else ui.selectedKeys = [...ui.allKeys];
+            queueSelectedKeysSync();
         },
 
         selectKeys: (keys) => updateSelection(keys, true),
-        clearSelection: () => (ui.selectedKeys = []),
+        clearSelection: () => {
+            ui.selectedKeys = [];
+            queueSelectedKeysSync();
+        },
+
+        isMonitorToggleLocked,
 
         isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
 
@@ -1566,7 +1710,7 @@ export const Search = () => {
 
             ui.savedResults = [...ui.savedResults, entry];
 
-            pendingMonitorIntentByPath.delete(result.path);
+            setPendingMonitorIntent(result.path, true);
             store.subscribeMonitor(monitorPath);
             subscribedMonitorPaths.add(result.path);
             store.emitSavedListEvent({ action: "upsert", entry });
@@ -1575,6 +1719,7 @@ export const Search = () => {
         },
 
         toggleSavedMonitor: (path, enabled) => {
+            lockMonitorToggle(path);
             setPendingMonitorIntent(path, enabled);
 
             const monitorPath = monitorPathForSearchResult(path);
@@ -1612,9 +1757,7 @@ export const Search = () => {
                 return;
             }
 
-            if (resolvedMonitor.id) {
-                store.unsubscribeMonitor(resolvedMonitor.id);
-            }
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
             subscribedMonitorPaths.delete(path);
             store.emitSavedListEvent({ action: "set-monitor-enabled", path, enabled: false });
             store.notify("Stopped watcher for " + path);
@@ -1624,9 +1767,7 @@ export const Search = () => {
             pendingMonitorIntentByPath.delete(path);
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            if (resolvedMonitor.id) {
-                store.unsubscribeMonitor(resolvedMonitor.id);
-            }
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
             subscribedMonitorPaths.delete(path);
             store.emitSavedListEvent({ action: "remove", path });
 
@@ -1642,9 +1783,7 @@ export const Search = () => {
                 pendingMonitorIntentByPath.delete(entry.path);
                 const monitorPath = monitorPathForSearchResult(entry.path);
                 const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-                if (resolvedMonitor.id) {
-                    store.unsubscribeMonitor(resolvedMonitor.id);
-                }
+                store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
                 subscribedMonitorPaths.delete(entry.path);
             }
 
@@ -1935,6 +2074,7 @@ export const Search = () => {
 
         startInitialSavedSync(ui.savedResults);
         startInitialFavoriteKeysSync(ui.favoriteKeys);
+        startInitialSelectedKeysSync(ui.selectedKeys);
     })();
 
     return div(
