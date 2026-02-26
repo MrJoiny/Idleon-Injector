@@ -210,3 +210,7 @@
 .feature-btn--loading { opacity: 0.5; cursor: wait; }
 
 .feature-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Anvil — info row (Points Remaining banner) */
+.feature-row--info                          { border-color: var(--c-accent) !important; background: var(--c-accent-06); }
+.feature-row__badge--highlight              { color: var(--c-accent); font-weight: 700; }
