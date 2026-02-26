@@ -131,9 +131,18 @@ export const StampsTab = () => {
             const data = await readMany({
                 levels:    `bEngine.getGameAttribute("StampLevel")`,
                 maxLevels: `bEngine.getGameAttribute("StampLevelMAX")`,
-                names:     `cList && cList.StampData
-                                ? cList.StampData.map(function(pg){ return pg.map(function(s){ return Array.isArray(s) ? s[0] : String(s); }); })
-                                : null`,
+                names:     `(function(){
+                                var pages = ['A', 'B', 'C'];
+                                return pages.map(function(letter) {
+                                    var names = [];
+                                    for (var i = 1; ; i++) {
+                                        var entry = itemDefs['Stamp' + letter + i];
+                                        if (!entry) break;
+                                        names.push(entry.h.displayName.replace(/_/g, ' '));
+                                    }
+                                    return names;
+                                });
+                            })()`,
             });
             gameData.val = data;
         } catch (e) {
@@ -210,7 +219,7 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name: names[order] ?? `Stamp ${page}-${order}`,
+                        name: names[order] ?? `Stamp ${['A','B','C'][page]}${order + 1}`,
                         levels:    data.levels,
                         maxLevels: data.maxLevels,
                         onLocalUpdate: updateLocal,
