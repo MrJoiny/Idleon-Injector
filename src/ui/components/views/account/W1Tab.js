@@ -22,10 +22,12 @@ const { div, button, span, p } = van.tags;
 // ─── sub-tab registry ─────────────────────────────────────────────────────────
 
 const W1_SUBTABS = [
-    { id: "stamps",  label: "STAMPS",  component: StampsTab },
-    { id: "anvil",   label: "ANVIL",   component: AnvilTab },
-    { id: "forge",   label: "FORGE",   component: ForgeTab },
-    { id: "smith",   label: "SMITHING", component: null },
+    { id: "stamps",    label: "STAMPS",     component: StampsTab },
+    { id: "anvil",     label: "ANVIL",      component: AnvilTab },
+    { id: "forge",     label: "FORGE",      component: ForgeTab },
+    { id: "statues",   label: "STATUES",    component: null },
+    { id: "starsigns", label: "STAR SIGNS", component: null },
+    { id: "orion",     label: "ORION",      component: null },
 ];
 
 const subTabCache = new Map();
