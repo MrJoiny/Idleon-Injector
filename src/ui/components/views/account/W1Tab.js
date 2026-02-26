@@ -15,6 +15,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { StampsTab } from "./w1/StampsTab.js";
 import { AnvilTab } from "./w1/AnvilTab.js";
+import { ForgeTab } from "./w1/ForgeTab.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -23,7 +24,7 @@ const { div, button, span, p } = van.tags;
 const W1_SUBTABS = [
     { id: "stamps",  label: "STAMPS",  component: StampsTab },
     { id: "anvil",   label: "ANVIL",   component: AnvilTab },
-    { id: "forge",   label: "FORGE",   component: null },
+    { id: "forge",   label: "FORGE",   component: ForgeTab },
     { id: "smith",   label: "SMITHING", component: null },
 ];
 
