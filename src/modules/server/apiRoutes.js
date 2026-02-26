@@ -487,6 +487,70 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
+
+
+    // ── GENERIC GAME MEMORY ACCESS ─────────────────────────────────────────────
+    // Used by src/ui/helpers/gameHelper.js — no new endpoints needed for new features.
+
+    app.post("/api/game/read", async (req, res) => {
+        const { expression } = await req.json();
+        if (!expression) return res.status(400).json({ error: "Missing expression" });
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `JSON.stringify((function(){ try{ return (${expression}); }catch(e){ return {__error: e.message}; } })())`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Evaluation failed", details: result.exceptionDetails.text });
+            }
+
+            let value;
+            try {
+                value = JSON.parse(result.result.value);
+            } catch {
+                return res.status(500).json({ error: "Result not serialisable" });
+            }
+
+            if (value && typeof value === "object" && value.__error) {
+                return res.status(500).json({ error: value.__error });
+            }
+
+            res.json({ value });
+        } catch (err) {
+            log.error("Error in /api/game/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/write", async (req, res) => {
+        const { expression } = await req.json();
+        if (!expression) return res.status(400).json({ error: "Missing expression" });
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `(function(){ try{ ${expression}; return "ok"; }catch(e){ return "error:" + e.message; } })()`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Write failed", details: result.exceptionDetails.text });
+            }
+
+            const val = result.result.value;
+            if (typeof val === "string" && val.startsWith("error:")) {
+                return res.status(500).json({ error: val.slice(6) });
+            }
+
+            res.json({ ok: true });
+        } catch (err) {
+            log.error("Error in /api/game/write:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.post("/api/open-url", async (req, res) => {
         const { url } = await req.json();
         if (!url) {

@@ -1,0 +1,219 @@
+/**
+ * Account Options Tab
+ * Raw game attribute editor (OptionsListAccount).
+ * Requires explicit user confirmation before data loads.
+ */
+
+import van from "../../../vendor/van-1.6.0.js";
+import vanX from "../../../vendor/van-x-0.6.3.js";
+import store from "../../../state/store.js";
+import { Loader } from "../../Loader.js";
+import { EmptyState } from "../../EmptyState.js";
+import { SearchBar } from "../../SearchBar.js";
+import { NumberInput } from "../../NumberInput.js";
+import { Icons } from "../../../assets/icons.js";
+import { withTooltip } from "../../Tooltip.js";
+
+const { div, button, input, label, span, p, h3 } = van.tags;
+
+export const AccountOptionsTab = () => {
+    const ui = vanX.reactive({
+        isUnlocked: false,
+        filterText: "",
+        hideAI: false,
+        displayList: [],
+    });
+
+    const handleLoad = () => {
+        ui.isUnlocked = true;
+        if (!store.data.accountOptions.length) {
+            store.loadAccountOptions();
+        }
+    };
+
+    van.derive(() => {
+        const data = store.data.accountOptions;
+        const schema = store.data.accountSchema;
+        const term = ui.filterText.toLowerCase();
+        const hide = ui.hideAI;
+
+        const _len = data.length;
+
+        if (!data || data.length === 0) {
+            ui.displayList = [];
+            return;
+        }
+
+        const results = [];
+        for (let index = 0; index < data.length; index++) {
+            const val = data[index];
+            const sch = schema[index];
+
+            if (hide && sch && sch.AI) continue;
+            if (term) {
+                const name = (sch && sch.name ? sch.name : `UNDOCUMENTED ${index}`).toLowerCase();
+                if (!name.includes(term) && !index.toString().includes(term)) continue;
+            }
+
+            results.push({ index, val, schema: sch });
+        }
+        ui.displayList = results;
+    });
+
+    return div({ class: "account-sub-tab-pane-inner" }, () => {
+        if (!ui.isUnlocked) {
+            return div(
+                { class: "modal-box options-account-modal" },
+                div({ class: "modal-header" }, h3("⚠ CRITICAL WARNING")),
+                div(
+                    { class: "modal-body" },
+                    p("You are entering the Options List Editor"),
+                    p("Modifying these indices directly bypasses game logic safety checks"),
+                    p("Proceed with caution")
+                ),
+                div(
+                    { class: "modal-footer" },
+                    button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS")
+                )
+            );
+        }
+
+        return div(
+            { class: "options-account-layout scroll-container" },
+
+            div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
+
+            div(
+                { class: "control-bar sticky-header" },
+                withTooltip(
+                    button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
+                    "Reload from game memory"
+                ),
+                withTooltip(
+                    label(
+                        { class: "toggle-switch account-toggle" },
+                        input({
+                            type: "checkbox",
+                            checked: () => ui.hideAI,
+                            onchange: (e) => (ui.hideAI = e.target.checked),
+                        }),
+                        span({ class: "slider" }),
+                        span({ class: "label" }, "HIDE AI")
+                    ),
+                    "Hide AI-generated options"
+                ),
+                div(
+                    { class: "options-account-search" },
+                    SearchBar({
+                        placeholder: "FILTER_INDEX",
+                        onInput: (val) => (ui.filterText = val),
+                    })
+                )
+            ),
+
+            div(
+                { id: "options-account-content", class: "options-account-content" },
+                () => {
+                    if (store.app.isLoading) {
+                        return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }));
+                    }
+
+                    if (ui.displayList.length === 0) {
+                        return EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "NO OPTIONS MATCH",
+                            subtitle: "Adjust your filter or search term",
+                        });
+                    }
+
+                    return vanX.list(
+                        div({ class: "options-account-list" }),
+                        ui.displayList,
+                        (itemState) => {
+                            const { index, val, schema } = itemState.val;
+                            return OptionItem(index, val, schema);
+                        }
+                    );
+                }
+            )
+        );
+    });
+};
+
+const OptionItem = (index, rawVal, schema) => {
+    const type = typeof rawVal;
+    const normalizedInit = type === "object" && rawVal !== null ? JSON.stringify(rawVal) : rawVal;
+
+    const currentVal = van.state(normalizedInit);
+    const status = van.state(null);
+
+    const handleApply = async () => {
+        try {
+            let val = currentVal.val;
+            if (type === "number") val = Number(val);
+            else if (type === "boolean") val = Boolean(val);
+            else if (type === "object") val = JSON.parse(val);
+
+            await store.updateAccountOption(index, val);
+            status.val = "success";
+            setTimeout(() => (status.val = null), 1000);
+        } catch {
+            status.val = "error";
+            setTimeout(() => (status.val = null), 1000);
+        }
+    };
+
+    const name = schema ? schema.name : "UNDOCUMENTED INDEX";
+    const desc = schema ? schema.description : null;
+    const isAI = schema ? schema.AI : false;
+    const warning = schema ? schema.warning : null;
+
+    return div(
+        {
+            class: () =>
+                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
+                    status.val === "success" ? "save-success" : ""
+                } ${status.val === "error" ? "save-error" : ""}`,
+            "data-index": index,
+        },
+        div(
+            { class: "option-header" },
+            div(
+                { class: "option-label" },
+                isAI ? span({ class: "option-ai-label" }, "AI_GEN // ") : null,
+                name
+            ),
+            div({ class: "option-index" }, `IDX::${index}`)
+        ),
+        warning ? div({ class: "option-warning" }, `⚠ ${warning}`) : null,
+        desc ? div({ class: "option-description" }, desc) : null,
+        div(
+            { class: "option-input-wrapper" },
+            type === "boolean"
+                ? input({
+                      type: "checkbox",
+                      class: "option-input",
+                      checked: currentVal,
+                      onchange: (e) => (currentVal.val = e.target.checked),
+                  })
+                : type === "number"
+                  ? NumberInput({
+                        class: "option-input",
+                        value: currentVal,
+                        oninput: (e) => (currentVal.val = e.target.value),
+                        onDecrement: () => (currentVal.val = Number(currentVal.val) - 1),
+                        onIncrement: () => (currentVal.val = Number(currentVal.val) + 1),
+                    })
+                  : input({
+                        type: "text",
+                        class: "option-input",
+                        value: currentVal,
+                        oninput: (e) => (currentVal.val = e.target.value),
+                    }),
+            withTooltip(
+                button({ class: "option-apply-button", onclick: handleApply }, "SET"),
+                "Write to game memory"
+            )
+        )
+    );
+};

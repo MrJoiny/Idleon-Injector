@@ -1,9 +1,12 @@
 /**
- * Account Component
- * Options page, toggle switch, option items, danger zone
+ * Account Options — Feature Styles
+ * Only for the raw OptionsListAccount editor (Tab 1).
+ * World chrome lives in _world-tabs.css.
+ * Stamp styles live in stamps.css.
  */
 
-/* --- DANGER ZONE HEADER --- */
+/* ── Danger zone header ──────────────────────────────────────────────────── */
+
 .danger-zone-header {
     border: 1px dashed var(--c-danger);
     background: var(--c-danger-05);
@@ -15,24 +18,24 @@
     letter-spacing: 0.05em;
 }
 
-/* --- ACCOUNT LAYOUT --- */
-.options-account-modal {
-    margin: 50px auto;
-    max-width: 600px;
-}
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+.options-account-modal  { margin: 50px auto; max-width: 600px; }
 
 .options-account-layout {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-.options-account-search {
-    flex: 1;
-    margin-left: 15px;
-}
+.options-account-search  { flex: 1; margin-left: 15px; }
 
 .options-account-content {
     flex: 1;
+    overflow-y: auto;
+    margin-top: 12px;
 }
 
 .options-account-loader {
@@ -42,23 +45,10 @@
     justify-content: center;
 }
 
-.options-account-list {
-    display: flex;
-    flex-direction: column;
-}
+.options-account-list { display: flex; flex-direction: column; }
 
-.option-ai-label {
-    color: var(--c-accent);
-    font-size: 0.875rem;
-}
+/* ── Toggle switch ───────────────────────────────────────────────────────── */
 
-.option-warning {
-    color: var(--c-warning);
-    font-size: 0.875rem;
-    margin-bottom: 8px;
-}
-
-/* --- TOGGLE SWITCH --- */
 .toggle-switch {
     display: inline-flex;
     align-items: center;
@@ -67,13 +57,8 @@
     flex-shrink: 0;
 }
 
-.toggle-switch.account-toggle {
-    margin-left: 25px;
-}
-
-.toggle-switch input {
-    display: none;
-}
+.toggle-switch.account-toggle { margin-left: 25px; }
+.toggle-switch input          { display: none; }
 
 .toggle-switch .slider {
     width: 36px;
@@ -88,19 +73,14 @@
 .toggle-switch .slider::before {
     content: "";
     position: absolute;
-    width: 12px;
-    height: 12px;
-    left: 2px;
-    top: 2px;
+    width: 12px; height: 12px;
+    left: 2px; top: 2px;
     background: var(--c-control-thumb);
     border-radius: 50%;
     transition: 0.3s;
 }
 
-.toggle-switch input:checked + .slider {
-    background: var(--c-accent-20);
-    border-color: var(--c-accent);
-}
+.toggle-switch input:checked + .slider { background: var(--c-accent-20); border-color: var(--c-accent); }
 
 .toggle-switch input:checked + .slider::before {
     transform: translateX(18px);
@@ -108,28 +88,21 @@
     box-shadow: 0 0 5px var(--c-accent);
 }
 
-.toggle-switch .label {
-    font-size: 0.875rem;
-    color: var(--c-text-dim);
-    font-weight: 600;
-}
+.toggle-switch .label { font-size: 0.875rem; color: var(--c-text-dim); font-weight: 600; }
 
-/* --- OPTION ITEM --- */
+/* ── Option items ────────────────────────────────────────────────────────── */
+
 .option-item {
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     margin-bottom: 8px;
     padding: 12px;
-    transition:
-        border-color 0.2s,
-        z-index 0s;
+    transition: border-color 0.2s, z-index 0s;
     position: relative;
 }
 
-.option-item:hover {
-    border-color: var(--c-border-strong);
-    z-index: 100;
-}
+.option-item:hover       { border-color: var(--c-border-strong); z-index: 100; }
+.option-item.has-warning { border-color: var(--c-warning); }
 
 .option-description {
     font-size: 0.875rem;
@@ -139,20 +112,9 @@
     line-height: 1.3;
 }
 
-.option-item.has-warning {
-    border-color: var(--c-warning);
-}
+.option-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
 
-.option-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.option-label {
-    font-weight: 600;
-    color: var(--c-text-main);
-}
+.option-label  { font-weight: 600; color: var(--c-text-main); }
 
 .option-index {
     background: var(--c-black-40);
@@ -163,10 +125,10 @@
     border-radius: 2px;
 }
 
-.option-input-wrapper {
-    display: flex;
-    gap: 10px;
-}
+.option-ai-label { color: var(--c-accent); font-size: 0.875rem; }
+.option-warning  { color: var(--c-warning); font-size: 0.875rem; margin-bottom: 8px; }
+
+.option-input-wrapper { display: flex; gap: 10px; }
 
 .option-apply-button {
     background: var(--c-control-border-strong);
@@ -176,7 +138,4 @@
     font-size: 0.875rem;
 }
 
-.option-apply-button:hover {
-    background: var(--c-success);
-    color: var(--c-black);
-}
+.option-apply-button:hover { background: var(--c-success); color: var(--c-black); }
