@@ -335,7 +335,7 @@ registerCheats({
                 if (!towerInfo) return "TowerInfo not found";
 
                 let count = 0;
-                for (let i = 0; i <= 27; i++) {
+                for (let i = 0; i <= 26; i++) {
                     if (towerInfo[i] !== undefined) {
                         const val = parseInt(towerInfo[i]) || 0;
                         if (val < 1) {
@@ -344,6 +344,17 @@ registerCheats({
                         }
                     }
                 }
+                for (let i = 27; i <= 53; i++) {
+                    towerInfo[i] = towerInfo[i - 27];
+                }
+
+                const shrineInfo = gga.ShrineInfo;
+                for (let i = 0; i < shrineInfo.length; i++) {
+                    if (shrineInfo[i] !== undefined && shrineInfo[i][3] === 0) {
+                        shrineInfo[i][3] = 1;
+                    }
+                }
+
                 return `Unlocked ${count} towers in construction.`;
             },
         },
