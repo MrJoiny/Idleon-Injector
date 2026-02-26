@@ -2,10 +2,12 @@
  * W1 — Anvil Tab
  *
  * AnvilPAstats layout:
- *   [0] = points remaining  (auto-managed by the game)
- *   [3] = Bonus Exp
- *   [4] = Speed/hr
- *   [5] = Capacity
+ *   [0] = points remaining  (read from game after every change)
+ *   [1] = Points bought with money        (max 600)
+ *   [2] = Points bought with monster parts (max 700)
+ *   [3] = Bonus Exp  (allocated)
+ *   [4] = Speed/hr   (allocated)
+ *   [5] = Capacity   (allocated)
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -19,30 +21,32 @@ import { withTooltip } from "../../../Tooltip.js";
 const { div, button, span, h3, p } = van.tags;
 
 const CATEGORIES = [
-    { label: "Bonus Exp", index: 3 },
-    { label: "Speed/hr",  index: 4 },
-    { label: "Capacity",  index: 5 },
+    { label: "Money Points",          index: 1, max: 600  },
+    { label: "Monster Part Points",   index: 2, max: 700  },
+    { label: "Bonus Exp",             index: 3, max: null },
+    { label: "Speed/hr",              index: 4, max: null },
+    { label: "Capacity",              index: 5, max: null },
 ];
 
 // ── AnvilRow ──────────────────────────────────────────────────────────────
 
-const AnvilRow = ({ category, stats, onReload }) => {
-    const inputVal = van.state(String(stats.val?.[category.index] ?? 0));
+const AnvilRow = ({ category, getStats, onReload }) => {
+    const inputVal = van.state(String(getStats()?.[category.index] ?? 0));
     const status   = van.state(null);
 
-    van.derive(() => {
-        inputVal.val = String(stats.val?.[category.index] ?? 0);
-    });
-
     const doSet = async (targetVal) => {
-        const pts = Math.max(0, Number(targetVal));
-        if (isNaN(pts)) return;
+        const raw = Number(targetVal);
+        if (isNaN(raw)) return;
+        const pts = Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
         status.val = "loading";
         try {
             await writeAttr(`bEngine.getGameAttribute("AnvilPAstats")[${category.index}] = ${pts}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            await onReload?.();
+            // Small delay so the game has time to commit the write before we re-read
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            const fresh = await onReload?.();
+            inputVal.val = String(fresh?.[category.index] ?? pts);
         } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1200);
@@ -57,10 +61,16 @@ const AnvilRow = ({ category, stats, onReload }) => {
                 }`,
         },
         div({ class: "feature-row__info" },
-            span({ class: "feature-row__name" }, category.label)
+            span({ class: "feature-row__name" }, category.label),
+            category.max !== null
+                ? span({ class: "feature-row__index" }, `max ${category.max}`)
+                : null
         ),
         span({ class: "feature-row__badge" },
-            () => `${stats.val?.[category.index] ?? 0} pts`
+            () => {
+                const val = getStats()?.[category.index] ?? 0;
+                return category.max !== null ? `${val} / ${category.max}` : `${val} pts`;
+            }
         ),
         div({ class: "feature-row__controls" },
             NumberInput({
@@ -75,16 +85,27 @@ const AnvilRow = ({ category, stats, onReload }) => {
                     onclick:  () => doSet(inputVal.val),
                     disabled: () => status.val === "loading",
                 }, () => (status.val === "loading" ? "..." : "SET")),
-                `Set allocated points for ${category.label}`
+                category.max !== null
+                    ? `Set value (clamped to max ${category.max})`
+                    : `Set allocated points for ${category.label}`
             ),
-            withTooltip(
-                button({
-                    class:    "feature-btn feature-btn--danger",
-                    onclick:  () => doSet(0),
-                    disabled: () => status.val === "loading",
-                }, "RESET"),
-                `Reset ${category.label} points to 0`
-            )
+            category.max !== null
+                ? withTooltip(
+                    button({
+                        class:    "feature-btn feature-btn--danger",
+                        onclick:  () => doSet(category.max),
+                        disabled: () => status.val === "loading",
+                    }, "MAX"),
+                    `Set to maximum (${category.max})`
+                )
+                : withTooltip(
+                    button({
+                        class:    "feature-btn feature-btn--danger",
+                        onclick:  () => doSet(0),
+                        disabled: () => status.val === "loading",
+                    }, "RESET"),
+                    `Reset ${category.label} to 0`
+                )
         )
     );
 };
@@ -96,6 +117,7 @@ export const AnvilTab = () => {
     const loading = van.state(false);
     const error   = van.state(null);
 
+    // Returns fresh array from game, also updates reactive stats
     const load = async () => {
         loading.val = true;
         error.val   = null;
@@ -104,9 +126,11 @@ export const AnvilTab = () => {
                 anvilStats: `bEngine.getGameAttribute("AnvilPAstats")`,
             });
             const raw = data.anvilStats;
-            stats.val = Array.isArray(raw)
+            const arr = Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
+            stats.val = arr;
+            return arr;
         } catch (e) {
             error.val = e.message || "Failed to read anvil data";
         } finally {
@@ -130,7 +154,8 @@ export const AnvilTab = () => {
         ),
 
         div({ class: "warning-banner" },
-            "⚠ You must have a character selected in-game for point changes to take effect"
+            "⚠ You must have a character selected in-game for point changes to take effect. ",
+            "Open the Anvil in-game at least once per session for Points Remaining to load correctly."
         ),
 
         () => {
@@ -148,9 +173,11 @@ export const AnvilTab = () => {
 
             return div({ class: "feature-list" },
 
+                // Points remaining — always read from game (index 0)
                 div({ class: "feature-row feature-row--info" },
                     div({ class: "feature-row__info" },
-                        span({ class: "feature-row__name" }, "Points Remaining")
+                        span({ class: "feature-row__name" }, "Points Remaining"),
+
                     ),
                     span({ class: "feature-row__badge feature-row__badge--highlight" },
                         () => `${stats.val?.[0] ?? 0} pts`
@@ -158,7 +185,11 @@ export const AnvilTab = () => {
                 ),
 
                 ...CATEGORIES.map((cat) =>
-                    AnvilRow({ category: cat, stats, onReload: load })
+                    AnvilRow({
+                        category: cat,
+                        getStats: () => stats.val,
+                        onReload: load,
+                    })
                 )
             );
         }
