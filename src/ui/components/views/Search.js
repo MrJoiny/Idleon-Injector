@@ -34,6 +34,120 @@ import {
 
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
 
+const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
+const SEARCH_WORKSPACE_VERSION = 1;
+const DEFAULT_SELECTED_KEYS_LIMIT = 8;
+
+function uniqueStrings(items) {
+    return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
+}
+
+function sanitizeScanType(scanType, allowed, fallback) {
+    return typeof scanType === "string" && allowed.includes(scanType) ? scanType : fallback;
+}
+
+function normalizeSavedEntry(entry) {
+    if (!entry || typeof entry !== "object" || typeof entry.path !== "string" || !entry.path) {
+        return null;
+    }
+
+    const normalized = {
+        path: entry.path,
+        formattedValue: typeof entry.formattedValue === "string" ? entry.formattedValue : "",
+        type: typeof entry.type === "string" ? entry.type : "undefined",
+        monitorEnabled: entry.monitorEnabled !== false,
+    };
+
+    if (Object.prototype.hasOwnProperty.call(entry, "value")) {
+        normalized.value = entry.value;
+    }
+
+    if (typeof entry.lastLiveFormatted === "string") {
+        normalized.lastLiveFormatted = entry.lastLiveFormatted;
+    }
+
+    if (typeof entry.lastLiveType === "string") {
+        normalized.lastLiveType = entry.lastLiveType;
+    }
+
+    if (Array.isArray(entry.lastHistory)) {
+        normalized.lastHistory = entry.lastHistory
+            .filter((point) => point && typeof point === "object" && typeof point.ts === "number")
+            .slice(0, 10)
+            .map((point) => ({ value: point.value, ts: point.ts }));
+    }
+
+    return normalized;
+}
+
+function loadSearchWorkspace() {
+    try {
+        const raw = localStorage.getItem(SEARCH_WORKSPACE_STORAGE_KEY);
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object" || parsed.version !== SEARCH_WORKSPACE_VERSION) {
+            return null;
+        }
+
+        const data = parsed.data;
+        if (!data || typeof data !== "object") return null;
+
+        return {
+            selectedKeys: uniqueStrings(data.selectedKeys),
+            searchQuery: typeof data.searchQuery === "string" ? data.searchQuery : "",
+            searchQuery2: typeof data.searchQuery2 === "string" ? data.searchQuery2 : "",
+            scanTypeNew: sanitizeScanType(data.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
+            scanTypeNext: sanitizeScanType(data.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
+            allKeysExpanded: data.allKeysExpanded === true,
+            allKeysFilter: typeof data.allKeysFilter === "string" ? data.allKeysFilter : "",
+            savedResults: Array.isArray(data.savedResults)
+                ? data.savedResults.map(normalizeSavedEntry).filter(Boolean)
+                : [],
+        };
+    } catch {
+        return null;
+    }
+}
+
+function buildSearchWorkspace(ui) {
+    return {
+        selectedKeys: uniqueStrings(ui.selectedKeys),
+        searchQuery: String(ui.searchQuery ?? ""),
+        searchQuery2: String(ui.searchQuery2 ?? ""),
+        scanTypeNew: sanitizeScanType(ui.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
+        scanTypeNext: sanitizeScanType(ui.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
+        allKeysExpanded: ui.allKeysExpanded === true,
+        allKeysFilter: String(ui.allKeysFilter ?? ""),
+        savedResults: (ui.savedResults || []).map(normalizeSavedEntry).filter(Boolean),
+    };
+}
+
+function saveSearchWorkspace(workspace) {
+    try {
+        localStorage.setItem(
+            SEARCH_WORKSPACE_STORAGE_KEY,
+            JSON.stringify({
+                version: SEARCH_WORKSPACE_VERSION,
+                data: workspace,
+            })
+        );
+    } catch {
+        // Ignore storage quota or JSON serialization failures
+    }
+}
+
+function pickInitialSelectedKeys(allKeys, persistedKeys, favoriteKeys) {
+    const available = new Set(allKeys || []);
+    const fromPersisted = uniqueStrings(persistedKeys).filter((key) => available.has(key));
+    if (fromPersisted.length > 0) return fromPersisted;
+
+    const fromFavorites = uniqueStrings(favoriteKeys).filter((key) => available.has(key));
+    if (fromFavorites.length > 0) return fromFavorites.slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
+
+    return (allKeys || []).slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
+}
+
 /**
  * Key checkbox component for the whitelist.
  */
@@ -741,14 +855,17 @@ const SavedResultsSection = ({ ui, handlers }) =>
         })
     );
 export const Search = () => {
+    const restoredWorkspace = loadSearchWorkspace() || {};
+    const initialSearchQuery = typeof restoredWorkspace.searchQuery === "string" ? restoredWorkspace.searchQuery : "";
+
     const ui = vanX.reactive({
         allKeys: [],
-        selectedKeys: [],
-        searchQuery: "",
-        searchQuery2: "",
-        detectedType: "empty",
-        scanTypeNew: "exact_value",
-        scanTypeNext: "exact_value",
+        selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
+        searchQuery: initialSearchQuery,
+        searchQuery2: typeof restoredWorkspace.searchQuery2 === "string" ? restoredWorkspace.searchQuery2 : "",
+        detectedType: detectQueryType(initialSearchQuery),
+        scanTypeNew: sanitizeScanType(restoredWorkspace.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
+        scanTypeNext: sanitizeScanType(restoredWorkspace.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
         scanSessionActive: false,
         previousSnapshot: {},
         isLoading: false,
@@ -756,8 +873,8 @@ export const Search = () => {
         results: [],
         displayLimit: 50,
         error: null,
-        allKeysExpanded: false,
-        allKeysFilter: "",
+        allKeysExpanded: restoredWorkspace.allKeysExpanded === true,
+        allKeysFilter: typeof restoredWorkspace.allKeysFilter === "string" ? restoredWorkspace.allKeysFilter : "",
         scopePaths: [],
         lastSearchMode: "new",
 
@@ -768,7 +885,9 @@ export const Search = () => {
         hasSearched: false,
 
         // saved list state
-        savedResults: [],
+        savedResults: Array.isArray(restoredWorkspace.savedResults)
+            ? restoredWorkspace.savedResults.map(normalizeSavedEntry).filter(Boolean)
+            : [],
         savedEdit: { path: null, draft: "", type: "" },
         isRefreshingSavedResults: false,
     });
@@ -801,6 +920,34 @@ export const Search = () => {
     const getResolvedMonitorEntry = (path) => {
         return resolveMonitorEntry(path, store.data.monitorValues || {});
     };
+
+    const subscribeSavedMonitors = () => {
+        for (const entry of ui.savedResults) {
+            if (!entry?.path || entry.monitorEnabled === false) continue;
+            store.subscribeMonitor(monitorPathForSearchResult(entry.path));
+        }
+    };
+
+    const restoreSavedMonitorsWithRetry = () => {
+        if (ui.savedResults.length === 0) return;
+
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        const trySubscribe = () => {
+            subscribeSavedMonitors();
+            attempts += 1;
+            if (attempts < maxAttempts) {
+                setTimeout(trySubscribe, 1500);
+            }
+        };
+
+        trySubscribe();
+    };
+
+    van.derive(() => {
+        saveSearchWorkspace(buildSearchWorkspace(ui));
+    });
 
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
@@ -1250,12 +1397,14 @@ export const Search = () => {
             const allKeys = await API.fetchGgaKeys();
             ui.allKeys = allKeys;
             const validFavorites = getValidFavorites();
-            ui.selectedKeys = validFavorites.slice(0, 8);
+            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys, validFavorites);
         } catch (err) {
             ui.error = err.message || "Failed to load GGA keys";
         } finally {
             ui.isLoading = false;
         }
+
+        restoreSavedMonitorsWithRetry();
     })();
 
     return div(
