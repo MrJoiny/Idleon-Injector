@@ -43,10 +43,6 @@ function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
 }
 
-function sanitizeScanType(scanType, allowed, fallback) {
-    return typeof scanType === "string" && allowed.includes(scanType) ? scanType : fallback;
-}
-
 function normalizeSavedEntry(entry) {
     if (!entry || typeof entry !== "object" || typeof entry.path !== "string" || !entry.path) {
         return null;
@@ -96,14 +92,7 @@ function loadSearchWorkspace() {
 
         return {
             selectedKeys: uniqueStrings(data.selectedKeys),
-            searchQuery: typeof data.searchQuery === "string" ? data.searchQuery : "",
-            searchQuery2: typeof data.searchQuery2 === "string" ? data.searchQuery2 : "",
-            resultsFilter: typeof data.resultsFilter === "string" ? data.resultsFilter : "",
-            savedFilter: typeof data.savedFilter === "string" ? data.savedFilter : "",
-            scanTypeNew: sanitizeScanType(data.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
-            scanTypeNext: sanitizeScanType(data.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
             allKeysExpanded: data.allKeysExpanded === true,
-            allKeysFilter: typeof data.allKeysFilter === "string" ? data.allKeysFilter : "",
             savedResults: Array.isArray(data.savedResults)
                 ? data.savedResults.map(normalizeSavedEntry).filter(Boolean)
                 : [],
@@ -116,14 +105,7 @@ function loadSearchWorkspace() {
 function buildSearchWorkspace(ui) {
     return {
         selectedKeys: uniqueStrings(ui.selectedKeys),
-        searchQuery: String(ui.searchQuery ?? ""),
-        searchQuery2: String(ui.searchQuery2 ?? ""),
-        resultsFilter: String(ui.resultsFilter ?? ""),
-        savedFilter: String(ui.savedFilter ?? ""),
-        scanTypeNew: sanitizeScanType(ui.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
-        scanTypeNext: sanitizeScanType(ui.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
         allKeysExpanded: ui.allKeysExpanded === true,
-        allKeysFilter: String(ui.allKeysFilter ?? ""),
         savedResults: (ui.savedResults || []).map(normalizeSavedEntry).filter(Boolean),
     };
 }
@@ -983,20 +965,20 @@ const SavedResultsSection = ({ ui, handlers }) =>
     );
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
-    const initialSearchQuery = typeof restoredWorkspace.searchQuery === "string" ? restoredWorkspace.searchQuery : "";
+    const initialSearchQuery = "";
 
     const ui = vanX.reactive({
         allKeys: [],
         selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
         searchQuery: initialSearchQuery,
-        searchQuery2: typeof restoredWorkspace.searchQuery2 === "string" ? restoredWorkspace.searchQuery2 : "",
-        resultsFilter: typeof restoredWorkspace.resultsFilter === "string" ? restoredWorkspace.resultsFilter : "",
-        savedFilter: typeof restoredWorkspace.savedFilter === "string" ? restoredWorkspace.savedFilter : "",
-        resultsFilterApplied: typeof restoredWorkspace.resultsFilter === "string" ? restoredWorkspace.resultsFilter : "",
-        savedFilterApplied: typeof restoredWorkspace.savedFilter === "string" ? restoredWorkspace.savedFilter : "",
+        searchQuery2: "",
+        resultsFilter: "",
+        savedFilter: "",
+        resultsFilterApplied: "",
+        savedFilterApplied: "",
         detectedType: detectQueryType(initialSearchQuery),
-        scanTypeNew: sanitizeScanType(restoredWorkspace.scanTypeNew, NEW_SCAN_TYPES, "exact_value"),
-        scanTypeNext: sanitizeScanType(restoredWorkspace.scanTypeNext, NEXT_SCAN_TYPES, "exact_value"),
+        scanTypeNew: "exact_value",
+        scanTypeNext: "exact_value",
         scanSessionActive: false,
         previousSnapshot: {},
         isLoading: false,
@@ -1005,7 +987,7 @@ export const Search = () => {
         displayLimit: 50,
         error: null,
         allKeysExpanded: restoredWorkspace.allKeysExpanded === true,
-        allKeysFilter: typeof restoredWorkspace.allKeysFilter === "string" ? restoredWorkspace.allKeysFilter : "",
+        allKeysFilter: "",
         scopePaths: [],
         lastSearchMode: "new",
 
