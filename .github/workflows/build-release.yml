@@ -12,18 +12,22 @@ jobs:
                       artifact-name: InjectCheatsUI-Windows
                       binary-name: InjectCheatsUI.exe
                       build-command: build
+                      archive-file: InjectCheatsUI-Windows.zip
                     - os: ubuntu-latest
                       artifact-name: InjectCheatsUI-Linux
                       binary-name: InjectCheatsUI-linux
                       build-command: build-unix
+                      archive-file: InjectCheatsUI-Linux.tar.gz
                     - os: macos-15-intel
                       artifact-name: InjectCheatsUI-macOS-x64
                       binary-name: InjectCheatsUI-macos-x64
                       build-command: build-macos-x64
+                      archive-file: InjectCheatsUI-macOS-x64.tar.gz
                     - os: macos-15
                       artifact-name: InjectCheatsUI-macOS-arm64
                       binary-name: InjectCheatsUI-macos-arm64
                       build-command: build-macos-arm64
+                      archive-file: InjectCheatsUI-macOS-arm64.tar.gz
 
         runs-on: ${{ matrix.os }}
 
@@ -54,16 +58,23 @@ jobs:
                   mkdir -p release-package
                   find . -maxdepth 1 -not -name '.' -not -name 'release-package' -not -name 'node_modules' -exec cp -r {} release-package/ \;
 
-            - name: Zip release package
+            - name: Archive release package (Windows)
+              if: runner.os == 'Windows'
               shell: pwsh
               run: |
-                  Compress-Archive -Path release-package/* -DestinationPath "${{ matrix.artifact-name }}.zip"
+                  Compress-Archive -Path release-package/* -DestinationPath "${{ matrix.archive-file }}"
+
+            - name: Archive release package (Unix)
+              if: runner.os != 'Windows'
+              shell: bash
+              run: |
+                  tar -czf "${{ matrix.archive-file }}" -C release-package .
 
             - name: Upload zipped artifact
               uses: actions/upload-artifact@v4
               with:
                   name: ${{ matrix.artifact-name }}
-                  path: ${{ matrix.artifact-name }}.zip
+                  path: ${{ matrix.archive-file }}
 
     release:
         needs: build
@@ -92,7 +103,7 @@ jobs:
                     --title "${{ steps.version.outputs.version }}" \
                     --generate-notes \
                     "binaries/InjectCheatsUI-Windows/InjectCheatsUI-Windows.zip" \
-                    "binaries/InjectCheatsUI-Linux/InjectCheatsUI-Linux.zip" \
-                    "binaries/InjectCheatsUI-macOS-x64/InjectCheatsUI-macOS-x64.zip" \
-                    "binaries/InjectCheatsUI-macOS-arm64/InjectCheatsUI-macOS-arm64.zip"
+                    "binaries/InjectCheatsUI-Linux/InjectCheatsUI-Linux.tar.gz" \
+                    "binaries/InjectCheatsUI-macOS-x64/InjectCheatsUI-macOS-x64.tar.gz" \
+                    "binaries/InjectCheatsUI-macOS-arm64/InjectCheatsUI-macOS-arm64.tar.gz"
 
