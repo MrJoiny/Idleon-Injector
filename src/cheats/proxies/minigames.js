@@ -188,6 +188,47 @@ function setupEvents670Minigames() {
             return value;
         },
     });
+
+    // valentine minigame
+    if (!ActorEvents670.prototype._event_OwlEvent?._isPatched) {
+        const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
+        ActorEvents670.prototype._event_OwlEvent = function (...args) {
+            const base = Reflect.apply(originalOwlEvent, this, args);
+
+            // this._GenINFO?.[213] event game 2 = valentine game
+            if (cheatState.minigame.valentine && this._GenINFO?.[213] === 2) {
+                const grid = this._GenINFO[228];
+                const clicked = this._GenINFO[229];
+                const covers = this._UIinventory15?.[68];
+
+                if (grid && clicked && covers) {
+                    for (let i = 0; i < 36; i++) {
+                        // 0 = Barf, skip if already clicked
+                        if (grid[i] !== 0 || clicked[i] !== 0) continue;
+
+                        const coverImg = covers[i];
+                        if (!coverImg || typeof coverImg.get_transform !== "function") continue;
+
+                        try {
+                            const tform = coverImg.get_transform();
+                            const cform = tform?.get_colorTransform?.();
+                            if (!cform) continue;
+
+                            cform.redMultiplier = 0;
+                            cform.blueMultiplier = 0;
+                            tform.set_colorTransform?.(cform);
+                            coverImg.set_transform?.(tform);
+                        } catch {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            return base;
+        };
+        ActorEvents670.prototype._event_OwlEvent._isPatched = true;
+    }
 }
 
 // poing
