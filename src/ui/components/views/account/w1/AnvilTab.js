@@ -40,7 +40,7 @@ const AnvilRow = ({ category, getStats, onReload }) => {
         const pts = Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
         status.val = "loading";
         try {
-            await writeAttr(`bEngine.getGameAttribute("AnvilPAstats")[${category.index}] = ${pts}`);
+            await writeAttr(`gga.AnvilPAstats[${category.index}] = ${pts}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             // Small delay so the game has time to commit the write before we re-read
@@ -123,7 +123,7 @@ export const AnvilTab = () => {
         error.val   = null;
         try {
             const data = await readMany({
-                anvilStats: `bEngine.getGameAttribute("AnvilPAstats")`,
+                anvilStats: `gga.AnvilPAstats`,
             });
             const raw = data.anvilStats;
             const arr = Array.isArray(raw)

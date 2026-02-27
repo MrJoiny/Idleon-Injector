@@ -58,7 +58,7 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeAttr(`bEngine.getGameAttribute("FurnaceLevels")[${upgrade.index}] = ${lvl}`);
+            await writeAttr(`gga.FurnaceLevels[${upgrade.index}] = ${lvl}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await onReload?.();
@@ -121,7 +121,7 @@ export const ForgeTab = () => {
         error.val   = null;
         try {
             const data = await readMany({
-                furnaceLevels: `bEngine.getGameAttribute("FurnaceLevels")`,
+                furnaceLevels: `gga.FurnaceLevels`,
             });
             const raw = data.furnaceLevels;
             levels.val = Array.isArray(raw)

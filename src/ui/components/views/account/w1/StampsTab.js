@@ -34,8 +34,8 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
-            await writeAttr(`bEngine.getGameAttribute("StampLevel")[${page}][${order}] = ${lvl}`);
-            await writeAttr(`bEngine.getGameAttribute("StampLevelMAX")[${page}][${order}] = ${maxLvl}`);
+            await writeAttr(`gga.StampLevel[${page}][${order}] = ${lvl}`);
+            await writeAttr(`gga.StampLevelMAX[${page}][${order}] = ${maxLvl}`);
             inputVal.val = String(lvl);
             onLocalUpdate?.(page, order, lvl, maxLvl);
             status.val = "success";
@@ -131,8 +131,8 @@ export const StampsTab = () => {
         error.val   = null;
         try {
             const data = await readMany({
-                levels:    `bEngine.getGameAttribute("StampLevel")`,
-                maxLevels: `bEngine.getGameAttribute("StampLevelMAX")`,
+                levels:    `gga.StampLevel`,
+                maxLevels: `gga.StampLevelMAX`,
                 names:     `(function(){
                                 var pages = ['A', 'B', 'C'];
                                 return pages.map(function(letter) {

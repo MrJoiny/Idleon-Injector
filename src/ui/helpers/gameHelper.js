@@ -17,14 +17,14 @@
  *
  *   // Read multiple at once (one round-trip)
  *   const { levels, maxLevels, names } = await readMany({
- *       levels:    `bEngine.getGameAttribute("StampLevel")`,
- *       maxLevels: `bEngine.getGameAttribute("StampLevelMAX")`,
+ *       levels:    `gga.StampLevel`,
+ *       maxLevels: `gga.StampLevelMAX`,
  *       names:     `cList.StampData ? cList.StampData.map(p => p.map(s => s[0])) : null`,
  *   });
  *
  *   // Write to a nested attribute
- *   await writeAttr(`bEngine.getGameAttribute("StampLevel")[0][3] = 50`);
- *   await writeAttr(`bEngine.getGameAttribute("StampLevelMAX")[0][3] = 50`);
+ *   await writeAttr(`gga.StampLevel[0][3] = 50`);
+ *   await writeAttr(`gga.StampLevelMAX[0][3] = 50`);
  */
 
 const BASE = "/api/game";
@@ -67,17 +67,17 @@ export async function writeExpr(expression) {
 
 /**
  * Read any top-level game attribute by name.
- * Equivalent to: bEngine.getGameAttribute(name)
+ * Equivalent to: gga[name]
  * @param {string} name  e.g. "StampLevel"
  */
 export function readAttr(name) {
-    return readExpr(`bEngine.getGameAttribute("${name}")`);
+    return readExpr(`gga.${name}`);
 }
 
 /**
  * Write a raw JS expression into game context.
  * Prefer using this over raw writeExpr for clarity.
- * @param {string} expression  e.g. `bEngine.getGameAttribute("StampLevel")[0][3] = 50`
+ * @param {string} expression  e.g. `gga.StampLevel[0][3] = 50`
  */
 export function writeAttr(expression) {
     return writeExpr(expression);
@@ -100,7 +100,7 @@ export function readCList(key) {
  *
  * @example
  * const { levels, names } = await readMany({
- *     levels: `bEngine.getGameAttribute("StampLevel")`,
+ *     levels: `gga.StampLevel`,
  *     names:  `cList.StampData ? cList.StampData.map(p => p.map(s => s[0])) : null`,
  * });
  */

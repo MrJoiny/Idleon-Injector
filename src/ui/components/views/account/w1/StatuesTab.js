@@ -42,7 +42,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            const fresh = await write(`bEngine.getGameAttribute("StatueLevels")[${index}][0] = ${lvl}`);
+            const fresh = await write(`gga.StatueLevels[${index}][0] = ${lvl}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
@@ -57,7 +57,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         if (isNaN(amt)) return;
         status.val = "loading";
         try {
-            const fresh = await write(`bEngine.getGameAttribute("StatueLevels")[${index}][1] = ${amt}`);
+            const fresh = await write(`gga.StatueLevels[${index}][1] = ${amt}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             depositedInput.val = String(fresh?.levels?.[index]?.[1] ?? amt);
@@ -71,7 +71,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         const tier = Number(tierVal);
         status.val = "loading";
         try {
-            await write(`bEngine.getGameAttribute("StatueG")[${index}] = ${tier}`);
+            await write(`gga.StatueG[${index}] = ${tier}`);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -176,8 +176,8 @@ export const StatuesTab = () => {
         try {
             const result = await readMany({
                 info:   `cList.StatueInfo`,
-                levels: `bEngine.getGameAttribute("StatueLevels")`,
-                tiers:  `bEngine.getGameAttribute("StatueG")`,
+                levels: `gga.StatueLevels`,
+                tiers:  `gga.StatueG`,
             });
             const toArr = (raw) => Array.isArray(raw)
                 ? raw
