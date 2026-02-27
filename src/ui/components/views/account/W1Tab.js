@@ -67,7 +67,7 @@ export const W1Tab = () => {
                 { class: "world-tab-title-group" },
                 () => {
                     const cur = W1_SUBTABS.find((t) => t.id === activeSubTab.val);
-                    return van.tags.h2({ class: "world-tab-title" }, `W1 — ${cur?.label ?? "BLUNDER HILLS"}`);
+                    return van.tags.h2({ class: "world-tab-title" }, `W1 — ${cur?.label ?? ""}`);
                 },
                 p({ class: "world-tab-subtitle" }, "Blunder Hills — Stamps, Statues, and other oddities")
             )

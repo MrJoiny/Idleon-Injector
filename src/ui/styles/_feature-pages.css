@@ -20,6 +20,16 @@
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
+/* ── world-feature: top-level layout container for feature tabs ─────────────
+   Used as: div({ class: "world-feature scroll-container" })
+   scroll-container handles overflow-y; world-feature handles flex layout.    */
+.world-feature {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
 .feature-header {
     display: flex;
     align-items: center;

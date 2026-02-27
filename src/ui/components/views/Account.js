@@ -61,7 +61,7 @@ export const Account = () => {
                     {
                         class: () =>
                             `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${
-                                tab.isWorld ? `world-tab-btn world-${tab.worldNum}` : "account-options-btn"
+                                tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
                             }`,
                         onclick: () => (activeTab.val = tab.id),
                         title: tab.label,

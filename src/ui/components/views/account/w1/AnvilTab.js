@@ -175,10 +175,7 @@ export const AnvilTab = () => {
 
                 // Points remaining — always read from game (index 0)
                 div({ class: "feature-row feature-row--info" },
-                    div({ class: "feature-row__info" },
-                        span({ class: "feature-row__name" }, "Points Remaining"),
-
-                    ),
+                    span({ class: "feature-row__name" }, "Points Remaining"),
                     span({ class: "feature-row__badge feature-row__badge--highlight" },
                         () => `${stats.val?.[0] ?? 0} pts`
                     )

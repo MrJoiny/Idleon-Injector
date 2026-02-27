@@ -27,7 +27,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { formatNumber } from "../../../../utils/numberFormat.js";
 
 const { div, button, span, h3, p } = van.tags;
 
