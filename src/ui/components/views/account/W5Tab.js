@@ -24,7 +24,7 @@ export const W5Tab = () => {
             div(
                 { class: "world-tab-title-group" },
                 van.tags.h2({ class: "world-tab-title" }, "SMOLDERIN' PLATEAU"),
-                p({ class: "world-tab-subtitle" }, "Sailing, Divinity, Gaming & Summoning")
+                p({ class: "world-tab-subtitle" }, "Sailing, Divinity & Gaming")
             )
         ),
 

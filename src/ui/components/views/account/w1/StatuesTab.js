@@ -217,7 +217,7 @@ export const StatuesTab = () => {
             span({ style: "color:#b06aff;font-weight:700;" }, "Onyx Tools"),
             " for Onyx, ",
             span({ style: "color:#00e5ff;font-weight:700;" }, "Zenith Tools"),
-            " for Zenith. Use the Power statue first — it unlocks the tier for all others."
+            " for Zenith. Note that this is only visual to the StatueMan in W1, when set to any rarity it will give their full bonus"
         ),
 
         () => {

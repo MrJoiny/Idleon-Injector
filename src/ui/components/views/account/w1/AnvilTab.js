@@ -155,7 +155,7 @@ export const AnvilTab = () => {
 
         div({ class: "warning-banner" },
             "⚠ You must have a character selected in-game for point changes to take effect. ",
-            "Open the Anvil in-game at least once per session for Points Remaining to load correctly."
+            "Open the Anvil in-game or points won't update properly."
         ),
 
         () => {

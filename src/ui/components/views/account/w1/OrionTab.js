@@ -44,7 +44,7 @@ const FIELDS = [
     { index: 254, label: "Feather Generation"                     },
     { index: 256, label: "Feather Multiplier"                     },
     { index: 257, label: "Feather Cheapener"                      },
-    { index: 258, label: "Feather Restart",            warn: "Permanent bonus — keep between 30–40" },
+    { index: 258, label: "Feather Restart",            warn: "Keep between 30–40" },
     { index: 259, label: "Super Feather Production"               },
     { index: 260, label: "Shiny Feathers"                         },
     { index: 261, label: "Super Feather Cheapener"                },

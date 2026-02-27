@@ -178,7 +178,7 @@ export const StampsTab = () => {
             div(
                 null,
                 h3("STAMPS"),
-                p({ class: "feature-header__desc" }, "Writes to StampLevel and StampLevelMAX in game memory")
+                p({ class: "feature-header__desc" }, "Change your Stamp levels and remove stamps")
             ),
             withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
