@@ -291,3 +291,83 @@
 .feature-row__controls--wide .number-input-wrapper input { min-width: 6ch; font-size: 0.8rem; }
 .feature-row__controls--xl .number-input-wrapper { width: 180px; }
 .feature-row__controls--xl .number-input-wrapper input { min-width: 10ch; font-size: 0.8rem; }
+
+/* ── Star Signs ───────────────────────────────────────────────────────── */
+.starsign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding: 4px 0;
+}
+.starsign-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.starsign-card:hover { border-color: var(--c-accent); background: var(--c-hover); }
+.starsign-card--unlocked { border-color: rgba(255,183,0,.4); }
+.starsign-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.starsign-label-badge {
+    font-size: .75rem; font-weight: 700; letter-spacing: .05em;
+    padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor;
+}
+.starsign-card-desc { font-size: .75rem; color: var(--c-text-dim); margin: 0 0 8px; line-height: 1.4; }
+.starsign-card-bar { height: 4px; background: var(--c-border); border-radius: 2px; overflow: hidden; }
+.starsign-card-fill { height: 100%; background: var(--c-accent); border-radius: 2px; transition: width .3s; }
+.starsign-status { font-size: .7rem; font-weight: 700; letter-spacing: .04em; }
+.starsign-status.unlocked { color: #ffb700; }
+.starsign-status.locked   { color: var(--c-text-dim); }
+
+/* Group colour tints */
+.sign-A .starsign-label-badge, .starsign-label-badge.sign-A { color: #4fc3f7; }
+.sign-B .starsign-label-badge, .starsign-label-badge.sign-B { color: #a5d6a7; }
+.sign-C .starsign-label-badge, .starsign-label-badge.sign-C { color: #ffb74d; }
+.sign-D .starsign-label-badge, .starsign-label-badge.sign-D { color: #ce93d8; }
+.sign-E .starsign-label-badge, .starsign-label-badge.sign-E { color: #ef9a9a; }
+.sign-F .starsign-label-badge, .starsign-label-badge.sign-F { color: #80cbc4; }
+
+/* Detail view */
+.starsign-detail { padding: 4px 0; }
+.starsign-back-btn { background: none; border: 1px solid var(--c-border); border-radius: 4px; padding: 4px 12px; cursor: pointer; color: var(--c-text); font-size: .8rem; margin-bottom: 0; }
+.starsign-back-btn:hover { border-color: var(--c-accent); }
+.starsign-detail-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.starsign-detail-label { font-size: 1.1rem; font-weight: 700; margin: 0 0 4px; }
+.starsign-detail-desc { font-size: .8rem; color: var(--c-text-dim); margin: 0; }
+.starsign-needed-badge { font-size: .75rem; font-weight: 700; padding: 2px 8px; border: 1px solid var(--c-accent); border-radius: 4px; color: var(--c-accent); white-space: nowrap; }
+.starsign-section-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--c-text-dim); margin: 12px 0 6px; }
+
+/* Drag list */
+.starsign-drag-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.starsign-drag-row { display: flex; align-items: center; gap: 8px; background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 4px; padding: 6px 10px; cursor: grab; user-select: none; }
+.starsign-drag-row:active, .starsign-drag-row.dragging { cursor: grabbing; opacity: .5; }
+.starsign-drag-row.drag-over { border-color: var(--c-accent); background: var(--c-hover); }
+.starsign-drag-handle { color: var(--c-text-dim); font-size: 1rem; }
+.starsign-player-chip { display: flex; align-items: center; gap: 8px; flex: 1; }
+.starsign-player-num { font-size: .85rem; font-weight: 600; }
+.starsign-player-letter { font-size: .7rem; font-family: monospace; background: var(--c-border); padding: 1px 6px; border-radius: 3px; }
+.starsign-remove-btn { margin-left: auto; background: none; border: none; color: var(--c-error, #ef5350); cursor: pointer; font-size: .85rem; padding: 0 4px; }
+.starsign-remove-btn:hover { color: #ff1744; }
+
+/* Empty state */
+.starsign-empty-players { font-size: .8rem; color: var(--c-text-dim); padding: 12px; border: 1px dashed var(--c-border); border-radius: 4px; text-align: center; margin-bottom: 12px; }
+
+/* Add row */
+.starsign-add-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+/* Progress */
+.starsign-progress-bar-wrap { margin-bottom: 16px; }
+.starsign-progress-label { font-size: .8rem; margin-bottom: 6px; }
+.starsign-unlocked-text { color: #ffb700; font-weight: 700; }
+.starsign-locked-text   { color: var(--c-text-dim); }
+.starsign-progress-bar  { height: 6px; background: var(--c-border); border-radius: 3px; overflow: hidden; }
+.starsign-progress-fill { height: 100%; background: var(--c-accent); border-radius: 3px; transition: width .3s; }
+
+/* Actions */
+.starsign-detail-actions { display: flex; align-items: center; gap: 10px; }
+.starsign-save-error { font-size: .75rem; color: var(--c-error, #ef5350); }
+
+/* ── Feature header actions group ──────────────────────────────────────── */
+.feature-header__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

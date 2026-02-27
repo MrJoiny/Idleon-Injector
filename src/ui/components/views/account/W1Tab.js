@@ -18,6 +18,7 @@ import { AnvilTab } from "./w1/AnvilTab.js";
 import { ForgeTab } from "./w1/ForgeTab.js";
 import { StatuesTab } from "./w1/StatuesTab.js";
 import { OrionTab } from "./w1/OrionTab.js";
+import { StarSignsTab } from "./w1/StarSignsTab.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -28,7 +29,7 @@ const W1_SUBTABS = [
     { id: "anvil",     label: "ANVIL",      component: AnvilTab },
     { id: "forge",     label: "FORGE",      component: ForgeTab },
     { id: "statues",   label: "STATUES",    component: StatuesTab },
-    { id: "starsigns", label: "STAR SIGNS", component: null },
+    { id: "starsigns", label: "STAR SIGNS", component: StarSignsTab },
     { id: "orion",     label: "ORION",      component: OrionTab },
 ];
 
