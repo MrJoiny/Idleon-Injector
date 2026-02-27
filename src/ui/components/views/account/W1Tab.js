@@ -17,6 +17,7 @@ import { StampsTab } from "./w1/StampsTab.js";
 import { AnvilTab } from "./w1/AnvilTab.js";
 import { ForgeTab } from "./w1/ForgeTab.js";
 import { StatuesTab } from "./w1/StatuesTab.js";
+import { OrionTab } from "./w1/OrionTab.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -28,7 +29,7 @@ const W1_SUBTABS = [
     { id: "forge",     label: "FORGE",      component: ForgeTab },
     { id: "statues",   label: "STATUES",    component: StatuesTab },
     { id: "starsigns", label: "STAR SIGNS", component: null },
-    { id: "orion",     label: "ORION",      component: null },
+    { id: "orion",     label: "ORION",      component: OrionTab },
 ];
 
 const subTabCache = new Map();
@@ -67,7 +68,7 @@ export const W1Tab = () => {
                     const cur = W1_SUBTABS.find((t) => t.id === activeSubTab.val);
                     return van.tags.h2({ class: "world-tab-title" }, `W1 — ${cur?.label ?? "BLUNDER HILLS"}`);
                 },
-                p({ class: "world-tab-subtitle" }, "Blunder Hills — Mining, Smithing, Stamps")
+                p({ class: "world-tab-subtitle" }, "Blunder Hills — Stamps, Statues, and other oddities")
             )
         ),
 

@@ -266,3 +266,28 @@
     width: 60px;
     text-align: right;
 }
+
+/* ── Orion tab ────────────────────────────────────────────────────────── */
+.feature-row--warn                          { border-color: var(--c-warning) !important; background: var(--c-accent-06); }
+.orion-warn-badge {
+    font-size: 0.65rem;
+    color: var(--c-warning);
+    margin-left: 8px;
+    font-style: italic;
+}
+.orion-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-dim);
+    padding: 8px 4px 4px;
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 2px;
+}
+
+/* Wide number input for large values (Orion feathers etc) */
+.feature-row__controls--wide .number-input-wrapper { width: 120px; }
+.feature-row__controls--wide .number-input-wrapper input { min-width: 6ch; font-size: 0.8rem; }
+.feature-row__controls--xl .number-input-wrapper { width: 180px; }
+.feature-row__controls--xl .number-input-wrapper input { min-width: 10ch; font-size: 0.8rem; }
