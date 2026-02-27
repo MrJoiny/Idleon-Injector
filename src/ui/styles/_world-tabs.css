@@ -1,0 +1,246 @@
+/**
+ * World Tabs — Shared Chrome
+ *
+ * Covers: top account sub-nav (Account Options / W1…W7),
+ * world tab shells (header, inner sub-nav, panes).
+ *
+ * Per-world colours are driven by a single --world-color custom property
+ * set on each .wN-world-tab root element — no per-world rule duplication.
+ */
+
+/* ── Top account sub-nav ─────────────────────────────────────────────────── */
+
+.account-sub-nav {
+    display: flex;
+    gap: 4px;
+    padding: 10px 10px 0;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-panel);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+}
+
+.account-sub-tab-button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--c-text-dim);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    position: relative;
+    bottom: -1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 60px;
+}
+
+.account-sub-tab-button:hover     { color: var(--c-text-main); background: var(--c-white-03); }
+
+.account-sub-tab-button.active {
+    color: var(--c-text-main);
+    border-color: var(--c-border);
+    border-bottom-color: var(--c-panel);
+    background: var(--c-panel);
+}
+
+.account-sub-tab-button.active::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--world-color, var(--c-accent));
+    box-shadow: 0 0 6px var(--c-accent-glow);
+}
+
+.account-options-btn { min-width: 130px; font-size: 0.75rem; }
+.world-tab-btn       { min-width: 64px; }
+
+.world-tab-btn-num {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.world-tab-btn-label {
+    font-size: 0.6rem;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 72px;
+}
+
+.account-sub-tab-button.active .world-tab-btn-label { color: var(--c-text-dim); }
+
+/* ── Top account panes ───────────────────────────────────────────────────── */
+
+/* display owned by .tab-pane/.tab-pane.active in _layout.css */
+.account-tab-layout { overflow: hidden; }
+
+.account-sub-tab-content { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+
+.account-sub-tab-pane { display: none; height: 100%; overflow: hidden; }
+
+.account-sub-tab-pane.active {
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.18s ease;
+}
+
+.account-sub-tab-pane-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* ── Per-world colour tokens ─────────────────────────────────────────────── */
+/* One rule per world. Everything inside uses var(--world-color). */
+
+.w1-world-tab { --world-color: #e8854a; }
+.w2-world-tab { --world-color: #d4a83a; }
+.w3-world-tab { --world-color: #6ec5e0; }
+.w4-world-tab { --world-color: #a06ee0; }
+.w5-world-tab { --world-color: #e05050; }
+.w6-world-tab { --world-color: #59c46a; }
+.w7-world-tab { --world-color: #c580e0; }
+
+/* ── World tab shell ─────────────────────────────────────────────────────── */
+
+.world-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.world-tab-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--c-border);
+    border-left: 3px solid var(--world-color, var(--c-border));
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--c-panel-dim) 0%, var(--c-panel) 100%);
+}
+
+.world-tab-badge {
+    font-size: 1.3rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--world-color, var(--c-text-muted));
+    border: 1px solid var(--world-color, var(--c-border));
+    background: var(--c-black-40);
+    padding: 5px 10px;
+    flex-shrink: 0;
+}
+
+.world-tab-title-group { display: flex; flex-direction: column; gap: 3px; }
+
+.world-tab-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--c-text-main);
+    margin: 0;
+    letter-spacing: 0.06em;
+}
+
+.world-tab-subtitle {
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    margin: 0;
+    font-style: italic;
+}
+
+/* ── World inner sub-nav ─────────────────────────────────────────────────── */
+
+.world-sub-nav {
+    display: flex;
+    gap: 4px;
+    padding: 8px 16px 0;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.world-sub-tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--c-text-muted);
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.15s;
+    position: relative;
+    bottom: -1px;
+}
+
+.world-sub-tab-btn:hover { color: var(--c-text-main); background: var(--c-white-03); }
+
+.world-sub-tab-btn.active {
+    color: var(--c-text-main);
+    border-color: var(--c-border);
+    border-bottom-color: var(--c-panel-dim);
+    background: var(--c-panel-dim);
+}
+
+.world-sub-tab-btn.active::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--world-color, var(--c-accent));
+}
+
+.world-sub-tab-btn--stub { opacity: 0.4; }
+.world-sub-tab-btn--stub:hover { opacity: 0.6; }
+
+/* ── World inner panes ───────────────────────────────────────────────────── */
+
+.world-sub-content { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+
+.world-sub-pane { display: none; height: 100%; overflow: hidden; flex-direction: column; min-height: 0; }
+
+.world-sub-pane.active { display: flex; animation: slideIn 0.18s ease; }
+
+/* Empty pane (unimplemented tabs) */
+.world-sub-pane--empty {
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-direction: column;
+    color: var(--c-text-muted);
+    padding: 40px;
+}
+
+.world-empty-icon  { font-size: 2.5rem; opacity: 0.4; line-height: 1; }
+.world-empty-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; margin: 0; }
+.world-empty-desc  { font-size: 0.75rem; margin: 0; text-align: center; max-width: 340px; opacity: 0.6; }
+
+/* Inline stub inside W1 for unimplemented sub-tabs */
+.world-sub-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    color: var(--c-text-muted);
+}
+
+.world-sub-placeholder__icon  { font-size: 2rem; opacity: 0.35; }
+.world-sub-placeholder__label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; margin: 0; }

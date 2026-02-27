@@ -1,0 +1,383 @@
+/**
+ * Feature Pages — Universal Component Styles
+ *
+ * Shared by every world sub-tab feature (Stamps, Forge, Alchemy, etc.).
+ * Add a new feature page → zero new CSS files. Just use these classes.
+ *
+ * Class anatomy:
+ *   .feature-header          top info + refresh bar
+ *   .feature-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
+ *   .feature-list            scrollable list container
+ *   .feature-row             one data row  (grid: info | badge | controls)
+ *   .feature-row__info       left: index badge + name
+ *   .feature-row__badge      centre: read-only status (e.g. "LV 50 / 100")
+ *   .feature-row__controls   right: inputs + action buttons
+ *   .feature-btn             base action button
+ *   .feature-btn--apply      SET / confirm (green hover)
+ *   .feature-btn--danger     RELOCK / reset (red)
+ *   .feature-btn--loading    spinner state
+ */
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+/* ── world-feature: top-level layout container for feature tabs ─────────────
+   Used as: div({ class: "world-feature scroll-container" })
+   scroll-container handles overflow-y; world-feature handles flex layout.    */
+.world-feature {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.feature-header h3 {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    color: var(--c-text-main);
+}
+
+.feature-header__desc {
+    margin: 2px 0 0;
+    font-size: 0.7rem;
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+/* ── Secondary page nav (e.g. Combat / Skills / Misc) ────────────────────── */
+
+.feature-page-nav {
+    display: flex;
+    gap: 4px;
+    padding: 8px 16px 0;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.feature-page-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--c-text-muted);
+    padding: 6px 20px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: color 0.15s;
+    position: relative;
+    bottom: -1px;
+}
+
+.feature-page-btn:hover { color: var(--c-text-main); }
+
+.feature-page-btn.active {
+    color: var(--c-accent);
+    border-color: var(--c-border);
+    border-bottom-color: var(--c-panel-dim);
+    background: var(--c-panel-dim);
+}
+
+.feature-page-btn.active::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--c-accent);
+    box-shadow: 0 0 5px var(--c-accent-glow);
+}
+
+/* ── Scrollable list ─────────────────────────────────────────────────────── */
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 14px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.feature-loader {
+    display: flex;
+    height: 160px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Data row ────────────────────────────────────────────────────────────── */
+
+.feature-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 7px 12px;
+    transition: border-color 0.2s;
+}
+
+.feature-row:hover           { border-color: var(--c-border-strong); }
+.feature-row--success        { border-color: var(--c-success) !important; background: var(--c-success-10); }
+.feature-row--error          { border-color: var(--c-danger)  !important; background: var(--c-danger-10); }
+
+/* Info cell */
+.feature-row__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.feature-row__index {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--c-text-muted);
+    background: var(--c-black-40);
+    padding: 1px 5px;
+    flex-shrink: 0;
+}
+
+.feature-row__name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Status badge (centre cell) */
+.feature-row__badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    padding: 2px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Controls cell */
+.feature-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Narrow the NumberInput inside feature rows — wide enough for 3 digits + ± buttons */
+.feature-row__controls .number-input-wrapper { width: 110px; }
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+
+.feature-btn {
+    padding: 0 12px;
+    height: 30px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+.feature-btn--apply {
+    background: var(--c-control-border-strong);
+    color: var(--c-white);
+}
+
+.feature-btn--apply:hover:not(:disabled) {
+    background: var(--c-success);
+    color: var(--c-black);
+}
+
+.feature-btn--danger {
+    background: var(--c-danger-10);
+    color: var(--c-danger-soft-text);
+    border: 1px solid var(--c-danger);
+}
+
+.feature-btn--danger:hover:not(:disabled) {
+    background: var(--c-danger);
+    color: var(--c-white);
+}
+
+.feature-btn--loading { opacity: 0.5; cursor: wait; }
+
+.feature-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Anvil — info row (Points Remaining banner) */
+.feature-row--info                          { border-color: var(--c-accent) !important; background: var(--c-accent-06); }
+.feature-row__badge--highlight              { color: var(--c-accent); font-weight: 700; }
+
+/* ── Statue tiers ─────────────────────────────────────────────────────── */
+.statue-tier-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+}
+.tier--stone  { color: #8a9bb0; }
+.tier--gold   { color: #ffb700; }
+.tier--onyx   { color: #b06aff; }
+.tier--zenith { color: #00e5ff; }
+
+.feature-row.tier--gold   { border-color: rgba(255,183,0,0.35); }
+.feature-row.tier--onyx   { border-color: rgba(176,106,255,0.35); }
+.feature-row.tier--zenith { border-color: rgba(0,229,255,0.35); }
+
+.statue-tier-select {
+    background: var(--c-panel);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 0 6px;
+    height: 32px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.statue-tier-select:focus { outline: none; border-color: var(--c-accent); }
+
+/* ── Statue stacked controls ──────────────────────────────────────────── */
+.feature-row__controls--stack {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.statue-control-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.statue-control-label {
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 60px;
+    text-align: right;
+}
+
+/* ── Orion tab ────────────────────────────────────────────────────────── */
+.feature-row--warn                          { border-color: var(--c-warning) !important; background: var(--c-accent-06); }
+.orion-warn-badge {
+    font-size: 0.65rem;
+    color: var(--c-warning);
+    margin-left: 8px;
+    font-style: italic;
+}
+.orion-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-dim);
+    padding: 8px 4px 4px;
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 2px;
+}
+
+/* Wide number input for large values (Orion feathers etc) */
+.feature-row__controls--wide .number-input-wrapper { width: 120px; }
+.feature-row__controls--wide .number-input-wrapper input { min-width: 6ch; font-size: 0.8rem; }
+.feature-row__controls--xl .number-input-wrapper { width: 180px; }
+.feature-row__controls--xl .number-input-wrapper input { min-width: 10ch; font-size: 0.8rem; }
+
+/* ── Star Signs ───────────────────────────────────────────────────────── */
+.starsign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding: 4px 0;
+}
+.starsign-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.starsign-card:hover { border-color: var(--c-accent); background: var(--c-hover); }
+.starsign-card--unlocked { border-color: rgba(255,183,0,.4); }
+.starsign-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.starsign-label-badge {
+    font-size: .75rem; font-weight: 700; letter-spacing: .05em;
+    padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor;
+}
+.starsign-card-desc { font-size: .75rem; color: var(--c-text-dim); margin: 0 0 8px; line-height: 1.4; }
+.starsign-card-bar { height: 4px; background: var(--c-border); border-radius: 2px; overflow: hidden; }
+.starsign-card-fill { height: 100%; background: var(--c-accent); border-radius: 2px; transition: width .3s; }
+.starsign-status { font-size: .7rem; font-weight: 700; letter-spacing: .04em; }
+.starsign-status.unlocked { color: #ffb700; }
+.starsign-status.locked   { color: var(--c-text-dim); }
+
+/* Group colour tints */
+.sign-A .starsign-label-badge, .starsign-label-badge.sign-A { color: #4fc3f7; }
+.sign-B .starsign-label-badge, .starsign-label-badge.sign-B { color: #a5d6a7; }
+.sign-C .starsign-label-badge, .starsign-label-badge.sign-C { color: #ffb74d; }
+.sign-D .starsign-label-badge, .starsign-label-badge.sign-D { color: #ce93d8; }
+.sign-E .starsign-label-badge, .starsign-label-badge.sign-E { color: #ef9a9a; }
+.sign-F .starsign-label-badge, .starsign-label-badge.sign-F { color: #80cbc4; }
+
+/* Detail view */
+.starsign-detail { padding: 4px 0; }
+.starsign-back-btn { background: none; border: 1px solid var(--c-border); border-radius: 4px; padding: 4px 12px; cursor: pointer; color: var(--c-text); font-size: .8rem; margin-bottom: 0; }
+.starsign-back-btn:hover { border-color: var(--c-accent); }
+.starsign-detail-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.starsign-detail-label { font-size: 1.1rem; font-weight: 700; margin: 0 0 4px; }
+.starsign-detail-desc { font-size: .8rem; color: var(--c-text-dim); margin: 0; }
+.starsign-needed-badge { font-size: .75rem; font-weight: 700; padding: 2px 8px; border: 1px solid var(--c-accent); border-radius: 4px; color: var(--c-accent); white-space: nowrap; }
+.starsign-section-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--c-text-dim); margin: 12px 0 6px; }
+
+/* Drag list */
+.starsign-drag-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.starsign-drag-row { display: flex; align-items: center; gap: 8px; background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 4px; padding: 6px 10px; cursor: grab; user-select: none; }
+.starsign-drag-row:active, .starsign-drag-row.dragging { cursor: grabbing; opacity: .5; }
+.starsign-drag-row.drag-over { border-color: var(--c-accent); background: var(--c-hover); }
+.starsign-drag-handle { color: var(--c-text-dim); font-size: 1rem; }
+.starsign-player-chip { display: flex; align-items: center; gap: 8px; flex: 1; }
+.starsign-player-num { font-size: .85rem; font-weight: 600; }
+.starsign-player-letter { font-size: .7rem; font-family: monospace; background: var(--c-border); padding: 1px 6px; border-radius: 3px; }
+.starsign-remove-btn { margin-left: auto; background: none; border: none; color: var(--c-error, #ef5350); cursor: pointer; font-size: .85rem; padding: 0 4px; }
+.starsign-remove-btn:hover { color: #ff1744; }
+
+/* Empty state */
+.starsign-empty-players { font-size: .8rem; color: var(--c-text-dim); padding: 12px; border: 1px dashed var(--c-border); border-radius: 4px; text-align: center; margin-bottom: 12px; }
+
+/* Add row */
+.starsign-add-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+/* Progress */
+.starsign-progress-bar-wrap { margin-bottom: 16px; }
+.starsign-progress-label { font-size: .8rem; margin-bottom: 6px; }
+.starsign-unlocked-text { color: #ffb700; font-weight: 700; }
+.starsign-locked-text   { color: var(--c-text-dim); }
+.starsign-progress-bar  { height: 6px; background: var(--c-border); border-radius: 3px; overflow: hidden; }
+.starsign-progress-fill { height: 100%; background: var(--c-accent); border-radius: 3px; transition: width .3s; }
+
+/* Actions */
+.starsign-detail-actions { display: flex; align-items: center; gap: 10px; }
+.starsign-save-error { font-size: .75rem; color: var(--c-error, #ef5350); }
+
+/* ── Feature header actions group ──────────────────────────────────────── */
+.feature-header__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

@@ -35,7 +35,7 @@ const ResultItem = ({ result }) => {
 
     const handleCopy = (e) => {
         e.stopPropagation();
-        const success = copyToClipboard(`bEngine.gameAttributes.h.${result.path}`);
+        const success = copyToClipboard(`gga.${result.path}`);
         copyFeedback.val = success ? "success" : "error";
         store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
         setTimeout(() => (copyFeedback.val = null), 1500);
