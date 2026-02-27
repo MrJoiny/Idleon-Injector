@@ -67,7 +67,7 @@ export const Account = () => {
                         title: tab.label,
                     },
                     tab.isWorld
-                        ? [span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`), span({ class: "world-tab-btn-label" }, tab.label)]
+                        ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`)
                         : tab.label
                 )
             )
