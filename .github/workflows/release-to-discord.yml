@@ -1,3 +1,5 @@
+name: Release To Discord
+
 on:
     release:
         types: [published]
