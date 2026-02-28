@@ -31,15 +31,10 @@ export const VIEWS = {
         label: "CHROMEDEBUG",
         sidebarLabel: "CHROMEDEBUG",
     },
-    MONITOR: {
-        id: "monitor-tab",
-        label: "VALUE MONITOR",
-        sidebarLabel: "MONITOR",
-    },
 };
 
 // Order in which tabs appear in the sidebar
-export const VIEW_ORDER = [VIEWS.CHEATS, VIEWS.ACCOUNT, VIEWS.CONFIG, VIEWS.SEARCH, VIEWS.MONITOR, VIEWS.DEVTOOLS];
+export const VIEW_ORDER = [VIEWS.CHEATS, VIEWS.ACCOUNT, VIEWS.CONFIG, VIEWS.SEARCH, VIEWS.DEVTOOLS];
 export const IS_ELECTRON = /electron/i.test(navigator.userAgent);
 export const CATEGORY_ORDER = [
     "general",
@@ -54,29 +49,4 @@ export const CATEGORY_ORDER = [
     "w6",
     "w7",
     "minigame",
-];
-
-/**
- * Curated list of favorite GGA keys for quick access in Search view.
- */
-export const FAVORITE_KEYS = [
-    "OptionsListAccount",
-    "OptionsList",
-    "PlayerDATABASE",
-    "SkillLevels",
-    "SkillLevelsMAX",
-    "BundlesReceived",
-    "ChestQuantity",
-    "CurrenciesOwned",
-    "CustomLists",
-    "Exp0",
-    "GemItemsPurchased",
-    "ItemQuantity",
-    "KillsLeft2Advance",
-    "Lv0",
-    "Spelunk",
-    "Arcane",
-    "Bubba",
-    "Compass",
-    "Grimoire",
 ];

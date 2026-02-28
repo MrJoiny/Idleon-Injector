@@ -19,20 +19,10 @@ const { getRuntimePath } = require("../utils/runtimePaths");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
 const { createLogger } = require("../utils/logger");
+const { version: appVersion } = require("../../../package.json");
 
 const log = createLogger("API");
 
-/**
- * Sets up all API routes for the web UI
- * @param {Object} app - TinyRouter application instance
- * @param {string} context - JavaScript expression for game context
- * @param {Object} client - Chrome DevTools Protocol client
- * @param {Object} config - Configuration objects
- * @param {Object} config.cheatConfig - Cheat configuration object
- * @param {Array} config.startupCheats - Array of startup cheat names
- * @param {Object} config.injectorConfig - Injector configuration
- * @param {number} config.cdpPort - Chrome DevTools Protocol port
- */
 function setupApiRoutes(app, context, client, config) {
     const { Runtime } = client;
     const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
@@ -101,8 +91,6 @@ function setupApiRoutes(app, context, client, config) {
             } else {
                 log.debug(`Executed: ${action} -> ${cheatResponse.result.value}`);
                 res.json({ result: cheatResponse.result.value });
-
-                // Broadcast updated cheat states to all WebSocket clients
                 broadcastCheatStates();
             }
         } catch (apiError) {
@@ -141,13 +129,13 @@ function setupApiRoutes(app, context, client, config) {
                 serializableDefaultConfig = prepareConfigForJson(defaultConfig);
             }
 
-            const fullConfigResponse = {
+            res.json({
                 startupCheats: startupCheats,
                 cheatConfig: serializableCheatConfig,
                 injectorConfig: injectorConfig,
                 defaultConfig: serializableDefaultConfig,
-            };
-            res.json(fullConfigResponse);
+                appVersion,
+            });
         } catch (error) {
             log.error("Error preparing full config for JSON:", error);
             res.status(500).json({ error: "Internal server error while preparing configuration" });
@@ -158,36 +146,30 @@ function setupApiRoutes(app, context, client, config) {
         const receivedFullConfig = await req.json();
 
         if (!receivedFullConfig || typeof receivedFullConfig !== "object") {
-            return res.status(400).json({
-                error: "Invalid configuration data received",
-            });
+            return res.status(400).json({ error: "Invalid configuration data received" });
         }
 
         try {
             if (receivedFullConfig.cheatConfig) {
-                const receivedCheatConfig = receivedFullConfig.cheatConfig;
-                const parsedCheatConfig = parseConfigFromJson(receivedCheatConfig);
-
+                const parsedCheatConfig = parseConfigFromJson(receivedFullConfig.cheatConfig);
                 deepMerge(cheatConfig, parsedCheatConfig);
             }
 
             if (Array.isArray(receivedFullConfig.startupCheats)) {
                 startupCheats.length = 0;
                 startupCheats.push(...receivedFullConfig.startupCheats);
-                log.debug("Updated server-side startupCheats");
             }
 
             if (receivedFullConfig.injectorConfig) {
                 deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                log.debug("Updated server-side injectorConfig");
             }
 
             const parsedCheatConfig = receivedFullConfig.cheatConfig
                 ? parseConfigFromJson(receivedFullConfig.cheatConfig)
                 : cheatConfig;
+
             const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` });
-            if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
-                log.error("Cheat context not found in iframe. Cannot update config in game");
+            if (!contextExistsResult?.result?.value) {
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game (context lost)",
                 });
@@ -196,12 +178,12 @@ function setupApiRoutes(app, context, client, config) {
             const configStringForInjection = objToString(parsedCheatConfig);
 
             const updateExpression = `
-        if (typeof updateCheatConfig === 'function') {
-          updateCheatConfig(${configStringForInjection});
-          'Config updated in game.';
-        } else {
-          'Error: updateCheatConfig function not found in game context.';
-        }
+if (typeof updateCheatConfig === 'function') {
+  updateCheatConfig(${configStringForInjection});
+  'Config updated in game.';
+} else {
+  'Error: updateCheatConfig function not found in game context.';
+}
       `;
 
             const updateResult = await Runtime.evaluate({
@@ -210,23 +192,19 @@ function setupApiRoutes(app, context, client, config) {
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
-            let gameUpdateDetails = "N/A";
             if (updateResult.exceptionDetails) {
-                log.error("Error updating config in game:", updateResult.exceptionDetails.text);
-                gameUpdateDetails = `Failed to apply in game: ${updateResult.exceptionDetails.text}`;
+                return res.status(200).json({
+                    message: "Configuration updated on server, but failed to apply in game",
+                    details: updateResult.exceptionDetails.text,
+                });
+            }
+
+            const gameUpdateDetails = updateResult.result.value;
+            if (String(gameUpdateDetails).startsWith("Error:")) {
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game",
                     details: gameUpdateDetails,
                 });
-            } else {
-                gameUpdateDetails = updateResult.result.value;
-                log.debug(`In-game config update result: ${gameUpdateDetails}`);
-                if (gameUpdateDetails.startsWith("Error:")) {
-                    return res.status(200).json({
-                        message: "Configuration updated on server, but failed to apply in game",
-                        details: gameUpdateDetails,
-                    });
-                }
             }
 
             res.json({ message: "Configuration updated successfully", details: gameUpdateDetails });
@@ -248,7 +226,6 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (statesResult.exceptionDetails) {
-                log.error("Error getting cheat states:", statesResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get cheat states from game",
                     details: statesResult.exceptionDetails.text,
@@ -274,7 +251,6 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (optionsResult.exceptionDetails) {
-                log.error("Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get OptionsListAccount from game",
                     details: optionsResult.exceptionDetails.text,
@@ -282,7 +258,6 @@ function setupApiRoutes(app, context, client, config) {
             } else {
                 let data = optionsResult.result.value;
 
-                // FIX: Normalize object/map response to array
                 if (data && typeof data === "object" && !Array.isArray(data)) {
                     data = Object.assign([], data);
                 }
@@ -306,24 +281,17 @@ function setupApiRoutes(app, context, client, config) {
         const { index, value } = await req.json();
 
         if (index === undefined || value === undefined) {
-            return res.status(400).json({
-                error: "Missing required parameters: index and value",
-            });
+            return res.status(400).json({ error: "Missing required parameters: index and value" });
         }
 
         if (typeof index !== "number" || index < 0) {
-            return res.status(400).json({
-                error: "Invalid index. Must be a non-negative number",
-            });
+            return res.status(400).json({ error: "Invalid index. Must be a non-negative number" });
         }
 
         try {
             let serializedValue;
-            if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                serializedValue = objToString(value);
-            } else {
-                serializedValue = JSON.stringify(value);
-            }
+            if (typeof value === "object" && value !== null && !Array.isArray(value)) serializedValue = objToString(value);
+            else serializedValue = JSON.stringify(value);
 
             const updateExpression = `setOptionsListAccountIndex(${index}, ${serializedValue})`;
 
@@ -334,19 +302,14 @@ function setupApiRoutes(app, context, client, config) {
             });
 
             if (updateResult.exceptionDetails) {
-                log.error(`Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
                 res.status(500).json({
                     error: `Failed to update OptionsListAccount[${index}] in game`,
                     details: updateResult.exceptionDetails.text,
                 });
             } else {
                 const result = updateResult.result.value;
-                if (result !== undefined) {
-                    log.debug(`OptionsListAccount[${index}] updated to:`, value);
-                    res.json({ message: `Index ${index} updated successfully`, value: value });
-                } else {
-                    res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
-                }
+                if (result !== undefined) res.json({ message: `Index ${index} updated successfully`, value: value });
+                else res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
             }
         } catch (apiError) {
             log.error("Error in /api/options-account/index POST:", apiError);
@@ -438,7 +401,6 @@ exports.injectorConfig = ${new_injectorConfig};
             });
 
             if (keysResult.exceptionDetails) {
-                log.error("Error getting GGA keys:", keysResult.exceptionDetails.text);
                 res.status(500).json({
                     error: "Failed to get GGA keys from game",
                     details: keysResult.exceptionDetails.text,
@@ -453,37 +415,80 @@ exports.injectorConfig = ${new_injectorConfig};
     });
 
     app.post("/api/search", async (req, res) => {
-        const { query, keys } = await req.json();
+        const { query, keys, withinPaths } = await req.json();
 
-        if (!query || !keys || !Array.isArray(keys) || keys.length === 0) {
+        const hasKeys = Array.isArray(keys) && keys.length > 0;
+        const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
+
+        if (typeof query !== "string" || (!hasKeys && !hasWithinPaths)) {
             return res.status(400).json({
-                error: "Missing required parameters: query (string) and keys (array)",
+                error: "Missing required parameters: query (string) and either keys (array) or withinPaths (array)",
             });
         }
 
         try {
-            const keysJson = JSON.stringify(keys);
-            const escapedQuery = query.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+            const queryJson = JSON.stringify(query);
+            const keysJson = JSON.stringify(hasKeys ? keys : []);
+            const optionsJson = hasWithinPaths ? JSON.stringify({ withinPaths }) : "null";
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga('${escapedQuery}', ${keysJson})`,
+                expression: `searchGga(${queryJson}, ${keysJson}, ${optionsJson})`,
                 awaitPromise: true,
                 returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
             });
 
             if (searchResult.exceptionDetails) {
                 log.error("Error searching GGA:", searchResult.exceptionDetails.text);
-                res.status(500).json({
+                return res.status(500).json({
                     error: "Failed to search GGA",
                     details: searchResult.exceptionDetails.text,
                 });
-            } else {
-                const data = searchResult.result.value || { results: [], totalCount: 0 };
-                res.json(data);
             }
+
+            return res.json(searchResult.result.value || { results: [], totalCount: 0 });
         } catch (apiError) {
             log.error("Error in /api/search:", apiError);
-            res.status(500).json({ error: "Internal server error while searching GGA" });
+            return res.status(500).json({ error: "Internal server error while searching GGA" });
+        }
+    });
+
+    app.post("/api/search/set", async (req, res) => {
+        const { path, value } = await req.json();
+
+        if (typeof path !== "string" || path.trim() === "" || typeof value !== "string") {
+            return res.status(400).json({
+                error: "Missing required parameters: path (string) and value (string)",
+            });
+        }
+
+        try {
+            const pathJson = JSON.stringify(path);
+            const valueJson = JSON.stringify(value);
+
+            const setResult = await Runtime.evaluate({
+                expression: `setGgaValue(${pathJson}, ${valueJson})`,
+                awaitPromise: true,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (setResult.exceptionDetails) {
+                return res.status(500).json({
+                    error: "Failed to set GGA value",
+                    details: setResult.exceptionDetails.text,
+                });
+            }
+
+            const data = setResult.result.value || { success: false, error: "No response from game context" };
+            if (data.success === false) {
+                return res.status(400).json({ error: data.error || "Failed to set value" });
+            }
+
+            return res.json(data);
+        } catch (apiError) {
+            log.error("Error in /api/search/set:", apiError);
+            return res.status(500).json({ error: "Internal server error while setting GGA value" });
         }
     });
 

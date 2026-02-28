@@ -130,15 +130,22 @@ function handleMonitorUpdate(msg) {
  */
 async function handleMonitorSubscribe(id, path) {
     if (!runtimeRef || !contextRef) return;
+    if (typeof id !== "string" || !id || typeof path !== "string" || !path) return;
 
-    // Pre-create the state entry so initial broadcast from wrap() is captured
-    if (!monitorState.has(id)) {
+    const existingState = monitorState.get(id);
+    if (existingState) {
+        existingState.path = path;
+    } else {
+        // Pre-create the state entry so initial broadcast from wrap() is captured
         monitorState.set(id, { path, history: [] });
     }
 
+    const idJson = JSON.stringify(id);
+    const pathJson = JSON.stringify(path);
+
     try {
         const result = await runtimeRef.evaluate({
-            expression: `window.monitorWrap("${id}", "${path}")`,
+            expression: `window.monitorWrap(${idJson}, ${pathJson})`,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -149,11 +156,29 @@ async function handleMonitorSubscribe(id, path) {
             return;
         }
 
-        if (result.result.value && result.result.value.success) {
+        const payload = result.result.value || {};
+
+        if (payload.success) {
             // State already exists, just broadcast
             broadcastMonitorState();
-        } else if (result.result.value && result.result.value.error) {
-            log.error(`Monitor subscribe error for ${id}:`, result.result.value.error);
+            return;
+        }
+
+        if (payload.error) {
+            const errorText = String(payload.error);
+
+            if (errorText.includes("Already watching this ID")) {
+                const existing = monitorState.get(id);
+                if (existing) {
+                    existing.path = path;
+                } else {
+                    monitorState.set(id, { path, history: [] });
+                }
+                broadcastMonitorState();
+                return;
+            }
+
+            log.error(`Monitor subscribe error for ${id}:`, payload.error);
             monitorState.delete(id);
         }
     } catch (err) {
@@ -168,10 +193,13 @@ async function handleMonitorSubscribe(id, path) {
  */
 async function handleMonitorUnsubscribe(id) {
     if (!runtimeRef || !contextRef) return;
+    if (typeof id !== "string" || !id) return;
+
+    const idJson = JSON.stringify(id);
 
     try {
         await runtimeRef.evaluate({
-            expression: `window.monitorUnwrap("${id}")`,
+            expression: `window.monitorUnwrap(${idJson})`,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -304,6 +332,7 @@ function closeWebSocket() {
             client.close();
         }
         clients.clear();
+        monitorState.clear();
         wss.close();
         wss = null;
         log.info("Server closed");
