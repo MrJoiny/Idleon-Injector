@@ -439,9 +439,13 @@ registerCheat({
 function eval_gg_func(params, mode) {
     try {
         const target = eval(params[0]);
-        const entries = Object.entries(target);
 
-        if (typeof entries === "string" || entries.length === 0) {
+        if (target === null || target === undefined || typeof target !== "object") {
+            return mode === 0 ? `${target}` : `Non iterable value: ${target}`;
+        }
+
+        const entries = Object.entries(target);
+        if (entries.length === 0) {
             return mode === 0 ? `${target}` : `Non iterable value: ${target}`;
         }
 
