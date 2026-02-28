@@ -13,8 +13,7 @@ const SHORTCUTS_TOOLTIP_TEXT =
     "2 - Account Options\n" +
     "3 - Config\n" +
     "4 - Search\n" +
-    "5 - Monitor\n" +
-    "6 - Chromedebug\n" +
+    "5 - Chromedebug\n" +
     "/ - Focus search\n" +
     "Ctrl+S - Save config (Config tab)\n";
 
@@ -63,7 +62,12 @@ export const Sidebar = () => {
             div(
                 { class: "brand-main" },
                 div({ class: "brand-logo" }, Icons.Logo()),
-                div({ class: "brand-text" }, span("IDLEON"), span({ class: "highlight" }, "INJECTOR"))
+                div(
+                    { class: "brand-text" },
+                    span("IDLEON"),
+                    span({ class: "highlight" }, "INJECTOR"),
+                    span({ class: "brand-version" }, () => (store.app.appVersion ? `v${store.app.appVersion}` : ""))
+                )
             ),
             NotificationHistory()
         ),
@@ -73,7 +77,6 @@ export const Sidebar = () => {
             NavBtn(VIEWS.ACCOUNT, Icons.Account),
             NavBtn(VIEWS.CONFIG, Icons.Config),
             NavBtn(VIEWS.SEARCH, Icons.Search),
-            NavBtn(VIEWS.MONITOR, Icons.Eye),
             NavBtn(VIEWS.DEVTOOLS, Icons.DevTools),
             withTooltip(
                 a(

@@ -20,7 +20,7 @@ import { setup as coreSetup } from "./core/setup.js";
 import "./cheats/register.js";
 import { getOLA, setOLAIndex, getcheatStateList } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
-import { searchGga, getGgaKeys } from "./api/search.js";
+import { searchGga, getGgaKeys, setGgaValue } from "./api/search.js";
 import { monitor } from "./core/valueMonitor.js";
 
 // Sets the config, startup and webport from glob to internal state
@@ -65,6 +65,7 @@ window.cheatStateList = getcheatStateList;
 // Search API
 window.searchGga = searchGga;
 window.getGgaKeys = getGgaKeys;
+window.setGgaValue = setGgaValue;
 
 // Monitor API
 window.monitorWrap = (id, path) => monitor.wrap(id, path);

@@ -134,6 +134,13 @@
     letter-spacing: 0.2em;
 }
 
+.brand-version {
+    font-size: 0.68rem;
+    color: var(--c-text-muted);
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+}
+
 /* --- NAVIGATION MENU --- */
 .nav-menu {
     display: flex;
