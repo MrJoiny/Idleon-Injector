@@ -435,7 +435,7 @@ registerCheat({
         }
 
         try {
-            eval(params[0]);
+            (0, eval)(params[0]);
             return `${params[0]}`;
         } catch (error) {
             return `Error: ${error}`;
