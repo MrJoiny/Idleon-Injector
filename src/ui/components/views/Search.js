@@ -1,7 +1,6 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
-import { FAVORITE_KEYS } from "../../state/constants.js";
 import { detectQueryType, copyToClipboard } from "../../utils/index.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
@@ -52,13 +51,12 @@ function normalizeFavoriteKeys(keys) {
 function loadLocalFavoriteKeys() {
     try {
         const raw = localStorage.getItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY);
-        if (!raw) return [...FAVORITE_KEYS];
+        if (!raw) return [];
 
         const parsed = JSON.parse(raw);
-        const normalized = normalizeFavoriteKeys(parsed);
-        return normalized.length > 0 ? normalized : [...FAVORITE_KEYS];
+        return normalizeFavoriteKeys(parsed);
     } catch {
-        return [...FAVORITE_KEYS];
+        return [];
     }
 }
 
@@ -405,14 +403,6 @@ const KeysSection = ({ ui, handlers }) =>
                     },
                     "FAV"
                 ),
-                button(
-                    {
-                        class: "btn-small",
-                        onclick: handlers.restoreFavoriteKeys,
-                        title: "Restore default favorites",
-                    },
-                    "RESTORE FAV"
-                ),
                 button({ class: "btn-small", onclick: handlers.clearSelection, title: "Clear selection" }, "CLEAR")
             )
         ),
@@ -581,6 +571,13 @@ const SearchInputSection = ({ ui, handlers }) =>
                 const activeScanType = ui.scanSessionActive ? ui.scanTypeNext : ui.scanTypeNew;
 
                 if (isInputlessScanType(activeScanType)) {
+                    if (activeScanType === "unknown_initial_value") {
+                        return span(
+                            { class: "type-label" },
+                            "MODE: " + getScanTypeLabel(activeScanType).toUpperCase() + " (SEARCHES FOR ANY VALUE)"
+                        );
+                    }
+
                     const suffix =
                         activeScanType === "changed_value" || activeScanType === "unchanged_value"
                             ? "(COMPARES AGAINST PREVIOUS RESULT LIST)"
@@ -688,7 +685,7 @@ const ResultsSection = ({ ui, handlers }) =>
                     return EmptyState({
                         icon: Icons.Search(),
                         title: "SEARCH GGA",
-                        subtitle: "Enter a value and click Search to find where it's stored (empty = show all)",
+                        subtitle: "Enter a value and click Search, or use UNKNOWN INITIAL VALUE to scan all values",
                     });
                 }
 
@@ -1084,8 +1081,6 @@ export const Search = () => {
     const areAllSelected = () => ui.allKeys.length > 0 && ui.selectedKeys.length === ui.allKeys.length;
 
     const updateSelection = (keys, select) => {
-        const before = JSON.stringify(ui.selectedKeys);
-
         if (select) {
             const newKeys = new Set(ui.selectedKeys);
             keys.forEach((k) => newKeys.add(k));
@@ -1093,10 +1088,6 @@ export const Search = () => {
         } else {
             const removeSet = new Set(keys);
             ui.selectedKeys = ui.selectedKeys.filter((k) => !removeSet.has(k));
-        }
-
-        if (JSON.stringify(ui.selectedKeys) !== before) {
-            queueSelectedKeysSync();
         }
     };
 
@@ -1113,37 +1104,12 @@ export const Search = () => {
     let resultsFilterSeq = 0;
     let savedFilterSeq = 0;
     let workspacePersistTimer = null;
-    let initialSavedSyncCompleted = false;
-    let initialSavedSyncTimer = null;
-    let initialFavoriteSyncCompleted = false;
-    let initialFavoriteSyncTimer = null;
-    let initialSelectedSyncCompleted = false;
-    let initialSelectedSyncTimer = null;
-    let selectedKeysSyncTimer = null;
     const subscribedMonitorPaths = new Set();
     const monitorToggleLocksByPath = new Map();
-    const pendingMonitorIntentByPath = new Map();
-    const PENDING_MONITOR_INTENT_TTL_MS = 5000;
     const MONITOR_TOGGLE_LOCK_MS = 280;
     const filterCache = {
         results: { source: null, query: "", values: [] },
         saved: { source: null, query: "", values: [] },
-    };
-
-    const getPendingMonitorIntent = (path) => {
-        const pending = pendingMonitorIntentByPath.get(path);
-        if (!pending) return null;
-
-        if (Date.now() - pending.ts > PENDING_MONITOR_INTENT_TTL_MS) {
-            pendingMonitorIntentByPath.delete(path);
-            return null;
-        }
-
-        return pending;
-    };
-
-    const setPendingMonitorIntent = (path, enabled) => {
-        pendingMonitorIntentByPath.set(path, { enabled: enabled === true, ts: Date.now() });
     };
 
     const isMonitorToggleLocked = (path) => {
@@ -1174,88 +1140,13 @@ export const Search = () => {
         }, MONITOR_TOGGLE_LOCK_MS + 20);
     };
 
-    const normalizeSavedResults = (entries) => {
-        return Array.isArray(entries) ? entries.map(normalizeSavedEntry).filter(Boolean) : [];
-    };
-
-    const applySharedSavedResults = (sharedEntries, currentEntries) => {
-        const currentByPath = new Map((currentEntries || []).map((entry) => [entry.path, entry]));
-        const next = [];
-        let changed = (sharedEntries || []).length !== (currentEntries || []).length;
-
-        for (const sharedEntry of sharedEntries || []) {
-            const current = currentByPath.get(sharedEntry.path);
-
-            const pending = getPendingMonitorIntent(sharedEntry.path);
-            if (pending) {
-                if (sharedEntry.monitorEnabled === pending.enabled) {
-                    pendingMonitorIntentByPath.delete(sharedEntry.path);
-                } else if (current) {
-                    next.push(current);
-                    continue;
-                }
-            }
-
-            if (current && JSON.stringify(current) === JSON.stringify(sharedEntry)) {
-                next.push(current);
-            } else {
-                next.push(sharedEntry);
-                changed = true;
-            }
-        }
-
-        return { changed, next };
-    };
-
-    const applySharedFavoriteKeys = (sharedKeys, currentKeys) => {
-        const next = normalizeFavoriteKeys(sharedKeys);
-        const current = normalizeFavoriteKeys(currentKeys);
-
-        if (next.length !== current.length) {
-            return { changed: true, next };
-        }
-
-        for (let i = 0; i < next.length; i++) {
-            if (next[i] !== current[i]) {
-                return { changed: true, next };
-            }
-        }
-
-        return { changed: false, next: current };
-    };
-
-    const normalizeSelectedKeysForAll = (keys) => {
-        if (!Array.isArray(keys)) return [];
-        const available = new Set(ui.allKeys || []);
-        return normalizeFavoriteKeys(keys).filter((key) => available.has(key));
-    };
-
-    const applySharedSelectedKeys = (sharedKeys, currentKeys) => {
-        const next = normalizeSelectedKeysForAll(sharedKeys);
-        const current = normalizeSelectedKeysForAll(currentKeys);
-
-        if (next.length !== current.length) {
-            return { changed: true, next };
-        }
-
-        for (let i = 0; i < next.length; i++) {
-            if (next[i] !== current[i]) {
-                return { changed: true, next };
-            }
-        }
-
-        return { changed: false, next: current };
-    };
-
     const reconcileMonitorSubscriptions = () => {
         const desiredPaths = new Set();
 
         for (const entry of ui.savedResults) {
             if (!entry?.path) continue;
 
-            const pending = getPendingMonitorIntent(entry.path);
-            const monitorEnabled = pending ? pending.enabled : entry.monitorEnabled;
-            if (monitorEnabled === false) continue;
+            if (entry.monitorEnabled === false) continue;
 
             desiredPaths.add(entry.path);
         }
@@ -1276,96 +1167,22 @@ export const Search = () => {
         }
     };
 
-    const startInitialSavedSync = (seedEntries) => {
-        const normalizedSeed = normalizeSavedResults(seedEntries);
-        if (normalizedSeed.length === 0) {
-            initialSavedSyncCompleted = true;
-            return;
-        }
-
-        const sendSeed = () => {
-            store.syncSavedList(normalizedSeed);
-        };
-
-        sendSeed();
+    const restoreSavedMonitorsWithRetry = () => {
+        if (ui.savedResults.length === 0) return;
 
         let attempts = 0;
-        const maxAttempts = 20;
-        initialSavedSyncTimer = setInterval(() => {
-            if (initialSavedSyncCompleted || store.data.savedListStateReady || attempts >= maxAttempts) {
-                clearInterval(initialSavedSyncTimer);
-                initialSavedSyncTimer = null;
-                return;
-            }
+        const maxAttempts = 10;
 
-            sendSeed();
+        const trySubscribe = () => {
+            reconcileMonitorSubscriptions();
             attempts += 1;
-        }, 500);
-    };
 
-    const startInitialFavoriteKeysSync = (seedKeys) => {
-        const normalizedSeed = normalizeFavoriteKeys(seedKeys);
-        if (normalizedSeed.length === 0) {
-            initialFavoriteSyncCompleted = true;
-            return;
-        }
-
-        const sendSeed = () => {
-            store.syncSearchFavoriteKeys(normalizedSeed);
+            if (attempts < maxAttempts) {
+                setTimeout(trySubscribe, 1500);
+            }
         };
 
-        sendSeed();
-
-        let attempts = 0;
-        const maxAttempts = 20;
-        initialFavoriteSyncTimer = setInterval(() => {
-            if (initialFavoriteSyncCompleted || store.data.searchFavoriteKeysStateReady || attempts >= maxAttempts) {
-                clearInterval(initialFavoriteSyncTimer);
-                initialFavoriteSyncTimer = null;
-                return;
-            }
-
-            sendSeed();
-            attempts += 1;
-        }, 500);
-    };
-
-    const startInitialSelectedKeysSync = (seedKeys) => {
-        const normalizedSeed = normalizeSelectedKeysForAll(seedKeys);
-        if (normalizedSeed.length === 0) {
-            initialSelectedSyncCompleted = true;
-            return;
-        }
-
-        const sendSeed = () => {
-            store.syncSearchSelectedKeys(normalizedSeed);
-        };
-
-        sendSeed();
-
-        let attempts = 0;
-        const maxAttempts = 20;
-        initialSelectedSyncTimer = setInterval(() => {
-            if (initialSelectedSyncCompleted || store.data.searchSelectedKeysStateReady || attempts >= maxAttempts) {
-                clearInterval(initialSelectedSyncTimer);
-                initialSelectedSyncTimer = null;
-                return;
-            }
-
-            sendSeed();
-            attempts += 1;
-        }, 500);
-    };
-
-    const queueSelectedKeysSync = () => {
-        if (selectedKeysSyncTimer !== null) {
-            clearTimeout(selectedKeysSyncTimer);
-        }
-
-        selectedKeysSyncTimer = setTimeout(() => {
-            selectedKeysSyncTimer = null;
-            store.emitSearchSelectedKeysEvent({ action: "set", keys: ui.selectedKeys });
-        }, 90);
+        trySubscribe();
     };
 
     const updateValueInUi = (path, payload) => {
@@ -1418,88 +1235,6 @@ export const Search = () => {
         saveLocalFavoriteKeys(ui.favoriteKeys);
     });
 
-    van.derive(() => {
-        if (!store.data.searchFavoriteKeysStateReady) {
-            return;
-        }
-
-        const sharedKeys = normalizeFavoriteKeys(store.data.searchFavoriteKeysState);
-
-        if (!initialFavoriteSyncCompleted && sharedKeys.length === 0 && ui.favoriteKeys.length > 0) {
-            store.syncSearchFavoriteKeys(ui.favoriteKeys);
-            return;
-        }
-
-        initialFavoriteSyncCompleted = true;
-
-        if (initialFavoriteSyncTimer !== null) {
-            clearInterval(initialFavoriteSyncTimer);
-            initialFavoriteSyncTimer = null;
-        }
-
-        const applied = applySharedFavoriteKeys(sharedKeys, ui.favoriteKeys);
-        if (applied.changed) {
-            ui.favoriteKeys = applied.next;
-        }
-    });
-
-    van.derive(() => {
-        if (!store.data.searchSelectedKeysStateReady || ui.allKeys.length === 0) {
-            return;
-        }
-
-        const sharedKeys = normalizeSelectedKeysForAll(store.data.searchSelectedKeysState);
-
-        if (!initialSelectedSyncCompleted && sharedKeys.length === 0 && ui.selectedKeys.length > 0) {
-            store.syncSearchSelectedKeys(ui.selectedKeys);
-            return;
-        }
-
-        initialSelectedSyncCompleted = true;
-
-        if (initialSelectedSyncTimer !== null) {
-            clearInterval(initialSelectedSyncTimer);
-            initialSelectedSyncTimer = null;
-        }
-
-        const applied = applySharedSelectedKeys(sharedKeys, ui.selectedKeys);
-        if (applied.changed) {
-            ui.selectedKeys = applied.next;
-        }
-    });
-
-    van.derive(() => {
-        if (!store.data.savedListStateReady) {
-            return;
-        }
-
-        const sharedEntries = normalizeSavedResults(store.data.savedListState);
-
-        if (!initialSavedSyncCompleted && sharedEntries.length === 0 && ui.savedResults.length > 0) {
-            store.syncSavedList(ui.savedResults);
-            return;
-        }
-
-        initialSavedSyncCompleted = true;
-
-        if (initialSavedSyncTimer !== null) {
-            clearInterval(initialSavedSyncTimer);
-            initialSavedSyncTimer = null;
-        }
-
-        if (sharedEntries.length === 0 && ui.savedResults.length === 0) {
-            reconcileMonitorSubscriptions();
-            return;
-        }
-
-        const applied = applySharedSavedResults(sharedEntries, ui.savedResults);
-        if (applied.changed) {
-            ui.savedResults = applied.next;
-        }
-
-        reconcileMonitorSubscriptions();
-    });
-
     const getFilteredResults = () => {
         const source = ui.results;
         const query = normalizeFilterText(ui.resultsFilterApplied);
@@ -1544,13 +1279,11 @@ export const Search = () => {
         toggleAll: () => {
             if (areAllSelected()) ui.selectedKeys = [];
             else ui.selectedKeys = [...ui.allKeys];
-            queueSelectedKeysSync();
         },
 
         selectKeys: (keys) => updateSelection(keys, true),
         clearSelection: () => {
             ui.selectedKeys = [];
-            queueSelectedKeysSync();
         },
 
         isMonitorToggleLocked,
@@ -1561,19 +1294,10 @@ export const Search = () => {
             const hasKey = ui.favoriteKeys.includes(keyName);
             if (hasKey) {
                 ui.favoriteKeys = ui.favoriteKeys.filter((key) => key !== keyName);
-                store.emitSearchFavoriteKeysEvent({ action: "remove", key: keyName });
                 return;
             }
 
             ui.favoriteKeys = [...ui.favoriteKeys, keyName];
-            store.emitSearchFavoriteKeysEvent({ action: "add", key: keyName });
-        },
-
-        restoreFavoriteKeys: () => {
-            const restored = normalizeFavoriteKeys(FAVORITE_KEYS);
-            ui.favoriteKeys = restored;
-            store.emitSearchFavoriteKeysEvent({ action: "restore", keys: restored });
-            store.notify("Restored default favorites", "success");
         },
 
         handleResultsFilterInput: (e) => {
@@ -1710,17 +1434,14 @@ export const Search = () => {
 
             ui.savedResults = [...ui.savedResults, entry];
 
-            setPendingMonitorIntent(result.path, true);
             store.subscribeMonitor(monitorPath);
             subscribedMonitorPaths.add(result.path);
-            store.emitSavedListEvent({ action: "upsert", entry });
 
             store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
         },
 
         toggleSavedMonitor: (path, enabled) => {
             lockMonitorToggle(path);
-            setPendingMonitorIntent(path, enabled);
 
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
@@ -1752,24 +1473,20 @@ export const Search = () => {
             if (enabled) {
                 store.subscribeMonitor(monitorPath);
                 subscribedMonitorPaths.add(path);
-                store.emitSavedListEvent({ action: "set-monitor-enabled", path, enabled: true });
                 store.notify("Enabled watcher for " + path);
                 return;
             }
 
             store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
             subscribedMonitorPaths.delete(path);
-            store.emitSavedListEvent({ action: "set-monitor-enabled", path, enabled: false });
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
-            pendingMonitorIntentByPath.delete(path);
             const monitorPath = monitorPathForSearchResult(path);
             const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
             store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
             subscribedMonitorPaths.delete(path);
-            store.emitSavedListEvent({ action: "remove", path });
 
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
             if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
@@ -1780,14 +1497,11 @@ export const Search = () => {
             if (ui.savedResults.length === 0) return;
 
             for (const entry of ui.savedResults) {
-                pendingMonitorIntentByPath.delete(entry.path);
                 const monitorPath = monitorPathForSearchResult(entry.path);
                 const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
                 store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
                 subscribedMonitorPaths.delete(entry.path);
             }
-
-            store.emitSavedListEvent({ action: "clear" });
 
             ui.savedResults = [];
             handlers.cancelSavedEdit();
@@ -1804,8 +1518,6 @@ export const Search = () => {
 
                 const data = await API.searchGga("", ui.selectedKeys, { withinPaths });
                 const nextByPath = new Map((data.results || []).map((entry) => [entry.path, entry]));
-
-                const updatedEntries = [];
 
                 ui.savedResults = ui.savedResults.map((entry) => {
                     const next = nextByPath.get(entry.path);
@@ -1825,13 +1537,8 @@ export const Search = () => {
                         lastLiveType: nextType,
                     };
 
-                    updatedEntries.push(updated);
                     return updated;
                 });
-
-                for (const entry of updatedEntries) {
-                    store.emitSavedListEvent({ action: "upsert", entry });
-                }
 
                 store.notify("Saved list refreshed", "success");
             } catch (e) {
@@ -1898,10 +1605,6 @@ export const Search = () => {
                 ui.isSettingValue = true;
                 const resp = await API.setGgaValue(ui.savedEdit.path, validation.valueToSend);
                 updateValueInUi(ui.savedEdit.path, resp);
-                const updatedSavedEntry = ui.savedResults.find((entry) => entry.path === ui.savedEdit.path);
-                if (updatedSavedEntry) {
-                    store.emitSavedListEvent({ action: "upsert", entry: updatedSavedEntry });
-                }
                 store.notify(`Updated ${ui.savedEdit.path}`, "success");
                 handlers.cancelSavedEdit();
             } catch (e) {
@@ -1940,10 +1643,6 @@ export const Search = () => {
                 ui.isSettingValue = true;
                 const resp = await API.setGgaValue(ui.edit.path, validation.valueToSend);
                 updateValueInUi(ui.edit.path, resp);
-                const updatedSavedEntry = ui.savedResults.find((entry) => entry.path === ui.edit.path);
-                if (updatedSavedEntry) {
-                    store.emitSavedListEvent({ action: "upsert", entry: updatedSavedEntry });
-                }
 
                 store.notify(`Updated ${ui.edit.path}`, "success");
                 handlers.cancelEdit();
@@ -1988,6 +1687,11 @@ export const Search = () => {
             const query2Trimmed = query2.trim();
             const inputless = isInputlessScanType(scanType);
             const hasSecondaryInput = requiresSecondaryInput(scanType);
+
+            if (!isNext && scanType === "exact_value" && queryTrimmed === "") {
+                store.notify("Enter a value for EXACT VALUE, or choose UNKNOWN INITIAL VALUE", "error");
+                return;
+            }
 
             if (!inputless && scanType !== "exact_value" && queryTrimmed === "") {
                 store.notify("Enter a value for this scan type", "error");
@@ -2072,9 +1776,7 @@ export const Search = () => {
             ui.isLoading = false;
         }
 
-        startInitialSavedSync(ui.savedResults);
-        startInitialFavoriteKeysSync(ui.favoriteKeys);
-        startInitialSelectedKeysSync(ui.selectedKeys);
+        restoreSavedMonitorsWithRetry();
     })();
 
     return div(

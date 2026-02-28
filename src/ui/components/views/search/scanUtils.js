@@ -1,4 +1,5 @@
 const INPUTLESS_SCAN_TYPES = new Set([
+    "unknown_initial_value",
     "increased_value",
     "decreased_value",
     "changed_value",
@@ -16,7 +17,7 @@ const NEXT_COMPARISON_SCAN_TYPES = new Set([
     "unchanged_value",
 ]);
 
-export const NEW_SCAN_TYPES = ["exact_value", "bigger_than", "smaller_than", "value_between"];
+export const NEW_SCAN_TYPES = ["exact_value", "unknown_initial_value", "bigger_than", "smaller_than", "value_between"];
 
 export const NEXT_SCAN_TYPES = [
     "exact_value",
@@ -33,6 +34,7 @@ export const NEXT_SCAN_TYPES = [
 
 const SCAN_TYPE_LABELS = {
     exact_value: "Exact Value",
+    unknown_initial_value: "Unknown Initial Value",
     bigger_than: "Bigger Than",
     smaller_than: "Smaller Than",
     value_between: "Value Between",
@@ -164,6 +166,10 @@ export function filterResultsByScanType(results, options) {
 
         if (scanType === "exact_value") {
             return matchesExactValue(currentType, currentValue, parsedExact);
+        }
+
+        if (scanType === "unknown_initial_value") {
+            return true;
         }
 
         if (scanType === "bigger_than") {

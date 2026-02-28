@@ -6,18 +6,9 @@ import {
     initWebSocket,
     onStateUpdate,
     onMonitorUpdate,
-    onSavedListState,
-    onFavoriteKeysState,
-    onSelectedKeysState,
     getConnectionStatus,
     sendMonitorSubscribe,
     sendMonitorUnsubscribe,
-    sendSavedListSync,
-    sendSavedListEvent,
-    sendFavoriteKeysSync,
-    sendFavoriteKeysEvent,
-    sendSelectedKeysSync,
-    sendSelectedKeysEvent,
 } from "../services/ws.js";
 
 /**
@@ -56,12 +47,6 @@ const dataState = vanX.reactive({
     favoriteCheats: safeParseJSON("favoriteCheats", []),
     recentCheats: safeParseJSON("recentCheats", []),
     monitorValues: {},
-    savedListState: [],
-    savedListStateReady: false,
-    searchFavoriteKeysState: [],
-    searchFavoriteKeysStateReady: false,
-    searchSelectedKeysState: [],
-    searchSelectedKeysStateReady: false,
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
@@ -111,21 +96,6 @@ const SystemService = {
 
         onMonitorUpdate((data) => {
             dataState.monitorValues = data || {};
-        });
-
-        onSavedListState((entries) => {
-            dataState.savedListState = Array.isArray(entries) ? entries : [];
-            dataState.savedListStateReady = true;
-        });
-
-        onFavoriteKeysState((keys) => {
-            dataState.searchFavoriteKeysState = Array.isArray(keys) ? keys : [];
-            dataState.searchFavoriteKeysStateReady = true;
-        });
-
-        onSelectedKeysState((keys) => {
-            dataState.searchSelectedKeysState = Array.isArray(keys) ? keys : [];
-            dataState.searchSelectedKeysStateReady = true;
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -371,36 +341,6 @@ const MonitorService = {
     },
 };
 
-const SavedListSyncService = {
-    sync: (entries) => {
-        sendSavedListSync(Array.isArray(entries) ? entries : []);
-    },
-    emit: (event) => {
-        if (!event || typeof event !== "object") return;
-        sendSavedListEvent(event);
-    },
-};
-
-const FavoriteKeysSyncService = {
-    sync: (keys) => {
-        sendFavoriteKeysSync(Array.isArray(keys) ? keys : []);
-    },
-    emit: (event) => {
-        if (!event || typeof event !== "object") return;
-        sendFavoriteKeysEvent(event);
-    },
-};
-
-const SelectedKeysSyncService = {
-    sync: (keys) => {
-        sendSelectedKeysSync(Array.isArray(keys) ? keys : []);
-    },
-    emit: (event) => {
-        if (!event || typeof event !== "object") return;
-        sendSelectedKeysEvent(event);
-    },
-};
-
 const store = {
     app: appState,
     data: dataState,
@@ -426,12 +366,6 @@ const store = {
 
     subscribeMonitor: MonitorService.subscribe,
     unsubscribeMonitor: MonitorService.unsubscribe,
-    syncSavedList: SavedListSyncService.sync,
-    emitSavedListEvent: SavedListSyncService.emit,
-    syncSearchFavoriteKeys: FavoriteKeysSyncService.sync,
-    emitSearchFavoriteKeysEvent: FavoriteKeysSyncService.emit,
-    syncSearchSelectedKeys: SelectedKeysSyncService.sync,
-    emitSearchSelectedKeysEvent: SelectedKeysSyncService.emit,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

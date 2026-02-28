@@ -50,28 +50,3 @@ export const CATEGORY_ORDER = [
     "w7",
     "minigame",
 ];
-
-/**
- * Curated list of favorite GGA keys for quick access in Search view.
- */
-export const FAVORITE_KEYS = [
-    "OptionsListAccount",
-    "OptionsList",
-    "PlayerDATABASE",
-    "SkillLevels",
-    "SkillLevelsMAX",
-    "BundlesReceived",
-    "ChestQuantity",
-    "CurrenciesOwned",
-    "CustomLists",
-    "Exp0",
-    "GemItemsPurchased",
-    "ItemQuantity",
-    "KillsLeft2Advance",
-    "Lv0",
-    "Spelunk",
-    "Arcane",
-    "Bubba",
-    "Compass",
-    "Grimoire",
-];

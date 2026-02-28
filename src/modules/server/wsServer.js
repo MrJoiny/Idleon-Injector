@@ -20,112 +20,11 @@ const clients = new Set();
 const monitorState = new Map();
 const HISTORY_LIMIT = 10;
 
-/** @type {Map<string, { path: string, formattedValue: string, type: string, monitorEnabled: boolean, value?: any, lastLiveRaw?: any, lastLiveFormatted?: string, lastLiveType?: string, lastHistory?: Array<{ value: any, ts: number }> }>} */
-const savedListState = new Map();
-
-/** @type {Array<string>} */
-const searchFavoriteKeysState = [];
-
-/** @type {Array<string>} */
-const searchSelectedKeysState = [];
-
 /** @type {Object|null} CDP Runtime reference for fetching cheat states */
 let runtimeRef = null;
 
 /** @type {string|null} Game context expression */
 let contextRef = null;
-
-function formatMonitorValue(value) {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") return "'" + value + "'";
-    if (typeof value === "object") return "[obj]";
-    return String(value);
-}
-
-function getUiTypeFromRawValue(value, fallback = "string") {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") return "string";
-    if (typeof value === "number") return "number";
-    if (typeof value === "boolean") return "boolean";
-    return fallback;
-}
-
-function getSavedPathFromMonitorPath(path) {
-    if (typeof path !== "string") return "";
-    return path.startsWith("gga.") ? path.slice(4) : path;
-}
-
-function normalizeSavedEntry(entry) {
-    if (!entry || typeof entry !== "object" || typeof entry.path !== "string" || !entry.path) {
-        return null;
-    }
-
-    const normalized = {
-        path: entry.path,
-        formattedValue: typeof entry.formattedValue === "string" ? entry.formattedValue : "",
-        type: typeof entry.type === "string" ? entry.type : "undefined",
-        monitorEnabled: entry.monitorEnabled !== false,
-    };
-
-    if (Object.prototype.hasOwnProperty.call(entry, "value")) {
-        normalized.value = entry.value;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw")) {
-        normalized.lastLiveRaw = entry.lastLiveRaw;
-    }
-
-    if (typeof entry.lastLiveFormatted === "string") {
-        normalized.lastLiveFormatted = entry.lastLiveFormatted;
-    }
-
-    if (typeof entry.lastLiveType === "string") {
-        normalized.lastLiveType = entry.lastLiveType;
-    }
-
-    if (Array.isArray(entry.lastHistory)) {
-        normalized.lastHistory = entry.lastHistory
-            .filter((point) => point && typeof point === "object" && typeof point.ts === "number")
-            .slice(0, HISTORY_LIMIT)
-            .map((point) => ({ value: point.value, ts: point.ts }));
-    }
-
-    return normalized;
-}
-
-function normalizeFavoriteKeys(keys) {
-    if (!Array.isArray(keys)) return [];
-    const unique = [];
-    const seen = new Set();
-
-    for (const key of keys) {
-        if (typeof key !== "string" || !key) continue;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        unique.push(key);
-    }
-
-    return unique;
-}
-
-function setSavedEntry(path, updater) {
-    const previous = savedListState.get(path) || null;
-    const next = updater(previous);
-    if (!next) {
-        savedListState.delete(path);
-        return previous !== null;
-    }
-
-    const normalized = normalizeSavedEntry(next);
-    if (!normalized) return false;
-
-    const before = previous ? JSON.stringify(previous) : "";
-    const after = JSON.stringify(normalized);
-    savedListState.set(path, normalized);
-    return before !== after;
-}
 
 /**
  * Initializes the WebSocket server attached to the HTTP server
@@ -147,9 +46,6 @@ function initWebSocket(httpServer, runtime, context) {
         // Push current state immediately on connection
         sendCheatStatesToClient(ws);
         sendMonitorStateToClient(ws);
-        sendSavedListStateToClient(ws);
-        sendFavoriteKeysStateToClient(ws);
-        sendSelectedKeysStateToClient(ws);
 
         ws.on("message", async (message) => {
             try {
@@ -201,30 +97,6 @@ async function handleMessage(ws, msg) {
         case "monitor-unsubscribe":
             await handleMonitorUnsubscribe(msg.id);
             break;
-
-        case "saved-list-sync":
-            handleSavedListSync(msg.entries);
-            break;
-
-        case "saved-list-event":
-            handleSavedListEvent(msg.event);
-            break;
-
-        case "favorite-keys-sync":
-            handleFavoriteKeysSync(msg.keys);
-            break;
-
-        case "favorite-keys-event":
-            handleFavoriteKeysEvent(msg.event);
-            break;
-
-        case "selected-keys-sync":
-            handleSelectedKeysSync(msg.keys);
-            break;
-
-        case "selected-keys-event":
-            handleSelectedKeysEvent(msg.event);
-            break;
     }
 }
 
@@ -258,18 +130,13 @@ function handleMonitorUpdate(msg) {
  */
 async function handleMonitorSubscribe(id, path) {
     if (!runtimeRef || !contextRef) return;
-
-    if (typeof id !== "string" || !id || typeof path !== "string" || !path) {
-        return;
-    }
+    if (typeof id !== "string" || !id || typeof path !== "string" || !path) return;
 
     const existingState = monitorState.get(id);
-    if (existingState && existingState.path !== path) {
-        log.warn(`Monitor id collision detected for id '${id}': '${existingState.path}' vs '${path}'`);
-    }
-
-    // Pre-create the state entry so initial broadcast from wrap() is captured
-    if (!monitorState.has(id)) {
+    if (existingState) {
+        existingState.path = path;
+    } else {
+        // Pre-create the state entry so initial broadcast from wrap() is captured
         monitorState.set(id, { path, history: [] });
     }
 
@@ -293,38 +160,11 @@ async function handleMonitorSubscribe(id, path) {
 
         if (payload.success) {
             // State already exists, just broadcast
-            const savedPath = getSavedPathFromMonitorPath(path);
-            if (savedPath) {
-                setSavedEntry(savedPath, (previous) => {
-                    if (!previous) return null;
-
-                    const liveHistory = monitorState.get(id)?.history || [];
-                    const latest = liveHistory[0];
-
-                    if (latest) {
-                        return {
-                            ...previous,
-                            monitorEnabled: true,
-                            value: latest.value,
-                            formattedValue: formatMonitorValue(latest.value),
-                            type: getUiTypeFromRawValue(latest.value, previous.type || "undefined"),
-                            lastLiveRaw: latest.value,
-                            lastLiveFormatted: formatMonitorValue(latest.value),
-                            lastLiveType: getUiTypeFromRawValue(latest.value, previous.type || "undefined"),
-                            lastHistory: liveHistory.slice(0, HISTORY_LIMIT),
-                        };
-                    }
-
-                    return {
-                        ...previous,
-                        monitorEnabled: true,
-                    };
-                });
-            }
-
             broadcastMonitorState();
-            broadcastSavedListState();
-        } else if (payload.error) {
+            return;
+        }
+
+        if (payload.error) {
             const errorText = String(payload.error);
 
             if (errorText.includes("Already watching this ID")) {
@@ -334,15 +174,7 @@ async function handleMonitorSubscribe(id, path) {
                 } else {
                     monitorState.set(id, { path, history: [] });
                 }
-                const savedPath = getSavedPathFromMonitorPath(path);
-                if (savedPath) {
-                    setSavedEntry(savedPath, (previous) => ({
-                        ...previous,
-                        monitorEnabled: true,
-                    }));
-                }
                 broadcastMonitorState();
-                broadcastSavedListState();
                 return;
             }
 
@@ -363,10 +195,9 @@ async function handleMonitorUnsubscribe(id) {
     if (!runtimeRef || !contextRef) return;
     if (typeof id !== "string" || !id) return;
 
-    try {
-        const existing = monitorState.get(id);
-        const idJson = JSON.stringify(id);
+    const idJson = JSON.stringify(id);
 
+    try {
         await runtimeRef.evaluate({
             expression: `window.monitorUnwrap(${idJson})`,
             awaitPromise: true,
@@ -374,227 +205,9 @@ async function handleMonitorUnsubscribe(id) {
         });
 
         monitorState.delete(id);
-
-        const savedPath = getSavedPathFromMonitorPath(existing?.path);
-        if (savedPath && savedListState.has(savedPath)) {
-            setSavedEntry(savedPath, (previous) => {
-                if (!previous) return null;
-                return {
-                    ...previous,
-                    monitorEnabled: false,
-                };
-            });
-        }
-
         broadcastMonitorState();
-        broadcastSavedListState();
     } catch (err) {
         log.error(`Error unsubscribing monitor ${id}:`, err.message);
-    }
-}
-
-function mergeSavedEntry(previous, incoming) {
-    const merged = {
-        ...previous,
-        ...incoming,
-    };
-
-    merged.monitorEnabled = previous ? previous.monitorEnabled : incoming.monitorEnabled;
-
-    if (previous && !Object.prototype.hasOwnProperty.call(incoming, "value") && Object.prototype.hasOwnProperty.call(previous, "value")) {
-        merged.value = previous.value;
-    }
-
-    if (previous && !Object.prototype.hasOwnProperty.call(incoming, "lastLiveRaw") && Object.prototype.hasOwnProperty.call(previous, "lastLiveRaw")) {
-        merged.lastLiveRaw = previous.lastLiveRaw;
-    }
-
-    if (previous && typeof incoming.lastLiveFormatted !== "string" && typeof previous.lastLiveFormatted === "string") {
-        merged.lastLiveFormatted = previous.lastLiveFormatted;
-    }
-
-    if (previous && typeof incoming.lastLiveType !== "string" && typeof previous.lastLiveType === "string") {
-        merged.lastLiveType = previous.lastLiveType;
-    }
-
-    const prevHistory = Array.isArray(previous?.lastHistory) ? previous.lastHistory : [];
-    const nextHistory = Array.isArray(incoming.lastHistory) ? incoming.lastHistory : [];
-    if (nextHistory.length === 0 && prevHistory.length > 0) {
-        merged.lastHistory = prevHistory;
-    } else if (nextHistory.length > 0 && prevHistory.length > 0) {
-        const prevTs = prevHistory[0]?.ts || 0;
-        const nextTs = nextHistory[0]?.ts || 0;
-        merged.lastHistory = nextTs >= prevTs ? nextHistory : prevHistory;
-    }
-
-    return merged;
-}
-
-function handleSavedListSync(entries) {
-    if (!Array.isArray(entries)) return;
-
-    let changed = false;
-
-    for (const rawEntry of entries) {
-        const entry = normalizeSavedEntry(rawEntry);
-        if (!entry) continue;
-
-        const previous = savedListState.get(entry.path);
-        const next = previous ? mergeSavedEntry(previous, entry) : entry;
-        const before = previous ? JSON.stringify(previous) : "";
-        const after = JSON.stringify(next);
-
-        if (before !== after) {
-            savedListState.set(entry.path, next);
-            changed = true;
-        }
-    }
-
-    if (changed) {
-        broadcastSavedListState();
-    }
-}
-
-function handleSavedListEvent(event) {
-    if (!event || typeof event !== "object") return;
-
-    let changed = false;
-
-    if (event.action === "upsert") {
-        const entry = normalizeSavedEntry(event.entry);
-        if (!entry) return;
-
-        const previous = savedListState.get(entry.path);
-        const next = previous ? mergeSavedEntry(previous, entry) : entry;
-        const before = previous ? JSON.stringify(previous) : "";
-        const after = JSON.stringify(next);
-
-        if (before !== after) {
-            savedListState.set(entry.path, next);
-            changed = true;
-        }
-    }
-
-    if (event.action === "remove" && typeof event.path === "string" && event.path) {
-        changed = savedListState.delete(event.path) || changed;
-    }
-
-    if (event.action === "clear") {
-        changed = savedListState.size > 0;
-        savedListState.clear();
-    }
-
-    if (event.action === "set-monitor-enabled" && typeof event.path === "string" && event.path) {
-        const enabled = event.enabled === true;
-        changed =
-            setSavedEntry(event.path, (previous) => {
-                if (!previous) {
-                    if (!enabled) return null;
-                    return {
-                        path: event.path,
-                        formattedValue: "undefined",
-                        type: "undefined",
-                        monitorEnabled: enabled,
-                    };
-                }
-
-                return {
-                    ...previous,
-                    monitorEnabled: enabled,
-                };
-            }) || changed;
-    }
-
-    if (changed) {
-        broadcastSavedListState();
-    }
-}
-
-function handleFavoriteKeysSync(keys) {
-    const incoming = normalizeFavoriteKeys(keys);
-    if (incoming.length === 0) return;
-
-    const known = new Set(searchFavoriteKeysState);
-    let changed = false;
-
-    for (const key of incoming) {
-        if (known.has(key)) continue;
-        searchFavoriteKeysState.push(key);
-        known.add(key);
-        changed = true;
-    }
-
-    if (changed) {
-        broadcastFavoriteKeysState();
-    }
-}
-
-function handleFavoriteKeysEvent(event) {
-    if (!event || typeof event !== "object") return;
-
-    let changed = false;
-
-    if (event.action === "add" && typeof event.key === "string" && event.key) {
-        if (!searchFavoriteKeysState.includes(event.key)) {
-            searchFavoriteKeysState.push(event.key);
-            changed = true;
-        }
-    }
-
-    if (event.action === "remove" && typeof event.key === "string" && event.key) {
-        const index = searchFavoriteKeysState.indexOf(event.key);
-        if (index !== -1) {
-            searchFavoriteKeysState.splice(index, 1);
-            changed = true;
-        }
-    }
-
-    if ((event.action === "restore" || event.action === "set") && Array.isArray(event.keys)) {
-        const next = normalizeFavoriteKeys(event.keys);
-        const prev = JSON.stringify(searchFavoriteKeysState);
-        const after = JSON.stringify(next);
-        if (prev !== after) {
-            searchFavoriteKeysState.length = 0;
-            searchFavoriteKeysState.push(...next);
-            changed = true;
-        }
-    }
-
-    if (changed) {
-        broadcastFavoriteKeysState();
-    }
-}
-
-function handleSelectedKeysSync(keys) {
-    const incoming = normalizeFavoriteKeys(keys);
-    if (incoming.length === 0) return;
-
-    const known = new Set(searchSelectedKeysState);
-    let changed = false;
-
-    for (const key of incoming) {
-        if (known.has(key)) continue;
-        searchSelectedKeysState.push(key);
-        known.add(key);
-        changed = true;
-    }
-
-    if (changed) {
-        broadcastSelectedKeysState();
-    }
-}
-
-function handleSelectedKeysEvent(event) {
-    if (!event || typeof event !== "object") return;
-    if (event.action !== "set" || !Array.isArray(event.keys)) return;
-
-    const next = normalizeFavoriteKeys(event.keys);
-    const prev = JSON.stringify(searchSelectedKeysState);
-    const after = JSON.stringify(next);
-    if (prev !== after) {
-        searchSelectedKeysState.length = 0;
-        searchSelectedKeysState.push(...next);
-        broadcastSelectedKeysState();
     }
 }
 
@@ -659,40 +272,6 @@ function sendMonitorStateToClient(ws) {
     }
 }
 
-function sendSavedListStateToClient(ws) {
-    const data = Array.from(savedListState.values()).sort((a, b) => a.path.localeCompare(b.path));
-    const message = JSON.stringify({
-        type: "saved-list-state",
-        data,
-    });
-
-    if (ws.readyState === ws.OPEN) {
-        ws.send(message);
-    }
-}
-
-function sendFavoriteKeysStateToClient(ws) {
-    const message = JSON.stringify({
-        type: "favorite-keys-state",
-        data: [...searchFavoriteKeysState],
-    });
-
-    if (ws.readyState === ws.OPEN) {
-        ws.send(message);
-    }
-}
-
-function sendSelectedKeysStateToClient(ws) {
-    const message = JSON.stringify({
-        type: "selected-keys-state",
-        data: [...searchSelectedKeysState],
-    });
-
-    if (ws.readyState === ws.OPEN) {
-        ws.send(message);
-    }
-}
-
 /**
  * Broadcasts current cheat states to all connected UI clients
  * Called after cheat execution to push updated state
@@ -736,55 +315,6 @@ function broadcastMonitorState() {
     }
 }
 
-function broadcastSavedListState() {
-    const uiClients = Array.from(clients).filter((c) => c.clientType === "ui");
-    if (uiClients.length === 0) return;
-
-    const data = Array.from(savedListState.values()).sort((a, b) => a.path.localeCompare(b.path));
-    const message = JSON.stringify({
-        type: "saved-list-state",
-        data,
-    });
-
-    for (const client of uiClients) {
-        if (client.readyState === client.OPEN) {
-            client.send(message);
-        }
-    }
-}
-
-function broadcastFavoriteKeysState() {
-    const uiClients = Array.from(clients).filter((c) => c.clientType === "ui");
-    if (uiClients.length === 0) return;
-
-    const message = JSON.stringify({
-        type: "favorite-keys-state",
-        data: [...searchFavoriteKeysState],
-    });
-
-    for (const client of uiClients) {
-        if (client.readyState === client.OPEN) {
-            client.send(message);
-        }
-    }
-}
-
-function broadcastSelectedKeysState() {
-    const uiClients = Array.from(clients).filter((c) => c.clientType === "ui");
-    if (uiClients.length === 0) return;
-
-    const message = JSON.stringify({
-        type: "selected-keys-state",
-        data: [...searchSelectedKeysState],
-    });
-
-    for (const client of uiClients) {
-        if (client.readyState === client.OPEN) {
-            client.send(message);
-        }
-    }
-}
-
 /**
  * Gets the number of connected WebSocket clients
  * @returns {number} Number of connected clients
@@ -803,9 +333,6 @@ function closeWebSocket() {
         }
         clients.clear();
         monitorState.clear();
-        savedListState.clear();
-        searchFavoriteKeysState.length = 0;
-        searchSelectedKeysState.length = 0;
         wss.close();
         wss = null;
         log.info("Server closed");
