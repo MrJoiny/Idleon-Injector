@@ -121,3 +121,27 @@ export async function searchGga(query, keys) {
         body: JSON.stringify({ query, keys }),
     });
 }
+
+export async function readGameAttr(key, path = []) {
+    return _request("/game/attr/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, path }),
+    });
+}
+
+export async function writeGameAttr(key, path, value) {
+    return _request("/game/attr/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, path, value }),
+    });
+}
+
+export async function readGameExpr(expression) {
+    return _request("/game/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expression }),
+    });
+}
