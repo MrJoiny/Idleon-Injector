@@ -27,25 +27,15 @@ const { div, button, span } = van.tags;
  */
 const ACCOUNT_TABS = [
     { id: "account-options", label: "ACCOUNT OPTIONS", isWorld: false, component: AccountOptionsTab },
-    { id: "upgrade-vault",   label: "UPGRADE VAULT",   isWorld: false, component: UpgradeVaultTab },
-    { id: "w1",              label: "BLUNDER HILLS",   isWorld: true,  worldNum: 1, component: W1Tab },
-    { id: "w2",              label: "YUM-YUM DESERT",  isWorld: true,  worldNum: 2, component: W2Tab },
-    { id: "w3",              label: "FROSTBITE TUNDRA",isWorld: true,  worldNum: 3, component: W3Tab },
-    { id: "w4",              label: "HYPERION NEBULA", isWorld: true,  worldNum: 4, component: W4Tab },
-    { id: "w5",              label: "SMOLDERIN' PLAT.", isWorld: true, worldNum: 5, component: W5Tab },
-    { id: "w6",              label: "SPIRITED VALLEY", isWorld: true,  worldNum: 6, component: W6Tab },
-    { id: "w7",              label: "EQUINOX VALLEY",  isWorld: true,  worldNum: 7, component: W7Tab },
+    { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
+    { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
+    { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
+    { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
+    { id: "w4", label: "HYPERION NEBULA", isWorld: true, worldNum: 4, component: W4Tab },
+    { id: "w5", label: "SMOLDERIN' PLAT.", isWorld: true, worldNum: 5, component: W5Tab },
+    { id: "w6", label: "SPIRITED VALLEY", isWorld: true, worldNum: 6, component: W6Tab },
+    { id: "w7", label: "EQUINOX VALLEY", isWorld: true, worldNum: 7, component: W7Tab },
 ];
-
-/** Cache lazily-instantiated tab components so they aren't re-mounted on every switch. */
-const tabCache = new Map();
-
-const getTabComponent = (tab) => {
-    if (!tabCache.has(tab.id)) {
-        tabCache.set(tab.id, tab.component());
-    }
-    return tabCache.get(tab.id);
-};
 
 export const Account = () => {
     const activeTab = van.state(ACCOUNT_TABS[0].id);
@@ -60,8 +50,7 @@ export const Account = () => {
                 button(
                     {
                         class: () =>
-                            `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${
-                                tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
+                            `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
                             }`,
                         onclick: () => (activeTab.val = tab.id),
                         title: tab.label,
@@ -73,19 +62,28 @@ export const Account = () => {
             )
         ),
 
-        // Tab panes - all rendered but only active is visible (keeps state alive)
+        // Tab panes — lazy-mount: component is created (and its data fetched)
+        // only when the user first activates that tab. The div stays in the DOM
+        // so CSS visibility toggling keeps state alive after mount.
         div(
             { class: "account-sub-tab-content" },
-            ...ACCOUNT_TABS.map((tab) =>
-                div(
-                    {
-                        class: () =>
-                            `account-sub-tab-pane ${activeTab.val === tab.id ? "active" : ""}`,
-                        "data-tab": tab.id,
-                    },
-                    getTabComponent(tab)
-                )
-            )
+            ...ACCOUNT_TABS.map((tab) => {
+                const pane = div({
+                    class: () =>
+                        `account-sub-tab-pane ${activeTab.val === tab.id ? "active" : ""}`,
+                    "data-tab": tab.id,
+                });
+
+                let mounted = false;
+                van.derive(() => {
+                    if (activeTab.val === tab.id && !mounted) {
+                        mounted = true;
+                        van.add(pane, tab.component());
+                    }
+                });
+
+                return pane;
+            })
         )
     );
 };

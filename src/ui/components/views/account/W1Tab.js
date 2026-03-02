@@ -25,22 +25,13 @@ const { div, button, span, p } = van.tags;
 // ─── sub-tab registry ─────────────────────────────────────────────────────────
 
 const W1_SUBTABS = [
-    { id: "stamps",    label: "STAMPS",     component: StampsTab },
-    { id: "anvil",     label: "ANVIL",      component: AnvilTab },
-    { id: "forge",     label: "FORGE",      component: ForgeTab },
-    { id: "statues",   label: "STATUES",    component: StatuesTab },
+    { id: "stamps", label: "STAMPS", component: StampsTab },
+    { id: "anvil", label: "ANVIL", component: AnvilTab },
+    { id: "forge", label: "FORGE", component: ForgeTab },
+    { id: "statues", label: "STATUES", component: StatuesTab },
     { id: "starsigns", label: "STAR SIGNS", component: StarSignsTab },
-    { id: "orion",     label: "ORION",      component: OrionTab },
+    { id: "orion", label: "ORION", component: OrionTab },
 ];
-
-const subTabCache = new Map();
-const getSubTab = (tab) => {
-    if (!tab.component) return null;
-    if (!subTabCache.has(tab.id)) {
-        subTabCache.set(tab.id, tab.component());
-    }
-    return subTabCache.get(tab.id);
-};
 
 // ─── placeholder pane ─────────────────────────────────────────────────────────
 
@@ -80,8 +71,7 @@ export const W1Tab = () => {
                 button(
                     {
                         class: () =>
-                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${
-                                !tab.component ? "world-sub-tab-btn--stub" : ""
+                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${!tab.component ? "world-sub-tab-btn--stub" : ""
                             }`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
@@ -90,19 +80,30 @@ export const W1Tab = () => {
             )
         ),
 
-        // Sub-tab content
+        // Sub-tab content — lazy mount
         div(
             { class: "world-sub-content" },
-            ...W1_SUBTABS.map((tab) =>
-                div(
-                    {
-                        class: () =>
-                            `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
-                        "data-subtab": tab.id,
-                    },
-                    tab.component ? getSubTab(tab) : PlaceholderPane(tab.label)
-                )
-            )
+            ...W1_SUBTABS.map((tab) => {
+                const pane = div({
+                    class: () =>
+                        `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
+                    "data-subtab": tab.id,
+                });
+
+                if (!tab.component) {
+                    van.add(pane, PlaceholderPane(tab.label));
+                } else {
+                    let mounted = false;
+                    van.derive(() => {
+                        if (activeSubTab.val === tab.id && !mounted) {
+                            mounted = true;
+                            van.add(pane, tab.component());
+                        }
+                    });
+                }
+
+                return pane;
+            })
         )
     );
 };
