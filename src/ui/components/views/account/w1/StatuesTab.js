@@ -29,49 +29,25 @@ const TIERS = [
 const StatueRow = ({ index, name, getData, onReload }) => {
     const levelInput = van.state(String(getData()?.levels?.[index]?.[0] ?? 0));
     const depositedInput = van.state(String(getData()?.levels?.[index]?.[1] ?? 0));
+    const tierInput = van.state(getData()?.tiers?.[index] ?? 0);
     const status = van.state(null);
 
-    const write = async (key, path, value) => {
-        await writeGga(key, path, value);
-        await new Promise((r) => setTimeout(r, 300));
-        return onReload?.();
-    };
+    const doSet = async () => {
+        const lvl = Math.max(0, Number(levelInput.val));
+        const dep = Math.max(0, Number(depositedInput.val));
+        const tier = Number(tierInput.val);
+        if (isNaN(lvl) || isNaN(dep)) return;
 
-    const doSetLevel = async (targetVal) => {
-        const lvl = Math.max(0, Number(targetVal));
-        if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            const fresh = await write("StatueLevels", [index, 0], lvl);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
+            await writeGga("StatueLevels", [index, 0], lvl);
+            await writeGga("StatueLevels", [index, 1], dep);
+            await writeGga("StatueG", [index], tier);
+            await new Promise((r) => setTimeout(r, 300));
+            const fresh = await onReload?.();
             levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
-    };
-
-    const doSetDeposited = async (targetVal) => {
-        const amt = Math.max(0, Number(targetVal));
-        if (isNaN(amt)) return;
-        status.val = "loading";
-        try {
-            const fresh = await write("StatueLevels", [index, 1], amt);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-            depositedInput.val = String(fresh?.levels?.[index]?.[1] ?? amt);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
-    };
-
-    const doSetTier = async (tierVal) => {
-        const tier = Number(tierVal);
-        status.val = "loading";
-        try {
-            await write("StatueG", [index], tier);
+            depositedInput.val = String(fresh?.levels?.[index]?.[1] ?? dep);
+            tierInput.val = fresh?.tiers?.[index] ?? tier;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -102,63 +78,59 @@ const StatueRow = ({ index, name, getData, onReload }) => {
             () => `LV ${getData()?.levels?.[index]?.[0] ?? 0}`
         ),
 
-        // Controls — two input groups stacked
-        div({ class: "feature-row__controls feature-row__controls--stack" },
+        // Controls — staged inputs + SET to the right
+        div({ class: "feature-row__controls" },
+            div({ class: "feature-row__controls--stack" },
 
-            // Row 1: Level
-            div({ class: "statue-control-row" },
-                span({ class: "statue-control-label" }, "Level"),
-                NumberInput({
-                    value: levelInput,
-                    oninput: (e) => (levelInput.val = e.target.value),
-                    onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
-                    onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
-                }),
-                withTooltip(
-                    button({
-                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSetLevel(levelInput.val),
+                // Row 1: Level
+                div({ class: "statue-control-row" },
+                    span({ class: "statue-control-label" }, "Level"),
+                    NumberInput({
+                        value: levelInput,
+                        oninput: (e) => (levelInput.val = e.target.value),
+                        onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
+                        onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
+                    }),
+                ),
+
+                // Row 2: Deposited
+                div({ class: "statue-control-row" },
+                    span({ class: "statue-control-label" }, "Deposited"),
+                    NumberInput({
+                        value: depositedInput,
+                        oninput: (e) => (depositedInput.val = e.target.value),
+                        onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
+                        onIncrement: () => (depositedInput.val = String(Number(depositedInput.val) + 1)),
+                    }),
+                ),
+
+                // Row 3: Tier (staged, not written until SET)
+                div({ class: "statue-control-row" },
+                    span({ class: "statue-control-label" }, "Tier"),
+                    select({
+                        class: "statue-tier-select",
+                        onchange: (e) => (tierInput.val = Number(e.target.value)),
                         disabled: () => status.val === "loading",
-                    }, () => (status.val === "loading" ? "..." : "SET")),
-                    "Set statue level"
+                    },
+                        ...TIERS.map((t) =>
+                            option({
+                                value: t.value,
+                                selected: () => tierInput.val === t.value,
+                            }, t.label)
+                        )
+                    ),
                 ),
             ),
 
-            // Row 2: Deposited
-            div({ class: "statue-control-row" },
-                span({ class: "statue-control-label" }, "Deposited"),
-                NumberInput({
-                    value: depositedInput,
-                    oninput: (e) => (depositedInput.val = e.target.value),
-                    onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
-                    onIncrement: () => (depositedInput.val = String(Number(depositedInput.val) + 1)),
-                }),
-                withTooltip(
-                    button({
-                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSetDeposited(depositedInput.val),
-                        disabled: () => status.val === "loading",
-                    }, () => (status.val === "loading" ? "..." : "SET")),
-                    "Set amount deposited"
-                ),
-            ),
-
-            // Row 3: Tier
-            div({ class: "statue-control-row" },
-                span({ class: "statue-control-label" }, "Tier"),
-                select({
-                    class: "statue-tier-select",
-                    onchange: (e) => doSetTier(e.target.value),
+            // Single SET button for all fields
+            withTooltip(
+                button({
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    onclick: doSet,
                     disabled: () => status.val === "loading",
-                },
-                    ...TIERS.map((t) =>
-                        option({
-                            value: t.value,
-                            selected: () => (getData()?.tiers?.[index] ?? 0) === t.value,
-                        }, t.label)
-                    )
-                )
-            )
+                }, () => (status.val === "loading" ? "..." : "SET")),
+                "Write level, deposited, and tier to game"
+            ),
         )
     );
 };
