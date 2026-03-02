@@ -21,18 +21,18 @@ import { withTooltip } from "../../../Tooltip.js";
 const { div, button, span, h3, p } = van.tags;
 
 const CATEGORIES = [
-    { label: "Money Points",          index: 1, max: 600  },
-    { label: "Monster Part Points",   index: 2, max: 700  },
-    { label: "Bonus Exp",             index: 3, max: null },
-    { label: "Speed/hr",              index: 4, max: null },
-    { label: "Capacity",              index: 5, max: null },
+    { label: "Money Points", index: 1, max: 600 },
+    { label: "Monster Part Points", index: 2, max: 700 },
+    { label: "Bonus Exp", index: 3, max: null },
+    { label: "Speed/hr", index: 4, max: null },
+    { label: "Capacity", index: 5, max: null },
 ];
 
 // ── AnvilRow ──────────────────────────────────────────────────────────────
 
 const AnvilRow = ({ category, getStats, onReload }) => {
     const inputVal = van.state(String(getStats()?.[category.index] ?? 0));
-    const status   = van.state(null);
+    const status = van.state(null);
 
     const doSet = async (targetVal) => {
         const raw = Number(targetVal);
@@ -56,8 +56,7 @@ const AnvilRow = ({ category, getStats, onReload }) => {
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
+                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
         div({ class: "feature-row__info" },
@@ -74,15 +73,15 @@ const AnvilRow = ({ category, getStats, onReload }) => {
         ),
         div({ class: "feature-row__controls" },
             NumberInput({
-                value:       inputVal,
-                oninput:     (e) => (inputVal.val = e.target.value),
+                value: inputVal,
+                oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
             withTooltip(
                 button({
-                    class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick:  () => doSet(inputVal.val),
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    onclick: () => doSet(inputVal.val),
                     disabled: () => status.val === "loading",
                 }, () => (status.val === "loading" ? "..." : "SET")),
                 category.max !== null
@@ -92,16 +91,16 @@ const AnvilRow = ({ category, getStats, onReload }) => {
             category.max !== null
                 ? withTooltip(
                     button({
-                        class:    "feature-btn feature-btn--danger",
-                        onclick:  () => doSet(category.max),
+                        class: "feature-btn feature-btn--danger",
+                        onclick: () => doSet(category.max),
                         disabled: () => status.val === "loading",
                     }, "MAX"),
                     `Set to maximum (${category.max})`
                 )
                 : withTooltip(
                     button({
-                        class:    "feature-btn feature-btn--danger",
-                        onclick:  () => doSet(0),
+                        class: "feature-btn feature-btn--danger",
+                        onclick: () => doSet(0),
                         disabled: () => status.val === "loading",
                     }, "RESET"),
                     `Reset ${category.label} to 0`
@@ -113,14 +112,14 @@ const AnvilRow = ({ category, getStats, onReload }) => {
 // ── AnvilTab ──────────────────────────────────────────────────────────────
 
 export const AnvilTab = () => {
-    const stats   = van.state(null);
+    const stats = van.state(null);
     const loading = van.state(false);
-    const error   = van.state(null);
+    const error = van.state(null);
 
     // Returns fresh array from game, also updates reactive stats
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
             const raw = await readGga("AnvilPAstats");
             const arr = Array.isArray(raw)
@@ -151,7 +150,8 @@ export const AnvilTab = () => {
         ),
 
         div({ class: "warning-banner" },
-            "⚠ You must have a character selected in-game for point changes to take effect. ",
+            Icons.Warning(),
+            " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
 

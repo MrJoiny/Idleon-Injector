@@ -5,6 +5,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
+import { Icons } from "../../../assets/icons.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -45,7 +46,7 @@ export const W4Tab = () => {
             { class: "world-sub-content" },
             div(
                 { class: "world-sub-pane active world-sub-pane--empty" },
-                span({ class: "world-empty-icon" }, "🍳"),
+                span({ class: "world-empty-icon" }, Icons.Wrench()),
                 p({ class: "world-empty-label" }, "W4 SYSTEMS COMING SOON"),
                 p({ class: "world-empty-desc" }, "Follow the W1Tab pattern to add sub-tabs for each W4 system.")
             )

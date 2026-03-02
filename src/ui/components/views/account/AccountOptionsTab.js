@@ -64,7 +64,7 @@ export const AccountOptionsTab = () => {
         if (!ui.isUnlocked) {
             return div(
                 { class: "modal-box options-account-modal" },
-                div({ class: "modal-header" }, h3("⚠ CRITICAL WARNING")),
+                div({ class: "modal-header" }, h3(Icons.Warning(), " CRITICAL WARNING")),
                 div(
                     { class: "modal-body" },
                     p("You are entering the Options List Editor"),
@@ -171,8 +171,7 @@ const OptionItem = (index, rawVal, schema) => {
     return div(
         {
             class: () =>
-                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
-                    status.val === "success" ? "save-success" : ""
+                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${status.val === "success" ? "save-success" : ""
                 } ${status.val === "error" ? "save-error" : ""}`,
             "data-index": index,
         },
@@ -185,26 +184,26 @@ const OptionItem = (index, rawVal, schema) => {
             ),
             div({ class: "option-index" }, `IDX::${index}`)
         ),
-        warning ? div({ class: "option-warning" }, `⚠ ${warning}`) : null,
+        warning ? div({ class: "option-warning" }, Icons.Warning(), ` ${warning}`) : null,
         desc ? div({ class: "option-description" }, desc) : null,
         div(
             { class: "option-input-wrapper" },
             type === "boolean"
                 ? input({
-                      type: "checkbox",
-                      class: "option-input",
-                      checked: currentVal,
-                      onchange: (e) => (currentVal.val = e.target.checked),
-                  })
+                    type: "checkbox",
+                    class: "option-input",
+                    checked: currentVal,
+                    onchange: (e) => (currentVal.val = e.target.checked),
+                })
                 : type === "number"
-                  ? NumberInput({
+                    ? NumberInput({
                         class: "option-input",
                         value: currentVal,
                         oninput: (e) => (currentVal.val = e.target.value),
                         onDecrement: () => (currentVal.val = Number(currentVal.val) - 1),
                         onIncrement: () => (currentVal.val = Number(currentVal.val) + 1),
                     })
-                  : input({
+                    : input({
                         type: "text",
                         class: "option-input",
                         value: currentVal,

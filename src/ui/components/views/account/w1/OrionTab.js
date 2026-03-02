@@ -35,28 +35,28 @@ const { div, button, span, h3, p } = van.tags;
 // warn: show a caution badge with a safe-range hint
 
 const PINNED = [
-    { index: 255, label: "Bonuses of Orion",       warn: "Permanent bonus — keep between 70–90" },
-    { index: 262, label: "The Great Mega Reset",    warn: "Permanent bonus — keep between 70–90" },
+    { index: 255, label: "Bonuses of Orion", warn: "Permanent bonus — keep between 70–90" },
+    { index: 262, label: "The Great Mega Reset", warn: "Permanent bonus — keep between 70–90" },
 ];
 
 const FIELDS = [
-    { index: 253, label: "Feathers",                  live: true,  large: true  },
-    { index: 254, label: "Feather Generation"                     },
-    { index: 256, label: "Feather Multiplier"                     },
-    { index: 257, label: "Feather Cheapener"                      },
-    { index: 258, label: "Feather Restart",            warn: "Keep between 30–40" },
-    { index: 259, label: "Super Feather Production"               },
-    { index: 260, label: "Shiny Feathers"                         },
-    { index: 261, label: "Super Feather Cheapener"                },
-    { index: 263, label: "Filler Bar",                 large: true              },
-    { index: 264, label: "Shiny Feathers (count)",    large: true              },
+    { index: 253, label: "Feathers", live: true, large: true },
+    { index: 254, label: "Feather Generation" },
+    { index: 256, label: "Feather Multiplier" },
+    { index: 257, label: "Feather Cheapener" },
+    { index: 258, label: "Feather Restart", warn: "Keep between 30–40" },
+    { index: 259, label: "Super Feather Production" },
+    { index: 260, label: "Shiny Feathers" },
+    { index: 261, label: "Super Feather Cheapener" },
+    { index: 263, label: "Filler Bar", large: true },
+    { index: 264, label: "Shiny Feathers (count)", large: true },
 ];
 
 // ── OrionRow ──────────────────────────────────────────────────────────────
 
 const OrionRow = ({ field, values, onWrite }) => {
     const inputVal = van.state(String(values.val?.[field.index] ?? 0));
-    const status   = van.state(null);
+    const status = van.state(null);
 
     const doSet = async (raw) => {
         const num = Number(raw);
@@ -76,14 +76,13 @@ const OrionRow = ({ field, values, onWrite }) => {
     return div(
         {
             class: () =>
-                `feature-row ${field.warn ? "feature-row--warn" : ""} ${
-                    status.val === "success" ? "feature-row--success" : ""
+                `feature-row ${field.warn ? "feature-row--warn" : ""} ${status.val === "success" ? "feature-row--success" : ""
                 } ${status.val === "error" ? "feature-row--error" : ""}`,
         },
         div({ class: "feature-row__info" },
             span({ class: "feature-row__name" }, field.label),
             field.warn
-                ? span({ class: "orion-warn-badge" }, `⚠ ${field.warn}`)
+                ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`)
                 : null
         ),
         span({ class: `feature-row__badge ${field.live ? "feature-row__badge--highlight" : ""}` },
@@ -94,15 +93,15 @@ const OrionRow = ({ field, values, onWrite }) => {
         ),
         div({ class: `feature-row__controls ${field.large ? "feature-row__controls--xl" : ""}` },
             NumberInput({
-                value:       inputVal,
-                oninput:     (e) => { inputVal.val = e.target.value; },
+                value: inputVal,
+                oninput: (e) => { inputVal.val = e.target.value; },
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
             withTooltip(
                 button({
-                    class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick:  () => doSet(inputVal.val),
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    onclick: () => doSet(inputVal.val),
                     disabled: () => status.val === "loading",
                 }, () => status.val === "loading" ? "..." : "SET"),
                 `Write value to OptionsListAccount[${field.index}]`
@@ -114,9 +113,9 @@ const OrionRow = ({ field, values, onWrite }) => {
 // ── OrionTab ──────────────────────────────────────────────────────────────
 
 export const OrionTab = () => {
-    const values  = van.state(null); // map of index → value
+    const values = van.state(null); // map of index → value
     const loading = van.state(false);
-    const error   = van.state(null);
+    const error = van.state(null);
 
     const ALL_INDICES = [...PINNED, ...FIELDS].map((f) => f.index);
 
@@ -155,7 +154,8 @@ export const OrionTab = () => {
         ),
 
         div({ class: "warning-banner" },
-            "⚠ ",
+            Icons.Warning(),
+            " ",
             span({ style: "color:var(--c-accent);font-weight:700;" }, "Bonuses of Orion"),
             " and ",
             span({ style: "color:var(--c-accent);font-weight:700;" }, "The Great Mega Reset"),
@@ -178,7 +178,7 @@ export const OrionTab = () => {
             return div({ class: "feature-list" },
 
                 // ── Pinned permanent bonuses ──
-                div({ class: "orion-section-label" }, "⚠ Permanent Bonuses — Edit with care"),
+                div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
                 ...PINNED.map((f) => OrionRow({ field: f, values, onWrite })),
 
                 // ── Divider ──

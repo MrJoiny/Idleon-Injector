@@ -29,7 +29,7 @@ const cleanName = (raw) =>
 
 const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
     const inputVal = van.state(String(getData()?.levels?.[index] ?? 0));
-    const status   = van.state(null);
+    const status = van.state(null);
 
     const doSet = async (targetVal) => {
         const lvl = Math.max(0, Number(targetVal));
@@ -51,8 +51,7 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
+                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
         div({ class: "feature-row__info" },
@@ -67,23 +66,23 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
         ),
         div({ class: "feature-row__controls" },
             NumberInput({
-                value:       inputVal,
-                oninput:     (e) => (inputVal.val = e.target.value),
+                value: inputVal,
+                oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
             withTooltip(
                 button({
-                    class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick:  () => doSet(inputVal.val),
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    onclick: () => doSet(inputVal.val),
                     disabled: () => status.val === "loading",
                 }, () => (status.val === "loading" ? "..." : "SET")),
                 `Set level for ${name} (base max: ${baseMax})`
             ),
             withTooltip(
                 button({
-                    class:    "feature-btn feature-btn--apply",
-                    onclick:  () => doSet(baseMax),
+                    class: "feature-btn feature-btn--apply",
+                    onclick: () => doSet(baseMax),
                     disabled: () => status.val === "loading",
                 }, "MAX"),
                 `Set to base max level (${baseMax})`
@@ -95,13 +94,13 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
 // ── UpgradeVaultTab ───────────────────────────────────────────────────────
 
 export const UpgradeVaultTab = () => {
-    const data    = van.state(null); // { upgrades: [{name, baseMax}], levels: [] }
+    const data = van.state(null); // { upgrades: [{name, baseMax}], levels: [] }
     const loading = van.state(false);
-    const error   = van.state(null);
+    const error = van.state(null);
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
             const toArr = (raw) => Array.isArray(raw)
                 ? raw
@@ -115,11 +114,11 @@ export const UpgradeVaultTab = () => {
                 readExpr(`cList.Research[29]`),
             ]);
 
-            const info          = toArr(rawInfo          ?? []);
-            const levels        = toArr(rawLevels        ?? []);
-            const researchKeys  = toArr(rawResearchKeys  ?? []);
+            const info = toArr(rawInfo ?? []);
+            const levels = toArr(rawLevels ?? []);
+            const researchKeys = toArr(rawResearchKeys ?? []);
             const researchBonus = toArr(rawResearchBonus ?? []);
-            const researchGrid  = toArr(rawResearchGrid  ?? []);
+            const researchGrid = toArr(rawResearchGrid ?? []);
 
             // Replicate VaultUpgMaxLV formula from game source:
             //   base = UpgradeVault[i][4]
@@ -129,10 +128,10 @@ export const UpgradeVaultTab = () => {
             //     max = base + bonus
             const computeMax = (i) => {
                 const base = parseInt(info[i]?.[4]) || 0;
-                const idx  = researchKeys.indexOf(String(i));
+                const idx = researchKeys.indexOf(String(i));
                 if (idx === -1) return base;
                 const bonus = Number(researchBonus[idx] ?? 0);
-                const grid  = Number(researchGrid[idx]  ?? 0);
+                const grid = Number(researchGrid[idx] ?? 0);
                 // Grid bonus multiplier — grid active means ×(1 + GridBonus); we use 1 when unknown
                 return Math.round(base + bonus * (grid === 1 ? 1 : 1));
             };
@@ -140,8 +139,8 @@ export const UpgradeVaultTab = () => {
             // Build upgrade definitions from cList, filter out trailing junk (e.g. the XP entry)
             const upgrades = info
                 .map((entry, i) => ({
-                    index:   i,
-                    name:    cleanName(entry?.[0]),
+                    index: i,
+                    name: cleanName(entry?.[0]),
                     baseMax: computeMax(i),
                 }))
                 .filter((u) => u.name.length > 0 && u.baseMax > 0);
@@ -173,7 +172,8 @@ export const UpgradeVaultTab = () => {
         ),
 
         div({ class: "warning-banner" },
-            "⚠ Max level is calculated live from game data, including any Research bonuses. " +
+            Icons.Warning(),
+            " Max level is calculated live from game data, including any Research bonuses. " +
             "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 
@@ -200,8 +200,8 @@ export const UpgradeVaultTab = () => {
             return div({ class: "feature-list" },
                 ...upgrades.map((u) =>
                     VaultRow({
-                        index:   u.index,
-                        name:    u.name,
+                        index: u.index,
+                        name: u.name,
                         baseMax: u.baseMax,
                         getData: () => data.val,
                         onReload: load,

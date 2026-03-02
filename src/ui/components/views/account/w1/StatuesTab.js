@@ -18,18 +18,18 @@ import { withTooltip } from "../../../Tooltip.js";
 const { div, button, span, h3, p, select, option } = van.tags;
 
 const TIERS = [
-    { value: 0, label: "Stone"  },
-    { value: 1, label: "Gold"   },
-    { value: 2, label: "Onyx"   },
+    { value: 0, label: "Stone" },
+    { value: 1, label: "Gold" },
+    { value: 2, label: "Onyx" },
     { value: 3, label: "Zenith" },
 ];
 
 // ── StatueRow ─────────────────────────────────────────────────────────────
 
 const StatueRow = ({ index, name, getData, onReload }) => {
-    const levelInput     = van.state(String(getData()?.levels?.[index]?.[0] ?? 0));
+    const levelInput = van.state(String(getData()?.levels?.[index]?.[0] ?? 0));
     const depositedInput = van.state(String(getData()?.levels?.[index]?.[1] ?? 0));
-    const status         = van.state(null);
+    const status = van.state(null);
 
     const write = async (key, path, value) => {
         await writeGga(key, path, value);
@@ -93,7 +93,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         div({ class: "feature-row__info" },
             span({ class: "feature-row__name" }, name),
             span({
-                class: () => `statue-tier-badge tier--${["stone","gold","onyx","zenith"][getData()?.tiers?.[index] ?? 0]}`
+                class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][getData()?.tiers?.[index] ?? 0]}`
             }, () => TIERS[getData()?.tiers?.[index] ?? 0]?.label ?? "Stone")
         ),
 
@@ -109,15 +109,15 @@ const StatueRow = ({ index, name, getData, onReload }) => {
             div({ class: "statue-control-row" },
                 span({ class: "statue-control-label" }, "Level"),
                 NumberInput({
-                    value:       levelInput,
-                    oninput:     (e) => (levelInput.val = e.target.value),
+                    value: levelInput,
+                    oninput: (e) => (levelInput.val = e.target.value),
                     onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
                     onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
                 }),
                 withTooltip(
                     button({
-                        class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick:  () => doSetLevel(levelInput.val),
+                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSetLevel(levelInput.val),
                         disabled: () => status.val === "loading",
                     }, () => (status.val === "loading" ? "..." : "SET")),
                     "Set statue level"
@@ -128,15 +128,15 @@ const StatueRow = ({ index, name, getData, onReload }) => {
             div({ class: "statue-control-row" },
                 span({ class: "statue-control-label" }, "Deposited"),
                 NumberInput({
-                    value:       depositedInput,
-                    oninput:     (e) => (depositedInput.val = e.target.value),
+                    value: depositedInput,
+                    oninput: (e) => (depositedInput.val = e.target.value),
                     onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
                     onIncrement: () => (depositedInput.val = String(Number(depositedInput.val) + 1)),
                 }),
                 withTooltip(
                     button({
-                        class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick:  () => doSetDeposited(depositedInput.val),
+                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSetDeposited(depositedInput.val),
                         disabled: () => status.val === "loading",
                     }, () => (status.val === "loading" ? "..." : "SET")),
                     "Set amount deposited"
@@ -147,13 +147,13 @@ const StatueRow = ({ index, name, getData, onReload }) => {
             div({ class: "statue-control-row" },
                 span({ class: "statue-control-label" }, "Tier"),
                 select({
-                    class:    "statue-tier-select",
+                    class: "statue-tier-select",
                     onchange: (e) => doSetTier(e.target.value),
                     disabled: () => status.val === "loading",
                 },
                     ...TIERS.map((t) =>
                         option({
-                            value:    t.value,
+                            value: t.value,
                             selected: () => (getData()?.tiers?.[index] ?? 0) === t.value,
                         }, t.label)
                     )
@@ -166,13 +166,13 @@ const StatueRow = ({ index, name, getData, onReload }) => {
 // ── StatuesTab ────────────────────────────────────────────────────────────
 
 export const StatuesTab = () => {
-    const data    = van.state(null);
+    const data = van.state(null);
     const loading = van.state(false);
-    const error   = van.state(null);
+    const error = van.state(null);
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
             const toArr = (raw) => Array.isArray(raw)
                 ? raw
@@ -183,9 +183,9 @@ export const StatuesTab = () => {
                 readGga("StatueG"),
             ]);
             data.val = {
-                info:   toArr(rawInfo),
+                info: toArr(rawInfo),
                 levels: toArr(rawLevels),
-                tiers:  toArr(rawTiers),
+                tiers: toArr(rawTiers),
             };
             return data.val;
         } catch (e) {
@@ -211,7 +211,8 @@ export const StatuesTab = () => {
         ),
 
         div({ class: "warning-banner" },
-            "⚠ Tier upgrades require specific tools: ",
+            Icons.Warning(),
+            " Tier upgrades require specific tools: ",
             span({ style: "color:var(--c-accent);font-weight:700;" }, "Guilding Tools"),
             " for Gold, ",
             span({ style: "color:#b06aff;font-weight:700;" }, "Onyx Tools"),

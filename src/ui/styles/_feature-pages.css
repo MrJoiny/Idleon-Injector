@@ -278,7 +278,7 @@
 }
 
 /* ── Orion tab ────────────────────────────────────────────────────────── */
-.feature-row--warn                          { border-color: var(--c-warning) !important; background: var(--c-accent-06); }
+.feature-row--warn                          { border-color: var(--c-warning) !important; background: var(--c-accent-dim-solid); }
 .orion-warn-badge {
     font-size: 0.65rem;
     color: var(--c-warning);

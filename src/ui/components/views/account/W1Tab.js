@@ -13,6 +13,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
+import { Icons } from "../../../assets/icons.js";
 import { StampsTab } from "./w1/StampsTab.js";
 import { AnvilTab } from "./w1/AnvilTab.js";
 import { ForgeTab } from "./w1/ForgeTab.js";
@@ -38,7 +39,7 @@ const W1_SUBTABS = [
 const PlaceholderPane = (label) =>
     div(
         { class: "world-sub-placeholder" },
-        span({ class: "world-sub-placeholder__icon" }, "⚒"),
+        span({ class: "world-sub-placeholder__icon" }, Icons.Wrench()),
         p({ class: "world-sub-placeholder__label" }, `${label} — COMING SOON`)
     );
 
