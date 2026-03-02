@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import * as API from "../../../../services/api.js";
+import { readGga, writeGga } from "../../../../helpers/gameHelper.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -124,10 +124,9 @@ export const OrionTab = () => {
         if (!silent) loading.val = true;
         error.val = null;
         try {
-            const res = await API.fetchOptionsAccount();
-            const list = res.data || [];
+            const list = await readGga("OptionsListAccount");
             const map = {};
-            for (const idx of ALL_INDICES) map[idx] = list[idx] ?? 0;
+            for (const idx of ALL_INDICES) map[idx] = (list ?? [])[idx] ?? 0;
             values.val = map;
         } catch (e) {
             if (!silent) error.val = e.message || "Failed to read Orion data";
@@ -137,7 +136,7 @@ export const OrionTab = () => {
     };
 
     const onWrite = async (index, value) => {
-        await API.updateOptionAccountIndex(index, value);
+        await writeGga("OptionsListAccount", [index], value);
         values.val = { ...values.val, [index]: value };
     };
 

@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readMany, writeAttr } from "../../../../helpers/gameHelper.js";
+import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -116,9 +116,9 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         try {
             const str = encodeProgress(players.val);
             const unlocked = players.val.length >= sign.playersNeeded ? 1 : 0;
-            await writeAttr(`gga.StarSignProg[${sign.index}][0] = "${str}"`);
+            await writeGga("StarSignProg", [sign.index, 0], str);
             await new Promise((r) => setTimeout(r, 150));
-            await writeAttr(`gga.StarSignProg[${sign.index}][1] = ${unlocked}`);
+            await writeGga("StarSignProg", [sign.index, 1], unlocked);
             status.val = "success";
             setTimeout(() => (status.val = null), 1500);
             onSave?.({ index: sign.index, progress: str, unlocked });
@@ -273,16 +273,16 @@ export const StarSignsTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const result = await readMany({
-                quests:    `cList.StarQuests`,
-                prog:      `gga.StarSignProg`,
-                usernames: `gga.GetPlayersUsernames`,
-            });
+            const [rawQuests, rawProg, rawUsernames] = await Promise.all([
+                readExpr(`cList.StarQuests`),
+                readGga("StarSignProg"),
+                readGga("GetPlayersUsernames"),
+            ]);
 
-            const quests = toArr(result.quests ?? []);
-            const prog   = toArr(result.prog   ?? []);
+            const quests = toArr(rawQuests ?? []);
+            const prog   = toArr(rawProg   ?? []);
             const labels    = computeLabels(quests);
-            const usernames = toArr(result.usernames ?? []).filter(u => typeof u === "string" && !u.startsWith("__"));
+            const usernames = toArr(rawUsernames ?? []).filter(u => typeof u === "string" && !u.startsWith("__"));
 
             signs.val = quests
                 .map((q, i) => ({
@@ -321,9 +321,9 @@ export const StarSignsTab = () => {
     const resetAll = async () => {
         if (!signs.val) return;
         for (const sign of signs.val) {
-            await writeAttr(`gga.StarSignProg[${sign.index}][0] = ""`);
+            await writeGga("StarSignProg", [sign.index, 0], "");
             await new Promise((r) => setTimeout(r, 40));
-            await writeAttr(`gga.StarSignProg[${sign.index}][1] = 0`);
+            await writeGga("StarSignProg", [sign.index, 1], 0);
             await new Promise((r) => setTimeout(r, 40));
         }
         await load();
@@ -343,9 +343,9 @@ export const StarSignsTab = () => {
             }
             const players = pool.slice(0, needed);
             const str = encodeProgress(players);
-            await writeAttr(`gga.StarSignProg[${sign.index}][0] = "${str}"`);
+            await writeGga("StarSignProg", [sign.index, 0], str);
             await new Promise((r) => setTimeout(r, 40));
-            await writeAttr(`gga.StarSignProg[${sign.index}][1] = 1`);
+            await writeGga("StarSignProg", [sign.index, 1], 1);
             await new Promise((r) => setTimeout(r, 40));
         }
         await load();

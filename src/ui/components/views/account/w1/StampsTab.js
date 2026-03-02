@@ -6,7 +6,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readMany, writeAttr } from "../../../../helpers/gameHelper.js";
+import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -34,8 +34,8 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
-            await writeAttr(`gga.StampLevel[${page}][${order}] = ${lvl}`);
-            await writeAttr(`gga.StampLevelMAX[${page}][${order}] = ${maxLvl}`);
+            await writeGga("StampLevel",    [page, order], lvl);
+            await writeGga("StampLevelMAX", [page, order], maxLvl);
             inputVal.val = String(lvl);
             onLocalUpdate?.(page, order, lvl, maxLvl);
             status.val = "success";
@@ -130,10 +130,10 @@ export const StampsTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const data = await readMany({
-                levels:    `gga.StampLevel`,
-                maxLevels: `gga.StampLevelMAX`,
-                names:     `(function(){
+            const [levels, maxLevels, names, steps] = await Promise.all([
+                readGga("StampLevel"),
+                readGga("StampLevelMAX"),
+                readExpr(`(function(){
                                 var pages = ['A', 'B', 'C'];
                                 return pages.map(function(letter) {
                                     var names = [];
@@ -144,23 +144,22 @@ export const StampsTab = () => {
                                     }
                                     return names;
                                 });
-                            })()`,
-                steps:     `(function(){
+                            })()`),
+                readExpr(`(function(){
                                 var pages = ['A', 'B', 'C'];
                                 return pages.map(function(letter) {
                                     var steps = [];
                                     for (var i = 1; ; i++) {
                                         var entry = itemDefs['Stamp' + letter + i];
                                         if (!entry) break;
-                                        // desc_line1 CSV: BonusType,op,base,?,STEP,material,...
                                         var parts = (entry.h.desc_line1 || '').split(',');
                                         steps.push(parseInt(parts[4]) || 0);
                                     }
                                     return steps;
                                 });
-                            })()`,
-            });
-            gameData.val = data;
+                            })()`),
+            ]);
+            gameData.val = { levels, maxLevels, names, steps };
         } catch (e) {
             error.val = e.message || "Failed to read stamp data";
         } finally {

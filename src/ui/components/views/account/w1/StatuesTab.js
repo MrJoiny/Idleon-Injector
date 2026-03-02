@@ -8,7 +8,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readMany, writeAttr } from "../../../../helpers/gameHelper.js";
+import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -31,8 +31,8 @@ const StatueRow = ({ index, name, getData, onReload }) => {
     const depositedInput = van.state(String(getData()?.levels?.[index]?.[1] ?? 0));
     const status         = van.state(null);
 
-    const write = async (expr) => {
-        await writeAttr(expr);
+    const write = async (key, path, value) => {
+        await writeGga(key, path, value);
         await new Promise((r) => setTimeout(r, 300));
         return onReload?.();
     };
@@ -42,7 +42,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            const fresh = await write(`gga.StatueLevels[${index}][0] = ${lvl}`);
+            const fresh = await write("StatueLevels", [index, 0], lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
@@ -57,7 +57,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         if (isNaN(amt)) return;
         status.val = "loading";
         try {
-            const fresh = await write(`gga.StatueLevels[${index}][1] = ${amt}`);
+            const fresh = await write("StatueLevels", [index, 1], amt);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             depositedInput.val = String(fresh?.levels?.[index]?.[1] ?? amt);
@@ -71,7 +71,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         const tier = Number(tierVal);
         status.val = "loading";
         try {
-            await write(`gga.StatueG[${index}] = ${tier}`);
+            await write("StatueG", [index], tier);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -174,18 +174,18 @@ export const StatuesTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const result = await readMany({
-                info:   `cList.StatueInfo`,
-                levels: `gga.StatueLevels`,
-                tiers:  `gga.StatueG`,
-            });
             const toArr = (raw) => Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
+            const [rawInfo, rawLevels, rawTiers] = await Promise.all([
+                readExpr(`cList.StatueInfo`),
+                readGga("StatueLevels"),
+                readGga("StatueG"),
+            ]);
             data.val = {
-                info:   toArr(result.info),
-                levels: toArr(result.levels),
-                tiers:  toArr(result.tiers),
+                info:   toArr(rawInfo),
+                levels: toArr(rawLevels),
+                tiers:  toArr(rawTiers),
             };
             return data.val;
         } catch (e) {

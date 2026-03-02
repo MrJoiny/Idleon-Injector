@@ -12,7 +12,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { readMany, writeAttr } from "../../../helpers/gameHelper.js";
+import { readGga, readExpr, writeGga } from "../../../helpers/gameHelper.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
@@ -36,7 +36,7 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeAttr(`gga.UpgVault[${index}] = ${lvl}`);
+            await writeGga("UpgVault", [index], lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await new Promise((r) => setTimeout(r, 300));
@@ -103,23 +103,23 @@ export const UpgradeVaultTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const result = await readMany({
-                info:          `cList.UpgradeVault`,
-                levels:        `gga.UpgVault`,
-                researchKeys:  `cList.Research[26]`,
-                researchBonus: `gga.Research[12]`,
-                researchGrid:  `cList.Research[29]`,
-            });
-
             const toArr = (raw) => Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
-            const info          = toArr(result.info          ?? []);
-            const levels        = toArr(result.levels        ?? []);
-            const researchKeys  = toArr(result.researchKeys  ?? []);
-            const researchBonus = toArr(result.researchBonus ?? []);
-            const researchGrid  = toArr(result.researchGrid  ?? []);
+            const [rawInfo, rawLevels, rawResearchKeys, rawResearchBonus, rawResearchGrid] = await Promise.all([
+                readExpr(`cList.UpgradeVault`),
+                readGga("UpgVault"),
+                readExpr(`cList.Research[26]`),
+                readGga("Research", [12]),
+                readExpr(`cList.Research[29]`),
+            ]);
+
+            const info          = toArr(rawInfo          ?? []);
+            const levels        = toArr(rawLevels        ?? []);
+            const researchKeys  = toArr(rawResearchKeys  ?? []);
+            const researchBonus = toArr(rawResearchBonus ?? []);
+            const researchGrid  = toArr(rawResearchGrid  ?? []);
 
             // Replicate VaultUpgMaxLV formula from game source:
             //   base = UpgradeVault[i][4]

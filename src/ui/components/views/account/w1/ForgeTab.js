@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readMany, writeAttr } from "../../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../../helpers/gameHelper.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -58,7 +58,7 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeAttr(`gga.FurnaceLevels[${upgrade.index}] = ${lvl}`);
+            await writeGga("FurnaceLevels", [upgrade.index], lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await onReload?.();
@@ -120,10 +120,7 @@ export const ForgeTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const data = await readMany({
-                furnaceLevels: `gga.FurnaceLevels`,
-            });
-            const raw = data.furnaceLevels;
+            const raw = await readGga("FurnaceLevels");
             levels.val = Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);

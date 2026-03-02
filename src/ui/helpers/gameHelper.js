@@ -2,29 +2,34 @@
  * Game Memory Helper
  *
  * Single generic interface between UI components and live game memory.
- * Uses two generic backend endpoints so no new API route is needed
- * when adding a new feature.
  *
- * ── Backend endpoints consumed ──────────────────────────────────────────────
- *   POST /api/game/read   { expression }  → { value }
- *   POST /api/game/write  { expression }  → { ok }
+ * ── Architecture ────────────────────────────────────────────────────────────
  *
- * ── Usage ───────────────────────────────────────────────────────────────────
- *   import { readAttr, writeAttr, readMany } from "../../helpers/gameHelper.js";
+ *   Structured writes  →  /api/game/attr/write  { key, path, value }
+ *   Structured reads   →  /api/game/attr/read   { key, path }
+ *   Batch/complex reads →  /api/game/read        { expression }   (read-only)
  *
- *   // Read a single game attribute
- *   const levels = await readAttr("StampLevel");
+ *   Writes NEVER send raw JS to the server. The server validates key as a
+ *   safe identifier and path as an array of non-negative integers, then
+ *   builds the assignment itself.  Value must be a primitive.
  *
- *   // Read multiple at once (one round-trip)
- *   const { levels, maxLevels, names } = await readMany({
- *       levels:    `gga.StampLevel`,
- *       maxLevels: `gga.StampLevelMAX`,
- *       names:     `cList.StampData ? cList.StampData.map(p => p.map(s => s[0])) : null`,
- *   });
+ *   readExpr() sends a raw expression for cases where readGga() is not
+ *   sufficient — cList lookups, method calls, or computed values.
  *
- *   // Write to a nested attribute
- *   await writeAttr(`gga.StampLevel[0][3] = 50`);
- *   await writeAttr(`gga.StampLevelMAX[0][3] = 50`);
+ * ── Usage ────────────────────────────────────────────────────────────────────
+ *
+ *   // Write a nested attribute (PREFERRED for all mutations)
+ *   await writeGga("StampLevel", [0, 3], 50);
+ *   await writeGga("StampLevelMAX", [0, 3], 50);
+ *   await writeGga("TowerInfo", [4], 10);
+ *   await writeGga("OptionsListAccount", [384], "0,_0,a1,");
+ *
+ *   // Read a single attribute
+ *   const levels = await readGga("StampLevel");         // whole array
+ *   const lvl    = await readGga("StampLevel", [0, 3]); // one cell
+ *
+ *   // Complex/cList read (use readGga for plain gga keys instead)
+ *   const names = await readExpr(`cList.StampData ? cList.StampData.map(p => p.map(s => s[0])) : null`);
  */
 
 const BASE = "/api/game";
@@ -35,18 +40,50 @@ async function _post(endpoint, body) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
-
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
 }
 
-// ── Low-level primitives ───────────────────────────────────────────────────
+// ── Structured write ──────────────────────────────────────────────────────
 
 /**
- * Evaluate a JS expression in game context and return its value.
- * The expression must produce a JSON-serialisable result.
- * @param {string} expression
+ * Write a primitive value into a nested game attribute.
+ *
+ * @param {string}   key    Top-level gga key, e.g. "StampLevel"
+ * @param {number[]} path   Index path, e.g. [0, 3] → gga["StampLevel"][0][3]
+ * @param {number|string|boolean|null} value  Must be a primitive.
+ *
+ * @example
+ *   await writeGga("FurnaceLevels", [2], 90);
+ *   await writeGga("CauldronInfo",  [0, 5], 50000);
+ *   await writeGga("OptionsListAccount", [384], "0,_0,a1,");
+ */
+export async function writeGga(key, path, value) {
+    await _post("attr/write", { key, path, value });
+}
+
+// ── Structured read ───────────────────────────────────────────────────────
+
+/**
+ * Read any game attribute or nested value by key + optional path.
+ *
+ * @param {string}    key   Top-level gga key, e.g. "TowerInfo"
+ * @param {number[]} [path] Optional index path, e.g. [4] → gga["TowerInfo"][4]
+ * @returns {Promise<*>}
+ */
+export async function readGga(key, path = []) {
+    const data = await _post("attr/read", { key, path });
+    return data.value;
+}
+
+// ── Batch / complex read  (read-only, expression-based) ───────────────────
+
+/**
+ * Evaluate a raw JS expression in game context (read-only).
+ * Only use this when readGga() is insufficient — e.g. cList lookups,
+ * method calls, or custom computed values.
+ * @param {string} expression  Must produce a JSON-serialisable result.
  * @returns {Promise<*>}
  */
 export async function readExpr(expression) {
@@ -54,63 +91,4 @@ export async function readExpr(expression) {
     return data.value;
 }
 
-/**
- * Execute a JS statement in game context (assignment, method call, etc.).
- * @param {string} expression
- * @returns {Promise<void>}
- */
-export async function writeExpr(expression) {
-    await _post("write", { expression });
-}
 
-// ── Typed game-attribute helpers ──────────────────────────────────────────
-
-/**
- * Read any top-level game attribute by name.
- * Equivalent to: gga[name]
- * @param {string} name  e.g. "StampLevel"
- */
-export function readAttr(name) {
-    return readExpr(`gga.${name}`);
-}
-
-/**
- * Write a raw JS expression into game context.
- * Prefer using this over raw writeExpr for clarity.
- * @param {string} expression  e.g. `gga.StampLevel[0][3] = 50`
- */
-export function writeAttr(expression) {
-    return writeExpr(expression);
-}
-
-/**
- * Read a key from cList (CustomLists).
- * @param {string} key  e.g. "StampData"
- */
-export function readCList(key) {
-    return readExpr(
-        `(cList && cList["${key}"] !== undefined) ? cList["${key}"] : null`
-    );
-}
-
-/**
- * Read multiple expressions in a single round-trip.
- * @param {Record<string, string>} specs  { resultKey: jsExpression, ... }
- * @returns {Promise<Record<string, *>>}
- *
- * @example
- * const { levels, names } = await readMany({
- *     levels: `gga.StampLevel`,
- *     names:  `cList.StampData ? cList.StampData.map(p => p.map(s => s[0])) : null`,
- * });
- */
-export async function readMany(specs) {
-    const keys = Object.keys(specs);
-    // Build a single object literal expression so it's one CDP round-trip
-    const objExpr =
-        "({" +
-        keys.map((k) => `"${k}": (function(){ try { return ${specs[k]}; } catch(e){ return null; } })()`).join(",") +
-        "})";
-
-    return readExpr(objExpr);
-}
