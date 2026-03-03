@@ -265,98 +265,6 @@ function setupApiRoutes(app, context, client, config) {
         }
     });
 
-    app.get("/api/options-account", async (req, res) => {
-        try {
-            const optionsResult = await Runtime.evaluate({
-                expression: `getOptionsListAccount()`,
-                awaitPromise: true,
-                returnByValue: true,
-            });
-
-            if (optionsResult.exceptionDetails) {
-                log.error("Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
-                res.status(500).json({
-                    error: "Failed to get OptionsListAccount from game",
-                    details: optionsResult.exceptionDetails.text,
-                });
-            } else {
-                let data = optionsResult.result.value;
-
-                // FIX: Normalize object/map response to array
-                if (data && typeof data === "object" && !Array.isArray(data)) {
-                    data = Object.assign([], data);
-                }
-
-                if (data === null) {
-                    res.status(500).json({ error: "OptionsListAccount not found in game context" });
-                } else {
-                    res.json({ data: data });
-                }
-            }
-        } catch (apiError) {
-            log.error("Error in /api/options-account:", apiError);
-            res.status(500).json({
-                error: "Internal server error while fetching OptionsListAccount",
-                details: apiError.message,
-            });
-        }
-    });
-
-    app.post("/api/options-account/index", async (req, res) => {
-        const { index, value } = await req.json();
-
-        if (index === undefined || value === undefined) {
-            return res.status(400).json({
-                error: "Missing required parameters: index and value",
-            });
-        }
-
-        if (typeof index !== "number" || index < 0) {
-            return res.status(400).json({
-                error: "Invalid index. Must be a non-negative number",
-            });
-        }
-
-        try {
-            let serializedValue;
-            if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                serializedValue = objToString(value);
-            } else {
-                serializedValue = JSON.stringify(value);
-            }
-
-            const updateExpression = `setOptionsListAccountIndex(${index}, ${serializedValue})`;
-
-            const updateResult = await Runtime.evaluate({
-                expression: updateExpression,
-                awaitPromise: true,
-                allowUnsafeEvalBlockedByCSP: true,
-            });
-
-            if (updateResult.exceptionDetails) {
-                log.error(`Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
-                res.status(500).json({
-                    error: `Failed to update OptionsListAccount[${index}] in game`,
-                    details: updateResult.exceptionDetails.text,
-                });
-            } else {
-                const result = updateResult.result.value;
-                if (result !== undefined) {
-                    log.debug(`OptionsListAccount[${index}] updated to:`, value);
-                    res.json({ message: `Index ${index} updated successfully`, value: value });
-                } else {
-                    res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
-                }
-            }
-        } catch (apiError) {
-            log.error("Error in /api/options-account/index POST:", apiError);
-            res.status(500).json({
-                error: "Internal server error while updating OptionsListAccount index",
-                details: apiError.message,
-            });
-        }
-    });
-
     app.post("/api/config/save", async (req, res) => {
         const receivedFullConfig = await req.json();
 
@@ -484,6 +392,135 @@ exports.injectorConfig = ${new_injectorConfig};
         } catch (apiError) {
             log.error("Error in /api/search:", apiError);
             res.status(500).json({ error: "Internal server error while searching GGA" });
+        }
+    });
+
+    // ── UNIFIED PATH-BASED GAME ACCESS ──────────────────────────────────────────
+    // Read/write endpoints that delegate to readGamePath / writeGamePath
+    // exposed in cheats/main.js. Path resolution (dot/bracket notation, .h
+    // unwrapping) happens cheat-side via the shared pathResolver utility.
+
+    app.post("/api/game/gga/read", async (req, res) => {
+        const { path } = await req.json();
+        if (!path || typeof path !== "string") {
+            return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
+        }
+
+        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readGamePath("${escaped}")`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Read failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            // CDP may serialize Haxe arrays as plain objects with numeric keys.
+            // Only normalize numeric-key maps so regular objects (e.g. .h maps)
+            // are preserved.
+            let value = data.value;
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+                const keys = Object.keys(value);
+                const isNumericKeyMap = keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
+                if (isNumericKeyMap) {
+                    value = Object.assign([], value);
+                }
+            }
+
+            log.debug(`Read path: ${path}`);
+            res.json({ value });
+        } catch (err) {
+            log.error("Error in /api/game/gga/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/read-entries", async (req, res) => {
+        const { rootPath, keys, fields } = await req.json();
+
+        if (!rootPath || typeof rootPath !== "string") {
+            return res.status(400).json({ error: "Missing or invalid rootPath (must be a non-empty string)" });
+        }
+        if (!Array.isArray(keys) || keys.length === 0) {
+            return res.status(400).json({ error: "Missing or invalid keys (must be a non-empty array)" });
+        }
+        if (!keys.every((key) => typeof key === "string" && key.length > 0)) {
+            return res.status(400).json({ error: "keys must contain non-empty strings" });
+        }
+        if (fields !== undefined && fields !== null) {
+            if (!Array.isArray(fields)) {
+                return res.status(400).json({ error: "fields must be an array of strings when provided" });
+            }
+            if (!fields.every((field) => typeof field === "string" && field.length > 0)) {
+                return res.status(400).json({ error: "fields must contain non-empty strings" });
+            }
+        }
+
+        const escapedRootPath = rootPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const keysJson = JSON.stringify(keys);
+        const fieldsJson = JSON.stringify(fields ?? null);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readGameEntries("${escapedRootPath}", ${keysJson}, ${fieldsJson})`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Read entries failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read entries: ${rootPath} (${keys.length} keys)`);
+            res.json({ value: data.value || {} });
+        } catch (err) {
+            log.error("Error in /api/game/gga/read-entries:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/write", async (req, res) => {
+        const { path, value } = await req.json();
+        if (!path || typeof path !== "string") {
+            return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
+        }
+        if (value === undefined) {
+            return res.status(400).json({ error: "Missing value" });
+        }
+        if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null) {
+            return res.status(400).json({ error: "value must be a primitive (number, string, boolean, or null)" });
+        }
+
+        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const serialized = JSON.stringify(value);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `writeGamePath("${escaped}", ${serialized})`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Write failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Write path: ${path} = ${serialized}`);
+            res.json({ ok: true });
+        } catch (err) {
+            log.error("Error in /api/game/gga/write:", err);
+            res.status(500).json({ error: err.message });
         }
     });
 

@@ -81,18 +81,6 @@ export async function fetchDevToolsUrl() {
     throw new Error("No URL received from backend");
 }
 
-export async function fetchOptionsAccount() {
-    return _request("/options-account");
-}
-
-export async function updateOptionAccountIndex(index, value) {
-    return _request("/options-account/index", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index, value }),
-    });
-}
-
 export async function checkHeartbeat() {
     try {
         return await _request("/heartbeat");
@@ -119,5 +107,53 @@ export async function searchGga(query, keys) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, keys }),
+    });
+}
+
+/**
+ * Read a game value by dot/bracket path.
+ * The "gga." prefix is automatically prepended.
+ * @param {string} path - e.g. "StampLevel" or "StampLevel[0][3]"
+ * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
+ */
+export async function readGga(path) {
+    const data = await _request("/game/gga/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `gga.${path}` }),
+    });
+    return data.value;
+}
+
+/**
+ * Read selected entries from a large GGA object map.
+ * The "gga." prefix is automatically prepended to rootPath.
+ * @param {string} rootPath - e.g. "ItemDefinitionsGET.h"
+ * @param {string[]} keys - Entry keys to read
+ * @param {string[]=} fields - Optional field whitelist per entry
+ * @returns {Promise<object>} Object keyed by requested entries
+ */
+export async function readGgaEntries(rootPath, keys, fields) {
+    const normalizedRootPath = rootPath.startsWith("gga.") ? rootPath : `gga.${rootPath}`;
+    const data = await _request("/game/gga/read-entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rootPath: normalizedRootPath, keys, fields }),
+    });
+    return data.value || {};
+}
+
+/**
+ * Write a primitive value to a game path.
+ * The "gga." prefix is automatically prepended.
+ * @param {string} path - e.g. "StampLevel[0][3]"
+ * @param {number|string|boolean|null} value
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function writeGga(path, value) {
+    return _request("/game/gga/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `gga.${path}`, value }),
     });
 }
