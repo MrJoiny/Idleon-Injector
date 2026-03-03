@@ -421,8 +421,14 @@ exports.injectorConfig = ${new_injectorConfig};
             const data = result.result.value;
             if (data.error) return res.status(500).json({ error: data.error });
 
+            // CDP returnByValue serializes arrays as plain objects — normalize back
+            let value = data.value;
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+                value = Object.assign([], value);
+            }
+
             log.debug(`Read path: ${path}`);
-            res.json({ value: data.value });
+            res.json({ value });
         } catch (err) {
             log.error("Error in /api/game/gga/read:", err);
             res.status(500).json({ error: err.message });
