@@ -421,16 +421,68 @@ exports.injectorConfig = ${new_injectorConfig};
             const data = result.result.value;
             if (data.error) return res.status(500).json({ error: data.error });
 
-            // CDP returnByValue serializes arrays as plain objects — normalize back
+            // CDP may serialize Haxe arrays as plain objects with numeric keys.
+            // Only normalize numeric-key maps so regular objects (e.g. .h maps)
+            // are preserved.
             let value = data.value;
             if (value && typeof value === "object" && !Array.isArray(value)) {
-                value = Object.assign([], value);
+                const keys = Object.keys(value);
+                const isNumericKeyMap = keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
+                if (isNumericKeyMap) {
+                    value = Object.assign([], value);
+                }
             }
 
             log.debug(`Read path: ${path}`);
             res.json({ value });
         } catch (err) {
             log.error("Error in /api/game/gga/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/read-entries", async (req, res) => {
+        const { rootPath, keys, fields } = await req.json();
+
+        if (!rootPath || typeof rootPath !== "string") {
+            return res.status(400).json({ error: "Missing or invalid rootPath (must be a non-empty string)" });
+        }
+        if (!Array.isArray(keys) || keys.length === 0) {
+            return res.status(400).json({ error: "Missing or invalid keys (must be a non-empty array)" });
+        }
+        if (!keys.every((key) => typeof key === "string" && key.length > 0)) {
+            return res.status(400).json({ error: "keys must contain non-empty strings" });
+        }
+        if (fields !== undefined && fields !== null) {
+            if (!Array.isArray(fields)) {
+                return res.status(400).json({ error: "fields must be an array of strings when provided" });
+            }
+            if (!fields.every((field) => typeof field === "string" && field.length > 0)) {
+                return res.status(400).json({ error: "fields must contain non-empty strings" });
+            }
+        }
+
+        const escapedRootPath = rootPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const keysJson = JSON.stringify(keys);
+        const fieldsJson = JSON.stringify(fields ?? null);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readGameEntries("${escapedRootPath}", ${keysJson}, ${fieldsJson})`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Read entries failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read entries: ${rootPath} (${keys.length} keys)`);
+            res.json({ value: data.value || {} });
+        } catch (err) {
+            log.error("Error in /api/game/gga/read-entries:", err);
             res.status(500).json({ error: err.message });
         }
     });

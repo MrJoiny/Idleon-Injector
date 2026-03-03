@@ -3,6 +3,7 @@
  *
  * Functions for accessing and modifying game state:
  * - Unified path-based read/write (readPath, writePath)
+ * - Selective object-entry reads for large maps (readEntries)
  * - cheatState access
  */
 
@@ -24,6 +25,65 @@ export function readPath(path) {
     const { target, prop } = resolved;
     if (prop === undefined) return { error: "Path must include at least one key below the root" };
     return { value: target[prop] };
+}
+
+/**
+ * Read selected entries from a root object path.
+ * Optional field picking reads from entry.h first (Haxe objects), then falls back
+ * to direct entry fields.
+ *
+ * @param {string} rootPath - Path to an object map like "gga.ItemDefinitionsGET.h"
+ * @param {string[]} keys - Entry keys to read
+ * @param {string[]=} fields - Optional field names to pick from each entry
+ * @returns {{ value: object } | { error: string }}
+ */
+export function readEntries(rootPath, keys, fields = null) {
+    if (!rootPath || typeof rootPath !== "string") return { error: "Missing or invalid rootPath" };
+    if (!Array.isArray(keys) || keys.length === 0) return { error: "keys must be a non-empty array" };
+    if (!keys.every((key) => typeof key === "string" && key.length > 0)) {
+        return { error: "keys must contain non-empty strings" };
+    }
+    if (fields !== null && fields !== undefined) {
+        if (!Array.isArray(fields)) return { error: "fields must be an array of strings" };
+        if (!fields.every((field) => typeof field === "string" && field.length > 0)) {
+            return { error: "fields must contain non-empty strings" };
+        }
+    }
+
+    const resolved = resolvePath(rootPath);
+    if (resolved.error) return resolved;
+
+    const { target, prop } = resolved;
+    if (prop === undefined) return { error: "Path must include at least one key below the root" };
+
+    const root = target[prop];
+    if (!root || typeof root !== "object") {
+        return { error: "Resolved root is not an object" };
+    }
+
+    const value = {};
+    const shouldPickFields = Array.isArray(fields) && fields.length > 0;
+
+    for (const key of keys) {
+        const entry = root[key];
+        if (entry === undefined) continue;
+
+        if (!shouldPickFields) {
+            value[key] = entry;
+            continue;
+        }
+
+        const source = entry && typeof entry === "object" && entry.h && typeof entry.h === "object" ? entry.h : entry;
+        const picked = {};
+
+        for (const field of fields) {
+            picked[field] = source?.[field];
+        }
+
+        value[key] = picked;
+    }
+
+    return { value };
 }
 
 /**

@@ -126,6 +126,24 @@ export async function readGga(path) {
 }
 
 /**
+ * Read selected entries from a large GGA object map.
+ * The "gga." prefix is automatically prepended to rootPath.
+ * @param {string} rootPath - e.g. "ItemDefinitionsGET.h"
+ * @param {string[]} keys - Entry keys to read
+ * @param {string[]=} fields - Optional field whitelist per entry
+ * @returns {Promise<object>} Object keyed by requested entries
+ */
+export async function readGgaEntries(rootPath, keys, fields) {
+    const normalizedRootPath = rootPath.startsWith("gga.") ? rootPath : `gga.${rootPath}`;
+    const data = await _request("/game/gga/read-entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rootPath: normalizedRootPath, keys, fields }),
+    });
+    return data.value || {};
+}
+
+/**
  * Write a primitive value to a game path.
  * The "gga." prefix is automatically prepended.
  * @param {string} path - e.g. "StampLevel[0][3]"

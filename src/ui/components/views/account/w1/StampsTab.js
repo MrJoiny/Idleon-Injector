@@ -6,7 +6,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -25,13 +25,13 @@ const PAGES = [
 
 const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate }) => {
     const inputVal = van.state(String(levels?.[page]?.[order] ?? 0));
-    const status   = van.state(null); // "loading" | "success" | "error" | null
+    const status = van.state(null); // "loading" | "success" | "error" | null
 
     const doSet = async (targetLevel) => {
         const lvl = Math.max(0, Number(targetLevel));
         if (isNaN(lvl)) return;
         // Max level unlocks in steps — round up to the next step boundary
-        const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
+        const maxLvl = step > 0 && lvl > 0 ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
             await writeGga(`StampLevel[${page}][${order}]`, lvl);
@@ -57,17 +57,20 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         div(
             { class: "feature-row__info" },
             span({ class: "feature-row__index" }, `[${order}]`),
-            span({ class: "feature-row__name"  }, name)
+            span({ class: "feature-row__name" }, name)
         ),
 
-        span({ class: "feature-row__badge" }, `LV ${levels?.[page]?.[order] ?? 0} / ${maxLevels?.[page]?.[order] ?? 0}`),
+        span(
+            { class: "feature-row__badge" },
+            `LV ${levels?.[page]?.[order] ?? 0} / ${maxLevels?.[page]?.[order] ?? 0}`
+        ),
 
         div(
             { class: "feature-row__controls" },
 
             NumberInput({
-                value:       inputVal,
-                oninput:     (e) => (inputVal.val = e.target.value),
+                value: inputVal,
+                oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
@@ -75,8 +78,9 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
             withTooltip(
                 button(
                     {
-                        class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick:  () => doSet(inputVal.val),
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSet(inputVal.val),
                         disabled: () => status.val === "loading",
                     },
                     () => (status.val === "loading" ? "..." : "SET")
@@ -87,8 +91,8 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
             withTooltip(
                 button(
                     {
-                        class:    "feature-btn feature-btn--danger",
-                        onclick:  () => doSet(0),
+                        class: "feature-btn feature-btn--danger",
+                        onclick: () => doSet(0),
                         disabled: () => status.val === "loading",
                     },
                     "RELOCK"
@@ -103,9 +107,9 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
 
 export const StampsTab = () => {
     const activePage = van.state(0);
-    const gameData   = van.state(null);
-    const loading    = van.state(false);
-    const error      = van.state(null);
+    const gameData = van.state(null);
+    const loading = van.state(false);
+    const error = van.state(null);
 
     const updateLocal = (page, order, lvl, maxLvl) => {
         const cur = gameData.val;
@@ -128,31 +132,38 @@ export const StampsTab = () => {
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
-            const [levels, maxLevels, rawItemDefs] = await Promise.all([
-                readGga("StampLevel"),
-                readGga("StampLevelMAX"),
-                readGga("ItemDefinitionsGET"),
-            ]);
+            const [levels, maxLevels] = await Promise.all([readGga("StampLevel"), readGga("StampLevelMAX")]);
+
+            const pages = ["A", "B", "C"];
+            const pageCounts = pages.map((_, page) =>
+                Math.max(levels?.[page]?.length ?? 0, maxLevels?.[page]?.length ?? 0)
+            );
+            const stampKeys = pages.flatMap((letter, page) =>
+                Array.from({ length: pageCounts[page] }, (_, i) => `Stamp${letter}${i + 1}`)
+            );
+
+            const rawItemDefs = stampKeys.length
+                ? await readGgaEntries("ItemDefinitionsGET.h", stampKeys, ["displayName", "desc_line1"])
+                : {};
 
             // Extract stamp names and step values client-side from ItemDefinitionsGET
-            const pages = ["A", "B", "C"];
-            const names = pages.map((letter) => {
+            const names = pages.map((letter, page) => {
                 const result = [];
-                for (let i = 1; ; i++) {
+                const count = pageCounts[page] ?? 0;
+                for (let i = 1; i <= count; i++) {
                     const entry = rawItemDefs?.["Stamp" + letter + i];
-                    if (!entry) break;
-                    result.push((entry.displayName ?? "").replace(/_/g, " "));
+                    result.push((entry?.displayName ?? `Stamp ${letter}${i}`).replace(/_/g, " "));
                 }
                 return result;
             });
-            const steps = pages.map((letter) => {
+            const steps = pages.map((letter, page) => {
                 const result = [];
-                for (let i = 1; ; i++) {
+                const count = pageCounts[page] ?? 0;
+                for (let i = 1; i <= count; i++) {
                     const entry = rawItemDefs?.["Stamp" + letter + i];
-                    if (!entry) break;
-                    const parts = (entry.desc_line1 || "").split(",");
+                    const parts = (entry?.desc_line1 || "").split(",");
                     result.push(parseInt(parts[4]) || 0);
                 }
                 return result;
@@ -172,11 +183,7 @@ export const StampsTab = () => {
 
         div(
             { class: "feature-header" },
-            div(
-                null,
-                h3("STAMPS"),
-                p({ class: "feature-header__desc" }, "Change your Stamp levels and remove stamps")
-            ),
+            div(null, h3("STAMPS"), p({ class: "feature-header__desc" }, "Change your Stamp levels and remove stamps")),
             withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read stamp data from game memory"
@@ -188,7 +195,7 @@ export const StampsTab = () => {
             ...PAGES.map((pg) =>
                 button(
                     {
-                        class:   () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
+                        class: () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
                         onclick: () => (activePage.val = pg.id),
                     },
                     pg.label
@@ -198,7 +205,10 @@ export const StampsTab = () => {
 
         () => {
             if (loading.val) {
-                return div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING STAMPS" })));
+                return div(
+                    { class: "feature-list" },
+                    div({ class: "feature-loader" }, Loader({ text: "READING STAMPS" }))
+                );
             }
 
             if (error.val) {
@@ -211,17 +221,17 @@ export const StampsTab = () => {
             const data = gameData.val;
             if (!data) return div({ class: "feature-list" });
 
-            const page      = activePage.val;
-            const names     = data.names?.[page] ?? [];
-            const steps     = data.steps?.[page] ?? [];
-            const count     = Math.max(names.length, data.levels?.[page]?.length ?? 0);
+            const page = activePage.val;
+            const names = data.names?.[page] ?? [];
+            const steps = data.steps?.[page] ?? [];
+            const count = Math.max(names.length, data.levels?.[page]?.length ?? 0);
 
             if (count === 0) {
                 return div(
                     { class: "feature-list" },
                     EmptyState({
-                        icon:     Icons.SearchX(),
-                        title:    "NO STAMP DATA",
+                        icon: Icons.SearchX(),
+                        title: "NO STAMP DATA",
                         subtitle: "Ensure the game is running, then hit REFRESH",
                     })
                 );
@@ -233,9 +243,9 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name: names[order] ?? `Stamp ${['A','B','C'][page]}${order + 1}`,
+                        name: names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
                         step: steps[order] ?? 0,
-                        levels:    data.levels,
+                        levels: data.levels,
                         maxLevels: data.maxLevels,
                         onLocalUpdate: updateLocal,
                     })
