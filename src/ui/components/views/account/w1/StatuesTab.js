@@ -40,9 +40,9 @@ const StatueRow = ({ index, name, getData, onReload }) => {
 
         status.val = "loading";
         try {
-            await writeGga(`gga.StatueLevels[${index}][0]`, lvl);
-            await writeGga(`gga.StatueLevels[${index}][1]`, dep);
-            await writeGga(`gga.StatueG[${index}]`, tier);
+            await writeGga(`StatueLevels[${index}][0]`, lvl);
+            await writeGga(`StatueLevels[${index}][1]`, dep);
+            await writeGga(`StatueG[${index}]`, tier);
             await new Promise((r) => setTimeout(r, 300));
             const fresh = await onReload?.();
             levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
@@ -150,9 +150,9 @@ export const StatuesTab = () => {
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
-                readGga("gga.CustomLists.StatueInfo"),
-                readGga("gga.StatueLevels"),
-                readGga("gga.StatueG"),
+                readGga("CustomLists.StatueInfo"),
+                readGga("StatueLevels"),
+                readGga("StatueG"),
             ]);
             data.val = {
                 info: toArr(rawInfo),

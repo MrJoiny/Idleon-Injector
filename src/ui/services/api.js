@@ -112,21 +112,23 @@ export async function searchGga(query, keys) {
 
 /**
  * Read a game value by dot/bracket path.
- * @param {string} path - e.g. "gga.StampLevel" or "gga.StampLevel[0][3]"
+ * The "gga." prefix is automatically prepended.
+ * @param {string} path - e.g. "StampLevel" or "StampLevel[0][3]"
  * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
  */
 export async function readGga(path) {
     const data = await _request("/game/gga/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path: `gga.${path}` }),
     });
     return data.value;
 }
 
 /**
  * Write a primitive value to a game path.
- * @param {string} path - e.g. "gga.StampLevel[0][3]"
+ * The "gga." prefix is automatically prepended.
+ * @param {string} path - e.g. "StampLevel[0][3]"
  * @param {number|string|boolean|null} value
  * @returns {Promise<{ ok: true }>}
  */
@@ -134,6 +136,6 @@ export async function writeGga(path, value) {
     return _request("/game/gga/write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path, value }),
+        body: JSON.stringify({ path: `gga.${path}`, value }),
     });
 }

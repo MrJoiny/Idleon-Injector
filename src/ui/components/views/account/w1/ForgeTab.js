@@ -58,7 +58,7 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeGga(`gga.FurnaceLevels[${upgrade.index}]`, lvl);
+            await writeGga(`FurnaceLevels[${upgrade.index}]`, lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await onReload?.();
@@ -120,7 +120,7 @@ export const ForgeTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const raw = await readGga("gga.FurnaceLevels");
+            const raw = await readGga("FurnaceLevels");
             levels.val = Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);

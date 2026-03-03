@@ -40,7 +40,7 @@ const AnvilRow = ({ category, getStats, onReload }) => {
         const pts = Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
         status.val = "loading";
         try {
-            await writeGga(`gga.AnvilPAstats[${category.index}]`, pts);
+            await writeGga(`AnvilPAstats[${category.index}]`, pts);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             // Small delay so the game has time to commit the write before we re-read
@@ -121,7 +121,7 @@ export const AnvilTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const raw = await readGga("gga.AnvilPAstats");
+            const raw = await readGga("AnvilPAstats");
             const arr = Array.isArray(raw)
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);

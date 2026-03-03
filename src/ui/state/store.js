@@ -278,7 +278,7 @@ const AccountService = {
                     hasSchema
                         ? Promise.resolve(null)
                         : fetch("/config/optionsAccountSchema.json").catch(() => ({ ok: false })),
-                    API.readGga("gga.OptionsListAccount"),
+                    API.readGga("OptionsListAccount"),
                 ]);
 
                 if (schemaRes?.ok) {
@@ -300,7 +300,7 @@ const AccountService = {
         try {
             // Optimistic UI Update
             dataState.accountOptions[index] = value;
-            await API.writeGga(`gga.OptionsListAccount[${index}]`, value);
+            await API.writeGga(`OptionsListAccount[${index}]`, value);
             Actions.notify(`WROTE "${value}" TO INDEX ${index}`);
         } catch (e) {
             Actions.notify(`Failed to update Index ${index}: ${e.message}`, "error");

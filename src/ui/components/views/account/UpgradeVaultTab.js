@@ -36,7 +36,7 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeGga(`gga.UpgVault[${index}]`, lvl);
+            await writeGga(`UpgVault[${index}]`, lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await new Promise((r) => setTimeout(r, 300));
@@ -107,11 +107,11 @@ export const UpgradeVaultTab = () => {
                 : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
             const [rawInfo, rawLevels, rawResearchKeys, rawResearchBonus, rawResearchGrid] = await Promise.all([
-                readGga("gga.CustomLists.UpgradeVault"),
-                readGga("gga.UpgVault"),
-                readGga("gga.CustomLists.Research[26]"),
-                readGga("gga.Research[12]"),
-                readGga("gga.CustomLists.Research[29]"),
+                readGga("CustomLists.UpgradeVault"),
+                readGga("UpgVault"),
+                readGga("CustomLists.Research[26]"),
+                readGga("Research[12]"),
+                readGga("CustomLists.Research[29]"),
             ]);
 
             const info = toArr(rawInfo ?? []);

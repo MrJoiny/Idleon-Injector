@@ -34,8 +34,8 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
-            await writeGga(`gga.StampLevel[${page}][${order}]`, lvl);
-            await writeGga(`gga.StampLevelMAX[${page}][${order}]`, maxLvl);
+            await writeGga(`StampLevel[${page}][${order}]`, lvl);
+            await writeGga(`StampLevelMAX[${page}][${order}]`, maxLvl);
             inputVal.val = String(lvl);
             onLocalUpdate?.(page, order, lvl, maxLvl);
             status.val = "success";
@@ -131,9 +131,9 @@ export const StampsTab = () => {
         error.val   = null;
         try {
             const [levels, maxLevels, rawItemDefs] = await Promise.all([
-                readGga("gga.StampLevel"),
-                readGga("gga.StampLevelMAX"),
-                readGga("gga.ItemDefinitionsGET"),
+                readGga("StampLevel"),
+                readGga("StampLevelMAX"),
+                readGga("ItemDefinitionsGET"),
             ]);
 
             // Extract stamp names and step values client-side from ItemDefinitionsGET
