@@ -6,7 +6,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -34,8 +34,8 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         const maxLvl = (step > 0 && lvl > 0) ? Math.ceil(lvl / step) * step : lvl;
         status.val = "loading";
         try {
-            await writeGga("StampLevel",    [page, order], lvl);
-            await writeGga("StampLevelMAX", [page, order], maxLvl);
+            await writeGga(`gga.StampLevel[${page}][${order}]`, lvl);
+            await writeGga(`gga.StampLevelMAX[${page}][${order}]`, maxLvl);
             inputVal.val = String(lvl);
             onLocalUpdate?.(page, order, lvl, maxLvl);
             status.val = "success";
@@ -130,35 +130,33 @@ export const StampsTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const [levels, maxLevels, names, steps] = await Promise.all([
-                readGga("StampLevel"),
-                readGga("StampLevelMAX"),
-                readExpr(`(function(){
-                                var pages = ['A', 'B', 'C'];
-                                return pages.map(function(letter) {
-                                    var names = [];
-                                    for (var i = 1; ; i++) {
-                                        var entry = itemDefs['Stamp' + letter + i];
-                                        if (!entry) break;
-                                        names.push(entry.h.displayName.replace(/_/g, ' '));
-                                    }
-                                    return names;
-                                });
-                            })()`),
-                readExpr(`(function(){
-                                var pages = ['A', 'B', 'C'];
-                                return pages.map(function(letter) {
-                                    var steps = [];
-                                    for (var i = 1; ; i++) {
-                                        var entry = itemDefs['Stamp' + letter + i];
-                                        if (!entry) break;
-                                        var parts = (entry.h.desc_line1 || '').split(',');
-                                        steps.push(parseInt(parts[4]) || 0);
-                                    }
-                                    return steps;
-                                });
-                            })()`),
+            const [levels, maxLevels, rawItemDefs] = await Promise.all([
+                readGga("gga.StampLevel"),
+                readGga("gga.StampLevelMAX"),
+                readGga("gga.ItemDefinitionsGET"),
             ]);
+
+            // Extract stamp names and step values client-side from ItemDefinitionsGET
+            const pages = ["A", "B", "C"];
+            const names = pages.map((letter) => {
+                const result = [];
+                for (let i = 1; ; i++) {
+                    const entry = rawItemDefs?.["Stamp" + letter + i];
+                    if (!entry) break;
+                    result.push((entry.displayName ?? "").replace(/_/g, " "));
+                }
+                return result;
+            });
+            const steps = pages.map((letter) => {
+                const result = [];
+                for (let i = 1; ; i++) {
+                    const entry = rawItemDefs?.["Stamp" + letter + i];
+                    if (!entry) break;
+                    const parts = (entry.desc_line1 || "").split(",");
+                    result.push(parseInt(parts[4]) || 0);
+                }
+                return result;
+            });
             gameData.val = { levels, maxLevels, names, steps };
         } catch (e) {
             error.val = e.message || "Failed to read stamp data";

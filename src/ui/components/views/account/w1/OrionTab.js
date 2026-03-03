@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -123,7 +123,7 @@ export const OrionTab = () => {
         if (!silent) loading.val = true;
         error.val = null;
         try {
-            const list = await readGga("OptionsListAccount");
+            const list = await readGga("gga.OptionsListAccount");
             const map = {};
             for (const idx of ALL_INDICES) map[idx] = (list ?? [])[idx] ?? 0;
             values.val = map;
@@ -135,7 +135,7 @@ export const OrionTab = () => {
     };
 
     const onWrite = async (index, value) => {
-        await writeGga("OptionsListAccount", [index], value);
+        await writeGga(`gga.OptionsListAccount[${index}]`, value);
         values.val = { ...values.val, [index]: value };
     };
 

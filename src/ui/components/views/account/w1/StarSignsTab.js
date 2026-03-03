@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -116,9 +116,9 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         try {
             const str = encodeProgress(players.val);
             const unlocked = players.val.length >= sign.playersNeeded ? 1 : 0;
-            await writeGga("StarSignProg", [sign.index, 0], str);
+            await writeGga(`gga.StarSignProg[${sign.index}][0]`, str);
             await new Promise((r) => setTimeout(r, 150));
-            await writeGga("StarSignProg", [sign.index, 1], unlocked);
+            await writeGga(`gga.StarSignProg[${sign.index}][1]`, unlocked);
             status.val = "success";
             setTimeout(() => (status.val = null), 1500);
             onSave?.({ index: sign.index, progress: str, unlocked });
@@ -274,9 +274,9 @@ export const StarSignsTab = () => {
         error.val   = null;
         try {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
-                readExpr(`cList.StarQuests`),
-                readGga("StarSignProg"),
-                readGga("GetPlayersUsernames"),
+                readGga("gga.CustomLists.StarQuests"),
+                readGga("gga.StarSignProg"),
+                readGga("gga.GetPlayersUsernames"),
             ]);
 
             const quests = toArr(rawQuests ?? []);
@@ -321,9 +321,9 @@ export const StarSignsTab = () => {
     const resetAll = async () => {
         if (!signs.val) return;
         for (const sign of signs.val) {
-            await writeGga("StarSignProg", [sign.index, 0], "");
+            await writeGga(`gga.StarSignProg[${sign.index}][0]`, "");
             await new Promise((r) => setTimeout(r, 40));
-            await writeGga("StarSignProg", [sign.index, 1], 0);
+            await writeGga(`gga.StarSignProg[${sign.index}][1]`, 0);
             await new Promise((r) => setTimeout(r, 40));
         }
         await load();
@@ -343,9 +343,9 @@ export const StarSignsTab = () => {
             }
             const players = pool.slice(0, needed);
             const str = encodeProgress(players);
-            await writeGga("StarSignProg", [sign.index, 0], str);
+            await writeGga(`gga.StarSignProg[${sign.index}][0]`, str);
             await new Promise((r) => setTimeout(r, 40));
-            await writeGga("StarSignProg", [sign.index, 1], 1);
+            await writeGga(`gga.StarSignProg[${sign.index}][1]`, 1);
             await new Promise((r) => setTimeout(r, 40));
         }
         await load();

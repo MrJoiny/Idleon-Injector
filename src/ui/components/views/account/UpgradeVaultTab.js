@@ -12,7 +12,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { readGga, readExpr, writeGga } from "../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../services/api.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
@@ -36,7 +36,7 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
         if (isNaN(lvl)) return;
         status.val = "loading";
         try {
-            await writeGga("UpgVault", [index], lvl);
+            await writeGga(`gga.UpgVault[${index}]`, lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
             await new Promise((r) => setTimeout(r, 300));
@@ -107,11 +107,11 @@ export const UpgradeVaultTab = () => {
                 : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
             const [rawInfo, rawLevels, rawResearchKeys, rawResearchBonus, rawResearchGrid] = await Promise.all([
-                readExpr(`cList.UpgradeVault`),
-                readGga("UpgVault"),
-                readExpr(`cList.Research[26]`),
-                readGga("Research", [12]),
-                readExpr(`cList.Research[29]`),
+                readGga("gga.CustomLists.UpgradeVault"),
+                readGga("gga.UpgVault"),
+                readGga("gga.CustomLists.Research[26]"),
+                readGga("gga.Research[12]"),
+                readGga("gga.CustomLists.Research[29]"),
             ]);
 
             const info = toArr(rawInfo ?? []);

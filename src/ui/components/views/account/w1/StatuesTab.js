@@ -8,7 +8,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readExpr, writeGga } from "../../../../helpers/gameHelper.js";
+import { readGga, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -40,9 +40,9 @@ const StatueRow = ({ index, name, getData, onReload }) => {
 
         status.val = "loading";
         try {
-            await writeGga("StatueLevels", [index, 0], lvl);
-            await writeGga("StatueLevels", [index, 1], dep);
-            await writeGga("StatueG", [index], tier);
+            await writeGga(`gga.StatueLevels[${index}][0]`, lvl);
+            await writeGga(`gga.StatueLevels[${index}][1]`, dep);
+            await writeGga(`gga.StatueG[${index}]`, tier);
             await new Promise((r) => setTimeout(r, 300));
             const fresh = await onReload?.();
             levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
@@ -150,9 +150,9 @@ export const StatuesTab = () => {
                 ? raw
                 : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
-                readExpr(`cList.StatueInfo`),
-                readGga("StatueLevels"),
-                readGga("StatueG"),
+                readGga("gga.CustomLists.StatueInfo"),
+                readGga("gga.StatueLevels"),
+                readGga("gga.StatueG"),
             ]);
             data.val = {
                 info: toArr(rawInfo),

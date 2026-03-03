@@ -149,14 +149,15 @@ export async function readGameExpr(expression) {
 /**
  * Read a game value by dot/bracket path.
  * @param {string} path - e.g. "gga.StampLevel" or "gga.StampLevel[0][3]"
- * @returns {Promise<{ value: any }>}
+ * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
  */
 export async function readGga(path) {
-    return _request("/game/gga/read", {
+    const data = await _request("/game/gga/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path }),
     });
+    return data.value;
 }
 
 /**

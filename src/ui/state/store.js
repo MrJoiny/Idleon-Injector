@@ -278,7 +278,7 @@ const AccountService = {
                     hasSchema
                         ? Promise.resolve(null)
                         : fetch("/config/optionsAccountSchema.json").catch(() => ({ ok: false })),
-                    API.fetchOptionsAccount(),
+                    API.readGga("gga.OptionsListAccount"),
                 ]);
 
                 if (schemaRes?.ok) {
@@ -286,7 +286,7 @@ const AccountService = {
                 }
 
                 // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
-                const newData = dataRes.data || [];
+                const newData = dataRes || [];
                 dataState.accountOptions = [];
                 dataState.accountOptions = newData;
 
@@ -300,7 +300,7 @@ const AccountService = {
         try {
             // Optimistic UI Update
             dataState.accountOptions[index] = value;
-            await API.updateOptionAccountIndex(index, value);
+            await API.writeGga(`gga.OptionsListAccount[${index}]`, value);
             Actions.notify(`WROTE "${value}" TO INDEX ${index}`);
         } catch (e) {
             Actions.notify(`Failed to update Index ${index}: ${e.message}`, "error");
