@@ -106,4 +106,3 @@ jobs:
                     "binaries/InjectCheatsUI-Linux/InjectCheatsUI-Linux.tar.gz" \
                     "binaries/InjectCheatsUI-macOS-x64/InjectCheatsUI-macOS-x64.tar.gz" \
                     "binaries/InjectCheatsUI-macOS-arm64/InjectCheatsUI-macOS-arm64.tar.gz"
-

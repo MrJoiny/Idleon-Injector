@@ -22,15 +22,14 @@ import { withTooltip } from "../../Tooltip.js";
 const { div, button, span, h3, p } = van.tags;
 
 // Strip underscores and the 製 character used as a tap-info marker
-const cleanName = (raw) =>
-    (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").trim();
+const cleanName = (raw) => (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").trim();
 
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
 const VaultRow = ({ index, name, baseMax, initialLevel }) => {
-    const inputVal     = van.state(String(initialLevel ?? 0));
+    const inputVal = van.state(String(initialLevel ?? 0));
     const levelDisplay = van.state(initialLevel ?? 0);
-    const status       = van.state(null);
+    const status = van.state(null);
 
     const doSet = async (targetVal) => {
         const lvl = Math.max(0, Number(targetVal));
@@ -38,7 +37,7 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
         status.val = "loading";
         try {
             await writeGga(`UpgVault[${index}]`, lvl);
-            inputVal.val     = String(lvl);
+            inputVal.val = String(lvl);
             levelDisplay.val = lvl;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
@@ -55,14 +54,14 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
                     status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
-        div({ class: "feature-row__info" },
+        div(
+            { class: "feature-row__info" },
             span({ class: "feature-row__name" }, name),
             span({ class: "feature-row__index" }, `#${index}`)
         ),
-        span({ class: "feature-row__badge" },
-            () => `LV ${levelDisplay.val} / ${baseMax}`
-        ),
-        div({ class: "feature-row__controls" },
+        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${baseMax}`),
+        div(
+            { class: "feature-row__controls" },
             NumberInput({
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
@@ -70,19 +69,26 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
             withTooltip(
-                button({
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick: () => doSet(inputVal.val),
-                    disabled: () => status.val === "loading",
-                }, () => (status.val === "loading" ? "..." : "SET")),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSet(inputVal.val),
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
                 `Set level for ${name} (base max: ${baseMax})`
             ),
             withTooltip(
-                button({
-                    class: "feature-btn feature-btn--apply",
-                    onclick: () => doSet(baseMax),
-                    disabled: () => status.val === "loading",
-                }, "MAX"),
+                button(
+                    {
+                        class: "feature-btn feature-btn--apply",
+                        onclick: () => doSet(baseMax),
+                        disabled: () => status.val === "loading",
+                    },
+                    "MAX"
+                ),
                 `Set to base max level (${baseMax})`
             )
         )
@@ -100,9 +106,12 @@ export const UpgradeVaultTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const toArr = (raw) => Array.isArray(raw)
-                ? raw
-                : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
+            const toArr = (raw) =>
+                Array.isArray(raw)
+                    ? raw
+                    : Object.keys(raw)
+                          .sort((a, b) => Number(a) - Number(b))
+                          .map((k) => raw[k]);
 
             const [rawInfo, rawLevels, rawResearchKeys, rawResearchBonus, rawResearchGrid] = await Promise.all([
                 readGga("CustomLists.UpgradeVault"),
@@ -153,12 +162,16 @@ export const UpgradeVaultTab = () => {
 
     load();
 
-    return div({ class: "world-feature scroll-container" },
+    return div(
+        { class: "world-feature scroll-container" },
 
-        div({ class: "feature-header" },
-            div(null,
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("UPGRADE VAULT"),
-                p({ class: "feature-header__desc" },
+                p(
+                    { class: "feature-header__desc" },
                     "Set levels for all vault upgrades — base max shown, Vault Mastery can push beyond it"
                 )
             ),
@@ -168,20 +181,23 @@ export const UpgradeVaultTab = () => {
             )
         ),
 
-        div({ class: "warning-banner" },
+        div(
+            { class: "warning-banner" },
             Icons.Warning(),
             " Max level is calculated live from game data, including any Research bonuses. " +
-            "SET accepts any value ≥ 0 — no hard upper limit enforced."
+                "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 
         () => {
             if (loading.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     div({ class: "feature-loader" }, Loader({ text: "READING VAULT" }))
                 );
 
             if (error.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     EmptyState({ icon: Icons.SearchX(), title: "VAULT READ FAILED", subtitle: error.val })
                 );
 
@@ -190,16 +206,22 @@ export const UpgradeVaultTab = () => {
             const { upgrades, levels } = data.val;
 
             if (!upgrades.length)
-                return div({ class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "NO VAULT DATA", subtitle: "Ensure the game is running, then hit REFRESH" })
+                return div(
+                    { class: "feature-list" },
+                    EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO VAULT DATA",
+                        subtitle: "Ensure the game is running, then hit REFRESH",
+                    })
                 );
 
-            return div({ class: "feature-list" },
+            return div(
+                { class: "feature-list" },
                 ...upgrades.map((u) =>
                     VaultRow({
-                        index:        u.index,
-                        name:         u.name,
-                        baseMax:      u.baseMax,
+                        index: u.index,
+                        name: u.name,
+                        baseMax: u.baseMax,
                         initialLevel: levels?.[u.index] ?? 0,
                     })
                 )

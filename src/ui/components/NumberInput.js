@@ -67,26 +67,12 @@ function parseInput(raw, callerParser = null) {
  *   • Suffix notation (2b, 1.5k) is expanded immediately on each keystroke.
  *   • value.val is kept in sync on every input event.
  */
-export const NumberInput = ({
-    value,
-    mode = "int",
-    onDecrement,
-    onIncrement,
-    formatter,
-    parser,
-    ...inputProps
-}) => {
-    const {
-        oninput: userOninput,
-        onfocus: userOnfocus,
-        onblur:  userOnblur,
-        ...restInputProps
-    } = inputProps;
+export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, formatter, parser, ...inputProps }) => {
+    const { oninput: userOninput, onfocus: userOnfocus, onblur: userOnblur, ...restInputProps } = inputProps;
 
     const allowDecimal = mode === "float";
 
-    const commit = (n) =>
-        String(allowDecimal ? n : Math.round(n));
+    const commit = (n) => String(allowDecimal ? n : Math.round(n));
 
     // ── Formatted mode ────────────────────────────────────────────────────────
     if (formatter) {
@@ -122,7 +108,7 @@ export const NumberInput = ({
                 isFocused = false;
                 const parsed = tryParse(e.target.value);
                 if (parsed !== null) {
-                    value.val     = parsed;
+                    value.val = parsed;
                     inputEl.value = formatter(parsed);
                 } else {
                     inputEl.value = formatter(value.val);
@@ -155,16 +141,19 @@ export const NumberInput = ({
         // Expand suffix notation as soon as the suffix letter is typed.
         const n = parseInput(raw);
         if (n !== null && raw.match(/[kmbt]$/i)) {
-            const committed   = commit(n);
-            e.target.value    = committed;
-            value.val         = committed;
+            const committed = commit(n);
+            e.target.value = committed;
+            value.val = committed;
             if (userOninput) userOninput(e);
             return;
         }
 
         // Strip characters that aren't valid for this mode.
         const cleaned = allowDecimal
-            ? raw.replace(/[^0-9.-]/g, "").replace(/(?!^)-/g, "").replace(/(\..*)\./g, "$1")
+            ? raw
+                  .replace(/[^0-9.-]/g, "")
+                  .replace(/(?!^)-/g, "")
+                  .replace(/(\..*)\./g, "$1")
             : raw.replace(/[^0-9-]/g, "").replace(/(?!^)-/g, "");
 
         if (e.target.value !== cleaned) e.target.value = cleaned;

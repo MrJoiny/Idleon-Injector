@@ -9,9 +9,7 @@ import { Icons } from "../../../assets/icons.js";
 
 const { div, button, span, p } = van.tags;
 
-const W7_SUBTABS = [
-    { id: "coming-soon", label: "COMING SOON" },
-];
+const W7_SUBTABS = [{ id: "coming-soon", label: "COMING SOON" }];
 
 export const W7Tab = () => {
     const activeSubTab = van.state(W7_SUBTABS[0].id);
@@ -34,7 +32,8 @@ export const W7Tab = () => {
             ...W7_SUBTABS.map((tab) =>
                 button(
                     {
-                        class: () => `world-sub-tab-btn world-sub-tab-btn--stub ${activeSubTab.val === tab.id ? "active" : ""}`,
+                        class: () =>
+                            `world-sub-tab-btn world-sub-tab-btn--stub ${activeSubTab.val === tab.id ? "active" : ""}`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
                     tab.label

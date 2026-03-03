@@ -72,7 +72,8 @@ export const W1Tab = () => {
                 button(
                     {
                         class: () =>
-                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${!tab.component ? "world-sub-tab-btn--stub" : ""
+                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${
+                                !tab.component ? "world-sub-tab-btn--stub" : ""
                             }`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
@@ -86,8 +87,7 @@ export const W1Tab = () => {
             { class: "world-sub-content" },
             ...W1_SUBTABS.map((tab) => {
                 const pane = div({
-                    class: () =>
-                        `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
+                    class: () => `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
                     "data-subtab": tab.id,
                 });
 

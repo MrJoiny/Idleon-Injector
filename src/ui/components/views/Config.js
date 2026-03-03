@@ -184,12 +184,10 @@ export const Config = () => {
                 {
                     class: () => `config-drawer-header ${store.app.configDrawerOpen ? "" : "hidden"}`,
                 },
-                span(
-                    { class: "config-drawer-title" },
-                    () =>
-                        store.app.configForcedPath?.length
-                            ? `EDITING: ${store.app.configForcedPath.join(" ").toUpperCase()}`
-                            : "CONFIG DRAWER"
+                span({ class: "config-drawer-title" }, () =>
+                    store.app.configForcedPath?.length
+                        ? `EDITING: ${store.app.configForcedPath.join(" ").toUpperCase()}`
+                        : "CONFIG DRAWER"
                 ),
                 button(
                     {

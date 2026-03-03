@@ -25,10 +25,10 @@ const PAGES = [
 
 const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) => {
     const inputVal = van.state(String(initialLevel ?? 0));
-    const status   = van.state(null);
+    const status = van.state(null);
 
     // Local display states — updated on SET without touching parent gameData.
-    const levelDisplay    = van.state(initialLevel    ?? 0);
+    const levelDisplay = van.state(initialLevel ?? 0);
     const maxLevelDisplay = van.state(initialMaxLevel ?? 0);
 
     const doSet = async (targetLevel) => {
@@ -40,8 +40,8 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
         try {
             await writeGga(`StampLevel[${page}][${order}]`, lvl);
             await writeGga(`StampLevelMAX[${page}][${order}]`, maxLvl);
-            inputVal.val      = String(lvl);
-            levelDisplay.val  = lvl;
+            inputVal.val = String(lvl);
+            levelDisplay.val = lvl;
             maxLevelDisplay.val = maxLvl;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
@@ -65,10 +65,7 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
             span({ class: "feature-row__name" }, name)
         ),
 
-        span(
-            { class: "feature-row__badge" },
-            () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`
-        ),
+        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`),
 
         div(
             { class: "feature-row__controls" },
@@ -112,9 +109,9 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
 
 export const StampsTab = () => {
     const activePage = van.state(0);
-    const gameData   = van.state(null);
-    const loading    = van.state(false);
-    const error      = van.state(null);
+    const gameData = van.state(null);
+    const loading = van.state(false);
+    const error = van.state(null);
 
     const load = async () => {
         loading.val = true;
@@ -229,10 +226,10 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name:             names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
-                        step:             steps[order] ?? 0,
-                        initialLevel:     data.levels?.[page]?.[order]    ?? 0,
-                        initialMaxLevel:  data.maxLevels?.[page]?.[order] ?? 0,
+                        name: names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
+                        step: steps[order] ?? 0,
+                        initialLevel: data.levels?.[page]?.[order] ?? 0,
+                        initialMaxLevel: data.maxLevels?.[page]?.[order] ?? 0,
                     })
                 )
             );

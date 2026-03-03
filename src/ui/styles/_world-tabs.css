@@ -33,7 +33,9 @@
     font-family: var(--font-display);
     letter-spacing: 0.04em;
     cursor: pointer;
-    transition: color 0.15s, background 0.15s;
+    transition:
+        color 0.15s,
+        background 0.15s;
     position: relative;
     bottom: -1px;
     display: flex;
@@ -43,7 +45,10 @@
     min-width: 60px;
 }
 
-.account-sub-tab-button:hover     { color: var(--c-text-main); background: var(--c-white-03); }
+.account-sub-tab-button:hover {
+    color: var(--c-text-main);
+    background: var(--c-white-03);
+}
 
 .account-sub-tab-button.active {
     color: var(--c-text-main);
@@ -55,13 +60,21 @@
 .account-sub-tab-button.active::after {
     content: "";
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 2px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
     background: var(--world-color, var(--c-accent));
     box-shadow: 0 0 6px var(--c-accent-glow);
 }
 
-.account-options-btn { min-width: 130px; font-size: 0.75rem; }
-.world-tab-btn       { min-width: 64px; }
+.account-options-btn {
+    min-width: 130px;
+    font-size: 0.75rem;
+}
+.world-tab-btn {
+    min-width: 64px;
+}
 
 .world-tab-btn-num {
     font-size: 0.9rem;
@@ -78,16 +91,29 @@
     max-width: 72px;
 }
 
-.account-sub-tab-button.active .world-tab-btn-label { color: var(--c-text-dim); }
+.account-sub-tab-button.active .world-tab-btn-label {
+    color: var(--c-text-dim);
+}
 
 /* ── Top account panes ───────────────────────────────────────────────────── */
 
 /* display owned by .tab-pane/.tab-pane.active in _layout.css */
-.account-tab-layout { overflow: hidden; }
+.account-tab-layout {
+    overflow: hidden;
+}
 
-.account-sub-tab-content { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.account-sub-tab-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+}
 
-.account-sub-tab-pane { display: none; height: 100%; overflow: hidden; }
+.account-sub-tab-pane {
+    display: none;
+    height: 100%;
+    overflow: hidden;
+}
 
 .account-sub-tab-pane.active {
     display: flex;
@@ -106,13 +132,27 @@
 /* ── Per-world colour tokens ─────────────────────────────────────────────── */
 /* One rule per world. Everything inside uses var(--world-color). */
 
-.w1-world-tab { --world-color: #e8854a; }
-.w2-world-tab { --world-color: #d4a83a; }
-.w3-world-tab { --world-color: #6ec5e0; }
-.w4-world-tab { --world-color: #a06ee0; }
-.w5-world-tab { --world-color: #e05050; }
-.w6-world-tab { --world-color: #59c46a; }
-.w7-world-tab { --world-color: #c580e0; }
+.w1-world-tab {
+    --world-color: #e8854a;
+}
+.w2-world-tab {
+    --world-color: #d4a83a;
+}
+.w3-world-tab {
+    --world-color: #6ec5e0;
+}
+.w4-world-tab {
+    --world-color: #a06ee0;
+}
+.w5-world-tab {
+    --world-color: #e05050;
+}
+.w6-world-tab {
+    --world-color: #59c46a;
+}
+.w7-world-tab {
+    --world-color: #c580e0;
+}
 
 /* ── World tab shell ─────────────────────────────────────────────────────── */
 
@@ -146,7 +186,11 @@
     flex-shrink: 0;
 }
 
-.world-tab-title-group { display: flex; flex-direction: column; gap: 3px; }
+.world-tab-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
 
 .world-tab-title {
     font-size: 1rem;
@@ -190,7 +234,10 @@
     bottom: -1px;
 }
 
-.world-sub-tab-btn:hover { color: var(--c-text-main); background: var(--c-white-03); }
+.world-sub-tab-btn:hover {
+    color: var(--c-text-main);
+    background: var(--c-white-03);
+}
 
 .world-sub-tab-btn.active {
     color: var(--c-text-main);
@@ -202,20 +249,41 @@
 .world-sub-tab-btn.active::after {
     content: "";
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 2px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
     background: var(--world-color, var(--c-accent));
 }
 
-.world-sub-tab-btn--stub { opacity: 0.4; }
-.world-sub-tab-btn--stub:hover { opacity: 0.6; }
+.world-sub-tab-btn--stub {
+    opacity: 0.4;
+}
+.world-sub-tab-btn--stub:hover {
+    opacity: 0.6;
+}
 
 /* ── World inner panes ───────────────────────────────────────────────────── */
 
-.world-sub-content { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.world-sub-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+}
 
-.world-sub-pane { display: none; height: 100%; overflow: hidden; flex-direction: column; min-height: 0; }
+.world-sub-pane {
+    display: none;
+    height: 100%;
+    overflow: hidden;
+    flex-direction: column;
+    min-height: 0;
+}
 
-.world-sub-pane.active { display: flex; animation: slideIn 0.18s ease; }
+.world-sub-pane.active {
+    display: flex;
+    animation: slideIn 0.18s ease;
+}
 
 /* Empty pane (unimplemented tabs) */
 .world-sub-pane--empty {
@@ -227,9 +295,24 @@
     padding: 40px;
 }
 
-.world-empty-icon  { font-size: 2.5rem; opacity: 0.4; line-height: 1; }
-.world-empty-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; margin: 0; }
-.world-empty-desc  { font-size: 0.75rem; margin: 0; text-align: center; max-width: 340px; opacity: 0.6; }
+.world-empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+    line-height: 1;
+}
+.world-empty-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin: 0;
+}
+.world-empty-desc {
+    font-size: 0.75rem;
+    margin: 0;
+    text-align: center;
+    max-width: 340px;
+    opacity: 0.6;
+}
 
 /* Inline stub inside W1 for unimplemented sub-tabs */
 .world-sub-placeholder {
@@ -242,5 +325,13 @@
     color: var(--c-text-muted);
 }
 
-.world-sub-placeholder__icon  { font-size: 2rem; opacity: 0.35; }
-.world-sub-placeholder__label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; margin: 0; }
+.world-sub-placeholder__icon {
+    font-size: 2rem;
+    opacity: 0.35;
+}
+.world-sub-placeholder__label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin: 0;
+}

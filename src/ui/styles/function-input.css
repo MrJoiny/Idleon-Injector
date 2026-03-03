@@ -71,7 +71,9 @@
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 0 6px var(--c-accent-glow);
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
 }
 
 .function-slider::-webkit-slider-thumb:hover {

@@ -71,10 +71,7 @@ export const AccountOptionsTab = () => {
                     p("Modifying these indices directly bypasses game logic safety checks"),
                     p("Proceed with caution")
                 ),
-                div(
-                    { class: "modal-footer" },
-                    button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS")
-                )
+                div({ class: "modal-footer" }, button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS"))
             );
         }
 
@@ -111,31 +108,24 @@ export const AccountOptionsTab = () => {
                 )
             ),
 
-            div(
-                { id: "options-account-content", class: "options-account-content" },
-                () => {
-                    if (store.app.isLoading) {
-                        return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }));
-                    }
-
-                    if (ui.displayList.length === 0) {
-                        return EmptyState({
-                            icon: Icons.SearchX(),
-                            title: "NO OPTIONS MATCH",
-                            subtitle: "Adjust your filter or search term",
-                        });
-                    }
-
-                    return vanX.list(
-                        div({ class: "options-account-list" }),
-                        ui.displayList,
-                        (itemState) => {
-                            const { index, val, schema } = itemState.val;
-                            return OptionItem(index, val, schema);
-                        }
-                    );
+            div({ id: "options-account-content", class: "options-account-content" }, () => {
+                if (store.app.isLoading) {
+                    return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }));
                 }
-            )
+
+                if (ui.displayList.length === 0) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO OPTIONS MATCH",
+                        subtitle: "Adjust your filter or search term",
+                    });
+                }
+
+                return vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
+                    const { index, val, schema } = itemState.val;
+                    return OptionItem(index, val, schema);
+                });
+            })
         );
     });
 };
@@ -171,17 +161,14 @@ const OptionItem = (index, rawVal, schema) => {
     return div(
         {
             class: () =>
-                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${status.val === "success" ? "save-success" : ""
+                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
+                    status.val === "success" ? "save-success" : ""
                 } ${status.val === "error" ? "save-error" : ""}`,
             "data-index": index,
         },
         div(
             { class: "option-header" },
-            div(
-                { class: "option-label" },
-                isAI ? span({ class: "option-ai-label" }, "AI_GEN // ") : null,
-                name
-            ),
+            div({ class: "option-label" }, isAI ? span({ class: "option-ai-label" }, "AI_GEN // ") : null, name),
             div({ class: "option-index" }, `IDX::${index}`)
         ),
         warning ? div({ class: "option-warning" }, Icons.Warning(), ` ${warning}`) : null,
@@ -190,29 +177,26 @@ const OptionItem = (index, rawVal, schema) => {
             { class: "option-input-wrapper" },
             type === "boolean"
                 ? input({
-                    type: "checkbox",
-                    class: "option-input",
-                    checked: currentVal,
-                    onchange: (e) => (currentVal.val = e.target.checked),
-                })
+                      type: "checkbox",
+                      class: "option-input",
+                      checked: currentVal,
+                      onchange: (e) => (currentVal.val = e.target.checked),
+                  })
                 : type === "number"
-                    ? NumberInput({
+                  ? NumberInput({
                         class: "option-input",
                         value: currentVal,
                         oninput: (e) => (currentVal.val = e.target.value),
                         onDecrement: () => (currentVal.val = Number(currentVal.val) - 1),
                         onIncrement: () => (currentVal.val = Number(currentVal.val) + 1),
                     })
-                    : input({
+                  : input({
                         type: "text",
                         class: "option-input",
                         value: currentVal,
                         oninput: (e) => (currentVal.val = e.target.value),
                     }),
-            withTooltip(
-                button({ class: "option-apply-button", onclick: handleApply }, "SET"),
-                "Write to game memory"
-            )
+            withTooltip(button({ class: "option-apply-button", onclick: handleApply }, "SET"), "Write to game memory")
         )
     );
 };
