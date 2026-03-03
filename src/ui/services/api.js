@@ -145,3 +145,30 @@ export async function readGameExpr(expression) {
         body: JSON.stringify({ expression }),
     });
 }
+
+/**
+ * Read a game value by dot/bracket path.
+ * @param {string} path - e.g. "gga.StampLevel" or "gga.StampLevel[0][3]"
+ * @returns {Promise<{ value: any }>}
+ */
+export async function readGga(path) {
+    return _request("/game/gga/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+    });
+}
+
+/**
+ * Write a primitive value to a game path.
+ * @param {string} path - e.g. "gga.StampLevel[0][3]"
+ * @param {number|string|boolean|null} value
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function writeGga(path, value) {
+    return _request("/game/gga/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, value }),
+    });
+}

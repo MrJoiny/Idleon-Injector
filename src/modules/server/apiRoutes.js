@@ -487,8 +487,6 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
-
-
     // ── STRUCTURED GAME ATTRIBUTE ACCESS ────────────────────────────────────────
     // Structured endpoints for reading/writing individual game attributes.
     // Accepts { key, path, value } — key is validated as a safe identifier,
@@ -503,8 +501,7 @@ exports.injectorConfig = ${new_injectorConfig};
     function validateAttrParams(key, path) {
         if (!key || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key))
             return "Invalid key: must be a valid JS identifier (letters, digits, underscore)";
-        if (!Array.isArray(path))
-            return "path must be an array";
+        if (!Array.isArray(path)) return "path must be an array";
         for (const seg of path) {
             if (!Number.isInteger(seg) || seg < 0)
                 return `Invalid path segment ${JSON.stringify(seg)}: must be a non-negative integer`;
@@ -530,8 +527,11 @@ exports.injectorConfig = ${new_injectorConfig};
                 return res.status(500).json({ error: "Read failed", details: result.exceptionDetails.text });
 
             let value;
-            try { value = JSON.parse(result.result.value); }
-            catch { return res.status(500).json({ error: "Result not serialisable" }); }
+            try {
+                value = JSON.parse(result.result.value);
+            } catch {
+                return res.status(500).json({ error: "Result not serialisable" });
+            }
 
             if (value && typeof value === "object" && value.__error)
                 return res.status(500).json({ error: value.__error });
@@ -549,10 +549,8 @@ exports.injectorConfig = ${new_injectorConfig};
         const err = validateAttrParams(key, path ?? []);
         if (err) return res.status(400).json({ error: err });
 
-        if (value === undefined)
-            return res.status(400).json({ error: "Missing value" });
-        if (typeof value !== "number" && typeof value !== "string" &&
-            typeof value !== "boolean" && value !== null)
+        if (value === undefined) return res.status(400).json({ error: "Missing value" });
+        if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null)
             return res.status(400).json({ error: "value must be a primitive (number, string, boolean, or null)" });
 
         // path must have at least one element for a write — gga["key"] = v would
@@ -561,7 +559,7 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "path must have at least one index for a write" });
 
         // Build safe accessor and serialize value — JSON.stringify prevents injection.
-        const accessor   = `gga["${key}"]` + path.map((i) => `[${i}]`).join("");
+        const accessor = `gga["${key}"]` + path.map((i) => `[${i}]`).join("");
         const serialized = JSON.stringify(value);
 
         try {
@@ -582,6 +580,72 @@ exports.injectorConfig = ${new_injectorConfig};
             res.json({ ok: true });
         } catch (err) {
             log.error("Error in /api/game/attr/write:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/read", async (req, res) => {
+        const { path } = await req.json();
+        if (!path || typeof path !== "string") {
+            return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
+        }
+
+        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readGamePath("${escaped}")`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Read failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read path: ${path}`);
+            res.json({ value: data.value });
+        } catch (err) {
+            log.error("Error in /api/game/gga/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/write", async (req, res) => {
+        const { path, value } = await req.json();
+        if (!path || typeof path !== "string") {
+            return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
+        }
+        if (value === undefined) {
+            return res.status(400).json({ error: "Missing value" });
+        }
+        if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null) {
+            return res.status(400).json({ error: "value must be a primitive (number, string, boolean, or null)" });
+        }
+
+        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const serialized = JSON.stringify(value);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `writeGamePath("${escaped}", ${serialized})`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Write failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Write path: ${path} = ${serialized}`);
+            res.json({ ok: true });
+        } catch (err) {
+            log.error("Error in /api/game/gga/write:", err);
             res.status(500).json({ error: err.message });
         }
     });
