@@ -26,6 +26,7 @@ registerCheats({
         { name: "wisdom", message: "wisdom monument minigame cheat" },
         { name: "scratch", message: "event scratch minigame cheat" },
         { name: "minehead", message: "minehead minigame visual reveal" },
+        { name: "log", message: "gaming log minigame card reveal" },
         { name: "valentine", message: "valentine chocolate minigame cheat" },
     ],
 });
