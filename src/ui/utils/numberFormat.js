@@ -10,24 +10,25 @@
  *   < 1e18           → Q   (quadrillion)
  *   < 1e21           → QQ  (quintillion)
  *   < 1e24           → QQQ (sextillion)
- *   ≥ 1e24           → Exx (e.g. E27)
+ *   ≥ 1e24           → Exx (e.g. 1.31E27)
  */
 export function formatNumber(value) {
     const n = Number(value);
     if (!isFinite(n)) return String(value);
     if (n < 0) return "-" + formatNumber(-n);
 
-    if (n < 1_000)     return n % 1 === 0 ? String(n) : n.toFixed(2);
-    if (n < 1e6)       return (n / 1e3).toPrecision(4).replace(/\.?0+$/, "")  + "K";
-    if (n < 1e9)       return (n / 1e6).toPrecision(4).replace(/\.?0+$/, "")  + "M";
-    if (n < 1e12)      return (n / 1e9).toPrecision(4).replace(/\.?0+$/, "")  + "B";
-    if (n < 1e15)      return (n / 1e12).toPrecision(4).replace(/\.?0+$/, "") + "T";
-    if (n < 1e18)      return (n / 1e15).toPrecision(4).replace(/\.?0+$/, "") + "Q";
-    if (n < 1e21)      return (n / 1e18).toPrecision(4).replace(/\.?0+$/, "") + "QQ";
-    if (n < 1e24)      return (n / 1e21).toPrecision(4).replace(/\.?0+$/, "") + "QQQ";
+    if (n < 1_000) return n % 1 === 0 ? String(n) : n.toFixed(2);
+    if (n < 1e6) return (n / 1e3).toPrecision(4).replace(/\.?0+$/, "") + "K";
+    if (n < 1e9) return (n / 1e6).toPrecision(4).replace(/\.?0+$/, "") + "M";
+    if (n < 1e12) return (n / 1e9).toPrecision(4).replace(/\.?0+$/, "") + "B";
+    if (n < 1e15) return (n / 1e12).toPrecision(4).replace(/\.?0+$/, "") + "T";
+    if (n < 1e18) return (n / 1e15).toPrecision(4).replace(/\.?0+$/, "") + "Q";
+    if (n < 1e21) return (n / 1e18).toPrecision(4).replace(/\.?0+$/, "") + "QQ";
+    if (n < 1e24) return (n / 1e21).toPrecision(4).replace(/\.?0+$/, "") + "QQQ";
 
-    const exp = Math.floor(Math.log10(n));
-    return `E${exp}`;
+    // 1.31E27 style
+    const expStr = n.toExponential(2).toUpperCase().replace("E+", "E");
+    return expStr;
 }
 
 /**
@@ -47,19 +48,24 @@ export function parseNumber(str) {
     const plain = Number(s);
     if (!isNaN(plain)) return plain;
 
-    // Scientific Exx shorthand (E27 etc — no coefficient, assume 10^N)
-    const eMatch = s.match(/^[eE](\d+)$/);
-    if (eMatch) return Math.pow(10, Number(eMatch[1]));
+    // Scientific Exx notation (e.g. 1.3E27, 1.3e27, E27)
+    // Supports an optional coefficient, e.g. "1.31E27" or just "E27" (which implies 1E27)
+    const eMatch = s.match(/^(\d+(?:\.\d+)?)?[eE](\+?-?\d+)$/);
+    if (eMatch) {
+        const coeff = eMatch[1] ? Number(eMatch[1]) : 1;
+        const exp = Number(eMatch[2]);
+        return coeff * Math.pow(10, exp);
+    }
 
     // Order matters — longer suffixes must be checked first
     const suffixes = [
         ["QQQ", 1e21],
-        ["QQ",  1e18],
-        ["Q",   1e15],
-        ["T",   1e12],
-        ["B",   1e9],
-        ["M",   1e6],
-        ["K",   1e3],
+        ["QQ", 1e18],
+        ["Q", 1e15],
+        ["T", 1e12],
+        ["B", 1e9],
+        ["M", 1e6],
+        ["K", 1e3],
     ];
 
     for (const [suffix, mult] of suffixes) {

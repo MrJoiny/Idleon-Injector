@@ -3,75 +3,179 @@ import van from "../vendor/van-1.6.0.js";
 const { div, input, button } = van.tags;
 
 /**
- * Reusable NumberInput component with side controls.
- * Only allows numeric input (digits and an optional leading minus sign).
+ * Parse user input to a plain JS number. Handles:
+ *   - Shorthand suffixes (case-insensitive): 2b, 1.5k, 10m, 5t
+ *   - Caller-supplied parser (K/M/B/T/Q/QQ/QQQ, scientific E-notation, …)
+ *   - Plain numbers
  *
- * @param {Object}   props
- * @param {State}    props.value       - VanJS State: the raw numeric string
- * @param {Function} [props.onDecrement]
- * @param {Function} [props.onIncrement]
- * @param {Function} [props.formatter] - Optional: format value for display (raw → display string)
- * @param {Function} [props.parser]    - Optional: parse display string back to raw number string
- *                                       Required when formatter is provided.
+ * Returns null if unparseable.
+ *
+ * @param {string}        raw
+ * @param {Function|null} callerParser  - (string) => string|null
+ * @returns {number|null}
  */
-export const NumberInput = ({ value, onDecrement, onIncrement, formatter, parser, ...inputProps }) => {
-    const { oninput: userOninput, onfocus: userOnfocus, onblur: userOnblur, ...restInputProps } = inputProps;
+function parseInput(raw, callerParser = null) {
+    if (!raw || raw.trim() === "") return null;
+    const s = raw.trim();
 
+    // 1. Shorthand suffixes — lowercase only so callerParser gets uppercase ones
+    const suffixMap = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 };
+    const suffixMatch = s.match(/^(-?[\d.]+)([kmbt])$/i);
+    if (suffixMatch) {
+        const n = parseFloat(suffixMatch[1]);
+        const mult = suffixMap[suffixMatch[2].toLowerCase()];
+        if (!isNaN(n) && mult) return n * mult;
+    }
+
+    // 2. Caller-supplied parser (handles K/M/B/T/Q/QQ/QQQ, 1e27, 1.31E27, …)
+    if (callerParser) {
+        const p = callerParser(s);
+        if (p !== null && p !== undefined) {
+            const n = Number(p);
+            if (!isNaN(n)) return n;
+        }
+    }
+
+    // 3. Plain number
+    const n = Number(s);
+    return isNaN(n) ? null : n;
+}
+
+/**
+ * Reusable NumberInput component with optional +/- side controls.
+ *
+ * Props:
+ *   value       {State}     VanJS state holding the current numeric value as a string.
+ *   mode        {string}    "int" (default) | "float" — whether decimals are allowed.
+ *   formatter   {Function}  (rawString) → displayString. Enables formatted mode.
+ *   parser      {Function}  (displayString) → rawString | null. Required with formatter.
+ *   onDecrement {Function}  Called when the − button is clicked.
+ *   onIncrement {Function}  Called when the + button is clicked.
+ *
+ * Formatted mode behaviour:
+ *   • The input always shows formatter(value.val) when not focused.
+ *   • While the user is typing the browser owns the field entirely —
+ *     no state is mutated, no reactive updates fire, cursor is never disrupted.
+ *   • On blur the typed text is parsed; on success value.val is committed and
+ *     the formatted display is restored; on failure the field reverts.
+ *   • External value.val changes (e.g. +/− buttons) update the DOM directly
+ *     only when the field is not focused.
+ *
+ * Standard mode behaviour:
+ *   • type="text" with character filtering (digits, optional leading minus,
+ *     optional decimal point in float mode).
+ *   • Suffix notation (2b, 1.5k) is expanded immediately on each keystroke.
+ *   • value.val is kept in sync on every input event.
+ */
+export const NumberInput = ({
+    value,
+    mode = "int",
+    onDecrement,
+    onIncrement,
+    formatter,
+    parser,
+    ...inputProps
+}) => {
+    const {
+        oninput: userOninput,
+        onfocus: userOnfocus,
+        onblur:  userOnblur,
+        ...restInputProps
+    } = inputProps;
+
+    const allowDecimal = mode === "float";
+
+    const commit = (n) =>
+        String(allowDecimal ? n : Math.round(n));
+
+    // ── Formatted mode ────────────────────────────────────────────────────────
     if (formatter) {
-        // ── Formatted mode ─────────────────────────────────────────────────
-        // The parent is responsible for only updating `value` when the input
-        // is not focused (to avoid clobbering in-progress typing).
-        // We expose onfocus/onblur so the parent can track focus state.
+        let isFocused = false;
 
-        // To do add support for typing numbers with suffixes (e.g. "1.5k"), the parser should be able to handle that and convert it back to a raw number string ("1500"). The formatter would do the opposite: take a raw number string and convert it to a display string with suffixes as needed.
-
-        const handleInput = (e) => {
-            // Don't reformat while typing — just propagate the raw text upward
-            // so the parent value state stays in sync for +/- buttons.
-            const raw = e.target.value;
-            const parsed = parser ? parser(raw) : null;
-            if (parsed !== null && !isNaN(Number(parsed))) {
-                value.val = String(parsed);
-            }
-            if (userOninput) userOninput(e);
+        const tryParse = (raw) => {
+            const n = parseInput(raw, parser);
+            return n !== null ? commit(n) : null;
         };
+
+        // Hold a direct DOM reference so we can write inputEl.value ourselves.
+        // If we used a reactive `value:` VanJS prop, any state change would let
+        // VanJS overwrite input.value mid-keystroke, resetting the cursor.
+        const inputEl = input({
+            type: "text",
+            ...restInputProps,
+
+            onfocus(e) {
+                isFocused = true;
+                inputEl.value = formatter(value.val);
+                if (userOnfocus) userOnfocus(e);
+            },
+
+            oninput(e) {
+                // Do NOT mutate any VanJS state here. A synchronous state mutation
+                // triggers all subscribers immediately, which can cause ancestor
+                // reactive closures to rebuild their DOM subtrees — destroying this
+                // input element, losing focus, and resetting scroll position.
+                if (userOninput) userOninput(e);
+            },
+
+            onblur(e) {
+                isFocused = false;
+                const parsed = tryParse(e.target.value);
+                if (parsed !== null) {
+                    value.val     = parsed;
+                    inputEl.value = formatter(parsed);
+                } else {
+                    inputEl.value = formatter(value.val);
+                }
+                if (userOnblur) userOnblur(e);
+            },
+        });
+
+        inputEl.value = formatter(value.val);
+
+        // React to external value.val changes (e.g. +/− buttons) only when
+        // the field is not focused so in-progress typing is never clobbered.
+        van.derive(() => {
+            const v = value.val;
+            if (!isFocused) inputEl.value = formatter(v);
+        });
 
         return div(
             { class: "number-input-wrapper" },
-            input({
-                type:    "text",
-                // Display: use formatter only when value looks like a plain number,
-                // otherwise show as-is so in-progress typed text isn't replaced.
-                value:   () => formatter(value.val),
-                oninput: handleInput,
-                onfocus: userOnfocus,
-                onblur:  userOnblur,
-                ...restInputProps,
-            }),
-            button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "-"),
+            inputEl,
+            button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
             button({ class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
         );
     }
 
-    // ── Standard mode (unchanged) ─────────────────────────────────────────
+    // ── Standard mode ─────────────────────────────────────────────────────────
     const handleInput = (e) => {
-        // Allow digits and a single leading minus sign; strip everything else
         const raw = e.target.value;
-        const cleaned = raw
-            .replace(/[^0-9-]/g, "")      // remove non-digit, non-minus chars
-            .replace(/(?!^)-/g, "");       // remove any minus that isn't at position 0
 
-        if (e.target.value !== cleaned) {
-            e.target.value = cleaned;
+        // Expand suffix notation as soon as the suffix letter is typed.
+        const n = parseInput(raw);
+        if (n !== null && raw.match(/[kmbt]$/i)) {
+            const committed   = commit(n);
+            e.target.value    = committed;
+            value.val         = committed;
+            if (userOninput) userOninput(e);
+            return;
         }
 
+        // Strip characters that aren't valid for this mode.
+        let cleaned = allowDecimal
+            ? raw.replace(/[^0-9.\-]/g, "").replace(/(?!^)-/g, "").replace(/(\..*)\./g, "$1")
+            : raw.replace(/[^0-9\-]/g, "").replace(/(?!^)-/g, "");
+
+        if (e.target.value !== cleaned) e.target.value = cleaned;
+        value.val = e.target.value;
         if (userOninput) userOninput(e);
     };
 
     return div(
         { class: "number-input-wrapper" },
-        input({ type: "number", value: value, oninput: handleInput, ...restInputProps }),
-        button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "-"),
+        input({ type: "text", value, oninput: handleInput, ...restInputProps }),
+        button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
         button({ class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
     );
 };
