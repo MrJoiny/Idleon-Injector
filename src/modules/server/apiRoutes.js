@@ -265,98 +265,6 @@ function setupApiRoutes(app, context, client, config) {
         }
     });
 
-    app.get("/api/options-account", async (req, res) => {
-        try {
-            const optionsResult = await Runtime.evaluate({
-                expression: `getOptionsListAccount()`,
-                awaitPromise: true,
-                returnByValue: true,
-            });
-
-            if (optionsResult.exceptionDetails) {
-                log.error("Error getting OptionsListAccount:", optionsResult.exceptionDetails.text);
-                res.status(500).json({
-                    error: "Failed to get OptionsListAccount from game",
-                    details: optionsResult.exceptionDetails.text,
-                });
-            } else {
-                let data = optionsResult.result.value;
-
-                // FIX: Normalize object/map response to array
-                if (data && typeof data === "object" && !Array.isArray(data)) {
-                    data = Object.assign([], data);
-                }
-
-                if (data === null) {
-                    res.status(500).json({ error: "OptionsListAccount not found in game context" });
-                } else {
-                    res.json({ data: data });
-                }
-            }
-        } catch (apiError) {
-            log.error("Error in /api/options-account:", apiError);
-            res.status(500).json({
-                error: "Internal server error while fetching OptionsListAccount",
-                details: apiError.message,
-            });
-        }
-    });
-
-    app.post("/api/options-account/index", async (req, res) => {
-        const { index, value } = await req.json();
-
-        if (index === undefined || value === undefined) {
-            return res.status(400).json({
-                error: "Missing required parameters: index and value",
-            });
-        }
-
-        if (typeof index !== "number" || index < 0) {
-            return res.status(400).json({
-                error: "Invalid index. Must be a non-negative number",
-            });
-        }
-
-        try {
-            let serializedValue;
-            if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                serializedValue = objToString(value);
-            } else {
-                serializedValue = JSON.stringify(value);
-            }
-
-            const updateExpression = `setOptionsListAccountIndex(${index}, ${serializedValue})`;
-
-            const updateResult = await Runtime.evaluate({
-                expression: updateExpression,
-                awaitPromise: true,
-                allowUnsafeEvalBlockedByCSP: true,
-            });
-
-            if (updateResult.exceptionDetails) {
-                log.error(`Error updating OptionsListAccount[${index}]:`, updateResult.exceptionDetails.text);
-                res.status(500).json({
-                    error: `Failed to update OptionsListAccount[${index}] in game`,
-                    details: updateResult.exceptionDetails.text,
-                });
-            } else {
-                const result = updateResult.result.value;
-                if (result !== undefined) {
-                    log.debug(`OptionsListAccount[${index}] updated to:`, value);
-                    res.json({ message: `Index ${index} updated successfully`, value: value });
-                } else {
-                    res.status(500).json({ error: `Failed to update OptionsListAccount[${index}] in game context` });
-                }
-            }
-        } catch (apiError) {
-            log.error("Error in /api/options-account/index POST:", apiError);
-            res.status(500).json({
-                error: "Internal server error while updating OptionsListAccount index",
-                details: apiError.message,
-            });
-        }
-    });
-
     app.post("/api/config/save", async (req, res) => {
         const receivedFullConfig = await req.json();
 
@@ -487,102 +395,10 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
-    // ── STRUCTURED GAME ATTRIBUTE ACCESS ────────────────────────────────────────
-    // Structured endpoints for reading/writing individual game attributes.
-    // Accepts { key, path, value } — key is validated as a safe identifier,
-    // path must be an array of non-negative integers, value must be a primitive.
-    // This prevents arbitrary JS injection from the UI.
-
-    /**
-     * Validate a game attribute key and path segment.
-     * key  → must match /^[A-Za-z_][A-Za-z0-9_]*$/ (no injection)
-     * path → array of non-negative integers
-     */
-    function validateAttrParams(key, path) {
-        if (!key || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key))
-            return "Invalid key: must be a valid JS identifier (letters, digits, underscore)";
-        if (!Array.isArray(path)) return "path must be an array";
-        for (const seg of path) {
-            if (!Number.isInteger(seg) || seg < 0)
-                return `Invalid path segment ${JSON.stringify(seg)}: must be a non-negative integer`;
-        }
-        return null; // valid
-    }
-
-    app.post("/api/game/attr/read", async (req, res) => {
-        const { key, path = [] } = await req.json();
-        const err = validateAttrParams(key, path);
-        if (err) return res.status(400).json({ error: err });
-
-        // Build safe accessor: gga["StampLevel"][0][3]
-        const accessor = `gga["${key}"]` + path.map((i) => `[${i}]`).join("");
-
-        try {
-            const result = await Runtime.evaluate({
-                expression: `JSON.stringify((function(){ try{ return (${accessor}); }catch(e){ return {__error: e.message}; } })())`,
-                returnByValue: true,
-            });
-
-            if (result.exceptionDetails)
-                return res.status(500).json({ error: "Read failed", details: result.exceptionDetails.text });
-
-            let value;
-            try {
-                value = JSON.parse(result.result.value);
-            } catch {
-                return res.status(500).json({ error: "Result not serialisable" });
-            }
-
-            if (value && typeof value === "object" && value.__error)
-                return res.status(500).json({ error: value.__error });
-
-            log.debug(`Read ${accessor}`);
-            res.json({ value });
-        } catch (err) {
-            log.error("Error in /api/game/attr/read:", err);
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    app.post("/api/game/attr/write", async (req, res) => {
-        const { key, path, value } = await req.json();
-        const err = validateAttrParams(key, path ?? []);
-        if (err) return res.status(400).json({ error: err });
-
-        if (value === undefined) return res.status(400).json({ error: "Missing value" });
-        if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null)
-            return res.status(400).json({ error: "value must be a primitive (number, string, boolean, or null)" });
-
-        // path must have at least one element for a write — gga["key"] = v would
-        // replace the whole attribute which is never what we want.
-        if (!path || path.length === 0)
-            return res.status(400).json({ error: "path must have at least one index for a write" });
-
-        // Build safe accessor and serialize value — JSON.stringify prevents injection.
-        const accessor = `gga["${key}"]` + path.map((i) => `[${i}]`).join("");
-        const serialized = JSON.stringify(value);
-
-        try {
-            const result = await Runtime.evaluate({
-                expression: `(function(){ try{ ${accessor} = ${serialized}; return "ok"; }catch(e){ return "error:" + e.message; } })()`,
-                returnByValue: true,
-                allowUnsafeEvalBlockedByCSP: true,
-            });
-
-            if (result.exceptionDetails)
-                return res.status(500).json({ error: "Write failed", details: result.exceptionDetails.text });
-
-            const val = result.result.value;
-            if (typeof val === "string" && val.startsWith("error:"))
-                return res.status(500).json({ error: val.slice(6) });
-
-            log.debug(`Write ${accessor} = ${serialized}`);
-            res.json({ ok: true });
-        } catch (err) {
-            log.error("Error in /api/game/attr/write:", err);
-            res.status(500).json({ error: err.message });
-        }
-    });
+    // ── UNIFIED PATH-BASED GAME ACCESS ──────────────────────────────────────────
+    // Read/write endpoints that delegate to readGamePath / writeGamePath
+    // exposed in cheats/main.js. Path resolution (dot/bracket notation, .h
+    // unwrapping) happens cheat-side via the shared pathResolver utility.
 
     app.post("/api/game/gga/read", async (req, res) => {
         const { path } = await req.json();
@@ -646,42 +462,6 @@ exports.injectorConfig = ${new_injectorConfig};
             res.json({ ok: true });
         } catch (err) {
             log.error("Error in /api/game/gga/write:", err);
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // ── GENERIC GAME MEMORY ACCESS ─────────────────────────────────────────────
-    // Used by readExpr() in gameHelper.js for complex batch reads (cList lookups,
-    // method calls, etc.). Read-only in practice. Do not use for writes.
-
-    app.post("/api/game/read", async (req, res) => {
-        const { expression } = await req.json();
-        if (!expression) return res.status(400).json({ error: "Missing expression" });
-
-        try {
-            const result = await Runtime.evaluate({
-                expression: `JSON.stringify((function(){ try{ return (${expression}); }catch(e){ return {__error: e.message}; } })())`,
-                returnByValue: true,
-            });
-
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Evaluation failed", details: result.exceptionDetails.text });
-            }
-
-            let value;
-            try {
-                value = JSON.parse(result.result.value);
-            } catch {
-                return res.status(500).json({ error: "Result not serialisable" });
-            }
-
-            if (value && typeof value === "object" && value.__error) {
-                return res.status(500).json({ error: value.__error });
-            }
-
-            res.json({ value });
-        } catch (err) {
-            log.error("Error in /api/game/read:", err);
             res.status(500).json({ error: err.message });
         }
     });

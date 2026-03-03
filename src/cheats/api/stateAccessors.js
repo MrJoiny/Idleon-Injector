@@ -3,27 +3,11 @@
  *
  * Functions for accessing and modifying game state:
  * - Unified path-based read/write (readPath, writePath)
- * - OptionsListAccount access
  * - cheatState access
  */
 
-import { gga } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
 import { resolvePath } from "../utils/pathResolver.js";
-
-export function getOLA() {
-    return [...gga.OptionsListAccount];
-}
-
-export function setOLAIndex(index, value) {
-    const ola = gga.OptionsListAccount;
-    ola[index] = value;
-    return ola[index];
-}
-
-export function getOLAIndex(index) {
-    return getOLA()[index];
-}
 
 export function getcheatStateList() {
     return cheatState;

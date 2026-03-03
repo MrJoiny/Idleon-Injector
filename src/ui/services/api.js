@@ -81,18 +81,6 @@ export async function fetchDevToolsUrl() {
     throw new Error("No URL received from backend");
 }
 
-export async function fetchOptionsAccount() {
-    return _request("/options-account");
-}
-
-export async function updateOptionAccountIndex(index, value) {
-    return _request("/options-account/index", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index, value }),
-    });
-}
-
 export async function checkHeartbeat() {
     try {
         return await _request("/heartbeat");
@@ -119,30 +107,6 @@ export async function searchGga(query, keys) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, keys }),
-    });
-}
-
-export async function readGameAttr(key, path = []) {
-    return _request("/game/attr/read", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, path }),
-    });
-}
-
-export async function writeGameAttr(key, path, value) {
-    return _request("/game/attr/write", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, path, value }),
-    });
-}
-
-export async function readGameExpr(expression) {
-    return _request("/game/read", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expression }),
     });
 }
 
