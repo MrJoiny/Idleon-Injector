@@ -4,6 +4,9 @@ Node.js + CDP runtime injector for **Legends of Idleon**. It targets
 the Steam or web client and exposes a local [VanJS](https://vanjs.org/)
 dashboard plus CLI for debugging, modding, and account management.
 
+Need help or want to share feedback? Join the community on Discord:
+[https://discord.gg/ySH2Rfk7SN](https://discord.gg/ySH2Rfk7SN)
+
 ## Features
 
 - **Steam/Web Injection**: Injects JavaScript into the Steam client or web

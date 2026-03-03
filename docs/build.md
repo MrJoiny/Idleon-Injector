@@ -60,6 +60,8 @@ Note: `cheats.js` is gitignored and generated during builds.
 Run this before packaging or releasing.
 
 To lint only cheats: `npx eslint src/cheats/`.
+To check formatting with Prettier: `npm run format:check`.
+To auto-format all files: `npm run format`.
 
 ## Packaging binaries
 
@@ -83,10 +85,10 @@ New UI assets should go under `src/ui` or be added to `pkg.assets`.
 2. Rebuild cheats if not using the watcher.
 3. Build target binaries.
 4. Run `InjectCheatsUI` and verify:
-   - UI loads at `http://localhost:8080`.
-   - Cheats list and config load.
-   - A sample cheat executes.
-   - CLI autocomplete works.
+    - UI loads at `http://localhost:8080`.
+    - Cheats list and config load.
+    - A sample cheat executes.
+    - CLI autocomplete works.
 
 ## Troubleshooting
 
