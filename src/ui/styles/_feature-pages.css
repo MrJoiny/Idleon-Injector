@@ -73,7 +73,7 @@
     color: var(--c-text-muted);
     padding: 6px 20px;
     font-size: 0.8rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     letter-spacing: 0.05em;
     cursor: pointer;
     transition: color 0.15s;
@@ -205,12 +205,14 @@
     padding: 0 12px;
     height: 30px;
     font-size: 0.75rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     letter-spacing: 0.04em;
     border: none;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s, color 0.15s;
+    transition:
+        background 0.15s,
+        color 0.15s;
 }
 
 .feature-btn--apply {
@@ -261,48 +263,48 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     margin-left: 6px;
     text-transform: uppercase;
     border: 1px solid currentColor;
 }
 
 .tier--stone {
-    color: #8a9bb0;
+    color: var(--c-tier-stone);
 }
 
 .tier--gold {
-    color: #ffb700;
+    color: var(--c-tier-gold);
 }
 
 .tier--onyx {
-    color: #b06aff;
+    color: var(--c-tier-onyx);
 }
 
 .tier--zenith {
-    color: #00e5ff;
+    color: var(--c-tier-zenith);
 }
 
 .feature-row.tier--gold {
-    border-color: rgba(255, 183, 0, 0.35);
+    border-color: var(--c-tier-gold-35);
 }
 
 .feature-row.tier--onyx {
-    border-color: rgba(176, 106, 255, 0.35);
+    border-color: var(--c-tier-onyx-35);
 }
 
 .feature-row.tier--zenith {
-    border-color: rgba(0, 229, 255, 0.35);
+    border-color: var(--c-tier-zenith-35);
 }
 
 .statue-tier-select {
     background: var(--c-panel);
     color: var(--c-text);
     border: 1px solid var(--c-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 0 6px;
     height: 32px;
-    width: 110px;
+    width: 180px;
     font-size: 0.8rem;
     cursor: pointer;
 }
@@ -317,6 +319,10 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
+}
+
+.feature-row__controls--stack .number-input-wrapper {
+    width: 180px;
 }
 
 .statue-control-row {
@@ -388,19 +394,21 @@
 .starsign-card {
     background: var(--c-panel);
     border: 1px solid var(--c-border);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     padding: 10px 12px;
     cursor: pointer;
-    transition: border-color .15s, background .15s;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
 }
 
 .starsign-card:hover {
     border-color: var(--c-accent);
-    background: var(--c-hover);
+    background: var(--c-panel-hover);
 }
 
 .starsign-card--unlocked {
-    border-color: rgba(255, 183, 0, .4);
+    border-color: var(--c-accent-40);
 }
 
 .starsign-card-header {
@@ -411,16 +419,16 @@
 }
 
 .starsign-label-badge {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: .05em;
+    letter-spacing: 0.05em;
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     border: 1px solid currentColor;
 }
 
 .starsign-card-desc {
-    font-size: .75rem;
+    font-size: 0.75rem;
     color: var(--c-text-dim);
     margin: 0 0 8px;
     line-height: 1.4;
@@ -429,25 +437,25 @@
 .starsign-card-bar {
     height: 4px;
     background: var(--c-border);
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
 .starsign-card-fill {
     height: 100%;
     background: var(--c-accent);
-    border-radius: 2px;
-    transition: width .3s;
+    border-radius: var(--radius-sm);
+    transition: width 0.3s;
 }
 
 .starsign-status {
-    font-size: .7rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: .04em;
+    letter-spacing: 0.04em;
 }
 
 .starsign-status.unlocked {
-    color: #ffb700;
+    color: var(--c-accent);
 }
 
 .starsign-status.locked {
@@ -457,32 +465,32 @@
 /* Group colour tints */
 .sign-A .starsign-label-badge,
 .starsign-label-badge.sign-A {
-    color: #4fc3f7;
+    color: var(--c-sign-a);
 }
 
 .sign-B .starsign-label-badge,
 .starsign-label-badge.sign-B {
-    color: #a5d6a7;
+    color: var(--c-sign-b);
 }
 
 .sign-C .starsign-label-badge,
 .starsign-label-badge.sign-C {
-    color: #ffb74d;
+    color: var(--c-sign-c);
 }
 
 .sign-D .starsign-label-badge,
 .starsign-label-badge.sign-D {
-    color: #ce93d8;
+    color: var(--c-sign-d);
 }
 
 .sign-E .starsign-label-badge,
 .starsign-label-badge.sign-E {
-    color: #ef9a9a;
+    color: var(--c-sign-e);
 }
 
 .sign-F .starsign-label-badge,
 .starsign-label-badge.sign-F {
-    color: #80cbc4;
+    color: var(--c-sign-f);
 }
 
 /* Detail view */
@@ -493,11 +501,11 @@
 .starsign-back-btn {
     background: none;
     border: 1px solid var(--c-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 4px 12px;
     cursor: pointer;
     color: var(--c-text);
-    font-size: .8rem;
+    font-size: 0.8rem;
     margin-bottom: 0;
 }
 
@@ -520,26 +528,26 @@
 }
 
 .starsign-detail-desc {
-    font-size: .8rem;
+    font-size: 0.8rem;
     color: var(--c-text-dim);
     margin: 0;
 }
 
 .starsign-needed-badge {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 700;
     padding: 2px 8px;
     border: 1px solid var(--c-accent);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     color: var(--c-accent);
     white-space: nowrap;
 }
 
 .starsign-section-label {
-    font-size: .7rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: 0.06em;
     color: var(--c-text-dim);
     margin: 12px 0 6px;
 }
@@ -558,7 +566,7 @@
     gap: 8px;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     cursor: grab;
     user-select: none;
@@ -567,12 +575,12 @@
 .starsign-drag-row:active,
 .starsign-drag-row.dragging {
     cursor: grabbing;
-    opacity: .5;
+    opacity: 0.5;
 }
 
 .starsign-drag-row.drag-over {
     border-color: var(--c-accent);
-    background: var(--c-hover);
+    background: var(--c-panel-hover);
 }
 
 .starsign-drag-handle {
@@ -588,39 +596,39 @@
 }
 
 .starsign-player-num {
-    font-size: .85rem;
+    font-size: 0.85rem;
     font-weight: 600;
 }
 
 .starsign-player-letter {
-    font-size: .7rem;
+    font-size: 0.7rem;
     font-family: monospace;
     background: var(--c-border);
     padding: 1px 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
 }
 
 .starsign-remove-btn {
     margin-left: auto;
     background: none;
     border: none;
-    color: var(--c-error, #ef5350);
+    color: var(--c-danger);
     cursor: pointer;
-    font-size: .85rem;
+    font-size: 0.85rem;
     padding: 0 4px;
 }
 
 .starsign-remove-btn:hover {
-    color: #ff1744;
+    color: var(--c-danger);
 }
 
 /* Empty state */
 .starsign-empty-players {
-    font-size: .8rem;
+    font-size: 0.8rem;
     color: var(--c-text-dim);
     padding: 12px;
     border: 1px dashed var(--c-border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     text-align: center;
     margin-bottom: 12px;
 }
@@ -639,12 +647,12 @@
 }
 
 .starsign-progress-label {
-    font-size: .8rem;
+    font-size: 0.8rem;
     margin-bottom: 6px;
 }
 
 .starsign-unlocked-text {
-    color: #ffb700;
+    color: var(--c-accent);
     font-weight: 700;
 }
 
@@ -655,15 +663,15 @@
 .starsign-progress-bar {
     height: 6px;
     background: var(--c-border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
 .starsign-progress-fill {
     height: 100%;
     background: var(--c-accent);
-    border-radius: 3px;
-    transition: width .3s;
+    border-radius: var(--radius-sm);
+    transition: width 0.3s;
 }
 
 /* Actions */
@@ -674,8 +682,8 @@
 }
 
 .starsign-save-error {
-    font-size: .75rem;
-    color: var(--c-error, #ef5350);
+    font-size: 0.75rem;
+    color: var(--c-danger);
 }
 
 /* ── Feature header actions group ──────────────────────────────────────── */
@@ -684,4 +692,20 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+/* ── Warning banner highlight helpers ───────────────────────────────────── */
+.warning-highlight-accent {
+    color: var(--c-accent);
+    font-weight: 700;
+}
+
+.warning-highlight-onyx {
+    color: var(--c-tier-onyx);
+    font-weight: 700;
+}
+
+.warning-highlight-zenith {
+    color: var(--c-tier-zenith);
+    font-weight: 700;
 }

@@ -30,7 +30,7 @@
     color: var(--c-text-dim);
     padding: 8px 14px;
     font-size: 0.8rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     letter-spacing: 0.04em;
     cursor: pointer;
     transition: color 0.15s, background 0.15s;
@@ -182,7 +182,7 @@
     color: var(--c-text-muted);
     padding: 6px 14px;
     font-size: 0.78rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     letter-spacing: 0.04em;
     cursor: pointer;
     transition: color 0.15s;

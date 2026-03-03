@@ -128,9 +128,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         }
     };
 
-    const available = () =>
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((n) => !players.val.includes(n));
-
     return div({ class: "starsign-detail" },
 
         // Header
@@ -333,7 +330,7 @@ export const StarSignsTab = () => {
         if (!signs.val) return;
         for (const sign of signs.val) {
             const needed = sign.playersNeeded;
-            let pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
+            const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
             if (randomize) {
                 // Fisher-Yates shuffle
                 for (let i = pool.length - 1; i > 0; i--) {

@@ -44,7 +44,6 @@ const { div, button, span, h3, p } = van.tags;
 //
 // formatted  — show badge + input using formatNumber/parseNumber (large numbers)
 // float      — allow decimals (implies formatted)
-// large      — wider input box (feature-row__controls--xl)
 // live       — highlight the badge
 // warn       — show caution badge with message
 
@@ -54,7 +53,7 @@ const PINNED = [
 ];
 
 const FIELDS = [
-    { index: 253, label: "Feathers", live: true, formatted: true, large: true },
+    { index: 253, label: "Feathers", live: true, formatted: true },
     { index: 254, label: "Feather Generation" },
     { index: 256, label: "Feather Multiplier" },
     { index: 257, label: "Feather Cheapener" },
@@ -62,7 +61,7 @@ const FIELDS = [
     { index: 259, label: "Super Feather Production" },
     { index: 260, label: "Shiny Feathers" },
     { index: 261, label: "Super Feather Cheapener" },
-    { index: 263, label: "Filler Bar", float: true, large: true },
+    { index: 263, label: "Filler Bar", float: true },
     { index: 264, label: "Shiny Feathers (count)" },
 ];
 
@@ -148,7 +147,7 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
                 return isFormatted ? formatNumber(v) : String(v);
             }
         ),
-        div({ class: `feature-row__controls ${field.large ? "feature-row__controls--xl" : ""}` },
+        div({ class: "feature-row__controls feature-row__controls--xl" },
             NumberInput({
                 value: inputVal,
                 mode: isFloat ? "float" : "int",
@@ -235,11 +234,11 @@ export const OrionTab = () => {
 
         div({ class: "warning-banner" },
             Icons.Warning(), " ",
-            span({ style: "color:var(--c-accent);font-weight:700;" }, "Bonuses of Orion"),
+            span({ class: "warning-highlight-accent" }, "Bonuses of Orion"),
             " and ",
-            span({ style: "color:var(--c-accent);font-weight:700;" }, "The Great Mega Reset"),
+            span({ class: "warning-highlight-accent" }, "The Great Mega Reset"),
             " are permanent — keep values between 70–90. ",
-            span({ style: "color:var(--c-accent);font-weight:700;" }, "Feather Restart"),
+            span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent — keep between 30–40."
         ),
 

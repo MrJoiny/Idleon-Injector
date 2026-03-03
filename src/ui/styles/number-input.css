@@ -27,7 +27,7 @@ input[type="number"] {
     border: 1px solid var(--c-border);
     border-radius: var(--radius-sm);
     overflow: hidden;
-    /* background: var(--c-accent-dim); */
+    background: var(--c-panel-dim);
 }
 
 .number-input-wrapper:focus-within {

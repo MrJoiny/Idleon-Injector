@@ -53,7 +53,7 @@ export const W1Tab = () => {
 
         // World header
         div(
-            { class: "world-tab-header w1-header" },
+            { class: "world-tab-header" },
             span({ class: "world-tab-badge" }, "W1"),
             div(
                 { class: "world-tab-title-group" },

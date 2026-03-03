@@ -5,6 +5,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
+import { Icons } from "../../../assets/icons.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -19,7 +20,7 @@ export const W2Tab = () => {
         { class: "world-tab w2-world-tab" },
 
         div(
-            { class: "world-tab-header w2-header" },
+            { class: "world-tab-header" },
             span({ class: "world-tab-badge" }, "W2"),
             div(
                 { class: "world-tab-title-group" },
@@ -45,7 +46,7 @@ export const W2Tab = () => {
             { class: "world-sub-content" },
             div(
                 { class: "world-sub-pane active world-sub-pane--empty" },
-                span({ class: "world-empty-icon" }, "🧪"),
+                span({ class: "world-empty-icon" }, Icons.Wrench()),
                 p({ class: "world-empty-label" }, "W2 SYSTEMS COMING SOON"),
                 p({ class: "world-empty-desc" }, "Follow the W1Tab pattern to add sub-tabs for each W2 system.")
             )

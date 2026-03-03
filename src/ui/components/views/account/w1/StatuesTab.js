@@ -104,6 +104,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
                 div({ class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Deposited"),
                     NumberInput({
+                        mode: "int",
                         value: depositedInput,
                         oninput: (e) => (depositedInput.val = e.target.value),
                         onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
@@ -191,11 +192,11 @@ export const StatuesTab = () => {
         div({ class: "warning-banner" },
             Icons.Warning(),
             " Tier upgrades require specific tools: ",
-            span({ style: "color:var(--c-accent);font-weight:700;" }, "Guilding Tools"),
+            span({ class: "warning-highlight-accent" }, "Guilding Tools"),
             " for Gold, ",
-            span({ style: "color:#b06aff;font-weight:700;" }, "Onyx Tools"),
+            span({ class: "warning-highlight-onyx" }, "Onyx Tools"),
             " for Onyx, ",
-            span({ style: "color:#00e5ff;font-weight:700;" }, "Zenith Tools"),
+            span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
             " for Zenith. Note that this is only visual to the StatueMan in W1, when set to any rarity it will give their full bonus"
         ),
 

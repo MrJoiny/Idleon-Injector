@@ -20,7 +20,7 @@ export const W6Tab = () => {
         { class: "world-tab w6-world-tab" },
 
         div(
-            { class: "world-tab-header w6-header" },
+            { class: "world-tab-header" },
             span({ class: "world-tab-badge" }, "W6"),
             div(
                 { class: "world-tab-title-group" },

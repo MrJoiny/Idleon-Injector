@@ -163,9 +163,9 @@ export const NumberInput = ({
         }
 
         // Strip characters that aren't valid for this mode.
-        let cleaned = allowDecimal
-            ? raw.replace(/[^0-9.\-]/g, "").replace(/(?!^)-/g, "").replace(/(\..*)\./g, "$1")
-            : raw.replace(/[^0-9\-]/g, "").replace(/(?!^)-/g, "");
+        const cleaned = allowDecimal
+            ? raw.replace(/[^0-9.-]/g, "").replace(/(?!^)-/g, "").replace(/(\..*)\./g, "$1")
+            : raw.replace(/[^0-9-]/g, "").replace(/(?!^)-/g, "");
 
         if (e.target.value !== cleaned) e.target.value = cleaned;
         value.val = e.target.value;

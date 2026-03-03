@@ -29,6 +29,7 @@
     --c-accent-06: rgba(255, 183, 0, 0.06);
     --c-accent-20: rgba(255, 183, 0, 0.2);
     --c-accent-25: rgba(255, 183, 0, 0.25);
+    --c-accent-40: rgba(255, 183, 0, 0.4);
 
     /* -- SEMANTIC STATES (fixed) -- */
     --c-success: #59f57d;
@@ -48,6 +49,21 @@
     --c-text-muted: #bec3d1;
     --c-text: var(--c-text-main);
     --c-danger-soft-text: #ffb2a5;
+
+    /* -- FEATURE TAB ACCENT COLORS -- */
+    --c-tier-stone: #8a9bb0;
+    --c-tier-gold: #ffb700;
+    --c-tier-onyx: #b06aff;
+    --c-tier-zenith: #00e5ff;
+    --c-tier-gold-35: rgba(255, 183, 0, 0.35);
+    --c-tier-onyx-35: rgba(176, 106, 255, 0.35);
+    --c-tier-zenith-35: rgba(0, 229, 255, 0.35);
+    --c-sign-a: #4fc3f7;
+    --c-sign-b: #a5d6a7;
+    --c-sign-c: #ffb74d;
+    --c-sign-d: #ce93d8;
+    --c-sign-e: #ef9a9a;
+    --c-sign-f: #80cbc4;
 
     /* -- OVERLAYS & EFFECTS -- */
     --c-white-02: rgba(255, 255, 255, 0.02);
@@ -100,6 +116,7 @@
         --c-accent-06: color-mix(in oklch, var(--c-accent) 6%, transparent);
         --c-accent-20: color-mix(in oklch, var(--c-accent) 20%, transparent);
         --c-accent-25: color-mix(in oklch, var(--c-accent) 25%, transparent);
+        --c-accent-40: oklch(82.53% 0.1709 80.01 / 0.4);
         --c-success: oklch(93.07% 0.2286 123.09);
         --c-warning: oklch(82.53% 0.1709 80.01);
         --c-danger: oklch(63.17% 0.2544 21.75);
@@ -114,6 +131,13 @@
         --c-text-dim: color-mix(in oklch, var(--c-text-main) 93%, transparent);
         --c-text-muted: color-mix(in oklch, var(--c-text-main) 88%, transparent);
         --c-danger-soft-text: oklch(88.97% 0.058 18.3);
+        --c-tier-stone: oklch(69.79% 0.0284 251.03);
+        --c-tier-gold: oklch(82.53% 0.1709 80.01);
+        --c-tier-onyx: oklch(67.86% 0.1798 310.11);
+        --c-tier-zenith: oklch(85.98% 0.1143 219.1);
+        --c-tier-gold-35: oklch(82.53% 0.1709 80.01 / 0.35);
+        --c-tier-onyx-35: oklch(67.86% 0.1798 310.11 / 0.35);
+        --c-tier-zenith-35: oklch(85.98% 0.1143 219.1 / 0.35);
         --c-white-02: color-mix(in oklch, var(--c-white) 2%, transparent);
         --c-white-03: color-mix(in oklch, var(--c-white) 3%, transparent);
         --c-white-05: color-mix(in oklch, var(--c-white) 5%, transparent);
