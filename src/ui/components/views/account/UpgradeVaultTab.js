@@ -27,9 +27,10 @@ const cleanName = (raw) =>
 
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
-const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
-    const inputVal = van.state(String(getData()?.levels?.[index] ?? 0));
-    const status = van.state(null);
+const VaultRow = ({ index, name, baseMax, initialLevel }) => {
+    const inputVal     = van.state(String(initialLevel ?? 0));
+    const levelDisplay = van.state(initialLevel ?? 0);
+    const status       = van.state(null);
 
     const doSet = async (targetVal) => {
         const lvl = Math.max(0, Number(targetVal));
@@ -37,11 +38,10 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
         status.val = "loading";
         try {
             await writeGga(`UpgVault[${index}]`, lvl);
+            inputVal.val     = String(lvl);
+            levelDisplay.val = lvl;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            await new Promise((r) => setTimeout(r, 300));
-            const fresh = await onReload?.();
-            inputVal.val = String(fresh?.levels?.[index] ?? lvl);
         } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1200);
@@ -51,7 +51,8 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""
+                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
+                    status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
         div({ class: "feature-row__info" },
@@ -59,10 +60,7 @@ const VaultRow = ({ index, name, baseMax, getData, onReload }) => {
             span({ class: "feature-row__index" }, `#${index}`)
         ),
         span({ class: "feature-row__badge" },
-            () => {
-                const cur = getData()?.levels?.[index] ?? 0;
-                return `LV ${cur} / ${baseMax}`;
-            }
+            () => `LV ${levelDisplay.val} / ${baseMax}`
         ),
         div({ class: "feature-row__controls" },
             NumberInput({
@@ -146,7 +144,6 @@ export const UpgradeVaultTab = () => {
                 .filter((u) => u.name.length > 0 && u.baseMax > 0);
 
             data.val = { upgrades, levels };
-            return data.val;
         } catch (e) {
             error.val = e.message || "Failed to read Upgrade Vault data";
         } finally {
@@ -190,7 +187,7 @@ export const UpgradeVaultTab = () => {
 
             if (!data.val) return div({ class: "feature-list" });
 
-            const { upgrades } = data.val;
+            const { upgrades, levels } = data.val;
 
             if (!upgrades.length)
                 return div({ class: "feature-list" },
@@ -200,11 +197,10 @@ export const UpgradeVaultTab = () => {
             return div({ class: "feature-list" },
                 ...upgrades.map((u) =>
                     VaultRow({
-                        index: u.index,
-                        name: u.name,
-                        baseMax: u.baseMax,
-                        getData: () => data.val,
-                        onReload: load,
+                        index:        u.index,
+                        name:         u.name,
+                        baseMax:      u.baseMax,
+                        initialLevel: levels?.[u.index] ?? 0,
                     })
                 )
             );
