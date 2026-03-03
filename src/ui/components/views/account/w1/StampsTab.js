@@ -23,9 +23,13 @@ const PAGES = [
 
 // ── StampRow ──────────────────────────────────────────────────────────────
 
-const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate }) => {
-    const inputVal = van.state(String(levels?.[page]?.[order] ?? 0));
-    const status = van.state(null); // "loading" | "success" | "error" | null
+const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) => {
+    const inputVal = van.state(String(initialLevel ?? 0));
+    const status   = van.state(null);
+
+    // Local display states — updated on SET without touching parent gameData.
+    const levelDisplay    = van.state(initialLevel    ?? 0);
+    const maxLevelDisplay = van.state(initialMaxLevel ?? 0);
 
     const doSet = async (targetLevel) => {
         const lvl = Math.max(0, Number(targetLevel));
@@ -36,8 +40,9 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
         try {
             await writeGga(`StampLevel[${page}][${order}]`, lvl);
             await writeGga(`StampLevelMAX[${page}][${order}]`, maxLvl);
-            inputVal.val = String(lvl);
-            onLocalUpdate?.(page, order, lvl, maxLvl);
+            inputVal.val      = String(lvl);
+            levelDisplay.val  = lvl;
+            maxLevelDisplay.val = maxLvl;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -62,7 +67,7 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
 
         span(
             { class: "feature-row__badge" },
-            `LV ${levels?.[page]?.[order] ?? 0} / ${maxLevels?.[page]?.[order] ?? 0}`
+            () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`
         ),
 
         div(
@@ -107,28 +112,9 @@ const StampRow = ({ page, order, name, step, levels, maxLevels, onLocalUpdate })
 
 export const StampsTab = () => {
     const activePage = van.state(0);
-    const gameData = van.state(null);
-    const loading = van.state(false);
-    const error = van.state(null);
-
-    const updateLocal = (page, order, lvl, maxLvl) => {
-        const cur = gameData.val;
-        if (!cur) return;
-
-        const next = { ...cur };
-
-        if (Array.isArray(cur.levels)) {
-            next.levels = cur.levels.map((pg, i) => (i === page && Array.isArray(pg) ? [...pg] : pg));
-            if (Array.isArray(next.levels?.[page])) next.levels[page][order] = lvl;
-        }
-
-        if (Array.isArray(cur.maxLevels)) {
-            next.maxLevels = cur.maxLevels.map((pg, i) => (i === page && Array.isArray(pg) ? [...pg] : pg));
-            if (Array.isArray(next.maxLevels?.[page])) next.maxLevels[page][order] = maxLvl ?? lvl;
-        }
-
-        gameData.val = next;
-    };
+    const gameData   = van.state(null);
+    const loading    = van.state(false);
+    const error      = van.state(null);
 
     const load = async () => {
         loading.val = true;
@@ -243,11 +229,10 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name: names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
-                        step: steps[order] ?? 0,
-                        levels: data.levels,
-                        maxLevels: data.maxLevels,
-                        onLocalUpdate: updateLocal,
+                        name:             names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
+                        step:             steps[order] ?? 0,
+                        initialLevel:     data.levels?.[page]?.[order]    ?? 0,
+                        initialMaxLevel:  data.maxLevels?.[page]?.[order] ?? 0,
                     })
                 )
             );

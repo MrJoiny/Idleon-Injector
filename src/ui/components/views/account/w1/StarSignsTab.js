@@ -351,7 +351,7 @@ export const StarSignsTab = () => {
         await load();
     };
 
-    return div({ class: "world-feature scroll-container" },
+    return div({ class: "world-feature scroll-container", style: "overflow-y: auto; display: flex; flex-direction: column; min-height: 0;" },
 
         div({ class: "feature-header" },
             div(null,

@@ -26,11 +26,17 @@ const TIERS = [
 
 // ── StatueRow ─────────────────────────────────────────────────────────────
 
-const StatueRow = ({ index, name, getData, onReload }) => {
-    const levelInput = van.state(String(getData()?.levels?.[index]?.[0] ?? 0));
-    const depositedInput = van.state(String(getData()?.levels?.[index]?.[1] ?? 0));
-    const tierInput = van.state(getData()?.tiers?.[index] ?? 0);
-    const status = van.state(null);
+const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier }) => {
+    const levelInput     = van.state(String(initialLevel ?? 0));
+    const depositedInput = van.state(String(initialDeposited ?? 0));
+    const tierInput      = van.state(initialTier ?? 0);
+    const status         = van.state(null);
+
+    // Display states — updated locally on SET so the row reflects the new value
+    // without triggering a full list re-render.
+    const levelDisplay     = van.state(initialLevel ?? 0);
+    const depositedDisplay = van.state(initialDeposited ?? 0);
+    const tierDisplay      = van.state(initialTier ?? 0);
 
     const doSet = async () => {
         const lvl = Math.max(0, Number(levelInput.val));
@@ -43,11 +49,12 @@ const StatueRow = ({ index, name, getData, onReload }) => {
             await writeGga(`StatueLevels[${index}][0]`, lvl);
             await writeGga(`StatueLevels[${index}][1]`, dep);
             await writeGga(`StatueG[${index}]`, tier);
-            await new Promise((r) => setTimeout(r, 300));
-            const fresh = await onReload?.();
-            levelInput.val = String(fresh?.levels?.[index]?.[0] ?? lvl);
-            depositedInput.val = String(fresh?.levels?.[index]?.[1] ?? dep);
-            tierInput.val = fresh?.tiers?.[index] ?? tier;
+
+            // Update display states locally — no page-wide re-render needed.
+            levelDisplay.val     = lvl;
+            depositedDisplay.val = dep;
+            tierDisplay.val      = tier;
+
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
         } catch {
@@ -59,7 +66,7 @@ const StatueRow = ({ index, name, getData, onReload }) => {
     return div(
         {
             class: () => {
-                const tier = getData()?.tiers?.[index] ?? 0;
+                const tier      = tierDisplay.val;
                 const tierClass = ["", "tier--gold", "tier--onyx", "tier--zenith"][tier] ?? "";
                 return `feature-row ${tierClass} ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`;
             },
@@ -69,13 +76,13 @@ const StatueRow = ({ index, name, getData, onReload }) => {
         div({ class: "feature-row__info" },
             span({ class: "feature-row__name" }, name),
             span({
-                class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][getData()?.tiers?.[index] ?? 0]}`
-            }, () => TIERS[getData()?.tiers?.[index] ?? 0]?.label ?? "Stone")
+                class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][tierDisplay.val]}`
+            }, () => TIERS[tierDisplay.val]?.label ?? "Stone")
         ),
 
         // Level badge
         span({ class: "feature-row__badge" },
-            () => `LV ${getData()?.levels?.[index]?.[0] ?? 0}`
+            () => `LV ${levelDisplay.val}`
         ),
 
         // Controls — staged inputs + SET to the right
@@ -159,7 +166,6 @@ export const StatuesTab = () => {
                 levels: toArr(rawLevels),
                 tiers: toArr(rawTiers),
             };
-            return data.val;
         } catch (e) {
             error.val = e.message || "Failed to read statue data";
         } finally {
@@ -215,7 +221,13 @@ export const StatuesTab = () => {
 
             return div({ class: "feature-list" },
                 ...statues.map((s) =>
-                    StatueRow({ index: s.index, name: s.name, getData: () => data.val, onReload: load })
+                    StatueRow({
+                        index:            s.index,
+                        name:             s.name,
+                        initialLevel:     data.val.levels?.[s.index]?.[0] ?? 0,
+                        initialDeposited: data.val.levels?.[s.index]?.[1] ?? 0,
+                        initialTier:      data.val.tiers?.[s.index]    ?? 0,
+                    })
                 )
             );
         }
