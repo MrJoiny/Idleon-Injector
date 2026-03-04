@@ -157,3 +157,22 @@ export async function writeGga(path, value) {
         body: JSON.stringify({ path: `gga.${path}`, value }),
     });
 }
+
+
+/**
+ * Read a computed value from a game helper family.
+ * Example: readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index])
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array=} args
+ * @returns {Promise<any>}
+ */
+export async function readComputed(namespace, name, args = []) {
+    const data = await _request("/game/computed/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ namespace, name, args }),
+    });
+    return data.value;
+}

@@ -709,3 +709,406 @@
     color: var(--c-tier-zenith);
     font-weight: 700;
 }
+/* ── Brewing tab ─────────────────────────────────────────────────────────── */
+
+.brewing-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.brewing-columns {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 14px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.brewing-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.brewing-column__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--cauldron-color, var(--c-accent));
+    flex-shrink: 0;
+}
+
+.brewing-column__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--cauldron-color, var(--c-text-main));
+}
+
+.brewing-column__setall-btn {
+    font-size: 0.65rem;
+    padding: 0 8px;
+    height: 24px;
+}
+
+.brewing-column__bubbles {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.brewing-column__empty {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    text-align: center;
+    padding: 20px 8px;
+}
+
+/* Set-all row in header */
+.brewing-setall-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brewing-setall-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+/* Larger number input for the global SET ALL level control */
+.brewing-setall-input-wrap .number-input-wrapper {
+    width: 150px;
+}
+
+.brewing-setall-input-wrap .number-input-btn {
+    height: 38px;
+}
+
+/* ── Bubble card ─────────────────────────────────────────────────────────── */
+
+.bubble-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.bubble-card:hover {
+    border-color: var(--c-border-strong);
+}
+
+.bubble-card--prisma {
+    border-color: var(--cauldron-color, var(--c-accent));
+    background: var(--cauldron-dim, var(--c-accent-06));
+}
+
+.bubble-card--success {
+    border-color: var(--c-success) !important;
+    background: var(--c-success-10);
+}
+
+.bubble-card--error {
+    border-color: var(--c-danger) !important;
+    background: var(--c-danger-10);
+}
+
+.bubble-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.bubble-card__index {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    background: var(--c-black-40);
+    padding: 1px 5px;
+}
+
+.bubble-card__prisma-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--cauldron-color, var(--c-accent));
+}
+
+.bubble-card__name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bubble-card__level-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bubble-card__level-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--c-text-dim);
+    letter-spacing: 0.05em;
+}
+
+.bubble-card__level-val {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--c-accent);
+}
+
+.bubble-card__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bubble-card__controls .number-input-wrapper {
+    width: 80px;
+}
+
+.bubble-card__set-btn {
+    font-size: 0.65rem;
+    padding: 0 8px;
+    height: 26px;
+}
+
+.bubble-card__prisma-btn {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    width: 100%;
+    text-align: center;
+}
+
+.bubble-card__prisma-btn:hover {
+    border-color: var(--cauldron-color, var(--c-accent));
+    color: var(--cauldron-color, var(--c-accent));
+}
+
+.bubble-card__prisma-btn--active {
+    border-color: var(--cauldron-color, var(--c-accent));
+    color: var(--cauldron-color, var(--c-accent));
+    background: var(--cauldron-dim, var(--c-accent-06));
+    font-weight: 700;
+}
+
+/* Invisible spacer — keeps big bubble cards the same height as normal cards.
+   Mirrors the exact box model of .bubble-card__prisma-btn so the gap it fills
+   is pixel-perfect regardless of font scaling. */
+.bubble-card__prisma-spacer {
+    padding: 3px 8px;
+    font-size: 0.65rem;
+    border: 1px solid transparent;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* ── Construction — MAX button ───────────────────────────────────────────── */
+
+.construction-btn--max {
+    background: var(--c-accent-06);
+    color: var(--c-accent);
+    border: 1px solid var(--c-accent-20);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.construction-btn--max:hover:not(:disabled) {
+    background: var(--c-accent);
+    color: var(--c-black);
+}
+
+/* ── Refinery tab ────────────────────────────────────────────────────────── */
+
+.refinery-row--polymer {
+    border-left: 3px solid #7e57c2;
+}
+
+.refinery-row--placeholder {
+    opacity: 0.5;
+    border-left: 3px solid var(--c-warning);
+}
+
+.refinery-row__name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.refinery-row__badges {
+    display: flex;
+    gap: 6px;
+}
+
+.refinery-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+
+.refinery-badge--polymer {
+    color: #7e57c2;
+}
+
+.refinery-badge--placeholder {
+    color: var(--c-warning);
+}
+
+/* Stacked level + charge controls */
+.refinery-control-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.refinery-control-label {
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 52px;
+    text-align: right;
+}
+
+/* Notices at top of refinery tab */
+.refinery-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.refinery-notice--polymer {
+    background: rgba(126, 87, 194, 0.06);
+}
+
+.refinery-notice--placeholder {
+    background: var(--c-accent-06);
+}
+
+.refinery-notice__icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.refinery-notice__highlight {
+    font-weight: 700;
+    color: var(--c-accent);
+}
+
+/* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
+/* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win)
+   and W3 Construction (Buildings, Cogs). */
+
+.alchemy-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.alchemy-sub-nav {
+    display: flex;
+    gap: 2px;
+    padding: 6px 14px 0;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.alchemy-sub-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--c-text-muted);
+    padding: 5px 16px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: color 0.15s;
+    position: relative;
+    bottom: -1px;
+}
+
+.alchemy-sub-btn:hover {
+    color: var(--c-text-main);
+}
+
+.alchemy-sub-btn.active {
+    color: var(--c-accent);
+    border-color: var(--c-border);
+    border-bottom-color: var(--c-panel-dim);
+    background: var(--c-panel-dim);
+}
+
+.alchemy-sub-btn.active::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--c-accent);
+    box-shadow: 0 0 5px var(--c-accent-glow);
+}
+
+.alchemy-sub-btn--stub {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.alchemy-sub-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.alchemy-pane {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.alchemy-pane--active {
+    display: flex;
+    flex-direction: column;
+}

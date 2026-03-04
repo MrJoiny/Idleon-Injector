@@ -4,10 +4,12 @@
  * Functions for accessing and modifying game state:
  * - Unified path-based read/write (readPath, writePath)
  * - Selective object-entry reads for large maps (readEntries)
+ * - Small computed-value bridge for internal helper families
  * - cheatState access
  */
 
 import { cheatState } from "../core/state.js";
+import { events } from "../core/globals.js";
 import { resolvePath } from "../utils/pathResolver.js";
 
 export function getcheatStateList() {
@@ -84,6 +86,43 @@ export function readEntries(rootPath, keys, fields = null) {
     }
 
     return { value };
+}
+
+/**
+ * Read a computed value from a game helper family.
+ * Uses the same injected ActorEvents access pattern as the minigame cheats:
+ * events(345), events(579), etc. The UI never touches ActorEvents directly.
+ *
+ * Supported namespaces:
+ * - workbench -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array=} args
+ * @returns {{ value: any } | { error: string }}
+ */
+export function readComputed(namespace, name, args = []) {
+    if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
+    if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
+    if (!Array.isArray(args)) return { error: "args must be an array" };
+
+    const sources = {
+        workbench: () => ({
+            actorEvents: events(345),
+            method: "_customBlock_WorkbenchStuff",
+        }),
+    };
+
+    const sourceFactory = sources[namespace];
+    if (!sourceFactory) return { error: `Unsupported computed namespace: ${namespace}` };
+
+    const { actorEvents, method } = sourceFactory();
+    const fn = actorEvents?.[method];
+    if (typeof fn !== "function") {
+        return { error: `Computed helper unavailable: ${namespace}.${name}` };
+    }
+
+    return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
 }
 
 /**
