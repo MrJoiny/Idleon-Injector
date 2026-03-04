@@ -285,8 +285,7 @@ const AccountService = {
                     dataState.accountSchema = await schemaRes.json();
                 }
 
-                // Hard reset to ensure clean reactivity state (Legacy behavior maintained)
-                const newData = dataRes || [];
+                const newData = Array.isArray(dataRes) ? dataRes : [];
                 dataState.accountOptions = [];
                 dataState.accountOptions = newData;
 
