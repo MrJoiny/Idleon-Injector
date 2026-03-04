@@ -15,7 +15,7 @@ const commonRules = {
 
     // Best practices
     "dot-notation": "warn",
-    "eqeqeq": "warn",
+    eqeqeq: "warn",
     "no-var": "warn",
     "prefer-const": "warn",
 };
@@ -91,4 +91,3 @@ export default [
         },
     },
 ];
-

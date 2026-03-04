@@ -55,7 +55,14 @@ const hasMatchingChildren = (obj, searchTerm) => {
     return false;
 };
 
-export const ConfigNode = ({ data, path = "", template = null, searchTerm = "", forceOpen = false, parentMatched = false }) => {
+export const ConfigNode = ({
+    data,
+    path = "",
+    template = null,
+    searchTerm = "",
+    forceOpen = false,
+    parentMatched = false,
+}) => {
     const source = template || data;
     const keys = Object.keys(source);
     const termLower = searchTerm.toLowerCase();

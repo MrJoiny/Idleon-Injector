@@ -13,8 +13,9 @@
  * - Hoops (ActorEvents_510) - Perfect ball/hoop position
  * - Darts (ActorEvents_510) - Bullseye position
  * - Scratch (ActorEvents_670) - Auto reveal all
- * - Wisdom (ActorEvents_670) - Infinite attempts
+ * - Wisdom (ActorEvents_670) - Infinite attempts + card reveal
  * - Poing (ActorEvents_577) - AI paddle off-screen
+ * - Log (ActorEvents_577) - Card type reveal
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
  */
 
@@ -148,7 +149,7 @@ function setupEvents510Minigames() {
     });
 }
 
-// scratch and wisdom
+// scratch, wisdom and valentine
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
     if (!ActorEvents670) return;
@@ -199,7 +200,7 @@ function setupEvents670Minigames() {
             if (cheatState.minigame.valentine && this._GenINFO?.[213] === 2) {
                 const grid = this._GenINFO[228];
                 const clicked = this._GenINFO[229];
-                const covers = this._UIinventory15?.[68];
+                const covers = this._UIinventory15[68];
 
                 if (grid && clicked && covers) {
                     for (let i = 0; i < 36; i++) {
@@ -207,20 +208,14 @@ function setupEvents670Minigames() {
                         if (grid[i] !== 0 || clicked[i] !== 0) continue;
 
                         const coverImg = covers[i];
-                        if (!coverImg || typeof coverImg.get_transform !== "function") continue;
 
-                        try {
-                            const tform = coverImg.get_transform();
-                            const cform = tform?.get_colorTransform?.();
-                            if (!cform) continue;
+                        const tform = coverImg.get_transform();
+                        const cform = tform.get_colorTransform();
 
-                            cform.redMultiplier = 0;
-                            cform.blueMultiplier = 0;
-                            tform.set_colorTransform?.(cform);
-                            coverImg.set_transform?.(tform);
-                        } catch {
-                            continue;
-                        }
+                        cform.redMultiplier = 0;
+                        cform.blueMultiplier = 0;
+                        tform.set_colorTransform(cform);
+                        coverImg.set_transform(tform);
                     }
                 }
             }
@@ -229,12 +224,54 @@ function setupEvents670Minigames() {
         };
         ActorEvents670.prototype._event_OwlEvent._isPatched = true;
     }
+
+    // wisdom card reveal helper — sets scaleX(1) on item images for active cards
+    // and tints matched pairs green using color transforms
+    function revealWisdomCards(instance) {
+        if (!cheatState.minigame.wisdom) return;
+        const cards = instance._UIinventory15?.[67];
+        const data = instance._GenINFO?.[197];
+        const matched = instance._GenINFO?.[198];
+
+        for (let i = 0; i < 44; i++) {
+            const img = cards[i + 44];
+            if (data[i] !== 0) {
+                img.set_scaleX(1);
+
+                // tint matched pairs green
+                if (matched[i] === 1) {
+                    const tform = img.get_transform();
+                    const cform = tform.get_colorTransform();
+
+                    cform.redMultiplier = 0;
+                    cform.blueMultiplier = 0;
+                    tform.set_colorTransform(cform);
+                    img.set_transform(tform);
+                }
+            }
+        }
+    }
+
+    // reveal after round setup ("f2") and card clicks ("c")
+    if (!ActorEvents670.prototype._customEvent_CavernStuffz3?._isPatched) {
+        createMethodProxy(ActorEvents670.prototype, "_customEvent_CavernStuffz3", function (base) {
+            revealWisdomCards(this);
+            return base;
+        });
+    }
+
+    // re-reveal on every mouse interaction to keep items visible
+    if (!ActorEvents670.prototype._event_monumentgameplay?._isPatched) {
+        createMethodProxy(ActorEvents670.prototype, "_event_monumentgameplay", function (base) {
+            revealWisdomCards(this);
+            return base;
+        });
+    }
 }
 
-// poing
+// poing and log
 function setupEvents577Minigames() {
     const ActorEvents577 = events(577);
-    if (!ActorEvents577) return;
 
     // Poing: Hook into _event_Gaming where AI paddle movement happens
     // _GenINFO[58] is paddle positions array [playerX, aiX]
@@ -267,6 +304,35 @@ function setupEvents577Minigames() {
             return originalEventGaming.call(this, ...args);
         };
         ActorEvents577.prototype._event_Gaming._isPatched = true;
+    }
+
+    // log card reveal
+    if (!ActorEvents577.prototype._customEvent_W5stuffzz?._isPatched) {
+        createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
+            if (!cheatState.minigame.log) return base;
+            const cards = this._UIinventory13[41];
+            const data = this._GenINFO[54];
+
+            for (let i = 0; i < 10; i++) {
+                const img = cards[i];
+
+                const tform = img.get_transform();
+                const cform = tform.get_colorTransform();
+
+                if (data[i] === 1) {
+                    // skull — tint red
+                    cform.greenMultiplier = 0;
+                    cform.blueMultiplier = 0;
+                } else {
+                    // safe — tint green
+                    cform.redMultiplier = 0;
+                    cform.blueMultiplier = 0;
+                }
+                tform.set_colorTransform(cform);
+                img.set_transform(tform);
+            }
+            return base;
+        });
     }
 }
 

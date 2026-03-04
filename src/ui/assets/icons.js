@@ -34,7 +34,15 @@ export const Icons = {
                             d: "M108.66,15 L169.34,50 Q178,55 178,65 L178,135 Q178,145 169.34,150 L108.66,185 Q100,190 91.34,185 L30.66,150 Q22,145 22,135 L22,65 Q22,55 30.66,50 L91.34,15 Q100,10 108.66,15 Z",
                         }),
                         g({ fill: "none", stroke: "black", "stroke-width": "8", transform: "rotate(-45 100 100)" }, [
-                            rect({ x: "85", y: "60", width: "30", height: "80", rx: "4", fill: "black", stroke: "none" }),
+                            rect({
+                                x: "85",
+                                y: "60",
+                                width: "30",
+                                height: "80",
+                                rx: "4",
+                                fill: "black",
+                                stroke: "none",
+                            }),
                             line({ x1: "100", y1: "40", x2: "100", y2: "60" }),
                             line({ x1: "85", y1: "40", x2: "115", y2: "40" }),
                             line({ x1: "100", y1: "140", x2: "100", y2: "170" }),
@@ -223,10 +231,11 @@ export const Icons = {
         ),
 
     Eye: (props) =>
-        SvgBase(
-            [path({ d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }), circle({ cx: "12", cy: "12", r: "3" })],
-            { "stroke-width": "2", "aria-hidden": "true", ...props }
-        ),
+        SvgBase([path({ d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }), circle({ cx: "12", cy: "12", r: "3" })], {
+            "stroke-width": "2",
+            "aria-hidden": "true",
+            ...props,
+        }),
 
     Warning: (props) =>
         SvgBase(
@@ -240,7 +249,9 @@ export const Icons = {
 
     Wrench: (props) =>
         SvgBase(
-            path({ d: "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" }),
+            path({
+                d: "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z",
+            }),
             { "stroke-width": "2", "aria-hidden": "true", ...props }
         ),
 };

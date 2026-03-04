@@ -50,14 +50,13 @@ export const Account = () => {
                 button(
                     {
                         class: () =>
-                            `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
+                            `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${
+                                tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
                             }`,
                         onclick: () => (activeTab.val = tab.id),
                         title: tab.label,
                     },
-                    tab.isWorld
-                        ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`)
-                        : tab.label
+                    tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label
                 )
             )
         ),
@@ -69,8 +68,7 @@ export const Account = () => {
             { class: "account-sub-tab-content" },
             ...ACCOUNT_TABS.map((tab) => {
                 const pane = div({
-                    class: () =>
-                        `account-sub-tab-pane ${activeTab.val === tab.id ? "active" : ""}`,
+                    class: () => `account-sub-tab-pane ${activeTab.val === tab.id ? "active" : ""}`,
                     "data-tab": tab.id,
                 });
 

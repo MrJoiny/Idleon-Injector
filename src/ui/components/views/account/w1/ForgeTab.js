@@ -27,9 +27,9 @@ const PAGES = [
         id: 0,
         label: "PAGE 1",
         upgrades: [
-            { label: "New Forge Slot",     index: 0, max: 16 },
+            { label: "New Forge Slot", index: 0, max: 16 },
             { label: "Ore Capacity Boost", index: 1, max: 50 },
-            { label: "Forge Speed",        index: 2, max: 90 },
+            { label: "Forge Speed", index: 2, max: 90 },
         ],
     },
     {
@@ -37,8 +37,8 @@ const PAGES = [
         label: "PAGE 2",
         upgrades: [
             { label: "Forge EXP Gain", index: 3, max: 85 },
-            { label: "Bar Bonanza",    index: 4, max: 75 },
-            { label: "Puff Puff Go",   index: 5, max: 60 },
+            { label: "Bar Bonanza", index: 4, max: 75 },
+            { label: "Puff Puff Go", index: 5, max: 60 },
         ],
     },
 ];
@@ -47,7 +47,7 @@ const PAGES = [
 
 const ForgeRow = ({ upgrade, levels, onReload }) => {
     const inputVal = van.state(String(levels.val?.[upgrade.index] ?? 0));
-    const status   = van.state(null);
+    const status = van.state(null);
 
     van.derive(() => {
         inputVal.val = String(levels.val?.[upgrade.index] ?? 0);
@@ -75,33 +75,37 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
                     status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
-        div({ class: "feature-row__info" },
-            span({ class: "feature-row__name" }, upgrade.label)
-        ),
-        span({ class: "feature-row__badge" },
-            () => `LV ${levels.val?.[upgrade.index] ?? 0} / ${upgrade.max}`
-        ),
-        div({ class: "feature-row__controls" },
+        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, upgrade.label)),
+        span({ class: "feature-row__badge" }, () => `LV ${levels.val?.[upgrade.index] ?? 0} / ${upgrade.max}`),
+        div(
+            { class: "feature-row__controls" },
             NumberInput({
-                value:       inputVal,
-                oninput:     (e) => (inputVal.val = e.target.value),
+                value: inputVal,
+                oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => (inputVal.val = String(Math.min(upgrade.max, Number(inputVal.val) + 1))),
             }),
             withTooltip(
-                button({
-                    class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick:  () => doSet(inputVal.val),
-                    disabled: () => status.val === "loading",
-                }, () => (status.val === "loading" ? "..." : "SET")),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSet(inputVal.val),
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
                 `Set level (max ${upgrade.max})`
             ),
             withTooltip(
-                button({
-                    class:    "feature-btn feature-btn--danger",
-                    onclick:  () => doSet(upgrade.max),
-                    disabled: () => status.val === "loading",
-                }, "MAX"),
+                button(
+                    {
+                        class: "feature-btn feature-btn--danger",
+                        onclick: () => doSet(upgrade.max),
+                        disabled: () => status.val === "loading",
+                    },
+                    "MAX"
+                ),
                 `Set to max level (${upgrade.max})`
             )
         )
@@ -112,18 +116,20 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
 
 export const ForgeTab = () => {
     const activePage = van.state(0);
-    const levels     = van.state(null);
-    const loading    = van.state(false);
-    const error      = van.state(null);
+    const levels = van.state(null);
+    const loading = van.state(false);
+    const error = van.state(null);
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
             const raw = await readGga("FurnaceLevels");
             levels.val = Array.isArray(raw)
                 ? raw
-                : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
+                : Object.keys(raw)
+                      .sort((a, b) => a - b)
+                      .map((k) => raw[k]);
         } catch (e) {
             error.val = e.message || "Failed to read forge data";
         } finally {
@@ -133,10 +139,13 @@ export const ForgeTab = () => {
 
     load();
 
-    return div({ class: "world-feature scroll-container" },
+    return div(
+        { class: "world-feature scroll-container" },
 
-        div({ class: "feature-header" },
-            div(null,
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("FORGE"),
                 p({ class: "feature-header__desc" }, "Set forge upgrade levels — each upgrade has a hard maximum")
             ),
@@ -147,23 +156,29 @@ export const ForgeTab = () => {
         ),
 
         // Page tabs
-        div({ class: "feature-page-nav" },
+        div(
+            { class: "feature-page-nav" },
             ...PAGES.map((pg) =>
-                button({
-                    class:   () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
-                    onclick: () => (activePage.val = pg.id),
-                }, pg.label)
+                button(
+                    {
+                        class: () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
+                        onclick: () => (activePage.val = pg.id),
+                    },
+                    pg.label
+                )
             )
         ),
 
         () => {
             if (loading.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     div({ class: "feature-loader" }, Loader({ text: "READING FORGE" }))
                 );
 
             if (error.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
                 );
 
@@ -171,10 +186,9 @@ export const ForgeTab = () => {
 
             const page = PAGES[activePage.val];
 
-            return div({ class: "feature-list" },
-                ...page.upgrades.map((upgrade) =>
-                    ForgeRow({ upgrade, levels, onReload: load })
-                )
+            return div(
+                { class: "feature-list" },
+                ...page.upgrades.map((upgrade) => ForgeRow({ upgrade, levels, onReload: load }))
             );
         }
     );

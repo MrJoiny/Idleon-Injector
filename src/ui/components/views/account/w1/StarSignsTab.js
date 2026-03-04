@@ -37,8 +37,8 @@ function computeLabels(quests) {
     const counters = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
     return quests.map((q) => {
         const mapId = parseInt(q[0]);
-        const g = mapId < 50 ? "A" : mapId < 100 ? "B" : mapId < 150 ? "C"
-                : mapId < 200 ? "D" : mapId < 250 ? "E" : "F";
+        const g =
+            mapId < 50 ? "A" : mapId < 100 ? "B" : mapId < 150 ? "C" : mapId < 200 ? "D" : mapId < 250 ? "E" : "F";
         counters[g]++;
         return `${g}-${counters[g]}`;
     });
@@ -46,19 +46,23 @@ function computeLabels(quests) {
 
 // Clean description: remove trailing AFK/progress text, replace underscores
 const cleanDesc = (s) =>
-    (s ?? "").replace(/_@_Progress.*$/, "").replace(/_/g, " ").trim();
+    (s ?? "")
+        .replace(/_@_Progress.*$/, "")
+        .replace(/_/g, " ")
+        .trim();
 
 // Parse progress string → ordered array of player numbers
 const parseProgress = (str) =>
-    (str ?? "").split("").map(letterToPlayer).filter((n) => n > 0);
+    (str ?? "")
+        .split("")
+        .map(letterToPlayer)
+        .filter((n) => n > 0);
 
 // Encode player list back to string
-const encodeProgress = (players) =>
-    players.map(playerToLetter).filter(Boolean).join("");
+const encodeProgress = (players) => players.map(playerToLetter).filter(Boolean).join("");
 
 // Get display name for a player slot (1-based)
-const playerName = (num, usernames) =>
-    usernames[num - 1] ?? `Player ${num}`;
+const playerName = (num, usernames) => usernames[num - 1] ?? `Player ${num}`;
 
 // ── DragList: simple drag-reorder list ────────────────────────────────────
 // Returns a DOM element with draggable items. onChange(newOrder) fires on drop.
@@ -74,9 +78,18 @@ const DragList = ({ items, renderItem, onChange }) => {
             const row = div({ class: "starsign-drag-row", draggable: true });
             row.appendChild(div({ class: "starsign-drag-handle" }, "⠿"));
             row.appendChild(renderItem(item, i));
-            row.addEventListener("dragstart", () => { dragIdx = i; row.classList.add("dragging"); });
-            row.addEventListener("dragend",   () => { dragIdx = null; row.classList.remove("dragging"); });
-            row.addEventListener("dragover",  (e) => { e.preventDefault(); row.classList.add("drag-over"); });
+            row.addEventListener("dragstart", () => {
+                dragIdx = i;
+                row.classList.add("dragging");
+            });
+            row.addEventListener("dragend", () => {
+                dragIdx = null;
+                row.classList.remove("dragging");
+            });
+            row.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                row.classList.add("drag-over");
+            });
             row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
             row.addEventListener("drop", (e) => {
                 e.preventDefault();
@@ -99,8 +112,8 @@ const DragList = ({ items, renderItem, onChange }) => {
 // ── Detail panel ──────────────────────────────────────────────────────────
 
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
-    const players  = van.state([...sign.players]);
-    const status   = van.state(null);
+    const players = van.state([...sign.players]);
+    const status = van.state(null);
 
     const addPlayer = (num) => {
         if (players.val.includes(num)) return;
@@ -128,17 +141,22 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         }
     };
 
-    return div({ class: "starsign-detail" },
+    return div(
+        { class: "starsign-detail" },
 
         // Header
-        div({ class: "starsign-detail-header" },
+        div(
+            { class: "starsign-detail-header" },
             button({ class: "starsign-back-btn", onclick: onBack }, "← Back"),
-            div(null,
+            div(
+                null,
                 h4({ class: "starsign-detail-label" }, sign.label),
                 p({ class: "starsign-detail-desc" }, sign.desc)
             ),
-            div({ class: "starsign-detail-meta" },
-                span({ class: "starsign-needed-badge" },
+            div(
+                { class: "starsign-detail-meta" },
+                span(
+                    { class: "starsign-needed-badge" },
                     `${sign.playersNeeded} player${sign.playersNeeded > 1 ? "s" : ""} needed`
                 )
             )
@@ -149,77 +167,91 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
 
         () => {
             const list = players.val;
-            if (!list.length)
-                return div({ class: "starsign-empty-players" }, "No players added yet");
+            if (!list.length) return div({ class: "starsign-empty-players" }, "No players added yet");
 
             return DragList({
-                items:      list,
+                items: list,
                 renderItem: (playerNum) => {
-                    const row = div({ class: "starsign-player-chip" },
+                    const row = div(
+                        { class: "starsign-player-chip" },
                         span({ class: "starsign-player-num" }, playerName(playerNum, usernames)),
                         span({ class: "starsign-player-letter" }, playerToLetter(playerNum) ?? "?"),
-                        button({
-                            class:   "starsign-remove-btn",
-                            onclick: () => removePlayer(playerNum),
-                        }, "✕")
+                        button(
+                            {
+                                class: "starsign-remove-btn",
+                                onclick: () => removePlayer(playerNum),
+                            },
+                            "✕"
+                        )
                     );
                     return row;
                 },
-                onChange: (newOrder) => { players.val = newOrder; },
+                onChange: (newOrder) => {
+                    players.val = newOrder;
+                },
             });
         },
 
         // Add player row
-        div({ class: "starsign-add-row" },
-            select({
-                id:    `add-player-select-${sign.index}`,
-                class: "statue-tier-select",
-            },
-                option({ value: "", disabled: true, selected: true }, "Add player…"),
-                ...[1,2,3,4,5,6,7,8,9,10].map((n) =>
-                    option({ value: n }, playerName(n, usernames))
-                )
-            ),
-            button({
-                class:   "feature-btn feature-btn--apply",
-                onclick: () => {
-                    const sel = document.getElementById(`add-player-select-${sign.index}`);
-                    const val = parseInt(sel?.value);
-                    if (val && !players.val.includes(val)) {
-                        addPlayer(val);
-                        sel.value = "";
-                    }
+        div(
+            { class: "starsign-add-row" },
+            select(
+                {
+                    id: `add-player-select-${sign.index}`,
+                    class: "statue-tier-select",
                 },
-            }, "ADD")
+                option({ value: "", disabled: true, selected: true }, "Add player…"),
+                ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => option({ value: n }, playerName(n, usernames)))
+            ),
+            button(
+                {
+                    class: "feature-btn feature-btn--apply",
+                    onclick: () => {
+                        const sel = document.getElementById(`add-player-select-${sign.index}`);
+                        const val = parseInt(sel?.value);
+                        if (val && !players.val.includes(val)) {
+                            addPlayer(val);
+                            sel.value = "";
+                        }
+                    },
+                },
+                "ADD"
+            )
         ),
 
         // Progress indicator
-        div({ class: "starsign-progress-bar-wrap" },
-            () => {
-                const cur  = players.val.length;
-                const need = sign.playersNeeded;
-                const pct  = Math.min(100, (cur / need) * 100);
-                return div(null,
-                    div({ class: "starsign-progress-label" },
-                        `${cur} / ${need} players — `,
-                        cur >= need
-                            ? span({ class: "starsign-unlocked-text" }, "✓ UNLOCKED")
-                            : span({ class: "starsign-locked-text"   }, "LOCKED")
-                    ),
-                    div({ class: "starsign-progress-bar" },
-                        div({ class: "starsign-progress-fill", style: `width:${pct}%` })
-                    )
-                );
-            }
-        ),
+        div({ class: "starsign-progress-bar-wrap" }, () => {
+            const cur = players.val.length;
+            const need = sign.playersNeeded;
+            const pct = Math.min(100, (cur / need) * 100);
+            return div(
+                null,
+                div(
+                    { class: "starsign-progress-label" },
+                    `${cur} / ${need} players — `,
+                    cur >= need
+                        ? span({ class: "starsign-unlocked-text" }, "✓ UNLOCKED")
+                        : span({ class: "starsign-locked-text" }, "LOCKED")
+                ),
+                div(
+                    { class: "starsign-progress-bar" },
+                    div({ class: "starsign-progress-fill", style: `width:${pct}%` })
+                )
+            );
+        }),
 
         // Save button
-        div({ class: "starsign-detail-actions" },
-            button({
-                class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                onclick:  doSave,
-                disabled: () => status.val === "loading",
-            }, () => status.val === "loading" ? "..." : status.val === "success" ? "✓ SAVED" : "SAVE"),
+        div(
+            { class: "starsign-detail-actions" },
+            button(
+                {
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    onclick: doSave,
+                    disabled: () => status.val === "loading",
+                },
+                () => (status.val === "loading" ? "..." : status.val === "success" ? "✓ SAVED" : "SAVE")
+            ),
             status.val === "error"
                 ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
                 : null
@@ -230,45 +262,48 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
 // ── Main list card ────────────────────────────────────────────────────────
 
 const StarSignCard = ({ sign, onClick }) => {
-    const isUnlocked  = sign.unlocked;
-    const cur         = sign.players.length;
-    const need        = sign.playersNeeded;
-    const pct         = Math.min(100, (cur / need) * 100);
+    const isUnlocked = sign.unlocked;
+    const cur = sign.players.length;
+    const need = sign.playersNeeded;
+    const pct = Math.min(100, (cur / need) * 100);
     const groupColors = { A: "sign-A", B: "sign-B", C: "sign-C", D: "sign-D", E: "sign-E", F: "sign-F" };
-    const groupClass  = groupColors[sign.label[0]] ?? "";
+    const groupClass = groupColors[sign.label[0]] ?? "";
 
-    return div({
-        class:   `starsign-card ${isUnlocked ? "starsign-card--unlocked" : ""} ${groupClass}`,
-        onclick: () => onClick(sign),
-    },
-        div({ class: "starsign-card-header" },
+    return div(
+        {
+            class: `starsign-card ${isUnlocked ? "starsign-card--unlocked" : ""} ${groupClass}`,
+            onclick: () => onClick(sign),
+        },
+        div(
+            { class: "starsign-card-header" },
             span({ class: `starsign-label-badge ${groupClass}` }, sign.label),
             isUnlocked
                 ? span({ class: "starsign-status unlocked" }, "✓ UNLOCKED")
-                : span({ class: "starsign-status locked"   }, `${cur}/${need}`)
+                : span({ class: "starsign-status locked" }, `${cur}/${need}`)
         ),
         p({ class: "starsign-card-desc" }, sign.desc),
-        div({ class: "starsign-card-bar" },
-            div({ class: "starsign-card-fill", style: `width:${pct}%` })
-        )
+        div({ class: "starsign-card-bar" }, div({ class: "starsign-card-fill", style: `width:${pct}%` }))
     );
 };
 
 // ── StarSignsTab ──────────────────────────────────────────────────────────
 
 export const StarSignsTab = () => {
-    const signs      = van.state(null); // array of sign objects
-    const loading    = van.state(false);
-    const error      = van.state(null);
+    const signs = van.state(null); // array of sign objects
+    const loading = van.state(false);
+    const error = van.state(null);
     const activeSign = van.state(null); // sign object being edited
 
-    const toArr = (raw) => Array.isArray(raw)
-        ? raw
-        : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
+    const toArr = (raw) =>
+        Array.isArray(raw)
+            ? raw
+            : Object.keys(raw)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((k) => raw[k]);
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         try {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
                 readGga("CustomLists.StarQuests"),
@@ -277,18 +312,18 @@ export const StarSignsTab = () => {
             ]);
 
             const quests = toArr(rawQuests ?? []);
-            const prog   = toArr(rawProg   ?? []);
-            const labels    = computeLabels(quests);
-            const usernames = toArr(rawUsernames ?? []).filter(u => typeof u === "string" && !u.startsWith("__"));
+            const prog = toArr(rawProg ?? []);
+            const labels = computeLabels(quests);
+            const usernames = toArr(rawUsernames ?? []).filter((u) => typeof u === "string" && !u.startsWith("__"));
 
             signs.val = quests
                 .map((q, i) => ({
-                    index:         i,
-                    label:         labels[i],
-                    desc:          cleanDesc(q[7]),
+                    index: i,
+                    label: labels[i],
+                    desc: cleanDesc(q[7]),
                     playersNeeded: parseInt(q[5]) || 1,
-                    players:       parseProgress(prog[i]?.[0]),
-                    unlocked:      prog[i]?.[1] === 1 || prog[i]?.[1] === "1",
+                    players: parseProgress(prog[i]?.[0]),
+                    unlocked: prog[i]?.[1] === 1 || prog[i]?.[1] === "1",
                     usernames,
                 }))
                 .filter((s) => s.desc.length > 0);
@@ -303,13 +338,16 @@ export const StarSignsTab = () => {
     const handleSave = ({ index, progress, unlocked }) => {
         if (!signs.val) return;
         signs.val = signs.val.map((s) =>
-            s.index === index
-                ? { ...s, players: parseProgress(progress), unlocked: unlocked === 1 }
-                : s
+            s.index === index ? { ...s, players: parseProgress(progress), unlocked: unlocked === 1 } : s
         );
         // Also update detail sign
         if (activeSign.val?.index === index) {
-            activeSign.val = { ...activeSign.val, players: parseProgress(progress), unlocked: unlocked === 1, usernames: activeSign.val?.usernames ?? [] };
+            activeSign.val = {
+                ...activeSign.val,
+                players: parseProgress(progress),
+                unlocked: unlocked === 1,
+                usernames: activeSign.val?.usernames ?? [],
+            };
         }
     };
 
@@ -348,35 +386,49 @@ export const StarSignsTab = () => {
         await load();
     };
 
-    return div({ class: "world-feature scroll-container", style: "overflow-y: auto; display: flex; flex-direction: column; min-height: 0;" },
+    return div(
+        {
+            class: "world-feature scroll-container",
+            style: "overflow-y: auto; display: flex; flex-direction: column; min-height: 0;",
+        },
 
-        div({ class: "feature-header" },
-            div(null,
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("STAR SIGNS"),
-                p({ class: "feature-header__desc" },
-                    "Assign players (1–10) and drag to reorder completion order"
-                )
+                p({ class: "feature-header__desc" }, "Assign players (1–10) and drag to reorder completion order")
             ),
-            div({ class: "feature-header__actions" },
+            div(
+                { class: "feature-header__actions" },
                 withTooltip(
-                    button({
-                        class:   "feature-btn feature-btn--apply",
-                        onclick: () => unlockAll(false),
-                    }, "UNLOCK ALL"),
+                    button(
+                        {
+                            class: "feature-btn feature-btn--apply",
+                            onclick: () => unlockAll(false),
+                        },
+                        "UNLOCK ALL"
+                    ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
                 withTooltip(
-                    button({
-                        class:   "feature-btn feature-btn--apply",
-                        onclick: () => unlockAll(true),
-                    }, "RANDOMIZE ALL"),
+                    button(
+                        {
+                            class: "feature-btn feature-btn--apply",
+                            onclick: () => unlockAll(true),
+                        },
+                        "RANDOMIZE ALL"
+                    ),
                     "Unlock all signs with a random player order per sign"
                 ),
                 withTooltip(
-                    button({
-                        class:   "feature-btn feature-btn--danger",
-                        onclick: resetAll,
-                    }, "RESET ALL"),
+                    button(
+                        {
+                            class: "feature-btn feature-btn--danger",
+                            onclick: resetAll,
+                        },
+                        "RESET ALL"
+                    ),
                     "Clear all star sign progress and lock everything"
                 ),
                 withTooltip(
@@ -388,12 +440,14 @@ export const StarSignsTab = () => {
 
         () => {
             if (loading.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     div({ class: "feature-loader" }, Loader({ text: "READING STAR SIGNS" }))
                 );
 
             if (error.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     EmptyState({ icon: Icons.SearchX(), title: "READ FAILED", subtitle: error.val })
                 );
 
@@ -401,21 +455,25 @@ export const StarSignsTab = () => {
 
             // Detail view
             if (activeSign.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     StarSignDetail({
-                        sign:      activeSign.val,
+                        sign: activeSign.val,
                         usernames: activeSign.val.usernames ?? [],
-                        onSave:    handleSave,
-                        onBack:    () => (activeSign.val = null),
+                        onSave: handleSave,
+                        onBack: () => (activeSign.val = null),
                     })
                 );
 
             // Card grid view
-            return div({ class: "starsign-grid" },
+            return div(
+                { class: "starsign-grid" },
                 ...signs.val.map((sign) =>
                     StarSignCard({
                         sign,
-                        onClick: (s) => { activeSign.val = { ...s }; },
+                        onClick: (s) => {
+                            activeSign.val = { ...s };
+                        },
                     })
                 )
             );

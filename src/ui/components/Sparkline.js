@@ -34,8 +34,10 @@ export const Sparkline = ({ data, width = 150, height = 30 }) => {
     const oldest = numericData[0];
     const padCount = Math.max(0, POINT_COUNT - numericData.length);
     const orderedData = [
-        ...Array(padCount).fill().map(() => ({ ...oldest, isPadded: true })),
-        ...numericData
+        ...Array(padCount)
+            .fill()
+            .map(() => ({ ...oldest, isPadded: true })),
+        ...numericData,
     ];
 
     // Calculate min/max for normalization

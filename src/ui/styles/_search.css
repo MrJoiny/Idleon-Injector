@@ -289,7 +289,10 @@
     color: var(--c-text-muted);
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease;
     width: 28px;
     height: 28px;
     display: inline-flex;

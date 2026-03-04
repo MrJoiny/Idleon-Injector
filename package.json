@@ -1,6 +1,6 @@
 {
     "name": "idleon-injector-ui",
-    "version": "2.0.8",
+    "version": "2.1.0",
     "description": "A cheat injector for Legends of Idleon",
     "main": "src/main.js",
     "bin": "src/main.js",
@@ -8,6 +8,8 @@
         "start": "node src/main.js",
         "build:cheats": "rollup -c",
         "watch:cheats": "rollup -c --watch",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "validate": "npm run build:cheats && node --check cheats.js config.js && npx eslint . && node -e \"require('./src/ui/config/optionsAccountSchema.json')\"",
         "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
         "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
@@ -29,6 +31,7 @@
         "@eslint/js": "^9.39.2",
         "eslint": "^9.39.2",
         "globals": "^17.0.0",
+        "prettier": "^3.8.1",
         "rollup": "^4.41.0"
     }
 }

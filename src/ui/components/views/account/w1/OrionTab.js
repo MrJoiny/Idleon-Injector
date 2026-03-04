@@ -105,7 +105,7 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
             if (n !== null) return isFloat ? n : Math.round(n);
         }
         const n = Number(raw);
-        return isNaN(n) ? null : (isFloat ? n : Math.round(n));
+        return isNaN(n) ? null : isFloat ? n : Math.round(n);
     };
 
     const doSet = async (raw) => {
@@ -114,7 +114,7 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
         status.val = "loading";
         try {
             await onWrite(field.index, num);
-            fieldState.val = num;        // only this row's badge re-renders
+            fieldState.val = num; // only this row's badge re-renders
             inputVal.val = String(num);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
@@ -126,34 +126,38 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                field.warn ? "feature-row--warn" : "",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    field.warn ? "feature-row--warn" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
-        div({ class: "feature-row__info" },
+        div(
+            { class: "feature-row__info" },
             span({ class: "feature-row__name" }, field.label),
-            field.warn
-                ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`)
-                : null
+            field.warn ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null
         ),
-        span(
-            { class: `feature-row__badge ${field.live ? "feature-row__badge--highlight" : ""}` },
-            () => {
-                const v = fieldState.val;
-                if (v === undefined) return "—";
-                return isFormatted ? formatNumber(v) : String(v);
-            }
-        ),
-        div({ class: "feature-row__controls feature-row__controls--xl" },
+        span({ class: `feature-row__badge ${field.live ? "feature-row__badge--highlight" : ""}` }, () => {
+            const v = fieldState.val;
+            if (v === undefined) return "—";
+            return isFormatted ? formatNumber(v) : String(v);
+        }),
+        div(
+            { class: "feature-row__controls feature-row__controls--xl" },
             NumberInput({
                 value: inputVal,
                 mode: isFloat ? "float" : "int",
                 ...(isFormatted ? { formatter: largeFormatter, parser: largeParser } : {}),
-                onfocus: () => { isFocused = true; },
-                onblur: () => { isFocused = false; },
+                onfocus: () => {
+                    isFocused = true;
+                },
+                onblur: () => {
+                    isFocused = false;
+                },
                 onDecrement: () => {
                     const cur = resolveNum(inputVal.val) ?? 0;
                     inputVal.val = String(Math.max(0, cur - step));
@@ -164,11 +168,15 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
                 },
             }),
             withTooltip(
-                button({
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick: () => doSet(inputVal.val),
-                    disabled: () => status.val === "loading",
-                }, () => status.val === "loading" ? "..." : "SET"),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSet(inputVal.val),
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
                 `Write value to OptionsListAccount[${field.index}]`
             )
         )
@@ -181,15 +189,13 @@ export const OrionTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
 
-    const fieldStates = new Map(ALL_FIELDS.map(f => [f.index, van.state(undefined)]));
+    const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
 
     const load = async () => {
         loading.val = true;
         error.val = null;
         try {
-            const results = await Promise.all(
-                ALL_FIELDS.map(f => readGga(`OptionsListAccount[${f.index}]`))
-            );
+            const results = await Promise.all(ALL_FIELDS.map((f) => readGga(`OptionsListAccount[${f.index}]`)));
             ALL_FIELDS.forEach((f, i) => {
                 fieldStates.get(f.index).val = results[i] ?? 0;
             });
@@ -209,20 +215,24 @@ export const OrionTab = () => {
     // Hidden via style while loading/errored so the user doesn't see stale data,
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
-        { class: "feature-list", style: () => loading.val || error.val ? "display:none" : "" },
+        { class: "feature-list", style: () => (loading.val || error.val ? "display:none" : "") },
         div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
-        ...PINNED.map(f => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
+        ...PINNED.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "orion-section-label" }, "Upgrades & Stats"),
-        ...FIELDS.map(f => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite }))
+        ...FIELDS.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite }))
     );
 
     load();
 
-    return div({ class: "world-feature scroll-container" },
-        div({ class: "feature-header" },
-            div(null,
+    return div(
+        { class: "world-feature scroll-container" },
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("ORION"),
-                p({ class: "feature-header__desc" },
+                p(
+                    { class: "feature-header__desc" },
                     "Manage Orion the Great Horned Owl — loads once, refreshes after each set"
                 )
             ),
@@ -232,8 +242,10 @@ export const OrionTab = () => {
             )
         ),
 
-        div({ class: "warning-banner" },
-            Icons.Warning(), " ",
+        div(
+            { class: "warning-banner" },
+            Icons.Warning(),
+            " ",
             span({ class: "warning-highlight-accent" }, "Bonuses of Orion"),
             " and ",
             span({ class: "warning-highlight-accent" }, "The Great Mega Reset"),
@@ -242,13 +254,18 @@ export const OrionTab = () => {
             " is permanent — keep between 30–40."
         ),
 
-        () => loading.val
-            ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" })))
-            : null,
+        () =>
+            loading.val
+                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" })))
+                : null,
 
-        () => !loading.val && error.val
-            ? div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val }))
-            : null,
+        () =>
+            !loading.val && error.val
+                ? div(
+                      { class: "feature-list" },
+                      EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
+                  )
+                : null,
 
         rowList
     );

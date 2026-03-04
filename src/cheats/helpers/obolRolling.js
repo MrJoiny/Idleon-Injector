@@ -40,22 +40,14 @@ export function rollAllObols(force = false) {
  * Roll personal obols to perfect stats.
  */
 export function rollPersonalObols() {
-    rollPerfectObols(
-        gga.ObolEquippedOrder[0],
-        gga.ObolEquippedMap[0],
-        gga.CharacterClass
-    );
+    rollPerfectObols(gga.ObolEquippedOrder[0], gga.ObolEquippedMap[0], gga.CharacterClass);
 }
 
 /**
  * Roll family obols to perfect stats.
  */
 export function rollFamilyObols() {
-    rollPerfectObols(
-        gga.ObolEquippedOrder[1],
-        gga.ObolEquippedMap[1],
-        gga.CharacterClass
-    );
+    rollPerfectObols(gga.ObolEquippedOrder[1], gga.ObolEquippedMap[1], gga.CharacterClass);
 }
 
 /**

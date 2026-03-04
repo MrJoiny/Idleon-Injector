@@ -56,22 +56,21 @@ const AnvilRow = ({ category, getStats, onReload }) => {
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""
+                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
+                    status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
-        div({ class: "feature-row__info" },
+        div(
+            { class: "feature-row__info" },
             span({ class: "feature-row__name" }, category.label),
-            category.max !== null
-                ? span({ class: "feature-row__index" }, `max ${category.max}`)
-                : null
+            category.max !== null ? span({ class: "feature-row__index" }, `max ${category.max}`) : null
         ),
-        span({ class: "feature-row__badge" },
-            () => {
-                const val = getStats()?.[category.index] ?? 0;
-                return category.max !== null ? `${val} / ${category.max}` : `${val} pts`;
-            }
-        ),
-        div({ class: "feature-row__controls" },
+        span({ class: "feature-row__badge" }, () => {
+            const val = getStats()?.[category.index] ?? 0;
+            return category.max !== null ? `${val} / ${category.max}` : `${val} pts`;
+        }),
+        div(
+            { class: "feature-row__controls" },
             NumberInput({
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
@@ -79,32 +78,42 @@ const AnvilRow = ({ category, getStats, onReload }) => {
                 onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
             }),
             withTooltip(
-                button({
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick: () => doSet(inputVal.val),
-                    disabled: () => status.val === "loading",
-                }, () => (status.val === "loading" ? "..." : "SET")),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: () => doSet(inputVal.val),
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
                 category.max !== null
                     ? `Set value (clamped to max ${category.max})`
                     : `Set allocated points for ${category.label}`
             ),
             category.max !== null
                 ? withTooltip(
-                    button({
-                        class: "feature-btn feature-btn--danger",
-                        onclick: () => doSet(category.max),
-                        disabled: () => status.val === "loading",
-                    }, "MAX"),
-                    `Set to maximum (${category.max})`
-                )
+                      button(
+                          {
+                              class: "feature-btn feature-btn--danger",
+                              onclick: () => doSet(category.max),
+                              disabled: () => status.val === "loading",
+                          },
+                          "MAX"
+                      ),
+                      `Set to maximum (${category.max})`
+                  )
                 : withTooltip(
-                    button({
-                        class: "feature-btn feature-btn--danger",
-                        onclick: () => doSet(0),
-                        disabled: () => status.val === "loading",
-                    }, "RESET"),
-                    `Reset ${category.label} to 0`
-                )
+                      button(
+                          {
+                              class: "feature-btn feature-btn--danger",
+                              onclick: () => doSet(0),
+                              disabled: () => status.val === "loading",
+                          },
+                          "RESET"
+                      ),
+                      `Reset ${category.label} to 0`
+                  )
         )
     );
 };
@@ -124,7 +133,9 @@ export const AnvilTab = () => {
             const raw = await readGga("AnvilPAstats");
             const arr = Array.isArray(raw)
                 ? raw
-                : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
+                : Object.keys(raw)
+                      .sort((a, b) => a - b)
+                      .map((k) => raw[k]);
             stats.val = arr;
             return arr;
         } catch (e) {
@@ -136,10 +147,13 @@ export const AnvilTab = () => {
 
     load();
 
-    return div({ class: "world-feature scroll-container" },
+    return div(
+        { class: "world-feature scroll-container" },
 
-        div({ class: "feature-header" },
-            div(null,
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("ANVIL"),
                 p({ class: "feature-header__desc" }, "Manage point allocation for Bonus Exp, Speed/hr, and Capacity")
             ),
@@ -149,7 +163,8 @@ export const AnvilTab = () => {
             )
         ),
 
-        div({ class: "warning-banner" },
+        div(
+            { class: "warning-banner" },
             Icons.Warning(),
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
@@ -157,23 +172,28 @@ export const AnvilTab = () => {
 
         () => {
             if (loading.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     div({ class: "feature-loader" }, Loader({ text: "READING ANVIL" }))
                 );
 
             if (error.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     EmptyState({ icon: Icons.SearchX(), title: "ANVIL READ FAILED", subtitle: error.val })
                 );
 
             if (!stats.val) return div({ class: "feature-list" });
 
-            return div({ class: "feature-list" },
+            return div(
+                { class: "feature-list" },
 
                 // Points remaining — always read from game (index 0)
-                div({ class: "feature-row feature-row--info" },
+                div(
+                    { class: "feature-row feature-row--info" },
                     span({ class: "feature-row__name" }, "Points Remaining"),
-                    span({ class: "feature-row__badge feature-row__badge--highlight" },
+                    span(
+                        { class: "feature-row__badge feature-row__badge--highlight" },
                         () => `${stats.val?.[0] ?? 0} pts`
                     )
                 ),

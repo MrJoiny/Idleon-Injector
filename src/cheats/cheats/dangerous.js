@@ -258,7 +258,12 @@ registerCheats({
         { name: "prisma", message: "Wipe your prisma", fn: wipeFunction },
         { name: "exalted", message: "Wipe your exalted", fn: wipeFunction },
         { name: "sumdoubler", message: "Wipe your summoning doublers", fn: wipeFunction },
-        { name: "exp", message: "Reset corrupted skill XP. Usage: wipe exp [skill_name|all]", needsParam: true, fn: wipeFunction },
+        {
+            name: "exp",
+            message: "Reset corrupted skill XP. Usage: wipe exp [skill_name|all]",
+            needsParam: true,
+            fn: wipeFunction,
+        },
     ],
 });
 

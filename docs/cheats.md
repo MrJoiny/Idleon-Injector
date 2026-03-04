@@ -61,7 +61,11 @@ registerCheats({
     message: "all account-wide cheats",
     allowToggleChildren: true,
     subcheats: [
-        { name: "gembuylimit", message: "set max gem item purchases", configurable: true },
+        {
+            name: "gembuylimit",
+            message: "set max gem item purchases",
+            configurable: true,
+        },
         { name: "mtx", message: "gem shop cost nullification" },
         {
             name: "guildpoints",
@@ -135,7 +139,13 @@ registerCheats({
     name: "wide",
     message: "all account-wide cheats",
     allowToggleChildren: true,
-    subcheats: [{ name: "gembuylimit", message: "set max gem item purchases", configurable: true }],
+    subcheats: [
+        {
+            name: "gembuylimit",
+            message: "set max gem item purchases",
+            configurable: true,
+        },
+    ],
 });
 ```
 
@@ -291,7 +301,10 @@ From `src/cheats/proxies/items.js`:
 ```js
 export function setupItemProxies() {
     if (itemDefs._isPatched) return;
-    Object.defineProperty(itemDefs, "_isPatched", { value: true, enumerable: false });
+    Object.defineProperty(itemDefs, "_isPatched", {
+        value: true,
+        enumerable: false,
+    });
 
     for (const item of Object.values(itemDefs)) {
         if (!item.h) continue;

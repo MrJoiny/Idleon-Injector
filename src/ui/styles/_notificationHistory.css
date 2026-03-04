@@ -7,7 +7,9 @@
     display: flex;
     align-items: center;
     margin-right: 10px;
-    transition: opacity 0.2s ease, max-width 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        max-width 0.2s ease;
 }
 
 .notification-history-toggle {
@@ -20,7 +22,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition:
+        color 0.2s ease,
+        background 0.2s ease;
 }
 
 .notification-history-toggle:hover {

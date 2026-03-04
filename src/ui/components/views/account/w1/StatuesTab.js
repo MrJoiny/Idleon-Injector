@@ -27,16 +27,16 @@ const TIERS = [
 // ── StatueRow ─────────────────────────────────────────────────────────────
 
 const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier }) => {
-    const levelInput     = van.state(String(initialLevel ?? 0));
+    const levelInput = van.state(String(initialLevel ?? 0));
     const depositedInput = van.state(String(initialDeposited ?? 0));
-    const tierInput      = van.state(initialTier ?? 0);
-    const status         = van.state(null);
+    const tierInput = van.state(initialTier ?? 0);
+    const status = van.state(null);
 
     // Display states — updated locally on SET so the row reflects the new value
     // without triggering a full list re-render.
-    const levelDisplay     = van.state(initialLevel ?? 0);
+    const levelDisplay = van.state(initialLevel ?? 0);
     const depositedDisplay = van.state(initialDeposited ?? 0);
-    const tierDisplay      = van.state(initialTier ?? 0);
+    const tierDisplay = van.state(initialTier ?? 0);
 
     const doSet = async () => {
         const lvl = Math.max(0, Number(levelInput.val));
@@ -51,9 +51,9 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
             await writeGga(`StatueG[${index}]`, tier);
 
             // Update display states locally — no page-wide re-render needed.
-            levelDisplay.val     = lvl;
+            levelDisplay.val = lvl;
             depositedDisplay.val = dep;
-            tierDisplay.val      = tier;
+            tierDisplay.val = tier;
 
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
@@ -66,42 +66,48 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
     return div(
         {
             class: () => {
-                const tier      = tierDisplay.val;
+                const tier = tierDisplay.val;
                 const tierClass = ["", "tier--gold", "tier--onyx", "tier--zenith"][tier] ?? "";
                 return `feature-row ${tierClass} ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`;
             },
         },
 
         // Name + tier badge
-        div({ class: "feature-row__info" },
+        div(
+            { class: "feature-row__info" },
             span({ class: "feature-row__name" }, name),
-            span({
-                class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][tierDisplay.val]}`
-            }, () => TIERS[tierDisplay.val]?.label ?? "Stone")
+            span(
+                {
+                    class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][tierDisplay.val]}`,
+                },
+                () => TIERS[tierDisplay.val]?.label ?? "Stone"
+            )
         ),
 
         // Level badge
-        span({ class: "feature-row__badge" },
-            () => `LV ${levelDisplay.val}`
-        ),
+        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val}`),
 
         // Controls — staged inputs + SET to the right
-        div({ class: "feature-row__controls" },
-            div({ class: "feature-row__controls--stack" },
+        div(
+            { class: "feature-row__controls" },
+            div(
+                { class: "feature-row__controls--stack" },
 
                 // Row 1: Level
-                div({ class: "statue-control-row" },
+                div(
+                    { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Level"),
                     NumberInput({
                         value: levelInput,
                         oninput: (e) => (levelInput.val = e.target.value),
                         onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
                         onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
-                    }),
+                    })
                 ),
 
                 // Row 2: Deposited
-                div({ class: "statue-control-row" },
+                div(
+                    { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Deposited"),
                     NumberInput({
                         mode: "int",
@@ -109,36 +115,45 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
                         oninput: (e) => (depositedInput.val = e.target.value),
                         onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
                         onIncrement: () => (depositedInput.val = String(Number(depositedInput.val) + 1)),
-                    }),
+                    })
                 ),
 
                 // Row 3: Tier (staged, not written until SET)
-                div({ class: "statue-control-row" },
+                div(
+                    { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Tier"),
-                    select({
-                        class: "statue-tier-select",
-                        onchange: (e) => (tierInput.val = Number(e.target.value)),
-                        disabled: () => status.val === "loading",
-                    },
+                    select(
+                        {
+                            class: "statue-tier-select",
+                            onchange: (e) => (tierInput.val = Number(e.target.value)),
+                            disabled: () => status.val === "loading",
+                        },
                         ...TIERS.map((t) =>
-                            option({
-                                value: t.value,
-                                selected: () => tierInput.val === t.value,
-                            }, t.label)
+                            option(
+                                {
+                                    value: t.value,
+                                    selected: () => tierInput.val === t.value,
+                                },
+                                t.label
+                            )
                         )
-                    ),
-                ),
+                    )
+                )
             ),
 
             // Single SET button for all fields
             withTooltip(
-                button({
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    onclick: doSet,
-                    disabled: () => status.val === "loading",
-                }, () => (status.val === "loading" ? "..." : "SET")),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        onclick: doSet,
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
                 "Write level, deposited, and tier to game"
-            ),
+            )
         )
     );
 };
@@ -154,9 +169,12 @@ export const StatuesTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const toArr = (raw) => Array.isArray(raw)
-                ? raw
-                : Object.keys(raw).sort((a, b) => a - b).map((k) => raw[k]);
+            const toArr = (raw) =>
+                Array.isArray(raw)
+                    ? raw
+                    : Object.keys(raw)
+                          .sort((a, b) => a - b)
+                          .map((k) => raw[k]);
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readGga("CustomLists.StatueInfo"),
                 readGga("StatueLevels"),
@@ -176,10 +194,13 @@ export const StatuesTab = () => {
 
     load();
 
-    return div({ class: "world-feature scroll-container" },
+    return div(
+        { class: "world-feature scroll-container" },
 
-        div({ class: "feature-header" },
-            div(null,
+        div(
+            { class: "feature-header" },
+            div(
+                null,
                 h3("STATUES"),
                 p({ class: "feature-header__desc" }, "Set statue levels, deposited amounts, and upgrade tiers")
             ),
@@ -189,7 +210,8 @@ export const StatuesTab = () => {
             )
         ),
 
-        div({ class: "warning-banner" },
+        div(
+            { class: "warning-banner" },
             Icons.Warning(),
             " Tier upgrades require specific tools: ",
             span({ class: "warning-highlight-accent" }, "Guilding Tools"),
@@ -202,11 +224,13 @@ export const StatuesTab = () => {
 
         () => {
             if (loading.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     div({ class: "feature-loader" }, Loader({ text: "READING STATUES" }))
                 );
             if (error.val)
-                return div({ class: "feature-list" },
+                return div(
+                    { class: "feature-list" },
                     EmptyState({ icon: Icons.SearchX(), title: "STATUE READ FAILED", subtitle: error.val })
                 );
             if (!data.val) return div({ class: "feature-list" });
@@ -216,18 +240,24 @@ export const StatuesTab = () => {
                 .filter((s) => s.name && s.name.trim().length > 0);
 
             if (statues.length === 0)
-                return div({ class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "NO STATUE DATA", subtitle: "Ensure the game is running, then hit REFRESH" })
+                return div(
+                    { class: "feature-list" },
+                    EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO STATUE DATA",
+                        subtitle: "Ensure the game is running, then hit REFRESH",
+                    })
                 );
 
-            return div({ class: "feature-list" },
+            return div(
+                { class: "feature-list" },
                 ...statues.map((s) =>
                     StatueRow({
-                        index:            s.index,
-                        name:             s.name,
-                        initialLevel:     data.val.levels?.[s.index]?.[0] ?? 0,
+                        index: s.index,
+                        name: s.name,
+                        initialLevel: data.val.levels?.[s.index]?.[0] ?? 0,
                         initialDeposited: data.val.levels?.[s.index]?.[1] ?? 0,
-                        initialTier:      data.val.tiers?.[s.index]    ?? 0,
+                        initialTier: data.val.tiers?.[s.index] ?? 0,
                     })
                 )
             );
