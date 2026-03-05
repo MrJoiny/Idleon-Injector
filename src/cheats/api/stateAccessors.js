@@ -26,7 +26,15 @@ export function readPath(path) {
     if (resolved.error) return resolved;
     const { target, prop } = resolved;
     if (prop === undefined) return { error: "Path must include at least one key below the root" };
-    return { value: target[prop] };
+    const raw = target[prop];
+    // CDP returnByValue cannot serialize Haxe arrays/objects directly — they come
+    // back as {}. JSON round-trip coerces them into plain serializable values.
+    try {
+        const value = JSON.parse(JSON.stringify(raw));
+        return { value };
+    } catch {
+        return { value: raw };
+    }
 }
 
 /**
