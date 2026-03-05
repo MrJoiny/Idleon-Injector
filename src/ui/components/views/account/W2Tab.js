@@ -13,16 +13,17 @@ import { LiquidTab } from "./w2/LiquidTab.js";
 import { VialTab } from "./w2/VialTab.js";
 import { Pay2WinTab } from "./w2/Pay2WinTab.js";
 import { SigilTab } from "./w2/SigilTab.js";
+import { ArcadeTab } from "./w2/ArcadeTab.js";
 
 const { div, button, span, p } = van.tags;
 
 // ── Alchemy inner sub-tabs ────────────────────────────────────────────────
 const ALCHEMY_SUBTABS = [
-    { id: "brewing", label: "BREWING",   component: BrewingTab  },
-    { id: "liquid",  label: "LIQUID",    component: LiquidTab   },
-    { id: "vials",   label: "VIALS",     component: VialTab     },
-    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab  },
-    { id: "sigils",  label: "SIGILS",    component: SigilTab    },
+    { id: "brewing", label: "BREWING", component: BrewingTab },
+    { id: "liquid", label: "LIQUID", component: LiquidTab },
+    { id: "vials", label: "VIALS", component: VialTab },
+    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab },
+    { id: "sigils", label: "SIGILS", component: SigilTab },
 ];
 
 // ── W2 top-level sub-tabs ─────────────────────────────────────────────────
@@ -113,7 +114,7 @@ export const W2Tab = () => {
                 button(
                     {
                         class: () =>
-                            `world-sub-tab-btn${activeSubTab.val === tab.id ? " active" : ""}${tab.id !== "alchemy" ? " world-sub-tab-btn--stub" : ""}`,
+                            `world-sub-tab-btn${activeSubTab.val === tab.id ? " active" : ""}${tab.id !== "alchemy" && tab.id !== "arcade" ? " world-sub-tab-btn--stub" : ""}`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
                     tab.label
@@ -135,6 +136,14 @@ export const W2Tab = () => {
                         if (activeSubTab.val === tab.id && !mounted) {
                             mounted = true;
                             van.add(pane, AlchemyPanel());
+                        }
+                    });
+                } else if (tab.id === "arcade") {
+                    let mounted = false;
+                    van.derive(() => {
+                        if (activeSubTab.val === tab.id && !mounted) {
+                            mounted = true;
+                            van.add(pane, ArcadeTab());
                         }
                     });
                 } else {
