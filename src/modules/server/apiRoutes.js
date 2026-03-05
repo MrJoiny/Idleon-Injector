@@ -512,7 +512,9 @@ exports.injectorConfig = ${new_injectorConfig};
             });
 
             if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Computed read failed", details: result.exceptionDetails.text });
+                const ex = result.exceptionDetails;
+                const details = ex.exception?.description ?? ex.text;
+                return res.status(500).json({ error: "Computed read failed", details });
             }
 
             const data = result.result.value;

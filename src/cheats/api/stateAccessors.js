@@ -94,7 +94,9 @@ export function readEntries(rootPath, keys, fields = null) {
  * events(345), events(579), etc. The UI never touches ActorEvents directly.
  *
  * Supported namespaces:
- * - workbench -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ * - workbench  -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ * - alchemy    -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
+ * - summoning  -> events(579)._customBlock_Summoning(name, ...args)
  *
  * @param {string} namespace
  * @param {string} name
@@ -111,6 +113,14 @@ export function readComputed(namespace, name, args = []) {
             actorEvents: events(345),
             method: "_customBlock_WorkbenchStuff",
         }),
+        alchemy: () => ({
+            actorEvents: events(189),
+            method: "_customBlock_cauldronp2wbonuses",
+        }),
+        summoning: () => ({
+            actorEvents: events(579),
+            method: "_customBlock_Summoning",
+        }),
     };
 
     const sourceFactory = sources[namespace];
@@ -122,7 +132,11 @@ export function readComputed(namespace, name, args = []) {
         return { error: `Computed helper unavailable: ${namespace}.${name}` };
     }
 
-    return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
+    try {
+        return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
+    } catch (e) {
+        return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };
+    }
 }
 
 /**
