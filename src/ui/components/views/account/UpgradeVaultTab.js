@@ -7,7 +7,7 @@
  *   CustomLists.UpgradeVault[i][0] = name (underscores + 製 stripped)
  *   CustomLists.UpgradeVault[i][4] = base max level (soft cap)
  *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
- *                 = real max level (includes Vault Mastery bonuses)
+ *                 = real max level (includes Glimbo trade bonuses)
  *   gga.UpgVault[i]                = current level
  *
  * Write: gga.UpgVault[XX] = YY
@@ -184,7 +184,7 @@ export const UpgradeVaultTab = () => {
                 h3("UPGRADE VAULT"),
                 p(
                     { class: "feature-header__desc" },
-                    "Set levels for all vault upgrades — real max includes Vault Mastery bonuses"
+                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses"
                 )
             ),
             withTooltip(
@@ -196,7 +196,7 @@ export const UpgradeVaultTab = () => {
         div(
             { class: "warning-banner" },
             Icons.Warning(),
-            " Max level is sourced directly from the game's VaultUpgMaxLV formula (base + Vault Mastery). " +
+            " Max level is sourced directly from the game's VaultUpgMaxLV formula (base + Glimbo trade bonuses). " +
             "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 

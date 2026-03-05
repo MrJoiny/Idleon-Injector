@@ -206,7 +206,7 @@ export const LiquidTab = () => {
             ),
             div(
                 { class: "feature-header__actions" },
-                button({ class: "feature-btn", onclick: load }, Icons.Refresh(), " REFRESH"),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
 
