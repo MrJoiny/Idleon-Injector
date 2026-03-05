@@ -3,7 +3,7 @@
  *
  * Account-wide cheats:
  * - gembuylimit, mtx, post, guild, task, quest, star
- * - giant, gems, plunderous, candy, candytime, nodmg
+ * - giant, gems, plunderous, candy, candytime, afkitemtime, nodmg
  * - hidenames, noanim, eventitems, autoloot, perfectobols, autoparty
  * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy
  */
@@ -32,6 +32,7 @@ registerCheats({
         { name: "plunderous", message: "100% plunderous mob spawn rate" },
         { name: "candy", message: "candy use everywhere" },
         { name: "candytime", message: "buffs 1 hr candys in minutes", configurable: true },
+        { name: "afkitemtime", message: "buffs skill AFK consumables (Blinding Lantern, Half Finished Research Paper, Aethermoon, Charred Bone, Arcane Rock) in hours", configurable: true },
         { name: "nodmg", message: "no damage numbers" },
         { name: "hidenames", message: "hide player names in world and UI" },
         { name: "noanim", message: "stop all game animations" },

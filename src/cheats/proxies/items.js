@@ -10,11 +10,13 @@
  * - upstones use: Upgrade stone no slot consumption
  * - equipall: Any item equippable by any class at level 1
  * - wide candytime: Custom time candy duration
+ * - wide afkitemtime: Custom skill AFK consumable duration (Aethermoon, Arcane Rock, Blinding Lantern, Charred Bone, Half Finished Research Paper)
  */
 
 import { cheatState, cheatConfig } from "../core/state.js";
 import { itemDefs } from "../core/globals.js";
 import { createProxy } from "../utils/proxy.js";
+import { AFX_ITEM_HOURS } from "./events038.js";
 
 /**
  * Setup all item definition proxies.
@@ -75,5 +77,18 @@ export function setupItemProxies() {
             if (cheatState.wide.candytime) return cheatConfig.wide.candytime ?? 600;
             return original;
         });
+    }
+
+    // Skill AFK consumables (hold-to-use, class path items)
+    for (const id of Object.keys(AFX_ITEM_HOURS)) {
+        const afkItem = itemDefs[id]?.h;
+        if (afkItem) {
+            createProxy(afkItem, "desc_line1", (original) => {
+                if (cheatState.wide.afkitemtime && original) {
+                    return original.replace(/\d+(?=_Hours?)/, String(cheatConfig.wide.afkitemtime ?? 240));
+                }
+                return original;
+            });
+        }
     }
 }
