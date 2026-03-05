@@ -69,6 +69,7 @@ const VIALS_UPG_LABELS = ["ATTEMPTS", "RNG"];
 
 // Player boosts: e = 0 → Alch Spd,  e = 1 → Extra EXP
 const PLAYER_LABELS = ["ALCH SPD", "EXTRA EXP"];
+const DRACONIC_LABELS = ["COUNT"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,10 @@ export const Pay2WinTab = () => {
     const vialsUpgVal = Array.from({ length: 2 }, () => van.state(0));
     const vialsUpgMax = Array.from({ length: 2 }, () => van.state(0));
 
+    // Draconic cauldrons (OptionsListAccount[123]): fixed range 0..4
+    const draconicVal = van.state(0);
+    const draconicMax = van.state(4);
+
     // Player boosts: 2 rows
     const playerVal = Array.from({ length: 2 }, () => van.state(0));
     const playerMax = Array.from({ length: 2 }, () => van.state(0));
@@ -173,12 +178,16 @@ export const Pay2WinTab = () => {
         loading.val = true;
         error.val   = null;
         try {
-            const rawP2W = await readGga("CauldronP2W");
+            const [rawP2W, rawDraconic] = await Promise.all([
+                readGga("CauldronP2W"),
+                readGga("OptionsListAccount[123]"),
+            ]);
             const p2w    = toArr(rawP2W ?? []);
             const brew0  = toArr(p2w[0] ?? []);
             const liq1   = toArr(p2w[1] ?? []);
             const via2   = toArr(p2w[2] ?? []);
             const plr3   = toArr(p2w[3] ?? []);
+            const draconic = Math.min(4, Math.max(0, Number(rawDraconic ?? 0)));
 
             // Fill values
             for (let e = 0; e < 4; e++)
@@ -193,6 +202,7 @@ export const Pay2WinTab = () => {
                 vialsUpgVal[e].val = Number(via2[e] ?? 0);
                 playerVal[e].val   = Number(plr3[e] ?? 0);
             }
+            draconicVal.val = draconic;
 
             // Fetch max levels in parallel
             const maxJobs = [];
@@ -316,6 +326,20 @@ export const Pay2WinTab = () => {
             LIQUID_COLS, LIQ_ROW_LABELS, liqVal, liqMax, 1, 2,
         ),
 
+        div(
+            { class: "p2w-section" },
+            SectionHeader("DRACONIC CAULDRONS", "Number of draconic liquid cauldrons (0-4)"),
+            div(
+                { class: "p2w-simple-rows" },
+                P2WRow({
+                    label: DRACONIC_LABELS[0],
+                    valueState: draconicVal,
+                    maxState: draconicMax,
+                    writePath: "OptionsListAccount[123]",
+                }),
+            ),
+        ),
+
         buildSimpleSection(
             "VIALS UPGRADES", "P2W vial upgrade levels",
             VIALS_UPG_LABELS, vialsUpgVal, vialsUpgMax, 2,
@@ -335,7 +359,7 @@ export const Pay2WinTab = () => {
             div(
                 {},
                 h3({}, "ALCHEMY — PAY 2 WIN"),
-                p({ class: "feature-header__desc" }, "Edit P2W upgrades for cauldrons, liquids, vials and player boosts."),
+                p({ class: "feature-header__desc" }, "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts."),
             ),
             div(
                 { class: "feature-header__actions" },
