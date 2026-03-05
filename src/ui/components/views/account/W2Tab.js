@@ -2,8 +2,14 @@
  * World 2 Tab — YUM-YUM DESERT
  *
  * Sub-tabs:
- *   - ALCHEMY  (inner: Brewing ✓, Liquid ✓, Vials ✓, Pay2Win ✓, Sigils ✓)
- *   - ARCADE, POST OFFICE, OBOLS  (placeholders)
+ *   - ALCHEMY     (inner: Brewing ✓, Liquid ✓, Vials ✓, Pay2Win ✓, Sigils ✓)
+ *   - ARCADE      (implemented ✓)
+ *   - POST OFFICE (implemented ✓)
+ *   - OBOLS       (placeholder)
+ *
+ * To add a new W2 sub-tab:
+ *   1. Create its component in ./w2/
+ *   2. Push an entry to W2_SUBTABS below.
  */
 
 import van from "../../../vendor/van-1.6.0.js";
@@ -14,26 +20,30 @@ import { VialTab } from "./w2/VialTab.js";
 import { Pay2WinTab } from "./w2/Pay2WinTab.js";
 import { SigilTab } from "./w2/SigilTab.js";
 import { ArcadeTab } from "./w2/ArcadeTab.js";
+import { PostOfficeTab } from "./w2/PostOfficeTab.js";
+import { KillroyTab } from "./w2/KillroyTab.js";
 
 const { div, button, span, p } = van.tags;
 
 // ── Alchemy inner sub-tabs ────────────────────────────────────────────────
 const ALCHEMY_SUBTABS = [
-    { id: "brewing", label: "BREWING", component: BrewingTab },
-    { id: "liquid", label: "LIQUID", component: LiquidTab },
-    { id: "vials", label: "VIALS", component: VialTab },
-    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab },
-    { id: "sigils", label: "SIGILS", component: SigilTab },
+    { id: "brewing", label: "BREWING",   component: BrewingTab  },
+    { id: "liquid",  label: "LIQUID",    component: LiquidTab   },
+    { id: "vials",   label: "VIALS",     component: VialTab     },
+    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab  },
+    { id: "sigils",  label: "SIGILS",    component: SigilTab    },
 ];
 
 // ── W2 top-level sub-tabs ─────────────────────────────────────────────────
 const W2_SUBTABS = [
-    { id: "alchemy", label: "ALCHEMY" },
-    { id: "arcade", label: "ARCADE" },
-    { id: "post-office", label: "POST OFFICE" },
-    { id: "obols", label: "OBOLS" },
+    { id: "alchemy",     label: "ALCHEMY",     component: null        },
+    { id: "arcade",      label: "ARCADE",      component: ArcadeTab   },
+    { id: "post-office", label: "POST OFFICE", component: PostOfficeTab },
+    { id: "killroy",     label: "KILLROY",     component: KillroyTab  },
+    { id: "obols",       label: "OBOLS",       component: null        },
 ];
 
+// ─── placeholder pane ────────────────────────────────────────────────────
 const PlaceholderPane = (label) =>
     div(
         { class: "world-sub-placeholder" },
@@ -53,7 +63,10 @@ const AlchemyPanel = () => {
             ...ALCHEMY_SUBTABS.map((tab) =>
                 button(
                     {
-                        class: () => `alchemy-sub-btn${active.val === tab.id ? " active" : ""}${!tab.component ? " alchemy-sub-btn--stub" : ""}`,
+                        class: () =>
+                            `alchemy-sub-btn ${active.val === tab.id ? "active" : ""} ${
+                                !tab.component ? "alchemy-sub-btn--stub" : ""
+                            }`,
                         onclick: () => (active.val = tab.id),
                     },
                     tab.label
@@ -65,7 +78,7 @@ const AlchemyPanel = () => {
             { class: "alchemy-sub-content" },
             ...ALCHEMY_SUBTABS.map((tab) => {
                 const pane = div({
-                    class: () => `alchemy-pane${active.val === tab.id ? " alchemy-pane--active" : ""}`,
+                    class: () => `alchemy-pane ${active.val === tab.id ? "alchemy-pane--active" : ""}`,
                     "data-alchemy": tab.id,
                 });
 
@@ -104,7 +117,7 @@ export const W2Tab = () => {
                     const cur = W2_SUBTABS.find((t) => t.id === activeSubTab.val);
                     return van.tags.h2({ class: "world-tab-title" }, `W2 — ${cur?.label ?? ""}`);
                 },
-                p({ class: "world-tab-subtitle" }, "Yum-Yum Desert — Alchemy, Arcade, Post Office & Obols")
+                p({ class: "world-tab-subtitle" }, "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Obols")
             )
         ),
 
@@ -114,7 +127,9 @@ export const W2Tab = () => {
                 button(
                     {
                         class: () =>
-                            `world-sub-tab-btn${activeSubTab.val === tab.id ? " active" : ""}${tab.id !== "alchemy" && tab.id !== "arcade" ? " world-sub-tab-btn--stub" : ""}`,
+                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${
+                                !tab.component && tab.id !== "alchemy" ? "world-sub-tab-btn--stub" : ""
+                            }`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
                     tab.label
@@ -126,7 +141,7 @@ export const W2Tab = () => {
             { class: "world-sub-content" },
             ...W2_SUBTABS.map((tab) => {
                 const pane = div({
-                    class: () => `world-sub-pane${activeSubTab.val === tab.id ? " active" : ""}`,
+                    class: () => `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
                     "data-subtab": tab.id,
                 });
 
@@ -138,16 +153,16 @@ export const W2Tab = () => {
                             van.add(pane, AlchemyPanel());
                         }
                     });
-                } else if (tab.id === "arcade") {
+                } else if (!tab.component) {
+                    van.add(pane, PlaceholderPane(tab.label));
+                } else {
                     let mounted = false;
                     van.derive(() => {
                         if (activeSubTab.val === tab.id && !mounted) {
                             mounted = true;
-                            van.add(pane, ArcadeTab());
+                            van.add(pane, tab.component());
                         }
                     });
-                } else {
-                    van.add(pane, PlaceholderPane(tab.label));
                 }
 
                 return pane;
