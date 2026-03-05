@@ -1033,6 +1033,19 @@
     color: var(--c-accent);
 }
 
+/* ── Vials tab ───────────────────────────────────────────────────────────── */
+
+.vials-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.vials-tab .feature-list {
+    overflow-y: auto;
+}
+
 /* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
 /* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win)
    and W3 Construction (Buildings, Cogs). */

@@ -9,6 +9,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
 import { BrewingTab } from "./w2/BrewingTab.js";
+import { VialTab } from "./w2/VialTab.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -16,7 +17,7 @@ const { div, button, span, p } = van.tags;
 const ALCHEMY_SUBTABS = [
     { id: "brewing", label: "BREWING", component: BrewingTab },
     { id: "liquid", label: "LIQUID", component: null },
-    { id: "vials", label: "VIALS", component: null },
+    { id: "vials", label: "VIALS", component: VialTab },
     { id: "pay2win", label: "PAY 2 WIN", component: null },
 ];
 
