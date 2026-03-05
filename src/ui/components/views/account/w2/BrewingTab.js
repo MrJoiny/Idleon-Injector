@@ -301,7 +301,7 @@ export const BrewingTab = () => {
     load();
 
     return div(
-        { class: "brewing-tab" },
+        { class: "brewing-tab tab-container" },
 
         // Header
         div(
@@ -337,7 +337,7 @@ export const BrewingTab = () => {
             if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
 
             return div(
-                { class: "brewing-columns" },
+                { class: "brewing-columns grid-4col scrollable-panel" },
                 ...CAULDRONS.map((c) =>
                     CauldronColumn({
                         cauldron: c,

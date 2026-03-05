@@ -124,7 +124,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
                     span({ class: "statue-control-label" }, "Tier"),
                     select(
                         {
-                            class: "statue-tier-select",
+                            class: "statue-tier-select select-base",
                             onchange: (e) => (tierInput.val = Number(e.target.value)),
                             disabled: () => status.val === "loading",
                         },

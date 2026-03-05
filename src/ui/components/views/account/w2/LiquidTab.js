@@ -187,14 +187,14 @@ export const LiquidTab = () => {
     // Grid is built once here and permanently lives in the DOM.
     // Concealed via CSS class until the first load completes.
     const grid = div(
-        { class: () => `liquid-grid${initialized.val ? "" : " liquid-grid--hidden"}` },
+        { class: () => `liquid-grid grid-4col scrollable-panel${initialized.val ? "" : " liquid-grid--hidden"}` },
         ...LIQUIDS.map((liq, i) =>
             LiquidColumn({ liquid: liq, states: liquidStates[i] })
         )
     );
 
     return div(
-        { class: "liquid-tab" },
+        { class: "liquid-tab tab-container" },
 
         // Header
         div(

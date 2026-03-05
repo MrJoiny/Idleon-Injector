@@ -258,7 +258,7 @@ export const Pay2WinTab = () => {
             { class: "p2w-section" },
             SectionHeader(title, note),
             div(
-                { class: "p2w-cauldron-grid" },
+                { class: "grid-4col" },
                 ...cols.map((col, e) =>
                     div(
                         {
@@ -304,7 +304,7 @@ export const Pay2WinTab = () => {
         );
 
     const scroll = div(
-        { class: () => `p2w-scroll${initialized.val ? "" : " p2w-scroll--hidden"}` },
+        { class: () => `p2w-scroll scrollable-panel${initialized.val ? "" : " p2w-scroll--hidden"}` },
 
         buildCauldronSection(
             "BREWING CAULDRONS", "P2W upgrade levels per cauldron",
@@ -328,7 +328,7 @@ export const Pay2WinTab = () => {
     );
 
     return div(
-        { class: "p2w-tab" },
+        { class: "p2w-tab tab-container" },
 
         div(
             { class: "feature-header" },

@@ -1,13 +1,21 @@
 /**
- * Feature Pages — Universal Component Styles
+ * Feature Pages — Shared Component Styles
  *
  * Shared by every world sub-tab feature (Stamps, Forge, Alchemy, etc.).
- * Add a new feature page → zero new CSS files. Just use these classes.
+ * Component-specific CSS lives in tabs/wX/ folders and is @imported by style.css.
  *
- * Class anatomy:
+ * ── Utility classes (use these in new components) ─────────────────────────
+ *   .tab-container      flex column fill — replaces .*-tab container blocks
+ *   .scrollable-panel   flex-grow + overflow-y:auto + padding:14px
+ *   .grid-4col          4-equal-column grid with 10px gap
+ *   .flash-success      green border+bg flash (SET success)
+ *   .flash-error        red border+bg flash (SET error)
+ *   .select-base        shared select element base style
+ *
+ * ── Class anatomy ─────────────────────────────────────────────────────────
  *   .feature-header          top info + refresh bar
  *   .feature-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
- *   .feature-list            scrollable list container
+ *   .feature-list            scrollable list container (incorporates .scrollable-panel)
  *   .feature-row             one data row  (grid: info | badge | controls)
  *   .feature-row__info       left: index badge + name
  *   .feature-row__badge      centre: read-only status (e.g. "LV 50 / 100")
@@ -18,17 +26,25 @@
  *   .feature-btn--loading    spinner state
  */
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+/* ── Layout containers ───────────────────────────────────────────────────── */
 
-/* ── world-feature: top-level layout container for feature tabs ─────────────
-   Used as: div({ class: "world-feature scroll-container" })
-   scroll-container handles overflow-y; world-feature handles flex layout.    */
+/* world-feature: used by W1 tabs (Statues, StarSigns, etc.) */
 .world-feature {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
 }
+
+/* tab-container: use this for new feature tab wrappers */
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
 
 .feature-header {
     display: flex;
@@ -105,6 +121,8 @@
 
 /* ── Scrollable list ─────────────────────────────────────────────────────── */
 
+/* feature-list: used by W1 tabs. Incorporates .scrollable-panel behavior.
+   New tabs should use .scrollable-panel directly on their scroll container. */
 .feature-list {
     display: flex;
     flex-direction: column;
@@ -112,6 +130,20 @@
     padding: 14px;
     flex: 1;
     overflow-y: auto;
+}
+
+/* Flex-grow scrollable content area — use on new scroll containers */
+.scrollable-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+}
+
+/* 4-equal-column grid used by cauldron / liquid layouts */
+.grid-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .feature-loader {
@@ -138,12 +170,28 @@
     border-color: var(--c-border-strong);
 }
 
-.feature-row--success {
+/* ── Flash state — shared by all card/row components ─────────────────────── */
+/* New components: use .flash-success / .flash-error directly.               */
+/* Existing class names kept here so no JS changes are required.             */
+
+.flash-success,
+.feature-row--success,
+.bubble-card--success,
+.liquid-section--success,
+.p2w-row--success,
+.sigil-setall-bar--success,
+.sigil-card--flash-success {
     border-color: var(--c-success) !important;
     background: var(--c-success-10);
 }
 
-.feature-row--error {
+.flash-error,
+.feature-row--error,
+.bubble-card--error,
+.liquid-section--error,
+.p2w-row--error,
+.sigil-setall-bar--error,
+.sigil-card--flash-error {
     border-color: var(--c-danger) !important;
     background: var(--c-danger-10);
 }
@@ -257,433 +305,20 @@
     font-weight: 700;
 }
 
-/* ── Statue tiers ─────────────────────────────────────────────────────── */
-.statue-tier-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-    margin-left: 6px;
-    text-transform: uppercase;
-    border: 1px solid currentColor;
-}
+/* ── Select base — shared dropdown style ─────────────────────────────────── */
+/* Add .select-base to any select element; keep only unique props in the      */
+/* component class (height, width, font-size, font-family, padding).          */
 
-.tier--stone {
-    color: var(--c-tier-stone);
-}
-
-.tier--gold {
-    color: var(--c-tier-gold);
-}
-
-.tier--onyx {
-    color: var(--c-tier-onyx);
-}
-
-.tier--zenith {
-    color: var(--c-tier-zenith);
-}
-
-.feature-row.tier--gold {
-    border-color: var(--c-tier-gold-35);
-}
-
-.feature-row.tier--onyx {
-    border-color: var(--c-tier-onyx-35);
-}
-
-.feature-row.tier--zenith {
-    border-color: var(--c-tier-zenith-35);
-}
-
-.statue-tier-select {
+.select-base {
     background: var(--c-panel);
     color: var(--c-text);
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 0 6px;
-    height: 32px;
-    width: 180px;
-    font-size: 0.8rem;
     cursor: pointer;
 }
 
-.statue-tier-select:focus {
+.select-base:focus {
     outline: none;
     border-color: var(--c-accent);
-}
-
-/* ── Statue stacked controls ──────────────────────────────────────────── */
-.feature-row__controls--stack {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-}
-
-.feature-row__controls--stack .number-input-wrapper {
-    width: 180px;
-}
-
-.statue-control-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.statue-control-label {
-    font-size: 0.7rem;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    width: 60px;
-    text-align: right;
-}
-
-/* ── Orion tab ────────────────────────────────────────────────────────── */
-.feature-row--warn {
-    border-color: var(--c-warning) !important;
-    background: var(--c-accent-dim-solid);
-}
-
-.orion-warn-badge {
-    font-size: 0.65rem;
-    color: var(--c-warning);
-    margin-left: 8px;
-    font-style: italic;
-}
-
-.orion-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--c-text-dim);
-    padding: 8px 4px 4px;
-    border-bottom: 1px solid var(--c-border);
-    margin-bottom: 2px;
-}
-
-/* Wide number input for large values (Orion feathers etc) */
-.feature-row__controls--wide .number-input-wrapper {
-    width: 120px;
-}
-
-.feature-row__controls--wide .number-input-wrapper input {
-    min-width: 6ch;
-    font-size: 0.8rem;
-}
-
-.feature-row__controls--xl .number-input-wrapper {
-    width: 180px;
-}
-
-.feature-row__controls--xl .number-input-wrapper input {
-    min-width: 10ch;
-    font-size: 0.8rem;
-}
-
-/* ── Star Signs ───────────────────────────────────────────────────────── */
-.starsign-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 8px;
-    padding: 4px 0;
-}
-
-.starsign-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-    cursor: pointer;
-    transition:
-        border-color 0.15s,
-        background 0.15s;
-}
-
-.starsign-card:hover {
-    border-color: var(--c-accent);
-    background: var(--c-panel-hover);
-}
-
-.starsign-card--unlocked {
-    border-color: var(--c-accent-40);
-}
-
-.starsign-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-}
-
-.starsign-label-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid currentColor;
-}
-
-.starsign-card-desc {
-    font-size: 0.75rem;
-    color: var(--c-text-dim);
-    margin: 0 0 8px;
-    line-height: 1.4;
-}
-
-.starsign-card-bar {
-    height: 4px;
-    background: var(--c-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-}
-
-.starsign-card-fill {
-    height: 100%;
-    background: var(--c-accent);
-    border-radius: var(--radius-sm);
-    transition: width 0.3s;
-}
-
-.starsign-status {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.starsign-status.unlocked {
-    color: var(--c-accent);
-}
-
-.starsign-status.locked {
-    color: var(--c-text-dim);
-}
-
-/* Group colour tints */
-.sign-A .starsign-label-badge,
-.starsign-label-badge.sign-A {
-    color: var(--c-sign-a);
-}
-
-.sign-B .starsign-label-badge,
-.starsign-label-badge.sign-B {
-    color: var(--c-sign-b);
-}
-
-.sign-C .starsign-label-badge,
-.starsign-label-badge.sign-C {
-    color: var(--c-sign-c);
-}
-
-.sign-D .starsign-label-badge,
-.starsign-label-badge.sign-D {
-    color: var(--c-sign-d);
-}
-
-.sign-E .starsign-label-badge,
-.starsign-label-badge.sign-E {
-    color: var(--c-sign-e);
-}
-
-.sign-F .starsign-label-badge,
-.starsign-label-badge.sign-F {
-    color: var(--c-sign-f);
-}
-
-/* Detail view */
-.starsign-detail {
-    padding: 4px 0;
-}
-
-.starsign-back-btn {
-    background: none;
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 4px 12px;
-    cursor: pointer;
-    color: var(--c-text);
-    font-size: 0.8rem;
-    margin-bottom: 0;
-}
-
-.starsign-back-btn:hover {
-    border-color: var(--c-accent);
-}
-
-.starsign-detail-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.starsign-detail-label {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 4px;
-}
-
-.starsign-detail-desc {
-    font-size: 0.8rem;
-    color: var(--c-text-dim);
-    margin: 0;
-}
-
-.starsign-needed-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border: 1px solid var(--c-accent);
-    border-radius: var(--radius-sm);
-    color: var(--c-accent);
-    white-space: nowrap;
-}
-
-.starsign-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--c-text-dim);
-    margin: 12px 0 6px;
-}
-
-/* Drag list */
-.starsign-drag-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 12px;
-}
-
-.starsign-drag-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    cursor: grab;
-    user-select: none;
-}
-
-.starsign-drag-row:active,
-.starsign-drag-row.dragging {
-    cursor: grabbing;
-    opacity: 0.5;
-}
-
-.starsign-drag-row.drag-over {
-    border-color: var(--c-accent);
-    background: var(--c-panel-hover);
-}
-
-.starsign-drag-handle {
-    color: var(--c-text-dim);
-    font-size: 1rem;
-}
-
-.starsign-player-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-}
-
-.starsign-player-num {
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.starsign-player-letter {
-    font-size: 0.7rem;
-    font-family: monospace;
-    background: var(--c-border);
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-}
-
-.starsign-remove-btn {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--c-danger);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0 4px;
-}
-
-.starsign-remove-btn:hover {
-    color: var(--c-danger);
-}
-
-/* Empty state */
-.starsign-empty-players {
-    font-size: 0.8rem;
-    color: var(--c-text-dim);
-    padding: 12px;
-    border: 1px dashed var(--c-border);
-    border-radius: var(--radius-sm);
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-/* Add row */
-.starsign-add-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-/* Progress */
-.starsign-progress-bar-wrap {
-    margin-bottom: 16px;
-}
-
-.starsign-progress-label {
-    font-size: 0.8rem;
-    margin-bottom: 6px;
-}
-
-.starsign-unlocked-text {
-    color: var(--c-accent);
-    font-weight: 700;
-}
-
-.starsign-locked-text {
-    color: var(--c-text-dim);
-}
-
-.starsign-progress-bar {
-    height: 6px;
-    background: var(--c-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-}
-
-.starsign-progress-fill {
-    height: 100%;
-    background: var(--c-accent);
-    border-radius: var(--radius-sm);
-    transition: width 0.3s;
-}
-
-/* Actions */
-.starsign-detail-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.starsign-save-error {
-    font-size: 0.75rem;
-    color: var(--c-danger);
 }
 
 /* ── Feature header actions group ──────────────────────────────────────── */
@@ -709,465 +344,18 @@
     color: var(--c-tier-zenith);
     font-weight: 700;
 }
-/* ── Brewing tab ─────────────────────────────────────────────────────────── */
-
-.brewing-tab {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-.brewing-columns {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 14px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.brewing-column {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-}
-
-.brewing-column__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-left: 3px solid var(--cauldron-color, var(--c-accent));
-    flex-shrink: 0;
-}
-
-.brewing-column__label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--cauldron-color, var(--c-text-main));
-}
-
-.brewing-column__setall-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 24px;
-}
-
-.brewing-column__bubbles {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.brewing-column__empty {
-    font-size: 0.75rem;
-    color: var(--c-text-dim);
-    text-align: center;
-    padding: 20px 8px;
-}
-
-/* Set-all row in header */
-.brewing-setall-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.brewing-setall-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-muted);
-    white-space: nowrap;
-}
-
-/* Larger number input for the global SET ALL level control */
-.brewing-setall-input-wrap .number-input-wrapper {
-    width: 150px;
-}
-
-.brewing-setall-input-wrap .number-input-btn {
-    height: 38px;
-}
-
-/* ── Bubble card ─────────────────────────────────────────────────────────── */
-
-.bubble-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    transition: border-color 0.2s, background 0.2s;
-}
-
-.bubble-card:hover {
-    border-color: var(--c-border-strong);
-}
-
-.bubble-card--prisma {
-    border-color: var(--cauldron-color, var(--c-accent));
-    background: var(--cauldron-dim, var(--c-accent-06));
-}
-
-.bubble-card--success {
-    border-color: var(--c-success) !important;
-    background: var(--c-success-10);
-}
-
-.bubble-card--error {
-    border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
-}
-
-.bubble-card__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
-
-.bubble-card__index {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--c-text-dim);
-    background: var(--c-black-40);
-    padding: 1px 5px;
-}
-
-.bubble-card__prisma-badge {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--cauldron-color, var(--c-accent));
-}
-
-.bubble-card__name {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--c-text-main);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bubble-card__level-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.bubble-card__level-label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--c-text-dim);
-    letter-spacing: 0.05em;
-}
-
-.bubble-card__level-val {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--c-accent);
-}
-
-.bubble-card__controls {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.bubble-card__controls .number-input-wrapper {
-    width: 80px;
-}
-
-.bubble-card__set-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 26px;
-}
-
-.bubble-card__prisma-btn {
-    font-size: 0.65rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-    padding: 3px 8px;
-    border: 1px solid var(--c-border);
-    background: transparent;
-    color: var(--c-text-dim);
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-    width: 100%;
-    text-align: center;
-}
-
-.bubble-card__prisma-btn:hover {
-    border-color: var(--cauldron-color, var(--c-accent));
-    color: var(--cauldron-color, var(--c-accent));
-}
-
-.bubble-card__prisma-btn--active {
-    border-color: var(--cauldron-color, var(--c-accent));
-    color: var(--cauldron-color, var(--c-accent));
-    background: var(--cauldron-dim, var(--c-accent-06));
-    font-weight: 700;
-}
-
-/* Invisible spacer — keeps big bubble cards the same height as normal cards.
-   Mirrors the exact box model of .bubble-card__prisma-btn so the gap it fills
-   is pixel-perfect regardless of font scaling. */
-.bubble-card__prisma-spacer {
-    padding: 3px 8px;
-    font-size: 0.65rem;
-    border: 1px solid transparent;
-    pointer-events: none;
-    visibility: hidden;
-}
-
-/* ── Construction — MAX button ───────────────────────────────────────────── */
-
-.construction-btn--max {
-    background: var(--c-accent-06);
-    color: var(--c-accent);
-    border: 1px solid var(--c-accent-20);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.construction-btn--max:hover:not(:disabled) {
-    background: var(--c-accent);
-    color: var(--c-black);
-}
-
-/* ── Refinery tab ────────────────────────────────────────────────────────── */
-
-.refinery-row--polymer {
-    border-left: 3px solid #7e57c2;
-}
-
-.refinery-row--placeholder {
-    opacity: 0.5;
-    border-left: 3px solid var(--c-warning);
-}
-
-.refinery-row__name-group {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.refinery-row__badges {
-    display: flex;
-    gap: 6px;
-}
-
-.refinery-badge {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 1px 6px;
-    border: 1px solid currentColor;
-    white-space: nowrap;
-}
-
-.refinery-badge--polymer {
-    color: #7e57c2;
-}
-
-.refinery-badge--placeholder {
-    color: var(--c-warning);
-}
-
-/* Stacked level + charge controls */
-.refinery-control-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.refinery-control-label {
-    font-size: 0.7rem;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    width: 52px;
-    text-align: right;
-}
-
-/* Notices at top of refinery tab */
-.refinery-notice {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    font-size: 0.75rem;
-    color: var(--c-text-muted);
-    border-bottom: 1px solid var(--c-border);
-    flex-shrink: 0;
-}
-
-.refinery-notice--polymer {
-    background: rgba(126, 87, 194, 0.06);
-}
-
-.refinery-notice--placeholder {
-    background: var(--c-accent-06);
-}
-
-.refinery-notice__icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.refinery-notice__highlight {
-    font-weight: 700;
-    color: var(--c-accent);
-}
 
 /* ── Vials tab ───────────────────────────────────────────────────────────── */
-
-.vials-tab {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
+/* Container properties handled by .tab-container                             */
 
 .vials-tab .feature-list {
     overflow-y: auto;
 }
 
-/* ── Liquid tab ──────────────────────────────────────────────────────────── */
-
-.liquid-tab {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-.liquid-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 14px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.liquid-col {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-}
-
-.liquid-col__header {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-left: 3px solid var(--liquid-color, var(--c-accent));
-}
-
-.liquid-col__name {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: var(--liquid-color, var(--c-text-main));
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* One editable property (Amount / Cap / Rate) */
-.liquid-section {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    transition: border-color 0.2s, background 0.2s;
-}
-
-.liquid-section:hover {
-    border-color: var(--c-border-strong);
-}
-
-.liquid-section--success {
-    border-color: var(--c-success) !important;
-    background: var(--c-success-10);
-}
-
-.liquid-section--error {
-    border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
-}
-
-.liquid-section__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
-
-.liquid-section__label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-}
-
-.liquid-section__display {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--liquid-color, var(--c-accent));
-}
-
-.liquid-section__controls {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.liquid-section__controls .number-input-wrapper {
-    flex: 1;
-    min-width: 0;
-}
-
-.liquid-section__set-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 26px;
-    flex-shrink: 0;
-}
-
-.liquid-grid--hidden {
-    display: none;
-}
-
 /* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
-/* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win)
-   and W3 Construction (Buildings, Cogs). */
-
-.alchemy-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
+/* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win, Sigils)
+   and W3 Construction (Buildings, Cogs).
+   Container properties handled by .tab-container                             */
 
 .alchemy-sub-nav {
     display: flex;
@@ -1236,349 +424,4 @@
 .alchemy-pane--active {
     display: flex;
     flex-direction: column;
-}
-
-/* ── Pay 2 Win tab ───────────────────────────────────────────────────────── */
-
-.p2w-tab {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-/* Scrollable content area — hidden until first load */
-.p2w-scroll {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-}
-
-.p2w-scroll--hidden {
-    display: none;
-}
-
-/* ── Section block ─────────────────────────────────────────────── */
-
-.p2w-section {
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 12px;
-}
-
-.p2w-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--c-border);
-}
-
-.p2w-section__title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--c-accent);
-}
-
-.p2w-section__note {
-    font-size: 0.68rem;
-    color: var(--c-text-dim);
-    font-style: italic;
-}
-
-/* ── Cauldron / liquid grid (4 equal columns) ──────────────────── */
-
-.p2w-cauldron-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}
-
-.p2w-col {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
-}
-
-.p2w-col__header {
-    padding: 6px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-left: 3px solid var(--col-color, var(--c-accent));
-}
-
-.p2w-col__name {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: var(--col-color, var(--c-text-main));
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-}
-
-.p2w-col__rows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-/* ── Upgrade row (used inside cauldron cols and simple sections) ── */
-
-.p2w-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 6px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    padding: 6px 8px;
-    transition: border-color 0.2s;
-}
-
-.p2w-row:hover {
-    border-color: var(--c-border-strong);
-}
-
-.p2w-row--success {
-    border-color: var(--c-success) !important;
-    background: var(--c-success-10);
-}
-
-.p2w-row--error {
-    border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
-}
-
-.p2w-row__label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.p2w-row__badge {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--c-accent);
-    background: var(--c-accent-06);
-    border: 1px solid var(--c-accent-20);
-    padding: 1px 6px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.p2w-row__controls {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-}
-
-.p2w-row__controls .number-input-wrapper {
-    width: 100px;
-}
-
-/* ── Simple flat sections (vials upgrades, player boosts, vial attempts) ── */
-
-.p2w-simple-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-/* Simple rows are wider — override number-input width */
-.p2w-simple-rows .p2w-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-}
-
-.p2w-simple-rows .p2w-row__controls .number-input-wrapper {
-    width: 120px;
-}
-
-/* ── Sigil tab ───────────────────────────────────────────────────────────── */
-
-.sigil-tab {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-.sigil-scroll {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-}
-
-.sigil-scroll--hidden {
-    display: none;
-}
-
-/* SET ALL bar */
-.sigil-setall-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    flex-shrink: 0;
-}
-
-.sigil-setall-bar--success {
-    border-color: var(--c-success) !important;
-    background: var(--c-success-10);
-}
-
-.sigil-setall-bar--error {
-    border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
-}
-
-.sigil-setall-bar__label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-dim);
-    white-space: nowrap;
-}
-
-.sigil-setall-bar__select {
-    background: var(--c-panel);
-    color: var(--c-text);
-    border: 1px solid var(--c-border);
-    padding: 0 8px;
-    height: 30px;
-    font-size: 0.78rem;
-    font-family: var(--font-display);
-    cursor: pointer;
-}
-
-.sigil-setall-bar__select:focus {
-    outline: none;
-    border-color: var(--c-accent);
-}
-
-/* Sigil grid */
-.sigil-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 8px;
-}
-
-/* Sigil card */
-.sigil-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    transition: border-color 0.2s, background 0.2s;
-}
-
-/* Tier-based border + background tint */
-.sigil-card--unlocked { border-color: rgba(96,  165, 250, 0.45); background: rgba(96,  165, 250, 0.04); }
-.sigil-card--boosted  { border-color: rgba(250, 204, 21,  0.45); background: rgba(250, 204, 21,  0.04); }
-.sigil-card--ionized  { border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.04); }
-.sigil-card--ethereal { border-color: rgba(192, 132, 252, 0.45); background: rgba(192, 132, 252, 0.04); }
-.sigil-card--eclectic { border-color: rgba(74,  222, 128, 0.45); background: rgba(74,  222, 128, 0.04); }
-
-.sigil-card--flash-success { border-color: var(--c-success) !important; background: var(--c-success-10); }
-.sigil-card--flash-error   { border-color: var(--c-danger)  !important; background: var(--c-danger-10);  }
-
-/* Card header */
-.sigil-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
-
-.sigil-card__identity {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    flex: 1;
-}
-
-.sigil-card__index {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--c-text-dim);
-    background: var(--c-black-40);
-    padding: 1px 4px;
-    flex-shrink: 0;
-}
-
-.sigil-card__name {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--c-text-main);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Tier badge — color per tier */
-.sigil-card__tier-badge {
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 1px 5px;
-    border: 1px solid currentColor;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.sigil-tier-badge--locked   { color: var(--c-text-dim); border-color: var(--c-border); }
-.sigil-tier-badge--unlocked { color: #60a5fa; }
-.sigil-tier-badge--boosted  { color: #facc15; }
-.sigil-tier-badge--ionized  { color: #f87171; }
-.sigil-tier-badge--ethereal { color: #c084fc; }
-.sigil-tier-badge--eclectic { color: #4ade80; }
-
-/* Tier select */
-.sigil-card__tier-select {
-    background: var(--c-panel);
-    color: var(--c-text);
-    border: 1px solid var(--c-border);
-    padding: 0 6px;
-    height: 28px;
-    width: 100%;
-    font-size: 0.72rem;
-    font-family: var(--font-display);
-    cursor: pointer;
-}
-
-.sigil-card__tier-select:focus {
-    outline: none;
-    border-color: var(--c-accent);
-}
-
-/* SET button */
-.sigil-card__set-btn {
-    width: 100%;
-    font-size: 0.68rem;
-    padding: 0;
-    height: 26px;
 }

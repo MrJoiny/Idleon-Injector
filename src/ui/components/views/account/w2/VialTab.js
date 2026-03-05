@@ -146,7 +146,7 @@ export const VialTab = () => {
     load();
 
     return div(
-        { class: "vials-tab" },
+        { class: "vials-tab tab-container" },
 
         // Header
         div(

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs head -50)",
+      "Bash(__NEW_LINE_3113121fcb776e98__ echo \"\")",
+      "Bash(__NEW_LINE_4fcbd575c5e3cb6f__ echo \"\")"
+    ]
+  }
+}

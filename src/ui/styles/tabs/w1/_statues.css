@@ -1,0 +1,76 @@
+/* ── Statue tiers ─────────────────────────────────────────────────────── */
+
+.statue-tier-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    margin-left: 6px;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+}
+
+.tier--stone {
+    color: var(--c-tier-stone);
+}
+
+.tier--gold {
+    color: var(--c-tier-gold);
+}
+
+.tier--onyx {
+    color: var(--c-tier-onyx);
+}
+
+.tier--zenith {
+    color: var(--c-tier-zenith);
+}
+
+.feature-row.tier--gold {
+    border-color: var(--c-tier-gold-35);
+}
+
+.feature-row.tier--onyx {
+    border-color: var(--c-tier-onyx-35);
+}
+
+.feature-row.tier--zenith {
+    border-color: var(--c-tier-zenith-35);
+}
+
+/* Base background/color/border/cursor handled by .select-base; unique properties only */
+.statue-tier-select {
+    border-radius: var(--radius-sm);
+    padding: 0 6px;
+    height: 32px;
+    width: 180px;
+    font-size: 0.8rem;
+}
+
+/* ── Statue stacked controls ──────────────────────────────────────────── */
+
+.feature-row__controls--stack {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.feature-row__controls--stack .number-input-wrapper {
+    width: 180px;
+}
+
+.statue-control-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.statue-control-label {
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 60px;
+    text-align: right;
+}

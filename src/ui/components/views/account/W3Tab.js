@@ -34,7 +34,7 @@ const ConstructionPanel = () => {
     const active = van.state(CONSTRUCTION_SUBTABS[0].id);
 
     return div(
-        { class: "alchemy-panel" },
+        { class: "alchemy-panel tab-container" },
 
         div(
             { class: "alchemy-sub-nav" },

@@ -96,7 +96,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
         // Tier select
         select(
             {
-                class:    "sigil-card__tier-select",
+                class:    "sigil-card__tier-select select-base",
                 onchange: (e) => (tierInput.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
@@ -204,7 +204,7 @@ export const SigilTab = () => {
         span({ class: "sigil-setall-bar__label" }, "SET ALL TIERS TO"),
         select(
             {
-                class:    "sigil-setall-bar__select",
+                class:    "sigil-setall-bar__select select-base",
                 onchange: (e) => (setAllTier.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
@@ -232,13 +232,13 @@ export const SigilTab = () => {
     );
 
     const scroll = div(
-        { class: () => `sigil-scroll${initialized.val ? "" : " sigil-scroll--hidden"}` },
+        { class: () => `sigil-scroll scrollable-panel${initialized.val ? "" : " sigil-scroll--hidden"}` },
         setAllBar,
         grid,
     );
 
     return div(
-        { class: "sigil-tab" },
+        { class: "sigil-tab tab-container" },
 
         // Header
         div(

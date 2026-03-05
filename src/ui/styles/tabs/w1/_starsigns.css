@@ -1,0 +1,303 @@
+/* ── Star Signs ───────────────────────────────────────────────────────── */
+
+.starsign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.starsign-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
+}
+
+.starsign-card:hover {
+    border-color: var(--c-accent);
+    background: var(--c-panel-hover);
+}
+
+.starsign-card--unlocked {
+    border-color: var(--c-accent-40);
+}
+
+.starsign-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.starsign-label-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid currentColor;
+}
+
+.starsign-card-desc {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    margin: 0 0 8px;
+    line-height: 1.4;
+}
+
+.starsign-card-bar {
+    height: 4px;
+    background: var(--c-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.starsign-card-fill {
+    height: 100%;
+    background: var(--c-accent);
+    border-radius: var(--radius-sm);
+    transition: width 0.3s;
+}
+
+.starsign-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.starsign-status.unlocked {
+    color: var(--c-accent);
+}
+
+.starsign-status.locked {
+    color: var(--c-text-dim);
+}
+
+/* Group colour tints */
+.sign-A .starsign-label-badge,
+.starsign-label-badge.sign-A {
+    color: var(--c-sign-a);
+}
+
+.sign-B .starsign-label-badge,
+.starsign-label-badge.sign-B {
+    color: var(--c-sign-b);
+}
+
+.sign-C .starsign-label-badge,
+.starsign-label-badge.sign-C {
+    color: var(--c-sign-c);
+}
+
+.sign-D .starsign-label-badge,
+.starsign-label-badge.sign-D {
+    color: var(--c-sign-d);
+}
+
+.sign-E .starsign-label-badge,
+.starsign-label-badge.sign-E {
+    color: var(--c-sign-e);
+}
+
+.sign-F .starsign-label-badge,
+.starsign-label-badge.sign-F {
+    color: var(--c-sign-f);
+}
+
+/* Detail view */
+.starsign-detail {
+    padding: 4px 0;
+}
+
+.starsign-back-btn {
+    background: none;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    cursor: pointer;
+    color: var(--c-text);
+    font-size: 0.8rem;
+    margin-bottom: 0;
+}
+
+.starsign-back-btn:hover {
+    border-color: var(--c-accent);
+}
+
+.starsign-detail-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.starsign-detail-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.starsign-detail-desc {
+    font-size: 0.8rem;
+    color: var(--c-text-dim);
+    margin: 0;
+}
+
+.starsign-needed-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius-sm);
+    color: var(--c-accent);
+    white-space: nowrap;
+}
+
+.starsign-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-text-dim);
+    margin: 12px 0 6px;
+}
+
+/* Drag list */
+.starsign-drag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.starsign-drag-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: grab;
+    user-select: none;
+}
+
+.starsign-drag-row:active,
+.starsign-drag-row.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+}
+
+.starsign-drag-row.drag-over {
+    border-color: var(--c-accent);
+    background: var(--c-panel-hover);
+}
+
+.starsign-drag-handle {
+    color: var(--c-text-dim);
+    font-size: 1rem;
+}
+
+.starsign-player-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.starsign-player-num {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.starsign-player-letter {
+    font-size: 0.7rem;
+    font-family: monospace;
+    background: var(--c-border);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.starsign-remove-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--c-danger);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 4px;
+}
+
+.starsign-remove-btn:hover {
+    color: var(--c-danger);
+}
+
+/* Empty state */
+.starsign-empty-players {
+    font-size: 0.8rem;
+    color: var(--c-text-dim);
+    padding: 12px;
+    border: 1px dashed var(--c-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+/* Add row */
+.starsign-add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/* Progress */
+.starsign-progress-bar-wrap {
+    margin-bottom: 16px;
+}
+
+.starsign-progress-label {
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.starsign-unlocked-text {
+    color: var(--c-accent);
+    font-weight: 700;
+}
+
+.starsign-locked-text {
+    color: var(--c-text-dim);
+}
+
+.starsign-progress-bar {
+    height: 6px;
+    background: var(--c-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.starsign-progress-fill {
+    height: 100%;
+    background: var(--c-accent);
+    border-radius: var(--radius-sm);
+    transition: width 0.3s;
+}
+
+/* Actions */
+.starsign-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.starsign-save-error {
+    font-size: 0.75rem;
+    color: var(--c-danger);
+}
