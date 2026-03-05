@@ -177,7 +177,7 @@ export const RefineryTab = () => {
     load();
 
     return div(
-        { class: "world-feature scroll-container" },
+        { class: "tab-container" },
 
         div(
             { class: "feature-header" },
@@ -188,7 +188,7 @@ export const RefineryTab = () => {
             ),
             div(
                 { class: "feature-header__actions" },
-                button({ class: "feature-btn", onclick: load }, Icons.Refresh(), " REFRESH"),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
 
@@ -213,7 +213,7 @@ export const RefineryTab = () => {
         // List
         () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
             if (!data.val) return null;
 
             return div(

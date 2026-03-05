@@ -193,7 +193,7 @@ export const ConstructionBuildingsTab = () => {
     load();
 
     return div(
-        { class: "world-feature scroll-container" },
+        { class: "tab-container" },
 
         div(
             { class: "feature-header" },
@@ -212,17 +212,17 @@ export const ConstructionBuildingsTab = () => {
                     },
                     () => bulkStatus.val === "loading" ? "MAXING…" : bulkStatus.val === "done" ? "✓ DONE" : "MAX ALL"
                 ),
-                button({ class: "feature-btn", onclick: load }, Icons.Refresh(), " REFRESH"),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
 
         () => {
-            if (loading.val) return div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader()));
-            if (error.val) return div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val }));
-            if (!data.val) return div({ class: "feature-list" });
+            if (loading.val) return div({ class: "feature-loader" }, Loader());
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
+            if (!data.val) return null;
 
             const buildings = data.val.buildings;
-            if (!buildings.length) return div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "NO DATA", desc: "No building data found." }));
+            if (!buildings.length) return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
 
             return div(
                 { class: "feature-list" },

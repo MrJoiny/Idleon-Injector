@@ -374,7 +374,7 @@ export const KillroyTab = () => {
 
         () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
 
             return div(
                 { class: "killroy-scroll scrollable-panel" },

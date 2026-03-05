@@ -372,7 +372,7 @@ export const Pay2WinTab = () => {
             : null,
 
         () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val })
+            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
             : null,
 
         scroll,

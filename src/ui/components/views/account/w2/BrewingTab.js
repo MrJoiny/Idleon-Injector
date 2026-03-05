@@ -334,7 +334,7 @@ export const BrewingTab = () => {
         // 4-column layout
         () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
 
             return div(
                 { class: "brewing-columns grid-4col scrollable-panel" },

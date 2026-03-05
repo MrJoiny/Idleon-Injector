@@ -217,7 +217,7 @@ export const LiquidTab = () => {
 
         // Error — only shown when the initial load fails
         () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val })
+            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
             : null,
 
         // Grid — always in DOM; hidden via CSS until first load completes,

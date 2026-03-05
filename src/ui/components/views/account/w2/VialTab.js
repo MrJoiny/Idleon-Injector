@@ -187,10 +187,10 @@ export const VialTab = () => {
         // Vial list — re-rendered only on load/refresh, not on individual SET
         () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
 
             const vials = vialDefs.val ?? [];
-            if (vials.length === 0) return EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", desc: "No vial definitions found." });
+            if (vials.length === 0) return EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." });
 
             return div(
                 { class: "feature-list" },

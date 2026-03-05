@@ -278,7 +278,7 @@ export const ArcadeTab = () => {
         // Scrollable Grids for upgrades
         () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val });
+            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
 
             const items = upgrades.val;
             if (items.length === 0) return div({ class: "empty-state" }, "No upgrades found.");

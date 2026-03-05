@@ -844,7 +844,7 @@ export const PostOfficeTab = () => {
 
         // Error ? only on failed initial load
         () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", desc: error.val })
+            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
             : null,
 
         // Content ? always in DOM; hidden via CSS until initialized
