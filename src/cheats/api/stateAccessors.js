@@ -102,9 +102,10 @@ export function readEntries(rootPath, keys, fields = null) {
  * events(345), events(579), etc. The UI never touches ActorEvents directly.
  *
  * Supported namespaces:
- * - workbench  -> events(345)._customBlock_WorkbenchStuff(name, ...args)
- * - alchemy    -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
- * - summoning  -> events(579)._customBlock_Summoning(name, ...args)
+ * - workbench     -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ * - alchemy       -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
+ * - summoning     -> events(579)._customBlock_Summoning(name, ...args)
+ * - atomCollider  -> events(579)._customBlock_AtomCollider(name, ...args)
  *
  * @param {string} namespace
  * @param {string} name
@@ -128,6 +129,10 @@ export function readComputed(namespace, name, args = []) {
         summoning: () => ({
             actorEvents: events(579),
             method: "_customBlock_Summoning",
+        }),
+        atomCollider: () => ({
+            actorEvents: events(579),
+            method: "_customBlock_AtomCollider",
         }),
     };
 

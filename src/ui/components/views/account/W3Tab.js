@@ -2,15 +2,21 @@
  * World 3 Tab — FROSTBITE TUNDRA
  *
  * Sub-tabs:
- *   - CONSTRUCTION  (inner: Buildings ✓, Cogs placeholder)
- *   - REFINERY      ✓
- *   - LIBRARY, TRAPPING, WORSHIP  (placeholders)
+ *   - CONSTRUCTION   (inner: Buildings ✓, Cogs placeholder)
+ *   - REFINERY       ✓
+ *   - SALT LICK      ✓
+ *   - ATOM COLLIDER  ✓
+ *   - MISC           (Library + Worship stubs)
+ *   - TRAPPING, DEATHNOTE  (placeholders)
  */
 
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
 import { ConstructionBuildingsTab } from "./w3/ConstructionBuildingsTab.js";
-import { RefineryTab } from "./w3/RefineryTab.js";
+import { RefineryTab }              from "./w3/RefineryTab.js";
+import { SaltLickTab }             from "./w3/SaltLickTab.js";
+import { AtomColliderTab }         from "./w3/AtomColliderTab.js";
+import { MiscTab }                 from "./w3/MiscTab.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -80,11 +86,13 @@ const ConstructionPanel = () => {
 // ── W3 top-level sub-tabs ─────────────────────────────────────────────────
 
 const W3_SUBTABS = [
-    { id: "construction", label: "CONSTRUCTION", component: ConstructionPanel },
-    { id: "refinery", label: "REFINERY", component: RefineryTab },
-    { id: "library", label: "LIBRARY", component: null },
-    { id: "trapping", label: "TRAPPING", component: null },
-    { id: "worship", label: "WORSHIP", component: null },
+    { id: "construction",  label: "CONSTRUCTION",  component: ConstructionPanel },
+    { id: "refinery",      label: "REFINERY",      component: RefineryTab       },
+    { id: "salt-lick",     label: "SALT LICK",     component: SaltLickTab       },
+    { id: "atom-collider", label: "ATOM COLLIDER", component: AtomColliderTab   },
+    { id: "misc",          label: "MISC",          component: MiscTab           },
+    { id: "trapping",      label: "TRAPPING",      component: null              },
+    { id: "deathnote",     label: "DEATHNOTE",     component: null              },
 ];
 
 export const W3Tab = () => {
@@ -102,7 +110,7 @@ export const W3Tab = () => {
                     const cur = W3_SUBTABS.find((t) => t.id === activeSubTab.val);
                     return van.tags.h2({ class: "world-tab-title" }, `W3 — ${cur?.label ?? ""}`);
                 },
-                p({ class: "world-tab-subtitle" }, "Frostbite Tundra — Construction, Refinery, Library, Trapping & Worship")
+                p({ class: "world-tab-subtitle" }, "Frostbite Tundra — Construction, Refinery, Salt Lick, Atom Collider & more")
             )
         ),
 
