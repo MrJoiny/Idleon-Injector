@@ -2,7 +2,7 @@
  * World 2 Tab — YUM-YUM DESERT
  *
  * Sub-tabs:
- *   - ALCHEMY  (inner: Brewing ✓, Liquid/Vials/Pay2Win placeholders)
+ *   - ALCHEMY  (inner: Brewing ✓, Liquid ✓, Vials ✓, Pay2Win ✓, Sigils ✓)
  *   - ARCADE, POST OFFICE, OBOLS  (placeholders)
  */
 
@@ -11,15 +11,18 @@ import { Icons } from "../../../assets/icons.js";
 import { BrewingTab } from "./w2/BrewingTab.js";
 import { LiquidTab } from "./w2/LiquidTab.js";
 import { VialTab } from "./w2/VialTab.js";
+import { Pay2WinTab } from "./w2/Pay2WinTab.js";
+import { SigilTab } from "./w2/SigilTab.js";
 
 const { div, button, span, p } = van.tags;
 
 // ── Alchemy inner sub-tabs ────────────────────────────────────────────────
 const ALCHEMY_SUBTABS = [
-    { id: "brewing", label: "BREWING", component: BrewingTab },
-    { id: "liquid", label: "LIQUID",  component: LiquidTab  },
-    { id: "vials",  label: "VIALS",   component: VialTab    },
-    { id: "pay2win", label: "PAY 2 WIN", component: null },
+    { id: "brewing", label: "BREWING",   component: BrewingTab  },
+    { id: "liquid",  label: "LIQUID",    component: LiquidTab   },
+    { id: "vials",   label: "VIALS",     component: VialTab     },
+    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab  },
+    { id: "sigils",  label: "SIGILS",    component: SigilTab    },
 ];
 
 // ── W2 top-level sub-tabs ─────────────────────────────────────────────────

@@ -1237,3 +1237,348 @@
     display: flex;
     flex-direction: column;
 }
+
+/* ── Pay 2 Win tab ───────────────────────────────────────────────────────── */
+
+.p2w-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Scrollable content area — hidden until first load */
+.p2w-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+}
+
+.p2w-scroll--hidden {
+    display: none;
+}
+
+/* ── Section block ─────────────────────────────────────────────── */
+
+.p2w-section {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.p2w-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.p2w-section__title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-accent);
+}
+
+.p2w-section__note {
+    font-size: 0.68rem;
+    color: var(--c-text-dim);
+    font-style: italic;
+}
+
+/* ── Cauldron / liquid grid (4 equal columns) ──────────────────── */
+
+.p2w-cauldron-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.p2w-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.p2w-col__header {
+    padding: 6px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--col-color, var(--c-accent));
+}
+
+.p2w-col__name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--col-color, var(--c-text-main));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.p2w-col__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ── Upgrade row (used inside cauldron cols and simple sections) ── */
+
+.p2w-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 6px 8px;
+    transition: border-color 0.2s;
+}
+
+.p2w-row:hover {
+    border-color: var(--c-border-strong);
+}
+
+.p2w-row--success {
+    border-color: var(--c-success) !important;
+    background: var(--c-success-10);
+}
+
+.p2w-row--error {
+    border-color: var(--c-danger) !important;
+    background: var(--c-danger-10);
+}
+
+.p2w-row__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.p2w-row__badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.p2w-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.p2w-row__controls .number-input-wrapper {
+    width: 100px;
+}
+
+/* ── Simple flat sections (vials upgrades, player boosts, vial attempts) ── */
+
+.p2w-simple-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Simple rows are wider — override number-input width */
+.p2w-simple-rows .p2w-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.p2w-simple-rows .p2w-row__controls .number-input-wrapper {
+    width: 120px;
+}
+
+/* ── Sigil tab ───────────────────────────────────────────────────────────── */
+
+.sigil-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sigil-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+}
+
+.sigil-scroll--hidden {
+    display: none;
+}
+
+/* SET ALL bar */
+.sigil-setall-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.sigil-setall-bar--success {
+    border-color: var(--c-success) !important;
+    background: var(--c-success-10);
+}
+
+.sigil-setall-bar--error {
+    border-color: var(--c-danger) !important;
+    background: var(--c-danger-10);
+}
+
+.sigil-setall-bar__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+}
+
+.sigil-setall-bar__select {
+    background: var(--c-panel);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    padding: 0 8px;
+    height: 30px;
+    font-size: 0.78rem;
+    font-family: var(--font-display);
+    cursor: pointer;
+}
+
+.sigil-setall-bar__select:focus {
+    outline: none;
+    border-color: var(--c-accent);
+}
+
+/* Sigil grid */
+.sigil-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+/* Sigil card */
+.sigil-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+/* Tier-based border + background tint */
+.sigil-card--unlocked { border-color: rgba(96,  165, 250, 0.45); background: rgba(96,  165, 250, 0.04); }
+.sigil-card--boosted  { border-color: rgba(250, 204, 21,  0.45); background: rgba(250, 204, 21,  0.04); }
+.sigil-card--ionized  { border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.04); }
+.sigil-card--ethereal { border-color: rgba(192, 132, 252, 0.45); background: rgba(192, 132, 252, 0.04); }
+.sigil-card--eclectic { border-color: rgba(74,  222, 128, 0.45); background: rgba(74,  222, 128, 0.04); }
+
+.sigil-card--flash-success { border-color: var(--c-success) !important; background: var(--c-success-10); }
+.sigil-card--flash-error   { border-color: var(--c-danger)  !important; background: var(--c-danger-10);  }
+
+/* Card header */
+.sigil-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.sigil-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.sigil-card__index {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    background: var(--c-black-40);
+    padding: 1px 4px;
+    flex-shrink: 0;
+}
+
+.sigil-card__name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tier badge — color per tier */
+.sigil-card__tier-badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sigil-tier-badge--locked   { color: var(--c-text-dim); border-color: var(--c-border); }
+.sigil-tier-badge--unlocked { color: #60a5fa; }
+.sigil-tier-badge--boosted  { color: #facc15; }
+.sigil-tier-badge--ionized  { color: #f87171; }
+.sigil-tier-badge--ethereal { color: #c084fc; }
+.sigil-tier-badge--eclectic { color: #4ade80; }
+
+/* Tier select */
+.sigil-card__tier-select {
+    background: var(--c-panel);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    padding: 0 6px;
+    height: 28px;
+    width: 100%;
+    font-size: 0.72rem;
+    font-family: var(--font-display);
+    cursor: pointer;
+}
+
+.sigil-card__tier-select:focus {
+    outline: none;
+    border-color: var(--c-accent);
+}
+
+/* SET button */
+.sigil-card__set-btn {
+    width: 100%;
+    font-size: 0.68rem;
+    padding: 0;
+    height: 26px;
+}
