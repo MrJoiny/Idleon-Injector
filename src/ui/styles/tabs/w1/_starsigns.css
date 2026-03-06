@@ -262,6 +262,14 @@
     margin-bottom: 16px;
 }
 
+.starsign-player-select {
+    border-radius: var(--radius-sm);
+    padding: 0 6px;
+    height: 32px;
+    width: 180px;
+    font-size: 0.8rem;
+}
+
 /* Progress */
 .starsign-progress-bar-wrap {
     margin-bottom: 16px;

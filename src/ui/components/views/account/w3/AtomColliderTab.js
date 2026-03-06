@@ -5,12 +5,12 @@
  *   gga.Atoms[b]                     - current level of atom b
  *   gga.CustomLists.h.AtomInfo[b][0] - atom name (underscores -> spaces)
  *
- * Max level is NOT stored in a data table - it is computed per-atom via:
- *   m._customBlock_AtomCollider("AtomMaxLv", b, 0)
- * which maps to: readComputed("AtomCollider", "AtomMaxLv", [b, 0])
+ * Max level is computed via:
+ *   readComputed("atomCollider", "AtomMaxLv", [b, 0])
  *
- * All per-atom max level requests are made in parallel during load.
- * Array length is taken from CustomLists.h.AtomInfo.
+ * Array length is taken from CustomLists.h.AtomInfo (authoritative source).
+ * All per-atom max level requests are fetched in parallel during load via
+ * Promise.all — readComputed returns 0 on failure so the tab still renders.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -19,24 +19,19 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
 const safeNum = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
 };
 
-// -- AtomRow -----------------------------------------------------------------
-
 const AtomRow = ({ index, name, maxLevel, levelState }) => {
     const inputVal = van.state("0");
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => {
         inputVal.val = String(levelState.val ?? 0);
@@ -45,17 +40,12 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
     const doSet = async (raw) => {
         const lvl = Math.max(0, Math.min(maxLevel, safeNum(raw)));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
+
+        await run(async () => {
             await writeGga(`Atoms[${index}]`, lvl);
             levelState.val = lvl;
             inputVal.val = String(lvl);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -66,18 +56,12 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
                 status.val === "error" ? "feature-row--error" : "",
             ].filter(Boolean).join(" "),
         },
-
         div(
             { class: "feature-row__info" },
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "feature-row__name" }, name)
         ),
-
-        span(
-            { class: "feature-row__badge" },
-            () => `LV ${levelState.val} / ${maxLevel}`
-        ),
-
+        span({ class: "feature-row__badge" }, () => `LV ${levelState.val} / ${maxLevel}`),
         div(
             { class: "feature-row__controls" },
             NumberInput({
@@ -98,26 +82,24 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
                         doSet(inputVal.val);
                     },
                 },
-                () => status.val === "loading" ? "..." : "SET"
-            ),
-        ),
+                () => (status.val === "loading" ? "..." : "SET")
+            )
+        )
     );
 };
-
-// -- AtomColliderTab ----------------------------------------------------------
 
 export const AtomColliderTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
-    const bulkStatus = van.state(null); // "loading" | "done" | null
+    const bulkStatus = van.state(null);
     const levelStates = [];
+
     const getLevelState = (i) => {
         if (!levelStates[i]) levelStates[i] = van.state(0);
         return levelStates[i];
     };
 
-    // targetLevel: null = each atom's own max, 0 = reset
     const doSetAll = async (targetLevel) => {
         if (!data.val || data.val.atoms.length === 0) return;
         bulkStatus.val = "loading";
@@ -144,9 +126,8 @@ export const AtomColliderTab = () => {
                 readGga("CustomLists.h.AtomInfo"),
             ]);
 
-            const atomInfoArr = toArr(rawAtomInfo ?? []);
+            const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
 
-            // Fetch computed max level for each atom in parallel.
             const maxLevels = await Promise.all(
                 atomInfoArr.map((_, i) =>
                     readComputed("atomCollider", "AtomMaxLv", [i, 0])
@@ -156,12 +137,12 @@ export const AtomColliderTab = () => {
             );
 
             const atoms = atomInfoArr.map((entry, i) => {
-                const e = toArr(entry ?? []);
-                const name = String(e[0] ?? `Atom ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
+                const entryArr = toIndexedArray(entry ?? []);
+                const name = String(entryArr[0] ?? `Atom ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
                 return { name, maxLevel: maxLevels[i] ?? 0 };
             });
 
-            const rawArr = toArr(rawLevels ?? []);
+            const rawArr = toIndexedArray(rawLevels ?? []);
             atoms.forEach((_, i) => {
                 getLevelState(i).val = safeNum(rawArr[i]);
             });
@@ -176,15 +157,36 @@ export const AtomColliderTab = () => {
 
     load(true);
 
+    const renderBody = AsyncFeatureBody({
+        loading,
+        error,
+        data,
+        renderLoading: () => div({ class: "feature-loader" }, Loader()),
+        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
+        isEmpty: (resolved) => !resolved.atoms.length,
+        renderEmpty: () => EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
+        renderContent: (resolved) =>
+            div(
+                { class: "feature-list" },
+                ...resolved.atoms.map((a, i) =>
+                    AtomRow({
+                        index: i,
+                        name: a.name,
+                        maxLevel: a.maxLevel,
+                        levelState: getLevelState(i),
+                    })
+                )
+            ),
+    });
+
     return div(
         { class: "tab-container" },
-
         div(
             { class: "feature-header" },
             div(
                 {},
                 h3({}, "ATOM COLLIDER"),
-                p({ class: "feature-header__desc" }, "Set Atom Collider upgrade levels. Max levels are computed from game data."),
+                p({ class: "feature-header__desc" }, "Set Atom Collider upgrade levels. Max levels are computed from game data.")
             ),
             div(
                 { class: "feature-header__actions" },
@@ -214,29 +216,9 @@ export const AtomColliderTab = () => {
                     },
                     "RESET ALL"
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH")
+            )
         ),
-
-        () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-            if (!data.val) return null;
-
-            const { atoms } = data.val;
-            if (!atoms.length) return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." });
-
-            return div(
-                { class: "feature-list" },
-                ...atoms.map((a, i) =>
-                    AtomRow({
-                        index: i,
-                        name: a.name,
-                        maxLevel: a.maxLevel,
-                        levelState: getLevelState(i),
-                    })
-                )
-            );
-        }
+        renderBody
     );
 };

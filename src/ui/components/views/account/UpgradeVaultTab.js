@@ -20,6 +20,7 @@ import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
+import { useWriteStatus } from "./featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -36,22 +37,16 @@ const cleanName = (raw) => (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").
 const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
     const inputVal = van.state(String(initialLevel ?? 0));
     const levelDisplay = van.state(initialLevel ?? 0);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     const doSet = async (targetVal) => {
         const lvl = Math.max(0, Number(targetVal));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`UpgVault[${index}]`, lvl);
             inputVal.val = String(lvl);
             levelDisplay.val = lvl;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);

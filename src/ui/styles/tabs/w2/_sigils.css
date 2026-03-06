@@ -9,10 +9,6 @@
     gap: 12px;
 }
 
-.sigil-scroll--hidden {
-    display: none;
-}
-
 /* SET ALL bar */
 .sigil-setall-bar {
     display: flex;

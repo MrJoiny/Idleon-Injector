@@ -25,6 +25,8 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -40,11 +42,6 @@ const LIQUIDS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
-
 const roundTo2 = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
@@ -56,7 +53,7 @@ const roundTo2 = (v) => {
 
 const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
     const inputVal = van.state(String(valueState.val));
-    const status   = van.state(null); // null | "loading" | "success" | "error"
+    const { status, run } = useWriteStatus();
 
     // Keep inputVal synced when the parent refreshes the backing state.
     van.derive(() => {
@@ -68,17 +65,11 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
             ? Math.max(0, roundTo2(raw))
             : Math.max(0, Math.round(Number(raw)));
         if (isNaN(val)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;   // update shared state (also refreshes display)
             inputVal.val   = String(val);
-            status.val     = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -155,7 +146,8 @@ const LiquidColumn = ({ liquid, states }) =>
 export const LiquidTab = () => {
     const loading     = van.state(true);
     const error       = van.state(null);
-    const initialized = van.state(false); // stays true after first successful load
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-liquid reactive states — created once, updated in-place on refresh.
     // Columns are never rebuilt; only their internal bindings react.
@@ -168,23 +160,26 @@ export const LiquidTab = () => {
     const load = async () => {
         loading.val = true;
         error.val   = null;
+        refreshError.val = null;
         try {
             const raw         = await readGga("CauldronInfo");
-            const amounts     = toArr(raw?.[6] ?? []);
-            const upgradesRaw = toArr(raw?.[8] ?? []);
+            const amounts     = toIndexedArray(raw?.[6] ?? []);
+            const upgradesRaw = toIndexedArray(raw?.[8] ?? []);
 
             LIQUIDS.forEach((liq, i) => {
-                const upgRow  = toArr(upgradesRaw[liq.upgradeIndex] ?? []);
-                const capRow  = toArr(upgRow[2] ?? []);
-                const rateRow = toArr(upgRow[3] ?? []);
+                const upgRow  = toIndexedArray(upgradesRaw[liq.upgradeIndex] ?? []);
+                const capRow  = toIndexedArray(upgRow[2] ?? []);
+                const rateRow = toIndexedArray(upgRow[3] ?? []);
                 liquidStates[i].amount.val = roundTo2(amounts[liq.index] ?? 0);
                 liquidStates[i].cap.val    = Number(capRow[1]  ?? 0);
                 liquidStates[i].rate.val   = Number(rateRow[1] ?? 0);
             });
 
-            initialized.val = true;
+            markReady();
         } catch (e) {
-            error.val = e?.message ?? "Failed to load";
+            const message = e?.message ?? "Failed to load";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -195,11 +190,12 @@ export const LiquidTab = () => {
     // Grid is built once here and permanently lives in the DOM.
     // Concealed via CSS class until the first load completes.
     const grid = div(
-        { class: () => `liquid-grid grid-4col scrollable-panel${initialized.val ? "" : " liquid-grid--hidden"}` },
+        { class: () => paneClass("liquid-grid grid-4col scrollable-panel") },
         ...LIQUIDS.map((liq, i) =>
             LiquidColumn({ liquid: liq, states: liquidStates[i] })
         )
     );
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
         { class: "tab-container" },
@@ -217,6 +213,8 @@ export const LiquidTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
+
+        renderRefreshErrorBanner,
 
         // Loader — only shown before the first successful load
         () => (loading.val && !initialized.val)

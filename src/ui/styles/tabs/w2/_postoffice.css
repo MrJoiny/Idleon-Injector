@@ -10,10 +10,6 @@
     min-height: 0;
 }
 
-.po-scroll--hidden {
-    display: none;
-}
-
 .po-sub-content {
     display: flex;
     flex-direction: column;

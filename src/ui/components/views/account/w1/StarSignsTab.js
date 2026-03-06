@@ -24,6 +24,8 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, h4, p, select, option } = van.tags;
 
@@ -113,7 +115,7 @@ const DragList = ({ items, renderItem, onChange }) => {
 
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const players = van.state([...sign.players]);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus({ successMs: 1500, errorMs: 1500 });
 
     const addPlayer = (num) => {
         if (players.val.includes(num)) return;
@@ -125,20 +127,14 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     };
 
     const doSave = async () => {
-        status.val = "loading";
-        try {
+        await run(async () => {
             const str = encodeProgress(players.val);
             const unlocked = players.val.length >= sign.playersNeeded ? 1 : 0;
             await writeGga(`StarSignProg[${sign.index}][0]`, str);
             await new Promise((r) => setTimeout(r, 150));
             await writeGga(`StarSignProg[${sign.index}][1]`, unlocked);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1500);
             onSave?.({ index: sign.index, progress: str, unlocked });
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1500);
-        }
+        });
     };
 
     return div(
@@ -198,7 +194,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             select(
                 {
                     id: `add-player-select-${sign.index}`,
-                    class: "statue-tier-select",
+                    class: "starsign-player-select select-base",
                 },
                 option({ value: "", disabled: true, selected: true }, "Add player…"),
                 ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => option({ value: n }, playerName(n, usernames)))
@@ -295,13 +291,6 @@ export const StarSignsTab = () => {
     const activeSign = van.state(null); // sign object being edited
     const bulkStatus = van.state(null); // null | loading-unlock | loading-random | loading-reset | success | error
 
-    const toArr = (raw) =>
-        Array.isArray(raw)
-            ? raw
-            : Object.keys(raw)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .map((k) => raw[k]);
-
     const load = async () => {
         loading.val = true;
         error.val = null;
@@ -312,10 +301,12 @@ export const StarSignsTab = () => {
                 readGga("GetPlayersUsernames"),
             ]);
 
-            const quests = toArr(rawQuests ?? []);
-            const prog = toArr(rawProg ?? []);
+            const quests = toIndexedArray(rawQuests ?? []);
+            const prog = toIndexedArray(rawProg ?? []);
             const labels = computeLabels(quests);
-            const usernames = toArr(rawUsernames ?? []).filter((u) => typeof u === "string" && !u.startsWith("__"));
+            const usernames = toIndexedArray(rawUsernames ?? []).filter(
+                (u) => typeof u === "string" && !u.startsWith("__")
+            );
 
             signs.val = quests
                 .map((q, i) => ({

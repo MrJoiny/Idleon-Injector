@@ -22,6 +22,20 @@ export function debounce(func, wait) {
 }
 
 /**
+ * Convert a game table payload into an index-ordered array.
+ * Supports native arrays and object-keyed arrays returned by the bridge.
+ * @param {unknown} raw
+ * @returns {Array}
+ */
+export function toIndexedArray(raw) {
+    if (Array.isArray(raw)) return raw;
+    if (!raw || typeof raw !== "object") return [];
+    return Object.keys(raw)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((k) => raw[k]);
+}
+
+/**
  * Get the config path parts for a cheat value.
  * Maps cheat command like "w1 owl" to path parts ["w1", "owl"].
  * @param {string} cheatValue - e.g., "w1 owl"

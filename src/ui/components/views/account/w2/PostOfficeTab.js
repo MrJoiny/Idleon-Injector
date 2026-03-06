@@ -33,6 +33,8 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -42,33 +44,22 @@ const POST_OFFICE_SUBTABS = [
     { id: "boxes", label: "BOXES" },
 ];
 
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
-
 // ── PONumField ──────────────────────────────────────────────────────────────
 // Compact numeric edit row used inside shipment cards.
 
 const PONumField = ({ label, valueState, writePath }) => {
     const inputVal = van.state(String(valueState.val));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => { inputVal.val = String(valueState.val); });
 
     const doSet = async () => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -103,20 +94,14 @@ const PONumField = ({ label, valueState, writePath }) => {
 };
 
 const POToggleField = ({ valueState, writePath }) => {
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     const doToggle = async () => {
         const next = valueState.val ? 0 : 1;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, next);
             valueState.val = next;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1000);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        }, { successMs: 1000 });
     };
 
     return button(
@@ -219,7 +204,7 @@ const OfficeGroup = ({ label, shipmentStates, startIndex }) =>
 // ── CurrencyRow ───────────────────────────────────────────────────────────────
 // Editable row for currency / option values in the Point Sources section.
 
-const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false }) => {
+const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onAfterWrite = null }) => {
     if (readOnly) {
         return div(
             { class: "po-currency-row po-currency-row--readonly" },
@@ -233,23 +218,18 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false }) =
     }
 
     const inputVal = van.state(String(valueState.val));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => { inputVal.val = String(valueState.val); });
 
     const doSet = async () => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+            if (typeof onAfterWrite === "function") onAfterWrite();
+        });
     };
 
     return div(
@@ -289,9 +269,9 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false }) =
 
 // PostOfficeTab ─────────────────────────────────────────────────────────────
 
-const POBoxRow = ({ box }) => {
+const POBoxRow = ({ box, onAfterWrite = null }) => {
     const inputVal = van.state(String(box.current.val));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => { inputVal.val = String(box.current.val); });
 
@@ -304,16 +284,11 @@ const POBoxRow = ({ box }) => {
     const doSet = async () => {
         const val = clampToCap(inputVal.val);
         if (val === null) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`PostOfficeInfo[3][${box.index}][0]`, val);
             box.current.val = val;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+            if (typeof onAfterWrite === "function") onAfterWrite();
+        });
     };
 
     return div(
@@ -353,7 +328,8 @@ const POBoxRow = ({ box }) => {
 export const PostOfficeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const initialized = van.state(false);
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
 
     // ── Per-shipment states (created once, updated in-place) ───────────────
@@ -387,6 +363,16 @@ export const PostOfficeTab = () => {
         }
     };
 
+    const recomputeSummary = () => {
+        let nextSpent = 0;
+        for (let i = 0; i < boxCount.val; i++) {
+            nextSpent += Number(boxStates[i]?.current.val ?? 0);
+        }
+        spentPoints.val = nextSpent;
+        // DeliveryBoxMisc is derived from AlchVials.BoxPoints + OptionsListAccount[131].
+        boxMisc.val = Number(boxPoints.val ?? 0) + Number(opt131.val ?? 0);
+    };
+
     // Computed — updates automatically when any dependency changes
     const totalEarned = van.derive(() =>
         boxComplete.val + boxStreak.val + opt347.val + boxMisc.val
@@ -396,14 +382,21 @@ export const PostOfficeTab = () => {
     // ── Bulk control states ────────────────────────────────────────────────
     const bulkStreakInput = van.state("100");
     const bulkShieldInput = van.state("5");
-    const bulkStreakStatus = van.state(null);
-    const bulkShieldStatus = van.state(null);
-    const boxBulkStatus = van.state(null);
+    const { status: bulkStreakStatus, run: runBulkStreakWrite } = useWriteStatus({
+        successMs: 1500,
+        errorMs: 1500,
+    });
+    const { status: bulkShieldStatus, run: runBulkShieldWrite } = useWriteStatus({
+        successMs: 1500,
+        errorMs: 1500,
+    });
+    const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
 
     // ── Load ───────────────────────────────────────────────────────────────
         const load = async () => {
         loading.val = true;
         error.val = null;
+        refreshError.val = null;
         try {
             const readPostOfficeBoxDefs = async () => {
                 return readGga("CustomLists.h.PostOffUpgradeInfo")
@@ -421,16 +414,16 @@ export const PostOfficeTab = () => {
             ]);
 
             // Parse PostOfficeInfo
-            const po = toArr(rawPO ?? []);
-            const orders = toArr(po[0] ?? []);
-            const perShipment = toArr(po[1] ?? []);
-            const bonuses = toArr(po[2] ?? []);
-            const upgrades = toArr(po[3] ?? []);
+            const po = toIndexedArray(rawPO ?? []);
+            const orders = toIndexedArray(po[0] ?? []);
+            const perShipment = toIndexedArray(po[1] ?? []);
+            const bonuses = toIndexedArray(po[2] ?? []);
+            const upgrades = toIndexedArray(po[3] ?? []);
 
             for (let s = 0; s < SHIPMENT_COUNT; s++) {
-                const order = toArr(orders[s] ?? []);
-                const ship = toArr(perShipment[s] ?? []);
-                const bonus = toArr(bonuses[s] ?? []);
+                const order = toIndexedArray(orders[s] ?? []);
+                const ship = toIndexedArray(perShipment[s] ?? []);
+                const bonus = toIndexedArray(bonuses[s] ?? []);
                 const st = shipmentStates[s];
 
                 st.itemId.val = String(order[0] ?? "");
@@ -444,18 +437,18 @@ export const PostOfficeTab = () => {
             // Sum spent upgrade points from PostOfficeInfo[3]
             let spent = 0;
             for (let i = 0; i < upgrades.length; i++) {
-                const row = toArr(upgrades[i] ?? []);
+                const row = toIndexedArray(upgrades[i] ?? []);
                 spent += Number(row[0] ?? 0);
             }
             spentPoints.val = spent;
 
-            const boxDefs = toArr(rawBoxDefs ?? []);
+            const boxDefs = toIndexedArray(rawBoxDefs ?? []);
             boxCount.val = boxDefs.length;
             ensureBoxStateCount(boxCount.val);
 
             for (let i = 0; i < boxCount.val; i++) {
-                const defRow = toArr(boxDefs[i] ?? []);
-                const upgRow = toArr(upgrades[i] ?? []);
+                const defRow = toIndexedArray(boxDefs[i] ?? []);
+                const upgRow = toIndexedArray(upgrades[i] ?? []);
                 const box = boxStates[i];
 
                 box.name.val = String(defRow[0] ?? `BOX ${i + 1}`).replace(/_/g, " ").trim();
@@ -474,16 +467,19 @@ export const PostOfficeTab = () => {
             boxMisc.val = Number(curr.DeliveryBoxMisc ?? 0);
 
             // Parse OptionsListAccount
-            const opts = toArr(rawOpts ?? []);
+            const opts = toIndexedArray(rawOpts ?? []);
             opt347.val = Number(opts[347] ?? 0);
             opt131.val = Number(opts[131] ?? 0);
 
             // AlchVials BoxPoints
             boxPoints.val = Number(rawBoxPts ?? 0);
+            recomputeSummary();
 
-            initialized.val = true;
+            markReady();
         } catch (e) {
-            error.val = e?.message ?? "Failed to load";
+            const message = e?.message ?? "Failed to load";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -495,40 +491,28 @@ export const PostOfficeTab = () => {
     const doSetAllStreaks = async () => {
         const val = Math.max(0, Math.round(Number(bulkStreakInput.val)));
         if (isNaN(val)) return;
-        bulkStreakStatus.val = "loading";
-        try {
+        await runBulkStreakWrite(async () => {
             await Promise.all(
                 shipmentStates.map((st, s) =>
                     writeGga(`PostOfficeInfo[1][${s}][1]`, val)
                         .then(() => { st.streak.val = val; })
                 )
             );
-            bulkStreakStatus.val = "success";
-            setTimeout(() => (bulkStreakStatus.val = null), 1500);
-        } catch {
-            bulkStreakStatus.val = "error";
-            setTimeout(() => (bulkStreakStatus.val = null), 1500);
-        }
+        });
     };
 
     // ── Bulk: set all shields ──────────────────────────────────────────────
     const doSetAllShields = async () => {
         const val = Math.max(0, Math.round(Number(bulkShieldInput.val)));
         if (isNaN(val)) return;
-        bulkShieldStatus.val = "loading";
-        try {
+        await runBulkShieldWrite(async () => {
             await Promise.all(
                 shipmentStates.map((st, s) =>
                     writeGga(`PostOfficeInfo[1][${s}][2]`, val)
                         .then(() => { st.shield.val = val; })
                 )
             );
-            bulkShieldStatus.val = "success";
-            setTimeout(() => (bulkShieldStatus.val = null), 1500);
-        } catch {
-            bulkShieldStatus.val = "error";
-            setTimeout(() => (bulkShieldStatus.val = null), 1500);
-        }
+        });
     };
 
     let setAllStreaksTimeout;
@@ -545,34 +529,31 @@ export const PostOfficeTab = () => {
 
     const doMaxAllBoxes = async () => {
         if (boxCount.val <= 0) return;
-        boxBulkStatus.val = "loading";
-        try {
+        await runBoxBulkWrite(async () => {
             // Write sequentially to avoid dropped/raced writes on deep nested PostOfficeInfo paths.
             for (let i = 0; i < boxCount.val; i++) {
-                await writeGga(`PostOfficeInfo[3][${i}][0]`, boxStates[i].cap.val);
+                const nextVal = boxStates[i].cap.val;
+                await writeGga(`PostOfficeInfo[3][${i}][0]`, nextVal);
+                boxStates[i].current.val = nextVal;
+                recomputeSummary();
                 await new Promise((r) => setTimeout(r, 20));
             }
             await load();
-            boxBulkStatus.val = null;
-        } catch {
-            boxBulkStatus.val = null;
-        }
+        });
     };
 
     const doResetBoxes = async () => {
         if (boxCount.val <= 0) return;
-        boxBulkStatus.val = "loading";
-        try {
+        await runBoxBulkWrite(async () => {
             // Same sequential strategy for consistency with MAX ALL.
             for (let i = 0; i < boxCount.val; i++) {
                 await writeGga(`PostOfficeInfo[3][${i}][0]`, 0);
+                boxStates[i].current.val = 0;
+                recomputeSummary();
                 await new Promise((r) => setTimeout(r, 20));
             }
             await load();
-            boxBulkStatus.val = null;
-        } catch {
-            boxBulkStatus.val = null;
-        }
+        });
     };
 
     // ── DOM: Bulk controls bar ─────────────────────────────────────────────
@@ -639,18 +620,21 @@ export const PostOfficeTab = () => {
                 note: null,
                 valueState: boxComplete,
                 writePath: "CurrenciesOwned.h.DeliveryBoxComplete",
+                onAfterWrite: recomputeSummary,
             }),
             CurrencyRow({
                 label: "DELIVERY STREAK",
                 note: null,
                 valueState: boxStreak,
                 writePath: "CurrenciesOwned.h.DeliveryBoxStreak",
+                onAfterWrite: recomputeSummary,
             }),
             CurrencyRow({
                 label: "BONUS POINTS",
                 note: null,
                 valueState: opt347,
                 writePath: "OptionsListAccount[347]",
+                onAfterWrite: recomputeSummary,
             }),
 
             // Misc divider
@@ -661,6 +645,7 @@ export const PostOfficeTab = () => {
                 note: null,
                 valueState: opt131,
                 writePath: "OptionsListAccount[131]",
+                onAfterWrite: recomputeSummary,
             }),
             CurrencyRow({
                 label: "VIAL BOX POINTS",
@@ -705,14 +690,14 @@ export const PostOfficeTab = () => {
 
     // ── DOM: Scrollable content ────────────────────────────────────────────
     const scroll = div(
-        { class: () => `po-scroll scrollable-panel${initialized.val ? "" : " po-scroll--hidden"}` },
+        { class: () => paneClass("po-scroll scrollable-panel") },
         bulkBar,
         shipmentsSection,
         pointsSection,
     );
 
     const boxesScroll = div(
-        { class: () => `po-scroll scrollable-panel${initialized.val ? "" : " po-scroll--hidden"}` },
+        { class: () => paneClass("po-scroll scrollable-panel") },
         div(
             { class: "po-bulk-bar" },
             button(
@@ -739,11 +724,12 @@ export const PostOfficeTab = () => {
                 : div(
                     { class: "po-boxes-grid" },
                     ...Array.from({ length: boxCount.val }, (_, i) =>
-                        POBoxRow({ box: boxStates[i] })
+                        POBoxRow({ box: boxStates[i], onAfterWrite: recomputeSummary })
                     ),
                 ),
         ),
     );
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
         { class: "tab-container" },
@@ -769,6 +755,7 @@ export const PostOfficeTab = () => {
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
         ),
+        renderRefreshErrorBanner,
 
         div(
             { class: "alchemy-sub-nav" },

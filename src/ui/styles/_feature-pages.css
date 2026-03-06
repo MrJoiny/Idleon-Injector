@@ -112,6 +112,11 @@
     padding: 14px;
 }
 
+/* Shared hidden-until-ready state used by persistent panes */
+.is-hidden-until-ready {
+    display: none !important;
+}
+
 /* 4-equal-column grid used by cauldron / liquid layouts */
 .grid-4col {
     display: grid;

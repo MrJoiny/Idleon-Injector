@@ -2,10 +2,6 @@
 /* .liquid-tab container  → .tab-container                                    */
 /* .liquid-grid layout    → .grid-4col + .scrollable-panel                   */
 
-.liquid-grid--hidden {
-    display: none;
-}
-
 .liquid-col {
     display: flex;
     flex-direction: column;

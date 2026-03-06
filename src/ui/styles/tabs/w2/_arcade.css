@@ -6,6 +6,13 @@
     height: 100%;
 }
 
+.arcade-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 .arcade-balls-summary {
     display: flex;
     gap: 16px;
@@ -37,6 +44,7 @@
     padding-right: 8px;
     /* For scrollbar */
     padding-bottom: 24px;
+    min-height: 0;
 }
 
 .arcade-card {
@@ -133,7 +141,7 @@
     margin-top: auto;
 }
 
-.arcade-card__controls>.number-input-wrap {
+.arcade-card__controls > .number-input-wrapper {
     flex: 1;
 }
 

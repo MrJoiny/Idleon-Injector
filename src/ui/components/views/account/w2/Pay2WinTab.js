@@ -34,6 +34,8 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -73,16 +75,12 @@ const DRACONIC_LABELS = ["COUNT"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
 // ── P2WRow ─────────────────────────────────────────────────────────────────
 
 const P2WRow = ({ label, valueState, maxState, writePath }) => {
     const inputVal = van.state(String(valueState.val));
-    const status   = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => { inputVal.val = String(valueState.val); });
 
@@ -91,17 +89,11 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         if (isNaN(parsed)) return;
         const max = Number(maxState.val);
         const val = (max > 0) ? Math.min(max, parsed) : parsed;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;
             inputVal.val   = String(val);
-            status.val     = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -148,7 +140,8 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
 export const Pay2WinTab = () => {
     const loading     = van.state(true);
     const error       = van.state(null);
-    const initialized = van.state(false);
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // ── Value & max states — created once, updated in-place ───────────────
 
@@ -177,16 +170,17 @@ export const Pay2WinTab = () => {
     const load = async () => {
         loading.val = true;
         error.val   = null;
+        refreshError.val = null;
         try {
             const [rawP2W, rawDraconic] = await Promise.all([
                 readGga("CauldronP2W"),
                 readGga("OptionsListAccount[123]"),
             ]);
-            const p2w    = toArr(rawP2W ?? []);
-            const brew0  = toArr(p2w[0] ?? []);
-            const liq1   = toArr(p2w[1] ?? []);
-            const via2   = toArr(p2w[2] ?? []);
-            const plr3   = toArr(p2w[3] ?? []);
+            const p2w    = toIndexedArray(rawP2W ?? []);
+            const brew0  = toIndexedArray(p2w[0] ?? []);
+            const liq1   = toIndexedArray(p2w[1] ?? []);
+            const via2   = toIndexedArray(p2w[2] ?? []);
+            const plr3   = toIndexedArray(p2w[3] ?? []);
             const draconic = Math.min(4, Math.max(0, Number(rawDraconic ?? 0)));
 
             // Fill values
@@ -204,6 +198,22 @@ export const Pay2WinTab = () => {
             }
             draconicVal.val = draconic;
 
+            // Reset max states before computed reads so stale maxima never survive a failed refresh.
+            for (let e = 0; e < 4; e++) {
+                for (let f = 0; f < 3; f++) {
+                    brewMax[e][f].val = 0;
+                }
+            }
+            for (let e = 0; e < 4; e++) {
+                for (let f = 0; f < 2; f++) {
+                    liqMax[e][f].val = 0;
+                }
+            }
+            for (let e = 0; e < 2; e++) {
+                vialsUpgMax[e].val = 0;
+                playerMax[e].val = 0;
+            }
+
             // Fetch max levels in parallel
             const maxJobs = [];
 
@@ -213,7 +223,7 @@ export const Pay2WinTab = () => {
                     maxJobs.push(
                         readComputed("alchemy", "CauldronLvMAX", [0, ce, "" + cf])
                             .then((v) => { brewMax[ce][cf].val = Number(v ?? 0); })
-                            .catch(() => {})
+                            .catch(() => { brewMax[ce][cf].val = 0; })
                     );
                 }
             }
@@ -223,7 +233,7 @@ export const Pay2WinTab = () => {
                     maxJobs.push(
                         readComputed("alchemy", "CauldronLvMAX", [1, ce, "" + cf])
                             .then((v) => { liqMax[ce][cf].val = Number(v ?? 0); })
-                            .catch(() => {})
+                            .catch(() => { liqMax[ce][cf].val = 0; })
                     );
                 }
             }
@@ -232,20 +242,22 @@ export const Pay2WinTab = () => {
                 maxJobs.push(
                     readComputed("alchemy", "CauldronLvMAX", [2, ce, "0"])
                         .then((v) => { vialsUpgMax[ce].val = Number(v ?? 0); })
-                        .catch(() => {})
+                        .catch(() => { vialsUpgMax[ce].val = 0; })
                 );
                 maxJobs.push(
                     readComputed("alchemy", "CauldronLvMAX", [3, ce, "0"])
                         .then((v) => { playerMax[ce].val = Number(v ?? 0); })
-                        .catch(() => {})
+                        .catch(() => { playerMax[ce].val = 0; })
                 );
             }
 
             await Promise.all(maxJobs);
-            initialized.val = true;
+            markReady();
 
         } catch (e) {
-            error.val = e?.message ?? "Failed to load";
+            const message = e?.message ?? "Failed to load";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -314,7 +326,7 @@ export const Pay2WinTab = () => {
         );
 
     const scroll = div(
-        { class: () => `p2w-scroll scrollable-panel${initialized.val ? "" : " p2w-scroll--hidden"}` },
+        { class: () => paneClass("p2w-scroll scrollable-panel") },
 
         buildCauldronSection(
             "BREWING CAULDRONS", "P2W upgrade levels per cauldron",
@@ -366,6 +378,15 @@ export const Pay2WinTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
+
+        () => (!loading.val && refreshError.val)
+            ? div(
+                { class: "warning-banner" },
+                Icons.Warning(),
+                " Refresh failed. Showing last loaded values. ",
+                refreshError.val
+            )
+            : null,
 
         () => (loading.val && !initialized.val)
             ? div({ class: "feature-loader" }, Loader())

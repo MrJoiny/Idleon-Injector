@@ -37,6 +37,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -86,7 +87,7 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
     const step = isFloat ? 0.1 : 1;
 
     const inputVal = van.state(String(fieldState.val ?? 0));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     // isFocused is set by onfocus/onblur forwarded from NumberInput.
     // It prevents the derive below from stomping on in-progress user input.
@@ -111,17 +112,11 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
     const doSet = async (raw) => {
         const num = resolveNum(raw);
         if (num === null) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await onWrite(field.index, num);
             fieldState.val = num; // only this row's badge re-renders
             inputVal.val = String(num);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -215,7 +210,7 @@ export const OrionTab = () => {
     // Hidden via style while loading/errored so the user doesn't see stale data,
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
-        { class: () => `feature-list${loading.val || error.val ? " orion-list--hidden" : ""}` },
+        { class: () => `feature-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
         div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
         ...PINNED.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "orion-section-label" }, "Upgrades & Stats"),

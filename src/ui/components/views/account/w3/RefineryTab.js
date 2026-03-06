@@ -17,6 +17,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -37,7 +38,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
 
     const levelInput = van.state("0");
     const chargeInput = van.state("0");
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => {
         levelInput.val = String(levelState.val ?? 0);
@@ -47,20 +48,14 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
     const doSet = async (field, val) => {
         const n = Math.max(0, Number(val));
         if (isNaN(n)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`Refinery[${gameIndex}][${field}]`, n);
             if (field === 1) {
                 levelState.val = n;
             } else {
                 chargeState.val = n;
             }
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(

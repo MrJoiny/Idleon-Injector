@@ -5,10 +5,6 @@
     background: var(--c-accent-dim-solid);
 }
 
-.orion-list--hidden {
-    display: none;
-}
-
 .orion-warn-badge {
     font-size: 0.65rem;
     color: var(--c-warning);

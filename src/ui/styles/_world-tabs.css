@@ -128,14 +128,6 @@
     animation: slideIn 0.18s ease;
 }
 
-.account-sub-tab-pane-inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    min-height: 0;
-}
-
 /* ── Per-world colour tokens ─────────────────────────────────────────────── */
 /* One rule per world. Everything inside uses var(--world-color). */
 

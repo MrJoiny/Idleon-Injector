@@ -3,12 +3,12 @@
  *
  * Data sources:
  *   gga.SaltLick[n]                   - current level of upgrade n
- *   gga.CustomLists.h.SaltLicks[n][1] - upgrade name (underscores -> spaces)
+ *   gga.CustomLists.h.SaltLicks[n][1] - upgrade name
  *   gga.CustomLists.h.SaltLicks[n][4] - max level for upgrade n
  *
  * Array length is taken from CustomLists.h.SaltLicks (authoritative game table).
- * gga.SaltLick may contain more entries than there are actual upgrades - it is
- * sliced down to the table length before use.
+ * gga.SaltLick may contain more entries than there are actual upgrades — it is
+ * implicitly trimmed because load() only iterates over defs.length entries.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -17,24 +17,19 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
 const safeNum = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
 };
 
-// -- SaltLickRow -------------------------------------------------------------
-
 const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
     const inputVal = van.state("0");
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => {
         inputVal.val = String(levelState.val ?? 0);
@@ -43,17 +38,12 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
     const doSet = async (raw) => {
         const lvl = Math.max(0, Math.min(maxLevel, safeNum(raw)));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
+
+        await run(async () => {
             await writeGga(`SaltLick[${index}]`, lvl);
             levelState.val = lvl;
             inputVal.val = String(lvl);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -64,18 +54,12 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
                 status.val === "error" ? "feature-row--error" : "",
             ].filter(Boolean).join(" "),
         },
-
         div(
             { class: "feature-row__info" },
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "feature-row__name" }, name)
         ),
-
-        span(
-            { class: "feature-row__badge" },
-            () => `LV ${levelState.val} / ${maxLevel}`
-        ),
-
+        span({ class: "feature-row__badge" }, () => `LV ${levelState.val} / ${maxLevel}`),
         div(
             { class: "feature-row__controls" },
             NumberInput({
@@ -96,26 +80,24 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
                         doSet(inputVal.val);
                     },
                 },
-                () => status.val === "loading" ? "..." : "SET"
-            ),
-        ),
+                () => (status.val === "loading" ? "..." : "SET")
+            )
+        )
     );
 };
-
-// -- SaltLickTab -------------------------------------------------------------
 
 export const SaltLickTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
-    const bulkStatus = van.state(null); // "loading" | "done" | null
+    const bulkStatus = van.state(null);
     const levelStates = [];
+
     const getLevelState = (i) => {
         if (!levelStates[i]) levelStates[i] = van.state(0);
         return levelStates[i];
     };
 
-    // targetLevel: null = each upgrade's own max, 0 = reset
     const doSetAll = async (targetLevel) => {
         if (!data.val || data.val.upgrades.length === 0) return;
         bulkStatus.val = "loading";
@@ -142,15 +124,15 @@ export const SaltLickTab = () => {
                 readGga("CustomLists.h.SaltLicks"),
             ]);
 
-            const defs = toArr(rawDefs ?? []);
+            const defs = toIndexedArray(rawDefs ?? []);
             const upgrades = defs.map((entry, i) => {
-                const e = toArr(entry ?? []);
-                const name = String(e[1] ?? `Salt Lick ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
-                const maxLevel = safeNum(e[4]);
+                const entryArr = toIndexedArray(entry ?? []);
+                const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
+                const maxLevel = safeNum(entryArr[4]);
                 return { name, maxLevel };
             });
 
-            const rawArr = toArr(rawLevels ?? []);
+            const rawArr = toIndexedArray(rawLevels ?? []);
             upgrades.forEach((_, i) => {
                 getLevelState(i).val = safeNum(rawArr[i]);
             });
@@ -165,15 +147,36 @@ export const SaltLickTab = () => {
 
     load(true);
 
+    const renderBody = AsyncFeatureBody({
+        loading,
+        error,
+        data,
+        renderLoading: () => div({ class: "feature-loader" }, Loader()),
+        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
+        isEmpty: (resolved) => !resolved.upgrades.length,
+        renderEmpty: () => EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." }),
+        renderContent: (resolved) =>
+            div(
+                { class: "feature-list" },
+                ...resolved.upgrades.map((u, i) =>
+                    SaltLickRow({
+                        index: i,
+                        name: u.name,
+                        maxLevel: u.maxLevel,
+                        levelState: getLevelState(i),
+                    })
+                )
+            ),
+    });
+
     return div(
         { class: "tab-container" },
-
         div(
             { class: "feature-header" },
             div(
                 {},
                 h3({}, "SALT LICK"),
-                p({ class: "feature-header__desc" }, "Set Salt Lick upgrade levels."),
+                p({ class: "feature-header__desc" }, "Set Salt Lick upgrade levels.")
             ),
             div(
                 { class: "feature-header__actions" },
@@ -203,29 +206,9 @@ export const SaltLickTab = () => {
                     },
                     "RESET ALL"
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH")
+            )
         ),
-
-        () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-            if (!data.val) return null;
-
-            const { upgrades } = data.val;
-            if (!upgrades.length) return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." });
-
-            return div(
-                { class: "feature-list" },
-                ...upgrades.map((u, i) =>
-                    SaltLickRow({
-                        index: i,
-                        name: u.name,
-                        maxLevel: u.maxLevel,
-                        levelState: getLevelState(i),
-                    })
-                )
-            );
-        }
+        renderBody
     );
 };

@@ -4,6 +4,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
@@ -67,7 +68,7 @@ const Section = (title, note, rows) =>
 
 const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disableEdit = false }) => {
     const inputVal = van.state(String(valueState.val));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => { inputVal.val = String(valueState.val); });
 
@@ -81,17 +82,11 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
     const doSet = async () => {
         const val = normalize(inputVal.val);
         if (val === null) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;
             inputVal.val = String(val);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -147,20 +142,14 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
 };
 
 const KillroyAirhornRow = ({ valueState }) => {
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     const doToggle = async () => {
         const next = toNum(valueState.val, 0) === 0 ? 1 : 0;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`OptionsListAccount[${AIRHORN_INDEX}]`, next);
             valueState.val = next;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -197,6 +186,7 @@ const KillroyAirhornRow = ({ valueState }) => {
 export const KillroyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
+    const data = van.state(null);
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
@@ -308,8 +298,10 @@ export const KillroyTab = () => {
             });
             allowedMobs.val = nextAllowedMobs;
             if (!addMobId.val && nextAllowedMobs.length > 0) addMobId.val = nextAllowedMobs[0].mobId;
+            data.val = { loaded: true };
         } catch (e) {
             error.val = e?.message ?? "Failed to load Killroy data";
+            data.val = null;
         } finally {
             loading.val = false;
         }
@@ -360,31 +352,14 @@ export const KillroyTab = () => {
     };
 
     load();
-
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
+    const renderBody = AsyncFeatureBody({
+        loading,
+        error,
+        data,
+        renderLoading: () => div({ class: "feature-loader" }, Loader()),
+        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
+        renderContent: () =>
             div(
-                {},
-                h3({}, "KILLROY STATE LIBRARY"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
-                ),
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
-        ),
-
-        () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-
-            return div(
                 { class: "killroy-scroll scrollable-panel" },
 
                 Section(
@@ -539,7 +514,28 @@ export const KillroyTab = () => {
                         ),
                     ),
                 ),
-            );
-        },
+            ),
+    });
+
+    return div(
+        { class: "tab-container" },
+
+        div(
+            { class: "feature-header" },
+            div(
+                {},
+                h3({}, "KILLROY STATE LIBRARY"),
+                p(
+                    { class: "feature-header__desc" },
+                    "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
+                ),
+            ),
+            div(
+                { class: "feature-header__actions" },
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            ),
+        ),
+
+        renderBody,
     );
 };

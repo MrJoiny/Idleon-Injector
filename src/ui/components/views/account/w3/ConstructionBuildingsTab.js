@@ -20,6 +20,8 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -44,7 +46,7 @@ const getEffectiveBuildingMax = async (baseMax, index) => {
 
 const BuildingRow = ({ index, name, maxLevel, levelState }) => {
     const inputVal = van.state("0");
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     van.derive(() => {
         inputVal.val = String(levelState.val ?? 0);
@@ -53,17 +55,11 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
     const doSet = async (raw) => {
         const lvl = Math.max(0, Math.min(maxLevel, Number(raw)));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`TowerInfo[${index}]`, lvl);
             await writeGga(`TowerInfo[${index + BUILDING_COUNT}]`, lvl);
             levelState.val = lvl;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -141,10 +137,6 @@ export const ConstructionBuildingsTab = () => {
     const bulkStatus = van.state(null);
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
 
-    const toArr = (raw) => Array.isArray(raw)
-        ? raw
-        : Object.keys(raw).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
-
     const load = async () => {
         loading.val = true;
         error.val = null;
@@ -154,17 +146,17 @@ export const ConstructionBuildingsTab = () => {
                 readGga("CustomLists.TowerInfo"),
             ]);
 
-            const buildingInfo = toArr(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
+            const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
             const maxInfos = await Promise.all(
                 buildingInfo.map(async (entry, i) => {
-                    const entryArr = toArr(entry ?? []);
+                    const entryArr = toIndexedArray(entry ?? []);
                     const baseMax = safeNum(entryArr[8]);
                     return getEffectiveBuildingMax(baseMax, i);
                 })
             );
 
             const buildings = buildingInfo.map((entry, i) => {
-                const entryArr = toArr(entry ?? []);
+                const entryArr = toIndexedArray(entry ?? []);
                 const name = String(entryArr[0] ?? "").replace(/_/g, " ");
                 const { baseMax, extraMax, maxLevel } = maxInfos[i] ?? { baseMax: 0, extraMax: 0, maxLevel: 0 };
                 return { name, baseMax, extraMax, maxLevel };

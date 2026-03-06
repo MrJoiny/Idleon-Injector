@@ -1,8 +1,7 @@
 /**
- * W1 — Stamps Tab
+ * W1 - Stamps Tab
  *
  * Uses generic .feature-* CSS classes from _feature-pages.css.
- * Adding Forge, Alchemy etc. just means a new JS file with the same classes.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -12,6 +11,8 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -20,43 +21,67 @@ const PAGES = [
     { id: 1, label: "SKILLS" },
     { id: 2, label: "MISC" },
 ];
+const PAGE_LETTERS = ["A", "B", "C"];
+const EXALTED_CODE_REGEX = /^[A-Z]\d+$/;
 
-// ── StampRow ──────────────────────────────────────────────────────────────
+const normalizeExaltedCodes = (rawCodes) =>
+    toIndexedArray(rawCodes)
+        .map((code) =>
+            String(code ?? "")
+                .trim()
+                .toUpperCase()
+        )
+        .filter((code) => EXALTED_CODE_REGEX.test(code));
 
-const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) => {
+const makeStampCode = (page, order) => `${PAGE_LETTERS[page] ?? "A"}${order + 1}`;
+
+const sortStampCodes = (a, b) => {
+    const letterDelta = a.charCodeAt(0) - b.charCodeAt(0);
+    if (letterDelta !== 0) return letterDelta;
+    return Number(a.slice(1)) - Number(b.slice(1));
+};
+
+const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel, exaltedCodes, writeExaltedCodes }) => {
     const inputVal = van.state(String(initialLevel ?? 0));
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
+    const stampCode = makeStampCode(page, order);
+    const isExalted = van.derive(() => (exaltedCodes.val ?? new Set()).has(stampCode));
 
-    // Local display states — updated on SET without touching parent gameData.
+    // Local display states, updated on SET without touching parent gameData.
     const levelDisplay = van.state(initialLevel ?? 0);
     const maxLevelDisplay = van.state(initialMaxLevel ?? 0);
 
     const doSet = async (targetLevel) => {
         const lvl = Math.max(0, Number(targetLevel));
         if (isNaN(lvl)) return;
-        // Max level unlocks in steps — round up to the next step boundary
+
+        // Max level unlocks in steps, round up to the next step boundary.
         const maxLvl = step > 0 && lvl > 0 ? Math.ceil(lvl / step) * step : lvl;
-        status.val = "loading";
-        try {
+
+        await run(async () => {
             await writeGga(`StampLevel[${page}][${order}]`, lvl);
             await writeGga(`StampLevelMAX[${page}][${order}]`, maxLvl);
             inputVal.val = String(lvl);
             levelDisplay.val = lvl;
             maxLevelDisplay.val = maxLvl;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
+    };
+
+    const doToggleExalted = async () => {
+        await run(async () => {
+            const next = new Set(exaltedCodes.val ?? new Set());
+            next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
+            await writeExaltedCodes(next);
+            exaltedCodes.val = next;
+        });
     };
 
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
-                }`,
+                `feature-row stamp-row ${isExalted.val ? "stamp-row--exalted" : ""} ${
+                    status.val === "success" ? "feature-row--success" : ""
+                } ${status.val === "error" ? "feature-row--error" : ""}`,
         },
 
         div(
@@ -68,7 +93,7 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
         span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`),
 
         div(
-            { class: "feature-row__controls" },
+            { class: "feature-row__controls stamp-row__controls" },
 
             NumberInput({
                 value: inputVal,
@@ -93,6 +118,21 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
             withTooltip(
                 button(
                     {
+                        class: () =>
+                            `feature-btn stamp-exalted-btn ${isExalted.val ? "stamp-exalted-btn--active" : ""} ${
+                                status.val === "loading" ? "feature-btn--loading" : ""
+                            }`,
+                        onclick: doToggleExalted,
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (isExalted.val ? "EXALTED ON" : "EXALTED OFF")
+                ),
+                `Toggle exalted stamp (${stampCode}) in gga.Compass[4]`
+            ),
+
+            withTooltip(
+                button(
+                    {
                         class: "feature-btn feature-btn--danger",
                         onclick: () => doSet(0),
                         disabled: () => status.val === "loading",
@@ -105,23 +145,48 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel }) =>
     );
 };
 
-// ── StampsTab ─────────────────────────────────────────────────────────────
-
 export const StampsTab = () => {
     const activePage = van.state(0);
     const gameData = van.state(null);
     const loading = van.state(false);
     const error = van.state(null);
+    const exaltedCodes = van.state(new Set());
+
+    const writeExaltedCodes = async (codeSet) => {
+        const ordered = [...(codeSet ?? new Set())]
+            .map((code) =>
+                String(code ?? "")
+                    .trim()
+                    .toUpperCase()
+            )
+            .filter((code) => EXALTED_CODE_REGEX.test(code))
+            .sort(sortStampCodes);
+
+        for (let i = 0; i < ordered.length; i++) {
+            await writeGga(`Compass[4][${i}]`, ordered[i]);
+        }
+        await writeGga("Compass[4].length", ordered.length);
+    };
 
     const load = async () => {
         loading.val = true;
         error.val = null;
         try {
-            const [levels, maxLevels] = await Promise.all([readGga("StampLevel"), readGga("StampLevelMAX")]);
+            const [levels, maxLevels, rawExaltedCodes] = await Promise.all([
+                readGga("StampLevel"),
+                readGga("StampLevelMAX"),
+                readGga("Compass[4]"),
+            ]);
 
-            const pages = ["A", "B", "C"];
+            const levelsByPage = toIndexedArray(levels ?? []);
+            const maxLevelsByPage = toIndexedArray(maxLevels ?? []);
+
+            const pages = PAGE_LETTERS;
             const pageCounts = pages.map((_, page) =>
-                Math.max(levels?.[page]?.length ?? 0, maxLevels?.[page]?.length ?? 0)
+                Math.max(
+                    toIndexedArray(levelsByPage[page] ?? []).length,
+                    toIndexedArray(maxLevelsByPage[page] ?? []).length
+                )
             );
             const stampKeys = pages.flatMap((letter, page) =>
                 Array.from({ length: pageCounts[page] }, (_, i) => `Stamp${letter}${i + 1}`)
@@ -131,27 +196,29 @@ export const StampsTab = () => {
                 ? await readGgaEntries("ItemDefinitionsGET.h", stampKeys, ["displayName", "desc_line1"])
                 : {};
 
-            // Extract stamp names and step values client-side from ItemDefinitionsGET
             const names = pages.map((letter, page) => {
                 const result = [];
                 const count = pageCounts[page] ?? 0;
                 for (let i = 1; i <= count; i++) {
-                    const entry = rawItemDefs?.["Stamp" + letter + i];
+                    const entry = rawItemDefs?.[`Stamp${letter}${i}`];
                     result.push((entry?.displayName ?? `Stamp ${letter}${i}`).replace(/_/g, " "));
                 }
                 return result;
             });
+
             const steps = pages.map((letter, page) => {
                 const result = [];
                 const count = pageCounts[page] ?? 0;
                 for (let i = 1; i <= count; i++) {
-                    const entry = rawItemDefs?.["Stamp" + letter + i];
+                    const entry = rawItemDefs?.[`Stamp${letter}${i}`];
                     const parts = (entry?.desc_line1 || "").split(",");
-                    result.push(parseInt(parts[4]) || 0);
+                    result.push(parseInt(parts[4], 10) || 0);
                 }
                 return result;
             });
-            gameData.val = { levels, maxLevels, names, steps };
+
+            exaltedCodes.val = new Set(normalizeExaltedCodes(rawExaltedCodes));
+            gameData.val = { levels: levelsByPage, maxLevels: maxLevelsByPage, names, steps };
         } catch (e) {
             error.val = e.message || "Failed to read stamp data";
         } finally {
@@ -166,7 +233,11 @@ export const StampsTab = () => {
 
         div(
             { class: "feature-header" },
-            div(null, h3("STAMPS"), p({ class: "feature-header__desc" }, "Change your Stamp levels and remove stamps")),
+            div(
+                null,
+                h3("STAMPS"),
+                p({ class: "feature-header__desc" }, "Change stamp levels and toggle exalted stamps")
+            ),
             withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read stamp data from game memory"
@@ -207,7 +278,7 @@ export const StampsTab = () => {
             const page = activePage.val;
             const names = data.names?.[page] ?? [];
             const steps = data.steps?.[page] ?? [];
-            const count = Math.max(names.length, data.levels?.[page]?.length ?? 0);
+            const count = Math.max(names.length, data.levels?.[page]?.length ?? 0, data.maxLevels?.[page]?.length ?? 0);
 
             if (count === 0) {
                 return div(
@@ -226,10 +297,12 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name: names[order] ?? `Stamp ${["A", "B", "C"][page]}${order + 1}`,
+                        name: names[order] ?? `Stamp ${PAGE_LETTERS[page]}${order + 1}`,
                         step: steps[order] ?? 0,
                         initialLevel: data.levels?.[page]?.[order] ?? 0,
                         initialMaxLevel: data.maxLevels?.[page]?.[order] ?? 0,
+                        exaltedCodes,
+                        writeExaltedCodes,
                     })
                 )
             );

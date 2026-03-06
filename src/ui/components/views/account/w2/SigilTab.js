@@ -20,6 +20,8 @@ import { readGga, writeGga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, select, option } = van.tags;
 
@@ -36,11 +38,6 @@ const SIGIL_TIERS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const toArr = (raw) =>
-    Array.isArray(raw)
-        ? raw
-        : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
-
 const getTierInfo = (v) =>
     SIGIL_TIERS.find((t) => t.value === Number(v)) ?? SIGIL_TIERS[0];
 
@@ -48,7 +45,7 @@ const getTierInfo = (v) =>
 
 const SigilCard = ({ index, tierState, nameState }) => {
     const tierInput = van.state(String(tierState.val));
-    const status    = van.state(null); // null | "loading" | "success" | "error"
+    const { status, run } = useWriteStatus();
 
     // Keep tierInput in sync when parent refreshes the backing state.
     van.derive(() => { tierInput.val = String(tierState.val); });
@@ -56,16 +53,10 @@ const SigilCard = ({ index, tierState, nameState }) => {
     const doSet = async () => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(tierInput.val))));
         if (isNaN(tier)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`CauldronP2W[4][${2 * index + 1}]`, tier);
             tierState.val = tier;
-            status.val    = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -123,7 +114,8 @@ const SigilCard = ({ index, tierState, nameState }) => {
 export const SigilTab = () => {
     const loading     = van.state(true);
     const error       = van.state(null);
-    const initialized = van.state(false);
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-sigil states — created once, updated in-place on every load.
     const sigilTier = Array.from({ length: 24 }, () => van.state(-1));
@@ -138,6 +130,7 @@ export const SigilTab = () => {
     const load = async () => {
         loading.val = true;
         error.val   = null;
+        refreshError.val = null;
         try {
             const [rawP2W, rawSigilDesc] = await Promise.all([
                 readGga("CauldronP2W"),
@@ -145,24 +138,26 @@ export const SigilTab = () => {
             ]);
 
             // Fill tier values from CauldronP2W[4][2*i + 1]
-            const sig4 = toArr(toArr(rawP2W ?? [])[4] ?? []);
+            const sig4 = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);
             for (let i = 0; i < 24; i++) {
                 sigilTier[i].val = Number(sig4[2 * i + 1] ?? -1);
             }
 
             // Fill sigil names from SigilDesc[i][0]; e.g. "BIG_MUSCLE" → "BIG MUSCLE"
-            const descArr = toArr(rawSigilDesc ?? []);
+            const descArr = toIndexedArray(rawSigilDesc ?? []);
             for (let i = 0; i < 24; i++) {
-                const entry = toArr(descArr[i] ?? []);
+                const entry = toIndexedArray(descArr[i] ?? []);
                 const raw   = String(entry[0] ?? "").trim();
                 sigilName[i].val = raw
                     ? raw.replace(/_/g, " ").toUpperCase()
                     : `#${i}`;
             }
 
-            initialized.val = true;
+            markReady();
         } catch (e) {
-            error.val = e?.message ?? "Failed to load";
+            const message = e?.message ?? "Failed to load";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -232,10 +227,11 @@ export const SigilTab = () => {
     );
 
     const scroll = div(
-        { class: () => `sigil-scroll scrollable-panel${initialized.val ? "" : " sigil-scroll--hidden"}` },
+        { class: () => paneClass("sigil-scroll scrollable-panel") },
         setAllBar,
         grid,
     );
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
         { class: "tab-container" },
@@ -253,6 +249,8 @@ export const SigilTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ),
         ),
+
+        renderRefreshErrorBanner,
 
         // Loader — only before first successful load
         () => (loading.val && !initialized.val)
