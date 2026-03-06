@@ -388,8 +388,7 @@ export const StarSignsTab = () => {
 
     return div(
         {
-            class: "world-feature scroll-container",
-            style: "overflow-y: auto; display: flex; flex-direction: column; min-height: 0;",
+            class: "world-feature scroll-container starsigns-scroll-container",
         },
 
         div(

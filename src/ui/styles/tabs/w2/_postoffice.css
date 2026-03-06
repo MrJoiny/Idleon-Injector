@@ -70,6 +70,13 @@
     flex-shrink: 0;
 }
 
+.po-bulk-status {
+    margin-left: 8px;
+    min-width: 20px;
+    color: var(--accent-green, #4caf50);
+    font-weight: 700;
+}
+
 .po-box-bulk-btn {
     background: var(--c-panel);
     color: var(--c-text-main);
@@ -301,9 +308,6 @@
 }
 
 .po-field-row__set-btn {
-    font-size: 0.6rem;
-    padding: 0 5px;
-    height: 22px;
     flex-shrink: 0;
 }
 
@@ -540,6 +544,10 @@
 
 .po-points-summary__value--spent {
     color: #f87171;
+}
+
+.po-points-summary__value--earned {
+    color: var(--accent-green, #4caf50);
 }
 
 .po-points-summary__value--available {

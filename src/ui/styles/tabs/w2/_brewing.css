@@ -27,12 +27,6 @@
     color: var(--cauldron-color, var(--c-text-main));
 }
 
-.brewing-column__setall-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 24px;
-}
-
 .brewing-column__bubbles {
     display: flex;
     flex-direction: column;
@@ -153,12 +147,6 @@
 
 .bubble-card__controls .number-input-wrapper {
     width: 80px;
-}
-
-.bubble-card__set-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 26px;
 }
 
 .bubble-card__prisma-btn {

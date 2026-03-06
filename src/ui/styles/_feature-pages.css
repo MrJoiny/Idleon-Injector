@@ -83,40 +83,13 @@
 }
 
 .feature-page-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    color: var(--c-text-muted);
-    padding: 6px 20px;
-    font-size: 0.8rem;
-    font-family: var(--font-display);
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: color 0.15s;
-    position: relative;
-    bottom: -1px;
-}
-
-.feature-page-btn:hover {
-    color: var(--c-text-main);
-}
-
-.feature-page-btn.active {
-    color: var(--c-accent);
-    border-color: var(--c-border);
-    border-bottom-color: var(--c-panel-dim);
-    background: var(--c-panel-dim);
-}
-
-.feature-page-btn.active::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--c-accent);
-    box-shadow: 0 0 5px var(--c-accent-glow);
+    --tab-nav-padding: 6px 20px;
+    --tab-nav-font-size: 0.8rem;
+    --tab-nav-letter-spacing: 0.05em;
+    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-bg: var(--c-panel-dim);
+    --tab-nav-active-indicator: var(--c-accent);
+    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
 }
 
 /* ── Scrollable list ─────────────────────────────────────────────────────── */
@@ -264,8 +237,12 @@
 }
 
 .feature-btn--apply {
+    min-width: 54px;
+    border: 1px solid var(--c-border);
     background: var(--c-control-border-strong);
     color: var(--c-white);
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .feature-btn--apply:hover:not(:disabled) {
@@ -365,40 +342,14 @@
 }
 
 .alchemy-sub-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    color: var(--c-text-muted);
-    padding: 5px 16px;
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: color 0.15s;
-    position: relative;
-    bottom: -1px;
-}
-
-.alchemy-sub-btn:hover {
-    color: var(--c-text-main);
-}
-
-.alchemy-sub-btn.active {
-    color: var(--c-accent);
-    border-color: var(--c-border);
-    border-bottom-color: var(--c-panel-dim);
-    background: var(--c-panel-dim);
-}
-
-.alchemy-sub-btn.active::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--c-accent);
-    box-shadow: 0 0 5px var(--c-accent-glow);
+    --tab-nav-padding: 5px 16px;
+    --tab-nav-font-size: 0.72rem;
+    --tab-nav-font-family: var(--font-display);
+    --tab-nav-letter-spacing: 0.05em;
+    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-bg: var(--c-panel-dim);
+    --tab-nav-active-indicator: var(--c-accent);
+    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
 }
 
 .alchemy-sub-btn--stub {

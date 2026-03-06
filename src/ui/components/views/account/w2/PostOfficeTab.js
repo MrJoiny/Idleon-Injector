@@ -644,7 +644,7 @@ export const PostOfficeTab = () => {
                 onIncrement: () => { bulkStreakInput.val = String(Number(bulkStreakInput.val) + 1); debouncedSetAllStreaks(); },
             }),
             span(
-                { class: "po-bulk-status", style: "margin-left: 8px; font-weight: bold; color: var(--accent-green, #4caf50); min-width: 20px;" },
+                { class: "po-bulk-status" },
                 () => bulkStreakStatus.val === "loading" ? "…" : bulkStreakStatus.val === "success" ? "✓" : ""
             )
         ),
@@ -662,7 +662,7 @@ export const PostOfficeTab = () => {
                 onIncrement: () => { bulkShieldInput.val = String(Number(bulkShieldInput.val) + 1); debouncedSetAllShields(); },
             }),
             span(
-                { class: "po-bulk-status", style: "margin-left: 8px; font-weight: bold; color: var(--accent-green, #4caf50); min-width: 20px;" },
+                { class: "po-bulk-status" },
                 () => bulkShieldStatus.val === "loading" ? "…" : bulkShieldStatus.val === "success" ? "✓" : ""
             )
         )
@@ -738,7 +738,7 @@ export const PostOfficeTab = () => {
                 { class: "po-points-summary__row" },
                 span({ class: "po-points-summary__label" }, "TOTAL EARNED"),
                 span(
-                    { class: "po-points-summary__value", style: "color: var(--accent-green, #4caf50);" },
+                    { class: "po-points-summary__value po-points-summary__value--earned" },
                     () => String(totalEarned.val),
                 ),
             ),

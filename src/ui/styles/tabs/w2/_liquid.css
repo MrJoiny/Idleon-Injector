@@ -82,8 +82,5 @@
 }
 
 .liquid-section__set-btn {
-    font-size: 0.65rem;
-    padding: 0 8px;
-    height: 26px;
     flex-shrink: 0;
 }

@@ -1,5 +1,10 @@
 /* ── Star Signs ───────────────────────────────────────────────────────── */
 
+.starsigns-scroll-container {
+    overflow-y: auto;
+    min-height: 0;
+}
+
 .starsign-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

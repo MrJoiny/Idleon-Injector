@@ -68,7 +68,7 @@ const ArcadeCard = ({ index, name, initialLevel }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply arcade-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },

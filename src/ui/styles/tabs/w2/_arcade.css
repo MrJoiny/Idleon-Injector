@@ -137,11 +137,6 @@
     flex: 1;
 }
 
-.arcade-card__set-btn {
-    min-width: 50px;
-    padding: 0;
-}
-
 .arcade-card--success {
     border-color: var(--c-success);
     box-shadow: 0 0 0 1px var(--c-success);

@@ -160,7 +160,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet, onReload }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply bubble-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -220,7 +220,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, onReload, setAllInp
             span({ class: "brewing-column__label" }, cauldron.label),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply brewing-column__setall-btn ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => bulkStatus.val === "loading",
                     onclick: doSetAll,
                     title: "Set all bubbles in this cauldron",

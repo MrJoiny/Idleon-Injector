@@ -23,49 +23,69 @@
     z-index: 1001;
 }
 
-.account-sub-tab-button {
+.account-sub-tab-button,
+.world-sub-tab-btn,
+.feature-page-btn,
+.alchemy-sub-btn {
     background: transparent;
     border: 1px solid transparent;
     border-bottom: none;
-    color: var(--c-text-dim);
-    padding: 8px 14px;
-    font-size: 0.8rem;
-    font-family: var(--font-display);
-    letter-spacing: 0.04em;
+    color: var(--tab-nav-color, var(--c-text-muted));
+    padding: var(--tab-nav-padding, 6px 14px);
+    font-size: var(--tab-nav-font-size, 0.78rem);
+    font-family: var(--tab-nav-font-family, var(--font-display));
+    letter-spacing: var(--tab-nav-letter-spacing, 0.04em);
     cursor: pointer;
     transition:
         color 0.15s,
         background 0.15s;
     position: relative;
     bottom: -1px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 60px;
 }
 
-.account-sub-tab-button:hover {
-    color: var(--c-text-main);
-    background: var(--c-white-03);
+.account-sub-tab-button:hover,
+.world-sub-tab-btn:hover,
+.feature-page-btn:hover,
+.alchemy-sub-btn:hover {
+    color: var(--tab-nav-hover-color, var(--c-text-main));
+    background: var(--tab-nav-hover-bg, var(--c-white-03));
 }
 
-.account-sub-tab-button.active {
-    color: var(--c-text-main);
+.account-sub-tab-button.active,
+.world-sub-tab-btn.active,
+.feature-page-btn.active,
+.alchemy-sub-btn.active {
+    color: var(--tab-nav-active-color, var(--c-text-main));
     border-color: var(--c-border);
-    border-bottom-color: var(--c-panel);
-    background: var(--c-panel);
+    border-bottom-color: var(--tab-nav-active-bg, var(--c-panel-dim));
+    background: var(--tab-nav-active-bg, var(--c-panel-dim));
 }
 
-.account-sub-tab-button.active::after {
+.account-sub-tab-button.active::after,
+.world-sub-tab-btn.active::after,
+.feature-page-btn.active::after,
+.alchemy-sub-btn.active::after {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 2px;
-    background: var(--world-color, var(--c-accent));
-    box-shadow: 0 0 6px var(--c-accent-glow);
+    background: var(--tab-nav-active-indicator, var(--world-color, var(--c-accent)));
+    box-shadow: var(--tab-nav-active-glow, none);
+}
+
+.account-sub-tab-button {
+    --tab-nav-color: var(--c-text-dim);
+    --tab-nav-padding: 8px 14px;
+    --tab-nav-font-size: 0.8rem;
+    --tab-nav-active-bg: var(--c-panel);
+    --tab-nav-active-glow: 0 0 6px var(--c-accent-glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 60px;
 }
 
 .account-options-btn {
@@ -207,40 +227,8 @@
 }
 
 .world-sub-tab-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    color: var(--c-text-muted);
-    padding: 6px 14px;
-    font-size: 0.78rem;
-    font-family: var(--font-display);
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: color 0.15s;
-    position: relative;
-    bottom: -1px;
-}
-
-.world-sub-tab-btn:hover {
-    color: var(--c-text-main);
-    background: var(--c-white-03);
-}
-
-.world-sub-tab-btn.active {
-    color: var(--c-text-main);
-    border-color: var(--c-border);
-    border-bottom-color: var(--c-panel-dim);
-    background: var(--c-panel-dim);
-}
-
-.world-sub-tab-btn.active::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--world-color, var(--c-accent));
+    --tab-nav-active-bg: var(--c-panel-dim);
+    --tab-nav-active-indicator: var(--world-color, var(--c-accent));
 }
 
 .world-sub-tab-btn--stub {

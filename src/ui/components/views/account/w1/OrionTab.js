@@ -215,7 +215,7 @@ export const OrionTab = () => {
     // Hidden via style while loading/errored so the user doesn't see stale data,
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
-        { class: "feature-list", style: () => (loading.val || error.val ? "display:none" : "") },
+        { class: () => `feature-list${loading.val || error.val ? " orion-list--hidden" : ""}` },
         div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
         ...PINNED.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "orion-section-label" }, "Upgrades & Stats"),
