@@ -45,7 +45,7 @@ const PAGES = [
 
 // ── ForgeRow ──────────────────────────────────────────────────────────────
 
-const ForgeRow = ({ upgrade, levels, onReload }) => {
+const ForgeRow = ({ upgrade, levels }) => {
     const inputVal = van.state(String(levels.val?.[upgrade.index] ?? 0));
     const status = van.state(null);
 
@@ -59,9 +59,11 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
         status.val = "loading";
         try {
             await writeGga(`FurnaceLevels[${upgrade.index}]`, lvl);
+            const nextLevels = Array.isArray(levels.val) ? [...levels.val] : [];
+            nextLevels[upgrade.index] = lvl;
+            levels.val = nextLevels;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            await onReload?.();
         } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1200);
@@ -188,7 +190,7 @@ export const ForgeTab = () => {
 
             return div(
                 { class: "feature-list" },
-                ...page.upgrades.map((upgrade) => ForgeRow({ upgrade, levels, onReload: load }))
+                ...page.upgrades.map((upgrade) => ForgeRow({ upgrade, levels }))
             );
         }
     );

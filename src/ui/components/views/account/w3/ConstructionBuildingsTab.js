@@ -42,12 +42,12 @@ const getEffectiveBuildingMax = async (baseMax, index) => {
 
 // ── BuildingRow ────────────────────────────────────────────────────────────
 
-const BuildingRow = ({ index, name, maxLevel, getData, onReload }) => {
-    const inputVal = van.state(String(getData()?.levels?.[index] ?? 0));
+const BuildingRow = ({ index, name, maxLevel, levelState }) => {
+    const inputVal = van.state("0");
     const status = van.state(null);
 
     van.derive(() => {
-        inputVal.val = String(getData()?.levels?.[index] ?? 0);
+        inputVal.val = String(levelState.val ?? 0);
     });
 
     const doSet = async (raw) => {
@@ -57,9 +57,9 @@ const BuildingRow = ({ index, name, maxLevel, getData, onReload }) => {
         try {
             await writeGga(`TowerInfo[${index}]`, lvl);
             await writeGga(`TowerInfo[${index + BUILDING_COUNT}]`, lvl);
+            levelState.val = lvl;
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            await onReload?.();
         } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1200);
@@ -83,7 +83,7 @@ const BuildingRow = ({ index, name, maxLevel, getData, onReload }) => {
 
         span(
             { class: "feature-row__badge" },
-            () => `LV ${getData()?.levels?.[index] ?? 0} / ${maxLevel}`
+            () => `LV ${levelState.val ?? 0} / ${maxLevel}`
         ),
 
         div(
@@ -98,9 +98,14 @@ const BuildingRow = ({ index, name, maxLevel, getData, onReload }) => {
             withTooltip(
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
-                        onclick: () => doSet(inputVal.val),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doSet(inputVal.val);
+                        },
                     },
                     () => status.val === "loading" ? "…" : "SET"
                 ),
@@ -109,9 +114,12 @@ const BuildingRow = ({ index, name, maxLevel, getData, onReload }) => {
             withTooltip(
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn construction-btn--max ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
-                        onclick: () => {
+                        onclick: (e) => {
+                            e.preventDefault();
                             inputVal.val = String(maxLevel);
                             doSet(maxLevel);
                         },
@@ -131,6 +139,7 @@ export const ConstructionBuildingsTab = () => {
     const error = van.state(null);
     const data = van.state(null);
     const bulkStatus = van.state(null);
+    const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
 
     const toArr = (raw) => Array.isArray(raw)
         ? raw
@@ -161,10 +170,12 @@ export const ConstructionBuildingsTab = () => {
                 return { name, baseMax, extraMax, maxLevel };
             });
 
-            data.val = {
-                levels: (levels ?? []).slice(0, BUILDING_COUNT),
-                buildings,
-            };
+            const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
+            for (let i = 0; i < BUILDING_COUNT; i++) {
+                levelStates[i].val = safeNum(nextLevels[i]);
+            }
+
+            data.val = { buildings };
         } catch (e) {
             error.val = e?.message ?? "Failed to load";
         } finally {
@@ -180,11 +191,11 @@ export const ConstructionBuildingsTab = () => {
                 const maxLv = data.val.buildings[i]?.maxLevel ?? 0;
                 await writeGga(`TowerInfo[${i}]`, maxLv);
                 await writeGga(`TowerInfo[${i + BUILDING_COUNT}]`, maxLv);
+                levelStates[i].val = maxLv;
                 await new Promise((r) => setTimeout(r, 30));
             }
             bulkStatus.val = "done";
             setTimeout(() => (bulkStatus.val = null), 1500);
-            await load();
         } catch {
             bulkStatus.val = null;
         }
@@ -206,9 +217,14 @@ export const ConstructionBuildingsTab = () => {
                 { class: "feature-header__actions" },
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading" || loading.val,
-                        onclick: doMaxAll,
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doMaxAll();
+                        },
                     },
                     () => bulkStatus.val === "loading" ? "MAXING…" : bulkStatus.val === "done" ? "✓ DONE" : "MAX ALL"
                 ),
@@ -231,8 +247,7 @@ export const ConstructionBuildingsTab = () => {
                         index: i,
                         name: b.name,
                         maxLevel: b.maxLevel,
-                        getData: () => data.val,
-                        onReload: load,
+                        levelState: levelStates[i],
                     })
                 )
             );

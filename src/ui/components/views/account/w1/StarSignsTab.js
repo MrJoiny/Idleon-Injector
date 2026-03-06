@@ -293,6 +293,7 @@ export const StarSignsTab = () => {
     const loading = van.state(false);
     const error = van.state(null);
     const activeSign = van.state(null); // sign object being edited
+    const bulkStatus = van.state(null); // null | loading-unlock | loading-random | loading-reset | success | error
 
     const toArr = (raw) =>
         Array.isArray(raw)
@@ -355,35 +356,67 @@ export const StarSignsTab = () => {
 
     const resetAll = async () => {
         if (!signs.val) return;
-        for (const sign of signs.val) {
-            await writeGga(`StarSignProg[${sign.index}][0]`, "");
-            await new Promise((r) => setTimeout(r, 40));
-            await writeGga(`StarSignProg[${sign.index}][1]`, 0);
-            await new Promise((r) => setTimeout(r, 40));
+        bulkStatus.val = "loading-reset";
+        try {
+            const nextSigns = [];
+            for (const sign of signs.val) {
+                await writeGga(`StarSignProg[${sign.index}][0]`, "");
+                await new Promise((r) => setTimeout(r, 40));
+                await writeGga(`StarSignProg[${sign.index}][1]`, 0);
+                await new Promise((r) => setTimeout(r, 40));
+                nextSigns.push({ ...sign, players: [], unlocked: false });
+            }
+
+            signs.val = nextSigns;
+            if (activeSign.val) {
+                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
+                if (updated) activeSign.val = { ...updated };
+            }
+
+            bulkStatus.val = "success";
+            setTimeout(() => (bulkStatus.val = null), 1200);
+        } catch {
+            bulkStatus.val = "error";
+            setTimeout(() => (bulkStatus.val = null), 1200);
         }
-        await load();
     };
 
     const unlockAll = async (randomize) => {
         if (!signs.val) return;
-        for (const sign of signs.val) {
-            const needed = sign.playersNeeded;
-            const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
-            if (randomize) {
-                // Fisher-Yates shuffle
-                for (let i = pool.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [pool[i], pool[j]] = [pool[j], pool[i]];
+        bulkStatus.val = randomize ? "loading-random" : "loading-unlock";
+        try {
+            const nextSigns = [];
+            for (const sign of signs.val) {
+                const needed = sign.playersNeeded;
+                const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
+                if (randomize) {
+                    // Fisher-Yates shuffle
+                    for (let i = pool.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [pool[i], pool[j]] = [pool[j], pool[i]];
+                    }
                 }
+                const players = pool.slice(0, needed);
+                const str = encodeProgress(players);
+                await writeGga(`StarSignProg[${sign.index}][0]`, str);
+                await new Promise((r) => setTimeout(r, 40));
+                await writeGga(`StarSignProg[${sign.index}][1]`, 1);
+                await new Promise((r) => setTimeout(r, 40));
+                nextSigns.push({ ...sign, players, unlocked: true });
             }
-            const players = pool.slice(0, needed);
-            const str = encodeProgress(players);
-            await writeGga(`StarSignProg[${sign.index}][0]`, str);
-            await new Promise((r) => setTimeout(r, 40));
-            await writeGga(`StarSignProg[${sign.index}][1]`, 1);
-            await new Promise((r) => setTimeout(r, 40));
+
+            signs.val = nextSigns;
+            if (activeSign.val) {
+                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
+                if (updated) activeSign.val = { ...updated };
+            }
+
+            bulkStatus.val = "success";
+            setTimeout(() => (bulkStatus.val = null), 1200);
+        } catch {
+            bulkStatus.val = "error";
+            setTimeout(() => (bulkStatus.val = null), 1200);
         }
-        await load();
     };
 
     return div(
@@ -403,30 +436,33 @@ export const StarSignsTab = () => {
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--apply",
+                            class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading-unlock" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(false),
                         },
-                        "UNLOCK ALL"
+                        () => bulkStatus.val === "loading-unlock" ? "…" : "UNLOCK ALL"
                     ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--apply",
+                            class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading-random" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(true),
                         },
-                        "RANDOMIZE ALL"
+                        () => bulkStatus.val === "loading-random" ? "…" : "RANDOMIZE ALL"
                     ),
                     "Unlock all signs with a random player order per sign"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--danger",
+                            class: () => `feature-btn feature-btn--danger ${bulkStatus.val === "loading-reset" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: resetAll,
                         },
-                        "RESET ALL"
+                        () => bulkStatus.val === "loading-reset" ? "…" : "RESET ALL"
                     ),
                     "Clear all star sign progress and lock everything"
                 ),

@@ -30,18 +30,18 @@ const PLACEHOLDER_INDEX = 8;
 
 // ── RefineryRow ────────────────────────────────────────────────────────────
 
-const RefineryRow = ({ refIndex, name, getData, onReload }) => {
+const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
     const gameIndex = refIndex + REFINERY_OFFSET;
     const isPolymer = refIndex >= POLYMER_LOCK_FROM;
     const isPlaceholder = refIndex === PLACEHOLDER_INDEX;
 
-    const levelInput = van.state(String(getData()?.levels?.[refIndex] ?? 0));
-    const chargeInput = van.state(String(getData()?.charges?.[refIndex] ?? 0));
+    const levelInput = van.state("0");
+    const chargeInput = van.state("0");
     const status = van.state(null);
 
     van.derive(() => {
-        levelInput.val = String(getData()?.levels?.[refIndex] ?? 0);
-        chargeInput.val = String(getData()?.charges?.[refIndex] ?? 0);
+        levelInput.val = String(levelState.val ?? 0);
+        chargeInput.val = String(chargeState.val ?? 0);
     });
 
     const doSet = async (field, val) => {
@@ -50,9 +50,13 @@ const RefineryRow = ({ refIndex, name, getData, onReload }) => {
         status.val = "loading";
         try {
             await writeGga(`Refinery[${gameIndex}][${field}]`, n);
+            if (field === 1) {
+                levelState.val = n;
+            } else {
+                chargeState.val = n;
+            }
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            await onReload?.();
         } catch {
             status.val = "error";
             setTimeout(() => (status.val = null), 1200);
@@ -88,7 +92,7 @@ const RefineryRow = ({ refIndex, name, getData, onReload }) => {
         // Centre: current level
         span(
             { class: "feature-row__badge" },
-            () => `LV ${getData()?.levels?.[refIndex] ?? 0}`
+            () => `LV ${levelState.val ?? 0}`
         ),
 
         // Right: level + charge controls
@@ -106,9 +110,14 @@ const RefineryRow = ({ refIndex, name, getData, onReload }) => {
                 }),
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
-                        onclick: () => doSet(1, levelInput.val),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doSet(1, levelInput.val);
+                        },
                     },
                     () => status.val === "loading" ? "…" : "SET"
                 ),
@@ -125,9 +134,14 @@ const RefineryRow = ({ refIndex, name, getData, onReload }) => {
                 }),
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
-                        onclick: () => doSet(0, chargeInput.val),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doSet(0, chargeInput.val);
+                        },
                     },
                     () => status.val === "loading" ? "…" : "SET"
                 ),
@@ -142,6 +156,8 @@ export const RefineryTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
+    const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
+    const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
 
     const load = async () => {
         loading.val = true;
@@ -166,7 +182,12 @@ export const RefineryTab = () => {
                 levels.push(entry[1] ?? 0);
             }
 
-            data.val = { names, levels, charges };
+            for (let i = 0; i < REFINERY_COUNT; i++) {
+                chargeStates[i].val = Number(charges[i] ?? 0);
+                levelStates[i].val = Number(levels[i] ?? 0);
+            }
+
+            data.val = { names };
         } catch (e) {
             error.val = e?.message ?? "Failed to load";
         } finally {
@@ -222,8 +243,8 @@ export const RefineryTab = () => {
                     RefineryRow({
                         refIndex: i,
                         name: data.val.names[i] ?? `Refinery ${i + 1}`,
-                        getData: () => data.val,
-                        onReload: load,
+                        levelState: levelStates[i],
+                        chargeState: chargeStates[i],
                     })
                 )
             );

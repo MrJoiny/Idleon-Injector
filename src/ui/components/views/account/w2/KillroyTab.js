@@ -342,9 +342,17 @@ export const KillroyTab = () => {
         addStatus.val = "loading";
         try {
             await writeGga(`KRbest.h[${mobId}]`, kills);
+            const mobLabel = allowedMobs.val.find((m) => m.mobId === mobId)?.mobName ?? mobId;
+            const nextRows = [...(bestByMob.val ?? [])];
+            const existingIndex = nextRows.findIndex((row) => row.mobKey === mobId);
+            if (existingIndex >= 0) {
+                nextRows[existingIndex] = { ...nextRows[existingIndex], kills };
+            } else {
+                nextRows.push({ mobKey: mobId, mobName: mobLabel, kills });
+            }
+            bestByMob.val = nextRows;
             addStatus.val = "success";
             setTimeout(() => (addStatus.val = null), 1200);
-            await load();
         } catch {
             addStatus.val = "error";
             setTimeout(() => (addStatus.val = null), 1200);

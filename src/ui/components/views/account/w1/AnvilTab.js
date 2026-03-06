@@ -30,7 +30,7 @@ const CATEGORIES = [
 
 // ── AnvilRow ──────────────────────────────────────────────────────────────
 
-const AnvilRow = ({ category, getStats, onReload }) => {
+const AnvilRow = ({ category, getStats, onSetApplied }) => {
     const inputVal = van.state(String(getStats()?.[category.index] ?? 0));
     const status = van.state(null);
 
@@ -43,9 +43,7 @@ const AnvilRow = ({ category, getStats, onReload }) => {
             await writeGga(`AnvilPAstats[${category.index}]`, pts);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
-            // Small delay so the game has time to commit the write before we re-read
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            const fresh = await onReload?.();
+            const fresh = await onSetApplied?.(category.index, pts);
             inputVal.val = String(fresh?.[category.index] ?? pts);
         } catch {
             status.val = "error";
@@ -145,6 +143,29 @@ export const AnvilTab = () => {
         }
     };
 
+    const applyStatUpdate = async (index, value) => {
+        if (!Array.isArray(stats.val)) return null;
+
+        const next = [...stats.val];
+        next[index] = value;
+        stats.val = next;
+
+        // Keep "Points Remaining" fresh without flipping the tab into a loading state.
+        try {
+            const remainingRaw = await readGga("AnvilPAstats[0]");
+            const remaining = Number(remainingRaw);
+            if (Number.isFinite(remaining)) {
+                const withRemaining = [...stats.val];
+                withRemaining[0] = remaining;
+                stats.val = withRemaining;
+            }
+        } catch {
+            // Best-effort refresh only; keep optimistic state if read fails.
+        }
+
+        return stats.val;
+    };
+
     load();
 
     return div(
@@ -202,7 +223,7 @@ export const AnvilTab = () => {
                     AnvilRow({
                         category: cat,
                         getStats: () => stats.val,
-                        onReload: load,
+                        onSetApplied: applyStatUpdate,
                     })
                 )
             );

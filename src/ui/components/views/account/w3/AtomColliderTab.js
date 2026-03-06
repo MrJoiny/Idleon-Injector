@@ -1,11 +1,11 @@
 /**
- * W3 — Atom Collider Tab
+ * W3 - Atom Collider Tab
  *
  * Data sources:
- *   gga.Atoms[b]                     — current level of atom b
- *   gga.CustomLists.h.AtomInfo[b][0] — atom name (underscores → spaces)
+ *   gga.Atoms[b]                     - current level of atom b
+ *   gga.CustomLists.h.AtomInfo[b][0] - atom name (underscores -> spaces)
  *
- * Max level is NOT stored in a data table — it is computed per-atom via:
+ * Max level is NOT stored in a data table - it is computed per-atom via:
  *   m._customBlock_AtomCollider("AtomMaxLv", b, 0)
  * which maps to: readComputed("AtomCollider", "AtomMaxLv", [b, 0])
  *
@@ -32,12 +32,15 @@ const safeNum = (v) => {
     return Number.isFinite(n) ? n : 0;
 };
 
-// ── AtomRow ────────────────────────────────────────────────────────────────
+// -- AtomRow -----------------------------------------------------------------
 
-const AtomRow = ({ index, name, maxLevel, initialLevel }) => {
-    const levelDisplay = van.state(initialLevel);
-    const inputVal = van.state(String(initialLevel));
+const AtomRow = ({ index, name, maxLevel, levelState }) => {
+    const inputVal = van.state("0");
     const status = van.state(null);
+
+    van.derive(() => {
+        inputVal.val = String(levelState.val ?? 0);
+    });
 
     const doSet = async (raw) => {
         const lvl = Math.max(0, Math.min(maxLevel, safeNum(raw)));
@@ -45,7 +48,7 @@ const AtomRow = ({ index, name, maxLevel, initialLevel }) => {
         status.val = "loading";
         try {
             await writeGga(`Atoms[${index}]`, lvl);
-            levelDisplay.val = lvl;
+            levelState.val = lvl;
             inputVal.val = String(lvl);
             status.val = "success";
             setTimeout(() => (status.val = null), 1200);
@@ -72,7 +75,7 @@ const AtomRow = ({ index, name, maxLevel, initialLevel }) => {
 
         span(
             { class: "feature-row__badge" },
-            () => `LV ${levelDisplay.val} / ${maxLevel}`
+            () => `LV ${levelState.val} / ${maxLevel}`
         ),
 
         div(
@@ -86,23 +89,33 @@ const AtomRow = ({ index, name, maxLevel, initialLevel }) => {
             }),
             button(
                 {
+                    type: "button",
+                    onmousedown: (e) => e.preventDefault(),
                     class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
+                    onclick: (e) => {
+                        e.preventDefault();
+                        doSet(inputVal.val);
+                    },
                 },
-                () => status.val === "loading" ? "…" : "SET"
+                () => status.val === "loading" ? "..." : "SET"
             ),
         ),
     );
 };
 
-// ── AtomColliderTab ────────────────────────────────────────────────────────
+// -- AtomColliderTab ----------------------------------------------------------
 
 export const AtomColliderTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
     const bulkStatus = van.state(null); // "loading" | "done" | null
+    const levelStates = [];
+    const getLevelState = (i) => {
+        if (!levelStates[i]) levelStates[i] = van.state(0);
+        return levelStates[i];
+    };
 
     // targetLevel: null = each atom's own max, 0 = reset
     const doSetAll = async (targetLevel) => {
@@ -112,18 +125,18 @@ export const AtomColliderTab = () => {
             for (let i = 0; i < data.val.atoms.length; i++) {
                 const lvl = targetLevel === null ? data.val.atoms[i].maxLevel : targetLevel;
                 await writeGga(`Atoms[${i}]`, lvl);
+                getLevelState(i).val = lvl;
                 await new Promise((r) => setTimeout(r, 20));
             }
             bulkStatus.val = "done";
             setTimeout(() => (bulkStatus.val = null), 1500);
-            await load();
         } catch {
             bulkStatus.val = null;
         }
     };
 
-    const load = async () => {
-        loading.val = true;
+    const load = async (showSpinner = true) => {
+        if (showSpinner) loading.val = true;
         error.val = null;
         try {
             const [rawLevels, rawAtomInfo] = await Promise.all([
@@ -149,17 +162,19 @@ export const AtomColliderTab = () => {
             });
 
             const rawArr = toArr(rawLevels ?? []);
-            const levels = atoms.map((_, i) => safeNum(rawArr[i]));
+            atoms.forEach((_, i) => {
+                getLevelState(i).val = safeNum(rawArr[i]);
+            });
 
-            data.val = { levels, atoms };
+            data.val = { atoms };
         } catch (e) {
             error.val = e?.message ?? "Failed to load";
         } finally {
-            loading.val = false;
+            if (showSpinner) loading.val = false;
         }
     };
 
-    load();
+    load(true);
 
     return div(
         { class: "tab-container" },
@@ -175,17 +190,27 @@ export const AtomColliderTab = () => {
                 { class: "feature-header__actions" },
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
-                        onclick: () => doSetAll(null),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doSetAll(null);
+                        },
                     },
                     "MAX ALL"
                 ),
                 button(
                     {
+                        type: "button",
+                        onmousedown: (e) => e.preventDefault(),
                         class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
-                        onclick: () => doSetAll(0),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            doSetAll(0);
+                        },
                     },
                     "RESET ALL"
                 ),
@@ -198,7 +223,7 @@ export const AtomColliderTab = () => {
             if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
             if (!data.val) return null;
 
-            const { levels, atoms } = data.val;
+            const { atoms } = data.val;
             if (!atoms.length) return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." });
 
             return div(
@@ -208,7 +233,7 @@ export const AtomColliderTab = () => {
                         index: i,
                         name: a.name,
                         maxLevel: a.maxLevel,
-                        initialLevel: levels[i],
+                        levelState: getLevelState(i),
                     })
                 )
             );

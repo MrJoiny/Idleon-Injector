@@ -45,6 +45,11 @@ const toArr = (raw) =>
         ? raw
         : Object.keys(raw ?? {}).sort((a, b) => Number(a) - Number(b)).map((k) => raw[k]);
 
+const roundTo2 = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+};
+
 // ── LiquidControl ─────────────────────────────────────────────────────────
 // Takes a reactive `valueState` (van.state) so refresh updates the display
 // in-place without recreating this element.
@@ -60,7 +65,7 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
 
     const doSet = async (raw) => {
         const val = mode === "float"
-            ? Math.max(0, Number(raw))
+            ? Math.max(0, roundTo2(raw))
             : Math.max(0, Math.round(Number(raw)));
         if (isNaN(val)) return;
         status.val = "loading";
@@ -87,7 +92,10 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
         div(
             { class: "liquid-section__top" },
             span({ class: "liquid-section__label" }, label),
-            span({ class: "liquid-section__display" }, () => valueState.val),
+            span(
+                { class: "liquid-section__display" },
+                () => mode === "float" ? roundTo2(valueState.val).toFixed(2) : String(valueState.val)
+            ),
         ),
         div(
             { class: "liquid-section__controls" },
@@ -169,7 +177,7 @@ export const LiquidTab = () => {
                 const upgRow  = toArr(upgradesRaw[liq.upgradeIndex] ?? []);
                 const capRow  = toArr(upgRow[2] ?? []);
                 const rateRow = toArr(upgRow[3] ?? []);
-                liquidStates[i].amount.val = Number(amounts[liq.index] ?? 0);
+                liquidStates[i].amount.val = roundTo2(amounts[liq.index] ?? 0);
                 liquidStates[i].cap.val    = Number(capRow[1]  ?? 0);
                 liquidStates[i].rate.val   = Number(rateRow[1] ?? 0);
             });
