@@ -210,6 +210,16 @@ export function setupGameAttributeProxies() {
                 if (cheatState.w6.emperor && index === 370) return -10;
                 if (cheatState.w3.jeweledcogs && index === 414) return 0;
 
+                // Clamp capped values on read to prevent cloud-loaded Infinity/NaN
+                if (index === 71 || index === 72) return applyMaxCap(obj[prop], "creditcap", true);
+                if (index === 73) return applyMaxCap(obj[prop], "flurbocap", true);
+                if (index === 329) return applyMaxCap(obj[prop], "totalbones", true);
+                if (index >= 330 && index <= 333) return applyMaxCap(obj[prop], "bones", true);
+                if (index >= 357 && index <= 361) return applyMaxCap(obj[prop], "dust", true);
+                if (index === 362) return applyMaxCap(obj[prop], "totaldust", true);
+                if (index >= 388 && index <= 393) return applyMaxCap(obj[prop], "tach", true);
+                if (index === 394) return applyMaxCap(obj[prop], "totaltach", true);
+
                 return obj[prop];
             },
             set(obj, prop, value) {
