@@ -34,7 +34,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 
-const { div, button, span, h3, p, input } = van.tags;
+const { div, button, span, h3, p } = van.tags;
 
 const SHIPMENT_COUNT = 6;
 const POST_OFFICE_SUBTABS = [
@@ -101,60 +101,6 @@ const PONumField = ({ label, valueState, writePath }) => {
         ),
     );
 };
-
-// ── POTextField ─────────────────────────────────────────────────────────────
-// Text (string) edit row for item ID.
-
-const POTextField = ({ label, valueState, writePath }) => {
-    const inputVal = van.state(String(valueState.val));
-    const status = van.state(null);
-
-    van.derive(() => { inputVal.val = String(valueState.val); });
-
-    const doSet = async () => {
-        status.val = "loading";
-        try {
-            await writeGga(writePath, inputVal.val);
-            valueState.val = inputVal.val;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
-    };
-
-    return div(
-        {
-            class: () => [
-                "po-field-row po-field-row--text",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
-        },
-        span({ class: "po-field-row__label" }, label),
-        div(
-            { class: "po-field-row__text-wrap" },
-            input({
-                class: "po-text-input",
-                type: "text",
-                value: () => inputVal.val,
-                oninput: (e) => (inputVal.val = e.target.value),
-            }),
-            button(
-                {
-                    class: () => `feature-btn feature-btn--apply po-field-row__set-btn${status.val === "loading" ? " feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: doSet,
-                },
-                () => status.val === "loading" ? "…" : "SET",
-            ),
-        ),
-    );
-};
-
-// ── POToggleField ───────────────────────────────────────────────────────────
-// Toggle button for the completed flag (0 / 1).
 
 const POToggleField = ({ valueState, writePath }) => {
     const status = van.state(null);

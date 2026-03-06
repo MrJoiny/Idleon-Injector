@@ -311,33 +311,6 @@
     flex-shrink: 0;
 }
 
-/* Text input + SET button wrapper (for item ID row) */
-.po-field-row__text-wrap {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-}
-
-/* Item ID text input */
-.po-text-input {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-main);
-    font-family: var(--font-mono);
-    font-size: 0.66rem;
-    padding: 2px 5px;
-    height: 22px;
-    flex: 1;
-    min-width: 0;
-    outline: none;
-    transition: border-color 0.15s;
-}
-
-.po-text-input:focus {
-    border-color: var(--c-accent);
-}
-
 /* ── Completed toggle button ─────────────────────────────────────────────── */
 
 .po-toggle-btn {
