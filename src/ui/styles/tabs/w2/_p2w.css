@@ -140,10 +140,6 @@
 }
 
 /* Simple rows are wider — override number-input width */
-.p2w-simple-rows .p2w-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-}
-
 .p2w-simple-rows .p2w-row__controls .number-input-wrapper {
     width: 120px;
 }

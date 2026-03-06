@@ -354,7 +354,7 @@ export const KillroyTab = () => {
     load();
 
     return div(
-        { class: "killroy-tab tab-container" },
+        { class: "tab-container" },
 
         div(
             { class: "feature-header" },

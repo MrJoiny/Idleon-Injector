@@ -154,7 +154,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                 p({ class: "starsign-detail-desc" }, sign.desc)
             ),
             div(
-                { class: "starsign-detail-meta" },
+                null,
                 span(
                     { class: "starsign-needed-badge" },
                     `${sign.playersNeeded} player${sign.playersNeeded > 1 ? "s" : ""} needed`

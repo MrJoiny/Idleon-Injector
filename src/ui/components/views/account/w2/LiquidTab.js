@@ -194,7 +194,7 @@ export const LiquidTab = () => {
     );
 
     return div(
-        { class: "liquid-tab tab-container" },
+        { class: "tab-container" },
 
         // Header
         div(

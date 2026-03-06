@@ -348,9 +348,6 @@
 /* ── Vials tab ───────────────────────────────────────────────────────────── */
 /* Container properties handled by .tab-container                             */
 
-.vials-tab .feature-list {
-    overflow-y: auto;
-}
 
 /* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
 /* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win, Sigils)

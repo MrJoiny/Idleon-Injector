@@ -352,7 +352,7 @@ export const Pay2WinTab = () => {
     );
 
     return div(
-        { class: "p2w-tab tab-container" },
+        { class: "tab-container" },
 
         div(
             { class: "feature-header" },

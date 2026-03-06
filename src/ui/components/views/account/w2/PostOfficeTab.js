@@ -800,7 +800,7 @@ export const PostOfficeTab = () => {
     );
 
     return div(
-        { class: "po-tab tab-container" },
+        { class: "tab-container" },
 
         // Header
         div(
@@ -825,11 +825,11 @@ export const PostOfficeTab = () => {
         ),
 
         div(
-            { class: "po-sub-nav alchemy-sub-nav" },
+            { class: "alchemy-sub-nav" },
             ...POST_OFFICE_SUBTABS.map((tab) =>
                 button(
                     {
-                        class: () => `po-sub-btn alchemy-sub-btn ${activeSubTab.val === tab.id ? "active" : ""}`,
+                        class: () => `alchemy-sub-btn ${activeSubTab.val === tab.id ? "active" : ""}`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
                     tab.label,

@@ -238,7 +238,7 @@ export const SigilTab = () => {
     );
 
     return div(
-        { class: "sigil-tab tab-container" },
+        { class: "tab-container" },
 
         // Header
         div(

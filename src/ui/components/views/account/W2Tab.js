@@ -56,7 +56,7 @@ const AlchemyPanel = () => {
     const active = van.state(ALCHEMY_SUBTABS[0].id);
 
     return div(
-        { class: "alchemy-panel tab-container" },
+        { class: "tab-container" },
 
         div(
             { class: "alchemy-sub-nav" },

@@ -23,16 +23,6 @@
     margin-bottom: 2px;
 }
 
-/* Wide number input for large values (Orion feathers etc) */
-.feature-row__controls--wide .number-input-wrapper {
-    width: 120px;
-}
-
-.feature-row__controls--wide .number-input-wrapper input {
-    min-width: 6ch;
-    font-size: 0.8rem;
-}
-
 .feature-row__controls--xl .number-input-wrapper {
     width: 180px;
 }

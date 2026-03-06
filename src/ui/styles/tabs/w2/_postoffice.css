@@ -70,10 +70,6 @@
     flex-shrink: 0;
 }
 
-.po-bulk-group__complete-btn {
-    margin-left: auto;
-}
-
 .po-box-bulk-btn {
     background: var(--c-panel);
     color: var(--c-text-main);
@@ -532,16 +528,6 @@
     color: var(--c-text-dim);
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-.po-points-summary__formula {
-    font-family: var(--font-mono);
-    font-size: 0.64rem;
-    color: var(--c-text-dim);
-    text-align: right;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .po-points-summary__value {

@@ -82,19 +82,6 @@
     line-height: 1;
 }
 
-.world-tab-btn-label {
-    font-size: 0.6rem;
-    color: var(--c-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 72px;
-}
-
-.account-sub-tab-button.active .world-tab-btn-label {
-    color: var(--c-text-dim);
-}
-
 /* ── Top account panes ───────────────────────────────────────────────────── */
 
 /* display owned by .tab-pane/.tab-pane.active in _layout.css */

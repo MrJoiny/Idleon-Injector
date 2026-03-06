@@ -301,7 +301,7 @@ export const BrewingTab = () => {
     load();
 
     return div(
-        { class: "brewing-tab tab-container" },
+        { class: "tab-container" },
 
         // Header
         div(
