@@ -53,15 +53,32 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
 }
 
 /* Tier-based border + background tint */
-.sigil-card--unlocked { border-color: rgba(96,  165, 250, 0.45); background: rgba(96,  165, 250, 0.04); }
-.sigil-card--boosted  { border-color: rgba(250, 204, 21,  0.45); background: rgba(250, 204, 21,  0.04); }
-.sigil-card--ionized  { border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.04); }
-.sigil-card--ethereal { border-color: rgba(192, 132, 252, 0.45); background: rgba(192, 132, 252, 0.04); }
-.sigil-card--eclectic { border-color: rgba(74,  222, 128, 0.45); background: rgba(74,  222, 128, 0.04); }
+.sigil-card--unlocked {
+    border-color: rgba(96, 165, 250, 0.45);
+    background: rgba(96, 165, 250, 0.04);
+}
+.sigil-card--boosted {
+    border-color: rgba(250, 204, 21, 0.45);
+    background: rgba(250, 204, 21, 0.04);
+}
+.sigil-card--ionized {
+    border-color: rgba(248, 113, 113, 0.45);
+    background: rgba(248, 113, 113, 0.04);
+}
+.sigil-card--ethereal {
+    border-color: rgba(192, 132, 252, 0.45);
+    background: rgba(192, 132, 252, 0.04);
+}
+.sigil-card--eclectic {
+    border-color: rgba(74, 222, 128, 0.45);
+    background: rgba(74, 222, 128, 0.04);
+}
 
 /* .sigil-card--flash-success / .sigil-card--flash-error → .flash-success / .flash-error */
 
@@ -111,12 +128,25 @@
     flex-shrink: 0;
 }
 
-.sigil-tier-badge--locked   { color: var(--c-text-dim); border-color: var(--c-border); }
-.sigil-tier-badge--unlocked { color: #60a5fa; }
-.sigil-tier-badge--boosted  { color: #facc15; }
-.sigil-tier-badge--ionized  { color: #f87171; }
-.sigil-tier-badge--ethereal { color: #c084fc; }
-.sigil-tier-badge--eclectic { color: #4ade80; }
+.sigil-tier-badge--locked {
+    color: var(--c-text-dim);
+    border-color: var(--c-border);
+}
+.sigil-tier-badge--unlocked {
+    color: #60a5fa;
+}
+.sigil-tier-badge--boosted {
+    color: #facc15;
+}
+.sigil-tier-badge--ionized {
+    color: #f87171;
+}
+.sigil-tier-badge--ethereal {
+    color: #c084fc;
+}
+.sigil-tier-badge--eclectic {
+    color: #4ade80;
+}
 
 /* Base background/color/border/cursor handled by .select-base; unique properties only */
 .sigil-card__tier-select {

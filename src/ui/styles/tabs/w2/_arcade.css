@@ -74,7 +74,9 @@
 
 .arcade-card--cosmic:hover {
     border-color: #60a5fa;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2), inset 0 0 0 1px rgba(59, 130, 246, 0.4);
+    box-shadow:
+        0 4px 12px rgba(59, 130, 246, 0.2),
+        inset 0 0 0 1px rgba(59, 130, 246, 0.4);
 }
 
 .arcade-card__top {

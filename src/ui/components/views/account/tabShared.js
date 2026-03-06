@@ -75,32 +75,34 @@ export const renderWorldHeader = ({ badge, title, subtitle }) =>
         )
     );
 
-export const createWorldComingSoonTab = ({ worldClass, badge, title, subtitle, worldKey }) => () => {
-    const tabs = [{ id: "coming-soon", label: "COMING SOON" }];
-    const activeSubTab = van.state(tabs[0].id);
+export const createWorldComingSoonTab =
+    ({ worldClass, badge, title, subtitle, worldKey }) =>
+    () => {
+        const tabs = [{ id: "coming-soon", label: "COMING SOON" }];
+        const activeSubTab = van.state(tabs[0].id);
 
-    return div(
-        { class: joinClasses("world-tab", worldClass) },
-        renderWorldHeader({ badge, title, subtitle }),
-        renderTabNav({
-            tabs,
-            activeId: activeSubTab,
-            navClass: "world-sub-nav",
-            buttonClass: "world-sub-tab-btn",
-            stubClass: "world-sub-tab-btn--stub",
-            isStub: () => true,
-        }),
-        div(
-            { class: "world-sub-content" },
+        return div(
+            { class: joinClasses("world-tab", worldClass) },
+            renderWorldHeader({ badge, title, subtitle }),
+            renderTabNav({
+                tabs,
+                activeId: activeSubTab,
+                navClass: "world-sub-nav",
+                buttonClass: "world-sub-tab-btn",
+                stubClass: "world-sub-tab-btn--stub",
+                isStub: () => true,
+            }),
             div(
-                { class: "world-sub-pane active world-sub-pane--empty" },
-                span({ class: "world-empty-icon" }, Icons.Wrench()),
-                p({ class: "world-empty-label" }, `${worldKey} SYSTEMS COMING SOON`),
-                p(
-                    { class: "world-empty-desc" },
-                    `Follow the W1Tab pattern to add sub-tabs for each ${worldKey} system.`
+                { class: "world-sub-content" },
+                div(
+                    { class: "world-sub-pane active world-sub-pane--empty" },
+                    span({ class: "world-empty-icon" }, Icons.Wrench()),
+                    p({ class: "world-empty-label" }, `${worldKey} SYSTEMS COMING SOON`),
+                    p(
+                        { class: "world-empty-desc" },
+                        `Follow the W1Tab pattern to add sub-tabs for each ${worldKey} system.`
+                    )
                 )
             )
-        )
-    );
-};
+        );
+    };

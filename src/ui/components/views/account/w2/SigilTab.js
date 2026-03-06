@@ -28,18 +28,17 @@ const { div, button, span, h3, p, select, option } = van.tags;
 // ── Sigil tier definitions ──────────────────────────────────────────────────
 
 const SIGIL_TIERS = [
-    { value: -1, label: "LOCKED",   cls: "locked"   },
-    { value:  0, label: "UNLOCKED", cls: "unlocked"  },
-    { value:  1, label: "BOOSTED",  cls: "boosted"   },
-    { value:  2, label: "IONIZED",  cls: "ionized"   },
-    { value:  3, label: "ETHEREAL", cls: "ethereal"  },
-    { value:  4, label: "ECLECTIC", cls: "eclectic"  },
+    { value: -1, label: "LOCKED", cls: "locked" },
+    { value: 0, label: "UNLOCKED", cls: "unlocked" },
+    { value: 1, label: "BOOSTED", cls: "boosted" },
+    { value: 2, label: "IONIZED", cls: "ionized" },
+    { value: 3, label: "ETHEREAL", cls: "ethereal" },
+    { value: 4, label: "ECLECTIC", cls: "eclectic" },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const getTierInfo = (v) =>
-    SIGIL_TIERS.find((t) => t.value === Number(v)) ?? SIGIL_TIERS[0];
+const getTierInfo = (v) => SIGIL_TIERS.find((t) => t.value === Number(v)) ?? SIGIL_TIERS[0];
 
 // ── SigilCard ──────────────────────────────────────────────────────────────
 
@@ -48,7 +47,9 @@ const SigilCard = ({ index, tierState, nameState }) => {
     const { status, run } = useWriteStatus();
 
     // Keep tierInput in sync when parent refreshes the backing state.
-    van.derive(() => { tierInput.val = String(tierState.val); });
+    van.derive(() => {
+        tierInput.val = String(tierState.val);
+    });
 
     const doSet = async () => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(tierInput.val))));
@@ -67,8 +68,10 @@ const SigilCard = ({ index, tierState, nameState }) => {
                     "sigil-card",
                     `sigil-card--${t.cls}`,
                     status.val === "success" ? "sigil-card--flash-success" : "",
-                    status.val === "error"   ? "sigil-card--flash-error"   : "",
-                ].filter(Boolean).join(" ");
+                    status.val === "error" ? "sigil-card--flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ");
             },
         },
         // Header: index + name | tier badge
@@ -77,43 +80,41 @@ const SigilCard = ({ index, tierState, nameState }) => {
             div(
                 { class: "sigil-card__identity" },
                 span({ class: "sigil-card__index" }, `#${index}`),
-                span({ class: "sigil-card__name" }, () => nameState.val),
+                span({ class: "sigil-card__name" }, () => nameState.val)
             ),
             span(
                 { class: () => `sigil-card__tier-badge sigil-tier-badge--${getTierInfo(tierState.val).cls}` },
-                () => getTierInfo(tierState.val).label,
-            ),
+                () => getTierInfo(tierState.val).label
+            )
         ),
         // Tier select
         select(
             {
-                class:    "sigil-card__tier-select select-base",
+                class: "sigil-card__tier-select select-base",
                 onchange: (e) => (tierInput.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
-                option(
-                    { value: t.value, selected: () => Number(tierInput.val) === t.value },
-                    t.label,
-                )
-            ),
+                option({ value: t.value, selected: () => Number(tierInput.val) === t.value }, t.label)
+            )
         ),
         // SET button
         button(
             {
-                class:    () => `feature-btn feature-btn--apply sigil-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                class: () =>
+                    `feature-btn feature-btn--apply sigil-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                 disabled: () => status.val === "loading",
-                onclick:  doSet,
+                onclick: doSet,
             },
-            () => status.val === "loading" ? "…" : "SET",
-        ),
+            () => (status.val === "loading" ? "…" : "SET")
+        )
     );
 };
 
 // ── SigilTab ───────────────────────────────────────────────────────────────
 
 export const SigilTab = () => {
-    const loading     = van.state(true);
-    const error       = van.state(null);
+    const loading = van.state(true);
+    const error = van.state(null);
     const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
@@ -122,14 +123,14 @@ export const SigilTab = () => {
     const sigilName = Array.from({ length: 24 }, (_, i) => van.state(`#${i}`));
 
     // SET ALL state
-    const setAllTier   = van.state("-1");
+    const setAllTier = van.state("-1");
     const setAllStatus = van.state(null);
 
     // ── Load ───────────────────────────────────────────────────────────────
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         refreshError.val = null;
         try {
             const [rawP2W, rawSigilDesc] = await Promise.all([
@@ -147,10 +148,8 @@ export const SigilTab = () => {
             const descArr = toIndexedArray(rawSigilDesc ?? []);
             for (let i = 0; i < 24; i++) {
                 const entry = toIndexedArray(descArr[i] ?? []);
-                const raw   = String(entry[0] ?? "").trim();
-                sigilName[i].val = raw
-                    ? raw.replace(/_/g, " ").toUpperCase()
-                    : `#${i}`;
+                const raw = String(entry[0] ?? "").trim();
+                sigilName[i].val = raw ? raw.replace(/_/g, " ").toUpperCase() : `#${i}`;
             }
 
             markReady();
@@ -174,8 +173,9 @@ export const SigilTab = () => {
         try {
             await Promise.all(
                 sigilTier.map((state, i) =>
-                    writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier)
-                        .then(() => { state.val = tier; })
+                    writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier).then(() => {
+                        state.val = tier;
+                    })
                 )
             );
             setAllStatus.val = "success";
@@ -190,47 +190,44 @@ export const SigilTab = () => {
 
     const setAllBar = div(
         {
-            class: () => [
-                "sigil-setall-bar",
-                setAllStatus.val === "success" ? "sigil-setall-bar--success" : "",
-                setAllStatus.val === "error"   ? "sigil-setall-bar--error"   : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "sigil-setall-bar",
+                    setAllStatus.val === "success" ? "sigil-setall-bar--success" : "",
+                    setAllStatus.val === "error" ? "sigil-setall-bar--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         span({ class: "sigil-setall-bar__label" }, "SET ALL TIERS TO"),
         select(
             {
-                class:    "sigil-setall-bar__select select-base",
+                class: "sigil-setall-bar__select select-base",
                 onchange: (e) => (setAllTier.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
-                option(
-                    { value: t.value, selected: () => Number(setAllTier.val) === t.value },
-                    t.label,
-                )
-            ),
+                option({ value: t.value, selected: () => Number(setAllTier.val) === t.value }, t.label)
+            )
         ),
         button(
             {
-                class:    () => `feature-btn feature-btn--apply ${setAllStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                class: () =>
+                    `feature-btn feature-btn--apply ${setAllStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                 disabled: () => setAllStatus.val === "loading",
-                onclick:  doSetAll,
+                onclick: doSetAll,
             },
-            () => setAllStatus.val === "loading" ? "…" : "SET ALL",
-        ),
+            () => (setAllStatus.val === "loading" ? "…" : "SET ALL")
+        )
     );
 
     const grid = div(
         { class: "sigil-grid" },
         ...Array.from({ length: 24 }, (_, i) =>
             SigilCard({ index: i, tierState: sigilTier[i], nameState: sigilName[i] })
-        ),
+        )
     );
 
-    const scroll = div(
-        { class: () => paneClass("sigil-scroll scrollable-panel") },
-        setAllBar,
-        grid,
-    );
+    const scroll = div({ class: () => paneClass("sigil-scroll scrollable-panel") }, setAllBar, grid);
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
@@ -242,27 +239,23 @@ export const SigilTab = () => {
             div(
                 {},
                 h3({}, "ALCHEMY — SIGILS"),
-                p({ class: "feature-header__desc" }, "Manage tier and unlock status for all 24 alchemy sigils."),
+                p({ class: "feature-header__desc" }, "Manage tier and unlock status for all 24 alchemy sigils.")
             ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
 
         renderRefreshErrorBanner,
 
         // Loader — only before first successful load
-        () => (loading.val && !initialized.val)
-            ? div({ class: "feature-loader" }, Loader())
-            : null,
+        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
 
         // Error — only on failed initial load
-        () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-            : null,
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                : null,
 
         // Content — always in DOM; hidden via CSS until initialized
-        scroll,
+        scroll
     );
 };

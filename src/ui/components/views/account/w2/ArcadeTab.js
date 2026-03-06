@@ -49,10 +49,8 @@ const ArcadeCard = ({ entry }) => {
                     .filter(Boolean)
                     .join(" "),
         },
-        div(
-            { class: "arcade-card__top" },
-            span({ class: "arcade-card__index" }, `#${entry.index}`),
-            () => (isCosmic.val ? span({ class: "arcade-card__cosmic-badge" }, "COSMIC") : null)
+        div({ class: "arcade-card__top" }, span({ class: "arcade-card__index" }, `#${entry.index}`), () =>
+            isCosmic.val ? span({ class: "arcade-card__cosmic-badge" }, "COSMIC") : null
         ),
         div({ class: "arcade-card__name" }, entry.name),
         div(
@@ -87,11 +85,15 @@ export const ArcadeTab = () => {
     const error = van.state(null);
     const refreshError = van.state(null);
     const bulkStatus = van.state(null);
+    let bulkDoneTimer = null;
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const normalBalls = van.state("0");
     const goldenBalls = van.state("0");
     const cosmicBalls = van.state("0");
+    const normalBallLoading = van.state(false);
+    const goldenBallLoading = van.state(false);
+    const cosmicBallLoading = van.state(false);
 
     // Entries are created once from the first load and then updated in place.
     const upgradeEntries = van.state([]);
@@ -163,22 +165,37 @@ export const ArcadeTab = () => {
             golden: 75,
             cosmic: 324,
         };
+        const loadingByType = {
+            normal: normalBallLoading,
+            golden: goldenBallLoading,
+            cosmic: cosmicBallLoading,
+        };
 
         const index = indexByType[ballType];
         if (index === undefined) return;
+        const ballLoading = loadingByType[ballType];
+        if (!ballLoading || ballLoading.val) return;
 
         const numVal = Math.max(0, Number(valueState.val));
         if (isNaN(numVal)) return;
 
         try {
+            ballLoading.val = true;
             await writeGga(`OptionsListAccount[${index}]`, numVal);
             valueState.val = String(numVal);
         } catch (err) {
             console.error(err);
+        } finally {
+            ballLoading.val = false;
         }
     };
 
     const doSetAll = async (targetLevel) => {
+        if (bulkDoneTimer) {
+            clearTimeout(bulkDoneTimer);
+            bulkDoneTimer = null;
+        }
+
         const entries = upgradeEntries.val;
         if (!entries.length) return;
 
@@ -193,9 +210,16 @@ export const ArcadeTab = () => {
                 await new Promise((r) => setTimeout(r, 20));
             }
             bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1500);
+            bulkDoneTimer = setTimeout(() => {
+                if (bulkStatus.val === "done") bulkStatus.val = null;
+                bulkDoneTimer = null;
+            }, 1500);
         } catch {
             bulkStatus.val = null;
+            if (bulkDoneTimer) {
+                clearTimeout(bulkDoneTimer);
+                bulkDoneTimer = null;
+            }
         }
     };
 
@@ -215,7 +239,15 @@ export const ArcadeTab = () => {
                     onDecrement: () => (normalBalls.val = String(Math.max(0, Number(normalBalls.val) - 1))),
                     onIncrement: () => (normalBalls.val = String(Number(normalBalls.val) + 1)),
                 }),
-                button({ class: "feature-btn feature-btn--apply", onclick: () => doSetBall("normal", normalBalls) }, "SET")
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${normalBallLoading.val ? "feature-btn--loading" : ""}`,
+                        disabled: () => normalBallLoading.val,
+                        onclick: () => doSetBall("normal", normalBalls),
+                    },
+                    () => (normalBallLoading.val ? "..." : "SET")
+                )
             ),
             div(
                 { class: "arcade-ball-item" },
@@ -227,7 +259,15 @@ export const ArcadeTab = () => {
                     onDecrement: () => (goldenBalls.val = String(Math.max(0, Number(goldenBalls.val) - 1))),
                     onIncrement: () => (goldenBalls.val = String(Number(goldenBalls.val) + 1)),
                 }),
-                button({ class: "feature-btn feature-btn--apply", onclick: () => doSetBall("golden", goldenBalls) }, "SET")
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${goldenBallLoading.val ? "feature-btn--loading" : ""}`,
+                        disabled: () => goldenBallLoading.val,
+                        onclick: () => doSetBall("golden", goldenBalls),
+                    },
+                    () => (goldenBallLoading.val ? "..." : "SET")
+                )
             ),
             div(
                 { class: "arcade-ball-item" },
@@ -239,7 +279,15 @@ export const ArcadeTab = () => {
                     onDecrement: () => (cosmicBalls.val = String(Math.max(0, Number(cosmicBalls.val) - 1))),
                     onIncrement: () => (cosmicBalls.val = String(Number(cosmicBalls.val) + 1)),
                 }),
-                button({ class: "feature-btn feature-btn--apply", onclick: () => doSetBall("cosmic", cosmicBalls) }, "SET")
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${cosmicBallLoading.val ? "feature-btn--loading" : ""}`,
+                        disabled: () => cosmicBallLoading.val,
+                        onclick: () => doSetBall("cosmic", cosmicBalls),
+                    },
+                    () => (cosmicBallLoading.val ? "..." : "SET")
+                )
             )
         ),
         () => {
@@ -254,7 +302,11 @@ export const ArcadeTab = () => {
         { class: "arcade-tab tab-container" },
         div(
             { class: "feature-header" },
-            div({}, h3({}, "ARCADE UPGRADES"), p({ class: "feature-header__desc" }, "Manage Arcade balls and upgrade levels.")),
+            div(
+                {},
+                h3({}, "ARCADE UPGRADES"),
+                p({ class: "feature-header__desc" }, "Manage Arcade balls and upgrade levels.")
+            ),
             div(
                 { class: "feature-header__actions" },
                 button(

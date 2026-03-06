@@ -50,11 +50,14 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         div(
             { class: "feature-row__info" },
@@ -75,7 +78,8 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
                 {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -121,10 +125,7 @@ export const AtomColliderTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawAtomInfo] = await Promise.all([
-                readGga("Atoms"),
-                readGga("CustomLists.h.AtomInfo"),
-            ]);
+            const [rawLevels, rawAtomInfo] = await Promise.all([readGga("Atoms"), readGga("CustomLists.h.AtomInfo")]);
 
             const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
 
@@ -138,7 +139,10 @@ export const AtomColliderTab = () => {
 
             const atoms = atomInfoArr.map((entry, i) => {
                 const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[0] ?? `Atom ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
+                const name = String(entryArr[0] ?? `Atom ${i + 1}`)
+                    .replace(/\+\{/g, "")
+                    .replace(/_/g, " ")
+                    .trim();
                 return { name, maxLevel: maxLevels[i] ?? 0 };
             });
 
@@ -164,7 +168,8 @@ export const AtomColliderTab = () => {
         renderLoading: () => div({ class: "feature-loader" }, Loader()),
         renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: (resolved) => !resolved.atoms.length,
-        renderEmpty: () => EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
+        renderEmpty: () =>
+            EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
         renderContent: (resolved) =>
             div(
                 { class: "feature-list" },
@@ -186,7 +191,10 @@ export const AtomColliderTab = () => {
             div(
                 {},
                 h3({}, "ATOM COLLIDER"),
-                p({ class: "feature-header__desc" }, "Set Atom Collider upgrade levels. Max levels are computed from game data.")
+                p(
+                    { class: "feature-header__desc" },
+                    "Set Atom Collider upgrade levels. Max levels are computed from game data."
+                )
             ),
             div(
                 { class: "feature-header__actions" },
@@ -194,7 +202,8 @@ export const AtomColliderTab = () => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -207,7 +216,8 @@ export const AtomColliderTab = () => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();

@@ -54,7 +54,8 @@ const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
     return div(
         {
             class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""
+                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
+                    status.val === "error" ? "feature-row--error" : ""
                 }`,
         },
         div(
@@ -113,13 +114,10 @@ export const UpgradeVaultTab = () => {
                 Array.isArray(raw)
                     ? raw
                     : Object.keys(raw)
-                        .sort((a, b) => Number(a) - Number(b))
-                        .map((k) => raw[k]);
+                          .sort((a, b) => Number(a) - Number(b))
+                          .map((k) => raw[k]);
 
-            const [rawInfo, rawLevels] = await Promise.all([
-                readGga("CustomLists.UpgradeVault"),
-                readGga("UpgVault"),
-            ]);
+            const [rawInfo, rawLevels] = await Promise.all([readGga("CustomLists.UpgradeVault"), readGga("UpgVault")]);
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
@@ -137,15 +135,15 @@ export const UpgradeVaultTab = () => {
 
             const realMaxes = useComputed
                 ? await Promise.all(
-                    info.map(async (_, i) => {
-                        try {
-                            const v = safeNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
-                            return v > 0 ? v : null;
-                        } catch {
-                            return null;
-                        }
-                    })
-                )
+                      info.map(async (_, i) => {
+                          try {
+                              const v = safeNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
+                              return v > 0 ? v : null;
+                          } catch {
+                              return null;
+                          }
+                      })
+                  )
                 : info.map(() => null);
 
             const upgrades = info
@@ -192,7 +190,7 @@ export const UpgradeVaultTab = () => {
             { class: "warning-banner" },
             Icons.Warning(),
             " Max level is sourced directly from the game's VaultUpgMaxLV formula (base + Glimbo trade bonuses). " +
-            "SET accepts any value ≥ 0 — no hard upper limit enforced."
+                "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 
         () => {

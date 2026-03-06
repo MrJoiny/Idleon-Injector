@@ -17,13 +17,9 @@ const FeatureStub = ({ title, subtitle }) =>
         { class: "feature-row feature-row--info" },
         div(
             { class: "feature-row__info" },
-            div(
-                {},
-                span({ class: "feature-row__name" }, title),
-                p({ class: "feature-header__desc" }, subtitle),
-            ),
+            div({}, span({ class: "feature-row__name" }, title), p({ class: "feature-header__desc" }, subtitle))
         ),
-        span({ class: "feature-row__badge" }, "COMING SOON"),
+        span({ class: "feature-row__badge" }, "COMING SOON")
     );
 
 // ── MiscTab ────────────────────────────────────────────────────────────────
@@ -37,8 +33,8 @@ export const MiscTab = () =>
             div(
                 {},
                 h3({}, "W3 — MISC"),
-                p({ class: "feature-header__desc" }, "Library, Worship, and other W3 features — coming soon."),
-            ),
+                p({ class: "feature-header__desc" }, "Library, Worship, and other W3 features — coming soon.")
+            )
         ),
 
         div(
@@ -50,6 +46,6 @@ export const MiscTab = () =>
             FeatureStub({
                 title: "WORSHIP — Charge & Max Wave",
                 subtitle: "Manage worship charge level and highest wave achieved.",
-            }),
-        ),
+            })
+        )
     );

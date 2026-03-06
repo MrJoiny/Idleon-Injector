@@ -51,7 +51,9 @@ const PONumField = ({ label, valueState, writePath }) => {
     const inputVal = van.state(String(valueState.val));
     const { status, run } = useWriteStatus();
 
-    van.derive(() => { inputVal.val = String(valueState.val); });
+    van.derive(() => {
+        inputVal.val = String(valueState.val);
+    });
 
     const doSet = async () => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
@@ -64,11 +66,14 @@ const PONumField = ({ label, valueState, writePath }) => {
 
     return div(
         {
-            class: () => [
-                "po-field-row",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "po-field-row",
+                    status.val === "success" ? "flash-success" : "",
+                    status.val === "error" ? "flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         span({ class: "po-field-row__label" }, label),
         span({ class: "po-field-row__value po-field-row__value--short" }, () => String(valueState.val)),
@@ -83,13 +88,14 @@ const PONumField = ({ label, valueState, writePath }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply po-field-row__set-btn${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply po-field-row__set-btn${status.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
-                () => status.val === "loading" ? "…" : "SET",
-            ),
-        ),
+                () => (status.val === "loading" ? "…" : "SET")
+            )
+        )
     );
 };
 
@@ -98,27 +104,29 @@ const POToggleField = ({ valueState, writePath }) => {
 
     const doToggle = async () => {
         const next = valueState.val ? 0 : 1;
-        await run(async () => {
-            await writeGga(writePath, next);
-            valueState.val = next;
-        }, { successMs: 1000 });
+        await run(
+            async () => {
+                await writeGga(writePath, next);
+                valueState.val = next;
+            },
+            { successMs: 1000 }
+        );
     };
 
     return button(
         {
-            class: () => [
-                "po-toggle-btn",
-                valueState.val ? "po-toggle-btn--done" : "",
-                status.val === "loading" ? "feature-btn--loading" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "po-toggle-btn",
+                    valueState.val ? "po-toggle-btn--done" : "",
+                    status.val === "loading" ? "feature-btn--loading" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
             disabled: () => status.val === "loading",
             onclick: doToggle,
         },
-        () => status.val === "loading"
-            ? "…"
-            : valueState.val
-                ? "✓  COMPLETED — click to undo"
-                : "○  MARK COMPLETE",
+        () => (status.val === "loading" ? "…" : valueState.val ? "✓  COMPLETED — click to undo" : "○  MARK COMPLETE")
     );
 };
 
@@ -136,8 +144,8 @@ const ShipmentCard = ({ index, states }) => {
             span({ class: "po-shipment-card__index" }, `SHIPMENT #${index}`),
             span(
                 { class: () => `po-shipment-card__badge${completed.val ? " po-shipment-card__badge--done" : ""}` },
-                () => completed.val ? "DONE" : "PENDING",
-            ),
+                () => (completed.val ? "DONE" : "PENDING")
+            )
         ),
 
         // Item ID Display (Read-Only)
@@ -179,7 +187,7 @@ const ShipmentCard = ({ index, states }) => {
         POToggleField({
             valueState: completed,
             writePath: `PostOfficeInfo[0][${index}][2]`,
-        }),
+        })
     );
 };
 
@@ -191,14 +199,14 @@ const OfficeGroup = ({ label, shipmentStates, startIndex }) =>
         div(
             { class: "po-office-group__header" },
             span({ class: "po-office-group__label" }, label),
-            span({ class: "po-office-group__range" }, `Shipments ${startIndex}–${startIndex + 2}`),
+            span({ class: "po-office-group__range" }, `Shipments ${startIndex}–${startIndex + 2}`)
         ),
         div(
             { class: "po-office-group__cards" },
             ...Array.from({ length: 3 }, (_, i) =>
                 ShipmentCard({ index: startIndex + i, states: shipmentStates[startIndex + i] })
-            ),
-        ),
+            )
+        )
     );
 
 // ── CurrencyRow ───────────────────────────────────────────────────────────────
@@ -211,16 +219,18 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             div(
                 { class: "po-currency-row__info" },
                 span({ class: "po-currency-row__label" }, label),
-                note ? span({ class: "po-currency-row__note" }, note) : null,
+                note ? span({ class: "po-currency-row__note" }, note) : null
             ),
-            span({ class: "po-currency-row__value" }, () => String(valueState.val)),
+            span({ class: "po-currency-row__value" }, () => String(valueState.val))
         );
     }
 
     const inputVal = van.state(String(valueState.val));
     const { status, run } = useWriteStatus();
 
-    van.derive(() => { inputVal.val = String(valueState.val); });
+    van.derive(() => {
+        inputVal.val = String(valueState.val);
+    });
 
     const doSet = async () => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
@@ -234,16 +244,19 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
 
     return div(
         {
-            class: () => [
-                "po-currency-row",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "po-currency-row",
+                    status.val === "success" ? "flash-success" : "",
+                    status.val === "error" ? "flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         div(
             { class: "po-currency-row__info" },
             span({ class: "po-currency-row__label" }, label),
-            note ? span({ class: "po-currency-row__note" }, note) : null,
+            note ? span({ class: "po-currency-row__note" }, note) : null
         ),
         span({ class: "po-currency-row__value" }, () => String(valueState.val)),
         div(
@@ -257,13 +270,14 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
-                () => status.val === "loading" ? "…" : "SET",
-            ),
-        ),
+                () => (status.val === "loading" ? "…" : "SET")
+            )
+        )
     );
 };
 
@@ -273,7 +287,9 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
     const inputVal = van.state(String(box.current.val));
     const { status, run } = useWriteStatus();
 
-    van.derive(() => { inputVal.val = String(box.current.val); });
+    van.derive(() => {
+        inputVal.val = String(box.current.val);
+    });
 
     const clampToCap = (raw) => {
         const n = Math.round(Number(raw));
@@ -293,16 +309,19 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
 
     return div(
         {
-            class: () => [
-                "po-box-row",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "po-box-row",
+                    status.val === "success" ? "flash-success" : "",
+                    status.val === "error" ? "flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         div(
             { class: "po-box-row__info" },
             span({ class: "po-box-row__name" }, () => box.name.val),
-            span({ class: "po-box-row__level" }, () => `LV ${box.current.val} / ${box.cap.val}`),
+            span({ class: "po-box-row__level" }, () => `LV ${box.current.val} / ${box.cap.val}`)
         ),
         div(
             { class: "po-box-row__controls" },
@@ -315,13 +334,14 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
-                () => status.val === "loading" ? "..." : "SET",
-            ),
-        ),
+                () => (status.val === "loading" ? "..." : "SET")
+            )
+        )
     );
 };
 
@@ -374,9 +394,7 @@ export const PostOfficeTab = () => {
     };
 
     // Computed — updates automatically when any dependency changes
-    const totalEarned = van.derive(() =>
-        boxComplete.val + boxStreak.val + opt347.val + boxMisc.val
-    );
+    const totalEarned = van.derive(() => boxComplete.val + boxStreak.val + opt347.val + boxMisc.val);
     const availablePoints = van.derive(() => totalEarned.val - spentPoints.val);
 
     // ── Bulk control states ────────────────────────────────────────────────
@@ -393,7 +411,7 @@ export const PostOfficeTab = () => {
     const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
 
     // ── Load ───────────────────────────────────────────────────────────────
-        const load = async () => {
+    const load = async () => {
         loading.val = true;
         error.val = null;
         refreshError.val = null;
@@ -451,7 +469,9 @@ export const PostOfficeTab = () => {
                 const upgRow = toIndexedArray(upgrades[i] ?? []);
                 const box = boxStates[i];
 
-                box.name.val = String(defRow[0] ?? `BOX ${i + 1}`).replace(/_/g, " ").trim();
+                box.name.val = String(defRow[0] ?? `BOX ${i + 1}`)
+                    .replace(/_/g, " ")
+                    .trim();
                 // cap comes from PostOffUpgradeInfo[i][15] (string-like values such as "400.1")
                 const capRaw = defRow[15];
                 // true max spend is floor(cap)
@@ -494,8 +514,9 @@ export const PostOfficeTab = () => {
         await runBulkStreakWrite(async () => {
             await Promise.all(
                 shipmentStates.map((st, s) =>
-                    writeGga(`PostOfficeInfo[1][${s}][1]`, val)
-                        .then(() => { st.streak.val = val; })
+                    writeGga(`PostOfficeInfo[1][${s}][1]`, val).then(() => {
+                        st.streak.val = val;
+                    })
                 )
             );
         });
@@ -508,8 +529,9 @@ export const PostOfficeTab = () => {
         await runBulkShieldWrite(async () => {
             await Promise.all(
                 shipmentStates.map((st, s) =>
-                    writeGga(`PostOfficeInfo[1][${s}][2]`, val)
-                        .then(() => { st.shield.val = val; })
+                    writeGga(`PostOfficeInfo[1][${s}][2]`, val).then(() => {
+                        st.shield.val = val;
+                    })
                 )
             );
         });
@@ -566,13 +588,21 @@ export const PostOfficeTab = () => {
             NumberInput({
                 mode: "int",
                 value: bulkStreakInput,
-                oninput: (e) => { bulkStreakInput.val = e.target.value; debouncedSetAllStreaks(); },
-                onDecrement: () => { bulkStreakInput.val = String(Math.max(0, Number(bulkStreakInput.val) - 1)); debouncedSetAllStreaks(); },
-                onIncrement: () => { bulkStreakInput.val = String(Number(bulkStreakInput.val) + 1); debouncedSetAllStreaks(); },
+                oninput: (e) => {
+                    bulkStreakInput.val = e.target.value;
+                    debouncedSetAllStreaks();
+                },
+                onDecrement: () => {
+                    bulkStreakInput.val = String(Math.max(0, Number(bulkStreakInput.val) - 1));
+                    debouncedSetAllStreaks();
+                },
+                onIncrement: () => {
+                    bulkStreakInput.val = String(Number(bulkStreakInput.val) + 1);
+                    debouncedSetAllStreaks();
+                },
             }),
-            span(
-                { class: "po-bulk-status" },
-                () => bulkStreakStatus.val === "loading" ? "…" : bulkStreakStatus.val === "success" ? "✓" : ""
+            span({ class: "po-bulk-status" }, () =>
+                bulkStreakStatus.val === "loading" ? "…" : bulkStreakStatus.val === "success" ? "✓" : ""
             )
         ),
 
@@ -584,13 +614,21 @@ export const PostOfficeTab = () => {
             NumberInput({
                 mode: "int",
                 value: bulkShieldInput,
-                oninput: (e) => { bulkShieldInput.val = e.target.value; debouncedSetAllShields(); },
-                onDecrement: () => { bulkShieldInput.val = String(Math.max(0, Number(bulkShieldInput.val) - 1)); debouncedSetAllShields(); },
-                onIncrement: () => { bulkShieldInput.val = String(Number(bulkShieldInput.val) + 1); debouncedSetAllShields(); },
+                oninput: (e) => {
+                    bulkShieldInput.val = e.target.value;
+                    debouncedSetAllShields();
+                },
+                onDecrement: () => {
+                    bulkShieldInput.val = String(Math.max(0, Number(bulkShieldInput.val) - 1));
+                    debouncedSetAllShields();
+                },
+                onIncrement: () => {
+                    bulkShieldInput.val = String(Number(bulkShieldInput.val) + 1);
+                    debouncedSetAllShields();
+                },
             }),
-            span(
-                { class: "po-bulk-status" },
-                () => bulkShieldStatus.val === "loading" ? "…" : bulkShieldStatus.val === "success" ? "✓" : ""
+            span({ class: "po-bulk-status" }, () =>
+                bulkShieldStatus.val === "loading" ? "…" : bulkShieldStatus.val === "success" ? "✓" : ""
             )
         )
     );
@@ -599,7 +637,7 @@ export const PostOfficeTab = () => {
     const shipmentsSection = div(
         { class: "po-shipments-section" },
         OfficeGroup({ label: "OFFICE 1", shipmentStates, startIndex: 0 }),
-        OfficeGroup({ label: "OFFICE 2", shipmentStates, startIndex: 3 }),
+        OfficeGroup({ label: "OFFICE 2", shipmentStates, startIndex: 3 })
     );
 
     // ── DOM: Point Sources section ─────────────────────────────────────────
@@ -609,7 +647,7 @@ export const PostOfficeTab = () => {
         div(
             { class: "po-section__header" },
             span({ class: "po-section__title" }, "POINT SOURCES & CURRENCY"),
-            span({ class: "po-section__subtitle" }, "Values that contribute to your available upgrade points"),
+            span({ class: "po-section__subtitle" }, "Values that contribute to your available upgrade points")
         ),
 
         div(
@@ -658,7 +696,7 @@ export const PostOfficeTab = () => {
                 note: null,
                 valueState: boxMisc,
                 readOnly: true,
-            }),
+            })
         ),
 
         // Points summary
@@ -668,24 +706,25 @@ export const PostOfficeTab = () => {
             div(
                 { class: "po-points-summary__row" },
                 span({ class: "po-points-summary__label" }, "TOTAL EARNED"),
-                span(
-                    { class: "po-points-summary__value po-points-summary__value--earned" },
-                    () => String(totalEarned.val),
-                ),
+                span({ class: "po-points-summary__value po-points-summary__value--earned" }, () =>
+                    String(totalEarned.val)
+                )
             ),
 
             div(
                 { class: "po-points-summary__row" },
                 span({ class: "po-points-summary__label" }, "SPENT ON UPGRADES"),
-                span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `−${spentPoints.val}`),
+                span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `−${spentPoints.val}`)
             ),
 
             div(
                 { class: "po-points-summary__row po-points-summary__row--highlight" },
                 span({ class: "po-points-summary__label" }, "AVAILABLE POINTS"),
-                span({ class: "po-points-summary__value po-points-summary__value--available" }, () => String(availablePoints.val)),
-            ),
-        ),
+                span({ class: "po-points-summary__value po-points-summary__value--available" }, () =>
+                    String(availablePoints.val)
+                )
+            )
+        )
     );
 
     // ── DOM: Scrollable content ────────────────────────────────────────────
@@ -693,7 +732,7 @@ export const PostOfficeTab = () => {
         { class: () => paneClass("po-scroll scrollable-panel") },
         bulkBar,
         shipmentsSection,
-        pointsSection,
+        pointsSection
     );
 
     const boxesScroll = div(
@@ -702,32 +741,33 @@ export const PostOfficeTab = () => {
             { class: "po-bulk-bar" },
             button(
                 {
-                    class: () => `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => boxBulkStatus.val === "loading",
                     onclick: doMaxAllBoxes,
                 },
-                "MAX ALL",
+                "MAX ALL"
             ),
             button(
                 {
-                    class: () => `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => boxBulkStatus.val === "loading",
                     onclick: doResetBoxes,
                 },
-                "RESET",
-            ),
+                "RESET"
+            )
         ),
-        div(
-            { class: "po-boxes-list" },
-            () => boxCount.val <= 0
+        div({ class: "po-boxes-list" }, () =>
+            boxCount.val <= 0
                 ? div({ class: "po-boxes-empty" }, "No Post Office box upgrades found.")
                 : div(
-                    { class: "po-boxes-grid" },
-                    ...Array.from({ length: boxCount.val }, (_, i) =>
-                        POBoxRow({ box: boxStates[i], onAfterWrite: recomputeSummary })
-                    ),
-                ),
-        ),
+                      { class: "po-boxes-grid" },
+                      ...Array.from({ length: boxCount.val }, (_, i) =>
+                          POBoxRow({ box: boxStates[i], onAfterWrite: recomputeSummary })
+                      )
+                  )
+        )
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
@@ -740,12 +780,12 @@ export const PostOfficeTab = () => {
             div(
                 {},
                 h3({}, "POST OFFICE"),
-                p({ class: "feature-header__desc" }, "Manage shipment streaks, shields, order completions and delivery point currencies."),
+                p(
+                    { class: "feature-header__desc" },
+                    "Manage shipment streaks, shields, order completions and delivery point currencies."
+                )
             ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
 
         div(
@@ -765,32 +805,25 @@ export const PostOfficeTab = () => {
                         class: () => `alchemy-sub-btn ${activeSubTab.val === tab.id ? "active" : ""}`,
                         onclick: () => (activeSubTab.val = tab.id),
                     },
-                    tab.label,
+                    tab.label
                 )
-            ),
+            )
         ),
 
         // Loader ? only before first successful load
-        () => (loading.val && !initialized.val)
-            ? div({ class: "feature-loader" }, Loader())
-            : null,
+        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
 
         // Error ? only on failed initial load
-        () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-            : null,
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                : null,
 
         // Content ? always in DOM; hidden via CSS until initialized
         div(
             { class: "po-sub-content" },
-            div(
-                { class: () => `po-pane ${activeSubTab.val === "deliveries" ? "po-pane--active" : ""}` },
-                scroll,
-            ),
-            div(
-                { class: () => `po-pane ${activeSubTab.val === "boxes" ? "po-pane--active" : ""}` },
-                boxesScroll,
-            ),
-        ),
+            div({ class: () => `po-pane ${activeSubTab.val === "deliveries" ? "po-pane--active" : ""}` }, scroll),
+            div({ class: () => `po-pane ${activeSubTab.val === "boxes" ? "po-pane--active" : ""}` }, boxesScroll)
+        )
     );
 };

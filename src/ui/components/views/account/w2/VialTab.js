@@ -42,11 +42,14 @@ const VialRow = ({ vial, initialLevel }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         div(
             { class: "feature-row__info" },
@@ -65,7 +68,8 @@ const VialRow = ({ vial, initialLevel }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -81,6 +85,7 @@ export const VialTab = () => {
     const vialDefs = van.state([]);
     const setAllInput = van.state("13");
     const bulkStatus = van.state(null);
+    let bulkDoneTimer = null;
 
     const load = async () => {
         loading.val = true;
@@ -98,7 +103,9 @@ export const VialTab = () => {
             vialDefs.val = vialDesc
                 .map((entry, idx) => {
                     const entryArr = toIndexedArray(entry ?? []);
-                    const name = String(entryArr[0] ?? "VIAL").replace(/_/g, " ").trim();
+                    const name = String(entryArr[0] ?? "VIAL")
+                        .replace(/_/g, " ")
+                        .trim();
                     return { name, index: idx, level: Number(rawLevels[idx] ?? 0) };
                 })
                 .filter((v) => v.name.toUpperCase() !== "VIAL" && v.name.trim() !== "");
@@ -110,6 +117,11 @@ export const VialTab = () => {
     };
 
     const doSetAll = async () => {
+        if (bulkDoneTimer) {
+            clearTimeout(bulkDoneTimer);
+            bulkDoneTimer = null;
+        }
+
         const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(setAllInput.val))));
         if (isNaN(lvl)) return;
         const vials = vialDefs.val ?? [];
@@ -121,10 +133,17 @@ export const VialTab = () => {
                 await new Promise((r) => setTimeout(r, 30));
             }
             bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1500);
+            bulkDoneTimer = setTimeout(() => {
+                if (bulkStatus.val === "done") bulkStatus.val = null;
+                bulkDoneTimer = null;
+            }, 1500);
             await load();
         } catch {
             bulkStatus.val = null;
+            if (bulkDoneTimer) {
+                clearTimeout(bulkDoneTimer);
+                bulkDoneTimer = null;
+            }
         }
     };
 
@@ -140,10 +159,7 @@ export const VialTab = () => {
         renderEmpty: () =>
             EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." }),
         renderContent: (vials) =>
-            div(
-                { class: "feature-list" },
-                ...vials.map((v) => VialRow({ vial: v, initialLevel: v.level }))
-            ),
+            div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, initialLevel: v.level }))),
     });
 
     return div(

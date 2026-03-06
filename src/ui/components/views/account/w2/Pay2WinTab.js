@@ -43,18 +43,18 @@ const { div, button, span, h3, p } = van.tags;
 
 // Brewing cauldron column headers — user-specified; match in-game names.
 const BREW_CAULDRONS = [
-    { label: "POWER CAULDRON",   color: "#f87171", dim: "rgba(248,113,113,0.10)" },
-    { label: "QUICC CAULDRON",   color: "#4ade80", dim: "rgba(74,222,128,0.10)"  },
-    { label: "HIGH-IQ CAULDRON", color: "#60a5fa", dim: "rgba(96,165,250,0.10)"  },
-    { label: "KAZAM CAULDRON",   color: "#c084fc", dim: "rgba(192,132,252,0.10)" },
+    { label: "POWER CAULDRON", color: "#f87171", dim: "rgba(248,113,113,0.10)" },
+    { label: "QUICC CAULDRON", color: "#4ade80", dim: "rgba(74,222,128,0.10)" },
+    { label: "HIGH-IQ CAULDRON", color: "#60a5fa", dim: "rgba(96,165,250,0.10)" },
+    { label: "KAZAM CAULDRON", color: "#c084fc", dim: "rgba(192,132,252,0.10)" },
 ];
 
 // Liquid column headers — identical constraint to LiquidTab.js.
 const LIQUID_COLS = [
-    { label: "WATER DROPLETS",  color: "#5ba6d3" },
+    { label: "WATER DROPLETS", color: "#5ba6d3" },
     { label: "LIQUID NITROGEN", color: "#82d9f5" },
     { label: "TRENCH SEAWATER", color: "#3a9e80" },
-    { label: "TOXIC MERCURY",   color: "#c084fc" },
+    { label: "TOXIC MERCURY", color: "#c084fc" },
 ];
 
 // ── Hardcoded row labels ────────────────────────────────────────────────────
@@ -75,34 +75,38 @@ const DRACONIC_LABELS = ["COUNT"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-
 // ── P2WRow ─────────────────────────────────────────────────────────────────
 
 const P2WRow = ({ label, valueState, maxState, writePath }) => {
     const inputVal = van.state(String(valueState.val));
     const { status, run } = useWriteStatus();
 
-    van.derive(() => { inputVal.val = String(valueState.val); });
+    van.derive(() => {
+        inputVal.val = String(valueState.val);
+    });
 
     const doSet = async (raw) => {
         const parsed = Math.max(0, Math.round(Number(raw)));
         if (isNaN(parsed)) return;
         const max = Number(maxState.val);
-        const val = (max > 0) ? Math.min(max, parsed) : parsed;
+        const val = max > 0 ? Math.min(max, parsed) : parsed;
         await run(async () => {
             await writeGga(writePath, val);
             valueState.val = val;
-            inputVal.val   = String(val);
+            inputVal.val = String(val);
         });
     };
 
     return div(
         {
-            class: () => [
-                "p2w-row",
-                status.val === "success" ? "p2w-row--success" : "",
-                status.val === "error"   ? "p2w-row--error"   : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "p2w-row",
+                    status.val === "success" ? "p2w-row--success" : "",
+                    status.val === "error" ? "p2w-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         span({ class: "p2w-row__label" }, label),
         span({ class: "p2w-row__badge" }, () => {
@@ -115,31 +119,32 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
             NumberInput({
                 mode: "int",
                 value: inputVal,
-                oninput:     (e) => (inputVal.val = e.target.value),
+                oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
                 onIncrement: () => {
-                    const max  = Number(maxState.val);
+                    const max = Number(maxState.val);
                     const next = Number(inputVal.val) + 1;
                     inputVal.val = String(max > 0 ? Math.min(max, next) : next);
                 },
             }),
             button(
                 {
-                    class:    () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
-                    onclick:  () => doSet(inputVal.val),
+                    onclick: () => doSet(inputVal.val),
                 },
-                () => status.val === "loading" ? "…" : "SET"
-            ),
-        ),
+                () => (status.val === "loading" ? "…" : "SET")
+            )
+        )
     );
 };
 
 // ── Pay2WinTab ─────────────────────────────────────────────────────────────
 
 export const Pay2WinTab = () => {
-    const loading     = van.state(true);
-    const error       = van.state(null);
+    const loading = van.state(true);
+    const error = van.state(null);
     const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
@@ -169,32 +174,29 @@ export const Pay2WinTab = () => {
 
     const load = async () => {
         loading.val = true;
-        error.val   = null;
+        error.val = null;
         refreshError.val = null;
         try {
             const [rawP2W, rawDraconic] = await Promise.all([
                 readGga("CauldronP2W"),
                 readGga("OptionsListAccount[123]"),
             ]);
-            const p2w    = toIndexedArray(rawP2W ?? []);
-            const brew0  = toIndexedArray(p2w[0] ?? []);
-            const liq1   = toIndexedArray(p2w[1] ?? []);
-            const via2   = toIndexedArray(p2w[2] ?? []);
-            const plr3   = toIndexedArray(p2w[3] ?? []);
-            const draconic = Math.min(4, Math.max(0, Number(rawDraconic ?? 0)));
+            const p2w = toIndexedArray(rawP2W ?? []);
+            const brew0 = toIndexedArray(p2w[0] ?? []);
+            const liq1 = toIndexedArray(p2w[1] ?? []);
+            const via2 = toIndexedArray(p2w[2] ?? []);
+            const plr3 = toIndexedArray(p2w[3] ?? []);
+            const draconicRaw = Number(rawDraconic ?? 0);
+            const draconic = Number.isFinite(draconicRaw) ? Math.min(4, Math.max(0, draconicRaw)) : 0;
 
             // Fill values
-            for (let e = 0; e < 4; e++)
-                for (let f = 0; f < 3; f++)
-                    brewVal[e][f].val = Number(brew0[f + 3 * e] ?? 0);
+            for (let e = 0; e < 4; e++) for (let f = 0; f < 3; f++) brewVal[e][f].val = Number(brew0[f + 3 * e] ?? 0);
 
-            for (let e = 0; e < 4; e++)
-                for (let f = 0; f < 2; f++)
-                    liqVal[e][f].val = Number(liq1[f + 2 * e] ?? 0);
+            for (let e = 0; e < 4; e++) for (let f = 0; f < 2; f++) liqVal[e][f].val = Number(liq1[f + 2 * e] ?? 0);
 
             for (let e = 0; e < 2; e++) {
                 vialsUpgVal[e].val = Number(via2[e] ?? 0);
-                playerVal[e].val   = Number(plr3[e] ?? 0);
+                playerVal[e].val = Number(plr3[e] ?? 0);
             }
             draconicVal.val = draconic;
 
@@ -219,21 +221,31 @@ export const Pay2WinTab = () => {
 
             for (let e = 0; e < 4; e++) {
                 for (let f = 0; f < 3; f++) {
-                    const ce = e, cf = f;
+                    const ce = e,
+                        cf = f;
                     maxJobs.push(
                         readComputed("alchemy", "CauldronLvMAX", [0, ce, "" + cf])
-                            .then((v) => { brewMax[ce][cf].val = Number(v ?? 0); })
-                            .catch(() => { brewMax[ce][cf].val = 0; })
+                            .then((v) => {
+                                brewMax[ce][cf].val = Number(v ?? 0);
+                            })
+                            .catch(() => {
+                                brewMax[ce][cf].val = 0;
+                            })
                     );
                 }
             }
             for (let e = 0; e < 4; e++) {
                 for (let f = 0; f < 2; f++) {
-                    const ce = e, cf = f;
+                    const ce = e,
+                        cf = f;
                     maxJobs.push(
                         readComputed("alchemy", "CauldronLvMAX", [1, ce, "" + cf])
-                            .then((v) => { liqMax[ce][cf].val = Number(v ?? 0); })
-                            .catch(() => { liqMax[ce][cf].val = 0; })
+                            .then((v) => {
+                                liqMax[ce][cf].val = Number(v ?? 0);
+                            })
+                            .catch(() => {
+                                liqMax[ce][cf].val = 0;
+                            })
                     );
                 }
             }
@@ -241,19 +253,26 @@ export const Pay2WinTab = () => {
                 const ce = e;
                 maxJobs.push(
                     readComputed("alchemy", "CauldronLvMAX", [2, ce, "0"])
-                        .then((v) => { vialsUpgMax[ce].val = Number(v ?? 0); })
-                        .catch(() => { vialsUpgMax[ce].val = 0; })
+                        .then((v) => {
+                            vialsUpgMax[ce].val = Number(v ?? 0);
+                        })
+                        .catch(() => {
+                            vialsUpgMax[ce].val = 0;
+                        })
                 );
                 maxJobs.push(
                     readComputed("alchemy", "CauldronLvMAX", [3, ce, "0"])
-                        .then((v) => { playerMax[ce].val = Number(v ?? 0); })
-                        .catch(() => { playerMax[ce].val = 0; })
+                        .then((v) => {
+                            playerMax[ce].val = Number(v ?? 0);
+                        })
+                        .catch(() => {
+                            playerMax[ce].val = 0;
+                        })
                 );
             }
 
             await Promise.all(maxJobs);
             markReady();
-
         } catch (e) {
             const message = e?.message ?? "Failed to load";
             if (!initialized.val) error.val = message;
@@ -271,7 +290,7 @@ export const Pay2WinTab = () => {
         div(
             { class: "p2w-section__header" },
             span({ class: "p2w-section__title" }, title),
-            note ? span({ class: "p2w-section__note" }, note) : null,
+            note ? span({ class: "p2w-section__note" }, note) : null
         );
 
     // Cauldron-style 4-column grid
@@ -287,24 +306,21 @@ export const Pay2WinTab = () => {
                             class: "p2w-col",
                             style: `--col-color: ${col.color}; --col-dim: ${col.dim ?? "transparent"};`,
                         },
-                        div(
-                            { class: "p2w-col__header" },
-                            span({ class: "p2w-col__name" }, col.label),
-                        ),
+                        div({ class: "p2w-col__header" }, span({ class: "p2w-col__name" }, col.label)),
                         div(
                             { class: "p2w-col__rows" },
                             ...rowLabels.map((label, f) =>
                                 P2WRow({
                                     label,
                                     valueState: valGrid[e][f],
-                                    maxState:   maxGrid[e][f],
-                                    writePath:  `CauldronP2W[${b}][${f + stride * e}]`,
+                                    maxState: maxGrid[e][f],
+                                    writePath: `CauldronP2W[${b}][${f + stride * e}]`,
                                 })
-                            ),
-                        ),
+                            )
+                        )
                     )
-                ),
-            ),
+                )
+            )
         );
 
     // Simple flat list
@@ -318,24 +334,36 @@ export const Pay2WinTab = () => {
                     P2WRow({
                         label,
                         valueState: vals[e],
-                        maxState:   maxs[e],
-                        writePath:  `CauldronP2W[${b}][${e}]`,
+                        maxState: maxs[e],
+                        writePath: `CauldronP2W[${b}][${e}]`,
                     })
-                ),
-            ),
+                )
+            )
         );
 
     const scroll = div(
         { class: () => paneClass("p2w-scroll scrollable-panel") },
 
         buildCauldronSection(
-            "BREWING CAULDRONS", "P2W upgrade levels per cauldron",
-            BREW_CAULDRONS, BREW_ROW_LABELS, brewVal, brewMax, 0, 3,
+            "BREWING CAULDRONS",
+            "P2W upgrade levels per cauldron",
+            BREW_CAULDRONS,
+            BREW_ROW_LABELS,
+            brewVal,
+            brewMax,
+            0,
+            3
         ),
 
         buildCauldronSection(
-            "LIQUID CAULDRONS", "P2W upgrade levels per liquid",
-            LIQUID_COLS, LIQ_ROW_LABELS, liqVal, liqMax, 1, 2,
+            "LIQUID CAULDRONS",
+            "P2W upgrade levels per liquid",
+            LIQUID_COLS,
+            LIQ_ROW_LABELS,
+            liqVal,
+            liqMax,
+            1,
+            2
         ),
 
         div(
@@ -348,19 +376,13 @@ export const Pay2WinTab = () => {
                     valueState: draconicVal,
                     maxState: draconicMax,
                     writePath: "OptionsListAccount[123]",
-                }),
-            ),
+                })
+            )
         ),
 
-        buildSimpleSection(
-            "VIALS UPGRADES", "P2W vial upgrade levels",
-            VIALS_UPG_LABELS, vialsUpgVal, vialsUpgMax, 2,
-        ),
+        buildSimpleSection("VIALS UPGRADES", "P2W vial upgrade levels", VIALS_UPG_LABELS, vialsUpgVal, vialsUpgMax, 2),
 
-        buildSimpleSection(
-            "PLAYER BOOSTS", "P2W player alchemy boosts",
-            PLAYER_LABELS, playerVal, playerMax, 3,
-        ),
+        buildSimpleSection("PLAYER BOOSTS", "P2W player alchemy boosts", PLAYER_LABELS, playerVal, playerMax, 3)
     );
 
     return div(
@@ -371,31 +393,31 @@ export const Pay2WinTab = () => {
             div(
                 {},
                 h3({}, "ALCHEMY — PAY 2 WIN"),
-                p({ class: "feature-header__desc" }, "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts."),
+                p(
+                    { class: "feature-header__desc" },
+                    "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts."
+                )
             ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
 
-        () => (!loading.val && refreshError.val)
-            ? div(
-                { class: "warning-banner" },
-                Icons.Warning(),
-                " Refresh failed. Showing last loaded values. ",
-                refreshError.val
-            )
-            : null,
+        () =>
+            !loading.val && refreshError.val
+                ? div(
+                      { class: "warning-banner" },
+                      Icons.Warning(),
+                      " Refresh failed. Showing last loaded values. ",
+                      refreshError.val
+                  )
+                : null,
 
-        () => (loading.val && !initialized.val)
-            ? div({ class: "feature-loader" }, Loader())
-            : null,
+        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
 
-        () => (!loading.val && error.val && !initialized.val)
-            ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-            : null,
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                : null,
 
-        scroll,
+        scroll
     );
 };

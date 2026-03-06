@@ -22,18 +22,18 @@ const PAGES = [
     { id: 2, label: "MISC" },
 ];
 const PAGE_LETTERS = ["A", "B", "C"];
-const EXALTED_CODE_REGEX = /^[A-Z]\d+$/;
+const EXALTED_CODE_REGEX = /^[a-z]\d+$/;
 
 const normalizeExaltedCodes = (rawCodes) =>
     toIndexedArray(rawCodes)
         .map((code) =>
             String(code ?? "")
                 .trim()
-                .toUpperCase()
+                .toLowerCase()
         )
         .filter((code) => EXALTED_CODE_REGEX.test(code));
 
-const makeStampCode = (page, order) => `${PAGE_LETTERS[page] ?? "A"}${order + 1}`;
+const makeExaltedStampCode = (page, order) => `${(PAGE_LETTERS[page] ?? "A").toLowerCase()}${order + 1}`;
 
 const sortStampCodes = (a, b) => {
     const letterDelta = a.charCodeAt(0) - b.charCodeAt(0);
@@ -44,7 +44,7 @@ const sortStampCodes = (a, b) => {
 const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel, exaltedCodes, writeExaltedCodes }) => {
     const inputVal = van.state(String(initialLevel ?? 0));
     const { status, run } = useWriteStatus();
-    const stampCode = makeStampCode(page, order);
+    const stampCode = makeExaltedStampCode(page, order);
     const isExalted = van.derive(() => (exaltedCodes.val ?? new Set()).has(stampCode));
 
     // Local display states, updated on SET without touching parent gameData.
@@ -157,7 +157,7 @@ export const StampsTab = () => {
             .map((code) =>
                 String(code ?? "")
                     .trim()
-                    .toUpperCase()
+                    .toLowerCase()
             )
             .filter((code) => EXALTED_CODE_REGEX.test(code))
             .sort(sortStampCodes);

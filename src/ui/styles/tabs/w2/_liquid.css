@@ -36,7 +36,9 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
 }
 
 .liquid-section:hover {

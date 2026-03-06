@@ -138,21 +138,18 @@ export const ForgeTab = () => {
 
     load();
 
-    const rowList = div(
-        { class: () => paneClass("feature-list") },
-        () => {
-            const page = PAGES[activePage.val];
-            return div(
-                { class: "forge-upgrades-list" },
-                ...page.upgrades.map((upgrade) =>
-                    ForgeRow({
-                        upgrade,
-                        levelState: levelStates[upgrade.index],
-                    })
-                )
-            );
-        }
-    );
+    const rowList = div({ class: () => paneClass("feature-list") }, () => {
+        const page = PAGES[activePage.val];
+        return div(
+            { class: "forge-upgrades-list" },
+            ...page.upgrades.map((upgrade) =>
+                ForgeRow({
+                    upgrade,
+                    levelState: levelStates[upgrade.index],
+                })
+            )
+        );
+    });
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
@@ -164,7 +161,10 @@ export const ForgeTab = () => {
                 h3("FORGE"),
                 p({ class: "feature-header__desc" }, "Set forge upgrade levels — each upgrade has a hard maximum")
             ),
-            withTooltip(button({ class: "btn-secondary", onclick: load }, "REFRESH"), "Re-read forge levels from game memory")
+            withTooltip(
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                "Re-read forge levels from game memory"
+            )
         ),
         div(
             { class: "feature-page-nav" },

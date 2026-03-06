@@ -4,26 +4,26 @@ This is the onboarding doc for account feature tabs.
 
 ## Quick Reference
 
-| Need | Helper | File |
-|---|---|---|
-| Row/button write status (`loading/success/error`) | `useWriteStatus()` | `src/ui/components/views/account/featureShared.js` |
-| Persistent pane hidden until first successful load | `usePersistentPaneReady()` | `src/ui/components/views/account/featureShared.js` |
-| Shared refresh-failure stale-data banner | `RefreshErrorBanner({ error })` | `src/ui/components/views/account/featureShared.js` |
-| Declarative async load rendering | `AsyncFeatureBody(...)` | `src/ui/components/views/account/featureShared.js` |
-| Normalize array-like game payloads | `toIndexedArray(raw)` | `src/ui/utils/index.js` |
-| Shared tab nav + lazy mount | `renderTabNav` + `renderLazyPanes` | `src/ui/components/views/account/tabShared.js` |
+| Need                                               | Helper                             | File                                               |
+| -------------------------------------------------- | ---------------------------------- | -------------------------------------------------- |
+| Row/button write status (`loading/success/error`)  | `useWriteStatus()`                 | `src/ui/components/views/account/featureShared.js` |
+| Persistent pane hidden until first successful load | `usePersistentPaneReady()`         | `src/ui/components/views/account/featureShared.js` |
+| Shared refresh-failure stale-data banner           | `RefreshErrorBanner({ error })`    | `src/ui/components/views/account/featureShared.js` |
+| Declarative async load rendering                   | `AsyncFeatureBody(...)`            | `src/ui/components/views/account/featureShared.js` |
+| Normalize array-like game payloads                 | `toIndexedArray(raw)`              | `src/ui/utils/index.js`                            |
+| Shared tab nav + lazy mount                        | `renderTabNav` + `renderLazyPanes` | `src/ui/components/views/account/tabShared.js`     |
 
 ## Pattern Choice
 
 Choose one rendering pattern per tab.
 
 1. Pattern A: Persistent pane (DOM built once, in-place state updates)
-Use for dense/interactive tabs where row inputs and scroll position should stay stable.
-Current examples: `Anvil`, `Forge`, `Liquid`, `Pay2Win`, `PostOffice`, `Sigil`, `Arcade`.
+   Use for dense/interactive tabs where row inputs and scroll position should stay stable.
+   Current examples: `Anvil`, `Forge`, `Liquid`, `Pay2Win`, `PostOffice`, `Sigil`, `Arcade`.
 
 2. Pattern B: AsyncFeatureBody (content chosen by async state)
-Use when list/body re-rendering is cheap and simpler.
-Current examples: `Vial`, `AtomCollider`, `SaltLick`, `Brewing`, `Killroy`.
+   Use when list/body re-rendering is cheap and simpler.
+   Current examples: `Vial`, `AtomCollider`, `SaltLick`, `Brewing`, `Killroy`.
 
 ## Add a New World Sub-Tab
 
@@ -42,58 +42,57 @@ import { readGga, writeGga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import {
-  RefreshErrorBanner,
-  usePersistentPaneReady,
-  useWriteStatus,
-} from "../featureShared.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button } = van.tags;
 
 export const MyFeatureTab = () => {
-  const loading = van.state(true);
-  const error = van.state(null);
-  const refreshError = van.state(null);
-  const { initialized, markReady, paneClass } = usePersistentPaneReady();
+    const loading = van.state(true);
+    const error = van.state(null);
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
-  const rowStates = Array.from({ length: 10 }, () => van.state(0));
+    const rowStates = Array.from({ length: 10 }, () => van.state(0));
 
-  const load = async () => {
-    loading.val = true;
-    error.val = null;
-    refreshError.val = null;
-    try {
-      const arr = toIndexedArray(await readGga("SomePath"));
-      rowStates.forEach((st, i) => { st.val = Number(arr[i] ?? 0); });
-      markReady();
-    } catch (e) {
-      const message = e?.message ?? "Failed to load";
-      if (!initialized.val) error.val = message;
-      else refreshError.val = message;
-    } finally {
-      loading.val = false;
-    }
-  };
+    const load = async () => {
+        loading.val = true;
+        error.val = null;
+        refreshError.val = null;
+        try {
+            const arr = toIndexedArray(await readGga("SomePath"));
+            rowStates.forEach((st, i) => {
+                st.val = Number(arr[i] ?? 0);
+            });
+            markReady();
+        } catch (e) {
+            const message = e?.message ?? "Failed to load";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
+        } finally {
+            loading.val = false;
+        }
+    };
 
-  load();
+    load();
 
-  const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-  const rowList = div(
-    { class: () => paneClass("feature-list") },
-    // Build once, bind row states
-  );
+    const rowList = div(
+        { class: () => paneClass("feature-list") }
+        // Build once, bind row states
+    );
 
-  return div(
-    { class: "tab-container" },
-    button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-    renderRefreshErrorBanner,
-    () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-    () => (!loading.val && error.val && !initialized.val
-      ? EmptyState({ title: "LOAD FAILED", subtitle: error.val })
-      : null),
-    rowList,
-  );
+    return div(
+        { class: "tab-container" },
+        button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        renderRefreshErrorBanner,
+        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? EmptyState({ title: "LOAD FAILED", subtitle: error.val })
+                : null,
+        rowList
+    );
 };
 ```
 
@@ -109,41 +108,37 @@ import { AsyncFeatureBody } from "../featureShared.js";
 const { div, button } = van.tags;
 
 export const MyFeatureTab = () => {
-  const loading = van.state(true);
-  const error = van.state(null);
-  const data = van.state(null);
+    const loading = van.state(true);
+    const error = van.state(null);
+    const data = van.state(null);
 
-  const load = async () => {
-    loading.val = true;
-    error.val = null;
-    try {
-      const raw = await readGga("SomePath");
-      data.val = { items: raw ?? [] };
-    } catch (e) {
-      error.val = e?.message ?? "Failed to load";
-    } finally {
-      loading.val = false;
-    }
-  };
+    const load = async () => {
+        loading.val = true;
+        error.val = null;
+        try {
+            const raw = await readGga("SomePath");
+            data.val = { items: raw ?? [] };
+        } catch (e) {
+            error.val = e?.message ?? "Failed to load";
+        } finally {
+            loading.val = false;
+        }
+    };
 
-  load();
+    load();
 
-  const renderBody = AsyncFeatureBody({
-    loading,
-    error,
-    data,
-    renderLoading: () => div({ class: "feature-loader" }, Loader()),
-    renderError: (message) => EmptyState({ title: "LOAD FAILED", subtitle: message }),
-    isEmpty: (resolved) => !resolved.items.length,
-    renderEmpty: () => EmptyState({ title: "NO DATA", subtitle: "No entries found." }),
-    renderContent: (resolved) => div({ class: "feature-list" }, /* map rows */),
-  });
+    const renderBody = AsyncFeatureBody({
+        loading,
+        error,
+        data,
+        renderLoading: () => div({ class: "feature-loader" }, Loader()),
+        renderError: (message) => EmptyState({ title: "LOAD FAILED", subtitle: message }),
+        isEmpty: (resolved) => !resolved.items.length,
+        renderEmpty: () => EmptyState({ title: "NO DATA", subtitle: "No entries found." }),
+        renderContent: (resolved) => div({ class: "feature-list" } /* map rows */),
+    });
 
-  return div(
-    { class: "tab-container" },
-    button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-    renderBody,
-  );
+    return div({ class: "tab-container" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"), renderBody);
 };
 ```
 
@@ -167,13 +162,13 @@ Use `useWriteStatus()` for bulk actions too, not only row-level writes.
 ## CSS Ownership
 
 1. `src/ui/styles/_world-tabs.css`
-Top-level shell, world nav, pane chrome.
+   Top-level shell, world nav, pane chrome.
 
 2. `src/ui/styles/_feature-pages.css`
-Shared feature contracts (`feature-*`, `warning-banner`, `is-hidden-until-ready`, `scrollable-panel`).
+   Shared feature contracts (`feature-*`, `warning-banner`, `is-hidden-until-ready`, `scrollable-panel`).
 
 3. `src/ui/styles/tabs/wN/_myfeature.css`
-Tab-specific visuals only.
+   Tab-specific visuals only.
 
 ## Anti-Patterns
 

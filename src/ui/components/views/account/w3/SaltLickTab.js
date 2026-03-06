@@ -48,11 +48,14 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
         div(
             { class: "feature-row__info" },
@@ -73,7 +76,8 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
                 {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -119,15 +123,15 @@ export const SaltLickTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawDefs] = await Promise.all([
-                readGga("SaltLick"),
-                readGga("CustomLists.h.SaltLicks"),
-            ]);
+            const [rawLevels, rawDefs] = await Promise.all([readGga("SaltLick"), readGga("CustomLists.h.SaltLicks")]);
 
             const defs = toIndexedArray(rawDefs ?? []);
             const upgrades = defs.map((entry, i) => {
                 const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`).replace(/\+\{/g, "").replace(/_/g, " ").trim();
+                const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`)
+                    .replace(/\+\{/g, "")
+                    .replace(/_/g, " ")
+                    .trim();
                 const maxLevel = safeNum(entryArr[4]);
                 return { name, maxLevel };
             });
@@ -154,7 +158,8 @@ export const SaltLickTab = () => {
         renderLoading: () => div({ class: "feature-loader" }, Loader()),
         renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: (resolved) => !resolved.upgrades.length,
-        renderEmpty: () => EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." }),
+        renderEmpty: () =>
+            EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." }),
         renderContent: (resolved) =>
             div(
                 { class: "feature-list" },
@@ -173,18 +178,15 @@ export const SaltLickTab = () => {
         { class: "tab-container" },
         div(
             { class: "feature-header" },
-            div(
-                {},
-                h3({}, "SALT LICK"),
-                p({ class: "feature-header__desc" }, "Set Salt Lick upgrade levels.")
-            ),
+            div({}, h3({}, "SALT LICK"), p({ class: "feature-header__desc" }, "Set Salt Lick upgrade levels.")),
             div(
                 { class: "feature-header__actions" },
                 button(
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -197,7 +199,8 @@ export const SaltLickTab = () => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();

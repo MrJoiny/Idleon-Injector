@@ -8,9 +8,7 @@ import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
-const CURRENCY_FIELDS = [
-    { index: 105, label: "KILLROY SKULLS" },
-];
+const CURRENCY_FIELDS = [{ index: 105, label: "KILLROY SKULLS" }];
 
 const SHOP_FIELDS = [
     { index: 106, label: "TIMER LEVEL" },
@@ -29,9 +27,7 @@ const META_FIELDS = [
     { index: 471, label: "BOOST SOMETHING BONUS", blurred: true },
 ];
 
-const RECORD_FIELDS = [
-    { index: 112, label: "TOTAL FINISHED RUNS" },
-];
+const RECORD_FIELDS = [{ index: 112, label: "TOTAL FINISHED RUNS" }];
 
 const PB_TOME_FIELDS = [
     { key: "melee", label: "HIGHEST KILLROY SCORE ON A WARRIOR", path: "CustomLists.h.Tome[27][0]", tomeIndex: 27 },
@@ -61,16 +57,18 @@ const Section = (title, note, rows) =>
         div(
             { class: "killroy-section__header" },
             span({ class: "killroy-section__title" }, title),
-            note ? span({ class: "killroy-section__note" }, note) : null,
+            note ? span({ class: "killroy-section__note" }, note) : null
         ),
-        div({ class: "killroy-rows" }, ...rows),
+        div({ class: "killroy-rows" }, ...rows)
     );
 
 const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disableEdit = false }) => {
     const inputVal = van.state(String(valueState.val));
     const { status, run } = useWriteStatus();
 
-    van.derive(() => { inputVal.val = String(valueState.val); });
+    van.derive(() => {
+        inputVal.val = String(valueState.val);
+    });
 
     const normalize = (raw) => {
         const parsed = Math.round(Number(raw));
@@ -91,53 +89,51 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                "killroy-row",
-                field.blurred ? "killroy-row--blur" : "",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    "killroy-row",
+                    field.blurred ? "killroy-row--blur" : "",
+                    status.val === "success" ? "flash-success" : "",
+                    status.val === "error" ? "flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__name" }, field.label),
-        ),
-        span(
-            { class: "feature-row__badge" },
-            () => {
-                if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
-                return String(valueState.val);
-            },
-        ),
+        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, field.label)),
+        span({ class: "feature-row__badge" }, () => {
+            if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
+            return String(valueState.val);
+        }),
         div(
             { class: "feature-row__controls" },
             disableEdit
                 ? span({ class: "killroy-row__locked" }, "LOCKED")
                 : [
-                    NumberInput({
-                        mode: "int",
-                        value: inputVal,
-                        oninput: (e) => (inputVal.val = e.target.value),
-                        onDecrement: () => {
-                            const next = toNum(inputVal.val, toNum(valueState.val, 0)) - 1;
-                            inputVal.val = String(field.allowNegative ? next : Math.max(0, next));
-                        },
-                        onIncrement: () => {
-                            const next = toNum(inputVal.val, toNum(valueState.val, 0)) + 1;
-                            inputVal.val = String(next);
-                        },
-                    }),
-                    button(
-                        {
-                            class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                            disabled: () => status.val === "loading",
-                            onclick: doSet,
-                        },
-                        () => status.val === "loading" ? "..." : "SET",
-                    ),
-                ],
-        ),
+                      NumberInput({
+                          mode: "int",
+                          value: inputVal,
+                          oninput: (e) => (inputVal.val = e.target.value),
+                          onDecrement: () => {
+                              const next = toNum(inputVal.val, toNum(valueState.val, 0)) - 1;
+                              inputVal.val = String(field.allowNegative ? next : Math.max(0, next));
+                          },
+                          onIncrement: () => {
+                              const next = toNum(inputVal.val, toNum(valueState.val, 0)) + 1;
+                              inputVal.val = String(next);
+                          },
+                      }),
+                      button(
+                          {
+                              class: () =>
+                                  `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                              disabled: () => status.val === "loading",
+                              onclick: doSet,
+                          },
+                          () => (status.val === "loading" ? "..." : "SET")
+                      ),
+                  ]
+        )
     );
 };
 
@@ -154,32 +150,30 @@ const KillroyAirhornRow = ({ valueState }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                "killroy-row",
-                status.val === "success" ? "flash-success" : "",
-                status.val === "error" ? "flash-error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    "killroy-row",
+                    status.val === "success" ? "flash-success" : "",
+                    status.val === "error" ? "flash-error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__name" }, "AIRHORN RESET"),
-        ),
-        span(
-            { class: "feature-row__badge" },
-            () => toNum(valueState.val, 0) === 0 ? "OFF" : "ON",
-        ),
+        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, "AIRHORN RESET")),
+        span({ class: "feature-row__badge" }, () => (toNum(valueState.val, 0) === 0 ? "OFF" : "ON")),
         div(
             { class: "feature-row__controls" },
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doToggle,
                 },
-                () => status.val === "loading" ? "..." : "TOGGLE",
-            ),
-        ),
+                () => (status.val === "loading" ? "..." : "TOGGLE")
+            )
+        )
     );
 };
 
@@ -210,15 +204,15 @@ export const KillroyTab = () => {
                 readGga(`OptionsListAccount[${idx}]`).then((v) => ({ idx, value: toNum(v, 0) }))
             );
 
-            const pbJobs = PB_TOME_FIELDS.map((f) =>
-                readGga(f.path).then((v) => ({ key: f.key, value: toNum(v, 0) }))
-            );
+            const pbJobs = PB_TOME_FIELDS.map((f) => readGga(f.path).then((v) => ({ key: f.key, value: toNum(v, 0) })));
             const pbLabelJobs = PB_TOME_FIELDS.map((f) =>
-                readGga(`CustomLists.h.Tome[${f.tomeIndex}]`).then((row) => {
-                    const arr = Array.isArray(row) ? row : Object.values(row ?? {});
-                    const labelRaw = arr.find((x) => typeof x === "string" && x.trim().length > 0);
-                    return { key: f.key, label: labelRaw };
-                }).catch(() => ({ key: f.key, label: null }))
+                readGga(`CustomLists.h.Tome[${f.tomeIndex}]`)
+                    .then((row) => {
+                        const arr = Array.isArray(row) ? row : Object.values(row ?? {});
+                        const labelRaw = arr.find((x) => typeof x === "string" && x.trim().length > 0);
+                        return { key: f.key, label: labelRaw };
+                    })
+                    .catch(() => ({ key: f.key, label: null }))
             );
 
             const [fieldValues, pbValues, pbLabels, rawBestByMob] = await Promise.all([
@@ -249,15 +243,13 @@ export const KillroyTab = () => {
                 .filter((entry) => entry.mobKey && entry.mobKey !== "__proto__");
 
             const mobKeys = rawEntries.map((entry) => entry.mobKey);
-            const mobDefs = mobKeys.length > 0
-                ? await readGgaEntries("MonsterDefinitionsGET.h", mobKeys, ["Name"])
-                : {};
+            const mobDefs =
+                mobKeys.length > 0 ? await readGgaEntries("MonsterDefinitionsGET.h", mobKeys, ["Name"]) : {};
 
             bestByMob.val = rawEntries.map((entry) => {
                 const rawName = mobDefs?.[entry.mobKey]?.Name;
-                const mobName = typeof rawName === "string" && rawName.length > 0
-                    ? rawName.replace(/_/g, " ")
-                    : entry.mobKey;
+                const mobName =
+                    typeof rawName === "string" && rawName.length > 0 ? rawName.replace(/_/g, " ") : entry.mobKey;
                 return { ...entry, mobName };
             });
 
@@ -270,8 +262,9 @@ export const KillroyTab = () => {
             ]);
 
             const toArr = (raw) => (Array.isArray(raw) ? raw : Object.values(raw ?? {}));
-            const mapKeys = [...toArr(rawKillroyMaps69), ...toArr(rawKillroyMaps70), ...toArr(rawKillroyMaps71)]
-                .filter((k) => typeof k === "string" && k.trim().length > 0);
+            const mapKeys = [...toArr(rawKillroyMaps69), ...toArr(rawKillroyMaps70), ...toArr(rawKillroyMaps71)].filter(
+                (k) => typeof k === "string" && k.trim().length > 0
+            );
             const mapNames = toArr(rawMapName);
             const mapAfkTargets = toArr(rawMapAfk);
 
@@ -284,16 +277,15 @@ export const KillroyTab = () => {
                 if (!allowedMobIds.includes(mobId)) allowedMobIds.push(mobId);
             }
 
-            const allowedMobDefs = allowedMobIds.length > 0
-                ? await readGgaEntries("MonsterDefinitionsGET.h", allowedMobIds, ["Name"])
-                : {};
+            const allowedMobDefs =
+                allowedMobIds.length > 0
+                    ? await readGgaEntries("MonsterDefinitionsGET.h", allowedMobIds, ["Name"])
+                    : {};
             const nextAllowedMobs = allowedMobIds.map((mobId) => {
                 const rawName = allowedMobDefs?.[mobId]?.Name;
                 return {
                     mobId,
-                    mobName: (typeof rawName === "string" && rawName.length > 0)
-                        ? rawName.replace(/_/g, " ")
-                        : mobId,
+                    mobName: typeof rawName === "string" && rawName.length > 0 ? rawName.replace(/_/g, " ") : mobId,
                 };
             });
             allowedMobs.val = nextAllowedMobs;
@@ -310,19 +302,19 @@ export const KillroyTab = () => {
     const sortedBestRows = () => {
         const rows = [...(bestByMob.val ?? [])];
         switch (sortBy.val) {
-        case "kills-asc":
-            rows.sort((a, b) => a.kills - b.kills || a.mobKey.localeCompare(b.mobKey));
-            break;
-        case "name-asc":
-            rows.sort((a, b) => a.mobName.localeCompare(b.mobName));
-            break;
-        case "name-desc":
-            rows.sort((a, b) => b.mobName.localeCompare(a.mobName));
-            break;
-        case "kills-desc":
-        default:
-            rows.sort((a, b) => b.kills - a.kills || a.mobKey.localeCompare(b.mobKey));
-            break;
+            case "kills-asc":
+                rows.sort((a, b) => a.kills - b.kills || a.mobKey.localeCompare(b.mobKey));
+                break;
+            case "name-asc":
+                rows.sort((a, b) => a.mobName.localeCompare(b.mobName));
+                break;
+            case "name-desc":
+                rows.sort((a, b) => b.mobName.localeCompare(a.mobName));
+                break;
+            case "kills-desc":
+            default:
+                rows.sort((a, b) => b.kills - a.kills || a.mobKey.localeCompare(b.mobKey));
+                break;
         }
         return rows;
     };
@@ -362,20 +354,16 @@ export const KillroyTab = () => {
             div(
                 { class: "killroy-scroll scrollable-panel" },
 
-                Section(
-                    "CURRENCY / AVAILABILITY",
-                    "Most-used Killroy currencies and weekly reset flag",
-                    [
-                        ...CURRENCY_FIELDS.map((field) =>
-                            KillroyNumRow({
-                                field,
-                                valueState: getState(field.index),
-                                writePath: `OptionsListAccount[${field.index}]`,
-                            })
-                        ),
-                        KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) }),
-                    ],
-                ),
+                Section("CURRENCY / AVAILABILITY", "Most-used Killroy currencies and weekly reset flag", [
+                    ...CURRENCY_FIELDS.map((field) =>
+                        KillroyNumRow({
+                            field,
+                            valueState: getState(field.index),
+                            writePath: `OptionsListAccount[${field.index}]`,
+                        })
+                    ),
+                    KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) }),
+                ]),
 
                 Section(
                     "SHOP UPGRADES",
@@ -387,7 +375,7 @@ export const KillroyTab = () => {
                             writePath: `OptionsListAccount[${field.index}]`,
                             disableEdit: Boolean(field.blurred),
                         })
-                    ),
+                    )
                 ),
 
                 Section(
@@ -400,7 +388,7 @@ export const KillroyTab = () => {
                             writePath: `OptionsListAccount[${field.index}]`,
                             disableEdit: Boolean(field.blurred),
                         })
-                    ),
+                    )
                 ),
 
                 div(
@@ -408,7 +396,7 @@ export const KillroyTab = () => {
                     div(
                         { class: "killroy-section__header" },
                         span({ class: "killroy-section__title" }, "RECORDS / TOME"),
-                        span({ class: "killroy-section__note" }, "KRbest.h table (sortable) and PB summaries"),
+                        span({ class: "killroy-section__note" }, "KRbest.h table (sortable) and PB summaries")
                     ),
 
                     div(
@@ -426,7 +414,7 @@ export const KillroyTab = () => {
                                 valueState: getPbState(field.key),
                                 writePath: field.path,
                             })
-                        ),
+                        )
                     ),
 
                     div(
@@ -438,18 +426,21 @@ export const KillroyTab = () => {
                                 value: sortBy,
                                 onchange: (e) => (sortBy.val = e.target.value),
                             },
-                            ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label)),
+                            ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label))
                         ),
-                        span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`),
+                        span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`)
                     ),
 
                     div(
                         {
-                            class: () => [
-                                "killroy-add-row",
-                                addStatus.val === "success" ? "flash-success" : "",
-                                addStatus.val === "error" ? "flash-error" : "",
-                            ].filter(Boolean).join(" "),
+                            class: () =>
+                                [
+                                    "killroy-add-row",
+                                    addStatus.val === "success" ? "flash-success" : "",
+                                    addStatus.val === "error" ? "flash-error" : "",
+                                ]
+                                    .filter(Boolean)
+                                    .join(" "),
                         },
                         span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
                         select(
@@ -460,60 +451,53 @@ export const KillroyTab = () => {
                             },
                             ...allowedMobs.val.map((mob) =>
                                 option({ value: mob.mobId }, `${mob.mobName} (${mob.mobId})`)
-                            ),
+                            )
                         ),
                         NumberInput({
                             mode: "int",
                             value: addKillsInput,
                             oninput: (e) => (addKillsInput.val = e.target.value),
-                            onDecrement: () => (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
+                            onDecrement: () =>
+                                (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
                             onIncrement: () => (addKillsInput.val = String(toNum(addKillsInput.val, 0) + 1)),
                         }),
                         button(
                             {
-                                class: () => `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                class: () =>
+                                    `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                                 disabled: () => addStatus.val === "loading" || !addMobId.val,
                                 onclick: setBestEntry,
                             },
-                            () => addStatus.val === "loading" ? "..." : "SET",
-                        ),
+                            () => (addStatus.val === "loading" ? "..." : "SET")
+                        )
                     ),
 
                     div(
                         { class: "killroy-best-table-wrap" },
-                        table(
-                            { class: "killroy-best-table" },
-                            thead(
-                                tr(
-                                    th({}, "MOB"),
-                                    th({}, "BEST KILLS"),
-                                )
-                            ),
-                            () => {
-                                const rows = sortedBestRows();
-                                if (rows.length === 0) {
-                                    return tbody(
-                                        tr(
-                                            td(
-                                                { class: "killroy-best-table__empty", colspan: 2 },
-                                                "No KRbest.h entries found.",
-                                            ),
-                                        ),
-                                    );
-                                }
-
+                        table({ class: "killroy-best-table" }, thead(tr(th({}, "MOB"), th({}, "BEST KILLS"))), () => {
+                            const rows = sortedBestRows();
+                            if (rows.length === 0) {
                                 return tbody(
-                                    ...rows.map((row) =>
-                                        tr(
-                                            td({ class: "killroy-best-table__mob" }, row.mobName),
-                                            td({ class: "killroy-best-table__kills" }, String(row.kills)),
+                                    tr(
+                                        td(
+                                            { class: "killroy-best-table__empty", colspan: 2 },
+                                            "No KRbest.h entries found."
                                         )
-                                    ),
+                                    )
                                 );
-                            },
-                        ),
-                    ),
-                ),
+                            }
+
+                            return tbody(
+                                ...rows.map((row) =>
+                                    tr(
+                                        td({ class: "killroy-best-table__mob" }, row.mobName),
+                                        td({ class: "killroy-best-table__kills" }, String(row.kills))
+                                    )
+                                )
+                            );
+                        })
+                    )
+                )
             ),
     });
 
@@ -525,17 +509,11 @@ export const KillroyTab = () => {
             div(
                 {},
                 h3({}, "KILLROY STATE LIBRARY"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
-                ),
+                p({ class: "feature-header__desc" }, "Currencies, upgrades, meta bonuses, and records for W2 Killroy.")
             ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
 
-        renderBody,
+        renderBody
     );
 };

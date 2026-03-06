@@ -60,13 +60,16 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row refinery-row",
-                isPolymer ? "refinery-row--polymer" : "",
-                isPlaceholder ? "refinery-row--placeholder" : "",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row refinery-row",
+                    isPolymer ? "refinery-row--polymer" : "",
+                    isPlaceholder ? "refinery-row--placeholder" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
 
         // Left: index + name + badges
@@ -78,23 +81,25 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
                 span({ class: "feature-row__name" }, name),
                 div(
                     { class: "refinery-row__badges" },
-                    isPolymer ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER") : null,
-                    isPlaceholder ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME") : null,
+                    isPolymer
+                        ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER")
+                        : null,
+                    isPlaceholder
+                        ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME")
+                        : null
                 )
             )
         ),
 
         // Centre: current level
-        span(
-            { class: "feature-row__badge" },
-            () => `LV ${levelState.val ?? 0}`
-        ),
+        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0}`),
 
         // Right: level + charge controls
         div(
             { class: "feature-row__controls feature-row__controls--stack" },
 
-            div({ class: "refinery-control-row" },
+            div(
+                { class: "refinery-control-row" },
                 span({ class: "refinery-control-label" }, "Level"),
                 NumberInput({
                     mode: "int",
@@ -107,18 +112,20 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
                             doSet(1, levelInput.val);
                         },
                     },
-                    () => status.val === "loading" ? "…" : "SET"
-                ),
+                    () => (status.val === "loading" ? "…" : "SET")
+                )
             ),
 
-            div({ class: "refinery-control-row" },
+            div(
+                { class: "refinery-control-row" },
                 span({ class: "refinery-control-label" }, "Charge"),
                 NumberInput({
                     mode: "int",
@@ -131,16 +138,17 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
                             doSet(0, chargeInput.val);
                         },
                     },
-                    () => status.val === "loading" ? "…" : "SET"
-                ),
-            ),
+                    () => (status.val === "loading" ? "…" : "SET")
+                )
+            )
         )
     );
 };
@@ -200,30 +208,31 @@ export const RefineryTab = () => {
             div(
                 {},
                 h3({}, "W3 — REFINERY"),
-                p({ class: "feature-header__desc" }, "Set refinery levels and salt charges."),
+                p({ class: "feature-header__desc" }, "Set refinery levels and salt charges.")
             ),
-            div(
-                { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
 
         // Notices
         div(
             { class: "refinery-notice refinery-notice--polymer" },
             span({ class: "refinery-notice__icon" }, Icons.Wrench()),
-            span({}, "Refineries 7–9 require the ",
+            span(
+                {},
+                "Refineries 7–9 require the ",
                 span({ class: "refinery-notice__highlight" }, "Polymer Refinery"),
                 " research to be unlocked in-game before they are available."
-            ),
+            )
         ),
         div(
             { class: "refinery-notice refinery-notice--placeholder" },
             span({ class: "refinery-notice__icon" }, Icons.Warning()),
-            span({}, "Refinery 9 is a ",
+            span(
+                {},
+                "Refinery 9 is a ",
                 span({ class: "refinery-notice__highlight" }, "placeholder"),
                 " — it does not exist in the game yet and setting it has no effect."
-            ),
+            )
         ),
 
         // List

@@ -183,7 +183,10 @@ export const AnvilTab = () => {
                 h3("ANVIL"),
                 p({ class: "feature-header__desc" }, "Manage point allocation for Bonus Exp, Speed/hr, and Capacity")
             ),
-            withTooltip(button({ class: "btn-secondary", onclick: load }, "REFRESH"), "Re-read anvil stats from game memory")
+            withTooltip(
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                "Re-read anvil stats from game memory"
+            )
         ),
         div(
             { class: "warning-banner" },

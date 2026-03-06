@@ -116,36 +116,24 @@ export function readComputed(namespace, name, args = []) {
     if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
     if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
     if (!Array.isArray(args)) return { error: "args must be an array" };
+    if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
 
     const sources = {
-        workbench: () => ({
-            actorEvents: events(345),
-            method: "_customBlock_WorkbenchStuff",
-        }),
-        alchemy: () => ({
-            actorEvents: events(189),
-            method: "_customBlock_cauldronp2wbonuses",
-        }),
-        summoning: () => ({
-            actorEvents: events(579),
-            method: "_customBlock_Summoning",
-        }),
-        atomCollider: () => ({
-            actorEvents: events(579),
-            method: "_customBlock_AtomCollider",
-        }),
+        workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
+        alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
+        summoning: { eventId: 579, method: "_customBlock_Summoning" },
+        atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
     };
 
-    const sourceFactory = sources[namespace];
-    if (!sourceFactory) return { error: `Unsupported computed namespace: ${namespace}` };
-
-    const { actorEvents, method } = sourceFactory();
-    const fn = actorEvents?.[method];
-    if (typeof fn !== "function") {
-        return { error: `Computed helper unavailable: ${namespace}.${name}` };
-    }
+    const source = sources[namespace];
+    if (!source) return { error: `Unsupported computed namespace: ${namespace}` };
 
     try {
+        const actorEvents = events(source.eventId);
+        const fn = actorEvents?.[source.method];
+        if (typeof fn !== "function") {
+            return { error: `Computed helper unavailable: ${namespace}.${name}` };
+        }
         return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
     } catch (e) {
         return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };

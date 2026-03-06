@@ -28,15 +28,17 @@ const resolveValue = (valueOrState) => {
     return valueOrState;
 };
 
-export const RefreshErrorBanner = ({ error }) => () =>
-    error?.val
-        ? div(
-              { class: "warning-banner" },
-              Icons.Warning(),
-              " Refresh failed. Showing last loaded values. ",
-              error.val
-          )
-        : null;
+export const RefreshErrorBanner =
+    ({ error }) =>
+    () =>
+        error?.val
+            ? div(
+                  { class: "warning-banner" },
+                  Icons.Warning(),
+                  " Refresh failed. Showing last loaded values. ",
+                  error.val
+              )
+            : null;
 
 // ── usePersistentPaneReady ─────────────────────────────────────────────────
 
@@ -189,25 +191,27 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
  *   renderContent:  (data: any) => Element | null,
  * }} props
  */
-export const AsyncFeatureBody = ({
-    loading,
-    error,
-    data = null,
-    renderLoading = null,
-    renderError = null,
-    isEmpty = null,
-    renderEmpty = null,
-    renderContent,
-}) => () => {
-    if (loading?.val) return renderLoading ? renderLoading() : null;
-    if (error?.val) return renderError ? renderError(error.val) : null;
+export const AsyncFeatureBody =
+    ({
+        loading,
+        error,
+        data = null,
+        renderLoading = null,
+        renderError = null,
+        isEmpty = null,
+        renderEmpty = null,
+        renderContent,
+    }) =>
+    () => {
+        if (loading?.val) return renderLoading ? renderLoading() : null;
+        if (error?.val) return renderError ? renderError(error.val) : null;
 
-    const resolvedData = resolveValue(data);
-    if (resolvedData === null || resolvedData === undefined) return null;
+        const resolvedData = resolveValue(data);
+        if (resolvedData === null || resolvedData === undefined) return null;
 
-    if (typeof isEmpty === "function" && isEmpty(resolvedData)) {
-        return renderEmpty ? renderEmpty(resolvedData) : null;
-    }
+        if (typeof isEmpty === "function" && isEmpty(resolvedData)) {
+            return renderEmpty ? renderEmpty(resolvedData) : null;
+        }
 
-    return renderContent ? renderContent(resolvedData) : null;
-};
+        return renderContent ? renderContent(resolvedData) : null;
+    };

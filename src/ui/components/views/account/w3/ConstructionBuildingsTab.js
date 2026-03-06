@@ -64,23 +64,23 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
 
     return div(
         {
-            class: () => [
-                "feature-row",
-                status.val === "success" ? "feature-row--success" : "",
-                status.val === "error" ? "feature-row--error" : "",
-            ].filter(Boolean).join(" "),
+            class: () =>
+                [
+                    "feature-row",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
 
         div(
             { class: "feature-row__info" },
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "feature-row__name" }, name)
         ),
 
-        span(
-            { class: "feature-row__badge" },
-            () => `LV ${levelState.val ?? 0} / ${maxLevel}`
-        ),
+        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0} / ${maxLevel}`),
 
         div(
             { class: "feature-row__controls" },
@@ -96,14 +96,15 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
                             doSet(inputVal.val);
                         },
                     },
-                    () => status.val === "loading" ? "…" : "SET"
+                    () => (status.val === "loading" ? "…" : "SET")
                 ),
                 `Set level (max ${maxLevel})`
             ),
@@ -112,7 +113,8 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn construction-btn--max ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn construction-btn--max ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -123,7 +125,7 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
                     "MAX"
                 ),
                 `Set to max level (${maxLevel})`
-            ),
+            )
         )
     );
 };
@@ -203,7 +205,7 @@ export const ConstructionBuildingsTab = () => {
             div(
                 {},
                 h3({}, "CONSTRUCTION — BUILDINGS"),
-                p({ class: "feature-header__desc" }, "Set building levels. Each building has its own max."),
+                p({ class: "feature-header__desc" }, "Set building levels. Each building has its own max.")
             ),
             div(
                 { class: "feature-header__actions" },
@@ -211,17 +213,18 @@ export const ConstructionBuildingsTab = () => {
                     {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
-                        class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        class: () =>
+                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                         disabled: () => bulkStatus.val === "loading" || loading.val,
                         onclick: (e) => {
                             e.preventDefault();
                             doMaxAll();
                         },
                     },
-                    () => bulkStatus.val === "loading" ? "MAXING…" : bulkStatus.val === "done" ? "✓ DONE" : "MAX ALL"
+                    () => (bulkStatus.val === "loading" ? "MAXING…" : bulkStatus.val === "done" ? "✓ DONE" : "MAX ALL")
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-            ),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH")
+            )
         ),
 
         () => {
@@ -230,7 +233,8 @@ export const ConstructionBuildingsTab = () => {
             if (!data.val) return null;
 
             const buildings = data.val.buildings;
-            if (!buildings.length) return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
+            if (!buildings.length)
+                return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
 
             return div(
                 { class: "feature-list" },

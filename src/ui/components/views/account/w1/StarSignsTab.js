@@ -248,9 +248,10 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                 },
                 () => (status.val === "loading" ? "..." : status.val === "success" ? "✓ SAVED" : "SAVE")
             ),
-            status.val === "error"
-                ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
-                : null
+            () =>
+                status.val === "error"
+                    ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
+                    : null
         )
     );
 };
@@ -427,33 +428,36 @@ export const StarSignsTab = () => {
                 withTooltip(
                     button(
                         {
-                            class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading-unlock" ? "feature-btn--loading" : ""}`,
+                            class: () =>
+                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-unlock" ? "feature-btn--loading" : ""}`,
                             disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(false),
                         },
-                        () => bulkStatus.val === "loading-unlock" ? "…" : "UNLOCK ALL"
+                        () => (bulkStatus.val === "loading-unlock" ? "…" : "UNLOCK ALL")
                     ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading-random" ? "feature-btn--loading" : ""}`,
+                            class: () =>
+                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-random" ? "feature-btn--loading" : ""}`,
                             disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(true),
                         },
-                        () => bulkStatus.val === "loading-random" ? "…" : "RANDOMIZE ALL"
+                        () => (bulkStatus.val === "loading-random" ? "…" : "RANDOMIZE ALL")
                     ),
                     "Unlock all signs with a random player order per sign"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: () => `feature-btn feature-btn--danger ${bulkStatus.val === "loading-reset" ? "feature-btn--loading" : ""}`,
+                            class: () =>
+                                `feature-btn feature-btn--danger ${bulkStatus.val === "loading-reset" ? "feature-btn--loading" : ""}`,
                             disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: resetAll,
                         },
-                        () => bulkStatus.val === "loading-reset" ? "…" : "RESET ALL"
+                        () => (bulkStatus.val === "loading-reset" ? "…" : "RESET ALL")
                     ),
                     "Clear all star sign progress and lock everything"
                 ),

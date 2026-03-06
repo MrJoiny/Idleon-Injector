@@ -200,7 +200,9 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
     min-width: 0;
 }
 
@@ -257,7 +259,9 @@
     background: var(--c-panel-dim);
     border: 1px solid var(--c-border);
     padding: 3px 6px;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
 }
 
 /* Text field variant (item ID) — label + full-width text+btn */
@@ -320,7 +324,10 @@
     background: var(--c-panel-dim);
     color: var(--c-text-dim);
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
     font-family: var(--font-display);
     white-space: nowrap;
     overflow: hidden;
@@ -401,7 +408,9 @@
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     padding: 6px 8px;
-    transition: border-color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
 }
 
 .po-currency-row:hover {

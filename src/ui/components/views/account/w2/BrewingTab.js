@@ -61,9 +61,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
 
     const prismaBlocked = bubble.isBigBubble === true;
 
-    const isPrisma = van.derive(() =>
-        (prismaSet.val ?? new Set()).has(prismaCode(cauldron.prismaKey, bubble.index))
-    );
+    const isPrisma = van.derive(() => (prismaSet.val ?? new Set()).has(prismaCode(cauldron.prismaKey, bubble.index)));
 
     van.derive(() => {
         inputVal.val = String(levels.val?.[bubble.index] ?? 0);
@@ -111,10 +109,8 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
                     .join(" "),
             style: `--cauldron-color: ${cauldron.color}; --cauldron-dim: ${cauldron.dimColor};`,
         },
-        div(
-            { class: "bubble-card__top" },
-            span({ class: "bubble-card__index" }, `#${bubble.index}`),
-            () => (isPrisma.val ? span({ class: "bubble-card__prisma-badge" }, "PRISMA") : null)
+        div({ class: "bubble-card__top" }, span({ class: "bubble-card__index" }, `#${bubble.index}`), () =>
+            isPrisma.val ? span({ class: "bubble-card__prisma-badge" }, "PRISMA") : null
         ),
         div({ class: "bubble-card__name" }, bubble.name),
         div(
@@ -133,7 +129,8 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             }),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -180,7 +177,9 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
             bulkStatus.val = "done";
             setTimeout(() => (bulkStatus.val = null), 1500);
         } catch {
-            bulkStatus.val = null;
+            console.error("Bulk set failed", e);
+            bulkStatus.val = "error";
+            setTimeout(() => (bulkStatus.val = null), 1500);
         }
     };
 
@@ -194,7 +193,8 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
             span({ class: "brewing-column__label" }, cauldron.label),
             button(
                 {
-                    class: () => `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => bulkStatus.val === "loading",
                     onclick: doSetAll,
                     title: "Set all bubbles in this cauldron",
@@ -251,7 +251,9 @@ export const BrewingTab = () => {
                 bubbleDefs.get(c.id).val = cauldronDesc
                     .map((entry, idx) => {
                         const entryArr = toIndexedArray(entry ?? []);
-                        const name = String(entryArr[0] ?? "BUBBLE").replace(/_/g, " ").trim();
+                        const name = String(entryArr[0] ?? "BUBBLE")
+                            .replace(/_/g, " ")
+                            .trim();
                         const isBigBubble = Number(entryArr[10] ?? 0) === 1;
                         return { name, index: idx, isBigBubble };
                     })
