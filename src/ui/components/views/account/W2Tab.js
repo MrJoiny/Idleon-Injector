@@ -1,19 +1,8 @@
 /**
- * World 2 Tab — YUM-YUM DESERT
- *
- * Sub-tabs:
- *   - ALCHEMY     (inner: Brewing ✓, Liquid ✓, Vials ✓, Pay2Win ✓, Sigils ✓)
- *   - ARCADE      (implemented ✓)
- *   - POST OFFICE (implemented ✓)
- *   - OBOLS       (placeholder)
- *
- * To add a new W2 sub-tab:
- *   1. Create its component in ./w2/
- *   2. Push an entry to W2_SUBTABS below.
+ * World 2 Tab - Yum-Yum Desert
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { Icons } from "../../../assets/icons.js";
 import { BrewingTab } from "./w2/BrewingTab.js";
 import { LiquidTab } from "./w2/LiquidTab.js";
 import { VialTab } from "./w2/VialTab.js";
@@ -22,150 +11,86 @@ import { SigilTab } from "./w2/SigilTab.js";
 import { ArcadeTab } from "./w2/ArcadeTab.js";
 import { PostOfficeTab } from "./w2/PostOfficeTab.js";
 import { KillroyTab } from "./w2/KillroyTab.js";
+import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
-const { div, button, span, p } = van.tags;
+const { div } = van.tags;
 
-// ── Alchemy inner sub-tabs ────────────────────────────────────────────────
 const ALCHEMY_SUBTABS = [
-    { id: "brewing", label: "BREWING",   component: BrewingTab  },
-    { id: "liquid",  label: "LIQUID",    component: LiquidTab   },
-    { id: "vials",   label: "VIALS",     component: VialTab     },
-    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab  },
-    { id: "sigils",  label: "SIGILS",    component: SigilTab    },
+    { id: "brewing", label: "BREWING", component: BrewingTab },
+    { id: "liquid", label: "LIQUID", component: LiquidTab },
+    { id: "vials", label: "VIALS", component: VialTab },
+    { id: "pay2win", label: "PAY 2 WIN", component: Pay2WinTab },
+    { id: "sigils", label: "SIGILS", component: SigilTab },
 ];
 
-// ── W2 top-level sub-tabs ─────────────────────────────────────────────────
 const W2_SUBTABS = [
-    { id: "alchemy",     label: "ALCHEMY",     component: null        },
-    { id: "arcade",      label: "ARCADE",      component: ArcadeTab   },
+    { id: "alchemy", label: "ALCHEMY", component: null },
+    { id: "arcade", label: "ARCADE", component: ArcadeTab },
     { id: "post-office", label: "POST OFFICE", component: PostOfficeTab },
-    { id: "killroy",     label: "KILLROY",     component: KillroyTab  },
-    { id: "obols",       label: "OBOLS",       component: null        },
+    { id: "killroy", label: "KILLROY", component: KillroyTab },
+    { id: "obols", label: "OBOLS", component: null },
 ];
 
-// ─── placeholder pane ────────────────────────────────────────────────────
-const PlaceholderPane = (label) =>
-    div(
-        { class: "world-sub-placeholder" },
-        span({ class: "world-sub-placeholder__icon" }, Icons.Wrench()),
-        p({ class: "world-sub-placeholder__label" }, `${label} — COMING SOON`)
-    );
-
-// ── Alchemy panel (inner sub-nav) ─────────────────────────────────────────
 const AlchemyPanel = () => {
     const active = van.state(ALCHEMY_SUBTABS[0].id);
 
     return div(
         { class: "tab-container" },
-
-        div(
-            { class: "alchemy-sub-nav" },
-            ...ALCHEMY_SUBTABS.map((tab) =>
-                button(
-                    {
-                        class: () =>
-                            `alchemy-sub-btn ${active.val === tab.id ? "active" : ""} ${
-                                !tab.component ? "alchemy-sub-btn--stub" : ""
-                            }`,
-                        onclick: () => (active.val = tab.id),
-                    },
-                    tab.label
-                )
-            )
-        ),
-
+        renderTabNav({
+            tabs: ALCHEMY_SUBTABS,
+            activeId: active,
+            navClass: "alchemy-sub-nav",
+            buttonClass: "alchemy-sub-btn",
+            stubClass: "alchemy-sub-btn--stub",
+            isStub: (tab) => !tab.component,
+        }),
         div(
             { class: "alchemy-sub-content" },
-            ...ALCHEMY_SUBTABS.map((tab) => {
-                const pane = div({
-                    class: () => `alchemy-pane ${active.val === tab.id ? "alchemy-pane--active" : ""}`,
-                    "data-alchemy": tab.id,
-                });
-
-                if (!tab.component) {
-                    van.add(pane, PlaceholderPane(tab.label));
-                } else {
-                    let mounted = false;
-                    van.derive(() => {
-                        if (active.val === tab.id && !mounted) {
-                            mounted = true;
-                            van.add(pane, tab.component());
-                        }
-                    });
-                }
-
-                return pane;
+            ...renderLazyPanes({
+                tabs: ALCHEMY_SUBTABS,
+                activeId: active,
+                paneClass: "alchemy-pane",
+                activeClass: "alchemy-pane--active",
+                dataAttr: "data-alchemy",
+                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
             })
         )
     );
 };
-
-// ── W2Tab ─────────────────────────────────────────────────────────────────
 
 export const W2Tab = () => {
     const activeSubTab = van.state(W2_SUBTABS[0].id);
 
     return div(
         { class: "world-tab w2-world-tab" },
-
-        div(
-            { class: "world-tab-header" },
-            span({ class: "world-tab-badge" }, "W2"),
-            div(
-                { class: "world-tab-title-group" },
-                () => {
-                    const cur = W2_SUBTABS.find((t) => t.id === activeSubTab.val);
-                    return van.tags.h2({ class: "world-tab-title" }, `W2 — ${cur?.label ?? ""}`);
-                },
-                p({ class: "world-tab-subtitle" }, "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Obols")
-            )
-        ),
-
-        div(
-            { class: "world-sub-nav" },
-            ...W2_SUBTABS.map((tab) =>
-                button(
-                    {
-                        class: () =>
-                            `world-sub-tab-btn ${activeSubTab.val === tab.id ? "active" : ""} ${
-                                !tab.component && tab.id !== "alchemy" ? "world-sub-tab-btn--stub" : ""
-                            }`,
-                        onclick: () => (activeSubTab.val = tab.id),
-                    },
-                    tab.label
-                )
-            )
-        ),
-
+        renderWorldHeader({
+            badge: "W2",
+            title: () => {
+                const cur = W2_SUBTABS.find((tab) => tab.id === activeSubTab.val);
+                return `W2 — ${cur?.label ?? ""}`;
+            },
+            subtitle: "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Obols",
+        }),
+        renderTabNav({
+            tabs: W2_SUBTABS,
+            activeId: activeSubTab,
+            navClass: "world-sub-nav",
+            buttonClass: "world-sub-tab-btn",
+            stubClass: "world-sub-tab-btn--stub",
+            isStub: (tab) => !tab.component && tab.id !== "alchemy",
+        }),
         div(
             { class: "world-sub-content" },
-            ...W2_SUBTABS.map((tab) => {
-                const pane = div({
-                    class: () => `world-sub-pane ${activeSubTab.val === tab.id ? "active" : ""}`,
-                    "data-subtab": tab.id,
-                });
-
-                if (tab.id === "alchemy") {
-                    let mounted = false;
-                    van.derive(() => {
-                        if (activeSubTab.val === tab.id && !mounted) {
-                            mounted = true;
-                            van.add(pane, AlchemyPanel());
-                        }
-                    });
-                } else if (!tab.component) {
-                    van.add(pane, PlaceholderPane(tab.label));
-                } else {
-                    let mounted = false;
-                    van.derive(() => {
-                        if (activeSubTab.val === tab.id && !mounted) {
-                            mounted = true;
-                            van.add(pane, tab.component());
-                        }
-                    });
-                }
-
-                return pane;
+            ...renderLazyPanes({
+                tabs: W2_SUBTABS,
+                activeId: activeSubTab,
+                paneClass: "world-sub-pane",
+                dataAttr: "data-subtab",
+                renderContent: (tab) => {
+                    if (tab.id === "alchemy") return AlchemyPanel();
+                    if (tab.component) return tab.component();
+                    return createComingSoonPlaceholder(tab.label);
+                },
             })
         )
     );
