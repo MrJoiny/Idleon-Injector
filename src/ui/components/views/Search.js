@@ -35,7 +35,7 @@ import {
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
 
 const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
-const SEARCH_WORKSPACE_VERSION = 1;
+const SEARCH_WORKSPACE_VERSION = 2;
 const SEARCH_FAVORITE_KEYS_STORAGE_KEY = "searchFavoriteKeys";
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
 const entryFilterTextCache = new WeakMap();
@@ -108,7 +108,11 @@ function loadSearchWorkspace() {
         if (!raw) return null;
 
         const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== "object" || parsed.version !== SEARCH_WORKSPACE_VERSION) {
+        if (
+            !parsed ||
+            typeof parsed !== "object" ||
+            (parsed.version !== SEARCH_WORKSPACE_VERSION && parsed.version !== 1)
+        ) {
             return null;
         }
 
@@ -117,7 +121,6 @@ function loadSearchWorkspace() {
 
         return {
             selectedKeys: uniqueStrings(data.selectedKeys),
-            allKeysExpanded: data.allKeysExpanded === true,
             savedResults: Array.isArray(data.savedResults)
                 ? data.savedResults.map(normalizeSavedEntry).filter(Boolean)
                 : [],
@@ -130,7 +133,6 @@ function loadSearchWorkspace() {
 function buildSearchWorkspace(ui) {
     return {
         selectedKeys: uniqueStrings(ui.selectedKeys),
-        allKeysExpanded: ui.allKeysExpanded === true,
         savedResults: (ui.savedResults || []).map(normalizeSavedEntry).filter(Boolean),
     };
 }
@@ -1046,7 +1048,7 @@ export const Search = () => {
         results: [],
         displayLimit: 50,
         error: null,
-        allKeysExpanded: restoredWorkspace.allKeysExpanded === true,
+        allKeysExpanded: false,
         allKeysFilter: "",
         scopePaths: [],
         lastSearchMode: "new",

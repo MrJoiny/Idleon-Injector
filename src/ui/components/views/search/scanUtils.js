@@ -1,3 +1,5 @@
+import { getResultValue } from "./valueUtils.js";
+
 const INPUTLESS_SCAN_TYPES = new Set([
     "unknown_initial_value",
     "increased_value",
@@ -112,12 +114,6 @@ function parseExactScanQuery(query) {
     if (!Number.isNaN(num) && trimmed !== "") return { type: "number", value: num };
 
     return { type: "string", value: trimmed };
-}
-
-function getResultValue(result) {
-    if (!result || typeof result !== "object") return undefined;
-    if (result.type === "undefined") return undefined;
-    return Object.prototype.hasOwnProperty.call(result, "value") ? result.value : undefined;
 }
 
 function matchesExactValue(currentType, currentValue, parsedQuery) {

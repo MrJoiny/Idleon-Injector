@@ -34,6 +34,7 @@ class ValueMonitor {
 
         this.ws.onclose = () => {
             console.log("[ValueMonitor] Disconnected from server");
+            this.stopPolling();
             this.ws = null;
             // Attempt to reconnect after delay
             setTimeout(() => this.init(), 5000);
@@ -46,17 +47,25 @@ class ValueMonitor {
 
     ensurePolling() {
         if (this.pollTimer) return;
+        if (this.watchers.size === 0) return;
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
         this.pollTimer = setInterval(() => {
             this.pollWatchers();
         }, this.pollMs);
     }
 
-    stopPollingIfIdle() {
-        if (this.watchers.size > 0 || !this.pollTimer) return;
+    stopPolling() {
+        if (!this.pollTimer) return;
 
         clearInterval(this.pollTimer);
         this.pollTimer = null;
+    }
+
+    stopPollingIfIdle() {
+        if (this.watchers.size > 0 || !this.pollTimer) return;
+
+        this.stopPolling();
     }
 
     /**
@@ -263,6 +272,7 @@ class ValueMonitor {
 
     pollWatchers(force = false) {
         if (this.watchers.size === 0) return;
+        if (!force && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) return;
 
         for (const [id, watcher] of this.watchers.entries()) {
             this.pollWatcher(id, watcher, force);

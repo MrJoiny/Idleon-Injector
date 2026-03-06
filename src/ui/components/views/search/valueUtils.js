@@ -52,10 +52,25 @@ export function monitorIdFromMonitorPath(path) {
     return "mon:" + encodeURIComponent(path);
 }
 
+const MAX_MONITOR_STRING_LENGTH = 100;
+
+function escapeMonitorString(value) {
+    return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+function truncateMonitorString(value) {
+    if (value.length <= MAX_MONITOR_STRING_LENGTH) return value;
+    return value.slice(0, MAX_MONITOR_STRING_LENGTH) + "...";
+}
+
 export function formatMonitorValue(value) {
     if (value === null) return "null";
     if (value === undefined) return "undefined";
-    if (typeof value === "string") return "'" + value + "'";
+    if (typeof value === "string") {
+        const escaped = escapeMonitorString(String(value));
+        const truncated = truncateMonitorString(escaped);
+        return "'" + truncated + "'";
+    }
     if (typeof value === "object") return "[obj]";
     return String(value);
 }
