@@ -4,10 +4,12 @@
  * Functions for accessing and modifying game state:
  * - Unified path-based read/write (readPath, writePath)
  * - Selective object-entry reads for large maps (readEntries)
+ * - Small computed-value bridge for internal helper families
  * - cheatState access
  */
 
 import { cheatState } from "../core/state.js";
+import { events } from "../core/globals.js";
 import { resolvePath } from "../utils/pathResolver.js";
 
 export function getcheatStateList() {
@@ -92,6 +94,50 @@ export function readEntries(rootPath, keys, fields = null) {
     }
 
     return { value };
+}
+
+/**
+ * Read a computed value from a game helper family.
+ * Uses the same injected ActorEvents access pattern as the minigame cheats:
+ * events(345), events(579), etc. The UI never touches ActorEvents directly.
+ *
+ * Supported namespaces:
+ * - workbench     -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ * - alchemy       -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
+ * - summoning     -> events(579)._customBlock_Summoning(name, ...args)
+ * - atomCollider  -> events(579)._customBlock_AtomCollider(name, ...args)
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array=} args
+ * @returns {{ value: any } | { error: string }}
+ */
+export function readComputed(namespace, name, args = []) {
+    if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
+    if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
+    if (!Array.isArray(args)) return { error: "args must be an array" };
+    if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
+
+    const sources = {
+        workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
+        alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
+        summoning: { eventId: 579, method: "_customBlock_Summoning" },
+        atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
+    };
+
+    const source = sources[namespace];
+    if (!source) return { error: `Unsupported computed namespace: ${namespace}` };
+
+    try {
+        const actorEvents = events(source.eventId);
+        const fn = actorEvents?.[source.method];
+        if (typeof fn !== "function") {
+            return { error: `Computed helper unavailable: ${namespace}.${name}` };
+        }
+        return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
+    } catch (e) {
+        return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };
+    }
 }
 
 /**

@@ -24,6 +24,8 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, h4, p, select, option } = van.tags;
 
@@ -113,7 +115,7 @@ const DragList = ({ items, renderItem, onChange }) => {
 
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const players = van.state([...sign.players]);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus({ successMs: 1500, errorMs: 1500 });
 
     const addPlayer = (num) => {
         if (players.val.includes(num)) return;
@@ -125,20 +127,14 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     };
 
     const doSave = async () => {
-        status.val = "loading";
-        try {
+        await run(async () => {
             const str = encodeProgress(players.val);
             const unlocked = players.val.length >= sign.playersNeeded ? 1 : 0;
             await writeGga(`StarSignProg[${sign.index}][0]`, str);
             await new Promise((r) => setTimeout(r, 150));
             await writeGga(`StarSignProg[${sign.index}][1]`, unlocked);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1500);
             onSave?.({ index: sign.index, progress: str, unlocked });
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1500);
-        }
+        });
     };
 
     return div(
@@ -154,7 +150,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                 p({ class: "starsign-detail-desc" }, sign.desc)
             ),
             div(
-                { class: "starsign-detail-meta" },
+                null,
                 span(
                     { class: "starsign-needed-badge" },
                     `${sign.playersNeeded} player${sign.playersNeeded > 1 ? "s" : ""} needed`
@@ -198,7 +194,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             select(
                 {
                     id: `add-player-select-${sign.index}`,
-                    class: "statue-tier-select",
+                    class: "starsign-player-select select-base",
                 },
                 option({ value: "", disabled: true, selected: true }, "Add player…"),
                 ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => option({ value: n }, playerName(n, usernames)))
@@ -252,9 +248,10 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                 },
                 () => (status.val === "loading" ? "..." : status.val === "success" ? "✓ SAVED" : "SAVE")
             ),
-            status.val === "error"
-                ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
-                : null
+            () =>
+                status.val === "error"
+                    ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
+                    : null
         )
     );
 };
@@ -293,13 +290,22 @@ export const StarSignsTab = () => {
     const loading = van.state(false);
     const error = van.state(null);
     const activeSign = van.state(null); // sign object being edited
+    const bulkStatus = van.state(null); // null | loading-unlock | loading-random | loading-reset | success | error
+    let bulkStatusTimer = null;
 
-    const toArr = (raw) =>
-        Array.isArray(raw)
-            ? raw
-            : Object.keys(raw)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .map((k) => raw[k]);
+    const setBulkStatus = (next, autoClearMs = 0) => {
+        bulkStatus.val = next;
+        if (bulkStatusTimer) {
+            clearTimeout(bulkStatusTimer);
+            bulkStatusTimer = null;
+        }
+        if (autoClearMs > 0) {
+            bulkStatusTimer = setTimeout(() => {
+                bulkStatus.val = null;
+                bulkStatusTimer = null;
+            }, autoClearMs);
+        }
+    };
 
     const load = async () => {
         loading.val = true;
@@ -311,10 +317,12 @@ export const StarSignsTab = () => {
                 readGga("GetPlayersUsernames"),
             ]);
 
-            const quests = toArr(rawQuests ?? []);
-            const prog = toArr(rawProg ?? []);
+            const quests = toIndexedArray(rawQuests ?? []);
+            const prog = toIndexedArray(rawProg ?? []);
             const labels = computeLabels(quests);
-            const usernames = toArr(rawUsernames ?? []).filter((u) => typeof u === "string" && !u.startsWith("__"));
+            const usernames = toIndexedArray(rawUsernames ?? []).filter(
+                (u) => typeof u === "string" && !u.startsWith("__")
+            );
 
             signs.val = quests
                 .map((q, i) => ({
@@ -355,41 +363,70 @@ export const StarSignsTab = () => {
 
     const resetAll = async () => {
         if (!signs.val) return;
-        for (const sign of signs.val) {
-            await writeGga(`StarSignProg[${sign.index}][0]`, "");
-            await new Promise((r) => setTimeout(r, 40));
-            await writeGga(`StarSignProg[${sign.index}][1]`, 0);
-            await new Promise((r) => setTimeout(r, 40));
+        setBulkStatus("loading-reset");
+        try {
+            const nextSigns = [];
+            for (const sign of signs.val) {
+                await writeGga(`StarSignProg[${sign.index}][0]`, "");
+                await new Promise((r) => setTimeout(r, 40));
+                await writeGga(`StarSignProg[${sign.index}][1]`, 0);
+                await new Promise((r) => setTimeout(r, 40));
+                nextSigns.push({ ...sign, players: [], unlocked: false });
+            }
+
+            signs.val = nextSigns;
+            if (activeSign.val) {
+                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
+                if (updated) activeSign.val = { ...updated };
+            }
+
+            setBulkStatus("success", 1200);
+        } catch {
+            setBulkStatus("error", 1200);
+            await load();
         }
-        await load();
     };
 
     const unlockAll = async (randomize) => {
         if (!signs.val) return;
-        for (const sign of signs.val) {
-            const needed = sign.playersNeeded;
-            const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
-            if (randomize) {
-                // Fisher-Yates shuffle
-                for (let i = pool.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [pool[i], pool[j]] = [pool[j], pool[i]];
+        setBulkStatus(randomize ? "loading-random" : "loading-unlock");
+        try {
+            const nextSigns = [];
+            for (const sign of signs.val) {
+                const needed = sign.playersNeeded;
+                const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
+                if (randomize) {
+                    // Fisher-Yates shuffle
+                    for (let i = pool.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [pool[i], pool[j]] = [pool[j], pool[i]];
+                    }
                 }
+                const players = pool.slice(0, needed);
+                const str = encodeProgress(players);
+                await writeGga(`StarSignProg[${sign.index}][0]`, str);
+                await new Promise((r) => setTimeout(r, 40));
+                await writeGga(`StarSignProg[${sign.index}][1]`, 1);
+                await new Promise((r) => setTimeout(r, 40));
+                nextSigns.push({ ...sign, players, unlocked: true });
             }
-            const players = pool.slice(0, needed);
-            const str = encodeProgress(players);
-            await writeGga(`StarSignProg[${sign.index}][0]`, str);
-            await new Promise((r) => setTimeout(r, 40));
-            await writeGga(`StarSignProg[${sign.index}][1]`, 1);
-            await new Promise((r) => setTimeout(r, 40));
+
+            signs.val = nextSigns;
+            if (activeSign.val) {
+                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
+                if (updated) activeSign.val = { ...updated };
+            }
+
+            setBulkStatus("success", 1200);
+        } catch {
+            setBulkStatus("error", 1200);
+            await load();
         }
-        await load();
     };
 
     return div(
         {
-            class: "world-feature scroll-container",
-            style: "overflow-y: auto; display: flex; flex-direction: column; min-height: 0;",
+            class: "world-feature scroll-container starsigns-scroll-container",
         },
 
         div(
@@ -404,30 +441,36 @@ export const StarSignsTab = () => {
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--apply",
+                            class: () =>
+                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-unlock" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(false),
                         },
-                        "UNLOCK ALL"
+                        () => (bulkStatus.val === "loading-unlock" ? "…" : "UNLOCK ALL")
                     ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--apply",
+                            class: () =>
+                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-random" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: () => unlockAll(true),
                         },
-                        "RANDOMIZE ALL"
+                        () => (bulkStatus.val === "loading-random" ? "…" : "RANDOMIZE ALL")
                     ),
                     "Unlock all signs with a random player order per sign"
                 ),
                 withTooltip(
                     button(
                         {
-                            class: "feature-btn feature-btn--danger",
+                            class: () =>
+                                `feature-btn feature-btn--danger ${bulkStatus.val === "loading-reset" ? "feature-btn--loading" : ""}`,
+                            disabled: () => String(bulkStatus.val).startsWith("loading"),
                             onclick: resetAll,
                         },
-                        "RESET ALL"
+                        () => (bulkStatus.val === "loading-reset" ? "…" : "RESET ALL")
                     ),
                     "Clear all star sign progress and lock everything"
                 ),

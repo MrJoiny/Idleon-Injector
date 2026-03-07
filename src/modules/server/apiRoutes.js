@@ -487,6 +487,46 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
+    app.post("/api/game/computed/read", async (req, res) => {
+        const { namespace, name, args } = await req.json();
+
+        if (!namespace || typeof namespace !== "string") {
+            return res.status(400).json({ error: "Missing or invalid namespace (must be a non-empty string)" });
+        }
+        if (!name || typeof name !== "string") {
+            return res.status(400).json({ error: "Missing or invalid name (must be a non-empty string)" });
+        }
+        if (args !== undefined && !Array.isArray(args)) {
+            return res.status(400).json({ error: "args must be an array when provided" });
+        }
+
+        const escapedNamespace = namespace.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const escapedName = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const argsJson = JSON.stringify(args ?? []);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readComputedValue("${escapedNamespace}", "${escapedName}", ${argsJson})`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                const ex = result.exceptionDetails;
+                const details = ex.exception?.description ?? ex.text;
+                return res.status(500).json({ error: "Computed read failed", details });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read computed: ${namespace}.${name}`);
+            res.json({ value: data.value });
+        } catch (err) {
+            log.error("Error in /api/game/computed/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.post("/api/game/gga/write", async (req, res) => {
         const { path, value } = await req.json();
         if (!path || typeof path !== "string") {

@@ -1,54 +1,89 @@
 /**
- * World 3 Tab — FROSTBITE TUNDRA
- * Sub-tabs will be added here as each system is implemented.
- * Follow the same pattern as W1Tab.js.
+ * World 3 Tab - Frostbite Tundra
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { Icons } from "../../../assets/icons.js";
+import { ConstructionBuildingsTab } from "./w3/ConstructionBuildingsTab.js";
+import { RefineryTab } from "./w3/RefineryTab.js";
+import { SaltLickTab } from "./w3/SaltLickTab.js";
+import { AtomColliderTab } from "./w3/AtomColliderTab.js";
+import { MiscTab } from "./w3/MiscTab.js";
+import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
-const { div, button, span, p } = van.tags;
+const { div } = van.tags;
 
-const W3_SUBTABS = [{ id: "coming-soon", label: "COMING SOON" }];
+const CONSTRUCTION_SUBTABS = [
+    { id: "buildings", label: "BUILDINGS", component: ConstructionBuildingsTab },
+    { id: "cogs", label: "COGS", component: null },
+];
+
+const W3_SUBTABS = [
+    { id: "construction", label: "CONSTRUCTION", component: ConstructionPanel },
+    { id: "refinery", label: "REFINERY", component: RefineryTab },
+    { id: "salt-lick", label: "SALT LICK", component: SaltLickTab },
+    { id: "atom-collider", label: "ATOM COLLIDER", component: AtomColliderTab },
+    { id: "misc", label: "MISC", component: MiscTab },
+    { id: "trapping", label: "TRAPPING", component: null },
+    { id: "deathnote", label: "DEATHNOTE", component: null },
+];
+
+function ConstructionPanel() {
+    const active = van.state(CONSTRUCTION_SUBTABS[0].id);
+
+    return div(
+        { class: "tab-container" },
+        renderTabNav({
+            tabs: CONSTRUCTION_SUBTABS,
+            activeId: active,
+            navClass: "alchemy-sub-nav",
+            buttonClass: "alchemy-sub-btn",
+            stubClass: "alchemy-sub-btn--stub",
+            isStub: (tab) => !tab.component,
+        }),
+        div(
+            { class: "alchemy-sub-content" },
+            ...renderLazyPanes({
+                tabs: CONSTRUCTION_SUBTABS,
+                activeId: active,
+                paneClass: "alchemy-pane",
+                activeClass: "alchemy-pane--active",
+                dataAttr: "data-construction",
+                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
+            })
+        )
+    );
+}
 
 export const W3Tab = () => {
     const activeSubTab = van.state(W3_SUBTABS[0].id);
 
     return div(
         { class: "world-tab w3-world-tab" },
-
-        div(
-            { class: "world-tab-header" },
-            span({ class: "world-tab-badge" }, "W3"),
-            div(
-                { class: "world-tab-title-group" },
-                van.tags.h2({ class: "world-tab-title" }, "FROSTBITE TUNDRA"),
-                p({ class: "world-tab-subtitle" }, "Construction, Library, Trapping & Worship")
-            )
-        ),
-
-        div(
-            { class: "world-sub-nav" },
-            ...W3_SUBTABS.map((tab) =>
-                button(
-                    {
-                        class: () =>
-                            `world-sub-tab-btn world-sub-tab-btn--stub ${activeSubTab.val === tab.id ? "active" : ""}`,
-                        onclick: () => (activeSubTab.val = tab.id),
-                    },
-                    tab.label
-                )
-            )
-        ),
-
+        renderWorldHeader({
+            badge: "W3",
+            title: () => {
+                const cur = W3_SUBTABS.find((tab) => tab.id === activeSubTab.val);
+                return `W3 — ${cur?.label ?? ""}`;
+            },
+            subtitle: "Frostbite Tundra — Construction, Refinery, Salt Lick, Atom Collider & more",
+        }),
+        renderTabNav({
+            tabs: W3_SUBTABS,
+            activeId: activeSubTab,
+            navClass: "world-sub-nav",
+            buttonClass: "world-sub-tab-btn",
+            stubClass: "world-sub-tab-btn--stub",
+            isStub: (tab) => !tab.component,
+        }),
         div(
             { class: "world-sub-content" },
-            div(
-                { class: "world-sub-pane active world-sub-pane--empty" },
-                span({ class: "world-empty-icon" }, Icons.Wrench()),
-                p({ class: "world-empty-label" }, "W3 SYSTEMS COMING SOON"),
-                p({ class: "world-empty-desc" }, "Follow the W1Tab pattern to add sub-tabs for each W3 system.")
-            )
+            ...renderLazyPanes({
+                tabs: W3_SUBTABS,
+                activeId: activeSubTab,
+                paneClass: "world-sub-pane",
+                dataAttr: "data-subtab",
+                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
+            })
         )
     );
 };

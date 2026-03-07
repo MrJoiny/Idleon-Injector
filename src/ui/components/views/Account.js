@@ -18,6 +18,7 @@ import { W4Tab } from "./account/W4Tab.js";
 import { W5Tab } from "./account/W5Tab.js";
 import { W6Tab } from "./account/W6Tab.js";
 import { W7Tab } from "./account/W7Tab.js";
+import { renderLazyPanes } from "./account/tabShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -66,21 +67,12 @@ export const Account = () => {
         // so CSS visibility toggling keeps state alive after mount.
         div(
             { class: "account-sub-tab-content" },
-            ...ACCOUNT_TABS.map((tab) => {
-                const pane = div({
-                    class: () => `account-sub-tab-pane ${activeTab.val === tab.id ? "active" : ""}`,
-                    "data-tab": tab.id,
-                });
-
-                let mounted = false;
-                van.derive(() => {
-                    if (activeTab.val === tab.id && !mounted) {
-                        mounted = true;
-                        van.add(pane, tab.component());
-                    }
-                });
-
-                return pane;
+            ...renderLazyPanes({
+                tabs: ACCOUNT_TABS,
+                activeId: activeTab,
+                paneClass: "account-sub-tab-pane",
+                dataAttr: "data-tab",
+                renderContent: (tab) => tab.component(),
             })
         )
     );

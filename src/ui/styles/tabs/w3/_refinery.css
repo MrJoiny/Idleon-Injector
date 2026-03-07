@@ -1,0 +1,85 @@
+/* ── Refinery tab ────────────────────────────────────────────────────────── */
+
+.refinery-row--polymer {
+    border-left: 3px solid #7e57c2;
+}
+
+.refinery-row--placeholder {
+    opacity: 0.5;
+    border-left: 3px solid var(--c-warning);
+}
+
+.refinery-row__name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.refinery-row__badges {
+    display: flex;
+    gap: 6px;
+}
+
+.refinery-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+
+.refinery-badge--polymer {
+    color: #7e57c2;
+}
+
+.refinery-badge--placeholder {
+    color: var(--c-warning);
+}
+
+/* Stacked level + charge controls */
+.refinery-control-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.refinery-control-label {
+    font-size: 0.7rem;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 52px;
+    text-align: right;
+}
+
+/* Notices at top of refinery tab */
+.refinery-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.refinery-notice--polymer {
+    background: rgba(126, 87, 194, 0.06);
+}
+
+.refinery-notice--placeholder {
+    background: var(--c-accent-06);
+}
+
+.refinery-notice__icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.refinery-notice__highlight {
+    font-weight: 700;
+    color: var(--c-accent);
+}
