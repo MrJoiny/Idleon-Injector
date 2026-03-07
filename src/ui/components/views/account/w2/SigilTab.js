@@ -125,6 +125,7 @@ export const SigilTab = () => {
     // SET ALL state
     const setAllTier = van.state("-1");
     const setAllStatus = van.state(null);
+    let setAllClearTimer = null;
 
     // ── Load ───────────────────────────────────────────────────────────────
 
@@ -167,22 +168,34 @@ export const SigilTab = () => {
     // ── SET ALL ────────────────────────────────────────────────────────────
 
     const doSetAll = async () => {
+        if (setAllClearTimer) {
+            clearTimeout(setAllClearTimer);
+            setAllClearTimer = null;
+        }
+
         const tier = Math.min(4, Math.max(-1, Math.round(Number(setAllTier.val))));
         if (isNaN(tier)) return;
         setAllStatus.val = "loading";
         try {
-            await Promise.all(
+            const results = await Promise.allSettled(
                 sigilTier.map((state, i) =>
                     writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier).then(() => {
                         state.val = tier;
                     })
                 )
             );
-            setAllStatus.val = "success";
-            setTimeout(() => (setAllStatus.val = null), 1500);
+            const failed = results.filter((r) => r.status === "rejected").length;
+            setAllStatus.val = failed === 0 ? "success" : "error";
+            setAllClearTimer = setTimeout(() => {
+                if (setAllStatus.val !== "loading") setAllStatus.val = null;
+                setAllClearTimer = null;
+            }, 1500);
         } catch {
             setAllStatus.val = "error";
-            setTimeout(() => (setAllStatus.val = null), 1500);
+            setAllClearTimer = setTimeout(() => {
+                if (setAllStatus.val !== "loading") setAllStatus.val = null;
+                setAllClearTimer = null;
+            }, 1500);
         }
     };
 

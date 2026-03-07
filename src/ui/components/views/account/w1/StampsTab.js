@@ -41,7 +41,17 @@ const sortStampCodes = (a, b) => {
     return Number(a.slice(1)) - Number(b.slice(1));
 };
 
-const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel, exaltedCodes, writeExaltedCodes }) => {
+const StampRow = ({
+    page,
+    order,
+    name,
+    step,
+    initialLevel,
+    initialMaxLevel,
+    exaltedCodes,
+    writeExaltedCodes,
+    exaltedBusy,
+}) => {
     const inputVal = van.state(String(initialLevel ?? 0));
     const { status, run } = useWriteStatus();
     const stampCode = makeExaltedStampCode(page, order);
@@ -68,11 +78,17 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel, exal
     };
 
     const doToggleExalted = async () => {
+        if (exaltedBusy.val) return;
         await run(async () => {
-            const next = new Set(exaltedCodes.val ?? new Set());
-            next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
-            await writeExaltedCodes(next);
-            exaltedCodes.val = next;
+            exaltedBusy.val = true;
+            try {
+                const next = new Set(exaltedCodes.val ?? new Set());
+                next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
+                await writeExaltedCodes(next);
+                exaltedCodes.val = next;
+            } finally {
+                exaltedBusy.val = false;
+            }
         });
     };
 
@@ -123,7 +139,7 @@ const StampRow = ({ page, order, name, step, initialLevel, initialMaxLevel, exal
                                 status.val === "loading" ? "feature-btn--loading" : ""
                             }`,
                         onclick: doToggleExalted,
-                        disabled: () => status.val === "loading",
+                        disabled: () => status.val === "loading" || exaltedBusy.val,
                     },
                     () => (isExalted.val ? "EXALTED ON" : "EXALTED OFF")
                 ),
@@ -151,6 +167,7 @@ export const StampsTab = () => {
     const loading = van.state(false);
     const error = van.state(null);
     const exaltedCodes = van.state(new Set());
+    const exaltedBusy = van.state(false);
 
     const writeExaltedCodes = async (codeSet) => {
         const ordered = [...(codeSet ?? new Set())]
@@ -303,6 +320,7 @@ export const StampsTab = () => {
                         initialMaxLevel: data.maxLevels?.[page]?.[order] ?? 0,
                         exaltedCodes,
                         writeExaltedCodes,
+                        exaltedBusy,
                     })
                 )
             );

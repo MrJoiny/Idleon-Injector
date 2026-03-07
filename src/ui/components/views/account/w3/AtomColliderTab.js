@@ -97,6 +97,7 @@ export const AtomColliderTab = () => {
     const error = van.state(null);
     const data = van.state(null);
     const bulkStatus = van.state(null);
+    let bulkDoneTimer = null;
     const levelStates = [];
 
     const getLevelState = (i) => {
@@ -105,6 +106,11 @@ export const AtomColliderTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
+        if (bulkDoneTimer) {
+            clearTimeout(bulkDoneTimer);
+            bulkDoneTimer = null;
+        }
+
         if (!data.val || data.val.atoms.length === 0) return;
         bulkStatus.val = "loading";
         try {
@@ -115,9 +121,16 @@ export const AtomColliderTab = () => {
                 await new Promise((r) => setTimeout(r, 20));
             }
             bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1500);
+            bulkDoneTimer = setTimeout(() => {
+                if (bulkStatus.val === "done") bulkStatus.val = null;
+                bulkDoneTimer = null;
+            }, 1500);
         } catch {
             bulkStatus.val = null;
+            if (bulkDoneTimer) {
+                clearTimeout(bulkDoneTimer);
+                bulkDoneTimer = null;
+            }
         }
     };
 

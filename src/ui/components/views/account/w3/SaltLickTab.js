@@ -27,6 +27,12 @@ const safeNum = (v) => {
     return Number.isFinite(n) ? n : 0;
 };
 
+const toLevelInt = (value, maxLevel) => {
+    const n = Math.trunc(safeNum(value));
+    const cap = Math.max(0, Math.trunc(safeNum(maxLevel)));
+    return Math.max(0, Math.min(cap, n));
+};
+
 const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
     const inputVal = van.state("0");
     const { status, run } = useWriteStatus();
@@ -36,8 +42,7 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
     });
 
     const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(maxLevel, safeNum(raw)));
-        if (isNaN(lvl)) return;
+        const lvl = toLevelInt(raw, maxLevel);
 
         await run(async () => {
             await writeGga(`SaltLick[${index}]`, lvl);
@@ -95,6 +100,7 @@ export const SaltLickTab = () => {
     const error = van.state(null);
     const data = van.state(null);
     const bulkStatus = van.state(null);
+    let bulkClearTimer = null;
     const levelStates = [];
 
     const getLevelState = (i) => {
@@ -103,19 +109,32 @@ export const SaltLickTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
+        if (bulkClearTimer) {
+            clearTimeout(bulkClearTimer);
+            bulkClearTimer = null;
+        }
+
         if (!data.val || data.val.upgrades.length === 0) return;
         bulkStatus.val = "loading";
         try {
             for (let i = 0; i < data.val.upgrades.length; i++) {
-                const lvl = targetLevel === null ? data.val.upgrades[i].maxLevel : targetLevel;
+                const rawLevel = targetLevel === null ? data.val.upgrades[i].maxLevel : targetLevel;
+                const lvl = toLevelInt(rawLevel, data.val.upgrades[i].maxLevel);
                 await writeGga(`SaltLick[${i}]`, lvl);
                 getLevelState(i).val = lvl;
                 await new Promise((r) => setTimeout(r, 20));
             }
             bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1500);
+            bulkClearTimer = setTimeout(() => {
+                bulkStatus.val = null;
+                bulkClearTimer = null;
+            }, 1500);
         } catch {
-            bulkStatus.val = null;
+            bulkStatus.val = "error";
+            bulkClearTimer = setTimeout(() => {
+                bulkStatus.val = null;
+                bulkClearTimer = null;
+            }, 1500);
         }
     };
 
@@ -132,13 +151,13 @@ export const SaltLickTab = () => {
                     .replace(/\+\{/g, "")
                     .replace(/_/g, " ")
                     .trim();
-                const maxLevel = safeNum(entryArr[4]);
+                const maxLevel = Math.max(0, Math.trunc(safeNum(entryArr[4])));
                 return { name, maxLevel };
             });
 
             const rawArr = toIndexedArray(rawLevels ?? []);
-            upgrades.forEach((_, i) => {
-                getLevelState(i).val = safeNum(rawArr[i]);
+            upgrades.forEach((u, i) => {
+                getLevelState(i).val = toLevelInt(rawArr[i], u.maxLevel);
             });
 
             data.val = { upgrades };

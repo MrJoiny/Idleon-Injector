@@ -291,6 +291,21 @@ export const StarSignsTab = () => {
     const error = van.state(null);
     const activeSign = van.state(null); // sign object being edited
     const bulkStatus = van.state(null); // null | loading-unlock | loading-random | loading-reset | success | error
+    let bulkStatusTimer = null;
+
+    const setBulkStatus = (next, autoClearMs = 0) => {
+        bulkStatus.val = next;
+        if (bulkStatusTimer) {
+            clearTimeout(bulkStatusTimer);
+            bulkStatusTimer = null;
+        }
+        if (autoClearMs > 0) {
+            bulkStatusTimer = setTimeout(() => {
+                bulkStatus.val = null;
+                bulkStatusTimer = null;
+            }, autoClearMs);
+        }
+    };
 
     const load = async () => {
         loading.val = true;
@@ -348,7 +363,7 @@ export const StarSignsTab = () => {
 
     const resetAll = async () => {
         if (!signs.val) return;
-        bulkStatus.val = "loading-reset";
+        setBulkStatus("loading-reset");
         try {
             const nextSigns = [];
             for (const sign of signs.val) {
@@ -365,17 +380,16 @@ export const StarSignsTab = () => {
                 if (updated) activeSign.val = { ...updated };
             }
 
-            bulkStatus.val = "success";
-            setTimeout(() => (bulkStatus.val = null), 1200);
+            setBulkStatus("success", 1200);
         } catch {
-            bulkStatus.val = "error";
-            setTimeout(() => (bulkStatus.val = null), 1200);
+            setBulkStatus("error", 1200);
+            await load();
         }
     };
 
     const unlockAll = async (randomize) => {
         if (!signs.val) return;
-        bulkStatus.val = randomize ? "loading-random" : "loading-unlock";
+        setBulkStatus(randomize ? "loading-random" : "loading-unlock");
         try {
             const nextSigns = [];
             for (const sign of signs.val) {
@@ -403,11 +417,10 @@ export const StarSignsTab = () => {
                 if (updated) activeSign.val = { ...updated };
             }
 
-            bulkStatus.val = "success";
-            setTimeout(() => (bulkStatus.val = null), 1200);
+            setBulkStatus("success", 1200);
         } catch {
-            bulkStatus.val = "error";
-            setTimeout(() => (bulkStatus.val = null), 1200);
+            setBulkStatus("error", 1200);
+            await load();
         }
     };
 
