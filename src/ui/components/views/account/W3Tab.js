@@ -7,6 +7,7 @@ import { ConstructionBuildingsTab } from "./w3/ConstructionBuildingsTab.js";
 import { RefineryTab } from "./w3/RefineryTab.js";
 import { SaltLickTab } from "./w3/SaltLickTab.js";
 import { AtomColliderTab } from "./w3/AtomColliderTab.js";
+import { HatRackTab } from "./w3/HatRackTab.js";
 import { MiscTab } from "./w3/MiscTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
@@ -22,6 +23,7 @@ const W3_SUBTABS = [
     { id: "refinery", label: "REFINERY", component: RefineryTab },
     { id: "salt-lick", label: "SALT LICK", component: SaltLickTab },
     { id: "atom-collider", label: "ATOM COLLIDER", component: AtomColliderTab },
+    { id: "hat-rack", label: "HAT RACK", component: HatRackTab },
     { id: "misc", label: "MISC", component: MiscTab },
     { id: "trapping", label: "TRAPPING", component: null },
     { id: "deathnote", label: "DEATHNOTE", component: null },
