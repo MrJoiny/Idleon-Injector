@@ -148,6 +148,7 @@ export const HatRackTab = () => {
     const onRackCount = van.state(0);
     const missingCount = van.state(0);
     const rackCount = van.state(0);
+    const writeWarning = van.state(null);
 
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let itemDefsCache = null;
@@ -174,6 +175,8 @@ export const HatRackTab = () => {
         if (!result.missingFromRack.some((item) => item.itemId === selectedAddItemId.val)) {
             selectedAddItemId.val = result.missingFromRack[0]?.itemId ?? "";
         }
+
+        writeWarning.val = null;
     };
 
     const load = async (showSpinner = true, forceDefsReload = false) => {
@@ -196,10 +199,23 @@ export const HatRackTab = () => {
     };
 
     const rewriteRack = async (nextRack) => {
+        writeWarning.val = null;
         for (let i = 0; i < nextRack.length; i++) {
-            await writeGga(`${RACK_PATH}[${i}]`, nextRack[i]);
+            try {
+                await writeGga(`${RACK_PATH}[${i}]`, nextRack[i]);
+            } catch (e) {
+                const msg = `Failed writing rack item at index ${i}. Rack may be inconsistent. Press REFRESH to resync.`;
+                writeWarning.val = msg;
+                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+            }
         }
-        await writeGga(`${RACK_PATH}.length`, nextRack.length);
+        try {
+            await writeGga(`${RACK_PATH}.length`, nextRack.length);
+        } catch (e) {
+            const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
+            writeWarning.val = msg;
+            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+        }
     };
 
     const removeAtIndex = async (index) => {
@@ -238,6 +254,10 @@ export const HatRackTab = () => {
                     {
                         class: "hat-rack-scroll scrollable-panel",
                     },
+                    () =>
+                        writeWarning.val
+                            ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val)
+                            : null,
 
                     div(
                         { class: "hat-rack-section" },
@@ -284,18 +304,19 @@ export const HatRackTab = () => {
                                         .join(" "),
                             },
                             span({ class: "hat-rack-add-row__label" }, "SELECT HAT"),
-                            select(
-                                {
-                                    class: "select-base hat-rack-add-row__select",
-                                    value: selectedAddItemId,
-                                    onchange: (e) => (selectedAddItemId.val = e.target.value),
-                                },
-                                ...(missingOptions.val.length === 0
-                                    ? [option({ value: "" }, "No eligible hats left to add")]
-                                    : missingOptions.val.map((item) =>
-                                          option({ value: item.itemId }, `${item.name} (${item.itemId})`)
-                                      ))
-                            ),
+                            () =>
+                                select(
+                                    {
+                                        class: "select-base hat-rack-add-row__select",
+                                        value: selectedAddItemId,
+                                        onchange: (e) => (selectedAddItemId.val = e.target.value),
+                                    },
+                                    ...(missingOptions.val.length === 0
+                                        ? [option({ value: "" }, "No eligible hats left to add")]
+                                        : missingOptions.val.map((item) =>
+                                              option({ value: item.itemId }, `${item.name} (${item.itemId})`)
+                                          ))
+                                ),
                             button(
                                 {
                                     class: () =>
