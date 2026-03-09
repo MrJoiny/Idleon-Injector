@@ -126,7 +126,7 @@ const RackRow = ({ row, onRemove }) => {
                 {
                     class: () =>
                         `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
+                    disabled: () => status.val === "loading" || onRemove.isBusy(),
                     onmousedown: (e) => e.preventDefault(),
                     onclick: removeRow,
                 },
@@ -149,10 +149,12 @@ export const HatRackTab = () => {
     const missingCount = van.state(0);
     const rackCount = van.state(0);
     const writeWarning = van.state(null);
+    const mutating = van.state(false);
 
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let itemDefsCache = null;
     let scrollEl = null;
+    let loadSeq = 0;
 
     const withPreservedScroll = (fn) => {
         const prevTop = scrollEl?.scrollTop ?? 0;
@@ -180,6 +182,7 @@ export const HatRackTab = () => {
     };
 
     const load = async (showSpinner = true, forceDefsReload = false) => {
+        const seq = ++loadSeq;
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
@@ -188,13 +191,15 @@ export const HatRackTab = () => {
                 itemDefsCache = defs && typeof defs === "object" ? defs : {};
             }
             const rawRack = await readGga(RACK_PATH);
+            if (seq !== loadSeq) return;
             applyRackState(rawRack);
             data.val = { loaded: true };
         } catch (e) {
+            if (seq !== loadSeq) return;
             error.val = e?.message ?? "Failed to load hat rack data";
             data.val = null;
         } finally {
-            if (showSpinner) loading.val = false;
+            if (showSpinner && seq === loadSeq) loading.val = false;
         }
     };
 
@@ -219,24 +224,36 @@ export const HatRackTab = () => {
     };
 
     const removeAtIndex = async (index) => {
+        if (mutating.val) return;
         const currentRack = [...currentRackIds.val];
         if (index < 0 || index >= currentRack.length) return;
 
-        const nextRack = currentRack.filter((_, i) => i !== index);
-        await rewriteRack(nextRack);
-        withPreservedScroll(() => applyRackState(nextRack));
+        mutating.val = true;
+        try {
+            const nextRack = currentRack.filter((_, i) => i !== index);
+            await rewriteRack(nextRack);
+            withPreservedScroll(() => applyRackState(nextRack));
+        } finally {
+            mutating.val = false;
+        }
     };
+    removeAtIndex.isBusy = () => mutating.val;
 
     const addSelected = async () => {
         const itemId = selectedAddItemId.val;
-        if (!itemId) return;
+        if (!itemId || mutating.val) return;
 
         await runAdd(async () => {
-            const currentRack = [...currentRackIds.val];
-            if (currentRack.includes(itemId)) return;
-            const nextRack = [...currentRack, itemId];
-            await rewriteRack(nextRack);
-            withPreservedScroll(() => applyRackState(nextRack));
+            mutating.val = true;
+            try {
+                const currentRack = [...currentRackIds.val];
+                if (currentRack.includes(itemId)) return;
+                const nextRack = [...currentRack, itemId];
+                await rewriteRack(nextRack);
+                withPreservedScroll(() => applyRackState(nextRack));
+            } finally {
+                mutating.val = false;
+            }
         });
     };
 
@@ -322,6 +339,7 @@ export const HatRackTab = () => {
                                     class: () =>
                                         `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
                                     disabled: () =>
+                                        mutating.val ||
                                         addStatus.val === "loading" ||
                                         !selectedAddItemId.val ||
                                         missingOptions.val.length === 0,
@@ -352,7 +370,17 @@ export const HatRackTab = () => {
             ),
             div(
                 { class: "feature-header__actions" },
-                button({ class: "btn-secondary", onclick: () => load(true, true) }, "REFRESH")
+                button(
+                    {
+                        class: "btn-secondary",
+                        disabled: () => loading.val || mutating.val,
+                        onclick: () => {
+                            if (mutating.val) return;
+                            load(true, true);
+                        },
+                    },
+                    "REFRESH"
+                )
             )
         ),
         renderBody
