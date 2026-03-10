@@ -1,3 +1,30 @@
+/**
+ * W2 - Killroy Tab
+ *
+ * OptionsListAccount fields used:
+ *   [105]              -> Killroy skulls currency
+ *   [106..111]         -> shop upgrade levels
+ *   [112]              -> total finished runs
+ *   [115]              -> airhorn reset toggle (0/1)
+ *   [204]              -> highest killroy score on warrior
+ *   [205]              -> highest killroy score on archer
+ *   [206]              -> highest killroy score on mage
+ *   [467..471]         -> meta bonus values
+ *
+ * Tome label rows (name/label only):
+ *   cList.Tome[27] -> warrior label row
+ *   cList.Tome[28] -> archer label row
+ *   cList.Tome[29] -> mage label row
+ *
+ * Best scores table:
+ *   KRbest.h[mobId] -> best kills for that mob
+ *
+ * Allowed mobs for ADD/UPDATE:
+ *   cList.RANDOlist[69..71] -> Killroy map keys
+ *   cList.MapName           -> map key lookup
+ *   cList.MapAFKtarget      -> mob id per map index
+ */
+
 import van from "../../../../vendor/van-1.6.0.js";
 import { readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";

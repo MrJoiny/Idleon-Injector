@@ -1,7 +1,23 @@
 /**
  * W1 - Stamps Tab
  *
- * Uses generic .feature-* CSS classes from _feature-pages.css.
+ * Data sources:
+ *   StampLevel[page][order]    -> current stamp level
+ *   StampLevelMAX[page][order] -> unlocked max level
+ *   Compass[4]                 -> exalted stamp codes
+ *
+ * Stamp definition lookup:
+ *   ItemDefinitionsGET.h.Stamp{A|B|C}{N}.displayName -> stamp name
+ *   ItemDefinitionsGET.h.Stamp{A|B|C}{N}.desc_line1  -> step metadata (index 4)
+ *
+ * Exalted code format in Compass[4]:
+ *   "a1"  -> page A, stamp 1
+ *   "b7"  -> page B, stamp 7
+ *   "c12" -> page C, stamp 12
+ *
+ * SET behavior:
+ *   Writes both StampLevel and StampLevelMAX.
+ *   StampLevelMAX is rounded up to the next step boundary.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";

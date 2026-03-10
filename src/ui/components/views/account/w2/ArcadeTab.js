@@ -1,3 +1,25 @@
+/**
+ * W2 - Arcade Tab
+ *
+ * Ball counts in OptionsListAccount:
+ *   [74]  -> normal balls
+ *   [75]  -> golden balls
+ *   [324] -> cosmic balls
+ *
+ * Upgrade sources:
+ *   cList.ArcadeShopInfo[i][0] -> upgrade name (BLANK rows skipped)
+ *   ArcadeUpg[i]                        -> current upgrade level
+ *
+ * Level rules:
+ *   Allowed range is 0-101.
+ *   Level 101 is shown as COSMIC in the UI.
+ *
+ * Bulk actions:
+ *   MAX ALL        -> set every ArcadeUpg[i] to 100
+ *   MAX ALL COSMIC -> set every ArcadeUpg[i] to 101
+ *   RESET ALL      -> set every ArcadeUpg[i] to 0
+ */
+
 import van from "../../../../vendor/van-1.6.0.js";
 import { readGga, writeGga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
