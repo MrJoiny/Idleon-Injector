@@ -1,11 +1,12 @@
 import van from "../../../../vendor/van-1.6.0.js";
+import { ObservationsTab } from "./ObservationsTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div } = van.tags;
 
 const RESEARCH_SUBTABS = [
     { id: "grid", label: "GRID", component: null },
-    { id: "observations", label: "OBSERVATIONS", component: null },
+    { id: "observations", label: "OBSERVATIONS", component: ObservationsTab },
 ];
 
 export const ResearchTab = () => {
@@ -29,7 +30,7 @@ export const ResearchTab = () => {
                 paneClass: "alchemy-pane",
                 activeClass: "alchemy-pane--active",
                 dataAttr: "data-research",
-                renderContent: (tab) => createComingSoonPlaceholder(tab.label),
+                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
             })
         )
     );
