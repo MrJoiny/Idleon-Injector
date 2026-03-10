@@ -432,11 +432,6 @@ export const TrophyTab = () => {
                 )
             )
         ),
-        div(
-            { class: "warning-banner" },
-            Icons.Warning(),
-            " Spelunk[16] uses -1 for empty slots. Adding fills the first empty slot, and unknown non--1 values stay visible so they can be cleared."
-        ),
         renderBody
     );
 };

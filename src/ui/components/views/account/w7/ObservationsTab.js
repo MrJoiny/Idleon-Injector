@@ -244,11 +244,6 @@ export const ObservationsTab = () => {
             ),
             div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
-        div(
-            { class: "warning-banner" },
-            Icons.Warning(),
-            " Insight level and EXP are edited as integers. Press SET on a tile to write all three values."
-        ),
         renderRefreshErrorBanner,
         () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
         () =>

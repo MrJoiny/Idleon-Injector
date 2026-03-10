@@ -354,11 +354,6 @@ export const GridTab = () => {
             ),
             div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
-        div(
-            { class: "warning-banner" },
-            Icons.Warning(),
-            " Inactive squares use max level -1 and cannot be edited. Tile fill is based on current level divided by max level."
-        ),
         renderRefreshErrorBanner,
         () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
         () =>
