@@ -1,11 +1,12 @@
 import van from "../../../../vendor/van-1.6.0.js";
+import { GridTab } from "./GridTab.js";
 import { ObservationsTab } from "./ObservationsTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div } = van.tags;
 
 const RESEARCH_SUBTABS = [
-    { id: "grid", label: "GRID", component: null },
+    { id: "grid", label: "GRID", component: GridTab },
     { id: "observations", label: "OBSERVATIONS", component: ObservationsTab },
 ];
 
