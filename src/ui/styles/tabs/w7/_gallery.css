@@ -1,0 +1,115 @@
+/* W7 Gallery */
+
+.trophy-gallery-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trophy-gallery-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 10px 12px;
+}
+
+.trophy-gallery-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 6px;
+}
+
+.trophy-gallery-section__title {
+    color: var(--c-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.trophy-gallery-section__note {
+    color: var(--c-text-dim);
+    font-size: 0.68rem;
+    font-style: italic;
+}
+
+.trophy-gallery-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.trophy-gallery-empty {
+    border: 1px dashed var(--c-border);
+    background: var(--c-panel);
+    color: var(--c-text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 12px;
+}
+
+.trophy-slot-row--empty {
+    background: var(--c-panel-dim);
+    border-style: dashed;
+}
+
+.trophy-slot-row__name-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.trophy-slot-row__item-id {
+    font-family: var(--font-mono);
+    color: var(--c-text-muted);
+    font-size: 0.68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.trophy-slot-row__empty-note {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+}
+
+.trophy-gallery-add-row {
+    display: grid;
+    grid-template-columns: auto minmax(220px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel);
+    padding: 8px;
+}
+
+.trophy-gallery-add-row__label {
+    color: var(--c-text-dim);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+}
+
+.trophy-gallery-add-row__select {
+    min-width: 240px;
+}
+
+.trophy-gallery-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 720px) {
+    .trophy-gallery-add-row {
+        grid-template-columns: 1fr;
+    }
+
+    .trophy-gallery-add-row__select {
+        min-width: 0;
+        width: 100%;
+    }
+}

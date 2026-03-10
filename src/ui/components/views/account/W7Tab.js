@@ -1,4 +1,5 @@
 import van from "../../../vendor/van-1.6.0.js";
+import { GalleryTab } from "./w7/GalleryTab.js";
 import { ResearchTab } from "./w7/ResearchTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
@@ -7,7 +8,7 @@ const { div } = van.tags;
 const W7_SUBTABS = [
     { id: "spelunk", label: "SPELUNK", component: null },
     { id: "research", label: "RESEARCH", component: ResearchTab },
-    { id: "gallery", label: "GALLERY", component: null },
+    { id: "gallery", label: "GALLERY", component: GalleryTab },
     { id: "legend-talent", label: "LEGEND TALENT", component: null },
     { id: "coral", label: "CORAL", component: null },
     { id: "zenith", label: "ZENITH", component: null },
