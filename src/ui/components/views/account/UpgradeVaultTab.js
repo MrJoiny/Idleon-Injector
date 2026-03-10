@@ -4,8 +4,8 @@
  * Reads/writes gga.UpgVault[index] for all vault upgrades.
  *
  * Data sources:
- *   CustomLists.UpgradeVault[i][0] = name (underscores + 製 stripped)
- *   CustomLists.UpgradeVault[i][4] = base max level (soft cap)
+ *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
+ *   cList.UpgradeVault[i][4] = base max level (soft cap)
  *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
  *                 = real max level (includes Glimbo trade bonuses)
  *   gga.UpgVault[i]                = current level
@@ -14,20 +14,15 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readComputed } from "../../../services/api.js";
+import { readGga, writeGga, readComputed, readCList } from "../../../services/api.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
-import { useWriteStatus } from "./featureShared.js";
+import { toNum, useWriteStatus } from "./featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-const safeNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-};
 
 // Strip underscores and the 製 character used as a tap-info marker
 const cleanName = (raw) => (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").trim();
@@ -117,7 +112,7 @@ export const UpgradeVaultTab = () => {
                           .sort((a, b) => Number(a) - Number(b))
                           .map((k) => raw[k]);
 
-            const [rawInfo, rawLevels] = await Promise.all([readGga("CustomLists.UpgradeVault"), readGga("UpgVault")]);
+            const [rawInfo, rawLevels] = await Promise.all([readCList("UpgradeVault"), readGga("UpgVault")]);
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
@@ -137,7 +132,7 @@ export const UpgradeVaultTab = () => {
                 ? await Promise.all(
                       info.map(async (_, i) => {
                           try {
-                              const v = safeNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
+                              const v = toNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
                               return v > 0 ? v : null;
                           } catch {
                               return null;
@@ -150,7 +145,7 @@ export const UpgradeVaultTab = () => {
                 .map((entry, i) => {
                     const name = cleanName(entry?.[0]);
                     if (!name) return null;
-                    const baseMax = safeNum(entry?.[4]);
+                    const baseMax = toNum(entry?.[4]);
                     if (baseMax <= 0) return null;
                     const realMax = realMaxes[i] ?? baseMax;
                     return { index: i, name, baseMax, realMax };

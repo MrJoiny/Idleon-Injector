@@ -1,6 +1,7 @@
 import van from "../vendor/van-1.6.0.js";
 
-const { svg, path, circle, g, defs, mask, rect, clipPath, polygon, use } = van.tags("http://www.w3.org/2000/svg");
+const { svg, path, circle, g, defs, mask, rect, clipPath, polygon, use, image, radialGradient, stop } =
+    van.tags("http://www.w3.org/2000/svg");
 
 const SvgBase = (content, props = {}) => {
     const { class: className, ...rest } = props;
@@ -5252,5 +5253,210 @@ export const Cogs = {
                 ]),
             ],
             { viewBox: "128 128 128 128", "aria-hidden": "true", ...props }
+        ),
+
+    CogFLflagS1: (props) =>
+        SvgBase(
+            [
+                rect({ x: "20", y: "80", width: "65", height: "12", fill: "#000000" }),
+                rect({ x: "35", y: "68", width: "40", height: "12", fill: "#000000" }),
+                rect({ x: "62", y: "15", width: "8", height: "53", fill: "#000000" }),
+                polygon({
+                    points: "62,15 62,65 10,40",
+                    fill: "#D32F2F",
+                    stroke: "#000000",
+                    "stroke-width": "5",
+                    "stroke-linejoin": "round",
+                }),
+            ],
+            { viewBox: "0 0 100 100", "aria-hidden": "true", ...props }
+        ),
+
+    CogFLflag: (props) =>
+        SvgBase(
+            [
+                rect({ x: "25", y: "80", width: "55", height: "12", fill: "#000000" }),
+                rect({ x: "40", y: "68", width: "30", height: "12", fill: "#000000" }),
+                rect({ x: "58", y: "15", width: "8", height: "53", fill: "#000000" }),
+                polygon({
+                    points: "58,15 58,50 25,32.5",
+                    fill: "#D32F2F",
+                    stroke: "#000000",
+                    "stroke-width": "5",
+                    "stroke-linejoin": "round",
+                }),
+            ],
+            { viewBox: "0 0 100 100", "aria-hidden": "true", ...props }
+        ),
+
+    CogSq_S1: (props) =>
+        SvgBase(
+            [
+                defs([clipPath({ id: "inner-box-cogsq-s1" }, [rect({ x: "1", y: "1", width: "14", height: "14" })])]),
+                rect({ width: "16", height: "16", fill: "#A47C62" }),
+                rect({ x: "1", y: "1", width: "14", height: "14", fill: "#3E2723" }),
+                g({ "clip-path": "url(#inner-box-cogsq-s1)" }, [
+                    rect({ x: "1", y: "4", width: "2", height: "1", fill: "#4E342E" }),
+                    rect({ x: "3", y: "3", width: "7", height: "1", fill: "#4E342E" }),
+                    rect({ x: "10", y: "4", width: "4", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "7", width: "3", height: "1", fill: "#4E342E" }),
+                    rect({ x: "4", y: "6", width: "6", height: "1", fill: "#4E342E" }),
+                    rect({ x: "10", y: "7", width: "5", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "10", width: "1", height: "1", fill: "#4E342E" }),
+                    rect({ x: "2", y: "9", width: "3", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "5", width: "2", height: "1", fill: "#5D4037" }),
+                    rect({ x: "3", y: "4", width: "7", height: "1", fill: "#5D4037" }),
+                    rect({ x: "10", y: "5", width: "4", height: "1", fill: "#5D4037" }),
+                    rect({ x: "1", y: "8", width: "3", height: "1", fill: "#5D4037" }),
+                    rect({ x: "4", y: "7", width: "6", height: "1", fill: "#5D4037" }),
+                    rect({ x: "10", y: "8", width: "5", height: "1", fill: "#5D4037" }),
+                    rect({ x: "1", y: "11", width: "1", height: "1", fill: "#5D4037" }),
+                    rect({ x: "2", y: "10", width: "3", height: "1", fill: "#5D4037" }),
+                ]),
+                rect({ x: "1", y: "1", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "14", y: "1", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "1", y: "14", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "14", y: "14", width: "1", height: "1", fill: "#1A0F0A" }),
+            ],
+            { viewBox: "0 0 16 16", "aria-hidden": "true", ...props }
+        ),
+
+    CogSq1: (props) =>
+        SvgBase(
+            [
+                defs([clipPath({ id: "inner-box-cogsq1" }, [rect({ x: "1", y: "1", width: "14", height: "14" })])]),
+                rect({ width: "16", height: "16", fill: "#A47C62" }),
+                rect({ x: "1", y: "1", width: "14", height: "14", fill: "#3E2723" }),
+                g({ "clip-path": "url(#inner-box-cogsq1)" }, [
+                    rect({ x: "1", y: "4", width: "2", height: "1", fill: "#4E342E" }),
+                    rect({ x: "3", y: "3", width: "7", height: "1", fill: "#4E342E" }),
+                    rect({ x: "10", y: "4", width: "4", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "7", width: "3", height: "1", fill: "#4E342E" }),
+                    rect({ x: "4", y: "6", width: "6", height: "1", fill: "#4E342E" }),
+                    rect({ x: "10", y: "7", width: "5", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "10", width: "1", height: "1", fill: "#4E342E" }),
+                    rect({ x: "2", y: "9", width: "3", height: "1", fill: "#4E342E" }),
+                    rect({ x: "1", y: "5", width: "2", height: "1", fill: "#5D4037" }),
+                    rect({ x: "3", y: "4", width: "7", height: "1", fill: "#5D4037" }),
+                    rect({ x: "10", y: "5", width: "4", height: "1", fill: "#5D4037" }),
+                    rect({ x: "1", y: "8", width: "3", height: "1", fill: "#5D4037" }),
+                    rect({ x: "4", y: "7", width: "6", height: "1", fill: "#5D4037" }),
+                    rect({ x: "10", y: "8", width: "5", height: "1", fill: "#5D4037" }),
+                    rect({ x: "1", y: "11", width: "1", height: "1", fill: "#5D4037" }),
+                    rect({ x: "2", y: "10", width: "3", height: "1", fill: "#5D4037" }),
+                ]),
+                rect({ x: "1", y: "1", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "14", y: "1", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "1", y: "14", width: "1", height: "1", fill: "#1A0F0A" }),
+                rect({ x: "14", y: "14", width: "1", height: "1", fill: "#1A0F0A" }),
+            ],
+            { viewBox: "0 0 16 16", "aria-hidden": "true", ...props }
+        ),
+
+    CogSq_S0: (props) =>
+        SvgBase(
+            [
+                rect({ width: "16", height: "16", fill: "#4A352F" }),
+                rect({ x: "1", y: "1", width: "14", height: "14", fill: "#6A4930" }),
+                rect({ x: "1", y: "4", width: "2", height: "1", fill: "#8E6346" }),
+                rect({ x: "3", y: "3", width: "7", height: "1", fill: "#8E6346" }),
+                rect({ x: "10", y: "4", width: "4", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "7", width: "3", height: "1", fill: "#8E6346" }),
+                rect({ x: "4", y: "6", width: "6", height: "1", fill: "#8E6346" }),
+                rect({ x: "10", y: "7", width: "5", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "10", width: "1", height: "1", fill: "#8E6346" }),
+                rect({ x: "2", y: "9", width: "3", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "5", width: "2", height: "1", fill: "#A47C62" }),
+                rect({ x: "3", y: "4", width: "7", height: "1", fill: "#A47C62" }),
+                rect({ x: "10", y: "5", width: "4", height: "1", fill: "#A47C62" }),
+                rect({ x: "1", y: "8", width: "3", height: "1", fill: "#A47C62" }),
+                rect({ x: "4", y: "7", width: "6", height: "1", fill: "#A47C62" }),
+                rect({ x: "10", y: "8", width: "5", height: "1", fill: "#A47C62" }),
+                rect({ x: "1", y: "11", width: "1", height: "1", fill: "#A47C62" }),
+                rect({ x: "2", y: "10", width: "3", height: "1", fill: "#A47C62" }),
+            ],
+            { viewBox: "0 0 16 16", "aria-hidden": "true", ...props }
+        ),
+
+    CogSq0: (props) =>
+        SvgBase(
+            [
+                rect({ width: "16", height: "16", fill: "#4A352F" }),
+                rect({ x: "1", y: "1", width: "14", height: "14", fill: "#6A4930" }),
+                rect({ x: "1", y: "4", width: "2", height: "1", fill: "#8E6346" }),
+                rect({ x: "3", y: "3", width: "7", height: "1", fill: "#8E6346" }),
+                rect({ x: "10", y: "4", width: "4", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "7", width: "3", height: "1", fill: "#8E6346" }),
+                rect({ x: "4", y: "6", width: "6", height: "1", fill: "#8E6346" }),
+                rect({ x: "10", y: "7", width: "5", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "10", width: "1", height: "1", fill: "#8E6346" }),
+                rect({ x: "2", y: "9", width: "3", height: "1", fill: "#8E6346" }),
+                rect({ x: "1", y: "5", width: "2", height: "1", fill: "#A47C62" }),
+                rect({ x: "3", y: "4", width: "7", height: "1", fill: "#A47C62" }),
+                rect({ x: "10", y: "5", width: "4", height: "1", fill: "#A47C62" }),
+                rect({ x: "1", y: "8", width: "3", height: "1", fill: "#A47C62" }),
+                rect({ x: "4", y: "7", width: "6", height: "1", fill: "#A47C62" }),
+                rect({ x: "10", y: "8", width: "5", height: "1", fill: "#A47C62" }),
+                rect({ x: "1", y: "11", width: "1", height: "1", fill: "#A47C62" }),
+                rect({ x: "2", y: "10", width: "3", height: "1", fill: "#A47C62" }),
+            ],
+            { viewBox: "0 0 16 16", "aria-hidden": "true", ...props }
+        ),
+
+    headBIG: (props) =>
+        SvgBase(
+            [
+                defs([
+                    radialGradient({ id: "skin", cx: "50%", cy: "50%", r: "50%" }, [
+                        stop({ offset: "0%", "stop-color": "#FFDFC4" }),
+                        stop({ offset: "100%", "stop-color": "#E0B896" }),
+                    ]),
+                ]),
+                path({ d: "M 50 100 C 50 40, 150 40, 150 100 L 150 160 C 150 180, 50 180, 50 160 Z", fill: "#4A3B32" }),
+                path({ d: "M 85 145 L 80 200 L 120 200 L 115 145 Z", fill: "#D4A37D" }),
+                path({ d: "M 40 200 C 40 160, 160 160, 160 200 Z", fill: "#2980B9" }),
+                path({
+                    d: "M 60 100 C 60 60, 140 60, 140 100 C 140 140, 120 160, 100 160 C 80 160, 60 140, 60 100 Z",
+                    fill: "url(#skin)",
+                }),
+                circle({ cx: "85", cy: "105", r: "4.5", fill: "#2C3E50" }),
+                circle({ cx: "115", cy: "105", r: "4.5", fill: "#2C3E50" }),
+                circle({ cx: "86", cy: "104", r: "1.5", fill: "#FFFFFF" }),
+                circle({ cx: "116", cy: "104", r: "1.5", fill: "#FFFFFF" }),
+                path({
+                    d: "M 76 95 Q 85 92 92 96",
+                    stroke: "#4A3B32",
+                    "stroke-width": "2.5",
+                    fill: "none",
+                    "stroke-linecap": "round",
+                }),
+                path({
+                    d: "M 108 96 Q 115 92 124 95",
+                    stroke: "#4A3B32",
+                    "stroke-width": "2.5",
+                    fill: "none",
+                    "stroke-linecap": "round",
+                }),
+                path({
+                    d: "M 100 105 L 100 122 L 105 122",
+                    stroke: "#B88A6B",
+                    "stroke-width": "2",
+                    fill: "none",
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                }),
+                path({
+                    d: "M 88 135 Q 100 144 112 135",
+                    stroke: "#C46A6A",
+                    "stroke-width": "2.5",
+                    fill: "none",
+                    "stroke-linecap": "round",
+                }),
+                path({
+                    d: "M 60 100 C 60 70, 100 65, 100 65 C 100 65, 140 70, 140 100 C 140 80, 110 45, 100 45 C 90 45, 60 80, 60 100 Z",
+                    fill: "#382B24",
+                }),
+            ],
+            { viewBox: "0 0 200 200", "aria-hidden": "true", ...props }
         ),
 };

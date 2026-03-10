@@ -14,27 +14,22 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga } from "../../../../services/api.js";
+import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useWriteStatus } from "../featureShared.js";
+import { toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 const BUILDING_COUNT = 27;
 
-const safeNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-};
-
 const getEffectiveBuildingMax = async (baseMax, index) => {
     try {
-        const extraMax = safeNum(await readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index]));
+        const extraMax = toNum(await readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index]));
         return { baseMax, extraMax, maxLevel: baseMax + extraMax };
     } catch {
         // Fall back to the base cap if the computed helper is unavailable.
@@ -143,16 +138,13 @@ export const ConstructionBuildingsTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const [levels, rawBuildingInfo] = await Promise.all([
-                readGga("TowerInfo"),
-                readGga("CustomLists.TowerInfo"),
-            ]);
+            const [levels, rawBuildingInfo] = await Promise.all([readGga("TowerInfo"), readCList("TowerInfo")]);
 
             const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
             const maxInfos = await Promise.all(
                 buildingInfo.map(async (entry, i) => {
                     const entryArr = toIndexedArray(entry ?? []);
-                    const baseMax = safeNum(entryArr[8]);
+                    const baseMax = toNum(entryArr[8]);
                     return getEffectiveBuildingMax(baseMax, i);
                 })
             );
@@ -166,7 +158,7 @@ export const ConstructionBuildingsTab = () => {
 
             const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                levelStates[i].val = safeNum(nextLevels[i]);
+                levelStates[i].val = toNum(nextLevels[i]);
             }
 
             data.val = { buildings };

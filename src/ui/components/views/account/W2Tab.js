@@ -11,6 +11,7 @@ import { SigilTab } from "./w2/SigilTab.js";
 import { ArcadeTab } from "./w2/ArcadeTab.js";
 import { PostOfficeTab } from "./w2/PostOfficeTab.js";
 import { KillroyTab } from "./w2/KillroyTab.js";
+import { PoppyTab } from "./w2/PoppyTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -28,7 +29,7 @@ const W2_SUBTABS = [
     { id: "arcade", label: "ARCADE", component: ArcadeTab },
     { id: "post-office", label: "POST OFFICE", component: PostOfficeTab },
     { id: "killroy", label: "KILLROY", component: KillroyTab },
-    { id: "obols", label: "OBOLS", component: null },
+    { id: "poppy", label: "POPPY", component: PoppyTab },
 ];
 
 const AlchemyPanel = () => {
@@ -69,7 +70,7 @@ export const W2Tab = () => {
                 const cur = W2_SUBTABS.find((tab) => tab.id === activeSubTab.val);
                 return `W2 — ${cur?.label ?? ""}`;
             },
-            subtitle: "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Obols",
+            subtitle: "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Poppy",
         }),
         renderTabNav({
             tabs: W2_SUBTABS,

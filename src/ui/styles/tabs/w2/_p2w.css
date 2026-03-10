@@ -51,6 +51,42 @@
     min-width: 0;
 }
 
+.p2w-col--brew-power {
+    --col-color: #f87171;
+    --col-dim: rgba(248, 113, 113, 0.1);
+}
+
+.p2w-col--brew-quicc {
+    --col-color: #4ade80;
+    --col-dim: rgba(74, 222, 128, 0.1);
+}
+
+.p2w-col--brew-high-iq {
+    --col-color: #60a5fa;
+    --col-dim: rgba(96, 165, 250, 0.1);
+}
+
+.p2w-col--brew-kazam {
+    --col-color: #c084fc;
+    --col-dim: rgba(192, 132, 252, 0.1);
+}
+
+.p2w-col--liquid-water-droplets {
+    --col-color: #5ba6d3;
+}
+
+.p2w-col--liquid-nitrogen {
+    --col-color: #82d9f5;
+}
+
+.p2w-col--liquid-trench-seawater {
+    --col-color: #3a9e80;
+}
+
+.p2w-col--liquid-toxic-mercury {
+    --col-color: #c084fc;
+}
+
 .p2w-col__header {
     padding: 6px 10px;
     background: var(--c-panel);

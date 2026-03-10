@@ -7,13 +7,13 @@
  *   "_0,_1,a3," -> orange[0], orange[1], green[3] are prisma
  *
  * Big bubble flag:
- *   CustomLists.AlchemyDescription[cauldron][bubble][10]
+ *   cList.AlchemyDescription[cauldron][bubble][10]
  *   0 = normal bubble (prisma allowed)
  *   1 = big bubble    (prisma blocked)
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -24,10 +24,10 @@ import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus } from "../feature
 const { div, button, span, h3, p } = van.tags;
 
 const CAULDRONS = [
-    { id: "orange", label: "ORANGE", index: 0, prismaKey: "_", color: "#e8841a", dimColor: "rgba(232,132,26,0.12)" },
-    { id: "green", label: "GREEN", index: 1, prismaKey: "a", color: "#5cb85c", dimColor: "rgba(92,184,92,0.12)" },
-    { id: "purple", label: "PURPLE", index: 2, prismaKey: "b", color: "#a259e6", dimColor: "rgba(162,89,230,0.12)" },
-    { id: "yellow", label: "YELLOW", index: 3, prismaKey: "c", color: "#e6c319", dimColor: "rgba(230,195,25,0.12)" },
+    { id: "orange", label: "ORANGE", index: 0, prismaKey: "_" },
+    { id: "green", label: "GREEN", index: 1, prismaKey: "a" },
+    { id: "purple", label: "PURPLE", index: 2, prismaKey: "b" },
+    { id: "yellow", label: "YELLOW", index: 3, prismaKey: "c" },
 ];
 
 function parsePrisma(str) {
@@ -57,6 +57,7 @@ function encodePrisma(set) {
 
 const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
     const inputVal = van.state(String(levels.val?.[bubble.index] ?? 0));
+    const levelDisplay = van.state(levels.val?.[bubble.index] ?? 0);
     const { status, run } = useWriteStatus();
 
     const prismaBlocked = bubble.isBigBubble === true;
@@ -65,10 +66,11 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
 
     van.derive(() => {
         inputVal.val = String(levels.val?.[bubble.index] ?? 0);
+        levelDisplay.val = levels.val?.[bubble.index] ?? 0;
     });
 
     const setLocalLevel = (level) => {
-        const nextLevels = toIndexedArray(levels.val ?? []);
+        const nextLevels = [...toIndexedArray(levels.val ?? [])];
         nextLevels[bubble.index] = level;
         levels.val = nextLevels;
     };
@@ -81,6 +83,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             await writeGga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
             setLocalLevel(lvl);
             inputVal.val = String(lvl);
+            levelDisplay.val = lvl;
         });
     };
 
@@ -101,13 +104,13 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             class: () =>
                 [
                     "bubble-card",
+                    `bubble-card--${cauldron.id}`,
                     isPrisma.val ? "bubble-card--prisma" : "",
                     status.val === "success" ? "bubble-card--success" : "",
                     status.val === "error" ? "bubble-card--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
-            style: `--cauldron-color: ${cauldron.color}; --cauldron-dim: ${cauldron.dimColor};`,
         },
         div({ class: "bubble-card__top" }, span({ class: "bubble-card__index" }, `#${bubble.index}`), () =>
             isPrisma.val ? span({ class: "bubble-card__prisma-badge" }, "PRISMA") : null
@@ -116,7 +119,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         div(
             { class: "bubble-card__level-row" },
             span({ class: "bubble-card__level-label" }, "LV"),
-            span({ class: "bubble-card__level-val" }, () => levels.val?.[bubble.index] ?? 0)
+            span({ class: "bubble-card__level-val" }, () => levelDisplay.val)
         ),
         div(
             { class: "bubble-card__controls" },
@@ -164,19 +167,35 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
         const bubbles = defs.val ?? [];
         if (bubbles.length === 0) return;
 
+        const currentLevels = toIndexedArray(levels.val ?? []);
+        const bubblesToSet = bubbles.filter((bubble) => Number(currentLevels[bubble.index] ?? 0) !== lvl);
+        if (bubblesToSet.length === 0) {
+            bulkStatus.val = "done";
+            setTimeout(() => (bulkStatus.val = null), 1000);
+            return;
+        }
+
         bulkStatus.val = "loading";
         try {
-            const nextLevels = toIndexedArray(levels.val ?? []);
-            for (const bubble of bubbles) {
+            let changedCount = 0;
+            for (const bubble of bubblesToSet) {
                 await writeGga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
+                const nextLevels = [...toIndexedArray(levels.val ?? [])];
                 nextLevels[bubble.index] = lvl;
+                levels.val = nextLevels;
+                changedCount += 1;
                 await new Promise((r) => setTimeout(r, 30));
             }
-            levels.val = nextLevels;
 
-            bulkStatus.val = "done";
+            if (changedCount > 0) {
+                bulkStatus.val = "done";
+                setTimeout(() => (bulkStatus.val = null), 1500);
+                return;
+            }
+
+            bulkStatus.val = "error";
             setTimeout(() => (bulkStatus.val = null), 1500);
-        } catch {
+        } catch (e) {
             console.error("Bulk set failed", e);
             bulkStatus.val = "error";
             setTimeout(() => (bulkStatus.val = null), 1500);
@@ -185,8 +204,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
 
     return div(
         {
-            class: "brewing-column",
-            style: `--cauldron-color: ${cauldron.color};`,
+            class: `brewing-column brewing-column--${cauldron.id}`,
         },
         div(
             { class: "brewing-column__header" },
@@ -236,7 +254,7 @@ export const BrewingTab = () => {
             const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
                 readGga("CauldronInfo"),
                 readGga("OptionsListAccount[384]"),
-                readGga("CustomLists.AlchemyDescription"),
+                readCList("AlchemyDescription"),
             ]);
 
             prismaSet.val = parsePrisma(rawPrismaStr);

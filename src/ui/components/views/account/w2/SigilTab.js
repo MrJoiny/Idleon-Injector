@@ -5,7 +5,7 @@
  *   [4][2*i + 1]  → tier for sigil i   (−1=Locked … 4=Eclectic)
  *   [4][2*i]      → EXP  for sigil i   (not displayed; tier-only UI)
  *
- * Sigil names: CustomLists.h.SigilDesc[i][0]  e.g. "BIG_MUSCLE"
+ * Sigil names: cList.SigilDesc[i][0]  e.g. "BIG_MUSCLE"
  *   → underscores replaced with spaces, displayed uppercased.
  *   Defaults to "#N" if data is unavailable.
  *
@@ -16,7 +16,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -134,10 +134,7 @@ export const SigilTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const [rawP2W, rawSigilDesc] = await Promise.all([
-                readGga("CauldronP2W"),
-                readGga("CustomLists.h.SigilDesc"),
-            ]);
+            const [rawP2W, rawSigilDesc] = await Promise.all([readGga("CauldronP2W"), readCList("SigilDesc")]);
 
             // Fill tier values from CauldronP2W[4][2*i + 1]
             const sig4 = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);

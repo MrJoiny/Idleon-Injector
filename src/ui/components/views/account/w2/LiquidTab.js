@@ -143,8 +143,7 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
 const LiquidColumn = ({ liquid, states }) =>
     div(
         {
-            class: "liquid-col",
-            style: `--liquid-color: ${liquid.color}; --liquid-dim: ${liquid.dimColor};`,
+            class: `liquid-col liquid-col--${liquid.id}`,
         },
         div({ class: "liquid-col__header" }, span({ class: "liquid-col__name" }, liquid.label)),
         LiquidControl({

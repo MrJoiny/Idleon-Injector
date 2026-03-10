@@ -26,12 +26,12 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
+import { readGga, readGgaEntries, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
@@ -57,9 +57,9 @@ const META_FIELDS = [
 const RECORD_FIELDS = [{ index: 112, label: "TOTAL FINISHED RUNS" }];
 
 const PB_TOME_FIELDS = [
-    { key: "melee", label: "HIGHEST KILLROY SCORE ON A WARRIOR", path: "CustomLists.h.Tome[27][0]", tomeIndex: 27 },
-    { key: "ranged", label: "HIGHEST KILLROY SCORE ON AN ARCHER", path: "CustomLists.h.Tome[28][0]", tomeIndex: 28 },
-    { key: "magic", label: "HIGHEST KILLROY SCORE ON A MAGE", path: "CustomLists.h.Tome[29][0]", tomeIndex: 29 },
+    { key: "melee", label: "HIGHEST KILLROY SCORE ON A WARRIOR", scoreIndex: 204, tomeIndex: 27 },
+    { key: "ranged", label: "HIGHEST KILLROY SCORE ON AN ARCHER", scoreIndex: 205, tomeIndex: 28 },
+    { key: "magic", label: "HIGHEST KILLROY SCORE ON A MAGE", scoreIndex: 206, tomeIndex: 29 },
 ];
 
 const SORT_OPTIONS = [
@@ -72,11 +72,6 @@ const SORT_OPTIONS = [
 const AIRHORN_INDEX = 115;
 const ALL_FIELD_DEFS = [...CURRENCY_FIELDS, ...SHOP_FIELDS, ...META_FIELDS, ...RECORD_FIELDS, { index: AIRHORN_INDEX }];
 const FIELD_INDEXES = Array.from(new Set(ALL_FIELD_DEFS.map((f) => f.index)));
-
-const toNum = (v, fallback = 0) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
-};
 
 const Section = (title, note, rows) =>
     div(
@@ -127,7 +122,14 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
                     .filter(Boolean)
                     .join(" "),
         },
-        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, field.label)),
+        div(
+            { class: "feature-row__info" },
+            span({ class: "feature-row__name" }, () => {
+                const label = field?.label;
+                if (label && typeof label === "object" && "val" in label) return label.val;
+                return label ?? "";
+            })
+        ),
         span({ class: "feature-row__badge" }, () => {
             if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
             return String(valueState.val);
@@ -207,7 +209,8 @@ const KillroyAirhornRow = ({ valueState }) => {
 export const KillroyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const data = van.state(null);
+    const refreshError = van.state(null);
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
@@ -215,25 +218,28 @@ export const KillroyTab = () => {
     const addStatus = van.state(null);
 
     const valueStates = new Map(FIELD_INDEXES.map((idx) => [idx, van.state(0)]));
-    const pbTomeStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(0)]));
+    const pbScoreStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(0)]));
     const pbLabelStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(f.label)]));
     const bestByMob = van.state([]);
 
     const getState = (index) => valueStates.get(index);
-    const getPbState = (key) => pbTomeStates.get(key);
+    const getPbState = (key) => pbScoreStates.get(key);
     const getPbLabelState = (key) => pbLabelStates.get(key);
 
     const load = async () => {
         loading.val = true;
         error.val = null;
+        refreshError.val = null;
         try {
             const valueJobs = FIELD_INDEXES.map((idx) =>
                 readGga(`OptionsListAccount[${idx}]`).then((v) => ({ idx, value: toNum(v, 0) }))
             );
 
-            const pbJobs = PB_TOME_FIELDS.map((f) => readGga(f.path).then((v) => ({ key: f.key, value: toNum(v, 0) })));
+            const pbJobs = PB_TOME_FIELDS.map((f) =>
+                readGga(`OptionsListAccount[${f.scoreIndex}]`).then((v) => ({ key: f.key, value: toNum(v, 0) }))
+            );
             const pbLabelJobs = PB_TOME_FIELDS.map((f) =>
-                readGga(`CustomLists.h.Tome[${f.tomeIndex}]`)
+                readCList(`Tome[${f.tomeIndex}]`)
                     .then((row) => {
                         const arr = Array.isArray(row) ? row : Object.values(row ?? {});
                         const labelRaw = arr.find((x) => typeof x === "string" && x.trim().length > 0);
@@ -281,11 +287,11 @@ export const KillroyTab = () => {
             });
 
             const [rawKillroyMaps69, rawKillroyMaps70, rawKillroyMaps71, rawMapName, rawMapAfk] = await Promise.all([
-                readGga("CustomLists.h.RANDOlist[69]"),
-                readGga("CustomLists.h.RANDOlist[70]"),
-                readGga("CustomLists.h.RANDOlist[71]"),
-                readGga("CustomLists.h.MapName"),
-                readGga("CustomLists.h.MapAFKtarget"),
+                readCList("RANDOlist[69]"),
+                readCList("RANDOlist[70]"),
+                readCList("RANDOlist[71]"),
+                readCList("MapName"),
+                readCList("MapAFKtarget"),
             ]);
 
             const toArr = (raw) => (Array.isArray(raw) ? raw : Object.values(raw ?? {}));
@@ -308,19 +314,26 @@ export const KillroyTab = () => {
                 allowedMobIds.length > 0
                     ? await readGgaEntries("MonsterDefinitionsGET.h", allowedMobIds, ["Name"])
                     : {};
-            const nextAllowedMobs = allowedMobIds.map((mobId) => {
-                const rawName = allowedMobDefs?.[mobId]?.Name;
-                return {
-                    mobId,
-                    mobName: typeof rawName === "string" && rawName.length > 0 ? rawName.replace(/_/g, " ") : mobId,
-                };
-            });
+            const nextAllowedMobs = allowedMobIds
+                .map((mobId) => {
+                    const rawName = allowedMobDefs?.[mobId]?.Name;
+                    return {
+                        mobId,
+                        mobName: typeof rawName === "string" && rawName.length > 0 ? rawName.replace(/_/g, " ") : mobId,
+                    };
+                })
+                .sort((a, b) => a.mobName.localeCompare(b.mobName) || a.mobId.localeCompare(b.mobId));
             allowedMobs.val = nextAllowedMobs;
-            if (!addMobId.val && nextAllowedMobs.length > 0) addMobId.val = nextAllowedMobs[0].mobId;
-            data.val = { loaded: true };
+            if (nextAllowedMobs.length === 0) {
+                addMobId.val = "";
+            } else if (!nextAllowedMobs.some((mob) => mob.mobId === addMobId.val)) {
+                addMobId.val = nextAllowedMobs[0].mobId;
+            }
+            markReady();
         } catch (e) {
-            error.val = e?.message ?? "Failed to load Killroy data";
-            data.val = null;
+            const message = e?.message ?? "Failed to load Killroy data";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -371,162 +384,152 @@ export const KillroyTab = () => {
     };
 
     load();
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        renderContent: () =>
+    const scrollPane = div(
+        { class: () => paneClass("killroy-scroll scrollable-panel") },
+
+        Section("CURRENCY / AVAILABILITY", "Most-used Killroy currencies and weekly reset flag", [
+            ...CURRENCY_FIELDS.map((field) =>
+                KillroyNumRow({
+                    field,
+                    valueState: getState(field.index),
+                    writePath: `OptionsListAccount[${field.index}]`,
+                })
+            ),
+            KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) }),
+        ]),
+
+        Section(
+            "SHOP UPGRADES",
+            "Classic Killroy shop level tracks",
+            SHOP_FIELDS.map((field) =>
+                KillroyNumRow({
+                    field,
+                    valueState: getState(field.index),
+                    writePath: `OptionsListAccount[${field.index}]`,
+                    disableEdit: Boolean(field.blurred),
+                })
+            )
+        ),
+
+        Section(
+            "META BONUSES",
+            "Account-wide Killroy bonus values",
+            META_FIELDS.map((field) =>
+                KillroyNumRow({
+                    field,
+                    valueState: getState(field.index),
+                    writePath: `OptionsListAccount[${field.index}]`,
+                    disableEdit: Boolean(field.blurred),
+                })
+            )
+        ),
+
+        div(
+            { class: "killroy-section" },
             div(
-                { class: "killroy-scroll scrollable-panel" },
+                { class: "killroy-section__header" },
+                span({ class: "killroy-section__title" }, "RECORDS / TOME"),
+                span({ class: "killroy-section__note" }, "KRbest.h table (sortable) and PB summaries")
+            ),
 
-                Section("CURRENCY / AVAILABILITY", "Most-used Killroy currencies and weekly reset flag", [
-                    ...CURRENCY_FIELDS.map((field) =>
-                        KillroyNumRow({
-                            field,
-                            valueState: getState(field.index),
-                            writePath: `OptionsListAccount[${field.index}]`,
-                        })
-                    ),
-                    KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) }),
-                ]),
-
-                Section(
-                    "SHOP UPGRADES",
-                    "Classic Killroy shop level tracks",
-                    SHOP_FIELDS.map((field) =>
-                        KillroyNumRow({
-                            field,
-                            valueState: getState(field.index),
-                            writePath: `OptionsListAccount[${field.index}]`,
-                            disableEdit: Boolean(field.blurred),
-                        })
-                    )
+            div(
+                { class: "killroy-rows" },
+                ...RECORD_FIELDS.map((field) =>
+                    KillroyNumRow({
+                        field,
+                        valueState: getState(field.index),
+                        writePath: `OptionsListAccount[${field.index}]`,
+                    })
                 ),
-
-                Section(
-                    "META BONUSES",
-                    "Account-wide Killroy bonus values",
-                    META_FIELDS.map((field) =>
-                        KillroyNumRow({
-                            field,
-                            valueState: getState(field.index),
-                            writePath: `OptionsListAccount[${field.index}]`,
-                            disableEdit: Boolean(field.blurred),
-                        })
-                    )
-                ),
-
-                div(
-                    { class: "killroy-section" },
-                    div(
-                        { class: "killroy-section__header" },
-                        span({ class: "killroy-section__title" }, "RECORDS / TOME"),
-                        span({ class: "killroy-section__note" }, "KRbest.h table (sortable) and PB summaries")
-                    ),
-
-                    div(
-                        { class: "killroy-rows" },
-                        ...RECORD_FIELDS.map((field) =>
-                            KillroyNumRow({
-                                field,
-                                valueState: getState(field.index),
-                                writePath: `OptionsListAccount[${field.index}]`,
-                            })
-                        ),
-                        ...PB_TOME_FIELDS.map((field) =>
-                            KillroyNumRow({
-                                field: { ...field, label: getPbLabelState(field.key)?.val ?? field.label },
-                                valueState: getPbState(field.key),
-                                writePath: field.path,
-                            })
-                        )
-                    ),
-
-                    div(
-                        { class: "killroy-best-toolbar" },
-                        span({ class: "killroy-best-toolbar__label" }, "SORT"),
-                        select(
-                            {
-                                class: "select-base killroy-best-toolbar__select",
-                                value: sortBy,
-                                onchange: (e) => (sortBy.val = e.target.value),
-                            },
-                            ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label))
-                        ),
-                        span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`)
-                    ),
-
-                    div(
-                        {
-                            class: () =>
-                                [
-                                    "killroy-add-row",
-                                    addStatus.val === "success" ? "flash-success" : "",
-                                    addStatus.val === "error" ? "flash-error" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" "),
-                        },
-                        span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
-                        select(
-                            {
-                                class: "select-base killroy-add-row__select",
-                                value: addMobId,
-                                onchange: (e) => (addMobId.val = e.target.value),
-                            },
-                            ...allowedMobs.val.map((mob) =>
-                                option({ value: mob.mobId }, `${mob.mobName} (${mob.mobId})`)
-                            )
-                        ),
-                        NumberInput({
-                            mode: "int",
-                            value: addKillsInput,
-                            oninput: (e) => (addKillsInput.val = e.target.value),
-                            onDecrement: () =>
-                                (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
-                            onIncrement: () => (addKillsInput.val = String(toNum(addKillsInput.val, 0) + 1)),
-                        }),
-                        button(
-                            {
-                                class: () =>
-                                    `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                disabled: () => addStatus.val === "loading" || !addMobId.val,
-                                onclick: setBestEntry,
-                            },
-                            () => (addStatus.val === "loading" ? "..." : "SET")
-                        )
-                    ),
-
-                    div(
-                        { class: "killroy-best-table-wrap" },
-                        table({ class: "killroy-best-table" }, thead(tr(th({}, "MOB"), th({}, "BEST KILLS"))), () => {
-                            const rows = sortedBestRows();
-                            if (rows.length === 0) {
-                                return tbody(
-                                    tr(
-                                        td(
-                                            { class: "killroy-best-table__empty", colspan: 2 },
-                                            "No KRbest.h entries found."
-                                        )
-                                    )
-                                );
-                            }
-
-                            return tbody(
-                                ...rows.map((row) =>
-                                    tr(
-                                        td({ class: "killroy-best-table__mob" }, row.mobName),
-                                        td({ class: "killroy-best-table__kills" }, String(row.kills))
-                                    )
-                                )
-                            );
-                        })
-                    )
+                ...PB_TOME_FIELDS.map((field) =>
+                    KillroyNumRow({
+                        field: { ...field, label: getPbLabelState(field.key) ?? field.label },
+                        valueState: getPbState(field.key),
+                        writePath: `OptionsListAccount[${field.scoreIndex}]`,
+                    })
                 )
             ),
-    });
+
+            div(
+                { class: "killroy-best-toolbar" },
+                span({ class: "killroy-best-toolbar__label" }, "SORT"),
+                select(
+                    {
+                        class: "select-base killroy-best-toolbar__select",
+                        value: sortBy,
+                        onchange: (e) => (sortBy.val = e.target.value),
+                    },
+                    ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label))
+                ),
+                span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`)
+            ),
+
+            div(
+                {
+                    class: () =>
+                        [
+                            "killroy-add-row",
+                            addStatus.val === "success" ? "flash-success" : "",
+                            addStatus.val === "error" ? "flash-error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
+                },
+                span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
+                () =>
+                    select(
+                        {
+                            class: "select-base killroy-add-row__select",
+                            value: addMobId,
+                            onchange: (e) => (addMobId.val = e.target.value),
+                        },
+                        ...((allowedMobs.val ?? []).length === 0
+                            ? [option({ value: "" }, "No Killroy mobs found")]
+                            : (allowedMobs.val ?? []).map((mob) =>
+                                  option({ value: mob.mobId }, `${mob.mobName || mob.mobId} (${mob.mobId})`)
+                              ))
+                    ),
+                NumberInput({
+                    mode: "int",
+                    value: addKillsInput,
+                    oninput: (e) => (addKillsInput.val = e.target.value),
+                    onDecrement: () => (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
+                    onIncrement: () => (addKillsInput.val = String(toNum(addKillsInput.val, 0) + 1)),
+                }),
+                button(
+                    {
+                        class: () =>
+                            `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        disabled: () => addStatus.val === "loading" || !addMobId.val,
+                        onclick: setBestEntry,
+                    },
+                    () => (addStatus.val === "loading" ? "..." : "SET")
+                )
+            ),
+
+            div(
+                { class: "killroy-best-table-wrap" },
+                table({ class: "killroy-best-table" }, thead(tr(th({}, "MOB"), th({}, "BEST KILLS"))), () => {
+                    const rows = sortedBestRows();
+                    if (rows.length === 0) {
+                        return tbody(
+                            tr(td({ class: "killroy-best-table__empty", colspan: 2 }, "No KRbest.h entries found."))
+                        );
+                    }
+
+                    return tbody(
+                        ...rows.map((row) =>
+                            tr(
+                                td({ class: "killroy-best-table__mob" }, row.mobName),
+                                td({ class: "killroy-best-table__kills" }, String(row.kills))
+                            )
+                        )
+                    );
+                })
+            )
+        )
+    );
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
         { class: "tab-container" },
@@ -540,7 +543,12 @@ export const KillroyTab = () => {
             ),
             div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
         ),
-
-        renderBody
+        renderRefreshErrorBanner,
+        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                : null,
+        scrollPane
     );
 };

@@ -4,19 +4,24 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { ConstructionBuildingsTab } from "./w3/ConstructionBuildingsTab.js";
+import { CogsTab } from "./w3/CogsTab.js";
 import { RefineryTab } from "./w3/RefineryTab.js";
 import { SaltLickTab } from "./w3/SaltLickTab.js";
 import { AtomColliderTab } from "./w3/AtomColliderTab.js";
 import { HatRackTab } from "./w3/HatRackTab.js";
 import { SmithyTab } from "./w3/SmithyTab.js";
-import { MiscTab } from "./w3/MiscTab.js";
+import { WorshipTab } from "./w3/WorshipTab.js";
+import { DeathNoteTab } from "./w3/DeathNoteTab.js";
+import { LibraryTab } from "./w3/LibraryTab.js";
+import { EquinoxTab } from "./w3/EquinoxTab.js";
+import { TrappingTab } from "./w3/TrappingTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const CONSTRUCTION_SUBTABS = [
     { id: "buildings", label: "BUILDINGS", component: ConstructionBuildingsTab },
-    { id: "cogs", label: "COGS", component: null },
+    { id: "cogs", label: "COGS", component: CogsTab },
 ];
 
 const W3_SUBTABS = [
@@ -26,8 +31,11 @@ const W3_SUBTABS = [
     { id: "atom-collider", label: "ATOM COLLIDER", component: AtomColliderTab },
     { id: "hat-rack", label: "HAT RACK", component: HatRackTab },
     { id: "smithy", label: "SMITHY", component: SmithyTab },
-    { id: "misc", label: "MISC", component: MiscTab },
-    { id: "trapping", label: "TRAPPING", component: null },
+    { id: "worship", label: "WORSHIP", component: WorshipTab },
+    { id: "death-note", label: "DEATH NOTE", component: DeathNoteTab },
+    { id: "library", label: "LIBRARY", component: LibraryTab },
+    { id: "equinox", label: "EQUINOX", component: EquinoxTab },
+    { id: "trapping", label: "TRAPPING", component: TrappingTab },
 ];
 
 function ConstructionPanel() {

@@ -10,6 +10,7 @@
 
 import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
+import { spawnCogRuntime, setTinyCogRuntime } from "../helpers/cogsRuntime.js";
 import { resolvePath } from "../utils/pathResolver.js";
 
 export function getcheatStateList() {
@@ -106,6 +107,10 @@ export function readEntries(rootPath, keys, fields = null) {
  * - alchemy       -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
  * - summoning     -> events(579)._customBlock_Summoning(name, ...args)
  * - atomCollider  -> events(579)._customBlock_AtomCollider(name, ...args)
+ * - runCode       -> events(12)._customBlock_RunCodeOfTypeXforThingY(name, ...args)
+ * - runCodeType   -> events(12)._customBlock_RunCodeOfType(name)
+ * - cogSpawn      -> runtime cog spawn helper (normal lane or jeweled clone)
+ * - tinyCog       -> runtime tiny cog setter (type/tier)
  *
  * @param {string} namespace
  * @param {string} name
@@ -116,17 +121,45 @@ export function readComputed(namespace, name, args = []) {
     if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
     if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
     if (!Array.isArray(args)) return { error: "args must be an array" };
-    if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
+
+    if (namespace === "cogSpawn") {
+        if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
+        if (name !== "spawn") return { error: `Unsupported cogSpawn operation: ${name}` };
+        try {
+            const jeweled = Boolean(args[0]);
+            const lane = Number(args[1]);
+            return { value: spawnCogRuntime({ jeweled, lane }) };
+        } catch (e) {
+            return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };
+        }
+    }
+
+    if (namespace === "tinyCog") {
+        if (name !== "set") return { error: `Unsupported tinyCog operation: ${name}` };
+        try {
+            const slot = Number(args[0]);
+            const type = String(args[1] ?? "");
+            const tier = Number(args[2]);
+            return { value: setTinyCogRuntime(slot, type, tier) };
+        } catch (e) {
+            return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };
+        }
+    }
 
     const sources = {
         workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
         alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
         summoning: { eventId: 579, method: "_customBlock_Summoning" },
         atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
+        runCode: { eventId: 12, method: "_customBlock_RunCodeOfTypeXforThingY" },
+        runCodeType: { eventId: 12, method: "_customBlock_RunCodeOfType" },
+        dream: { eventId: 579, method: "_customBlock_Dreamstuff" },
+        skillStats: { eventId: 12, method: "_customBlock_SkillStats" },
     };
 
     const source = sources[namespace];
     if (!source) return { error: `Unsupported computed namespace: ${namespace}` };
+    if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
 
     try {
         const actorEvents = events(source.eventId);

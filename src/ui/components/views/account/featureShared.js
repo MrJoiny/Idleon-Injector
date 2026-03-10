@@ -28,6 +28,15 @@ const resolveValue = (valueOrState) => {
     return valueOrState;
 };
 
+/**
+ * Safely coerce a value to a finite number.
+ * Returns `fallback` when coercion yields NaN/Infinity.
+ */
+export const toNum = (value, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+};
+
 export const RefreshErrorBanner =
     ({ error }) =>
     () =>

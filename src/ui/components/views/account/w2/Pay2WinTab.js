@@ -43,18 +43,18 @@ const { div, button, span, h3, p } = van.tags;
 
 // Brewing cauldron column headers — user-specified; match in-game names.
 const BREW_CAULDRONS = [
-    { label: "POWER CAULDRON", color: "#f87171", dim: "rgba(248,113,113,0.10)" },
-    { label: "QUICC CAULDRON", color: "#4ade80", dim: "rgba(74,222,128,0.10)" },
-    { label: "HIGH-IQ CAULDRON", color: "#60a5fa", dim: "rgba(96,165,250,0.10)" },
-    { label: "KAZAM CAULDRON", color: "#c084fc", dim: "rgba(192,132,252,0.10)" },
+    { label: "POWER CAULDRON", tone: "brew-power" },
+    { label: "QUICC CAULDRON", tone: "brew-quicc" },
+    { label: "HIGH-IQ CAULDRON", tone: "brew-high-iq" },
+    { label: "KAZAM CAULDRON", tone: "brew-kazam" },
 ];
 
 // Liquid column headers — identical constraint to LiquidTab.js.
 const LIQUID_COLS = [
-    { label: "WATER DROPLETS", color: "#5ba6d3" },
-    { label: "LIQUID NITROGEN", color: "#82d9f5" },
-    { label: "TRENCH SEAWATER", color: "#3a9e80" },
-    { label: "TOXIC MERCURY", color: "#c084fc" },
+    { label: "WATER DROPLETS", tone: "liquid-water-droplets" },
+    { label: "LIQUID NITROGEN", tone: "liquid-nitrogen" },
+    { label: "TRENCH SEAWATER", tone: "liquid-trench-seawater" },
+    { label: "TOXIC MERCURY", tone: "liquid-toxic-mercury" },
 ];
 
 // ── Hardcoded row labels ────────────────────────────────────────────────────
@@ -293,7 +293,7 @@ export const Pay2WinTab = () => {
             note ? span({ class: "p2w-section__note" }, note) : null
         );
 
-    // Cauldron-style 4-column grid
+    // Cauldron 4-column grid
     const buildCauldronSection = (title, note, cols, rowLabels, valGrid, maxGrid, b, stride) =>
         div(
             { class: "p2w-section" },
@@ -303,8 +303,7 @@ export const Pay2WinTab = () => {
                 ...cols.map((col, e) =>
                     div(
                         {
-                            class: "p2w-col",
-                            style: `--col-color: ${col.color}; --col-dim: ${col.dim ?? "transparent"};`,
+                            class: `p2w-col ${col.tone ? `p2w-col--${col.tone}` : ""}`,
                         },
                         div({ class: "p2w-col__header" }, span({ class: "p2w-col__name" }, col.label)),
                         div(

@@ -126,6 +126,20 @@ export async function readGga(path) {
 }
 
 /**
+ * Read a value from cList (gga.CustomLists.h) by dot/bracket path.
+ * @param {string} path - e.g. "Tome[27]" or "RANDOlist[16]"
+ * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
+ */
+export async function readCList(path) {
+    const data = await _request("/game/gga/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `gga.CustomLists.h.${path}` }),
+    });
+    return data.value;
+}
+
+/**
  * Read selected entries from a large GGA object map.
  * The "gga." prefix is automatically prepended to rootPath.
  * @param {string} rootPath - e.g. "ItemDefinitionsGET.h"

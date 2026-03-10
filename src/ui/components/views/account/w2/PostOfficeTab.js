@@ -28,7 +28,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -397,17 +397,7 @@ export const PostOfficeTab = () => {
     const totalEarned = van.derive(() => boxComplete.val + boxStreak.val + opt347.val + boxMisc.val);
     const availablePoints = van.derive(() => totalEarned.val - spentPoints.val);
 
-    // ── Bulk control states ────────────────────────────────────────────────
-    const bulkStreakInput = van.state("100");
-    const bulkShieldInput = van.state("5");
-    const { status: bulkStreakStatus, run: runBulkStreakWrite } = useWriteStatus({
-        successMs: 1500,
-        errorMs: 1500,
-    });
-    const { status: bulkShieldStatus, run: runBulkShieldWrite } = useWriteStatus({
-        successMs: 1500,
-        errorMs: 1500,
-    });
+    // Box bulk state
     const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
 
     // ── Load ───────────────────────────────────────────────────────────────
@@ -417,10 +407,7 @@ export const PostOfficeTab = () => {
         refreshError.val = null;
         try {
             const readPostOfficeBoxDefs = async () => {
-                return readGga("CustomLists.h.PostOffUpgradeInfo")
-                    .catch(() => readGga("CustomLists.PostOffUpgradeInfo"))
-                    .catch(() => readGga("cList.PostOffUpgradeInfo"))
-                    .catch(() => []);
+                return readCList("PostOffUpgradeInfo").catch(() => []);
             };
 
             const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
@@ -507,48 +494,7 @@ export const PostOfficeTab = () => {
 
     load();
 
-    // ── Bulk: set all streaks ──────────────────────────────────────────────
-    const doSetAllStreaks = async () => {
-        const val = Math.max(0, Math.round(Number(bulkStreakInput.val)));
-        if (isNaN(val)) return;
-        await runBulkStreakWrite(async () => {
-            await Promise.all(
-                shipmentStates.map((st, s) =>
-                    writeGga(`PostOfficeInfo[1][${s}][1]`, val).then(() => {
-                        st.streak.val = val;
-                    })
-                )
-            );
-        });
-    };
-
-    // ── Bulk: set all shields ──────────────────────────────────────────────
-    const doSetAllShields = async () => {
-        const val = Math.max(0, Math.round(Number(bulkShieldInput.val)));
-        if (isNaN(val)) return;
-        await runBulkShieldWrite(async () => {
-            await Promise.all(
-                shipmentStates.map((st, s) =>
-                    writeGga(`PostOfficeInfo[1][${s}][2]`, val).then(() => {
-                        st.shield.val = val;
-                    })
-                )
-            );
-        });
-    };
-
-    let setAllStreaksTimeout;
-    const debouncedSetAllStreaks = () => {
-        clearTimeout(setAllStreaksTimeout);
-        setAllStreaksTimeout = setTimeout(doSetAllStreaks, 500);
-    };
-
-    let setAllShieldsTimeout;
-    const debouncedSetAllShields = () => {
-        clearTimeout(setAllShieldsTimeout);
-        setAllShieldsTimeout = setTimeout(doSetAllShields, 500);
-    };
-
+    // Bulk box actions
     const doMaxAllBoxes = async () => {
         if (boxCount.val <= 0) return;
         await runBoxBulkWrite(async () => {
@@ -578,62 +524,7 @@ export const PostOfficeTab = () => {
         });
     };
 
-    // ── DOM: Bulk controls bar ─────────────────────────────────────────────
-    const bulkBar = div(
-        { class: "po-bulk-bar" },
-
-        div(
-            { class: "po-bulk-group" },
-            span({ class: "po-bulk-group__label" }, "ALL STREAKS"),
-            NumberInput({
-                mode: "int",
-                value: bulkStreakInput,
-                oninput: (e) => {
-                    bulkStreakInput.val = e.target.value;
-                    debouncedSetAllStreaks();
-                },
-                onDecrement: () => {
-                    bulkStreakInput.val = String(Math.max(0, Number(bulkStreakInput.val) - 1));
-                    debouncedSetAllStreaks();
-                },
-                onIncrement: () => {
-                    bulkStreakInput.val = String(Number(bulkStreakInput.val) + 1);
-                    debouncedSetAllStreaks();
-                },
-            }),
-            span({ class: "po-bulk-status" }, () =>
-                bulkStreakStatus.val === "loading" ? "…" : bulkStreakStatus.val === "success" ? "✓" : ""
-            )
-        ),
-
-        div({ class: "po-bulk-separator" }),
-
-        div(
-            { class: "po-bulk-group" },
-            span({ class: "po-bulk-group__label" }, "ALL SHIELDS"),
-            NumberInput({
-                mode: "int",
-                value: bulkShieldInput,
-                oninput: (e) => {
-                    bulkShieldInput.val = e.target.value;
-                    debouncedSetAllShields();
-                },
-                onDecrement: () => {
-                    bulkShieldInput.val = String(Math.max(0, Number(bulkShieldInput.val) - 1));
-                    debouncedSetAllShields();
-                },
-                onIncrement: () => {
-                    bulkShieldInput.val = String(Number(bulkShieldInput.val) + 1);
-                    debouncedSetAllShields();
-                },
-            }),
-            span({ class: "po-bulk-status" }, () =>
-                bulkShieldStatus.val === "loading" ? "…" : bulkShieldStatus.val === "success" ? "✓" : ""
-            )
-        )
-    );
-
-    // ── DOM: Shipment cards ────────────────────────────────────────────────
+    // DOM: Shipment cards
     const shipmentsSection = div(
         { class: "po-shipments-section" },
         OfficeGroup({ label: "OFFICE 1", shipmentStates, startIndex: 0 }),
@@ -728,12 +619,7 @@ export const PostOfficeTab = () => {
     );
 
     // ── DOM: Scrollable content ────────────────────────────────────────────
-    const scroll = div(
-        { class: () => paneClass("po-scroll scrollable-panel") },
-        bulkBar,
-        shipmentsSection,
-        pointsSection
-    );
+    const scroll = div({ class: () => paneClass("po-scroll scrollable-panel") }, shipmentsSection, pointsSection);
 
     const boxesScroll = div(
         { class: () => paneClass("po-scroll scrollable-panel") },

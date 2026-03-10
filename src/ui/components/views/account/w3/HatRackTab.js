@@ -27,13 +27,7 @@ const getDef = (raw) => raw?.h ?? raw;
 const getName = (itemId, raw) => {
     const def = getDef(raw);
     return (
-        def?.displayName ||
-        def?.DisplayName ||
-        def?.name ||
-        def?.Name ||
-        def?.desc_line1 ||
-        def?.desc_line2 ||
-        itemId
+        def?.displayName || def?.DisplayName || def?.name || def?.Name || def?.desc_line1 || def?.desc_line2 || itemId
     );
 };
 
@@ -257,6 +251,30 @@ export const HatRackTab = () => {
         });
     };
 
+    const addAllAvailable = async () => {
+        if (mutating.val || missingOptions.val.length === 0) return;
+        const shouldContinue = window.confirm(
+            "This will add every available hat from the dropdown to your rack.\n\nAre you sure you want to continue?"
+        );
+        if (!shouldContinue) return;
+
+        await runAdd(async () => {
+            mutating.val = true;
+            try {
+                const currentRack = [...currentRackIds.val];
+                const toAdd = missingOptions.val
+                    .map((item) => item.itemId)
+                    .filter((itemId) => !currentRack.includes(itemId));
+                if (toAdd.length === 0) return;
+                const nextRack = [...currentRack, ...toAdd];
+                await rewriteRack(nextRack);
+                withPreservedScroll(() => applyRackState(nextRack));
+            } finally {
+                mutating.val = false;
+            }
+        });
+    };
+
     load(true, true);
 
     const renderBody = AsyncFeatureBody({
@@ -281,8 +299,9 @@ export const HatRackTab = () => {
                         div(
                             { class: "hat-rack-section__header" },
                             span({ class: "hat-rack-section__title" }, "ON RACK"),
-                            span({ class: "hat-rack-section__note" }, () =>
-                                `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`
+                            span(
+                                { class: "hat-rack-section__note" },
+                                () => `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`
                             )
                         ),
                         () => {
@@ -347,6 +366,17 @@ export const HatRackTab = () => {
                                     onclick: addSelected,
                                 },
                                 () => (addStatus.val === "loading" ? "..." : "ADD")
+                            ),
+                            button(
+                                {
+                                    class: () =>
+                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                    disabled: () =>
+                                        mutating.val || addStatus.val === "loading" || missingOptions.val.length === 0,
+                                    onmousedown: (e) => e.preventDefault(),
+                                    onclick: addAllAvailable,
+                                },
+                                () => (addStatus.val === "loading" ? "..." : "ADD ALL")
                             )
                         )
                     )

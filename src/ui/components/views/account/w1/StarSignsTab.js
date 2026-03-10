@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -116,6 +116,12 @@ const DragList = ({ items, renderItem, onChange }) => {
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const players = van.state([...sign.players]);
     const { status, run } = useWriteStatus({ successMs: 1500, errorMs: 1500 });
+    const progressFill = div({ class: "starsign-progress-fill" });
+
+    van.derive(() => {
+        const pct = Math.min(100, (players.val.length / sign.playersNeeded) * 100);
+        progressFill.style.setProperty("--starsign-fill-width", `${pct}%`);
+    });
 
     const addPlayer = (num) => {
         if (players.val.includes(num)) return;
@@ -219,7 +225,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         div({ class: "starsign-progress-bar-wrap" }, () => {
             const cur = players.val.length;
             const need = sign.playersNeeded;
-            const pct = Math.min(100, (cur / need) * 100);
             return div(
                 null,
                 div(
@@ -229,10 +234,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                         ? span({ class: "starsign-unlocked-text" }, "✓ UNLOCKED")
                         : span({ class: "starsign-locked-text" }, "LOCKED")
                 ),
-                div(
-                    { class: "starsign-progress-bar" },
-                    div({ class: "starsign-progress-fill", style: `width:${pct}%` })
-                )
+                div({ class: "starsign-progress-bar" }, progressFill)
             );
         }),
 
@@ -265,6 +267,8 @@ const StarSignCard = ({ sign, onClick }) => {
     const pct = Math.min(100, (cur / need) * 100);
     const groupColors = { A: "sign-A", B: "sign-B", C: "sign-C", D: "sign-D", E: "sign-E", F: "sign-F" };
     const groupClass = groupColors[sign.label[0]] ?? "";
+    const cardFill = div({ class: "starsign-card-fill" });
+    cardFill.style.setProperty("--starsign-fill-width", `${pct}%`);
 
     return div(
         {
@@ -279,7 +283,7 @@ const StarSignCard = ({ sign, onClick }) => {
                 : span({ class: "starsign-status locked" }, `${cur}/${need}`)
         ),
         p({ class: "starsign-card-desc" }, sign.desc),
-        div({ class: "starsign-card-bar" }, div({ class: "starsign-card-fill", style: `width:${pct}%` }))
+        div({ class: "starsign-card-bar" }, cardFill)
     );
 };
 
@@ -312,7 +316,7 @@ export const StarSignsTab = () => {
         error.val = null;
         try {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
-                readGga("CustomLists.StarQuests"),
+                readCList("StarQuests"),
                 readGga("StarSignProg"),
                 readGga("GetPlayersUsernames"),
             ]);

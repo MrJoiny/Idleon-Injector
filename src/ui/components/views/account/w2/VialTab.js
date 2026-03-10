@@ -1,7 +1,7 @@
 /**
  * W2 - Vials Tab (Alchemy Vials)
  *
- * Vial definitions: CustomLists.AlchemyDescription[4]
+ * Vial definitions: cList.AlchemyDescription[4]
  *   entry[0] = internal name key (for example "COPPER_CORONA")
  *
  * Levels stored in: CauldronInfo[4]
@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -93,7 +93,7 @@ export const VialTab = () => {
         try {
             const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
                 readGga("CauldronInfo"),
-                readGga("CustomLists.AlchemyDescription"),
+                readCList("AlchemyDescription"),
             ]);
 
             const descArr = toIndexedArray(rawAlchemyDesc ?? []);

@@ -3,31 +3,26 @@
  *
  * Data sources:
  *   gga.Atoms[b]                     - current level of atom b
- *   gga.CustomLists.h.AtomInfo[b][0] - atom name (underscores -> spaces)
+ *   cList.AtomInfo[b][0] - atom name (underscores -> spaces)
  *
  * Max level is computed via:
  *   readComputed("atomCollider", "AtomMaxLv", [b, 0])
  *
- * Array length is taken from CustomLists.h.AtomInfo (authoritative source).
+ * Array length is taken from cList.AtomInfo (authoritative source).
  * All per-atom max level requests are fetched in parallel during load via
  * Promise.all — readComputed returns 0 on failure so the tab still renders.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga } from "../../../../services/api.js";
+import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-const safeNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-};
 
 const AtomRow = ({ index, name, maxLevel, levelState }) => {
     const inputVal = van.state("0");
@@ -38,7 +33,7 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
     });
 
     const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(maxLevel, safeNum(raw)));
+        const lvl = Math.max(0, Math.min(maxLevel, toNum(raw)));
         if (isNaN(lvl)) return;
 
         await run(async () => {
@@ -71,8 +66,8 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
                 mode: "int",
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, safeNum(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, safeNum(inputVal.val) + 1))),
+                onDecrement: () => (inputVal.val = String(Math.max(0, toNum(inputVal.val) - 1))),
+                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, toNum(inputVal.val) + 1))),
             }),
             button(
                 {
@@ -138,14 +133,14 @@ export const AtomColliderTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawAtomInfo] = await Promise.all([readGga("Atoms"), readGga("CustomLists.h.AtomInfo")]);
+            const [rawLevels, rawAtomInfo] = await Promise.all([readGga("Atoms"), readCList("AtomInfo")]);
 
             const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
 
             const maxLevels = await Promise.all(
                 atomInfoArr.map((_, i) =>
                     readComputed("atomCollider", "AtomMaxLv", [i, 0])
-                        .then((v) => safeNum(v))
+                        .then((v) => toNum(v))
                         .catch(() => 0)
                 )
             );
@@ -161,7 +156,7 @@ export const AtomColliderTab = () => {
 
             const rawArr = toIndexedArray(rawLevels ?? []);
             atoms.forEach((_, i) => {
-                getLevelState(i).val = safeNum(rawArr[i]);
+                getLevelState(i).val = toNum(rawArr[i]);
             });
 
             data.val = { atoms };

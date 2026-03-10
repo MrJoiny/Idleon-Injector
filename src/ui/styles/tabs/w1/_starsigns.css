@@ -64,6 +64,7 @@
 
 .starsign-card-fill {
     height: 100%;
+    width: var(--starsign-fill-width, 0%);
     background: var(--c-accent);
     border-radius: var(--radius-sm);
     transition: width 0.3s;
@@ -298,6 +299,7 @@
 
 .starsign-progress-fill {
     height: 100%;
+    width: var(--starsign-fill-width, 0%);
     background: var(--c-accent);
     border-radius: var(--radius-sm);
     transition: width 0.3s;

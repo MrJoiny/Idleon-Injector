@@ -3,33 +3,28 @@
  *
  * Data sources:
  *   gga.SaltLick[n]                   - current level of upgrade n
- *   gga.CustomLists.h.SaltLicks[n][1] - upgrade name
- *   gga.CustomLists.h.SaltLicks[n][4] - max level for upgrade n
+ *   cList.SaltLicks[n][1] - upgrade name
+ *   cList.SaltLicks[n][4] - max level for upgrade n
  *
- * Array length is taken from CustomLists.h.SaltLicks (authoritative game table).
+ * Array length is taken from cList.SaltLicks (authoritative game table).
  * gga.SaltLick may contain more entries than there are actual upgrades — it is
  * implicitly trimmed because load() only iterates over defs.length entries.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
-const safeNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-};
-
 const toLevelInt = (value, maxLevel) => {
-    const n = Math.trunc(safeNum(value));
-    const cap = Math.max(0, Math.trunc(safeNum(maxLevel)));
+    const n = Math.trunc(toNum(value));
+    const cap = Math.max(0, Math.trunc(toNum(maxLevel)));
     return Math.max(0, Math.min(cap, n));
 };
 
@@ -74,8 +69,8 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
                 mode: "int",
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, safeNum(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, safeNum(inputVal.val) + 1))),
+                onDecrement: () => (inputVal.val = String(Math.max(0, toNum(inputVal.val) - 1))),
+                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, toNum(inputVal.val) + 1))),
             }),
             button(
                 {
@@ -142,7 +137,7 @@ export const SaltLickTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawDefs] = await Promise.all([readGga("SaltLick"), readGga("CustomLists.h.SaltLicks")]);
+            const [rawLevels, rawDefs] = await Promise.all([readGga("SaltLick"), readCList("SaltLicks")]);
 
             const defs = toIndexedArray(rawDefs ?? []);
             const upgrades = defs.map((entry, i) => {
@@ -151,7 +146,7 @@ export const SaltLickTab = () => {
                     .replace(/\+\{/g, "")
                     .replace(/_/g, " ")
                     .trim();
-                const maxLevel = Math.max(0, Math.trunc(safeNum(entryArr[4])));
+                const maxLevel = Math.max(0, Math.trunc(toNum(entryArr[4])));
                 return { name, maxLevel };
             });
 

@@ -8,7 +8,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -165,7 +165,7 @@ export const StatuesTab = () => {
         error.val = null;
         try {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
-                readGga("CustomLists.StatueInfo"),
+                readCList("StatueInfo"),
                 readGga("StatueLevels"),
                 readGga("StatueG"),
             ]);

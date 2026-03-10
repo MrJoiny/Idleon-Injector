@@ -153,9 +153,7 @@ const buildSmithyState = ({ rawEquipSets, rawSetOrder, rawStoredSets, rawEquippe
 
 const encodeStoredSets = (setKeys) => {
     const normalized = uniq(
-        setKeys
-            .map((setKey) => String(setKey ?? "").trim())
-            .filter((setKey) => setKey.length > 0 && setKey !== "0")
+        setKeys.map((setKey) => String(setKey ?? "").trim()).filter((setKey) => setKey.length > 0 && setKey !== "0")
     );
     return normalized.length > 0 ? ["0", ...normalized].join(",") : "0";
 };
@@ -342,6 +340,28 @@ export const SmithyTab = () => {
         });
     };
 
+    const addAllAvailable = async () => {
+        if (mutating.val || addOptions.val.length === 0) return;
+        const shouldContinue = window.confirm(
+            "This will add every available set from the dropdown to smithy.\n\nAre you sure you want to continue?"
+        );
+        if (!shouldContinue) return;
+
+        await runAdd(async () => {
+            mutating.val = true;
+            try {
+                const current = [...currentStoredSetKeys.val];
+                const toAdd = addOptions.val.map((entry) => entry.setKey).filter((setKey) => !current.includes(setKey));
+                if (toAdd.length === 0) return;
+                const next = [...current, ...toAdd];
+                await writeStoredSets(next);
+                await refreshAfterWrite();
+            } finally {
+                mutating.val = false;
+            }
+        });
+    };
+
     load(true);
 
     const renderBody = AsyncFeatureBody({
@@ -440,6 +460,17 @@ export const SmithyTab = () => {
                                     onclick: addSelected,
                                 },
                                 () => (addStatus.val === "loading" ? "..." : "ADD")
+                            ),
+                            button(
+                                {
+                                    class: () =>
+                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                    disabled: () =>
+                                        mutating.val || addStatus.val === "loading" || addOptions.val.length === 0,
+                                    onmousedown: (e) => e.preventDefault(),
+                                    onclick: addAllAvailable,
+                                },
+                                () => (addStatus.val === "loading" ? "..." : "ADD ALL")
                             )
                         )
                     )

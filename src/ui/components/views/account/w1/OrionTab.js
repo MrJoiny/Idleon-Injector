@@ -207,7 +207,7 @@ export const OrionTab = () => {
     };
 
     // Built once, stays in the DOM permanently.
-    // Hidden via style while loading/errored so the user doesn't see stale data,
+    // Hidden via class while loading/errored so the user doesn't see stale data,
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
         { class: () => `feature-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
