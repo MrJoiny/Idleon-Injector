@@ -33,10 +33,10 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Set up Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: "18"
 
@@ -71,7 +71,7 @@ jobs:
                   tar -czf "${{ matrix.archive-file }}" -C release-package .
 
             - name: Upload zipped artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: ${{ matrix.artifact-name }}
                   path: ${{ matrix.archive-file }}
@@ -91,7 +91,7 @@ jobs:
               run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
             - name: Download all artifacts
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   path: binaries/
 
