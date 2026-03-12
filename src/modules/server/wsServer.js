@@ -20,6 +20,38 @@ const clients = new Set();
 const monitorState = new Map();
 const HISTORY_LIMIT = 10;
 
+/**
+ * Normalizes a monitor path from UI input.
+ * @param {any} path
+ * @returns {string|null}
+ */
+function normalizeMonitorPath(path) {
+    if (typeof path !== "string") return null;
+    const normalized = path.trim();
+    return normalized.length > 0 ? normalized : null;
+}
+
+/**
+ * Produces a collision-safe monitor id from path.
+ * @param {string} path
+ * @returns {string}
+ */
+function buildMonitorId(path) {
+    return `mon:${encodeURIComponent(path)}`;
+}
+
+/**
+ * Finds an existing monitor id for a given path.
+ * @param {string} path
+ * @returns {string|null}
+ */
+function findMonitorIdByPath(path) {
+    for (const [id, state] of monitorState.entries()) {
+        if (state?.path === path) return id;
+    }
+    return null;
+}
+
 /** @type {Object|null} CDP Runtime reference for fetching cheat states */
 let runtimeRef = null;
 
@@ -91,11 +123,11 @@ async function handleMessage(ws, msg) {
             break;
 
         case "monitor-subscribe":
-            await handleMonitorSubscribe(msg.id, msg.path);
+            await handleMonitorSubscribe(msg.path);
             break;
 
         case "monitor-unsubscribe":
-            await handleMonitorUnsubscribe(msg.id);
+            await handleMonitorUnsubscribe(msg.id, msg.path);
             break;
     }
 }
@@ -125,27 +157,42 @@ function handleMonitorUpdate(msg) {
 
 /**
  * Handles subscription requests from the UI
- * @param {string} id
  * @param {string} path
  */
-async function handleMonitorSubscribe(id, path) {
+async function handleMonitorSubscribe(path) {
     if (!runtimeRef || !contextRef) return;
-    if (typeof id !== "string" || !id || typeof path !== "string" || !path) return;
+
+    const normalizedPath = normalizeMonitorPath(path);
+    if (!normalizedPath) {
+        log.error("Monitor subscribe rejected: missing or invalid path");
+        return;
+    }
+
+    const id = buildMonitorId(normalizedPath);
+
+    const existingId = findMonitorIdByPath(normalizedPath);
+    if (existingId) {
+        if (existingId !== id) {
+            const existingState = monitorState.get(existingId);
+            monitorState.delete(existingId);
+            monitorState.set(id, existingState);
+        }
+        broadcastMonitorState();
+        return;
+    }
 
     const existingState = monitorState.get(id);
     if (existingState) {
-        existingState.path = path;
+        existingState.path = normalizedPath;
     } else {
         // Pre-create the state entry so initial broadcast from wrap() is captured
-        monitorState.set(id, { path, history: [] });
+        monitorState.set(id, { path: normalizedPath, history: [] });
     }
 
-    const idJson = JSON.stringify(id);
-    const pathJson = JSON.stringify(path);
-
     try {
+        const expression = `window.monitorWrap(${JSON.stringify(id)}, ${JSON.stringify(normalizedPath)})`;
         const result = await runtimeRef.evaluate({
-            expression: `window.monitorWrap(${idJson}, ${pathJson})`,
+            expression,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -170,9 +217,9 @@ async function handleMonitorSubscribe(id, path) {
             if (errorText.includes("Already watching this ID")) {
                 const existing = monitorState.get(id);
                 if (existing) {
-                    existing.path = path;
+                    existing.path = normalizedPath;
                 } else {
-                    monitorState.set(id, { path, history: [] });
+                    monitorState.set(id, { path: normalizedPath, history: [] });
                 }
                 broadcastMonitorState();
                 return;
@@ -190,24 +237,33 @@ async function handleMonitorSubscribe(id, path) {
 /**
  * Handles unsubscription requests from the UI
  * @param {string} id
+ * @param {string=} path
  */
-async function handleMonitorUnsubscribe(id) {
+async function handleMonitorUnsubscribe(id, path) {
     if (!runtimeRef || !contextRef) return;
-    if (typeof id !== "string" || !id) return;
 
-    const idJson = JSON.stringify(id);
+    const requestedId = typeof id === "string" && id.length > 0 ? id : null;
+    const normalizedPath = normalizeMonitorPath(path);
+    const resolvedId =
+        (requestedId && monitorState.has(requestedId) && requestedId) ||
+        (normalizedPath ? findMonitorIdByPath(normalizedPath) : null);
+
+    if (!resolvedId) {
+        return;
+    }
 
     try {
+        const expression = `window.monitorUnwrap(${JSON.stringify(resolvedId)})`;
         await runtimeRef.evaluate({
-            expression: `window.monitorUnwrap(${idJson})`,
+            expression,
             awaitPromise: true,
             returnByValue: true,
         });
 
-        monitorState.delete(id);
+        monitorState.delete(resolvedId);
         broadcastMonitorState();
     } catch (err) {
-        log.error(`Error unsubscribing monitor ${id}:`, err.message);
+        log.error(`Error unsubscribing monitor ${resolvedId}:`, err.message);
     }
 }
 

@@ -331,13 +331,45 @@ const AccountService = {
     },
 };
 
+const normalizeMonitorPath = (path) => {
+    if (typeof path !== "string") return "";
+    return path.trim();
+};
+
+const monitorIdFromPath = (path) => `mon:${encodeURIComponent(path)}`;
+
+const findMonitoredEntryByPath = (path) => {
+    for (const [id, entry] of Object.entries(dataState.monitorValues)) {
+        if (entry?.path === path) {
+            return { id, entry };
+        }
+    }
+    return null;
+};
+
 const MonitorService = {
     subscribe: (path) => {
-        const id = "mon:" + encodeURIComponent(path);
-        sendMonitorSubscribe(id, path);
+        const normalizedPath = normalizeMonitorPath(path);
+        if (!normalizedPath) {
+            return { error: "Path is required" };
+        }
+
+        const existing = findMonitoredEntryByPath(normalizedPath);
+        if (existing) {
+            return { id: existing.id, path: normalizedPath, alreadyWatching: true };
+        }
+
+        const id = monitorIdFromPath(normalizedPath);
+        sendMonitorSubscribe(id, normalizedPath);
+        return { id, path: normalizedPath, alreadyWatching: false };
     },
     unsubscribe: (id) => {
+        if (!id || typeof id !== "string") {
+            return { error: "Monitor id is required" };
+        }
+
         sendMonitorUnsubscribe(id);
+        return { id };
     },
 };
 

@@ -20,6 +20,12 @@ let stateUpdateHandler = null;
 /** @type {Function|null} */
 let monitorUpdateHandler = null;
 
+/** @type {Map<string, string>} */
+const pendingMonitorSubscribes = new Map();
+
+/** @type {Set<string>} */
+const pendingMonitorUnsubscribes = new Set();
+
 /** Reconnect interval in milliseconds (same as heartbeat) */
 const RECONNECT_INTERVAL = 10000;
 
@@ -48,6 +54,23 @@ function handleMessage(event) {
     } catch (err) {
         console.error("[WebSocket] Error parsing message:", err);
     }
+}
+
+/**
+ * Flush queued monitor subscription messages when connection is ready.
+ */
+function flushPendingMonitorMessages() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    for (const id of pendingMonitorUnsubscribes) {
+        ws.send(JSON.stringify({ type: "monitor-unsubscribe", id }));
+    }
+    pendingMonitorUnsubscribes.clear();
+
+    for (const [id, path] of pendingMonitorSubscribes.entries()) {
+        ws.send(JSON.stringify({ type: "monitor-subscribe", id, path }));
+    }
+    pendingMonitorSubscribes.clear();
 }
 
 /**
@@ -80,6 +103,7 @@ function connect() {
         ws.onopen = () => {
             isConnected = true;
             console.log("[WebSocket] Connected to server");
+            flushPendingMonitorMessages();
         };
 
         ws.onmessage = handleMessage;
@@ -130,9 +154,11 @@ export function onMonitorUpdate(handler) {
  * @param {string} path
  */
 export function sendMonitorSubscribe(id, path) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "monitor-subscribe", id, path }));
-    }
+    if (!id || !path) return;
+
+    pendingMonitorUnsubscribes.delete(id);
+    pendingMonitorSubscribes.set(id, path);
+    flushPendingMonitorMessages();
 }
 
 /**
@@ -140,9 +166,11 @@ export function sendMonitorSubscribe(id, path) {
  * @param {string} id
  */
 export function sendMonitorUnsubscribe(id) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "monitor-unsubscribe", id }));
-    }
+    if (!id) return;
+
+    pendingMonitorSubscribes.delete(id);
+    pendingMonitorUnsubscribes.add(id);
+    flushPendingMonitorMessages();
 }
 
 /**
@@ -168,4 +196,6 @@ export function closeWebSocket() {
     }
 
     isConnected = false;
+    pendingMonitorSubscribes.clear();
+    pendingMonitorUnsubscribes.clear();
 }
