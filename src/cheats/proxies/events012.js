@@ -80,10 +80,7 @@ function applyAllCardPassiveBonuses(context, throttled = false) {
     }
 
     const cardBonusMap = gga?.DNSM?.h?.CardBonusS?.h;
-    const ownedCards = gga?.Cards?.[0]?.h;
-    const calcContext = getPrimaryCalcContext(context);
-
-    if (!cardBonusMap || !ownedCards || !calcContext) return false;
+    if (!cardBonusMap) return false;
 
     removePreviouslyInjectedBonuses(cardBonusMap);
 
@@ -91,6 +88,10 @@ function applyAllCardPassiveBonuses(context, throttled = false) {
         lastPassiveApplyAt = Date.now();
         return true;
     }
+
+    const ownedCards = gga?.Cards?.[0]?.h;
+    const calcContext = getPrimaryCalcContext(context);
+    if (!ownedCards || !calcContext) return false;
 
     const rowsById = getCardRowsById();
     const legendMultiplier = getLegendCardMultiplier(calcContext);

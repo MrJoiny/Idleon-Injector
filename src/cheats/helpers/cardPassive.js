@@ -23,24 +23,29 @@ let cardRowsById = null;
 export function getCardRowsById() {
     if (cardRowsById) return cardRowsById;
 
-    const map = new Map();
     const categories = cList?.CardStuff;
+    if (!Array.isArray(categories) || categories.length === 0) {
+        return new Map();
+    }
 
-    if (Array.isArray(categories)) {
-        for (const category of categories) {
-            if (!Array.isArray(category)) continue;
+    const map = new Map();
 
-            for (const row of category) {
-                if (!Array.isArray(row)) continue;
+    for (const category of categories) {
+        if (!Array.isArray(category)) continue;
 
-                const cardId = row[0];
-                if (typeof cardId !== "string" || !cardId || cardId === "Blank") continue;
-                map.set(cardId, row);
-            }
+        for (const row of category) {
+            if (!Array.isArray(row)) continue;
+
+            const cardId = row[0];
+            if (typeof cardId !== "string" || !cardId || cardId === "Blank") continue;
+            map.set(cardId, row);
         }
     }
 
-    cardRowsById = map;
+    if (map.size > 0) {
+        cardRowsById = map;
+    }
+
     return map;
 }
 
@@ -119,7 +124,6 @@ export function collectPotentialCardCalcContexts() {
     if (actors && typeof actors === "object") {
         for (const actor of Object.values(actors)) {
             addTarget(safeGetBehavior(actor, "ActorEvents_12"));
-            addTarget(safeGetBehavior(actor, "ActorEvents_312"));
         }
     }
 
@@ -127,19 +131,12 @@ export function collectPotentialCardCalcContexts() {
     addTarget(event12);
     addTarget(event12?.prototype);
 
-    const event312 = events(312);
-    addTarget(event312);
-    addTarget(event312?.prototype);
-
     const context = getGameContext();
     const scripts = context?.scripts;
-    if (scripts && typeof scripts === "object") {
-        for (const [name, script] of Object.entries(scripts)) {
-            if (!name.startsWith("ActorEvents_")) continue;
-
-            addTarget(script);
-            addTarget(script?.prototype);
-        }
+    const script12 = scripts?.ActorEvents_12;
+    if (script12) {
+        addTarget(script12);
+        addTarget(script12?.prototype);
     }
 
     return results;
