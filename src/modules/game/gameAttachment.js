@@ -21,7 +21,7 @@ const { createLogger } = require("../utils/logger");
 const log = createLogger("Game");
 
 const IDLEON_APP_ID = 1476970;
-const DEFAULT_TIMEOUT = 30000;
+const DEFAULT_TIMEOUT = 60000;
 const POLL_INTERVAL = 500;
 const COMMON_STEAM_PATHS = [
     "/usr/bin/steam",
