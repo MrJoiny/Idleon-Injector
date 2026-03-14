@@ -31,6 +31,7 @@ const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
 
 export const App = () => {
     store.initHeartbeat();
+    store.loadAppInfo();
 
     // Global Keyboard Shortcuts
     document.addEventListener("keydown", (e) => {

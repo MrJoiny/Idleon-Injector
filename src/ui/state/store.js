@@ -30,6 +30,7 @@ const appState = vanX.reactive({
     configDrawerOpen: false,
     isLoading: false,
     heartbeat: false,
+    appInfo: null,
     toast: { message: "", type: "", id: 0 },
     notificationHistory: [],
     config: null,
@@ -49,6 +50,7 @@ const dataState = vanX.reactive({
 });
 
 const MAX_NOTIFICATION_HISTORY = 10;
+let appInfoRequest = null;
 
 const Actions = {
     notify: (message, type = "success") => {
@@ -99,6 +101,26 @@ const SystemService = {
         };
         check();
         setInterval(check, 10000);
+    },
+
+    loadAppInfo: async () => {
+        if (appState.appInfo?.version) return appState.appInfo;
+        if (appInfoRequest) return appInfoRequest;
+
+        appInfoRequest = API.fetchAppInfo()
+            .then((appInfo) => {
+                appState.appInfo = appInfo;
+                return appInfo;
+            })
+            .catch((error) => {
+                console.error("Error loading app info:", error);
+                return null;
+            })
+            .finally(() => {
+                appInfoRequest = null;
+            });
+
+        return appInfoRequest;
     },
 };
 
@@ -325,6 +347,7 @@ const store = {
 
     notify: Actions.notify,
     initHeartbeat: SystemService.initHeartbeat,
+    loadAppInfo: SystemService.loadAppInfo,
 
     loadCheats: CheatService.loadCheats,
     executeCheat: CheatService.executeCheat,
