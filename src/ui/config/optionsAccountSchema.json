@@ -2711,14 +2711,12 @@
     "497": {
         "name": "Gaming Minigame High Score",
         "description": "Highest Round Reached High Score in the Log Game Minigame",
-        "type": "number",
-        "AI": true
+        "type": "number"
     },
     "498": {
         "name": "Tournament Lifetime Participation Counter",
         "description": "Lifetime counter for Pet Tournaments Participated In",
-        "type": "number",
-        "AI": true
+        "type": "number"
     },
     "499": {
         "name": "Summoning Grimoire Cost Reduction (%)",
@@ -2741,6 +2739,222 @@
     "502": {
         "name": "Tournament Unread Notification Flag",
         "description": "Unread Tournament Notification UI marker ('NEW' bubble flag)",
+        "type": "number",
+        "AI": true
+    },
+    "503": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "504": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "505": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "506": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "507": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "508": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "509": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "510": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "511": {
+        "name": "Tournament Registration Day Lock",
+        "description": "Most recent tournament day used for pet tournament registration gating",
+        "type": "number",
+        "AI": true
+    },
+    "512": {
+        "name": "Toobus/Goobus 4 Quest Stage",
+        "description": "Current completion stage for the multi-step Toobus/Goobus 4 quest chain",
+        "type": "number",
+        "AI": true
+    },
+    "513": {
+        "name": "Companion Alert Seen Flag",
+        "description": "One-time flag marking the companion warning/tooltip animation as seen",
+        "type": "number",
+        "AI": true
+    },
+    "514": {
+        "name": "Observation Min Roll Streak",
+        "description": "Temporary observation progress counter that boosts the Grid MinRoll bonus before reset",
+        "type": "number",
+        "AI": true
+    },
+    "515": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "516": {
+        "name": "Pet Mart Gem Reward Day Lock",
+        "description": "Last shop day the Pet Mart gem reward was claimed",
+        "type": "number",
+        "AI": true
+    },
+    "517": {
+        "name": "Workbench Selected Tab",
+        "description": "Saved workbench/crafting selection index restored when reopening the UI",
+        "type": "number",
+        "AI": true
+    },
+    "518": {
+        "name": "Companion 88 Cauldron Bonus Claimed",
+        "description": "One-time claim flag for the companion 88 Cauldron bonus reward",
+        "type": "number",
+        "AI": true
+    },
+    "519": {
+        "name": "Tournament Best Division This Season",
+        "description": "Highest pet tournament division reached during the current season",
+        "type": "number",
+        "AI": true
+    },
+    "520": {
+        "name": "Steam Promo UI State",
+        "description": "Finite-state flag for the Play-on-Steam / kill-dialogue promo UI",
+        "type": "number",
+        "AI": true
+    },
+    "521": {
+        "name": "Vault Upgrade Scroll Position",
+        "description": "Saved Vault upgrade screen scroll/offset position",
+        "type": "number",
+        "AI": true
+    },
+    "522": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "523": {
+        "name": "Supporter Pack Popup Suppression Flag",
+        "description": "High-spender/supporter flag tied to Pack Popup suppression messaging",
+        "type": "number",
+        "AI": true
+    },
+    "524": {
+        "name": "Guild GP Auto-Contribution Gate",
+        "description": "Feature gate controlling automatic Guild GP task contribution flow",
+        "type": "number",
+        "AI": true
+    },
+    "525": {
+        "name": "Timed Event Popup Suppression Flag",
+        "description": "One-time flag gating Happy Hour and related timed event popups",
+        "type": "number",
+        "AI": true
+    },
+    "526": {
+        "name": "GiveAllEZaccessFR Action Toggle",
+        "description": "Feature flag that triggers the GiveAllEZaccessFR action block during Emperor cleanup",
+        "type": "number",
+        "AI": true
+    },
+    "527": {
+        "name": "Auto-Claim Flag",
+        "description": "Feature flag that marks the surrounding reward flow as auto-claimed",
+        "type": "number",
+        "AI": true
+    },
+    "528": {
+        "name": "Farming Bulk Toggle Mode",
+        "description": "Enables the farming UI bulk toggle action for all farm plots",
+        "type": "number",
+        "AI": true
+    },
+    "529": {
+        "name": "Sailing Autopilot Intensity",
+        "description": "Controls queued sailing callbacks and save suppression for automated sailing flows",
+        "type": "number",
+        "AI": true
+    },
+    "530": {
+        "name": "Cog Trash-All Toggle",
+        "description": "Enables the one-click Trash All action in the CogCraft UI",
+        "type": "number",
+        "AI": true
+    },
+    "531": {
+        "name": "AutoUseAllEggies Action Toggle",
+        "description": "Feature flag that triggers the AutoUseAllEggies action block",
+        "type": "number",
+        "AI": true
+    },
+    "532": {
+        "name": "Unused",
+        "description": "No observable behavior in current build",
+        "type": "number",
+        "AI": true
+    },
+    "533": {
+        "name": "Random Event Bookmark Mode",
+        "description": "Enables per-slot marking/highlighting in the random event UI",
+        "type": "number",
+        "AI": true
+    },
+    "534": {
+        "name": "W5 Gaming Saved Selection",
+        "description": "Saved selection/state value restored when launching the W5 gaming event",
+        "type": "number",
+        "AI": true
+    },
+    "535": {
+        "name": "Ninja Super-Trash Toggle",
+        "description": "Enables the automatic Ninja super-trash cleanup routine",
+        "type": "number",
+        "AI": true
+    },
+    "536": {
+        "name": "Ninja Gem Click Mode",
+        "description": "Enables the extra Lucky Ninja Gem click interaction in the Ninja UI",
+        "type": "number",
+        "AI": true
+    },
+    "537": {
+        "name": "Global Ninja Refresh Toggle",
+        "description": "Allows Ninja updates and refreshes to apply across all player slots",
+        "type": "number",
+        "AI": true
+    },
+    "538": {
+        "name": "Auto Full-Clear Necessary Flag",
+        "description": "Toggles whether the AutoFullClearNECESSARY helper reports that an auto full clear is required",
         "type": "number",
         "AI": true
     }
