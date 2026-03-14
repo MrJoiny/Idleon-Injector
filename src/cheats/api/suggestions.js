@@ -122,7 +122,7 @@ export function getAutoCompleteSuggestions() {
     for (const [name, code] of allBundles) {
         choices.push({
             value: `buy ${code}`,
-            message: name,
+            message: name + " (One Time Use, does not provide gems and pets)",
             category: "buy",
         });
     }
