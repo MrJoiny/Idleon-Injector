@@ -28,17 +28,12 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { useWriteStatus } from "../featureShared.js";
+import { toInt, useWriteStatus } from "../featureShared.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-const safeInt = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? Math.round(n) : 0;
-};
 
 const unwrap = (v) => (v && typeof v === "object" && "h" in v ? v.h : v);
 
@@ -81,13 +76,13 @@ const DN_SUBTABS = [
 // ── PlayerKillRow (world mobs only) ───────────────────────────────────────────
 
 const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
-    const inputVal = van.state(String(safeInt(killState.val)));
+    const inputVal = van.state(String(toInt(killState.val)));
     const { status, run } = useWriteStatus();
     let isFocused = false;
 
     van.derive(() => {
         const v = killState.val;
-        if (v !== undefined && !isFocused) inputVal.val = String(safeInt(v));
+        if (v !== undefined && !isFocused) inputVal.val = String(toInt(v));
     });
 
     const resolveNum = (raw) => {
@@ -118,10 +113,10 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
 
                 let verifiedLeft;
                 try {
-                    verifiedLeft = safeInt(await readGga(dbPath));
+                    verifiedLeft = toInt(await readGga(dbPath));
                 } catch (err) {
                     if (!isCurrentPlayer) throw err;
-                    verifiedLeft = safeInt(await readGga(liveKillsLeftPath(mob.mapIndex)));
+                    verifiedLeft = toInt(await readGga(liveKillsLeftPath(mob.mapIndex)));
                 }
 
                 if (verifiedLeft !== newKillsLeft) {
@@ -157,7 +152,7 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
             playerName,
             isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, " (you)") : null
         ),
-        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(safeInt(killState.val))),
+        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
         div(
             { class: "dn-player-row__controls" },
             NumberInput({
@@ -203,7 +198,7 @@ const MobRow = ({ mob, getKillState, getExpandState, currentPlayer }) => {
     const expanded = getExpandState(mob.mobId);
     const playerNames = Object.keys(mob.perCharacterKills);
 
-    const totalKills = () => playerNames.reduce((sum, name) => sum + safeInt(getKillState(mob.mobId, name).val), 0);
+    const totalKills = () => playerNames.reduce((sum, name) => sum + toInt(getKillState(mob.mobId, name).val), 0);
 
     const playerRows = playerNames.map((name) => {
         const isCurrentPlayer = name === currentPlayer;
@@ -239,13 +234,13 @@ const MobRow = ({ mob, getKillState, getExpandState, currentPlayer }) => {
 // ── MinibossRow ───────────────────────────────────────────────────────────────
 
 const MinibossRow = ({ mob, killState }) => {
-    const inputVal = van.state(String(safeInt(killState.val)));
+    const inputVal = van.state(String(toInt(killState.val)));
     const { status, run } = useWriteStatus();
     let isFocused = false;
 
     van.derive(() => {
         const v = killState.val;
-        if (v !== undefined && !isFocused) inputVal.val = String(safeInt(v));
+        if (v !== undefined && !isFocused) inputVal.val = String(toInt(v));
     });
 
     const resolveNum = (raw) => {
@@ -271,7 +266,7 @@ const MinibossRow = ({ mob, killState }) => {
                 `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`,
         },
         div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, mob.mobName)),
-        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(safeInt(killState.val))),
+        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
         div(
             { class: "feature-row__controls feature-row__controls--xl" },
             NumberInput({
@@ -498,12 +493,12 @@ export const DeathNoteTab = () => {
             const getRequired = (mapIndex) => {
                 const row = toIndexedArray(mapDetails[mapIndex] ?? []);
                 const inner = toIndexedArray(row[0] ?? []);
-                return safeInt(inner[0] ?? 0);
+                return toInt(inner[0] ?? 0);
             };
 
             const getCurrentKills = (mapIndex) => {
                 const required = getRequired(mapIndex);
-                const left = safeInt(toIndexedArray(killsLeftArr[mapIndex] ?? [])[0] ?? required);
+                const left = toInt(toIndexedArray(killsLeftArr[mapIndex] ?? [])[0] ?? required);
                 return required - left;
             };
 
@@ -511,7 +506,7 @@ export const DeathNoteTab = () => {
                 const required = getRequired(mapIndex);
                 const pdata = unwrap(playerDb[playerName]) || {};
                 const pKillsLeft = toIndexedArray(pdata.KillsLeft2Advance ?? []);
-                const left = safeInt(toIndexedArray(pKillsLeft[mapIndex] ?? [])[0] ?? required);
+                const left = toInt(toIndexedArray(pKillsLeft[mapIndex] ?? [])[0] ?? required);
                 return required - left;
             };
 
@@ -549,7 +544,7 @@ export const DeathNoteTab = () => {
                 mobId,
                 mobName: getMobName(mobId),
                 mobIndex: i,
-                kills: safeInt(minibossKills[i] ?? 0),
+                kills: toInt(minibossKills[i] ?? 0),
             }));
 
             if (seq !== dnStore.loadSeq) return;
@@ -558,7 +553,7 @@ export const DeathNoteTab = () => {
                 for (const mob of worlds[worldKey] ?? []) {
                     for (const [name, kills] of Object.entries(mob.perCharacterKills)) {
                         const key = `${mob.mobId}:${name}`;
-                        const v = String(safeInt(kills));
+                        const v = String(toInt(kills));
                         if (dnStore.killStateMap.has(key)) dnStore.killStateMap.get(key).val = v;
                         else dnStore.killStateMap.set(key, van.state(v));
                     }

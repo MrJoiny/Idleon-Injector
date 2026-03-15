@@ -31,13 +31,12 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { RefreshErrorBanner, toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 // All displayed numbers are plain integers — no decimals, no thousands commas
-const safeInt = (v) => Math.floor(toNum(v));
-const fmtInt = (v) => String(safeInt(v));
+const fmtInt = (v) => String(toInt(v, { mode: "floor" }));
 
 const fmtCloudName = (raw) =>
     String(raw ?? "")
@@ -47,7 +46,7 @@ const fmtCloudName = (raw) =>
 // Mirrors in-game visibility: visible count = clamp(Dream[2], 0, 5),
 // then include cloud i when WeeklyBoss.h["d_i"] !== -1, up to that count.
 function getVisibleCloudIndexes(firstUpgLevel, dreamChallengeArr, weeklyBossMap) {
-    const visibleCount = Math.max(0, Math.min(5, safeInt(firstUpgLevel)));
+    const visibleCount = Math.max(0, Math.min(5, toInt(firstUpgLevel, { mode: "floor" })));
     const out = [];
     for (let i = 0; i < dreamChallengeArr.length && out.length < visibleCount; i++) {
         if (toNum(weeklyBossMap["d_" + i]) !== -1) out.push(i);
@@ -155,7 +154,7 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
     });
 
     const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(entry.maxLevel, safeInt(raw)));
+        const lvl = Math.max(0, Math.min(entry.maxLevel, toInt(raw, { mode: "floor" })));
         await run(async () => {
             // Dream[0] and Dream[1] are reserved; upgrades start at Dream[2]
             await writeGga(`Dream[${entry.index + 2}]`, lvl);
@@ -189,8 +188,8 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
                 mode: "int",
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, safeInt(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(entry.maxLevel, safeInt(inputVal.val) + 1))),
+                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { mode: "floor" }) - 1))),
+                onIncrement: () => (inputVal.val = String(Math.min(entry.maxLevel, toInt(inputVal.val, { mode: "floor" }) + 1))),
             }),
             button(
                 {
@@ -248,8 +247,8 @@ export const EquinoxTab = () => {
             return {
                 cloudIndex: i,
                 name: fmtCloudName(arr[0]),
-                required: safeInt(arr[1]),
-                progress: safeInt(weeklyBossMap["d_" + i] ?? 0),
+                required: toInt(arr[1], { mode: "floor" }),
+                progress: toInt(weeklyBossMap["d_" + i] ?? 0, { mode: "floor" }),
             };
         });
 
@@ -285,11 +284,15 @@ export const EquinoxTab = () => {
                 readComputed("dream", "BarFillReq", [0]).catch(() => barFillReqState.val),
             ]);
 
-            barFillReqState.val = safeInt(newBarFillReq);
+            barFillReqState.val = toInt(newBarFillReq, { mode: "floor" });
 
             const dreamArr = toIndexedArray(rawDream ?? []);
             const weeklyBossMap = rawWeeklyBoss ?? {};
-            const visibleIndexes = getVisibleCloudIndexes(safeInt(dreamArr[2]), cachedDreamChallengeArr, weeklyBossMap);
+            const visibleIndexes = getVisibleCloudIndexes(
+                toInt(dreamArr[2], { mode: "floor" }),
+                cachedDreamChallengeArr,
+                weeklyBossMap
+            );
             updateCloudEntries(visibleIndexes, weeklyBossMap, cachedDreamChallengeArr);
         } catch {
             // Silent — upgrade write already succeeded; bar/cloud are best-effort
@@ -320,17 +323,17 @@ export const EquinoxTab = () => {
             cachedDreamChallengeArr = toIndexedArray(rawDreamChallenge ?? []);
 
             // ── Bar ───────────────────────────────────────────────────────────
-            barFillState.val = safeInt(dreamArr[0]);
-            barFillReqState.val = safeInt(barFillReq);
-            barFillRateState.val = safeInt(barFillRate);
+            barFillState.val = toInt(dreamArr[0], { mode: "floor" });
+            barFillReqState.val = toInt(barFillReq, { mode: "floor" });
+            barFillRateState.val = toInt(barFillRate, { mode: "floor" });
 
             // ── Upgrades ──────────────────────────────────────────────────────
-            const count = safeInt(upgUnlocked);
+            const count = toInt(upgUnlocked, { mode: "floor" });
 
             const maxLevels = await Promise.all(
                 Array.from({ length: count }, (_, i) =>
                     readComputed("dream", "UpgMaxLV", [i])
-                        .then((v) => safeInt(v))
+                        .then((v) => toInt(v, { mode: "floor" }))
                         .catch(() => 0)
                 )
             );
@@ -340,7 +343,7 @@ export const EquinoxTab = () => {
                 index: i,
                 name: String(toIndexedArray(dreamUpgArr[i] ?? [])[0] ?? `Upgrade ${i + 1}`),
                 maxLevel: maxLevels[i] ?? 0,
-                level: safeInt(dreamArr[i + 2]),
+                level: toInt(dreamArr[i + 2], { mode: "floor" }),
             }));
 
             const existingUpg = upgradeEntries.val;
@@ -360,7 +363,7 @@ export const EquinoxTab = () => {
             }
 
             // ── Clouds ────────────────────────────────────────────────────────
-            const visibleIndexes = getVisibleCloudIndexes(safeInt(dreamArr[2]), cachedDreamChallengeArr, weeklyBossMap);
+            const visibleIndexes = getVisibleCloudIndexes(toInt(dreamArr[2], { mode: "floor" }), cachedDreamChallengeArr, weeklyBossMap);
             updateCloudEntries(visibleIndexes, weeklyBossMap, cachedDreamChallengeArr);
 
             markReady();

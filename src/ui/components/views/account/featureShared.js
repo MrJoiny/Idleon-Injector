@@ -37,6 +37,26 @@ export const toNum = (value, fallback = 0) => {
     return Number.isFinite(n) ? n : fallback;
 };
 
+/**
+ * Safely coerce a value to a finite integer with configurable behavior.
+ * - Default: round to nearest integer.
+ * - mode: "floor" for floor behavior.
+ * - min: clamp lower bound (e.g. 0 for non-negative ints).
+ *
+ * Backward compatible call style is supported:
+ *   toInt(value, fallbackNumber)
+ */
+export const toInt = (value, opts = 0) => {
+    const hasConfig = opts !== null && typeof opts === "object" && !Array.isArray(opts);
+    const fallback = hasConfig ? (opts.fallback ?? 0) : opts;
+    const mode = hasConfig ? (opts.mode ?? "round") : "round";
+    const min = hasConfig ? (opts.min ?? -Infinity) : -Infinity;
+
+    const n = toNum(value, toNum(fallback, 0));
+    const asInt = mode === "floor" ? Math.floor(n) : Math.round(n);
+    return Math.max(min, asInt);
+};
+
 export const RefreshErrorBanner =
     ({ error }) =>
     () =>

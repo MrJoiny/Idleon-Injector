@@ -25,7 +25,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -39,12 +39,6 @@ const WORSHIP_TOTEM_NAMES = [
     "Breezy Battle",
     "Pufferblob Brawl",
 ];
-
-const safeInt = (value) => {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.round(n));
-};
 
 const Section = (title, rows) =>
     div(
@@ -74,7 +68,7 @@ const WorshipChargeRow = ({
         activeCharacterNameRef.val === playerName;
 
     const doSet = async (rawValue) => {
-        const next = safeInt(rawValue);
+        const next = toInt(rawValue, { min: 0 });
 
         await run(async () => {
             await writeCharge(playerName, next);
@@ -116,8 +110,8 @@ const WorshipChargeRow = ({
                 mode: "int",
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, safeInt(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(safeInt(inputVal.val) + 1)),
+                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { min: 0 }) - 1))),
+                onIncrement: () => (inputVal.val = String(toInt(inputVal.val, { min: 0 }) + 1)),
             }),
             button(
                 {
@@ -146,7 +140,7 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) => {
     });
 
     const doSet = async (rawValue) => {
-        const next = safeInt(rawValue);
+        const next = toInt(rawValue, { min: 0 });
 
         await run(async () => {
             await writeWave(index, next);
@@ -179,8 +173,8 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) => {
                 mode: "int",
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, safeInt(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(safeInt(inputVal.val) + 1)),
+                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { min: 0 }) - 1))),
+                onIncrement: () => (inputVal.val = String(toInt(inputVal.val, { min: 0 }) + 1)),
             }),
             button(
                 {
@@ -266,17 +260,17 @@ export const WorshipTab = () => {
 
             activeCharacterNameRef.val = activeCharacterName;
             activeMaxChargeRef.val =
-                activeMaxCharge === null || activeMaxCharge === undefined ? null : safeInt(activeMaxCharge);
+                activeMaxCharge === null || activeMaxCharge === undefined ? null : toInt(activeMaxCharge, { min: 0 });
 
             const players = playerNames.map((playerName) => {
                 const playerStuff = toIndexedArray(playerEntries?.[playerName]?.PlayerStuff ?? []);
-                const storedCharge = safeInt(playerStuff[0]);
+                const storedCharge = toInt(playerStuff[0], { min: 0 });
 
                 const charge =
                     typeof activeCharacterName === "string" &&
                     activeCharacterName.length > 0 &&
                     activeCharacterName === playerName
-                        ? safeInt(activeLiveCharge)
+                        ? toInt(activeLiveCharge, { min: 0 })
                         : storedCharge;
 
                 getChargeState(playerName).val = charge;
@@ -285,7 +279,7 @@ export const WorshipTab = () => {
 
             const totemWaves = toIndexedArray(rawTotemInfo0 ?? []);
             const towerRows = WORSHIP_TOTEM_NAMES.map((name, index) => {
-                const wave = safeInt(totemWaves[index]);
+                const wave = toInt(totemWaves[index], { min: 0 });
                 getWaveState(index).val = wave;
                 return { index, name };
             });

@@ -27,17 +27,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 const unwrap = (value) => (value && typeof value === "object" && "h" in value ? value.h : value);
-
-const safeInt = (value, fallback = 0) => {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return fallback;
-    return Math.round(n);
-};
 
 const cleanName = (raw, fallback = "") =>
     String(raw ?? fallback)
@@ -57,8 +51,8 @@ const largeParser = (display) => {
 const trapStateKey = (playerName, trapIndex, field) => `${playerName}:${trapIndex}:${field}`;
 const trapBasePath = (playerName, trapIndex) => `PlayerDATABASE.h[${playerName}].h.PldTraps[${trapIndex}]`;
 const progressLabel = (elapsed, completion) => {
-    const done = safeInt(elapsed, 0);
-    const total = Math.max(0, safeInt(completion, 0));
+    const done = toInt(elapsed, 0);
+    const total = Math.max(0, toInt(completion, 0));
     const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((done / total) * 100))) : 0;
     return `Progress: ${done} / ${total} (${pct}%)`;
 };
@@ -80,11 +74,11 @@ const resolveCritterName = (critterId, itemDefs, monsterDefs) => {
 };
 
 const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInputState, onWriteField }) => {
-    const qtyValue = getValueState(playerName, trap.trapIndex, "qty", safeInt(trap.qty));
-    const expValue = getValueState(playerName, trap.trapIndex, "exp", safeInt(trap.exp));
-    const rareValue = getValueState(playerName, trap.trapIndex, "rare", safeInt(trap.rareChance));
-    const elapsedValue = getValueState(playerName, trap.trapIndex, "elapsed", safeInt(trap.elapsed));
-    const completionValue = getValueState(playerName, trap.trapIndex, "completion", safeInt(trap.completionTime));
+    const qtyValue = getValueState(playerName, trap.trapIndex, "qty", toInt(trap.qty));
+    const expValue = getValueState(playerName, trap.trapIndex, "exp", toInt(trap.exp));
+    const rareValue = getValueState(playerName, trap.trapIndex, "rare", toInt(trap.rareChance));
+    const elapsedValue = getValueState(playerName, trap.trapIndex, "elapsed", toInt(trap.elapsed));
+    const completionValue = getValueState(playerName, trap.trapIndex, "completion", toInt(trap.completionTime));
 
     const qtyInput = getInputState(playerName, trap.trapIndex, "qty", String(qtyValue.val));
     const expInput = getInputState(playerName, trap.trapIndex, "exp", String(expValue.val));
@@ -98,7 +92,7 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
         if (parsed !== null) return Math.max(0, Math.round(parsed));
         const asNumber = Number(raw);
         if (Number.isFinite(asNumber)) return Math.max(0, Math.round(asNumber));
-        return Math.max(0, safeInt(fallback, 0));
+        return Math.max(0, toInt(fallback, 0));
     };
     const latestRaw = (inputState) => {
         const liveRaw = getNumberInputLiveRaw(inputState);
@@ -134,7 +128,7 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
     };
 
     const doFinish = async () => {
-        const finishAt = safeInt(completionValue.val, safeInt(trap.completionTime));
+        const finishAt = toInt(completionValue.val, toInt(trap.completionTime));
         await finishStatus.run(async () => {
             await onWriteField(playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer);
             elapsedValue.val = finishAt;
@@ -155,7 +149,7 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
         span(
             { class: "feature-row__badge trap-row__badge" },
             () =>
-                `QTY ${formatNumber(safeInt(qtyValue.val))} | EXP ${formatNumber(safeInt(expValue.val))} | RARE ${formatNumber(safeInt(rareValue.val))}`
+                `QTY ${formatNumber(toInt(qtyValue.val))} | EXP ${formatNumber(toInt(expValue.val))} | RARE ${formatNumber(toInt(rareValue.val))}`
         ),
         div(
             { class: "feature-row__controls trap-row__controls" },
@@ -237,7 +231,7 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
                     trap.completionTime
                 );
                 const elapsedState = getValueState(player.playerName, trap.trapIndex, "elapsed", trap.elapsed);
-                const finishAt = safeInt(completionState.val, safeInt(trap.completionTime));
+                const finishAt = toInt(completionState.val, toInt(trap.completionTime));
                 await onWriteField(player.playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer);
                 elapsedState.val = finishAt;
             }
@@ -331,15 +325,15 @@ export const TrappingTab = () => {
     const setTrapStatesFromSnapshot = (snapshot) => {
         for (const player of snapshot.players) {
             for (const trap of player.traps) {
-                getValueState(player.playerName, trap.trapIndex, "qty", 0).val = safeInt(trap.qty);
-                getValueState(player.playerName, trap.trapIndex, "exp", 0).val = safeInt(trap.exp);
-                getValueState(player.playerName, trap.trapIndex, "rare", 0).val = safeInt(trap.rareChance);
-                getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = safeInt(trap.elapsed);
-                getValueState(player.playerName, trap.trapIndex, "completion", 0).val = safeInt(trap.completionTime);
+                getValueState(player.playerName, trap.trapIndex, "qty", 0).val = toInt(trap.qty);
+                getValueState(player.playerName, trap.trapIndex, "exp", 0).val = toInt(trap.exp);
+                getValueState(player.playerName, trap.trapIndex, "rare", 0).val = toInt(trap.rareChance);
+                getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = toInt(trap.elapsed);
+                getValueState(player.playerName, trap.trapIndex, "completion", 0).val = toInt(trap.completionTime);
 
-                getInputState(player.playerName, trap.trapIndex, "qty", "0").val = String(safeInt(trap.qty));
-                getInputState(player.playerName, trap.trapIndex, "exp", "0").val = String(safeInt(trap.exp));
-                getInputState(player.playerName, trap.trapIndex, "rare", "0").val = String(safeInt(trap.rareChance));
+                getInputState(player.playerName, trap.trapIndex, "qty", "0").val = String(toInt(trap.qty));
+                getInputState(player.playerName, trap.trapIndex, "exp", "0").val = String(toInt(trap.exp));
+                getInputState(player.playerName, trap.trapIndex, "rare", "0").val = String(toInt(trap.rareChance));
             }
         }
     };
@@ -379,21 +373,21 @@ export const TrappingTab = () => {
                 const traps = rawTraps
                     .map((rawTrap, trapIndex) => {
                         const t = toIndexedArray(rawTrap ?? []);
-                        const mapValue = safeInt(t[0], -1);
+                        const mapValue = toInt(t[0], -1);
                         if (mapValue === -1) return null;
 
                         return {
                             trapIndex,
                             map: mapValue,
-                            xPos: safeInt(t[1], 0),
-                            elapsed: safeInt(t[2], 0),
+                            xPos: toInt(t[1], 0),
+                            elapsed: toInt(t[2], 0),
                             critterId: t[3],
                             critterName: resolveCritterName(t[3], itemDefs, monsterDefs),
-                            qty: safeInt(t[4], 0),
-                            trapType: safeInt(t[5], 0),
-                            completionTime: safeInt(t[6], 0),
-                            exp: safeInt(t[7], 0),
-                            rareChance: safeInt(t[8], 0),
+                            qty: toInt(t[4], 0),
+                            trapType: toInt(t[5], 0),
+                            completionTime: toInt(t[6], 0),
+                            exp: toInt(t[7], 0),
+                            rareChance: toInt(t[8], 0),
                         };
                     })
                     .filter(Boolean);
