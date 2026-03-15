@@ -33,89 +33,6 @@
     margin: 0 auto;
 }
 
-.cogs-spawn-panel {
-    width: 220px;
-    min-width: 220px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: 1px solid var(--c-border);
-    background: var(--c-panel);
-    padding: 8px;
-}
-
-.cogs-spawn-panel h3 {
-    margin: 0;
-    font-size: 0.82rem;
-    color: var(--c-accent);
-}
-
-.cogs-spawn-panel__desc {
-    margin: 0;
-    font-size: 0.68rem;
-    color: var(--c-text-dim);
-    font-family: var(--font-mono);
-}
-
-.cogs-spawn-panel__controls {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.cogs-spawn-panel__select {
-    width: 100%;
-    height: 30px;
-    padding: 4px 8px;
-    border: 1px solid var(--c-border);
-    background: var(--c-panel-dim);
-    color: var(--c-text);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-}
-
-.cogs-spawn-panel__select:focus {
-    outline: none;
-    border-color: var(--c-border-strong);
-}
-
-.cogs-spawn-panel__status,
-.cogs-spawn-panel__error,
-.cogs-spawn-panel__result {
-    margin: 0;
-    border: 1px solid var(--c-border);
-    background: var(--c-panel-dim);
-    padding: 6px 8px;
-    font-size: 0.68rem;
-    line-height: 1.35;
-    font-family: var(--font-mono);
-}
-
-.cogs-spawn-panel__warning {
-    margin: 0;
-    border: 1px solid var(--c-cogs-warning-border);
-    background: var(--c-cogs-warning-bg);
-    padding: 6px 8px;
-    font-size: 0.68rem;
-    line-height: 1.35;
-    font-family: var(--font-mono);
-    color: var(--c-cogs-warning-text);
-}
-
-.cogs-spawn-panel__status {
-    color: var(--c-text);
-}
-
-.cogs-spawn-panel__error {
-    color: var(--c-danger);
-    border-color: var(--c-cogs-error-border);
-}
-
-.cogs-spawn-panel__result {
-    color: var(--c-success);
-    border-color: var(--c-cogs-success-border);
-}
-
 .cogs-main-grid {
     display: grid;
     grid-template-columns: repeat(12, 44px);
@@ -343,11 +260,6 @@
     gap: 6px;
 }
 
-.cogs-tiny-editor__actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
 .cogs-cog-stats__warning {
     font-size: 0.68rem;
     color: var(--c-text-dim);
@@ -481,9 +393,4 @@
         align-items: center;
     }
 
-    .cogs-spawn-panel {
-        width: 100%;
-        min-width: 0;
-        max-width: 560px;
-    }
 }

@@ -32,7 +32,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, input, select, option } = van.tags;
+const { div, button, span, h3, p, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
 
 const FlagIcon = (props = {}) =>
@@ -81,20 +81,6 @@ const COG_MAP_FIELD_META = {
     j: { keyName: "%_Speed_to_Flags", meaning: "% speed to flags" },
     k: { keyName: "%_Nothing_sowwy", meaning: "Junk/placeholder stat ('Nothing sowwy')" },
 };
-const COG_SURROUND_NAMES = [
-    "adjacent",
-    "diagonal",
-    "left",
-    "right",
-    "up",
-    "down",
-    "row",
-    "column",
-    "corners",
-    "everything",
-    "around",
-];
-
 const isMainSlot = (index) => index >= 0 && index < MAIN_SLOT_COUNT;
 const isSideSlot = (index) => index >= MAIN_SLOT_COUNT && index < TOTAL_SLOT_COUNT;
 const TINY_COG_TYPES = new Set(["_", "a", "b"]);
@@ -116,24 +102,6 @@ const renderCogSvg = (id, className) => {
  */
 const getCogOrderIndex = (uiIndex) =>
     uiIndex < MAIN_SLOT_COUNT ? uiIndex : COGORDER_SIDE_START + (uiIndex - MAIN_SLOT_COUNT);
-
-const getCogKind = (cogId) => {
-    const id = String(cogId ?? "");
-    if (!id || id === "Blank") return "Blank";
-    if (id.startsWith("Player_")) return "Player";
-    if (id === "CogY") return "Special gem cog";
-    if (/^CogZA0[0-3]$/.test(id)) return "Special jewel cog";
-    if (id.startsWith("CogSm")) return "Tiny cog";
-    if (id.startsWith("CogCry")) return "Crystal cog";
-    if (/^Cog[0-3]/.test(id)) return "Crafted cog";
-    return "Unknown";
-};
-
-const getRarityTier = (cogId) => {
-    const id = String(cogId ?? "");
-    const marker = id.charAt(3);
-    return ["0", "1", "2", "3"].includes(marker) ? Number(marker) : null;
-};
 
 const getTinyTier = (cogId) => {
     const id = String(cogId ?? "");
@@ -208,14 +176,6 @@ const stateLabel = (state) => {
     return "UNLOCKING";
 };
 
-const COG_SPAWN_OPTIONS = [
-    { value: "nooby", label: "Nooby", jeweled: false, lane: 0 },
-    { value: "decent", label: "Decent", jeweled: false, lane: 1 },
-    { value: "superb", label: "Superb", jeweled: false, lane: 2 },
-    { value: "ultimate", label: "Ultimate", jeweled: false, lane: 3 },
-    { value: "jeweled", label: "Jeweled", jeweled: true, lane: 0 },
-];
-
 export const CogsTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
@@ -238,11 +198,6 @@ export const CogsTab = () => {
     const activeCogNameStatus = van.state("idle");
     const cogNameCache = new Map();
     let activeCogNameRequestId = 0;
-    const spawnBusy = van.state(false);
-    const spawnStatus = van.state("");
-    const spawnError = van.state(null);
-    const spawnResult = van.state(null);
-    const spawnSelection = van.state(COG_SPAWN_OPTIONS[0].value);
     const tinyTypeInput = van.state("_");
     const tinyTierInput = van.state("0");
 
@@ -258,10 +213,7 @@ export const CogsTab = () => {
         run: runTinyWrite,
         clearStatus: clearTinyWriteStatus,
     } = useWriteStatus({ successMs: 1100, errorMs: 1600 });
-
     const getActiveIndex = () => (activeSlot.val === null ? selectedSlot.val : activeSlot.val);
-    const getActiveCogId = () => String(cogOrders[getActiveIndex()].val ?? "Blank");
-    const getActiveCogOrderSlot = () => getCogOrderIndex(getActiveIndex());
 
     const syncTinyInputsFromSlot = (index) => {
         if (!isSideSlot(index)) return;
@@ -297,34 +249,6 @@ export const CogsTab = () => {
             if (reqId !== activeCogNameRequestId) return;
             activeCogName.val = cogId;
             activeCogNameStatus.val = "error";
-        }
-    };
-
-    const spawnCogFromUi = async ({ jeweled = false, lane = 0, label = "" } = {}) => {
-        if (spawnBusy.val) return;
-
-        spawnBusy.val = true;
-        spawnError.val = null;
-        spawnResult.val = null;
-        spawnStatus.val = jeweled ? "Spawning jeweled cog..." : `Spawning ${label || "lane"} cog...`;
-
-        try {
-            const result = await readComputed("cogSpawn", "spawn", [jeweled, lane]);
-            const cogId = String(result?.id ?? "Blank");
-            const cogName = await resolveCogName(cogId).catch(() => cogId);
-            spawnResult.val = {
-                ...result,
-                name: cogName,
-            };
-            spawnStatus.val = jeweled
-                ? `Spawned jeweled cog in slot ${result?.slot ?? "?"}.`
-                : `Spawned ${label} cog in slot ${result?.slot ?? "?"}.`;
-            await load();
-        } catch (e) {
-            spawnError.val = e?.message ?? "Failed to spawn cog.";
-            spawnStatus.val = "";
-        } finally {
-            spawnBusy.val = false;
         }
     };
 
@@ -414,19 +338,19 @@ export const CogsTab = () => {
         if (!isSideSlot(index)) return;
 
         const slot = getCogOrderIndex(index);
-        const rawType = String(tinyTypeInput.val ?? "").trim();
-        const rawTier = Number(tinyTierInput.val);
 
         await runTinyWrite(async () => {
-            const result = await readComputed("tinyCog", "set", [slot, rawType, rawTier]);
-            const newId = String(result?.id ?? "Blank");
-            const normalizedType = String(result?.type ?? getTinyTypeCode(newId) ?? "_");
-            const normalizedTier = Number(result?.tier);
-
-            cogOrders[index].val = newId;
-            if (result?.cogMap?.h && typeof result.cogMap.h === "object") {
-                cogMapStats[index].val = cloneCogMapStats(result.cogMap);
+            const normalizedType = String(tinyTypeInput.val ?? "")
+                .trim()
+                .slice(0, 1);
+            const normalizedTier = Math.max(0, Math.min(9, Number(tinyTierInput.val) || 0));
+            if (!TINY_COG_TYPES.has(normalizedType)) {
+                throw new Error('Tiny cog type must be "_", "a", or "b".');
             }
+            const newId = `CogSm${normalizedType}${normalizedTier}`;
+
+            await writeGga(`CogOrder[${slot}]`, newId);
+            cogOrders[index].val = newId;
             tinyTypeInput.val = TINY_COG_TYPES.has(normalizedType) ? normalizedType : "_";
             tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(normalizedTier) ? normalizedTier : 0)));
             void refreshActiveCogName(index);
@@ -597,9 +521,6 @@ export const CogsTab = () => {
                     : new Text("")
         );
 
-    const isJeweledSpawnSelected = () =>
-        (COG_SPAWN_OPTIONS.find((entry) => entry.value === spawnSelection.val) ?? COG_SPAWN_OPTIONS[0]).jeweled;
-
     const leftRail = div(
         { class: "cogs-side-grid cogs-side-grid--left" },
         ...Array.from({ length: SIDE_SLOT_COUNT }, (_, i) => renderSlot(LEFT_SIDE_START + i, "cogs-slot--small"))
@@ -615,69 +536,11 @@ export const CogsTab = () => {
         ...Array.from({ length: SIDE_SLOT_COUNT }, (_, i) => renderSlot(RIGHT_SIDE_START + i, "cogs-slot--small"))
     );
 
-    const spawnPanel = div(
-        { class: "cogs-spawn-panel" },
-        h3({}, "COG SPAWNER"),
-        p({ class: "cogs-spawn-panel__desc" }, "Spawn one cog directly into normal cog storage (page 1+)."),
-        div(
-            { class: "cogs-spawn-panel__controls" },
-            select(
-                {
-                    class: "cogs-spawn-panel__select",
-                    disabled: () => spawnBusy.val || loading.val,
-                    value: () => spawnSelection.val,
-                    onchange: (e) => {
-                        spawnSelection.val = String(e.target.value ?? COG_SPAWN_OPTIONS[0].value);
-                    },
-                },
-                ...COG_SPAWN_OPTIONS.map((entry) => option({ value: entry.value }, entry.label))
-            ),
-            button(
-                {
-                    type: "button",
-                    class: () => `feature-btn feature-btn--apply${spawnBusy.val ? " feature-btn--loading" : ""}`,
-                    disabled: () => spawnBusy.val || loading.val,
-                    onclick: () => {
-                        const selected =
-                            COG_SPAWN_OPTIONS.find((entry) => entry.value === spawnSelection.val) ??
-                            COG_SPAWN_OPTIONS[0];
-                        spawnCogFromUi({
-                            jeweled: selected.jeweled,
-                            lane: selected.lane,
-                            label: selected.label,
-                        });
-                    },
-                },
-                "SPAWN COG"
-            )
-        ),
-        () =>
-            isJeweledSpawnSelected()
-                ? p(
-                      { class: "cogs-spawn-panel__warning" },
-                      "You might have to reopen the cogboard to see the Jeweled cogs."
-                  )
-                : null,
-        () => (spawnStatus.val ? p({ class: "cogs-spawn-panel__status" }, () => spawnStatus.val) : null),
-        () => (spawnError.val ? p({ class: "cogs-spawn-panel__error" }, () => spawnError.val) : null),
-        () =>
-            spawnResult.val
-                ? p(
-                      { class: "cogs-spawn-panel__result" },
-                      () => `Result: ${spawnResult.val.name || spawnResult.val.id || "Unknown"}`
-                  )
-                : null
-    );
-
     const boardPane = div(
         { class: () => paneClass("cogs-scroll scrollable-panel") },
         div(
             { class: "cogs-board-shell" },
-            div(
-                { class: "cogs-board-content" },
-                spawnPanel,
-                div({ class: "cogs-board-layout" }, leftRail, mainGrid, rightRail)
-            )
+            div({ class: "cogs-board-content" }, div({ class: "cogs-board-layout" }, leftRail, mainGrid, rightRail))
         )
     );
 
