@@ -111,8 +111,8 @@ const renderCogSvg = (id, className) => {
 
 /**
  * Map a UI slot index to its CogOrder game-array index.
- * Main board  (UI  0â€“ 95) â†’ CogOrder[  0â€“ 95]
- * Side rails  (UI 96â€“119) â†’ CogOrder[228â€“251]
+ * Main board (UI 0-95) -> CogOrder[0-95]
+ * Side rails (UI 96-119) -> CogOrder[228-251]
  */
 const getCogOrderIndex = (uiIndex) =>
     uiIndex < MAIN_SLOT_COUNT ? uiIndex : COGORDER_SIDE_START + (uiIndex - MAIN_SLOT_COUNT);
@@ -181,7 +181,7 @@ const getSlotName = (index) => {
 // FlagReq formula for main slots: 25 * cList.FlagReqs[index]
 // FlagReq formula for side slots (index >= 96):
 //   5e6 * (1 + min(9, 9*(b-96)) + max(0, 10*(b-97))) * 4^(b-96)
-// Source: p._customBlock_WorkbenchStuff("FlagReq", b, e) â€” game line 12134
+// Source: p._customBlock_WorkbenchStuff("FlagReq", b, e) - game line 12134
 const getSideSlotCap = (index) => {
     const r0 = Math.round(index - 96);
     const r1 = Math.round(index - 97);
@@ -228,7 +228,7 @@ export const CogsTab = () => {
     const slotValues = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state(0));
     const slotCaps = Array.from({ length: MAIN_SLOT_COUNT }, () => van.state(0));
     const flaggedSlots = van.state(new Set());
-    // Raw FlagsPlaced array â€” each entry is a slot UI index (or -1 for an empty entry).
+    // Raw FlagsPlaced array - each entry is a slot UI index (or -1 for an empty entry).
     const flagsRaw = van.state([]);
     // CogOrder name per UI slot (e.g. "Cog0A00", "Player_name", "Blank")
     const cogOrders = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state("Blank"));
@@ -400,7 +400,7 @@ export const CogsTab = () => {
     const setCogMapField = async (field, rawValue) => {
         const index = getActiveIndex();
         const cogIdx = getCogOrderIndex(index);
-        // parseNumber handles formatted strings like "50K" â†’ 50000
+        // parseNumber handles formatted strings like "50K" -> 50000
         const numVal = parseNumber(rawValue);
         const writeVal = numVal !== null ? numVal : rawValue;
         await runCogMapWrite(async () => {
@@ -520,7 +520,7 @@ export const CogsTab = () => {
 
         // Vertical: always open BELOW the cursor and stay as close as possible.
         // Shift the top upward only as far as needed to keep MIN_VISIBLE pixels
-        // on screen â€” never jump all the way to the top of the viewport.
+        // on screen - never jump all the way to the top of the viewport.
         // The popup body has overflow-y:auto so content beyond maxHeight scrolls.
         const MIN_VISIBLE = 200;
         let top = mouseY + POPOVER_GAP;
@@ -686,7 +686,7 @@ export const CogsTab = () => {
             class: "cogs-popup",
             onclick: (e) => e.stopPropagation(),
         },
-        // â”€â”€ Header: slot coords + cog name + state badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ---- Header: slot coords + cog name + state badge -----------------
         div(
             { class: "cogs-modal-header" },
             div(
@@ -712,7 +712,7 @@ export const CogsTab = () => {
                 () => stateLabel(getSlotState(slotValues[getActiveIndex()].val))
             )
         ),
-        // â”€â”€ Body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ---- Body ----------------------------------------------------------
         div({ class: "cogs-modal-body" }, () => {
             const index = getActiveIndex();
             const slotState = getSlotState(slotValues[index].val);
@@ -797,7 +797,7 @@ export const CogsTab = () => {
                               { class: "cogs-cog-stats" },
                               div(
                                   { class: "cogs-cog-stats__warning" },
-                                  "Base values shown — final in-game values are influenced by surrounding cogs."
+                                  "Base values shown - final in-game values are influenced by surrounding cogs."
                               ),
                               statsNode
                           )
@@ -805,7 +805,7 @@ export const CogsTab = () => {
                     : null
             );
         }),
-        // â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ---- Footer --------------------------------------------------------
         div(
             { class: "cogs-modal-footer" },
             div(

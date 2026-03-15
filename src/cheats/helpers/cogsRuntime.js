@@ -1,12 +1,5 @@
 import { events, gga } from "../core/globals.js";
-
-export const deepCloneValue = (value) => {
-    try {
-        return JSON.parse(JSON.stringify(value));
-    } catch {
-        return null;
-    }
-};
+import { deepCopy } from "../utils/deepCopy.js";
 
 export const getWorkbenchBehavior481 = () => {
     const wbActor = gga?.PixelHelperActor?.[8];
@@ -78,7 +71,7 @@ export function spawnCogRuntime({ jeweled = false, lane = 0 } = {}) {
         }
 
         const pick = candidates[Math.floor(Math.random() * candidates.length)];
-        const clonedMap = deepCloneValue(pick.map) ?? {};
+        const clonedMap = deepCopy(pick.map) ?? {};
         if (!clonedMap.h || typeof clonedMap.h !== "object") clonedMap.h = {};
 
         gga.CogOrder[freeSlot] = pick.id;
@@ -90,7 +83,7 @@ export function spawnCogRuntime({ jeweled = false, lane = 0 } = {}) {
             slot: freeSlot,
             id: gga?.CogOrder?.[freeSlot],
             fromSlot: pick.slot,
-            cogMap: deepCloneValue(gga?.CogMap?.[freeSlot]),
+            cogMap: deepCopy(gga?.CogMap?.[freeSlot]),
         };
     }
 
@@ -116,7 +109,7 @@ export function spawnCogRuntime({ jeweled = false, lane = 0 } = {}) {
         lane,
         slot: freeSlot,
         id: spawnedId,
-        cogMap: deepCloneValue(gga?.CogMap?.[freeSlot]),
+        cogMap: deepCopy(gga?.CogMap?.[freeSlot]),
         towerInfo: gga?.TowerInfo?.[62 + lane],
     };
 }
@@ -152,6 +145,6 @@ export function setTinyCogRuntime(slot, type, tier) {
         id,
         type: normalizedType,
         tier: normalizedTier,
-        cogMap: deepCloneValue(gga.CogMap[targetSlot]) ?? { h: {} },
+        cogMap: deepCopy(gga.CogMap[targetSlot]) ?? { h: {} },
     };
 }
