@@ -65,7 +65,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
             class: () => {
                 const t = getTierInfo(tierState.val);
                 return [
-                    "sigil-card",
+                    "tier-card",
                     `sigil-card--${t.cls}`,
                     status.val === "success" ? "sigil-card--flash-success" : "",
                     status.val === "error" ? "sigil-card--flash-error" : "",
@@ -76,21 +76,21 @@ const SigilCard = ({ index, tierState, nameState }) => {
         },
         // Header: index + name | tier badge
         div(
-            { class: "sigil-card__header" },
+            { class: "tier-card__header" },
             div(
-                { class: "sigil-card__identity" },
-                span({ class: "sigil-card__index" }, `#${index}`),
-                span({ class: "sigil-card__name" }, () => nameState.val)
+                { class: "tier-card__identity" },
+                span({ class: "tier-card__index" }, `#${index}`),
+                span({ class: "tier-card__name" }, () => nameState.val)
             ),
             span(
-                { class: () => `sigil-card__tier-badge sigil-tier-badge--${getTierInfo(tierState.val).cls}` },
+                { class: () => `tier-card__badge sigil-tier-badge--${getTierInfo(tierState.val).cls}` },
                 () => getTierInfo(tierState.val).label
             )
         ),
         // Tier select
         select(
             {
-                class: "sigil-card__tier-select select-base",
+                class: "tier-card__select select-base",
                 onchange: (e) => (tierInput.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
@@ -101,7 +101,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
         button(
             {
                 class: () =>
-                    `feature-btn feature-btn--apply sigil-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    `feature-btn feature-btn--apply tier-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                 disabled: () => status.val === "loading",
                 onclick: doSet,
             },
@@ -202,17 +202,17 @@ export const SigilTab = () => {
         {
             class: () =>
                 [
-                    "sigil-setall-bar",
+                    "tier-setall-bar",
                     setAllStatus.val === "success" ? "sigil-setall-bar--success" : "",
                     setAllStatus.val === "error" ? "sigil-setall-bar--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
-        span({ class: "sigil-setall-bar__label" }, "SET ALL TIERS TO"),
+        span({ class: "tier-setall-bar__label" }, "SET ALL TIERS TO"),
         select(
             {
-                class: "sigil-setall-bar__select select-base",
+                class: "tier-setall-bar__select select-base",
                 onchange: (e) => (setAllTier.val = e.target.value),
             },
             ...SIGIL_TIERS.map((t) =>
@@ -231,13 +231,13 @@ export const SigilTab = () => {
     );
 
     const grid = div(
-        { class: "sigil-grid" },
+        { class: "tier-grid" },
         ...Array.from({ length: 24 }, (_, i) =>
             SigilCard({ index: i, tierState: sigilTier[i], nameState: sigilName[i] })
         )
     );
 
-    const scroll = div({ class: () => paneClass("sigil-scroll scrollable-panel") }, setAllBar, grid);
+    const scroll = div({ class: () => paneClass("tier-scroll scrollable-panel") }, setAllBar, grid);
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
