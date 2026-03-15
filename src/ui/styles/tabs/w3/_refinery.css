@@ -1,7 +1,7 @@
 /* ── Refinery tab ────────────────────────────────────────────────────────── */
 
 .refinery-row--polymer {
-    border-left: 3px solid #7e57c2;
+    border-left: 3px solid var(--c-refinery-polymer);
 }
 
 .refinery-row--placeholder {
@@ -31,7 +31,7 @@
 }
 
 .refinery-badge--polymer {
-    color: #7e57c2;
+    color: var(--c-refinery-polymer);
 }
 
 .refinery-badge--placeholder {
@@ -67,7 +67,7 @@
 }
 
 .refinery-notice--polymer {
-    background: rgba(126, 87, 194, 0.06);
+    background: var(--c-refinery-polymer-06);
 }
 
 .refinery-notice--placeholder {

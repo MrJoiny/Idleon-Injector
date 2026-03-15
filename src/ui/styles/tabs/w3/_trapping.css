@@ -46,7 +46,7 @@
 }
 
 .trap-user-header:hover {
-    background: var(--c-hover, rgba(255, 255, 255, 0.04));
+    background: var(--c-hover);
 }
 
 .trap-user-header__arrow {
@@ -92,7 +92,7 @@
     flex-direction: column;
     gap: 0;
     border-top: 1px solid var(--c-border);
-    background: var(--c-panel-dim, rgba(0, 0, 0, 0.15));
+    background: var(--c-panel-dim);
 }
 
 .trap-user-dropdown--open {

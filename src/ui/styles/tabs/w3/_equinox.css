@@ -78,7 +78,7 @@
 }
 
 .equinox-bar__fill--full {
-    background: var(--c-success, #4caf7d);
+    background: var(--c-success);
 }
 
 /* Shared section header (CLOUDS / UPGRADES) */
@@ -124,9 +124,9 @@
     gap: 8px;
     padding: 7px 12px 8px;
     margin: 4px 0 6px;
-    background: rgba(210, 120, 20, 0.1);
-    border-left: 3px solid #d47814;
-    color: #d47814;
+    background: var(--c-equinox-warning-10);
+    border-left: 3px solid var(--c-equinox-warning);
+    color: var(--c-equinox-warning);
     font-size: 0.7rem;
     line-height: 1.45;
 }

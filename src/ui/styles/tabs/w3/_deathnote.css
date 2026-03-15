@@ -49,7 +49,7 @@
 }
 
 .dn-mob-header:hover {
-    background: var(--c-hover, rgba(255, 255, 255, 0.04));
+    background: var(--c-hover);
 }
 
 .dn-mob-header__arrow {
@@ -98,7 +98,7 @@
     flex-direction: column;
     gap: 0;
     border-top: 1px solid var(--c-border);
-    background: var(--c-panel-dim, rgba(0, 0, 0, 0.15));
+    background: var(--c-panel-dim);
 }
 
 .dn-mob-dropdown--open {
@@ -112,7 +112,7 @@
     align-items: center;
     gap: 10px;
     padding: 6px 12px 6px 32px;
-    border-bottom: 1px solid var(--c-border-faint, rgba(255, 255, 255, 0.05));
+    border-bottom: 1px solid var(--c-border-faint);
     transition: background 0.12s;
 }
 
@@ -121,11 +121,11 @@
 }
 
 .dn-player-row--success {
-    background: var(--c-success-bg, rgba(72, 187, 120, 0.08));
+    background: var(--c-success-08);
 }
 
 .dn-player-row--error {
-    background: var(--c-error-bg, rgba(245, 101, 101, 0.08));
+    background: var(--c-danger-08);
 }
 
 .dn-player-row__name {

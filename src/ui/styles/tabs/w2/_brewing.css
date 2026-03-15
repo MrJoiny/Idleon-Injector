@@ -11,26 +11,26 @@
 
 .brewing-column--orange,
 .bubble-card--orange {
-    --cauldron-color: #e8841a;
-    --cauldron-dim: rgba(232, 132, 26, 0.12);
+    --cauldron-color: var(--c-cauldron-orange);
+    --cauldron-dim: var(--c-cauldron-orange-12);
 }
 
 .brewing-column--green,
 .bubble-card--green {
-    --cauldron-color: #5cb85c;
-    --cauldron-dim: rgba(92, 184, 92, 0.12);
+    --cauldron-color: var(--c-cauldron-green);
+    --cauldron-dim: var(--c-cauldron-green-12);
 }
 
 .brewing-column--purple,
 .bubble-card--purple {
-    --cauldron-color: #a259e6;
-    --cauldron-dim: rgba(162, 89, 230, 0.12);
+    --cauldron-color: var(--c-cauldron-purple);
+    --cauldron-dim: var(--c-cauldron-purple-12);
 }
 
 .brewing-column--yellow,
 .bubble-card--yellow {
-    --cauldron-color: #e6c319;
-    --cauldron-dim: rgba(230, 195, 25, 0.12);
+    --cauldron-color: var(--c-cauldron-yellow);
+    --cauldron-dim: var(--c-cauldron-yellow-12);
 }
 
 .brewing-column__header {

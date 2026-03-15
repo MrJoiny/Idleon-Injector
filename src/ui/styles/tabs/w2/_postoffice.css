@@ -69,7 +69,7 @@
 .po-bulk-status {
     margin-left: 8px;
     min-width: 20px;
-    color: var(--accent-green, #4caf50);
+    color: var(--c-postoffice-accent-green);
     font-weight: 700;
 }
 
@@ -211,8 +211,8 @@
 }
 
 .po-shipment-card--completed {
-    border-color: rgba(74, 222, 128, 0.35);
-    background: rgba(74, 222, 128, 0.03);
+    border-color: var(--c-ui-green-35);
+    background: var(--c-ui-green-03);
 }
 
 .po-shipment-card__header {
@@ -245,8 +245,8 @@
 }
 
 .po-shipment-card__badge--done {
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.4);
+    color: var(--c-ui-green);
+    border-color: var(--c-ui-green-40);
 }
 
 /* ── Field rows (within shipment cards) ─────────────────────────────────── */
@@ -340,13 +340,13 @@
 }
 
 .po-toggle-btn--done {
-    border-color: rgba(74, 222, 128, 0.4);
-    background: rgba(74, 222, 128, 0.07);
-    color: #4ade80;
+    border-color: var(--c-ui-green-40);
+    background: var(--c-ui-green-07);
+    color: var(--c-ui-green);
 }
 
 .po-toggle-btn--done:hover:not(:disabled) {
-    background: rgba(74, 222, 128, 0.12);
+    background: var(--c-ui-green-12);
 }
 
 /* ── Point Sources section ───────────────────────────────────────────────── */
@@ -521,11 +521,11 @@
 }
 
 .po-points-summary__value--spent {
-    color: #f87171;
+    color: var(--c-ui-red);
 }
 
 .po-points-summary__value--earned {
-    color: var(--accent-green, #4caf50);
+    color: var(--c-postoffice-accent-green);
 }
 
 .po-points-summary__value--available {

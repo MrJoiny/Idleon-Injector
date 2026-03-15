@@ -62,21 +62,21 @@
 .arcade-card:hover {
     border-color: var(--c-accent);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--c-black-20);
 }
 
 .arcade-card--cosmic {
-    background: rgba(43, 88, 118, 0.15);
+    background: var(--c-arcade-cosmic-bg);
     /* Subdued blue-ish background */
-    border-color: var(--brand-info, #3b82f6);
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
+    border-color: var(--c-arcade-cosmic);
+    box-shadow: inset 0 0 0 1px var(--c-arcade-cosmic-20);
 }
 
 .arcade-card--cosmic:hover {
-    border-color: #60a5fa;
+    border-color: var(--c-ui-blue);
     box-shadow:
-        0 4px 12px rgba(59, 130, 246, 0.2),
-        inset 0 0 0 1px rgba(59, 130, 246, 0.4);
+        0 4px 12px var(--c-arcade-cosmic-20),
+        inset 0 0 0 1px var(--c-arcade-cosmic-40);
 }
 
 .arcade-card__top {
@@ -97,7 +97,7 @@
 .arcade-card__cosmic-badge {
     font-size: 10px;
     font-weight: 700;
-    color: #60a5fa;
+    color: var(--c-ui-blue);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -134,7 +134,7 @@
 }
 
 .arcade-card--cosmic .arcade-card__level-val {
-    color: #60a5fa;
+    color: var(--c-ui-blue);
 }
 
 .arcade-card__controls {

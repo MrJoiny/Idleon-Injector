@@ -10,23 +10,23 @@
 }
 
 .liquid-col--water-droplets {
-    --liquid-color: #5ba6d3;
-    --liquid-dim: rgba(91, 166, 211, 0.1);
+    --liquid-color: var(--c-liquid-water);
+    --liquid-dim: var(--c-liquid-water-10);
 }
 
 .liquid-col--liquid-nitrogen {
-    --liquid-color: #82d9f5;
-    --liquid-dim: rgba(130, 217, 245, 0.1);
+    --liquid-color: var(--c-liquid-nitrogen);
+    --liquid-dim: var(--c-liquid-nitrogen-10);
 }
 
 .liquid-col--trench-seawater {
-    --liquid-color: #3a9e80;
-    --liquid-dim: rgba(58, 158, 128, 0.1);
+    --liquid-color: var(--c-liquid-seawater);
+    --liquid-dim: var(--c-liquid-seawater-10);
 }
 
 .liquid-col--toxic-mercury {
-    --liquid-color: #c084fc;
-    --liquid-dim: rgba(192, 132, 252, 0.1);
+    --liquid-color: var(--c-liquid-mercury);
+    --liquid-dim: var(--c-liquid-mercury-10);
 }
 
 .liquid-col__header {

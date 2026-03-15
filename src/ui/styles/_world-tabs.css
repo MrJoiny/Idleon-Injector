@@ -132,25 +132,25 @@
 /* One rule per world. Everything inside uses var(--world-color). */
 
 .w1-world-tab {
-    --world-color: #e8854a;
+    --world-color: var(--c-world-w1);
 }
 .w2-world-tab {
-    --world-color: #d4a83a;
+    --world-color: var(--c-world-w2);
 }
 .w3-world-tab {
-    --world-color: #6ec5e0;
+    --world-color: var(--c-world-w3);
 }
 .w4-world-tab {
-    --world-color: #a06ee0;
+    --world-color: var(--c-world-w4);
 }
 .w5-world-tab {
-    --world-color: #e05050;
+    --world-color: var(--c-world-w5);
 }
 .w6-world-tab {
-    --world-color: #59c46a;
+    --world-color: var(--c-world-w6);
 }
 .w7-world-tab {
-    --world-color: #c580e0;
+    --world-color: var(--c-world-w7);
 }
 
 /* ── World tab shell ─────────────────────────────────────────────────────── */
