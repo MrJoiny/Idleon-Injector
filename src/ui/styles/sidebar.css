@@ -78,6 +78,32 @@
     pointer-events: none;
 }
 
+.brand-version {
+    transition:
+        opacity 0.2s var(--ease-tech),
+        max-height 0.2s var(--ease-tech),
+        margin 0.2s var(--ease-tech),
+        padding 0.2s var(--ease-tech);
+}
+
+.brand-version-hidden {
+    opacity: 0;
+    max-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.sidebar-collapsed .brand-version {
+    opacity: 0;
+    max-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+    overflow: hidden;
+}
+
 .sidebar-toggle {
     background: transparent;
     border: 1px solid var(--c-border);
@@ -132,6 +158,15 @@
     font-size: 0.875rem;
     color: var(--c-accent);
     letter-spacing: 0.2em;
+}
+
+.brand-version {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: var(--c-text-dim);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.12em;
 }
 
 /* --- NAVIGATION MENU --- */
