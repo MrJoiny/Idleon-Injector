@@ -276,6 +276,112 @@
     cursor: not-allowed;
 }
 
+/* Shared compact card/grid controls used by Sigils and Sailing Artifacts */
+.tier-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tier-setall-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.tier-setall-bar__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+}
+
+.tier-setall-bar__select {
+    padding: 0 8px;
+    height: 30px;
+    font-size: 0.78rem;
+    font-family: var(--font-display);
+}
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+.tier-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.tier-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.tier-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tier-card__index {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    background: var(--c-black-40);
+    padding: 1px 4px;
+    flex-shrink: 0;
+}
+
+.tier-card__name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tier-card__badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tier-card__select {
+    padding: 0 6px;
+    height: 28px;
+    width: 100%;
+    font-size: 0.72rem;
+    font-family: var(--font-display);
+}
+
+.tier-card__set-btn {
+    width: 100%;
+}
+
 /* Anvil — info row (Points Remaining banner) */
 .feature-row--info {
     border-color: var(--c-accent) !important;
@@ -377,3 +483,4 @@
     display: flex;
     flex-direction: column;
 }
+
