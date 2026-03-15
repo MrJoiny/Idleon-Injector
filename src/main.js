@@ -200,6 +200,10 @@ async function main() {
                 log.error("Page load handler failed:", loadEventError);
             }
         });
+        // add small delay to fix ERR_CERT_VERIFIER_CHANGED
+        if (target === "web") {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
 
         log.debug("Reloading page to trigger injection");
         await Page.reload({ ignoreCache: true });
