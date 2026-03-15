@@ -16,6 +16,7 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
+import { formatNumber, parseNumber } from "../../../utils/numberFormat.js";
 
 const { div } = van.tags;
 
@@ -58,6 +59,16 @@ export const toInt = (value, opts = 0) => {
     const n = toNum(value, toNum(fallback, 0));
     const asInt = mode === "floor" ? Math.floor(n) : Math.round(n);
     return Math.max(min, asInt);
+};
+
+export const largeFormatter = (raw) => {
+    const n = parseNumber(String(raw));
+    return n !== null ? formatNumber(n) : String(raw);
+};
+
+export const largeParser = (display) => {
+    const n = parseNumber(display);
+    return n !== null ? String(n) : null;
 };
 
 export const RefreshErrorBanner =

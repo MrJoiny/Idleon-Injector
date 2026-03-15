@@ -27,7 +27,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { AsyncFeatureBody, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -35,16 +35,6 @@ const cleanName = (raw, fallback = "") =>
     String(raw ?? fallback)
         .replace(/_/g, " ")
         .trim();
-
-const largeFormatter = (raw) => {
-    const n = parseNumber(String(raw));
-    return n !== null ? formatNumber(n) : String(raw);
-};
-
-const largeParser = (display) => {
-    const n = parseNumber(display);
-    return n !== null ? String(n) : null;
-};
 
 const trapStateKey = (playerName, trapIndex, field) => `${playerName}:${trapIndex}:${field}`;
 const trapBasePath = (playerName, trapIndex) => `PlayerDATABASE.h[${playerName}].h.PldTraps[${trapIndex}]`;

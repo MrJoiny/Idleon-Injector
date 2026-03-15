@@ -16,7 +16,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { RefreshErrorBanner, largeFormatter, largeParser, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -69,15 +69,6 @@ const TAR_PIT_FIELDS = [
 ];
 
 const ALL_FIELDS = [...PINNED_FIELDS, ...CORE_FIELDS, ...SPIRAL_FIELDS, ...TAR_PIT_FIELDS];
-
-const largeFormatter = (raw) => {
-    const n = parseNumber(String(raw));
-    return n !== null ? formatNumber(n) : String(raw);
-};
-const largeParser = (display) => {
-    const n = parseNumber(display);
-    return n !== null ? String(n) : null;
-};
 
 const PoppyRow = ({ field, fieldState, onWrite }) => {
     const isFormatted = field.formatted || field.float;
