@@ -747,7 +747,7 @@ exports.injectorConfig = {
     interceptPattern: "*N.js",
     enableUI: true,
     webPort: 8080,
-    onLinuxTimeout: 30000,
+    onLinuxTimeout: 60000,
     target: "web", // "web" or "steam"
     webUrl: "https://www.legendsofidleon.com/ytGl5oc/",
     browserPath: "", // browser path for web (auto if empty)
