@@ -71,10 +71,11 @@ export const largeParser = (display) => {
     return n !== null ? String(n) : null;
 };
 
-export const cleanName = (raw, fallback = "") =>
-    String(raw ?? fallback)
-        .replace(/_/g, " ")
-        .trim();
+export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
+    const base = String(raw ?? fallback);
+    const normalized = stripMarker ? base.replace(/製.*$/, "") : base;
+    return normalized.replace(/_/g, " ").trim();
+};
 
 export const RefreshErrorBanner =
     ({ error }) =>

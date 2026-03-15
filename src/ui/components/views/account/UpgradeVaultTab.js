@@ -20,12 +20,9 @@ import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
-import { toNum, useWriteStatus } from "./featureShared.js";
+import { cleanName, toNum, useWriteStatus } from "./featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-// Strip underscores and the 製 character used as a tap-info marker
-const cleanName = (raw) => (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").trim();
 
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
@@ -143,7 +140,7 @@ export const UpgradeVaultTab = () => {
 
             const upgrades = info
                 .map((entry, i) => {
-                    const name = cleanName(entry?.[0]);
+                    const name = cleanName(entry?.[0], "", { stripMarker: true });
                     if (!name) return null;
                     const baseMax = toNum(entry?.[4]);
                     if (baseMax <= 0) return null;

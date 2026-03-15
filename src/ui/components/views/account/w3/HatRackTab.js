@@ -14,7 +14,7 @@ import { readGga, writeGga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, h3, p, select, option } = van.tags;
@@ -31,12 +31,6 @@ const getName = (itemId, raw) => {
     );
 };
 
-const cleanName = (name) =>
-    String(name ?? "")
-        .replace(/製.*$/, "")
-        .replace(/_/g, " ")
-        .trim();
-
 const normalizeRackIds = (rawRack) =>
     toIndexedArray(rawRack ?? [])
         .map((entry) => String(entry ?? "").trim())
@@ -51,7 +45,7 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
             const def = getDef(raw);
             return {
                 itemId,
-                name: cleanName(getName(itemId, raw)),
+                name: cleanName(getName(itemId, raw), "", { stripMarker: true }),
                 type: def?.Type,
                 typeGen: def?.typeGen,
                 id: def?.ID,
@@ -70,7 +64,7 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
     const rackTable = rack.map((itemId, index) => ({
         index,
         itemId,
-        name: cleanName(getName(itemId, itemDefs[itemId])),
+        name: cleanName(getName(itemId, itemDefs[itemId]), "", { stripMarker: true }),
         eligible: eligibleIds.has(itemId),
         id: eligibleMap[itemId]?.id ?? getDef(itemDefs[itemId])?.ID ?? null,
     }));
