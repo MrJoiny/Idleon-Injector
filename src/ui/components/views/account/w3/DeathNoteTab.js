@@ -28,14 +28,12 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { toInt, useWriteStatus } from "../featureShared.js";
+import { toInt, unwrapH, useWriteStatus } from "../featureShared.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-const unwrap = (v) => (v && typeof v === "object" && "h" in v ? v.h : v);
 
 const cleanName = (raw, fallback = "") =>
     String(raw ?? fallback)
@@ -456,9 +454,9 @@ export const DeathNoteTab = () => {
             const deathNoteGroups = toIndexedArray(rawDeathNoteMobs ?? []);
             const mapTargets = toIndexedArray(rawMapTargets ?? []);
             const mapDetails = toIndexedArray(rawMapDetails ?? []);
-            const monsterDefs = unwrap(rawMonsterDefs) || {};
+            const monsterDefs = unwrapH(rawMonsterDefs) || {};
             const killsLeftArr = toIndexedArray(rawKillsLeft ?? []);
-            const playerDb = unwrap(rawPlayerDb) || {};
+            const playerDb = unwrapH(rawPlayerDb) || {};
             const minibossIds = toIndexedArray(rawMinibossIds ?? []);
             const minibossKills = toIndexedArray(rawMinibossKills ?? []);
             const playerNamesFromList = toIndexedArray(rawPlayerNames ?? []).filter(
@@ -473,13 +471,13 @@ export const DeathNoteTab = () => {
                 .filter((name) => name.trim().length > 0 && !name.startsWith("__"))
                 .filter((name) => {
                     if (name === currentPlayerName) return true;
-                    const pdata = unwrap(playerDb[name]) || {};
+                    const pdata = unwrapH(playerDb[name]) || {};
                     return pdata && pdata.KillsLeft2Advance !== undefined;
                 });
             const otherPlayers = candidateNames.filter((n) => n !== currentPlayerName);
 
             const getMobName = (mobId) => {
-                const def = unwrap(monsterDefs[mobId]) || {};
+                const def = unwrapH(monsterDefs[mobId]) || {};
                 return cleanName(def.Name || def.displayName || def.name || mobId, mobId);
             };
 
@@ -504,7 +502,7 @@ export const DeathNoteTab = () => {
 
             const getOtherKills = (playerName, mapIndex) => {
                 const required = getRequired(mapIndex);
-                const pdata = unwrap(playerDb[playerName]) || {};
+                const pdata = unwrapH(playerDb[playerName]) || {};
                 const pKillsLeft = toIndexedArray(pdata.KillsLeft2Advance ?? []);
                 const left = toInt(toIndexedArray(pKillsLeft[mapIndex] ?? [])[0] ?? required);
                 return required - left;

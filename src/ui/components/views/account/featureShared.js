@@ -37,6 +37,9 @@ export const toNum = (value, fallback = 0) => {
     return Number.isFinite(n) ? n : fallback;
 };
 
+/** Unwrap Idleon-style wrapper objects that store payload in `.h`. */
+export const unwrapH = (value) => (value && typeof value === "object" && "h" in value ? value.h : value);
+
 /**
  * Safely coerce a value to a finite integer with configurable behavior.
  * - Default: round to nearest integer.

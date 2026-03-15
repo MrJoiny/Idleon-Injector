@@ -13,7 +13,7 @@ import { readGga, writeGga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, h3, p, select, option } = van.tags;
@@ -23,8 +23,6 @@ const SET_ORDER_PATHS = ["CustomLists.h.RANDOlist[113]", "CustomLists.RANDOlist[
 const STORED_SETS_PATH = "OptionsListAccount[379]";
 const EQUIPPED_MAIN_PATH = "EquipmentOrder[0]";
 const EQUIPPED_EXTRA_PATH = "EquipmentOrder[1]";
-
-const unwrap = (value) => (value && typeof value === "object" && "h" in value ? value.h : value);
 
 const cleanText = (txt, fallback = "") =>
     String(txt ?? fallback)
@@ -59,18 +57,18 @@ const uniq = (arr) => {
 };
 
 const toObject = (raw) => {
-    const value = unwrap(raw);
+    const value = unwrapH(raw);
     return value && typeof value === "object" ? value : {};
 };
 
 const isSetCompletedNow = (setKey, equipSets, equippedMainSet, equippedExtraSet) => {
-    const setData = toIndexedArray(unwrap(equipSets?.[setKey]) ?? []);
+    const setData = toIndexedArray(unwrapH(equipSets?.[setKey]) ?? []);
     if (!Array.isArray(setData) || setData.length === 0) return false;
 
-    const mainParts = normalizeStringList(unwrap(setData[0]));
-    const extraParts = normalizeStringList(unwrap(setData[1]));
-    const optionalParts = normalizeStringList(unwrap(setData[2]));
-    const meta = toIndexedArray(unwrap(setData[3]) ?? []);
+    const mainParts = normalizeStringList(unwrapH(setData[0]));
+    const extraParts = normalizeStringList(unwrapH(setData[1]));
+    const optionalParts = normalizeStringList(unwrapH(setData[2]));
+    const meta = toIndexedArray(unwrapH(setData[3]) ?? []);
 
     const extraCap = Math.max(0, Number(meta[0] ?? 0) || 0);
     const needsOptionalOne = Number(meta[1] ?? 0) === 1;

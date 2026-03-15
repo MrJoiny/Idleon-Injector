@@ -27,11 +27,9 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
-
-const unwrap = (value) => (value && typeof value === "object" && "h" in value ? value.h : value);
 
 const cleanName = (raw, fallback = "") =>
     String(raw ?? fallback)
@@ -62,11 +60,11 @@ const resolveCritterName = (critterId, itemDefs, monsterDefs) => {
     const key = String(raw);
     if (!key) return "Unknown Critter";
 
-    const itemDef = unwrap(itemDefs?.[key] ?? itemDefs?.[raw]);
+    const itemDef = unwrapH(itemDefs?.[key] ?? itemDefs?.[raw]);
     const itemName = itemDef?.Name ?? itemDef?.displayName ?? itemDef?.name;
     if (itemName) return cleanName(itemName, key);
 
-    const mobDef = unwrap(monsterDefs?.[key] ?? monsterDefs?.[raw]);
+    const mobDef = unwrapH(monsterDefs?.[key] ?? monsterDefs?.[raw]);
     const mobName = mobDef?.Name ?? mobDef?.displayName ?? mobDef?.name;
     if (mobName) return cleanName(mobName, key);
 
@@ -362,13 +360,13 @@ export const TrappingTab = () => {
                 (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
             );
 
-            const playerDb = unwrap(rawPlayerDb) || {};
-            const itemDefs = unwrap(rawItemDefs) || {};
-            const monsterDefs = unwrap(rawMonsterDefs) || {};
+            const playerDb = unwrapH(rawPlayerDb) || {};
+            const itemDefs = unwrapH(rawItemDefs) || {};
+            const monsterDefs = unwrapH(rawMonsterDefs) || {};
             const currentPlayer = typeof rawCurrentPlayer === "string" ? rawCurrentPlayer : "";
 
             const players = playerNames.map((playerName) => {
-                const playerNode = unwrap(playerDb[playerName]) || {};
+                const playerNode = unwrapH(playerDb[playerName]) || {};
                 const rawTraps = toIndexedArray(playerNode.PldTraps ?? []);
                 const traps = rawTraps
                     .map((rawTrap, trapIndex) => {
