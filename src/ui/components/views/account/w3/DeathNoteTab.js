@@ -28,17 +28,12 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
+import { cleanName, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-const cleanName = (raw, fallback = "") =>
-    String(raw ?? fallback)
-        .replace(/_/g, " ")
-        .trim();
 
 const playerDbKillsLeftPath = (playerName, mapIndex) =>
     `PlayerDATABASE.h[${playerName}].h.KillsLeft2Advance[${mapIndex}][0]`;

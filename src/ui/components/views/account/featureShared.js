@@ -71,6 +71,11 @@ export const largeParser = (display) => {
     return n !== null ? String(n) : null;
 };
 
+export const cleanName = (raw, fallback = "") =>
+    String(raw ?? fallback)
+        .replace(/_/g, " ")
+        .trim();
+
 export const RefreshErrorBanner =
     ({ error }) =>
     () =>
