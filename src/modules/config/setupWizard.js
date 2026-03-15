@@ -1,8 +1,8 @@
-const { Toggle, Select, Input } = require("enquirer");
+const { Toggle, Select } = require("enquirer");
 const fs = require("fs");
 const os = require("os");
 const { createLogger } = require("../utils/logger");
-const { injectorConfig, cheatConfig } = require("../../../config.js");
+const { cheatConfig } = require("../../../config.js");
 
 const log = createLogger("SetupWizard");
 /**
@@ -30,30 +30,6 @@ async function runSetupWizard(targetPath) {
         // Prepare config objects
         const newInjectorConfig = { target };
         const newCheatConfig = {};
-        if (target === "steam") {
-            // Steam EXE Path
-            const exePrompt = new Input({
-                name: "gameExePath",
-                message: "Path to LegendsOfIdleon.exe (leave empty for auto-detect):",
-                initial: "",
-            });
-            newInjectorConfig.gameExePath = await exePrompt.run();
-        } else {
-            // Web URL
-            const urlPrompt = new Input({
-                name: "webUrl",
-                message: "Idleon Web URL:",
-                initial: injectorConfig.webUrl,
-            });
-            newInjectorConfig.webUrl = await urlPrompt.run();
-            // Browser Path
-            const browserPrompt = new Input({
-                name: "browserPath",
-                message: "Browser executable path (leave empty for auto-detect):",
-                initial: "",
-            });
-            newInjectorConfig.browserPath = await browserPrompt.run();
-        }
         // Enable In-Game UI
         const uiPrompt = new Toggle({
             message: "Enable In-Game UI Overlay?",
