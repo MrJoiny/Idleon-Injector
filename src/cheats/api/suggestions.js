@@ -70,7 +70,13 @@ export function getAutoCompleteSuggestions() {
     addChoices(choices, itemDefs, (code, item) => {
         if (!item.h.displayName) return null;
         if (itemBlacklist.has(code)) return null;
-        const name = item.h.displayName.replace(/_/g, " ");
+        let name;
+        // get the right message names for the cards
+        if (code.startsWith("Cards")) {
+            name = monsterDefs[item.h.desc_line1]?.h.Name?.replace(/_/g, " ") ?? item.h.desc_line1;
+        } else {
+            name = item.h.displayName.replace(/_/g, " ");
+        }
         // filtering out ui items named strung jewels
         if (code !== "Quest66" && name === "Strung Jewels") return null;
 
