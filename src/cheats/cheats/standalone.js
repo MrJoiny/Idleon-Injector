@@ -134,6 +134,13 @@ registerCheat({
     fn: () => {},
 });
 
+// update (handled in executable)
+registerCheat({
+    name: "update",
+    message: "update (Check for updates and install the latest version)",
+    fn: () => {},
+});
+
 // Stop dropping items from monsters
 registerCheat({
     name: "nomore",

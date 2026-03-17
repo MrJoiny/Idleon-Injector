@@ -8,9 +8,12 @@
  */
 
 const Enquirer = require("enquirer");
-const { exec } = require("child_process");
+const { exec, execFileSync, spawn } = require("child_process");
 const { createLogger, setActivePrompt } = require("../utils/logger");
 const { broadcastCheatStates } = require("../server/wsServer");
+const { checkForUpdates } = require("../updateChecker");
+const { performUpdate } = require("../autoUpdater");
+const { version } = require("../../../package.json");
 
 const log = createLogger("CLI");
 
@@ -55,6 +58,100 @@ function navigateHistory(direction) {
         }
     }
     return commandHistory[historyIndex] || "";
+}
+
+/**
+ * Close the current game target before handing off to the updater.
+ * @param {Object} client - CDP client instance
+ * @param {string} target - Configured injection target
+ */
+async function closeGameForUpdate(client, target) {
+    if ((target || "steam").toLowerCase() === "web") {
+        try {
+            await Promise.race([client.Browser.close(), new Promise((resolve) => setTimeout(resolve, 3000))]);
+        } catch {
+            // Browser may already be closed
+        }
+
+        try {
+            await client.close();
+        } catch {
+            // Ignore CDP disconnect errors
+        }
+
+        return;
+    }
+
+    // Steam: disconnect CDP first (it blocks the game from closing)
+    try {
+        await client.close();
+    } catch {
+        // Ignore CDP disconnect errors
+    }
+
+    try {
+        if (process.platform === "win32") {
+            execFileSync("taskkill", ["/IM", "LegendsOfIdleon.exe", "/F"], {
+                stdio: "pipe",
+            });
+        } else {
+            execFileSync("pkill", ["-f", "LegendsOfIdleon"], { stdio: "pipe" });
+        }
+    } catch {
+        // Game may already be closed
+    }
+}
+
+/**
+ * Handle the "update" CLI command: check for updates, prompt, download, and apply.
+ * @param {Object} client - CDP client instance
+ * @param {Object} options - CLI options (injectorConfig, cdpPort, etc.)
+ */
+async function handleUpdateCommand(client, options) {
+    if (!process.pkg) {
+        log.error("Auto-update is only available in packaged builds.");
+        return;
+    }
+
+    log.info("Checking for updates...");
+    const updateInfo = await checkForUpdates(version);
+
+    if (!updateInfo || !updateInfo.updateAvailable) {
+        log.info("You are already on the latest version.");
+        return;
+    }
+
+    log.info(`Update available: v${updateInfo.latestVersion}`);
+    const { proceed } = await new Enquirer().prompt({
+        type: "confirm",
+        name: "proceed",
+        message: `Update to v${updateInfo.latestVersion}? This will close the application.`,
+    });
+
+    if (!proceed) {
+        log.info("Update cancelled.");
+        return;
+    }
+
+    try {
+        log.info("Preparing update...");
+        const preparedUpdate = await performUpdate(updateInfo);
+
+        log.info("Closing game...");
+        await closeGameForUpdate(client, options.injectorConfig?.target || "steam");
+
+        if (process.platform === "win32") {
+            spawn("cmd.exe", ["/c", preparedUpdate.scriptPath], { detached: true, stdio: "ignore" }).unref();
+        } else {
+            spawn("bash", [preparedUpdate.scriptPath], { detached: true, stdio: "ignore" }).unref();
+        }
+
+        log.info(`Update is ready for: ${preparedUpdate.updatedFileNames}`);
+        log.info("Update will be applied after exit. Please start the application manually.");
+        process.exit(0);
+    } catch (updateError) {
+        log.error("Update failed:", updateError.message);
+    }
 }
 
 /**
@@ -163,7 +260,9 @@ async function startCliInterface(context, client, options = {}) {
             addToHistory(action);
             setActivePrompt(null);
 
-            if (action === "chromedebug") {
+            if (action === "update") {
+                await handleUpdateCommand(client, options);
+            } else if (action === "chromedebug") {
                 const response = await client.Target.getTargetInfo();
                 const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
                 const getCommand = platformOpenCommands[process.platform] || ((u) => `xdg-open "${u}"`);
