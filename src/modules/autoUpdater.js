@@ -215,7 +215,7 @@ async function performUpdate(releaseInfo) {
     extractArchive(archivePath, extractDir);
 
     const requiredFiles = [...UPDATE_FILES];
-    if (binaryName) requiredFiles.push(binaryName);
+    requiredFiles.push(binaryName);
 
     const updateFiles = [];
     for (const filename of requiredFiles) {
