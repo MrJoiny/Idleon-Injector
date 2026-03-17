@@ -3,7 +3,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const { getRuntimeBaseDir } = require("./utils/runtimePaths");
 const { createLogger } = require("./utils/logger");
 
@@ -76,19 +76,20 @@ function downloadFile(url, destPath, redirectCount = 0) {
 function extractArchive(archivePath, destDir) {
     if (archivePath.endsWith(".zip")) {
         if (process.platform !== "win32") {
-            execSync(`unzip -o "${archivePath}" -d "${destDir}"`, { stdio: "pipe" });
+            execFileSync("unzip", ["-o", archivePath, "-d", destDir], { stdio: "pipe" });
             return;
         }
 
-        execSync(
-            `powershell -NoProfile -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`,
+        execFileSync(
+            "powershell",
+            ["-NoProfile", "-Command", `Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force`],
             { stdio: "pipe" }
         );
         return;
     }
 
     if (archivePath.endsWith(".tar.gz") || archivePath.endsWith(".tgz")) {
-        execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: "pipe" });
+        execFileSync("tar", ["-xzf", archivePath, "-C", destDir], { stdio: "pipe" });
         return;
     }
 

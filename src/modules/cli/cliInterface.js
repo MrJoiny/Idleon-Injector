@@ -8,7 +8,7 @@
  */
 
 const Enquirer = require("enquirer");
-const { exec, execSync, spawn } = require("child_process");
+const { exec, execFileSync, spawn } = require("child_process");
 const { createLogger, setActivePrompt } = require("../utils/logger");
 const { broadcastCheatStates } = require("../server/wsServer");
 const { checkForUpdates } = require("../updateChecker");
@@ -91,11 +91,11 @@ async function closeGameForUpdate(client, target) {
 
     try {
         if (process.platform === "win32") {
-            execSync('taskkill /IM "LegendsOfIdleon.exe" /F', {
+            execFileSync("taskkill", ["/IM", "LegendsOfIdleon.exe", "/F"], {
                 stdio: "pipe",
             });
         } else {
-            execSync('pkill -f "LegendsOfIdleon"', { stdio: "pipe" });
+            execFileSync("pkill", ["-f", "LegendsOfIdleon"], { stdio: "pipe" });
         }
     } catch {
         // Game may already be closed
