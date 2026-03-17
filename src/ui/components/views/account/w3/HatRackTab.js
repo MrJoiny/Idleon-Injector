@@ -211,6 +211,26 @@ export const HatRackTab = () => {
         }
     };
 
+    const appendToRack = async (currentLength, items) => {
+        writeWarning.val = null;
+        for (let i = 0; i < items.length; i++) {
+            try {
+                await writeGga(`${RACK_PATH}[${currentLength + i}]`, items[i]);
+            } catch (e) {
+                const msg = `Failed writing rack item at index ${currentLength + i}. Rack may be inconsistent. Press REFRESH to resync.`;
+                writeWarning.val = msg;
+                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+            }
+        }
+        try {
+            await writeGga(`${RACK_PATH}.length`, currentLength + items.length);
+        } catch (e) {
+            const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
+            writeWarning.val = msg;
+            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+        }
+    };
+
     const removeAtIndex = async (index) => {
         if (mutating.val) return;
         const currentRack = [...currentRackIds.val];
@@ -236,9 +256,8 @@ export const HatRackTab = () => {
             try {
                 const currentRack = [...currentRackIds.val];
                 if (currentRack.includes(itemId)) return;
-                const nextRack = [...currentRack, itemId];
-                await rewriteRack(nextRack);
-                withPreservedScroll(() => applyRackState(nextRack));
+                await appendToRack(currentRack.length, [itemId]);
+                withPreservedScroll(() => applyRackState([...currentRack, itemId]));
             } finally {
                 mutating.val = false;
             }
@@ -260,9 +279,8 @@ export const HatRackTab = () => {
                     .map((item) => item.itemId)
                     .filter((itemId) => !currentRack.includes(itemId));
                 if (toAdd.length === 0) return;
-                const nextRack = [...currentRack, ...toAdd];
-                await rewriteRack(nextRack);
-                withPreservedScroll(() => applyRackState(nextRack));
+                await appendToRack(currentRack.length, toAdd);
+                withPreservedScroll(() => applyRackState([...currentRack, ...toAdd]));
             } finally {
                 mutating.val = false;
             }
