@@ -17,6 +17,7 @@
  * - Poing (ActorEvents_577) - AI paddle off-screen
  * - Log (ActorEvents_577) - Card type reveal
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
+ * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
  */
 
 import { cheatState } from "../core/state.js";
@@ -149,7 +150,7 @@ function setupEvents510Minigames() {
     });
 }
 
-// scratch, wisdom and valentine
+// scratch, wisdom, valentine and gold pot rush
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
     if (!ActorEvents670) return;
@@ -158,6 +159,15 @@ function setupEvents670Minigames() {
     const STATE_IDX = 50;
     const COVER_IMG_ARRAY_ID = 68;
     const COVER_IMG_ID = 1;
+    const VALENTINE_GAME_ID = 2;
+    const EVENT_GAME_STATE_IDX = 213;
+    const GOLD_POT_RUSH_GAME_ID = 3;
+    const GOLD_POT_ACTIVE_IDX = 255;
+    const GOLD_POT_BALLS_IDX = 254;
+    const GOLD_POT_BALL_PROGRESS_IDX = 10;
+    const GOLD_POT_CONFIG_IDX = 256;
+    const GOLD_POT_FRAME_WINDOW_IDX = 0;
+    const GOLD_POT_COMPLETE_STAGE = 9;
 
     wrapArrayOnInit(ActorEvents670.prototype, "init", "_GenINFO", {
         get(target, prop, receiver) {
@@ -202,7 +212,7 @@ function setupEvents670Minigames() {
             const base = Reflect.apply(originalOwlEvent, this, args);
 
             // this._GenINFO?.[213] event game 2 = valentine game
-            if (cheatState.minigame.valentine && this._GenINFO?.[213] === 2) {
+            if (cheatState.minigame.valentine && this._GenINFO?.[EVENT_GAME_STATE_IDX] === VALENTINE_GAME_ID) {
                 const grid = this._GenINFO[228];
                 const clicked = this._GenINFO[229];
                 const covers = this._UIinventory15?.[68];
@@ -238,6 +248,34 @@ function setupEvents670Minigames() {
             return base;
         };
         ActorEvents670.prototype._event_OwlEvent._isPatched = true;
+    }
+
+    if (!ActorEvents670.prototype._event_7._isPatched) {
+        createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
+            if (
+                !cheatState.minigame.goldrush ||
+                this._GenINFO[EVENT_GAME_STATE_IDX] !== GOLD_POT_RUSH_GAME_ID ||
+                this._GenINFO[GOLD_POT_ACTIVE_IDX] !== 1
+            ) {
+                return base;
+            }
+
+            const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
+            const completeProgress =
+                GOLD_POT_COMPLETE_STAGE * this._GenINFO[GOLD_POT_CONFIG_IDX][GOLD_POT_FRAME_WINDOW_IDX];
+
+            for (const ball of balls) {
+                if (ball[GOLD_POT_BALL_PROGRESS_IDX] >= completeProgress) continue;
+
+                // Fast-forward to the game's own payout threshold so _event_7
+                // resolves the winning bucket on the next tick
+                ball[GOLD_POT_BALL_PROGRESS_IDX] = completeProgress;
+            }
+
+            return base;
+        });
+
+        ActorEvents670.prototype._event_7._isPatched = true;
     }
 
     // wisdom card reveal helper — sets scaleX(1) on item images for active cards
