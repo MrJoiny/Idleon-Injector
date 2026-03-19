@@ -47,11 +47,13 @@ function setupEvents229Minigames() {
         this._GenInfo = new Proxy(this._GenInfo, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
                 const index = Number(prop);
                 if (cheatState.minigame.catching) {
                     if (index === 31) return 70;
                     if (index === 33) return [95, 95, 95, 95, 95];
                 }
+
                 return Reflect.get(target, prop, receiver);
             },
         });
@@ -69,10 +71,12 @@ function setupEvents116Minigames() {
         this._GeneralINFO = new Proxy(this._GeneralINFO, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
                 const index = Number(prop);
-                if (cheatState.minigame.choppin) {
-                    if (index === 7) return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
+                if (cheatState.minigame.choppin && index === 7) {
+                    return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
                 }
+
                 return Reflect.get(target, prop, receiver);
             },
         });
@@ -103,6 +107,7 @@ function setupEvents510Minigames() {
         this._GenINFO = new Proxy(this._GenINFO, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
                 const index = Number(prop);
 
                 // Hoops logic
@@ -146,10 +151,15 @@ function setupEvents670Minigames() {
     const SCRATCH_STATE_IDX = 50;
     const COVER_IMG_SET_IDX = 68;
     const COVER_IMG_IDX = 1;
+    const SCRATCH_REVEAL_START_IDX = 25;
+    const SCRATCH_REVEAL_END_IDX = 49;
 
     // Event minigame ids/state
     const EVENT_GAME_IDX = 213;
     const VALENTINE_GAME_ID = 2;
+    const VALENTINE_GRID_IDX = 228;
+    const VALENTINE_CLICKED_IDX = 229;
+    const VALENTINE_GRID_SIZE = 36;
     const GOLD_POT_GAME_ID = 3;
 
     // Gold Pot Rush state
@@ -164,6 +174,12 @@ function setupEvents670Minigames() {
     const WISDOM_HOLE_ID = 12;
     const WISDOM_PHASE_IDX = 55;
     const HOLE_ACTIVITY_IDX = 0;
+    const WISDOM_ATTEMPTS_IDX = 194;
+    const WISDOM_DATA_IDX = 197;
+    const WISDOM_MATCHED_IDX = 198;
+    const WISDOM_CARD_SET_IDX = 67;
+    const WISDOM_CARD_OFFSET = 44;
+    const WISDOM_CARD_COUNT = 44;
 
     function isGoldPotRushRound(instance) {
         return instance._GenINFO[EVENT_GAME_IDX] === GOLD_POT_GAME_ID && instance._GenINFO[GOLD_POT_PHASE_IDX] === 1;
@@ -174,24 +190,20 @@ function setupEvents670Minigames() {
         this._GenINFO = new Proxy(this._GenINFO, {
             get: (target, prop, receiver) => {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
                 const index = Number(prop);
                 const value = Reflect.get(target, prop, receiver);
-
                 // scratch logic auto reveal all scratch zones
-                if (index === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                    if (value[SCRATCH_STATE_IDX] === 1) {
-                        for (let i = 25; i <= 49; i++) {
-                            value[i] = 1;
-                        }
-
-                        // Hide cover image
-                        const coverImage = this._UIinventory15[COVER_IMG_SET_IDX][COVER_IMG_IDX];
-                        coverImage.set_alpha(0);
+                if (index === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch && value[SCRATCH_STATE_IDX] === 1) {
+                    for (let i = SCRATCH_REVEAL_START_IDX; i <= SCRATCH_REVEAL_END_IDX; i++) {
+                        value[i] = 1;
                     }
+                    // Hide cover image
+                    const coverImage = this._UIinventory15[COVER_IMG_SET_IDX][COVER_IMG_IDX];
+                    coverImage.set_alpha(0);
                 }
-
                 // wisdom logic infinite attempts
-                if (cheatState.minigame.wisdom && index === 194) {
+                if (cheatState.minigame.wisdom && index === WISDOM_ATTEMPTS_IDX) {
                     return 10;
                 }
 
@@ -236,11 +248,11 @@ function setupEvents670Minigames() {
 
         // this._GenINFO[213] event game 2 = valentine game
         if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_IDX] === VALENTINE_GAME_ID) {
-            const grid = this._GenINFO[228];
-            const clicked = this._GenINFO[229];
-            const covers = this._UIinventory15[68];
+            const grid = this._GenINFO[VALENTINE_GRID_IDX];
+            const clicked = this._GenINFO[VALENTINE_CLICKED_IDX];
+            const covers = this._UIinventory15[COVER_IMG_SET_IDX];
 
-            for (let i = 0; i < 36; i++) {
+            for (let i = 0; i < VALENTINE_GRID_SIZE; i++) {
                 // 0 = Barf, skip if already clicked
                 if (grid[i] !== 0 || clicked[i] !== 0) continue;
 
@@ -265,7 +277,7 @@ function setupEvents670Minigames() {
         const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
         const completeProg = GOLD_POT_DONE_STAGE * this._GenINFO[GOLD_POT_CFG_IDX][GOLD_POT_FRAME_IDX];
 
-        // jump each coin to the games payout threshold.
+        // Jump each coin to the game's payout threshold.
         for (const ball of balls) {
             if (ball[GOLD_POT_BALL_PROG_IDX] >= completeProg) continue;
 
@@ -285,12 +297,12 @@ function setupEvents670Minigames() {
         if (gga.Holes[HOLE_ACTIVITY_IDX][playerHoleIdx] !== WISDOM_HOLE_ID) return;
         if (instance._GenINFO[WISDOM_PHASE_IDX] !== 1) return;
 
-        const cards = instance._UIinventory15[67];
-        const data = instance._GenINFO[197];
-        const matched = instance._GenINFO[198];
+        const cards = instance._UIinventory15[WISDOM_CARD_SET_IDX];
+        const data = instance._GenINFO[WISDOM_DATA_IDX];
+        const matched = instance._GenINFO[WISDOM_MATCHED_IDX];
 
-        for (let i = 0; i < 44; i++) {
-            const img = cards[i + 44];
+        for (let i = 0; i < WISDOM_CARD_COUNT; i++) {
+            const img = cards[i + WISDOM_CARD_OFFSET];
             if (data[i] === 0) continue;
 
             img.set_scaleX(1);
@@ -375,13 +387,12 @@ function setupEvents577Minigames() {
             const img = cards[i];
             const tform = img.get_transform();
             const cform = tform.get_colorTransform();
+            cform.blueMultiplier = 0;
 
             if (data[i] === 1) {
                 cform.greenMultiplier = 0;
-                cform.blueMultiplier = 0;
             } else {
                 cform.redMultiplier = 0;
-                cform.blueMultiplier = 0;
             }
 
             tform.set_colorTransform(cform);
