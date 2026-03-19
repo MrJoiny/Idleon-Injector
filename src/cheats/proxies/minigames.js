@@ -24,25 +24,6 @@ import { cheatState } from "../core/state.js";
 import { behavior, events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 
-/**
- * Wraps an array property in a Proxy when the init method is called.
- * This ensures the proxy is applied to every instance created from the prototype.
- *
- * @param {object} prototype - The ActorEvents prototype to patch
- * @param {string} initMethod - The initialization method name (e.g., "init")
- * @param {string} arrayProp - The array property name (e.g., "_GenINFO")
- * @param {object} handler - The Proxy handler with get/set traps
- */
-function wrapArrayOnInit(prototype, initMethod, arrayProp, handler) {
-    createMethodProxy(prototype, initMethod, function (base) {
-        if (this[arrayProp] && !this[arrayProp]._isProxied) {
-            this[arrayProp] = new Proxy(this[arrayProp], handler);
-            this[arrayProp]._isProxied = true;
-        }
-        return base;
-    });
-}
-
 // mining, fishing, catching
 function setupEvents229Minigames() {
     const ActorEvents229 = events(229);
@@ -51,26 +32,30 @@ function setupEvents229Minigames() {
     const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
     ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
         if (cheatState.minigame.mining) return; // Skip original entirely
-        return originalMining.call(this, ...args);
+        return Reflect.apply(originalMining, this, args);
     };
 
     // fishing block game over
     const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
     ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
         if (cheatState.minigame.fishing) return; // Skip original entirely
-        return originalFishing.call(this, ...args);
+        return Reflect.apply(originalFishing, this, args);
     };
 
     // catching proxy _GenInfo array for static positions
-    wrapArrayOnInit(ActorEvents229.prototype, "init", "_GenInfo", {
-        get(target, prop, receiver) {
-            if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
-            if (cheatState.minigame.catching) {
-                if (Number(prop) === 31) return 70;
-                if (Number(prop) === 33) return [95, 95, 95, 95, 95];
-            }
-            return Reflect.get(target, prop, receiver);
-        },
+    createMethodProxy(ActorEvents229.prototype, "init", function (base) {
+        this._GenInfo = new Proxy(this._GenInfo, {
+            get(target, prop, receiver) {
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+                if (cheatState.minigame.catching) {
+                    if (Number(prop) === 31) return 70;
+                    if (Number(prop) === 33) return [95, 95, 95, 95, 95];
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
@@ -79,13 +64,17 @@ function setupEvents116Minigames() {
     const ActorEvents116 = events(116);
 
     // choppin proxy _GeneralINFO for gold zone
-    wrapArrayOnInit(ActorEvents116.prototype, "init", "_GeneralINFO", {
-        get(target, prop, receiver) {
-            if (cheatState.minigame.choppin && Number(prop) === 7) {
-                return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
-            }
-            return Reflect.get(target, prop, receiver);
-        },
+    createMethodProxy(ActorEvents116.prototype, "init", function (base) {
+        this._GeneralINFO = new Proxy(this._GeneralINFO, {
+            get(target, prop, receiver) {
+                if (cheatState.minigame.choppin && Number(prop) === 7) {
+                    return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
@@ -107,32 +96,36 @@ function setupEvents510Minigames() {
     const BULLSEYE_X = 938;
     const BULLSEYE_Y = 292;
 
-    wrapArrayOnInit(ActorEvents510.prototype, "init", "_GenINFO", {
-        get(target, prop, receiver) {
-            const numProp = Number(prop);
+    createMethodProxy(ActorEvents510.prototype, "init", function (base) {
+        this._GenINFO = new Proxy(this._GenINFO, {
+            get(target, prop, receiver) {
+                const numProp = Number(prop);
 
-            // Hoops logic
-            if (cheatState.minigame.hoops) {
-                switch (numProp) {
-                    case HOOP_TARGET_X:
-                    case HOOP_POS_X:
-                        return 600;
-                    case HOOP_TARGET_Y:
-                    case HOOP_POS_Y:
-                        return 300;
-                    case BALL_X:
-                        return 620;
+                // Hoops logic
+                if (cheatState.minigame.hoops) {
+                    switch (numProp) {
+                        case HOOP_TARGET_X:
+                        case HOOP_POS_X:
+                            return 600;
+                        case HOOP_TARGET_Y:
+                        case HOOP_POS_Y:
+                            return 300;
+                        case BALL_X:
+                            return 620;
+                    }
                 }
-            }
 
-            // Darts logic
-            if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
-                if (numProp === DART_X) return BULLSEYE_X;
-                if (numProp === DART_Y) return BULLSEYE_Y;
-            }
+                // Darts logic
+                if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
+                    if (numProp === DART_X) return BULLSEYE_X;
+                    if (numProp === DART_Y) return BULLSEYE_Y;
+                }
 
-            return Reflect.get(target, prop, receiver);
-        },
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
@@ -160,35 +153,35 @@ function setupEvents670Minigames() {
     const WISDOM_ACTIVE_IDX = 55;
     const HOLE_ACTIVITY_IDX = 0;
 
-    wrapArrayOnInit(ActorEvents670.prototype, "init", "_GenINFO", {
-        get(target, prop, receiver) {
-            const numProp = Number(prop);
-            const value = Reflect.get(target, prop, receiver);
+    createMethodProxy(ActorEvents670.prototype, "init", function (base) {
+        this._GenINFO = new Proxy(this._GenINFO, {
+            get: (target, prop, receiver) => {
+                const numProp = Number(prop);
+                const value = Reflect.get(target, prop, receiver);
 
-            // scratch logic auto reveal all scratch zones
-            if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                if (value[STATE_IDX] === 1) {
-                    for (let i = 25; i <= 49; i++) {
-                        if (value[i] !== 1) {
+                // scratch logic auto reveal all scratch zones
+                if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
+                    if (value[STATE_IDX] === 1) {
+                        for (let i = 25; i <= 49; i++) {
                             value[i] = 1;
                         }
-                    }
 
-                    // Hide cover image
-                    const coverImage = this._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
-                    if (coverImage.get_alpha() > 0) {
+                        // Hide cover image
+                        const coverImage = this._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
                         coverImage.set_alpha(0);
                     }
                 }
-            }
 
-            // wisdom logic infinite attempts
-            if (cheatState.minigame.wisdom && numProp === 194) {
-                return 10;
-            }
+                // wisdom logic infinite attempts
+                if (cheatState.minigame.wisdom && numProp === 194) {
+                    return 10;
+                }
 
-            return value;
-        },
+                return value;
+            },
+        });
+
+        return base;
     });
 
     // valentine reveal and Gold Pot Rush round tracking
@@ -203,8 +196,7 @@ function setupEvents670Minigames() {
         behavior.runLater = function (...runLaterArgs) {
             if (
                 runLaterArgs[2] === instance.actor &&
-                instance._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID &&
-                typeof runLaterArgs[1] === "function"
+                instance._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID
             ) {
                 const callback = runLaterArgs[1];
                 // Ignore delayed spawns from older rounds after _GenINFO[254] is rebuilt.
@@ -359,7 +351,7 @@ function setupEvents577Minigames() {
             });
             this._GenINFO[58]._isProxied = true;
         }
-        return originalEventGaming.call(this, ...args);
+        return Reflect.apply(originalEventGaming, this, args);
     };
 
     // log card reveal
