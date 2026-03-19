@@ -17,98 +17,81 @@
  * - Poing (ActorEvents_577) - AI paddle off-screen
  * - Log (ActorEvents_577) - Card type reveal
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
+ * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
  */
 
 import { cheatState } from "../core/state.js";
-import { events } from "../core/globals.js";
+import { behavior, events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
-
-/**
- * Wraps an array property in a Proxy when the init method is called.
- * This ensures the proxy is applied to every instance created from the prototype.
- *
- * @param {object} prototype - The ActorEvents prototype to patch
- * @param {string} initMethod - The initialization method name (e.g., "init")
- * @param {string} arrayProp - The array property name (e.g., "_GenINFO")
- * @param {object} handler - The Proxy handler with get/set traps
- */
-function wrapArrayOnInit(prototype, initMethod, arrayProp, handler) {
-    if (!prototype[initMethod]) return;
-    if (prototype[initMethod]._isPatched) return;
-
-    createMethodProxy(prototype, initMethod, function (base) {
-        if (this[arrayProp] && !this[arrayProp]._isProxied) {
-            this[arrayProp] = new Proxy(this[arrayProp], handler);
-            this[arrayProp]._isProxied = true;
-        }
-        return base;
-    });
-
-    prototype[initMethod]._isPatched = true;
-}
 
 // mining, fishing, catching
 function setupEvents229Minigames() {
     const ActorEvents229 = events(229);
-    if (!ActorEvents229) return;
 
     // mining block game over
-    if (!ActorEvents229.prototype._customEvent_MiningGameOver?._isPatched) {
-        const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
-        ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
-            if (cheatState.minigame.mining) return; // Skip original entirely
-            return originalMining.call(this, ...args);
-        };
-        ActorEvents229.prototype._customEvent_MiningGameOver._isPatched = true;
-    }
+    const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
+    ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
+        if (cheatState.minigame.mining) return; // Skip original entirely
+        return Reflect.apply(originalMining, this, args);
+    };
 
     // fishing block game over
-    if (!ActorEvents229.prototype._customEvent_FishingGameOver?._isPatched) {
-        const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
-        ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
-            if (cheatState.minigame.fishing) return; // Skip original entirely
-            return originalFishing.call(this, ...args);
-        };
-        ActorEvents229.prototype._customEvent_FishingGameOver._isPatched = true;
-    }
+    const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
+    ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
+        if (cheatState.minigame.fishing) return; // Skip original entirely
+        return Reflect.apply(originalFishing, this, args);
+    };
 
     // catching proxy _GenInfo array for static positions
-    wrapArrayOnInit(ActorEvents229.prototype, "init", "_GenInfo", {
-        get(target, prop, receiver) {
-            if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
-            if (cheatState.minigame.catching) {
-                if (Number(prop) === 31) return 70;
-                if (Number(prop) === 33) return [95, 95, 95, 95, 95];
-            }
-            return Reflect.get(target, prop, receiver);
-        },
+    createMethodProxy(ActorEvents229.prototype, "init", function (base) {
+        this._GenInfo = new Proxy(this._GenInfo, {
+            get(target, prop, receiver) {
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
+                const index = Number(prop);
+                if (cheatState.minigame.catching) {
+                    if (index === 31) return 70;
+                    if (index === 33) return [95, 95, 95, 95, 95];
+                }
+
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
 // choppin
 function setupEvents116Minigames() {
     const ActorEvents116 = events(116);
-    if (!ActorEvents116) return;
 
     // choppin proxy _GeneralINFO for gold zone
-    wrapArrayOnInit(ActorEvents116.prototype, "init", "_GeneralINFO", {
-        get(target, prop, receiver) {
-            if (cheatState.minigame.choppin && Number(prop) === 7) {
-                return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
-            }
-            return Reflect.get(target, prop, receiver);
-        },
+    createMethodProxy(ActorEvents116.prototype, "init", function (base) {
+        this._GeneralINFO = new Proxy(this._GeneralINFO, {
+            get(target, prop, receiver) {
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
+                const index = Number(prop);
+                if (cheatState.minigame.choppin && index === 7) {
+                    return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
+                }
+
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
 // hoops and darts
 function setupEvents510Minigames() {
     const ActorEvents510 = events(510);
-    if (!ActorEvents510) return;
 
     // Hoops constants
-    const HOOP_TARGET_X = 107;
-    const HOOP_TARGET_Y = 108;
+    const HOOP_TGT_X = 107;
+    const HOOP_TGT_Y = 108;
     const HOOP_POS_X = 95;
     const HOOP_POS_Y = 96;
     const BALL_X = 91;
@@ -120,261 +103,309 @@ function setupEvents510Minigames() {
     const BULLSEYE_X = 938;
     const BULLSEYE_Y = 292;
 
-    wrapArrayOnInit(ActorEvents510.prototype, "init", "_GenINFO", {
-        get(target, prop, receiver) {
-            const numProp = Number(prop);
+    createMethodProxy(ActorEvents510.prototype, "init", function (base) {
+        this._GenINFO = new Proxy(this._GenINFO, {
+            get(target, prop, receiver) {
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
 
-            // Hoops logic
-            if (cheatState.minigame.hoops) {
-                switch (numProp) {
-                    case HOOP_TARGET_X:
-                    case HOOP_POS_X:
-                        return 600;
-                    case HOOP_TARGET_Y:
-                    case HOOP_POS_Y:
-                        return 300;
-                    case BALL_X:
-                        return 620;
+                const index = Number(prop);
+
+                // Hoops logic
+                if (cheatState.minigame.hoops) {
+                    switch (index) {
+                        case HOOP_TGT_X:
+                        case HOOP_POS_X:
+                            return 600;
+                        case HOOP_TGT_Y:
+                        case HOOP_POS_Y:
+                            return 300;
+                        case BALL_X:
+                            return 620;
+                    }
                 }
-            }
 
-            // Darts logic
-            if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
-                if (numProp === DART_X) return BULLSEYE_X;
-                if (numProp === DART_Y) return BULLSEYE_Y;
-            }
+                // Darts logic
+                if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
+                    if (index === DART_X) return BULLSEYE_X;
+                    if (index === DART_Y) return BULLSEYE_Y;
+                }
 
-            return Reflect.get(target, prop, receiver);
-        },
+                return Reflect.get(target, prop, receiver);
+            },
+        });
+
+        return base;
     });
 }
 
-// scratch, wisdom and valentine
+// scratch, wisdom, valentine and gold pot rush
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
-    if (!ActorEvents670) return;
 
+    // Gold Pot Rush queues delayed coin spawns. Without a round id, callbacks
+    // from the previous round can write into the next round's _GenINFO[254].
+    const goldPotRushRoundIds = new WeakMap();
+
+    // Scratch card state
     const SCRATCH_ARRAY_IDX = 212;
-    const STATE_IDX = 50;
-    const COVER_IMG_ARRAY_ID = 68;
-    const COVER_IMG_ID = 1;
+    const SCRATCH_STATE_IDX = 50;
+    const COVER_IMG_SET_IDX = 68;
+    const COVER_IMG_IDX = 1;
+    const SCRATCH_REVEAL_START_IDX = 25;
+    const SCRATCH_REVEAL_END_IDX = 49;
 
-    wrapArrayOnInit(ActorEvents670.prototype, "init", "_GenINFO", {
-        get(target, prop, receiver) {
-            const numProp = Number(prop);
-            const value = Reflect.get(target, prop, receiver);
+    // Event minigame ids/state
+    const EVENT_GAME_IDX = 213;
+    const VALENTINE_GAME_ID = 2;
+    const VALENTINE_GRID_IDX = 228;
+    const VALENTINE_CLICKED_IDX = 229;
+    const VALENTINE_GRID_SIZE = 36;
+    const GOLD_POT_GAME_ID = 3;
 
-            // scratch logic auto reveal all scratch zones
-            if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                if (Array.isArray(value) && value[STATE_IDX] === 1) {
-                    for (let i = 25; i <= 49; i++) {
-                        if (value[i] !== 1) {
-                            value[i] = 1;
-                        }
+    // Gold Pot Rush state
+    const GOLD_POT_PHASE_IDX = 255;
+    const GOLD_POT_BALLS_IDX = 254;
+    const GOLD_POT_BALL_PROG_IDX = 10;
+    const GOLD_POT_CFG_IDX = 256;
+    const GOLD_POT_FRAME_IDX = 0;
+    const GOLD_POT_DONE_STAGE = 9;
+
+    // Wisdom Monument state
+    const WISDOM_HOLE_ID = 12;
+    const WISDOM_PHASE_IDX = 55;
+    const HOLE_ACTIVITY_IDX = 0;
+    const WISDOM_ATTEMPTS_IDX = 194;
+    const WISDOM_DATA_IDX = 197;
+    const WISDOM_MATCHED_IDX = 198;
+    const WISDOM_CARD_SET_IDX = 67;
+    const WISDOM_CARD_OFFSET = 44;
+    const WISDOM_CARD_COUNT = 44;
+
+    function isGoldPotRushRound(instance) {
+        return instance._GenINFO[EVENT_GAME_IDX] === GOLD_POT_GAME_ID && instance._GenINFO[GOLD_POT_PHASE_IDX] === 1;
+    }
+
+    // _GenINFO proxy hooks for Scratch and Wisdom Monument
+    createMethodProxy(ActorEvents670.prototype, "init", function (base) {
+        this._GenINFO = new Proxy(this._GenINFO, {
+            get: (target, prop, receiver) => {
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+
+                const index = Number(prop);
+                const value = Reflect.get(target, prop, receiver);
+                // scratch logic auto reveal all scratch zones
+                if (index === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch && value[SCRATCH_STATE_IDX] === 1) {
+                    for (let i = SCRATCH_REVEAL_START_IDX; i <= SCRATCH_REVEAL_END_IDX; i++) {
+                        value[i] = 1;
                     }
-
                     // Hide cover image
-                    const coverImage = this._UIinventory15?.[COVER_IMG_ARRAY_ID]?.[COVER_IMG_ID];
-                    if (
-                        coverImage &&
-                        typeof coverImage.get_alpha === "function" &&
-                        typeof coverImage.set_alpha === "function" &&
-                        coverImage.get_alpha() > 0
-                    ) {
-                        coverImage.set_alpha(0);
-                    }
+                    const coverImage = this._UIinventory15[COVER_IMG_SET_IDX][COVER_IMG_IDX];
+                    coverImage.set_alpha(0);
                 }
-            }
+                // wisdom logic infinite attempts
+                if (cheatState.minigame.wisdom && index === WISDOM_ATTEMPTS_IDX) {
+                    return 10;
+                }
 
-            // wisdom logic infinite attempts
-            if (cheatState.minigame.wisdom && numProp === 194) {
-                return 10;
-            }
+                return value;
+            },
+        });
 
-            return value;
-        },
+        return base;
     });
 
-    // valentine minigame
-    if (!ActorEvents670.prototype._event_OwlEvent?._isPatched) {
-        const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
-        ActorEvents670.prototype._event_OwlEvent = function (...args) {
-            const base = Reflect.apply(originalOwlEvent, this, args);
+    // valentine reveal and Gold Pot Rush round tracking both on _event_OwlEvent.
+    const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
+    ActorEvents670.prototype._event_OwlEvent = function (...args) {
+        const instance = this;
+        const nextGoldPotRushRoundId = (goldPotRushRoundIds.get(this) || 0) + 1;
+        const previousGoldPotRushActive = isGoldPotRushRound(this);
+        const originalRunLater = behavior.runLater;
 
-            // this._GenINFO?.[213] event game 2 = valentine game
-            if (cheatState.minigame.valentine && this._GenINFO?.[213] === 2) {
-                const grid = this._GenINFO[228];
-                const clicked = this._GenINFO[229];
-                const covers = this._UIinventory15?.[68];
-
-                if (grid && clicked && covers) {
-                    for (let i = 0; i < 36; i++) {
-                        // 0 = Barf, skip if already clicked
-                        if (grid[i] !== 0 || clicked[i] !== 0) continue;
-
-                        const coverImg = covers[i];
-                        if (
-                            !coverImg ||
-                            typeof coverImg.get_transform !== "function" ||
-                            typeof coverImg.set_transform !== "function"
-                        ) {
-                            continue;
-                        }
-
-                        const tform = coverImg.get_transform();
-                        if (!tform || typeof tform.get_colorTransform !== "function") continue;
-
-                        const cform = tform.get_colorTransform();
-                        if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                        cform.redMultiplier = 0;
-                        cform.blueMultiplier = 0;
-                        tform.set_colorTransform(cform);
-                        coverImg.set_transform(tform);
-                    }
-                }
+        behavior.runLater = function (...runLaterArgs) {
+            if (runLaterArgs[2] === instance.actor && isGoldPotRushRound(instance)) {
+                const callback = runLaterArgs[1];
+                // Ignore delayed spawns from older rounds after _GenINFO[254] is rebuilt.
+                runLaterArgs[1] = function (...callbackArgs) {
+                    if (goldPotRushRoundIds.get(instance) !== nextGoldPotRushRoundId) return;
+                    return Reflect.apply(callback, this, callbackArgs);
+                };
             }
 
-            return base;
+            return Reflect.apply(originalRunLater, this, runLaterArgs);
         };
-        ActorEvents670.prototype._event_OwlEvent._isPatched = true;
-    }
+
+        let base;
+        try {
+            base = Reflect.apply(originalOwlEvent, this, args);
+        } finally {
+            behavior.runLater = originalRunLater;
+        }
+
+        if (!previousGoldPotRushActive && isGoldPotRushRound(this)) {
+            goldPotRushRoundIds.set(this, nextGoldPotRushRoundId);
+        }
+
+        // this._GenINFO[213] event game 2 = valentine game
+        if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_IDX] === VALENTINE_GAME_ID) {
+            const grid = this._GenINFO[VALENTINE_GRID_IDX];
+            const clicked = this._GenINFO[VALENTINE_CLICKED_IDX];
+            const covers = this._UIinventory15[COVER_IMG_SET_IDX];
+
+            for (let i = 0; i < VALENTINE_GRID_SIZE; i++) {
+                // 0 = Barf, skip if already clicked
+                if (grid[i] !== 0 || clicked[i] !== 0) continue;
+
+                const tform = covers[i].get_transform();
+                const cform = tform.get_colorTransform();
+                cform.redMultiplier = 0;
+                cform.blueMultiplier = 0;
+                tform.set_colorTransform(cform);
+                covers[i].set_transform(tform);
+            }
+        }
+
+        return base;
+    };
+
+    // Gold Pot Rush cheat
+    createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
+        if (!cheatState.minigame.goldrush || !isGoldPotRushRound(this)) {
+            return base;
+        }
+
+        const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
+        const completeProg = GOLD_POT_DONE_STAGE * this._GenINFO[GOLD_POT_CFG_IDX][GOLD_POT_FRAME_IDX];
+
+        // Jump each coin to the game's payout threshold.
+        for (const ball of balls) {
+            if (ball[GOLD_POT_BALL_PROG_IDX] >= completeProg) continue;
+
+            // Fast-forward to the game's own payout threshold so _event_7
+            // resolves the winning bucket on the next tick.
+            ball[GOLD_POT_BALL_PROG_IDX] = completeProg;
+        }
+
+        return base;
+    });
 
     // wisdom card reveal helper — sets scaleX(1) on item images for active cards
     // and tints matched pairs green using color transforms
     function revealWisdomCards(instance) {
         if (!cheatState.minigame.wisdom) return;
-        const cards = instance._UIinventory15?.[67];
-        const data = instance._GenINFO?.[197];
-        const matched = instance._GenINFO?.[198];
+        const playerHoleIdx = gga.GetPlayersUsernames.indexOf(gga.UserInfo[0]);
+        if (gga.Holes[HOLE_ACTIVITY_IDX][playerHoleIdx] !== WISDOM_HOLE_ID) return;
+        if (instance._GenINFO[WISDOM_PHASE_IDX] !== 1) return;
 
-        if (!cards || !data || !matched) return;
+        const cards = instance._UIinventory15[WISDOM_CARD_SET_IDX];
+        const data = instance._GenINFO[WISDOM_DATA_IDX];
+        const matched = instance._GenINFO[WISDOM_MATCHED_IDX];
 
-        for (let i = 0; i < 44; i++) {
-            const img = cards[i + 44];
-            if (data[i] !== 0 && img && typeof img.set_scaleX === "function") {
-                img.set_scaleX(1);
+        for (let i = 0; i < WISDOM_CARD_COUNT; i++) {
+            const img = cards[i + WISDOM_CARD_OFFSET];
+            if (data[i] === 0) continue;
 
-                // tint matched pairs green
-                if (
-                    matched[i] === 1 &&
-                    typeof img.get_transform === "function" &&
-                    typeof img.set_transform === "function"
-                ) {
-                    const tform = img.get_transform();
-                    if (!tform || typeof tform.get_colorTransform !== "function") continue;
+            img.set_scaleX(1);
+            if (matched[i] !== 1) continue;
 
-                    const cform = tform.get_colorTransform();
-                    if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                    cform.redMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                    tform.set_colorTransform(cform);
-                    img.set_transform(tform);
-                }
-            }
+            const tform = img.get_transform();
+            const cform = tform.get_colorTransform();
+            cform.redMultiplier = 0;
+            cform.blueMultiplier = 0;
+            tform.set_colorTransform(cform);
+            img.set_transform(tform);
         }
     }
 
     // reveal after round setup ("f2") and card clicks ("c")
-    if (!ActorEvents670.prototype._customEvent_CavernStuffz3?._isPatched) {
-        createMethodProxy(ActorEvents670.prototype, "_customEvent_CavernStuffz3", function (base) {
-            revealWisdomCards(this);
-            return base;
-        });
-    }
+    createMethodProxy(ActorEvents670.prototype, "_customEvent_CavernStuffz3", function (base) {
+        revealWisdomCards(this);
+        return base;
+    });
 
     // re-reveal on every mouse interaction to keep items visible
-    if (!ActorEvents670.prototype._event_monumentgameplay?._isPatched) {
-        createMethodProxy(ActorEvents670.prototype, "_event_monumentgameplay", function (base) {
-            revealWisdomCards(this);
-            return base;
-        });
-    }
+    createMethodProxy(ActorEvents670.prototype, "_event_monumentgameplay", function (base) {
+        revealWisdomCards(this);
+        return base;
+    });
 }
 
 // poing and log
 function setupEvents577Minigames() {
     const ActorEvents577 = events(577);
-    if (!ActorEvents577) return;
+    const LOG_INACTIVE_STATE = -1;
+    const LOG_PHASE_IDX = 53;
+    const POING_INACTIVE_PHASE = -1;
+    const POING_PHASE_IDX = 57;
+    const POING_PAD_XS_IDX = 58;
+    const POING_AI_PAD_IDX = 1;
 
     // Poing: Hook into _event_Gaming where AI paddle movement happens
-    // _GenINFO[58] is paddle positions array [playerX, aiX]
+    // _GenINFO[58] is paddle X positions [player, ai]
     // We move AI paddle off-screen (999) and block game from updating it
-    if (!ActorEvents577.prototype._event_Gaming?._isPatched) {
-        const originalEventGaming = ActorEvents577.prototype._event_Gaming;
-        ActorEvents577.prototype._event_Gaming = function (...args) {
-            // Before running game logic, wrap _GenINFO[58] if cheat is enabled
-            if (cheatState.minigame.poing && this._GenINFO?.[58] && !this._GenINFO[58]._isProxied) {
-                this._GenINFO[58] = new Proxy(this._GenINFO[58], {
-                    get(t, p) {
-                        if (typeof p === "symbol") return t[p];
-                        // p is the sub-index: 0 = Player, 1 = AI
-                        if (Number(p) === 1) {
-                            return 999; // Move AI paddle far off-screen
-                        }
-                        return t[p];
-                    },
-                    set(t, p, v) {
-                        // Block game from updating AI's position
-                        if (Number(p) === 1) {
-                            return true;
-                        }
-                        t[p] = v;
+    const originalEventGaming = ActorEvents577.prototype._event_Gaming;
+    ActorEvents577.prototype._event_Gaming = function (...args) {
+        // Before running game logic, wrap the paddle X positions if cheat is enabled
+        if (
+            cheatState.minigame.poing &&
+            this._GenINFO[POING_PHASE_IDX] !== POING_INACTIVE_PHASE &&
+            this._GenINFO[POING_PAD_XS_IDX] &&
+            !this._GenINFO[POING_PAD_XS_IDX]._isProxied
+        ) {
+            this._GenINFO[POING_PAD_XS_IDX] = new Proxy(this._GenINFO[POING_PAD_XS_IDX], {
+                get(padXs, key) {
+                    if (typeof key === "symbol") return padXs[key];
+                    const index = Number(key);
+                    if (index === POING_AI_PAD_IDX) {
+                        return 999; // Move AI paddle far off-screen
+                    }
+                    return padXs[key];
+                },
+                set(padXs, key, value) {
+                    const index = Number(key);
+                    // Block game from updating AI's position
+                    if (index === POING_AI_PAD_IDX) {
                         return true;
-                    },
-                });
-                this._GenINFO[58]._isProxied = true;
-            }
-            return originalEventGaming.call(this, ...args);
-        };
-        ActorEvents577.prototype._event_Gaming._isPatched = true;
-    }
+                    }
+                    padXs[key] = value;
+                    return true;
+                },
+            });
+            this._GenINFO[POING_PAD_XS_IDX]._isProxied = true;
+        }
+        return Reflect.apply(originalEventGaming, this, args);
+    };
 
     // log card reveal
-    if (!ActorEvents577.prototype._customEvent_W5stuffzz?._isPatched) {
-        createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
-            if (!cheatState.minigame.log) return base;
-            const cards = this?._UIinventory13?.[41];
-            const data = this?._GenINFO?.[54];
+    createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
+        if (!cheatState.minigame.log) return base;
+        if (this._GenINFO[LOG_PHASE_IDX] === LOG_INACTIVE_STATE) return base;
+        const cards = this._UIinventory13[41];
+        const data = this._GenINFO[54];
 
-            if (!cards || !data) return base;
+        for (let i = 0; i < 10; i++) {
+            const img = cards[i];
+            const tform = img.get_transform();
+            const cform = tform.get_colorTransform();
+            cform.blueMultiplier = 0;
 
-            for (let i = 0; i < 10; i++) {
-                const img = cards[i];
-                if (!img || typeof img.get_transform !== "function" || typeof img.set_transform !== "function") {
-                    continue;
-                }
-
-                const tform = img.get_transform();
-                if (!tform || typeof tform.get_colorTransform !== "function") continue;
-
-                const cform = tform.get_colorTransform();
-                if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                if (data[i] === 1) {
-                    // skull — tint red
-                    cform.greenMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                } else {
-                    // safe — tint green
-                    cform.redMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                }
-                tform.set_colorTransform(cform);
-                img.set_transform(tform);
+            if (data[i] === 1) {
+                cform.greenMultiplier = 0;
+            } else {
+                cform.redMultiplier = 0;
             }
-            return base;
-        });
-    }
+
+            tform.set_colorTransform(cform);
+            img.set_transform(tform);
+        }
+
+        return base;
+    });
 }
 
 // minehead
 function setupEvents741Minigames() {
     const ActorEvents741 = events(741);
-    if (!ActorEvents741) return;
-
-    if (ActorEvents741.prototype._event_Minehead?._isPatched) return;
 
     const TILE_LAYERS = [27, 28, 29];
     const MINE_ALPHA = 0.2;
@@ -382,13 +413,13 @@ function setupEvents741Minigames() {
     const mineRevealActive = new WeakMap();
 
     createMethodProxy(ActorEvents741.prototype, "_event_Minehead", function (base) {
-        const mineGrid = this?._GenINFO?.[32];
-        const revealedTiles = this?._GenINFO?.[33];
-        const uiInventory = this?._UIinventory17;
+        const mineGrid = this._GenINFO[32];
+        const revealedTiles = this._GenINFO[33];
+        const uiInventory = this._UIinventory17;
 
         if (!Array.isArray(mineGrid) || !uiInventory) return base;
 
-        const inMineRound = this?._GenINFO?.[28] === 1;
+        const inMineRound = this._GenINFO[28] === 1;
         const shouldReveal = cheatState.minigame.minehead && inMineRound;
         const wasRevealActive = mineRevealActive.get(this) === true;
 
@@ -397,14 +428,11 @@ function setupEvents741Minigames() {
         for (let tileIndex = 0; tileIndex < mineGrid.length; tileIndex++) {
             if (mineGrid[tileIndex] !== 0) continue;
 
-            const isRevealed = Array.isArray(revealedTiles) && revealedTiles[tileIndex] === 1;
+            const isRevealed = revealedTiles[tileIndex] === 1;
             const alpha = shouldReveal && !isRevealed ? MINE_ALPHA : DEFAULT_ALPHA;
 
             for (const layer of TILE_LAYERS) {
-                const image = uiInventory[layer]?.[tileIndex];
-                if (image?.set_alpha) {
-                    image.set_alpha(alpha);
-                }
+                uiInventory[layer][tileIndex].set_alpha(alpha);
             }
         }
 
@@ -416,8 +444,6 @@ function setupEvents741Minigames() {
 
         return base;
     });
-
-    ActorEvents741.prototype._event_Minehead._isPatched = true;
 }
 
 /**
