@@ -47,9 +47,10 @@ function setupEvents229Minigames() {
         this._GenInfo = new Proxy(this._GenInfo, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+                const index = Number(prop);
                 if (cheatState.minigame.catching) {
-                    if (Number(prop) === 31) return 70;
-                    if (Number(prop) === 33) return [95, 95, 95, 95, 95];
+                    if (index === 31) return 70;
+                    if (index === 33) return [95, 95, 95, 95, 95];
                 }
                 return Reflect.get(target, prop, receiver);
             },
@@ -67,8 +68,10 @@ function setupEvents116Minigames() {
     createMethodProxy(ActorEvents116.prototype, "init", function (base) {
         this._GeneralINFO = new Proxy(this._GeneralINFO, {
             get(target, prop, receiver) {
-                if (cheatState.minigame.choppin && Number(prop) === 7) {
-                    return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+                const index = Number(prop);
+                if (cheatState.minigame.choppin) {
+                    if (index === 7) return [100, -1, 0, 2, 0, 220, -1, 0, -1, 0, -1, 0, 0, 220, 0, 0, 1];
                 }
                 return Reflect.get(target, prop, receiver);
             },
@@ -99,11 +102,12 @@ function setupEvents510Minigames() {
     createMethodProxy(ActorEvents510.prototype, "init", function (base) {
         this._GenINFO = new Proxy(this._GenINFO, {
             get(target, prop, receiver) {
-                const numProp = Number(prop);
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+                const index = Number(prop);
 
                 // Hoops logic
                 if (cheatState.minigame.hoops) {
-                    switch (numProp) {
+                    switch (index) {
                         case HOOP_TARGET_X:
                         case HOOP_POS_X:
                             return 600;
@@ -117,8 +121,8 @@ function setupEvents510Minigames() {
 
                 // Darts logic
                 if (cheatState.minigame.darts && target[DART_ACTIVE] === 1) {
-                    if (numProp === DART_X) return BULLSEYE_X;
-                    if (numProp === DART_Y) return BULLSEYE_Y;
+                    if (index === DART_X) return BULLSEYE_X;
+                    if (index === DART_Y) return BULLSEYE_Y;
                 }
 
                 return Reflect.get(target, prop, receiver);
@@ -132,36 +136,53 @@ function setupEvents510Minigames() {
 // scratch, wisdom, valentine and gold pot rush
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
+
     // Gold Pot Rush queues delayed coin spawns. Without a round id, callbacks
     // from the previous round can write into the next round's _GenINFO[254].
     const goldPotRushRoundIds = new WeakMap();
 
+    // Scratch card state
     const SCRATCH_ARRAY_IDX = 212;
-    const STATE_IDX = 50;
+    const SCRATCH_STATE_IDX = 50;
     const COVER_IMG_ARRAY_ID = 68;
     const COVER_IMG_ID = 1;
+
+    // Event minigame ids/state
+    const EVENT_MINIGAME_IDX = 213;
     const VALENTINE_GAME_ID = 2;
-    const EVENT_GAME_STATE_IDX = 213;
     const GOLD_POT_RUSH_GAME_ID = 3;
+
+    // Gold Pot Rush state
     const GOLD_POT_ACTIVE_IDX = 255;
     const GOLD_POT_BALLS_IDX = 254;
     const GOLD_POT_BALL_PROGRESS_IDX = 10;
     const GOLD_POT_CONFIG_IDX = 256;
     const GOLD_POT_FRAME_WINDOW_IDX = 0;
     const GOLD_POT_COMPLETE_STAGE = 9;
+
+    // Wisdom Monument state
     const WISDOM_HOLE_ID = 12;
     const WISDOM_ACTIVE_IDX = 55;
     const HOLE_ACTIVITY_IDX = 0;
 
+    function isGoldPotRushRound(instance) {
+        return (
+            instance._GenINFO[EVENT_MINIGAME_IDX] === GOLD_POT_RUSH_GAME_ID &&
+            instance._GenINFO[GOLD_POT_ACTIVE_IDX] === 1
+        );
+    }
+
+    // _GenINFO proxy hooks for Scratch and Wisdom Monument
     createMethodProxy(ActorEvents670.prototype, "init", function (base) {
         this._GenINFO = new Proxy(this._GenINFO, {
             get: (target, prop, receiver) => {
-                const numProp = Number(prop);
+                if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
+                const index = Number(prop);
                 const value = Reflect.get(target, prop, receiver);
 
                 // scratch logic auto reveal all scratch zones
-                if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                    if (value[STATE_IDX] === 1) {
+                if (index === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
+                    if (value[SCRATCH_STATE_IDX] === 1) {
                         for (let i = 25; i <= 49; i++) {
                             value[i] = 1;
                         }
@@ -173,7 +194,7 @@ function setupEvents670Minigames() {
                 }
 
                 // wisdom logic infinite attempts
-                if (cheatState.minigame.wisdom && numProp === 194) {
+                if (cheatState.minigame.wisdom && index === 194) {
                     return 10;
                 }
 
@@ -184,20 +205,16 @@ function setupEvents670Minigames() {
         return base;
     });
 
-    // valentine reveal and Gold Pot Rush round tracking
+    // valentine reveal and Gold Pot Rush round tracking both on _event_OwlEvent.
     const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
     ActorEvents670.prototype._event_OwlEvent = function (...args) {
         const instance = this;
         const nextGoldPotRushRoundId = (goldPotRushRoundIds.get(this) || 0) + 1;
-        const previousGoldPotRushActive =
-            this._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID && this._GenINFO[GOLD_POT_ACTIVE_IDX] === 1;
+        const previousGoldPotRushActive = isGoldPotRushRound(this);
         const originalRunLater = behavior.runLater;
 
         behavior.runLater = function (...runLaterArgs) {
-            if (
-                runLaterArgs[2] === instance.actor &&
-                instance._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID
-            ) {
+            if (runLaterArgs[2] === instance.actor && isGoldPotRushRound(instance)) {
                 const callback = runLaterArgs[1];
                 // Ignore delayed spawns from older rounds after _GenINFO[254] is rebuilt.
                 runLaterArgs[1] = function (...callbackArgs) {
@@ -216,11 +233,7 @@ function setupEvents670Minigames() {
             behavior.runLater = originalRunLater;
         }
 
-        if (
-            !previousGoldPotRushActive &&
-            this._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID &&
-            this._GenINFO[GOLD_POT_ACTIVE_IDX] === 1
-        ) {
+        if (!previousGoldPotRushActive && isGoldPotRushRound(this)) {
             goldPotRushRoundIds.set(this, nextGoldPotRushRoundId);
         }
 
@@ -246,12 +259,9 @@ function setupEvents670Minigames() {
         return base;
     };
 
+    // Gold Pot Rush cheat
     createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
-        if (
-            !cheatState.minigame.goldrush ||
-            this._GenINFO[EVENT_GAME_STATE_IDX] !== GOLD_POT_RUSH_GAME_ID ||
-            this._GenINFO[GOLD_POT_ACTIVE_IDX] !== 1
-        ) {
+        if (!cheatState.minigame.goldrush || !isGoldPotRushRound(this)) {
             return base;
         }
 
@@ -278,6 +288,7 @@ function setupEvents670Minigames() {
         const playerHoleIdx = gga.GetPlayersUsernames.indexOf(gga.UserInfo[0]);
         if (gga.Holes[HOLE_ACTIVITY_IDX][playerHoleIdx] !== WISDOM_HOLE_ID) return;
         if (instance._GenINFO[WISDOM_ACTIVE_IDX] !== 1) return;
+
         const cards = instance._UIinventory15[67];
         const data = instance._GenINFO[197];
         const matched = instance._GenINFO[198];
