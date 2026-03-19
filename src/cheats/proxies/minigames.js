@@ -21,7 +21,7 @@
  */
 
 import { cheatState } from "../core/state.js";
-import { events, gga } from "../core/globals.js";
+import { behavior, events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 
 /**
@@ -139,6 +139,9 @@ function setupEvents510Minigames() {
 // scratch, wisdom, valentine and gold pot rush
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
+    // Gold Pot Rush queues delayed coin spawns. Without a round id, callbacks
+    // from the previous round can write into the next round's _GenINFO[254].
+    const goldPotRushRoundIds = new WeakMap();
 
     const SCRATCH_ARRAY_IDX = 212;
     const STATE_IDX = 50;
@@ -188,10 +191,46 @@ function setupEvents670Minigames() {
         },
     });
 
-    // valentine minigame
+    // valentine reveal and Gold Pot Rush round tracking
     const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
     ActorEvents670.prototype._event_OwlEvent = function (...args) {
-        const base = Reflect.apply(originalOwlEvent, this, args);
+        const instance = this;
+        const nextGoldPotRushRoundId = (goldPotRushRoundIds.get(this) || 0) + 1;
+        const previousGoldPotRushActive =
+            this._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID && this._GenINFO[GOLD_POT_ACTIVE_IDX] === 1;
+        const originalRunLater = behavior.runLater;
+
+        behavior.runLater = function (...runLaterArgs) {
+            if (
+                runLaterArgs[2] === instance.actor &&
+                instance._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID &&
+                typeof runLaterArgs[1] === "function"
+            ) {
+                const callback = runLaterArgs[1];
+                // Ignore delayed spawns from older rounds after _GenINFO[254] is rebuilt.
+                runLaterArgs[1] = function (...callbackArgs) {
+                    if (goldPotRushRoundIds.get(instance) !== nextGoldPotRushRoundId) return;
+                    return Reflect.apply(callback, this, callbackArgs);
+                };
+            }
+
+            return Reflect.apply(originalRunLater, this, runLaterArgs);
+        };
+
+        let base;
+        try {
+            base = Reflect.apply(originalOwlEvent, this, args);
+        } finally {
+            behavior.runLater = originalRunLater;
+        }
+
+        if (
+            !previousGoldPotRushActive &&
+            this._GenINFO[EVENT_GAME_STATE_IDX] === GOLD_POT_RUSH_GAME_ID &&
+            this._GenINFO[GOLD_POT_ACTIVE_IDX] === 1
+        ) {
+            goldPotRushRoundIds.set(this, nextGoldPotRushRoundId);
+        }
 
         // this._GenINFO[213] event game 2 = valentine game
         if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_STATE_IDX] === VALENTINE_GAME_ID) {
@@ -228,6 +267,7 @@ function setupEvents670Minigames() {
         const completeProgress =
             GOLD_POT_COMPLETE_STAGE * this._GenINFO[GOLD_POT_CONFIG_IDX][GOLD_POT_FRAME_WINDOW_IDX];
 
+        // jump each coin to the games payout threshold.
         for (const ball of balls) {
             if (ball[GOLD_POT_BALL_PROGRESS_IDX] >= completeProgress) continue;
 
