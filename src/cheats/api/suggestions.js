@@ -48,10 +48,6 @@ export function getAutoCompleteSuggestions() {
         });
     }
 
-    // here are items stored that are not visible in the w5 slab
-    const itemBlacklist = new Set(cList.RANDOlist[17]);
-    itemBlacklist.delete("COIN");
-
     const allBundles = getAllBundles();
 
     // cheat commands (skip "cheats" since it's already added as first)
@@ -69,7 +65,6 @@ export function getAutoCompleteSuggestions() {
     // item commands (drop, nomore, multiplestacks)
     addChoices(choices, itemDefs, (code, item) => {
         if (!item.h.displayName) return null;
-        if (itemBlacklist.has(code)) return null;
         let name;
         // get the right message names for the cards
         if (code.startsWith("Cards")) {
