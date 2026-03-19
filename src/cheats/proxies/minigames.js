@@ -86,8 +86,8 @@ function setupEvents510Minigames() {
     const ActorEvents510 = events(510);
 
     // Hoops constants
-    const HOOP_TARGET_X = 107;
-    const HOOP_TARGET_Y = 108;
+    const HOOP_TGT_X = 107;
+    const HOOP_TGT_Y = 108;
     const HOOP_POS_X = 95;
     const HOOP_POS_Y = 96;
     const BALL_X = 91;
@@ -108,10 +108,10 @@ function setupEvents510Minigames() {
                 // Hoops logic
                 if (cheatState.minigame.hoops) {
                     switch (index) {
-                        case HOOP_TARGET_X:
+                        case HOOP_TGT_X:
                         case HOOP_POS_X:
                             return 600;
-                        case HOOP_TARGET_Y:
+                        case HOOP_TGT_Y:
                         case HOOP_POS_Y:
                             return 300;
                         case BALL_X:
@@ -144,32 +144,29 @@ function setupEvents670Minigames() {
     // Scratch card state
     const SCRATCH_ARRAY_IDX = 212;
     const SCRATCH_STATE_IDX = 50;
-    const COVER_IMG_ARRAY_ID = 68;
-    const COVER_IMG_ID = 1;
+    const COVER_IMG_SET_IDX = 68;
+    const COVER_IMG_IDX = 1;
 
     // Event minigame ids/state
-    const EVENT_MINIGAME_IDX = 213;
+    const EVENT_GAME_IDX = 213;
     const VALENTINE_GAME_ID = 2;
-    const GOLD_POT_RUSH_GAME_ID = 3;
+    const GOLD_POT_GAME_ID = 3;
 
     // Gold Pot Rush state
-    const GOLD_POT_ACTIVE_IDX = 255;
+    const GOLD_POT_PHASE_IDX = 255;
     const GOLD_POT_BALLS_IDX = 254;
-    const GOLD_POT_BALL_PROGRESS_IDX = 10;
-    const GOLD_POT_CONFIG_IDX = 256;
-    const GOLD_POT_FRAME_WINDOW_IDX = 0;
-    const GOLD_POT_COMPLETE_STAGE = 9;
+    const GOLD_POT_BALL_PROG_IDX = 10;
+    const GOLD_POT_CFG_IDX = 256;
+    const GOLD_POT_FRAME_IDX = 0;
+    const GOLD_POT_DONE_STAGE = 9;
 
     // Wisdom Monument state
     const WISDOM_HOLE_ID = 12;
-    const WISDOM_ACTIVE_IDX = 55;
+    const WISDOM_PHASE_IDX = 55;
     const HOLE_ACTIVITY_IDX = 0;
 
     function isGoldPotRushRound(instance) {
-        return (
-            instance._GenINFO[EVENT_MINIGAME_IDX] === GOLD_POT_RUSH_GAME_ID &&
-            instance._GenINFO[GOLD_POT_ACTIVE_IDX] === 1
-        );
+        return instance._GenINFO[EVENT_GAME_IDX] === GOLD_POT_GAME_ID && instance._GenINFO[GOLD_POT_PHASE_IDX] === 1;
     }
 
     // _GenINFO proxy hooks for Scratch and Wisdom Monument
@@ -188,7 +185,7 @@ function setupEvents670Minigames() {
                         }
 
                         // Hide cover image
-                        const coverImage = this._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
+                        const coverImage = this._UIinventory15[COVER_IMG_SET_IDX][COVER_IMG_IDX];
                         coverImage.set_alpha(0);
                     }
                 }
@@ -238,7 +235,7 @@ function setupEvents670Minigames() {
         }
 
         // this._GenINFO[213] event game 2 = valentine game
-        if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_STATE_IDX] === VALENTINE_GAME_ID) {
+        if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_IDX] === VALENTINE_GAME_ID) {
             const grid = this._GenINFO[228];
             const clicked = this._GenINFO[229];
             const covers = this._UIinventory15[68];
@@ -266,16 +263,15 @@ function setupEvents670Minigames() {
         }
 
         const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
-        const completeProgress =
-            GOLD_POT_COMPLETE_STAGE * this._GenINFO[GOLD_POT_CONFIG_IDX][GOLD_POT_FRAME_WINDOW_IDX];
+        const completeProg = GOLD_POT_DONE_STAGE * this._GenINFO[GOLD_POT_CFG_IDX][GOLD_POT_FRAME_IDX];
 
         // jump each coin to the games payout threshold.
         for (const ball of balls) {
-            if (ball[GOLD_POT_BALL_PROGRESS_IDX] >= completeProgress) continue;
+            if (ball[GOLD_POT_BALL_PROG_IDX] >= completeProg) continue;
 
             // Fast-forward to the game's own payout threshold so _event_7
             // resolves the winning bucket on the next tick.
-            ball[GOLD_POT_BALL_PROGRESS_IDX] = completeProgress;
+            ball[GOLD_POT_BALL_PROG_IDX] = completeProg;
         }
 
         return base;
@@ -287,7 +283,7 @@ function setupEvents670Minigames() {
         if (!cheatState.minigame.wisdom) return;
         const playerHoleIdx = gga.GetPlayersUsernames.indexOf(gga.UserInfo[0]);
         if (gga.Holes[HOLE_ACTIVITY_IDX][playerHoleIdx] !== WISDOM_HOLE_ID) return;
-        if (instance._GenINFO[WISDOM_ACTIVE_IDX] !== 1) return;
+        if (instance._GenINFO[WISDOM_PHASE_IDX] !== 1) return;
 
         const cards = instance._UIinventory15[67];
         const data = instance._GenINFO[197];
@@ -326,41 +322,44 @@ function setupEvents670Minigames() {
 function setupEvents577Minigames() {
     const ActorEvents577 = events(577);
     const LOG_INACTIVE_STATE = -1;
-    const LOG_STATE_IDX = 53;
-    const POING_INACTIVE_STATE = -1;
-    const POING_STATE_IDX = 57;
+    const LOG_PHASE_IDX = 53;
+    const POING_INACTIVE_PHASE = -1;
+    const POING_PHASE_IDX = 57;
+    const POING_PAD_XS_IDX = 58;
+    const POING_AI_PAD_IDX = 1;
 
     // Poing: Hook into _event_Gaming where AI paddle movement happens
-    // _GenINFO[58] is paddle positions array [playerX, aiX]
+    // _GenINFO[58] is paddle X positions [player, ai]
     // We move AI paddle off-screen (999) and block game from updating it
     const originalEventGaming = ActorEvents577.prototype._event_Gaming;
     ActorEvents577.prototype._event_Gaming = function (...args) {
-        // Before running game logic, wrap _GenINFO[58] if cheat is enabled
+        // Before running game logic, wrap the paddle X positions if cheat is enabled
         if (
             cheatState.minigame.poing &&
-            this._GenINFO[POING_STATE_IDX] !== POING_INACTIVE_STATE &&
-            this._GenINFO[58] &&
-            !this._GenINFO[58]._isProxied
+            this._GenINFO[POING_PHASE_IDX] !== POING_INACTIVE_PHASE &&
+            this._GenINFO[POING_PAD_XS_IDX] &&
+            !this._GenINFO[POING_PAD_XS_IDX]._isProxied
         ) {
-            this._GenINFO[58] = new Proxy(this._GenINFO[58], {
-                get(t, p) {
-                    if (typeof p === "symbol") return t[p];
-                    // p is the sub-index: 0 = Player, 1 = AI
-                    if (Number(p) === 1) {
+            this._GenINFO[POING_PAD_XS_IDX] = new Proxy(this._GenINFO[POING_PAD_XS_IDX], {
+                get(padXs, key) {
+                    if (typeof key === "symbol") return padXs[key];
+                    const index = Number(key);
+                    if (index === POING_AI_PAD_IDX) {
                         return 999; // Move AI paddle far off-screen
                     }
-                    return t[p];
+                    return padXs[key];
                 },
-                set(t, p, v) {
+                set(padXs, key, value) {
+                    const index = Number(key);
                     // Block game from updating AI's position
-                    if (Number(p) === 1) {
+                    if (index === POING_AI_PAD_IDX) {
                         return true;
                     }
-                    t[p] = v;
+                    padXs[key] = value;
                     return true;
                 },
             });
-            this._GenINFO[58]._isProxied = true;
+            this._GenINFO[POING_PAD_XS_IDX]._isProxied = true;
         }
         return Reflect.apply(originalEventGaming, this, args);
     };
@@ -368,7 +367,7 @@ function setupEvents577Minigames() {
     // log card reveal
     createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
         if (!cheatState.minigame.log) return base;
-        if (this._GenINFO[LOG_STATE_IDX] === LOG_INACTIVE_STATE) return base;
+        if (this._GenINFO[LOG_PHASE_IDX] === LOG_INACTIVE_STATE) return base;
         const cards = this._UIinventory13[41];
         const data = this._GenINFO[54];
 
