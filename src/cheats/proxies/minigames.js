@@ -21,7 +21,7 @@
  */
 
 import { cheatState } from "../core/state.js";
-import { events } from "../core/globals.js";
+import { events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 
 /**
@@ -34,9 +34,6 @@ import { createMethodProxy } from "../utils/proxy.js";
  * @param {object} handler - The Proxy handler with get/set traps
  */
 function wrapArrayOnInit(prototype, initMethod, arrayProp, handler) {
-    if (!prototype[initMethod]) return;
-    if (prototype[initMethod]._isPatched) return;
-
     createMethodProxy(prototype, initMethod, function (base) {
         if (this[arrayProp] && !this[arrayProp]._isProxied) {
             this[arrayProp] = new Proxy(this[arrayProp], handler);
@@ -44,34 +41,25 @@ function wrapArrayOnInit(prototype, initMethod, arrayProp, handler) {
         }
         return base;
     });
-
-    prototype[initMethod]._isPatched = true;
 }
 
 // mining, fishing, catching
 function setupEvents229Minigames() {
     const ActorEvents229 = events(229);
-    if (!ActorEvents229) return;
 
     // mining block game over
-    if (!ActorEvents229.prototype._customEvent_MiningGameOver?._isPatched) {
-        const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
-        ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
-            if (cheatState.minigame.mining) return; // Skip original entirely
-            return originalMining.call(this, ...args);
-        };
-        ActorEvents229.prototype._customEvent_MiningGameOver._isPatched = true;
-    }
+    const originalMining = ActorEvents229.prototype._customEvent_MiningGameOver;
+    ActorEvents229.prototype._customEvent_MiningGameOver = function (...args) {
+        if (cheatState.minigame.mining) return; // Skip original entirely
+        return originalMining.call(this, ...args);
+    };
 
     // fishing block game over
-    if (!ActorEvents229.prototype._customEvent_FishingGameOver?._isPatched) {
-        const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
-        ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
-            if (cheatState.minigame.fishing) return; // Skip original entirely
-            return originalFishing.call(this, ...args);
-        };
-        ActorEvents229.prototype._customEvent_FishingGameOver._isPatched = true;
-    }
+    const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
+    ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
+        if (cheatState.minigame.fishing) return; // Skip original entirely
+        return originalFishing.call(this, ...args);
+    };
 
     // catching proxy _GenInfo array for static positions
     wrapArrayOnInit(ActorEvents229.prototype, "init", "_GenInfo", {
@@ -89,7 +77,6 @@ function setupEvents229Minigames() {
 // choppin
 function setupEvents116Minigames() {
     const ActorEvents116 = events(116);
-    if (!ActorEvents116) return;
 
     // choppin proxy _GeneralINFO for gold zone
     wrapArrayOnInit(ActorEvents116.prototype, "init", "_GeneralINFO", {
@@ -105,7 +92,6 @@ function setupEvents116Minigames() {
 // hoops and darts
 function setupEvents510Minigames() {
     const ActorEvents510 = events(510);
-    if (!ActorEvents510) return;
 
     // Hoops constants
     const HOOP_TARGET_X = 107;
@@ -153,7 +139,6 @@ function setupEvents510Minigames() {
 // scratch, wisdom, valentine and gold pot rush
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
-    if (!ActorEvents670) return;
 
     const SCRATCH_ARRAY_IDX = 212;
     const STATE_IDX = 50;
@@ -168,6 +153,9 @@ function setupEvents670Minigames() {
     const GOLD_POT_CONFIG_IDX = 256;
     const GOLD_POT_FRAME_WINDOW_IDX = 0;
     const GOLD_POT_COMPLETE_STAGE = 9;
+    const WISDOM_HOLE_ID = 12;
+    const WISDOM_ACTIVE_IDX = 55;
+    const HOLE_ACTIVITY_IDX = 0;
 
     wrapArrayOnInit(ActorEvents670.prototype, "init", "_GenINFO", {
         get(target, prop, receiver) {
@@ -176,7 +164,7 @@ function setupEvents670Minigames() {
 
             // scratch logic auto reveal all scratch zones
             if (numProp === SCRATCH_ARRAY_IDX && cheatState.minigame.scratch) {
-                if (Array.isArray(value) && value[STATE_IDX] === 1) {
+                if (value[STATE_IDX] === 1) {
                     for (let i = 25; i <= 49; i++) {
                         if (value[i] !== 1) {
                             value[i] = 1;
@@ -184,13 +172,8 @@ function setupEvents670Minigames() {
                     }
 
                     // Hide cover image
-                    const coverImage = this._UIinventory15?.[COVER_IMG_ARRAY_ID]?.[COVER_IMG_ID];
-                    if (
-                        coverImage &&
-                        typeof coverImage.get_alpha === "function" &&
-                        typeof coverImage.set_alpha === "function" &&
-                        coverImage.get_alpha() > 0
-                    ) {
+                    const coverImage = this._UIinventory15[COVER_IMG_ARRAY_ID][COVER_IMG_ID];
+                    if (coverImage.get_alpha() > 0) {
                         coverImage.set_alpha(0);
                     }
                 }
@@ -206,213 +189,170 @@ function setupEvents670Minigames() {
     });
 
     // valentine minigame
-    if (!ActorEvents670.prototype._event_OwlEvent?._isPatched) {
-        const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
-        ActorEvents670.prototype._event_OwlEvent = function (...args) {
-            const base = Reflect.apply(originalOwlEvent, this, args);
+    const originalOwlEvent = ActorEvents670.prototype._event_OwlEvent;
+    ActorEvents670.prototype._event_OwlEvent = function (...args) {
+        const base = Reflect.apply(originalOwlEvent, this, args);
 
-            // this._GenINFO?.[213] event game 2 = valentine game
-            if (cheatState.minigame.valentine && this._GenINFO?.[EVENT_GAME_STATE_IDX] === VALENTINE_GAME_ID) {
-                const grid = this._GenINFO[228];
-                const clicked = this._GenINFO[229];
-                const covers = this._UIinventory15?.[68];
+        // this._GenINFO[213] event game 2 = valentine game
+        if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_STATE_IDX] === VALENTINE_GAME_ID) {
+            const grid = this._GenINFO[228];
+            const clicked = this._GenINFO[229];
+            const covers = this._UIinventory15[68];
 
-                if (grid && clicked && covers) {
-                    for (let i = 0; i < 36; i++) {
-                        // 0 = Barf, skip if already clicked
-                        if (grid[i] !== 0 || clicked[i] !== 0) continue;
+            for (let i = 0; i < 36; i++) {
+                // 0 = Barf, skip if already clicked
+                if (grid[i] !== 0 || clicked[i] !== 0) continue;
 
-                        const coverImg = covers[i];
-                        if (
-                            !coverImg ||
-                            typeof coverImg.get_transform !== "function" ||
-                            typeof coverImg.set_transform !== "function"
-                        ) {
-                            continue;
-                        }
-
-                        const tform = coverImg.get_transform();
-                        if (!tform || typeof tform.get_colorTransform !== "function") continue;
-
-                        const cform = tform.get_colorTransform();
-                        if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                        cform.redMultiplier = 0;
-                        cform.blueMultiplier = 0;
-                        tform.set_colorTransform(cform);
-                        coverImg.set_transform(tform);
-                    }
-                }
+                const tform = covers[i].get_transform();
+                const cform = tform.get_colorTransform();
+                cform.redMultiplier = 0;
+                cform.blueMultiplier = 0;
+                tform.set_colorTransform(cform);
+                covers[i].set_transform(tform);
             }
+        }
 
+        return base;
+    };
+
+    createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
+        if (
+            !cheatState.minigame.goldrush ||
+            this._GenINFO[EVENT_GAME_STATE_IDX] !== GOLD_POT_RUSH_GAME_ID ||
+            this._GenINFO[GOLD_POT_ACTIVE_IDX] !== 1
+        ) {
             return base;
-        };
-        ActorEvents670.prototype._event_OwlEvent._isPatched = true;
-    }
+        }
 
-    if (!ActorEvents670.prototype._event_7._isPatched) {
-        createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
-            if (
-                !cheatState.minigame.goldrush ||
-                this._GenINFO[EVENT_GAME_STATE_IDX] !== GOLD_POT_RUSH_GAME_ID ||
-                this._GenINFO[GOLD_POT_ACTIVE_IDX] !== 1
-            ) {
-                return base;
-            }
+        const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
+        const completeProgress =
+            GOLD_POT_COMPLETE_STAGE * this._GenINFO[GOLD_POT_CONFIG_IDX][GOLD_POT_FRAME_WINDOW_IDX];
 
-            const balls = this._GenINFO[GOLD_POT_BALLS_IDX];
-            const completeProgress =
-                GOLD_POT_COMPLETE_STAGE * this._GenINFO[GOLD_POT_CONFIG_IDX][GOLD_POT_FRAME_WINDOW_IDX];
+        for (const ball of balls) {
+            if (ball[GOLD_POT_BALL_PROGRESS_IDX] >= completeProgress) continue;
 
-            for (const ball of balls) {
-                if (ball[GOLD_POT_BALL_PROGRESS_IDX] >= completeProgress) continue;
+            // Fast-forward to the game's own payout threshold so _event_7
+            // resolves the winning bucket on the next tick.
+            ball[GOLD_POT_BALL_PROGRESS_IDX] = completeProgress;
+        }
 
-                // Fast-forward to the game's own payout threshold so _event_7
-                // resolves the winning bucket on the next tick
-                ball[GOLD_POT_BALL_PROGRESS_IDX] = completeProgress;
-            }
-
-            return base;
-        });
-
-        ActorEvents670.prototype._event_7._isPatched = true;
-    }
+        return base;
+    });
 
     // wisdom card reveal helper — sets scaleX(1) on item images for active cards
     // and tints matched pairs green using color transforms
     function revealWisdomCards(instance) {
         if (!cheatState.minigame.wisdom) return;
-        const cards = instance._UIinventory15?.[67];
-        const data = instance._GenINFO?.[197];
-        const matched = instance._GenINFO?.[198];
-
-        if (!cards || !data || !matched) return;
+        const playerHoleIdx = gga.GetPlayersUsernames.indexOf(gga.UserInfo[0]);
+        if (gga.Holes[HOLE_ACTIVITY_IDX][playerHoleIdx] !== WISDOM_HOLE_ID) return;
+        if (instance._GenINFO[WISDOM_ACTIVE_IDX] !== 1) return;
+        const cards = instance._UIinventory15[67];
+        const data = instance._GenINFO[197];
+        const matched = instance._GenINFO[198];
 
         for (let i = 0; i < 44; i++) {
             const img = cards[i + 44];
-            if (data[i] !== 0 && img && typeof img.set_scaleX === "function") {
-                img.set_scaleX(1);
+            if (data[i] === 0) continue;
 
-                // tint matched pairs green
-                if (
-                    matched[i] === 1 &&
-                    typeof img.get_transform === "function" &&
-                    typeof img.set_transform === "function"
-                ) {
-                    const tform = img.get_transform();
-                    if (!tform || typeof tform.get_colorTransform !== "function") continue;
+            img.set_scaleX(1);
+            if (matched[i] !== 1) continue;
 
-                    const cform = tform.get_colorTransform();
-                    if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                    cform.redMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                    tform.set_colorTransform(cform);
-                    img.set_transform(tform);
-                }
-            }
+            const tform = img.get_transform();
+            const cform = tform.get_colorTransform();
+            cform.redMultiplier = 0;
+            cform.blueMultiplier = 0;
+            tform.set_colorTransform(cform);
+            img.set_transform(tform);
         }
     }
 
     // reveal after round setup ("f2") and card clicks ("c")
-    if (!ActorEvents670.prototype._customEvent_CavernStuffz3?._isPatched) {
-        createMethodProxy(ActorEvents670.prototype, "_customEvent_CavernStuffz3", function (base) {
-            revealWisdomCards(this);
-            return base;
-        });
-    }
+    createMethodProxy(ActorEvents670.prototype, "_customEvent_CavernStuffz3", function (base) {
+        revealWisdomCards(this);
+        return base;
+    });
 
     // re-reveal on every mouse interaction to keep items visible
-    if (!ActorEvents670.prototype._event_monumentgameplay?._isPatched) {
-        createMethodProxy(ActorEvents670.prototype, "_event_monumentgameplay", function (base) {
-            revealWisdomCards(this);
-            return base;
-        });
-    }
+    createMethodProxy(ActorEvents670.prototype, "_event_monumentgameplay", function (base) {
+        revealWisdomCards(this);
+        return base;
+    });
 }
 
 // poing and log
 function setupEvents577Minigames() {
     const ActorEvents577 = events(577);
-    if (!ActorEvents577) return;
+    const LOG_INACTIVE_STATE = -1;
+    const LOG_STATE_IDX = 53;
+    const POING_INACTIVE_STATE = -1;
+    const POING_STATE_IDX = 57;
 
     // Poing: Hook into _event_Gaming where AI paddle movement happens
     // _GenINFO[58] is paddle positions array [playerX, aiX]
     // We move AI paddle off-screen (999) and block game from updating it
-    if (!ActorEvents577.prototype._event_Gaming?._isPatched) {
-        const originalEventGaming = ActorEvents577.prototype._event_Gaming;
-        ActorEvents577.prototype._event_Gaming = function (...args) {
-            // Before running game logic, wrap _GenINFO[58] if cheat is enabled
-            if (cheatState.minigame.poing && this._GenINFO?.[58] && !this._GenINFO[58]._isProxied) {
-                this._GenINFO[58] = new Proxy(this._GenINFO[58], {
-                    get(t, p) {
-                        if (typeof p === "symbol") return t[p];
-                        // p is the sub-index: 0 = Player, 1 = AI
-                        if (Number(p) === 1) {
-                            return 999; // Move AI paddle far off-screen
-                        }
-                        return t[p];
-                    },
-                    set(t, p, v) {
-                        // Block game from updating AI's position
-                        if (Number(p) === 1) {
-                            return true;
-                        }
-                        t[p] = v;
+    const originalEventGaming = ActorEvents577.prototype._event_Gaming;
+    ActorEvents577.prototype._event_Gaming = function (...args) {
+        // Before running game logic, wrap _GenINFO[58] if cheat is enabled
+        if (
+            cheatState.minigame.poing &&
+            this._GenINFO[POING_STATE_IDX] !== POING_INACTIVE_STATE &&
+            this._GenINFO[58] &&
+            !this._GenINFO[58]._isProxied
+        ) {
+            this._GenINFO[58] = new Proxy(this._GenINFO[58], {
+                get(t, p) {
+                    if (typeof p === "symbol") return t[p];
+                    // p is the sub-index: 0 = Player, 1 = AI
+                    if (Number(p) === 1) {
+                        return 999; // Move AI paddle far off-screen
+                    }
+                    return t[p];
+                },
+                set(t, p, v) {
+                    // Block game from updating AI's position
+                    if (Number(p) === 1) {
                         return true;
-                    },
-                });
-                this._GenINFO[58]._isProxied = true;
-            }
-            return originalEventGaming.call(this, ...args);
-        };
-        ActorEvents577.prototype._event_Gaming._isPatched = true;
-    }
+                    }
+                    t[p] = v;
+                    return true;
+                },
+            });
+            this._GenINFO[58]._isProxied = true;
+        }
+        return originalEventGaming.call(this, ...args);
+    };
 
     // log card reveal
-    if (!ActorEvents577.prototype._customEvent_W5stuffzz?._isPatched) {
-        createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
-            if (!cheatState.minigame.log) return base;
-            const cards = this?._UIinventory13?.[41];
-            const data = this?._GenINFO?.[54];
+    createMethodProxy(ActorEvents577.prototype, "_customEvent_W5stuffzz", function (base) {
+        if (!cheatState.minigame.log) return base;
+        if (this._GenINFO[LOG_STATE_IDX] === LOG_INACTIVE_STATE) return base;
+        const cards = this._UIinventory13[41];
+        const data = this._GenINFO[54];
 
-            if (!cards || !data) return base;
+        for (let i = 0; i < 10; i++) {
+            const img = cards[i];
+            const tform = img.get_transform();
+            const cform = tform.get_colorTransform();
 
-            for (let i = 0; i < 10; i++) {
-                const img = cards[i];
-                if (!img || typeof img.get_transform !== "function" || typeof img.set_transform !== "function") {
-                    continue;
-                }
-
-                const tform = img.get_transform();
-                if (!tform || typeof tform.get_colorTransform !== "function") continue;
-
-                const cform = tform.get_colorTransform();
-                if (!cform || typeof tform.set_colorTransform !== "function") continue;
-
-                if (data[i] === 1) {
-                    // skull — tint red
-                    cform.greenMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                } else {
-                    // safe — tint green
-                    cform.redMultiplier = 0;
-                    cform.blueMultiplier = 0;
-                }
-                tform.set_colorTransform(cform);
-                img.set_transform(tform);
+            if (data[i] === 1) {
+                cform.greenMultiplier = 0;
+                cform.blueMultiplier = 0;
+            } else {
+                cform.redMultiplier = 0;
+                cform.blueMultiplier = 0;
             }
-            return base;
-        });
-    }
+
+            tform.set_colorTransform(cform);
+            img.set_transform(tform);
+        }
+
+        return base;
+    });
 }
 
 // minehead
 function setupEvents741Minigames() {
     const ActorEvents741 = events(741);
-    if (!ActorEvents741) return;
-
-    if (ActorEvents741.prototype._event_Minehead?._isPatched) return;
 
     const TILE_LAYERS = [27, 28, 29];
     const MINE_ALPHA = 0.2;
@@ -420,13 +360,13 @@ function setupEvents741Minigames() {
     const mineRevealActive = new WeakMap();
 
     createMethodProxy(ActorEvents741.prototype, "_event_Minehead", function (base) {
-        const mineGrid = this?._GenINFO?.[32];
-        const revealedTiles = this?._GenINFO?.[33];
-        const uiInventory = this?._UIinventory17;
+        const mineGrid = this._GenINFO[32];
+        const revealedTiles = this._GenINFO[33];
+        const uiInventory = this._UIinventory17;
 
         if (!Array.isArray(mineGrid) || !uiInventory) return base;
 
-        const inMineRound = this?._GenINFO?.[28] === 1;
+        const inMineRound = this._GenINFO[28] === 1;
         const shouldReveal = cheatState.minigame.minehead && inMineRound;
         const wasRevealActive = mineRevealActive.get(this) === true;
 
@@ -435,14 +375,11 @@ function setupEvents741Minigames() {
         for (let tileIndex = 0; tileIndex < mineGrid.length; tileIndex++) {
             if (mineGrid[tileIndex] !== 0) continue;
 
-            const isRevealed = Array.isArray(revealedTiles) && revealedTiles[tileIndex] === 1;
+            const isRevealed = revealedTiles[tileIndex] === 1;
             const alpha = shouldReveal && !isRevealed ? MINE_ALPHA : DEFAULT_ALPHA;
 
             for (const layer of TILE_LAYERS) {
-                const image = uiInventory[layer]?.[tileIndex];
-                if (image?.set_alpha) {
-                    image.set_alpha(alpha);
-                }
+                uiInventory[layer][tileIndex].set_alpha(alpha);
             }
         }
 
@@ -454,8 +391,6 @@ function setupEvents741Minigames() {
 
         return base;
     });
-
-    ActorEvents741.prototype._event_Minehead._isPatched = true;
 }
 
 /**
