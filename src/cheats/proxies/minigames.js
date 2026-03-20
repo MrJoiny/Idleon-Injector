@@ -13,7 +13,7 @@
  * - Hoops (ActorEvents_510) - Perfect ball/hoop position
  * - Darts (ActorEvents_510) - Bullseye position
  * - Scratch (ActorEvents_670) - Auto reveal all
- * - Wisdom (ActorEvents_670) - Infinite attempts + card reveal
+ * - Wisdom (ActorEvents_670) - Infinite insta matches + card reveal
  * - Poing (ActorEvents_577) - AI paddle off-screen
  * - Log (ActorEvents_577) - Card type reveal
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
@@ -174,7 +174,8 @@ function setupEvents670Minigames() {
     const WISDOM_HOLE_ID = 12;
     const WISDOM_PHASE_IDX = 55;
     const HOLE_ACTIVITY_IDX = 0;
-    const WISDOM_ATTEMPTS_IDX = 194;
+    // const WISDOM_ATTEMPTS_IDX = 194;
+    const WISDOM_INSTA_IDX = 200;
     const WISDOM_DATA_IDX = 197;
     const WISDOM_MATCHED_IDX = 198;
     const WISDOM_CARD_SET_IDX = 67;
@@ -202,8 +203,8 @@ function setupEvents670Minigames() {
                     const coverImage = this._UIinventory15[COVER_IMG_SET_IDX][COVER_IMG_IDX];
                     coverImage.set_alpha(0);
                 }
-                // wisdom logic infinite attempts
-                if (cheatState.minigame.wisdom && index === WISDOM_ATTEMPTS_IDX) {
+                // wisdom logic infinite insta matches
+                if (cheatState.minigame.wisdom && index === WISDOM_INSTA_IDX) {
                     return 10;
                 }
 
