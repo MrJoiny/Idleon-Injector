@@ -284,6 +284,7 @@ function setupEvents670Minigames() {
             // Fast-forward to the game's own payout threshold so _event_7
             // resolves the winning bucket on the next tick.
             ball[GOLD_POT_BALL_PROG_IDX] = completeProg;
+            break;
         }
 
         return base;
