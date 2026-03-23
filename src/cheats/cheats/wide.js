@@ -5,7 +5,7 @@
  * - gembuylimit, mtx, post, guild, task, quest, star
  * - giant, gems, plunderous, candy, candytime, nodmg
  * - hidenames, noanim, eventitems, autoloot, perfectobols, autoparty
- * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy
+ * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy, cardpassive
  */
 
 import { registerCheats } from "../core/registration.js";
@@ -13,6 +13,11 @@ import { cheatState } from "../core/state.js";
 import { firebase, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
+import { recalculateCardBonusesWithPassive } from "../proxies/events012.js";
+
+function recalculateCardBonuses() {
+    return recalculateCardBonusesWithPassive();
+}
 
 // Wide (account-wide) cheats
 registerCheats({
@@ -80,6 +85,20 @@ registerCheats({
                 }
 
                 return `Copied CardPreset to ${count} player(s).`;
+            },
+        },
+        {
+            name: "cardpassive",
+            message: "force all cards to be treated as passive cards",
+            fn: function () {
+                cheatState.wide.cardpassive = !cheatState.wide.cardpassive;
+
+                const recalculated = recalculateCardBonuses();
+                const action = cheatState.wide.cardpassive ? "Activated" : "Deactivated";
+                const recalcSuffix = recalculated
+                    ? " and recalculated card bonuses"
+                    : " but could not force card bonus recalculation";
+                return `${action} all-card passive mode${recalcSuffix}.`;
             },
         },
     ],
