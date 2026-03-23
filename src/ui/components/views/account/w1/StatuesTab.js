@@ -8,12 +8,14 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { readGga, writeGga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, select, option } = van.tags;
 
@@ -30,7 +32,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
     const levelInput = van.state(String(initialLevel ?? 0));
     const depositedInput = van.state(String(initialDeposited ?? 0));
     const tierInput = van.state(initialTier ?? 0);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     // Display states — updated locally on SET so the row reflects the new value
     // without triggering a full list re-render.
@@ -44,8 +46,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
         const tier = Number(tierInput.val);
         if (isNaN(lvl) || isNaN(dep)) return;
 
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`StatueLevels[${index}][0]`, lvl);
             await writeGga(`StatueLevels[${index}][1]`, dep);
             await writeGga(`StatueG[${index}]`, tier);
@@ -54,13 +55,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
             levelDisplay.val = lvl;
             depositedDisplay.val = dep;
             tierDisplay.val = tier;
-
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
 
     return div(
@@ -124,7 +119,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
                     span({ class: "statue-control-label" }, "Tier"),
                     select(
                         {
-                            class: "statue-tier-select",
+                            class: "statue-tier-select select-base",
                             onchange: (e) => (tierInput.val = Number(e.target.value)),
                             disabled: () => status.val === "loading",
                         },
@@ -169,21 +164,15 @@ export const StatuesTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const toArr = (raw) =>
-                Array.isArray(raw)
-                    ? raw
-                    : Object.keys(raw)
-                          .sort((a, b) => a - b)
-                          .map((k) => raw[k]);
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
-                readGga("CustomLists.StatueInfo"),
+                readCList("StatueInfo"),
                 readGga("StatueLevels"),
                 readGga("StatueG"),
             ]);
             data.val = {
-                info: toArr(rawInfo),
-                levels: toArr(rawLevels),
-                tiers: toArr(rawTiers),
+                info: toIndexedArray(rawInfo),
+                levels: toIndexedArray(rawLevels),
+                tiers: toIndexedArray(rawTiers),
             };
         } catch (e) {
             error.val = e.message || "Failed to read statue data";

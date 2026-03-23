@@ -1,0 +1,104 @@
+/* ── Liquid tab ──────────────────────────────────────────────────────────── */
+/* .liquid-tab container  → .tab-container                                    */
+/* .liquid-grid layout    → .grid-4col + .scrollable-panel                   */
+
+.liquid-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.liquid-col--water-droplets {
+    --liquid-color: var(--c-liquid-water);
+    --liquid-dim: var(--c-liquid-water-10);
+}
+
+.liquid-col--liquid-nitrogen {
+    --liquid-color: var(--c-liquid-nitrogen);
+    --liquid-dim: var(--c-liquid-nitrogen-10);
+}
+
+.liquid-col--trench-seawater {
+    --liquid-color: var(--c-liquid-seawater);
+    --liquid-dim: var(--c-liquid-seawater-10);
+}
+
+.liquid-col--toxic-mercury {
+    --liquid-color: var(--c-liquid-mercury);
+    --liquid-dim: var(--c-liquid-mercury-10);
+}
+
+.liquid-col__header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--liquid-color, var(--c-accent));
+}
+
+.liquid-col__name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--liquid-color, var(--c-text-main));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* One editable property (Amount / Cap / Rate) */
+.liquid-section {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.liquid-section:hover {
+    border-color: var(--c-border-strong);
+}
+
+/* .liquid-section--success / .liquid-section--error → .flash-success / .flash-error */
+
+.liquid-section__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.liquid-section__label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+}
+
+.liquid-section__display {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--liquid-color, var(--c-accent));
+}
+
+.liquid-section__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.liquid-section__controls .number-input-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+.liquid-section__set-btn {
+    flex-shrink: 0;
+}

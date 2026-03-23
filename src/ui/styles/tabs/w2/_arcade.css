@@ -1,0 +1,158 @@
+/* W2 Arcade Tab Styles */
+
+.arcade-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.arcade-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.arcade-balls-summary {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    align-items: center;
+}
+
+.arcade-ball-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.arcade-ball-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--c-text-dim);
+}
+
+.arcade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    padding-right: 8px;
+    /* For scrollbar */
+    padding-bottom: 24px;
+    min-height: 0;
+}
+
+.arcade-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.arcade-card:hover {
+    border-color: var(--c-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--c-black-20);
+}
+
+.arcade-card--cosmic {
+    background: var(--c-arcade-cosmic-bg);
+    /* Subdued blue-ish background */
+    border-color: var(--c-arcade-cosmic);
+    box-shadow: inset 0 0 0 1px var(--c-arcade-cosmic-20);
+}
+
+.arcade-card--cosmic:hover {
+    border-color: var(--c-ui-blue);
+    box-shadow:
+        0 4px 12px var(--c-arcade-cosmic-20),
+        inset 0 0 0 1px var(--c-arcade-cosmic-40);
+}
+
+.arcade-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.arcade-card__index {
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--c-text-dim);
+    background: var(--c-panel-dim);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.arcade-card__cosmic-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--c-ui-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.arcade-card__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-text-main);
+    line-height: 1.3;
+    min-height: 34px;
+    /* Ensure 2 lines */
+    display: flex;
+    align-items: center;
+}
+
+.arcade-card__level-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.arcade-card__level-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--c-text-dim);
+}
+
+.arcade-card__level-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--c-accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.arcade-card--cosmic .arcade-card__level-val {
+    color: var(--c-ui-blue);
+}
+
+.arcade-card__controls {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.arcade-card__controls > .number-input-wrapper {
+    flex: 1;
+}
+
+.arcade-card--success {
+    border-color: var(--c-success);
+    box-shadow: 0 0 0 1px var(--c-success);
+}
+
+.arcade-card--error {
+    border-color: var(--c-danger);
+    box-shadow: 0 0 0 1px var(--c-danger);
+}

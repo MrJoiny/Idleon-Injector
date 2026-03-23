@@ -1,0 +1,545 @@
+/* ── Post Office tab ─────────────────────────────────────────────────────── */
+/* .po-tab container → .tab-container                                         */
+/* .po-scroll        → .scrollable-panel (flex-grow + overflow + padding)     */
+/* Flash states      → .flash-success / .flash-error (global)                 */
+
+.po-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+}
+
+.po-sub-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.po-pane {
+    display: none;
+    flex: 1;
+    min-height: 0;
+}
+
+.po-pane--active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Bulk controls bar ───────────────────────────────────────────────────── */
+
+.po-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.po-bulk-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.po-bulk-group__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+}
+
+.po-bulk-group .number-input-wrapper {
+    width: 150px;
+}
+
+.po-bulk-separator {
+    width: 1px;
+    height: 22px;
+    background: var(--c-border);
+    flex-shrink: 0;
+}
+
+.po-bulk-status {
+    margin-left: 8px;
+    min-width: 20px;
+    color: var(--c-postoffice-accent-green);
+    font-weight: 700;
+}
+
+.po-box-bulk-btn {
+    background: var(--c-panel);
+    color: var(--c-text-main);
+    border: 1px solid var(--c-border);
+}
+
+.po-box-bulk-btn:hover:not(:disabled) {
+    background: var(--c-panel-dim);
+    border-color: var(--c-border-strong);
+}
+
+.po-boxes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.po-boxes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.po-boxes-empty {
+    padding: 10px 12px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    color: var(--c-text-dim);
+    font-size: 0.72rem;
+}
+
+.po-box-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px;
+}
+
+.po-box-row__info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.po-box-row__name {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--c-text-main);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-box-row__level {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--c-accent);
+}
+
+.po-box-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.po-box-row__controls .number-input-wrapper {
+    width: 120px;
+}
+
+/* ── Office groups & shipment cards ─────────────────────────────────────── */
+
+.po-shipments-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.po-office-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.po-office-group__header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--c-accent);
+}
+
+.po-office-group__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-accent);
+}
+
+.po-office-group__range {
+    font-size: 0.62rem;
+    color: var(--c-text-dim);
+    font-style: italic;
+}
+
+.po-office-group__cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+/* ── Shipment card ───────────────────────────────────────────────────────── */
+
+.po-shipment-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+    min-width: 0;
+}
+
+.po-shipment-card:hover {
+    border-color: var(--c-border-strong);
+}
+
+.po-shipment-card--completed {
+    border-color: var(--c-ui-green-35);
+    background: var(--c-ui-green-03);
+}
+
+.po-shipment-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 6px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.po-shipment-card__index {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--c-text-main);
+}
+
+.po-shipment-card__badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 5px;
+    border: 1px solid var(--c-border);
+    color: var(--c-text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.po-shipment-card__badge--done {
+    color: var(--c-ui-green);
+    border-color: var(--c-ui-green-40);
+}
+
+/* ── Field rows (within shipment cards) ─────────────────────────────────── */
+
+.po-field-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 5px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 3px 6px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+/* Text field variant (item ID) — label + full-width text+btn */
+.po-field-row--text {
+    grid-template-columns: auto 1fr;
+}
+
+.po-field-row__label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.po-field-row__value {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    padding: 1px 5px;
+    white-space: nowrap;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-field-row__value--short {
+    justify-self: end;
+}
+
+.po-field-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.po-field-row__controls .number-input-wrapper {
+    width: 120px;
+}
+
+.po-field-row__set-btn {
+    flex-shrink: 0;
+}
+
+/* ── Completed toggle button ─────────────────────────────────────────────── */
+
+.po-toggle-btn {
+    width: 100%;
+    height: 24px;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    color: var(--c-text-dim);
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
+    font-family: var(--font-display);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-toggle-btn:hover:not(:disabled) {
+    border-color: var(--c-border-strong);
+    color: var(--c-text-main);
+}
+
+.po-toggle-btn--done {
+    border-color: var(--c-ui-green-40);
+    background: var(--c-ui-green-07);
+    color: var(--c-ui-green);
+}
+
+.po-toggle-btn--done:hover:not(:disabled) {
+    background: var(--c-ui-green-12);
+}
+
+/* ── Point Sources section ───────────────────────────────────────────────── */
+
+.po-section {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.po-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.po-section__title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-accent);
+}
+
+.po-section__subtitle {
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    font-style: italic;
+}
+
+.po-section__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.po-section__divider {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    padding: 4px 2px 2px;
+    border-bottom: 1px solid var(--c-border);
+    margin-top: 2px;
+}
+
+/* ── Currency rows ───────────────────────────────────────────────────────── */
+
+.po-currency-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 6px 8px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.po-currency-row:hover {
+    border-color: var(--c-border-strong);
+}
+
+.po-currency-row--readonly {
+    grid-template-columns: minmax(0, 1fr) auto;
+    opacity: 0.72;
+}
+
+.po-currency-row--readonly:hover {
+    border-color: var(--c-border);
+}
+
+/* flash states handled globally via .flash-success / .flash-error */
+
+.po-currency-row__info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.po-currency-row__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-currency-row__note {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--c-text-dim);
+    opacity: 0.65;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-currency-row__value {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    padding: 2px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.po-currency-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.po-currency-row__controls .number-input-wrapper {
+    width: 120px;
+}
+
+/* ── Points summary ──────────────────────────────────────────────────────── */
+
+.po-points-summary {
+    border-top: 1px solid var(--c-border);
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.po-points-summary__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 6px;
+}
+
+.po-points-summary__row--highlight {
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    margin-top: 2px;
+}
+
+.po-points-summary__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.po-points-summary__value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.po-points-summary__value--spent {
+    color: var(--c-ui-red);
+}
+
+.po-points-summary__value--earned {
+    color: var(--c-postoffice-accent-green);
+}
+
+.po-points-summary__value--available {
+    color: var(--c-accent);
+    font-size: 0.92rem;
+}
+
+/* ── Responsive: narrow down to 1-col cards on small panels ─────────────── */
+@media (max-width: 560px) {
+    .po-office-group__cards {
+        grid-template-columns: 1fr;
+    }
+
+    .po-boxes-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,216 @@
+/* ── Brewing tab ─────────────────────────────────────────────────────────── */
+/* .brewing-tab container  → .tab-container                                   */
+/* .brewing-columns layout → .grid-4col + .scrollable-panel                  */
+
+.brewing-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.brewing-column--orange,
+.bubble-card--orange {
+    --cauldron-color: var(--c-cauldron-orange);
+    --cauldron-dim: var(--c-cauldron-orange-12);
+}
+
+.brewing-column--green,
+.bubble-card--green {
+    --cauldron-color: var(--c-cauldron-green);
+    --cauldron-dim: var(--c-cauldron-green-12);
+}
+
+.brewing-column--purple,
+.bubble-card--purple {
+    --cauldron-color: var(--c-cauldron-purple);
+    --cauldron-dim: var(--c-cauldron-purple-12);
+}
+
+.brewing-column--yellow,
+.bubble-card--yellow {
+    --cauldron-color: var(--c-cauldron-yellow);
+    --cauldron-dim: var(--c-cauldron-yellow-12);
+}
+
+.brewing-column__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--cauldron-color, var(--c-accent));
+    flex-shrink: 0;
+}
+
+.brewing-column__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--cauldron-color, var(--c-text-main));
+}
+
+.brewing-column__bubbles {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.brewing-column__empty {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    text-align: center;
+    padding: 20px 8px;
+}
+
+/* Set-all row in header */
+.brewing-setall-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brewing-setall-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+/* Larger number input for the global SET ALL level control */
+.brewing-setall-input-wrap .number-input-wrapper {
+    width: 150px;
+}
+
+.brewing-setall-input-wrap .number-input-btn {
+    height: 38px;
+}
+
+/* ── Bubble card ─────────────────────────────────────────────────────────── */
+
+.bubble-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.bubble-card:hover {
+    border-color: var(--c-border-strong);
+}
+
+.bubble-card--prisma {
+    border-color: var(--cauldron-color, var(--c-accent));
+    background: var(--cauldron-dim, var(--c-accent-06));
+}
+
+/* .bubble-card--success / .bubble-card--error → .flash-success / .flash-error */
+
+.bubble-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.bubble-card__index {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    background: var(--c-black-40);
+    padding: 1px 5px;
+}
+
+.bubble-card__prisma-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--cauldron-color, var(--c-accent));
+}
+
+.bubble-card__name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bubble-card__level-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bubble-card__level-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--c-text-dim);
+    letter-spacing: 0.05em;
+}
+
+.bubble-card__level-val {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--c-accent);
+}
+
+.bubble-card__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bubble-card__controls .number-input-wrapper {
+    width: 150px;
+}
+
+.bubble-card__prisma-btn {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
+    width: 100%;
+    text-align: center;
+}
+
+.bubble-card__prisma-btn:hover {
+    border-color: var(--cauldron-color, var(--c-accent));
+    color: var(--cauldron-color, var(--c-accent));
+}
+
+.bubble-card__prisma-btn--active {
+    border-color: var(--cauldron-color, var(--c-accent));
+    color: var(--cauldron-color, var(--c-accent));
+    background: var(--cauldron-dim, var(--c-accent-06));
+    font-weight: 700;
+}
+
+/* Invisible spacer — keeps big bubble cards the same height as normal cards.
+   Mirrors the exact box model of .bubble-card__prisma-btn so the gap it fills
+   is pixel-perfect regardless of font scaling. */
+.bubble-card__prisma-spacer {
+    padding: 3px 8px;
+    font-size: 0.65rem;
+    border: 1px solid transparent;
+    pointer-events: none;
+    visibility: hidden;
+}

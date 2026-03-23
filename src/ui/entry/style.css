@@ -20,6 +20,9 @@
 @import url("../styles/config.css");
 @import url("../styles/_world-tabs.css");
 @import url("../styles/_feature-pages.css");
+@import url("../styles/tabs/w1/_index.css");
+@import url("../styles/tabs/w2/_index.css");
+@import url("../styles/tabs/w3/_index.css");
 @import url("../styles/account.css");
 @import url("../styles/devtools.css");
 @import url("../styles/startup-cheats.css");

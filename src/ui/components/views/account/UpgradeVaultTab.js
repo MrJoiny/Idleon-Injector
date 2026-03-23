@@ -1,51 +1,47 @@
 /**
  * Upgrade Vault Tab
  *
- * Reads/writes gga.UpgVault[index] for all 62 vault upgrades.
+ * Reads/writes gga.UpgVault[index] for all vault upgrades.
  *
- * Data source:
+ * Data sources:
  *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
- *   cList.UpgradeVault[i][4] = base max level (soft cap — Vault Mastery can push it higher)
- *   gga.UpgVault[i]          = current level
+ *   cList.UpgradeVault[i][4] = base max level (soft cap)
+ *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
+ *                 = real max level (includes Glimbo trade bonuses)
+ *   gga.UpgVault[i]                = current level
  *
  * Write: gga.UpgVault[XX] = YY
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../services/api.js";
+import { readGga, writeGga, readComputed, readCList } from "../../../services/api.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
+import { cleanName, toNum, useWriteStatus } from "./featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
-// Strip underscores and the 製 character used as a tap-info marker
-const cleanName = (raw) => (raw ?? "").replace(/製.*$/, "").replace(/_/g, " ").trim();
-
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
-const VaultRow = ({ index, name, baseMax, initialLevel }) => {
+const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
     const inputVal = van.state(String(initialLevel ?? 0));
     const levelDisplay = van.state(initialLevel ?? 0);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     const doSet = async (targetVal) => {
         const lvl = Math.max(0, Number(targetVal));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
+        await run(async () => {
             await writeGga(`UpgVault[${index}]`, lvl);
             inputVal.val = String(lvl);
             levelDisplay.val = lvl;
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+        });
     };
+
+    const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
 
     return div(
         {
@@ -59,7 +55,7 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
             span({ class: "feature-row__name" }, name),
             span({ class: "feature-row__index" }, `#${index}`)
         ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${baseMax}`),
+        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${realMax}`),
         div(
             { class: "feature-row__controls" },
             NumberInput({
@@ -78,18 +74,18 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
                     },
                     () => (status.val === "loading" ? "..." : "SET")
                 ),
-                `Set level for ${name} (base max: ${baseMax})`
+                `Set level for ${name} (max: ${maxLabel})`
             ),
             withTooltip(
                 button(
                     {
                         class: "feature-btn feature-btn--apply",
-                        onclick: () => doSet(baseMax),
+                        onclick: () => doSet(realMax),
                         disabled: () => status.val === "loading",
                     },
                     "MAX"
                 ),
-                `Set to base max level (${baseMax})`
+                `Set to max level (${maxLabel})`
             )
         )
     );
@@ -98,7 +94,7 @@ const VaultRow = ({ index, name, baseMax, initialLevel }) => {
 // ── UpgradeVaultTab ───────────────────────────────────────────────────────
 
 export const UpgradeVaultTab = () => {
-    const data = van.state(null); // { upgrades: [{name, baseMax}], levels: [] }
+    const data = van.state(null); // { upgrades: [{name, baseMax, realMax}], levels: [] }
     const loading = van.state(false);
     const error = van.state(null);
 
@@ -113,44 +109,45 @@ export const UpgradeVaultTab = () => {
                           .sort((a, b) => Number(a) - Number(b))
                           .map((k) => raw[k]);
 
-            const [rawInfo, rawLevels, rawResearchKeys, rawResearchBonus, rawResearchGrid] = await Promise.all([
-                readGga("CustomLists.UpgradeVault"),
-                readGga("UpgVault"),
-                readGga("CustomLists.Research[26]"),
-                readGga("Research[12]"),
-                readGga("CustomLists.Research[29]"),
-            ]);
+            const [rawInfo, rawLevels] = await Promise.all([readCList("UpgradeVault"), readGga("UpgVault")]);
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
-            const researchKeys = toArr(rawResearchKeys ?? []);
-            const researchBonus = toArr(rawResearchBonus ?? []);
-            const researchGrid = toArr(rawResearchGrid ?? []);
 
-            // Replicate VaultUpgMaxLV formula from game source:
-            //   base = UpgradeVault[i][4]
-            //   if i is in Research[26]:
-            //     bonus = Research[12][indexOf(i)]
-            //     if Research[29][indexOf(i)] == 1: bonus *= (1 + GridBonus)  [Grid not implemented here yet]
-            //     max = base + bonus
-            const computeMax = (i) => {
-                const base = parseInt(info[i]?.[4]) || 0;
-                const idx = researchKeys.indexOf(String(i));
-                if (idx === -1) return base;
-                const bonus = Number(researchBonus[idx] ?? 0);
-                const grid = Number(researchGrid[idx] ?? 0);
-                // Grid bonus multiplier — grid active means ×(1 + GridBonus); we use 1 when unknown
-                return Math.round(base + bonus * (grid === 1 ? 1 : 1));
-            };
+            // Probe whether the summoning computed namespace is available (requires injector restart
+            // after the summoning namespace was added to stateAccessors). If the probe succeeds,
+            // fetch real max levels for all upgrades; otherwise fall back to baseMax for all.
+            let useComputed = false;
+            try {
+                await readComputed("summoning", "VaultUpgMaxLV", [0, 0]);
+                useComputed = true;
+            } catch {
+                // Summoning namespace unavailable — injector restart required, silently use baseMax
+            }
 
-            // Build upgrade definitions from cList, filter out trailing junk (e.g. the XP entry)
+            const realMaxes = useComputed
+                ? await Promise.all(
+                      info.map(async (_, i) => {
+                          try {
+                              const v = toNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
+                              return v > 0 ? v : null;
+                          } catch {
+                              return null;
+                          }
+                      })
+                  )
+                : info.map(() => null);
+
             const upgrades = info
-                .map((entry, i) => ({
-                    index: i,
-                    name: cleanName(entry?.[0]),
-                    baseMax: computeMax(i),
-                }))
-                .filter((u) => u.name.length > 0 && u.baseMax > 0);
+                .map((entry, i) => {
+                    const name = cleanName(entry?.[0], "", { stripMarker: true });
+                    if (!name) return null;
+                    const baseMax = toNum(entry?.[4]);
+                    if (baseMax <= 0) return null;
+                    const realMax = realMaxes[i] ?? baseMax;
+                    return { index: i, name, baseMax, realMax };
+                })
+                .filter(Boolean);
 
             data.val = { upgrades, levels };
         } catch (e) {
@@ -172,7 +169,7 @@ export const UpgradeVaultTab = () => {
                 h3("UPGRADE VAULT"),
                 p(
                     { class: "feature-header__desc" },
-                    "Set levels for all vault upgrades — base max shown, Vault Mastery can push beyond it"
+                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses"
                 )
             ),
             withTooltip(
@@ -184,7 +181,7 @@ export const UpgradeVaultTab = () => {
         div(
             { class: "warning-banner" },
             Icons.Warning(),
-            " Max level is calculated live from game data, including any Research bonuses. " +
+            " Max level is sourced directly from the game's VaultUpgMaxLV formula (base + Glimbo trade bonuses). " +
                 "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 
@@ -222,6 +219,7 @@ export const UpgradeVaultTab = () => {
                         index: u.index,
                         name: u.name,
                         baseMax: u.baseMax,
+                        realMax: u.realMax,
                         initialLevel: levels?.[u.index] ?? 0,
                     })
                 )

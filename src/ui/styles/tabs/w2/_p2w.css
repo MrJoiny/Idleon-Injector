@@ -1,0 +1,177 @@
+/* ── Pay 2 Win tab ───────────────────────────────────────────────────────── */
+/* .p2w-tab container  → .tab-container                                       */
+/* .p2w-cauldron-grid  → .grid-4col                                           */
+/* .p2w-scroll scroll  → .scrollable-panel (flex/overflow/padding)            */
+
+/* Scrollable content area — hidden until first load */
+.p2w-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── Section block ─────────────────────────────────────────────── */
+
+.p2w-section {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.p2w-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.p2w-section__title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-accent);
+}
+
+.p2w-section__note {
+    font-size: 0.68rem;
+    color: var(--c-text-dim);
+    font-style: italic;
+}
+
+/* ── Cauldron column ──────────────────────────────────────────── */
+
+.p2w-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.p2w-col--brew-power {
+    --col-color: var(--c-p2w-brew-power);
+    --col-dim: var(--c-p2w-brew-power-10);
+}
+
+.p2w-col--brew-quicc {
+    --col-color: var(--c-p2w-brew-quicc);
+    --col-dim: var(--c-p2w-brew-quicc-10);
+}
+
+.p2w-col--brew-high-iq {
+    --col-color: var(--c-p2w-brew-high-iq);
+    --col-dim: var(--c-p2w-brew-high-iq-10);
+}
+
+.p2w-col--brew-kazam {
+    --col-color: var(--c-p2w-brew-kazam);
+    --col-dim: var(--c-p2w-brew-kazam-10);
+}
+
+.p2w-col--liquid-water-droplets {
+    --col-color: var(--c-liquid-water);
+}
+
+.p2w-col--liquid-nitrogen {
+    --col-color: var(--c-liquid-nitrogen);
+}
+
+.p2w-col--liquid-trench-seawater {
+    --col-color: var(--c-liquid-seawater);
+}
+
+.p2w-col--liquid-toxic-mercury {
+    --col-color: var(--c-liquid-mercury);
+}
+
+.p2w-col__header {
+    padding: 6px 10px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--col-color, var(--c-accent));
+}
+
+.p2w-col__name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--col-color, var(--c-text-main));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.p2w-col__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ── Upgrade row (used inside cauldron cols and simple sections) ── */
+
+.p2w-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 6px 8px;
+    transition: border-color 0.2s;
+}
+
+.p2w-row:hover {
+    border-color: var(--c-border-strong);
+}
+
+/* .p2w-row--success / .p2w-row--error → .flash-success / .flash-error */
+
+.p2w-row__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.p2w-row__badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    border: 1px solid var(--c-accent-20);
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.p2w-row__controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.p2w-row__controls .number-input-wrapper {
+    width: 100px;
+}
+
+/* ── Simple flat sections (vials upgrades, player boosts) ── */
+
+.p2w-simple-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Simple rows are wider — override number-input width */
+.p2w-simple-rows .p2w-row__controls .number-input-wrapper {
+    width: 120px;
+}
