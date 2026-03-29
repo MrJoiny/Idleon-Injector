@@ -34,9 +34,12 @@ const VialRow = ({ vial, initialLevel }) => {
         if (isNaN(lvl)) return;
 
         await run(async () => {
-            await writeGga(`CauldronInfo[4][${vial.index}]`, lvl);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
+            const path = `CauldronInfo[4][${vial.index}]`;
+            await writeGga(path, lvl);
+            const verified = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(await readGga(path)))));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            inputVal.val = String(verified);
+            levelDisplay.val = verified;
         });
     };
 
@@ -84,8 +87,7 @@ export const VialTab = () => {
     const error = van.state(null);
     const vialDefs = van.state([]);
     const setAllInput = van.state("13");
-    const bulkStatus = van.state(null);
-    let bulkDoneTimer = null;
+    const { status: bulkStatus, run: runBulk } = useWriteStatus();
 
     const load = async () => {
         loading.val = true;
@@ -117,34 +119,25 @@ export const VialTab = () => {
     };
 
     const doSetAll = async () => {
-        if (bulkDoneTimer) {
-            clearTimeout(bulkDoneTimer);
-            bulkDoneTimer = null;
-        }
-
         const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(setAllInput.val))));
         if (isNaN(lvl)) return;
         const vials = vialDefs.val ?? [];
         if (vials.length === 0) return;
-        bulkStatus.val = "loading";
-        try {
+
+        await runBulk(async () => {
             for (const v of vials) {
                 await writeGga(`CauldronInfo[4][${v.index}]`, lvl);
                 await new Promise((r) => setTimeout(r, 30));
             }
-            bulkStatus.val = "done";
-            bulkDoneTimer = setTimeout(() => {
-                if (bulkStatus.val === "done") bulkStatus.val = null;
-                bulkDoneTimer = null;
-            }, 1500);
-            await load();
-        } catch {
-            bulkStatus.val = null;
-            if (bulkDoneTimer) {
-                clearTimeout(bulkDoneTimer);
-                bulkDoneTimer = null;
+            const rawVerified = await readGga("CauldronInfo[4]");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const v of vials) {
+                const verified = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(verifiedArr[v.index] ?? 0))));
+                if (verified !== lvl)
+                    throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}, got ${verified}`);
             }
-        }
+            vialDefs.val = vials.map((v) => ({ ...v, level: lvl }));
+        });
     };
 
     load();
@@ -174,7 +167,16 @@ export const VialTab = () => {
             div(
                 { class: "feature-header__actions" },
                 div(
-                    { class: "brewing-setall-row" },
+                    {
+                        class: () =>
+                            [
+                                "brewing-setall-row",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
+                    },
                     span({ class: "brewing-setall-label" }, "SET ALL:"),
                     div(
                         { class: "brewing-setall-input-wrap" },
@@ -194,7 +196,8 @@ export const VialTab = () => {
                             disabled: () => bulkStatus.val === "loading",
                             onclick: doSetAll,
                         },
-                        () => (bulkStatus.val === "loading" ? "..." : bulkStatus.val === "done" ? "\u2713" : "SET ALL")
+                        () =>
+                            bulkStatus.val === "loading" ? "..." : bulkStatus.val === "success" ? "\u2713" : "SET ALL"
                     )
                 ),
                 button({ class: "btn-secondary", onclick: load }, "REFRESH")

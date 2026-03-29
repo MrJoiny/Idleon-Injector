@@ -27,7 +27,15 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { AsyncFeatureBody, cleanName, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
+import {
+    AsyncFeatureBody,
+    cleanName,
+    largeFormatter,
+    largeParser,
+    toInt,
+    unwrapH,
+    useWriteStatus,
+} from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -63,9 +71,9 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
     const elapsedValue = getValueState(playerName, trap.trapIndex, "elapsed", toInt(trap.elapsed));
     const completionValue = getValueState(playerName, trap.trapIndex, "completion", toInt(trap.completionTime));
 
-    const qtyInput = getInputState(playerName, trap.trapIndex, "qty", String(qtyValue.val));
-    const expInput = getInputState(playerName, trap.trapIndex, "exp", String(expValue.val));
-    const rareInput = getInputState(playerName, trap.trapIndex, "rare", String(rareValue.val));
+    const qtyInput = getInputState(playerName, trap.trapIndex, "qty", "0");
+    const expInput = getInputState(playerName, trap.trapIndex, "exp", "0");
+    const rareInput = getInputState(playerName, trap.trapIndex, "rare", "0");
 
     const applyStatus = useWriteStatus();
     const finishStatus = useWriteStatus();
@@ -96,25 +104,34 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
         const nextExp = resolveInputInt(latestRaw(expInput), expValue.val);
         const nextRare = resolveInputInt(latestRaw(rareInput), rareValue.val);
 
-        await applyStatus.run(async () => {
-            await onWriteField(playerName, trap.trapIndex, 4, nextQty, isCurrentPlayer);
-            await onWriteField(playerName, trap.trapIndex, 7, nextExp, isCurrentPlayer);
-            await onWriteField(playerName, trap.trapIndex, 8, nextRare, isCurrentPlayer);
-
-            qtyValue.val = nextQty;
-            expValue.val = nextExp;
-            rareValue.val = nextRare;
-            qtyInput.val = String(nextQty);
-            expInput.val = String(nextExp);
-            rareInput.val = String(nextRare);
-        });
+        await applyStatus.run(
+            async () => {
+                const verifiedQty = await onWriteField(playerName, trap.trapIndex, 4, nextQty, isCurrentPlayer);
+                const verifiedExp = await onWriteField(playerName, trap.trapIndex, 7, nextExp, isCurrentPlayer);
+                const verifiedRare = await onWriteField(playerName, trap.trapIndex, 8, nextRare, isCurrentPlayer);
+                return { verifiedQty, verifiedExp, verifiedRare };
+            },
+            {
+                onSuccess: (result) => {
+                    if (!result) return;
+                    qtyValue.val = result.verifiedQty;
+                    expValue.val = result.verifiedExp;
+                    rareValue.val = result.verifiedRare;
+                    qtyInput.val = String(result.verifiedQty);
+                    expInput.val = String(result.verifiedExp);
+                    rareInput.val = String(result.verifiedRare);
+                },
+            }
+        );
     };
 
     const doFinish = async () => {
         const finishAt = toInt(completionValue.val, toInt(trap.completionTime));
-        await finishStatus.run(async () => {
-            await onWriteField(playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer);
-            elapsedValue.val = finishAt;
+        await finishStatus.run(async () => onWriteField(playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer), {
+            onSuccess: (verifiedElapsed) => {
+                if (typeof verifiedElapsed !== "number") return;
+                elapsedValue.val = verifiedElapsed;
+            },
         });
     };
 
@@ -178,7 +195,16 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
             button(
                 {
                     type: "button",
-                    class: () => `feature-btn feature-btn--apply ${isBusy() ? "feature-btn--loading" : ""}`,
+                    class: () =>
+                        [
+                            "feature-btn",
+                            "feature-btn--apply",
+                            isBusy() ? "feature-btn--loading" : "",
+                            applyStatus.status.val === "success" ? "feature-row--success" : "",
+                            applyStatus.status.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
                     disabled: isBusy,
                     onclick: doApply,
                 },
@@ -188,7 +214,16 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                 {
                     type: "button",
                     class: () =>
-                        `feature-btn feature-btn--apply trap-row__finish-btn ${isBusy() ? "feature-btn--loading" : ""}`,
+                        [
+                            "feature-btn",
+                            "feature-btn--apply",
+                            "trap-row__finish-btn",
+                            isBusy() ? "feature-btn--loading" : "",
+                            finishStatus.status.val === "success" ? "feature-row--success" : "",
+                            finishStatus.status.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
                     disabled: isBusy,
                     onclick: doFinish,
                 },
@@ -205,20 +240,40 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
 
     const doFinishAll = async () => {
         if (!player.traps.length) return;
-        await finishAllStatus.run(async () => {
-            for (const trap of player.traps) {
-                const completionState = getValueState(
-                    player.playerName,
-                    trap.trapIndex,
-                    "completion",
-                    trap.completionTime
-                );
-                const elapsedState = getValueState(player.playerName, trap.trapIndex, "elapsed", trap.elapsed);
-                const finishAt = toInt(completionState.val, toInt(trap.completionTime));
-                await onWriteField(player.playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer);
-                elapsedState.val = finishAt;
+        await finishAllStatus.run(
+            async () => {
+                const verifiedElapsedByTrap = new Map();
+                for (const trap of player.traps) {
+                    const completionState = getValueState(
+                        player.playerName,
+                        trap.trapIndex,
+                        "completion",
+                        trap.completionTime
+                    );
+                    const finishAt = toInt(completionState.val, toInt(trap.completionTime));
+                    const verifiedElapsed = await onWriteField(
+                        player.playerName,
+                        trap.trapIndex,
+                        2,
+                        finishAt,
+                        isCurrentPlayer
+                    );
+                    verifiedElapsedByTrap.set(trap.trapIndex, verifiedElapsed);
+                }
+                return verifiedElapsedByTrap;
+            },
+            {
+                onSuccess: (verifiedElapsedByTrap) => {
+                    if (!(verifiedElapsedByTrap instanceof Map)) return;
+                    for (const trap of player.traps) {
+                        const elapsedState = getValueState(player.playerName, trap.trapIndex, "elapsed", trap.elapsed);
+                        if (verifiedElapsedByTrap.has(trap.trapIndex)) {
+                            elapsedState.val = verifiedElapsedByTrap.get(trap.trapIndex);
+                        }
+                    }
+                },
             }
-        });
+        );
     };
 
     return div(
@@ -268,7 +323,16 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
                     {
                         type: "button",
                         class: () =>
-                            `feature-btn feature-btn--apply trap-user-dropdown__finish-all ${finishAllStatus.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn",
+                                "feature-btn--apply",
+                                "trap-user-dropdown__finish-all",
+                                finishAllStatus.status.val === "loading" ? "feature-btn--loading" : "",
+                                finishAllStatus.status.val === "success" ? "feature-row--success" : "",
+                                finishAllStatus.status.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => finishAllStatus.status.val === "loading" || !player.traps.length,
                         onclick: doFinishAll,
                     },
@@ -325,7 +389,11 @@ export const TrappingTab = () => {
         if (isCurrentPlayer) {
             await writeGga(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value);
         }
-        await writeGga(`${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`, value);
+        const dbPath = `${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`;
+        await writeGga(dbPath, value);
+        const verified = Math.max(0, Math.round(Number(await readGga(dbPath))));
+        if (verified !== value) throw new Error(`Write mismatch at ${dbPath}: expected ${value}, got ${verified}`);
+        return verified;
     };
 
     const load = async (showSpinner = true) => {

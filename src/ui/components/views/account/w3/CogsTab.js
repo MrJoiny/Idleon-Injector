@@ -201,18 +201,10 @@ export const CogsTab = () => {
     const tinyTypeInput = van.state("_");
     const tinyTierInput = van.state("0");
 
-    const {
-        status: lockStatus,
-        run: runLockWrite,
-        clearStatus: clearLockStatus,
-    } = useWriteStatus({ successMs: 1100, errorMs: 1600 });
+    const { status: lockStatus, run: runLockWrite, clearStatus: clearLockStatus } = useWriteStatus();
 
-    const { status: cogMapWriteStatus, run: runCogMapWrite } = useWriteStatus({ successMs: 1100, errorMs: 1600 });
-    const {
-        status: tinyWriteStatus,
-        run: runTinyWrite,
-        clearStatus: clearTinyWriteStatus,
-    } = useWriteStatus({ successMs: 1100, errorMs: 1600 });
+    const { status: cogMapWriteStatus, run: runCogMapWrite } = useWriteStatus();
+    const { status: tinyWriteStatus, run: runTinyWrite, clearStatus: clearTinyWriteStatus } = useWriteStatus();
     const getActiveIndex = () => (activeSlot.val === null ? selectedSlot.val : activeSlot.val);
 
     const syncTinyInputsFromSlot = (index) => {
@@ -300,8 +292,12 @@ export const CogsTab = () => {
     const setSlotLockState = async (index, unlock) => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;
         await runLockWrite(async () => {
-            await writeGga(`FlagUnlock[${index}]`, next);
-            slotValues[index].val = next;
+            const unlockPath = `FlagUnlock[${index}]`;
+            await writeGga(unlockPath, next);
+            const verifiedUnlock = toNum(await readGga(unlockPath));
+            if (verifiedUnlock !== next)
+                throw new Error(`Write mismatch at ${unlockPath}: expected ${next}, got ${verifiedUnlock}`);
+            slotValues[index].val = verifiedUnlock;
 
             // If a flag is placed on this slot, clear its FlagsPlaced entry to prevent
             // the flag-charge system from overwriting the -11 sentinel and re-locking the slot.
@@ -309,7 +305,11 @@ export const CogsTab = () => {
                 const arr = flagsRaw.val;
                 const pos = arr.findIndex((v) => toNum(v) === index);
                 if (pos >= 0) {
-                    await writeGga(`FlagsPlaced[${pos}]`, -1);
+                    const flagPath = `FlagsPlaced[${pos}]`;
+                    await writeGga(flagPath, -1);
+                    const verifiedFlag = toNum(await readGga(flagPath));
+                    if (verifiedFlag !== -1)
+                        throw new Error(`Write mismatch at ${flagPath}: expected -1, got ${verifiedFlag}`);
                     const newRaw = [...arr];
                     newRaw[pos] = -1;
                     flagsRaw.val = newRaw;
@@ -328,7 +328,11 @@ export const CogsTab = () => {
         const numVal = parseNumber(rawValue);
         const writeVal = numVal !== null ? numVal : rawValue;
         await runCogMapWrite(async () => {
-            await writeGga(`CogMap[${cogIdx}].h.${field}`, writeVal);
+            const writePath = `CogMap[${cogIdx}].h.${field}`;
+            await writeGga(writePath, writeVal);
+            const rawVerified = await readGga(writePath);
+            const match = numVal !== null ? Number(rawVerified) === numVal : String(rawVerified) === String(writeVal);
+            if (!match) throw new Error(`Write mismatch at ${writePath}: expected ${writeVal}, got ${rawVerified}`);
             cogMapStats[index].val = { ...cogMapStats[index].val, [field]: writeVal };
         });
     };
@@ -349,8 +353,12 @@ export const CogsTab = () => {
             }
             const newId = `CogSm${normalizedType}${normalizedTier}`;
 
-            await writeGga(`CogOrder[${slot}]`, newId);
-            cogOrders[index].val = newId;
+            const cogOrderPath = `CogOrder[${slot}]`;
+            await writeGga(cogOrderPath, newId);
+            const verifiedId = String(await readGga(cogOrderPath));
+            if (verifiedId !== newId)
+                throw new Error(`Write mismatch at ${cogOrderPath}: expected ${newId}, got ${verifiedId}`);
+            cogOrders[index].val = verifiedId;
             tinyTypeInput.val = TINY_COG_TYPES.has(normalizedType) ? normalizedType : "_";
             tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(normalizedTier) ? normalizedTier : 0)));
             void refreshActiveCogName(index);
@@ -364,7 +372,16 @@ export const CogsTab = () => {
         return div(
             { class: "cogs-tiny-editor" },
             div(
-                { class: "cogs-cog-stat-row" },
+                {
+                    class: () =>
+                        [
+                            "cogs-cog-stat-row",
+                            tinyWriteStatus.val === "success" ? "feature-row--success" : "",
+                            tinyWriteStatus.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
+                },
                 div({ class: "cogs-cog-stat-row__code" }, "t"),
                 div(
                     { class: "cogs-cog-stat-row__text" },
@@ -397,7 +414,16 @@ export const CogsTab = () => {
                 )
             ),
             div(
-                { class: "cogs-cog-stat-row" },
+                {
+                    class: () =>
+                        [
+                            "cogs-cog-stat-row",
+                            tinyWriteStatus.val === "success" ? "feature-row--success" : "",
+                            tinyWriteStatus.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
+                },
                 div({ class: "cogs-cog-stat-row__code" }, "lvl"),
                 div(
                     { class: "cogs-cog-stat-row__text" },
@@ -600,7 +626,16 @@ export const CogsTab = () => {
                               disabled: readOnly,
                           });
                           return div(
-                              { class: "cogs-cog-stat-row" },
+                              {
+                                  class: () =>
+                                      [
+                                          "cogs-cog-stat-row",
+                                          cogMapWriteStatus.val === "success" ? "feature-row--success" : "",
+                                          cogMapWriteStatus.val === "error" ? "feature-row--error" : "",
+                                      ]
+                                          .filter(Boolean)
+                                          .join(" "),
+                              },
                               div({ class: "cogs-cog-stat-row__code" }, key),
                               div(
                                   { class: "cogs-cog-stat-row__text" },
@@ -672,7 +707,16 @@ export const CogsTab = () => {
         div(
             { class: "cogs-modal-footer" },
             div(
-                { class: "cogs-selection-actions" },
+                {
+                    class: () =>
+                        [
+                            "cogs-selection-actions",
+                            lockStatus.val === "success" ? "feature-row--success" : "",
+                            lockStatus.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
+                },
                 button(
                     {
                         type: "button",

@@ -113,7 +113,15 @@
     background: var(--cauldron-dim, var(--c-accent-06));
 }
 
-/* .bubble-card--success / .bubble-card--error → .flash-success / .flash-error */
+/* Canonical feedback class: .feature-row--success / .feature-row--error */
+/* Keep success/error visible even on prisma cards. */
+.bubble-card--prisma.feature-row--success {
+    background: var(--c-success-10);
+}
+
+.bubble-card--prisma.feature-row--error {
+    background: var(--c-danger-10);
+}
 
 .bubble-card__top {
     display: flex;

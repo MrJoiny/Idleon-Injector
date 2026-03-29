@@ -1,7 +1,7 @@
 /* ── Post Office tab ─────────────────────────────────────────────────────── */
 /* .po-tab container → .tab-container                                         */
 /* .po-scroll        → .scrollable-panel (flex-grow + overflow + padding)     */
-/* Flash states      → .flash-success / .flash-error (global)                 */
+/* Flash states -> .feature-row--success / .feature-row--error (global)                 */
 
 .po-scroll {
     display: flex;
@@ -39,38 +39,6 @@
     border: 1px solid var(--c-border);
     flex-shrink: 0;
     flex-wrap: wrap;
-}
-
-.po-bulk-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.po-bulk-group__label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--c-text-dim);
-    white-space: nowrap;
-}
-
-.po-bulk-group .number-input-wrapper {
-    width: 150px;
-}
-
-.po-bulk-separator {
-    width: 1px;
-    height: 22px;
-    background: var(--c-border);
-    flex-shrink: 0;
-}
-
-.po-bulk-status {
-    margin-left: 8px;
-    min-width: 20px;
-    color: var(--c-postoffice-accent-green);
-    font-weight: 700;
 }
 
 .po-box-bulk-btn {
@@ -426,7 +394,7 @@
     border-color: var(--c-border);
 }
 
-/* flash states handled globally via .flash-success / .flash-error */
+/* Flash states handled globally via .feature-row--success / .feature-row--error */
 
 .po-currency-row__info {
     display: flex;
@@ -543,3 +511,4 @@
         grid-template-columns: 1fr;
     }
 }
+

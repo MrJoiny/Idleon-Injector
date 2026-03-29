@@ -37,9 +37,12 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
         if (isNaN(lvl)) return;
 
         await run(async () => {
-            await writeGga(`Atoms[${index}]`, lvl);
-            levelState.val = lvl;
-            inputVal.val = String(lvl);
+            const path = `Atoms[${index}]`;
+            await writeGga(path, lvl);
+            const verified = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(path)))));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            levelState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -91,8 +94,7 @@ export const AtomColliderTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
-    const bulkStatus = van.state(null);
-    let bulkDoneTimer = null;
+    const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
 
     const getLevelState = (i) => {
@@ -101,32 +103,23 @@ export const AtomColliderTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
-        if (bulkDoneTimer) {
-            clearTimeout(bulkDoneTimer);
-            bulkDoneTimer = null;
-        }
-
         if (!data.val || data.val.atoms.length === 0) return;
-        bulkStatus.val = "loading";
-        try {
-            for (let i = 0; i < data.val.atoms.length; i++) {
-                const lvl = targetLevel === null ? data.val.atoms[i].maxLevel : targetLevel;
-                await writeGga(`Atoms[${i}]`, lvl);
-                getLevelState(i).val = lvl;
+        await runBulk(async () => {
+            const atoms = data.val.atoms;
+            const expectedLevels = atoms.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
+            for (let i = 0; i < atoms.length; i++) {
+                await writeGga(`Atoms[${i}]`, expectedLevels[i]);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            bulkStatus.val = "done";
-            bulkDoneTimer = setTimeout(() => {
-                if (bulkStatus.val === "done") bulkStatus.val = null;
-                bulkDoneTimer = null;
-            }, 1500);
-        } catch {
-            bulkStatus.val = null;
-            if (bulkDoneTimer) {
-                clearTimeout(bulkDoneTimer);
-                bulkDoneTimer = null;
+            const rawVerified = await readGga("Atoms");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < atoms.length; i++) {
+                const verified = Math.max(0, Math.min(atoms[i].maxLevel, Math.round(Number(verifiedArr[i] ?? 0))));
+                if (verified !== expectedLevels[i])
+                    throw new Error(`Write mismatch at Atoms[${i}]: expected ${expectedLevels[i]}, got ${verified}`);
+                getLevelState(i).val = verified;
             }
-        }
+        });
     };
 
     const load = async (showSpinner = true) => {
@@ -211,7 +204,14 @@ export const AtomColliderTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -225,7 +225,14 @@ export const AtomColliderTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();

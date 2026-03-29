@@ -120,14 +120,6 @@
     border-bottom: none;
 }
 
-.dn-player-row--success {
-    background: var(--c-success-08);
-}
-
-.dn-player-row--error {
-    background: var(--c-danger-08);
-}
-
 .dn-player-row__name {
     flex: 1;
     font-size: 0.75rem;

@@ -158,10 +158,10 @@ export async function readGgaEntries(rootPath, keys, fields) {
 }
 
 /**
- * Write a primitive value to a game path.
+ * Write a JSON-serializable value to a game path.
  * The "gga." prefix is automatically prepended.
  * @param {string} path - e.g. "StampLevel[0][3]"
- * @param {number|string|boolean|null} value
+ * @param {any} value - Number, string, boolean, null, object, or array
  * @returns {Promise<{ ok: true }>}
  */
 export async function writeGga(path, value) {

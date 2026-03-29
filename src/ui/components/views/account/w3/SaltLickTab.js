@@ -40,9 +40,12 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
         const lvl = toLevelInt(raw, maxLevel);
 
         await run(async () => {
-            await writeGga(`SaltLick[${index}]`, lvl);
-            levelState.val = lvl;
-            inputVal.val = String(lvl);
+            const path = `SaltLick[${index}]`;
+            await writeGga(path, lvl);
+            const verified = toLevelInt(await readGga(path), maxLevel);
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            levelState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -94,8 +97,7 @@ export const SaltLickTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
-    const bulkStatus = van.state(null);
-    let bulkClearTimer = null;
+    const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
 
     const getLevelState = (i) => {
@@ -104,33 +106,25 @@ export const SaltLickTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
-        if (bulkClearTimer) {
-            clearTimeout(bulkClearTimer);
-            bulkClearTimer = null;
-        }
-
         if (!data.val || data.val.upgrades.length === 0) return;
-        bulkStatus.val = "loading";
-        try {
-            for (let i = 0; i < data.val.upgrades.length; i++) {
-                const rawLevel = targetLevel === null ? data.val.upgrades[i].maxLevel : targetLevel;
-                const lvl = toLevelInt(rawLevel, data.val.upgrades[i].maxLevel);
-                await writeGga(`SaltLick[${i}]`, lvl);
-                getLevelState(i).val = lvl;
+        await runBulk(async () => {
+            const upgrades = data.val.upgrades;
+            const expectedLevels = upgrades.map((u) =>
+                toLevelInt(targetLevel === null ? u.maxLevel : targetLevel, u.maxLevel)
+            );
+            for (let i = 0; i < upgrades.length; i++) {
+                await writeGga(`SaltLick[${i}]`, expectedLevels[i]);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            bulkStatus.val = "done";
-            bulkClearTimer = setTimeout(() => {
-                bulkStatus.val = null;
-                bulkClearTimer = null;
-            }, 1500);
-        } catch {
-            bulkStatus.val = "error";
-            bulkClearTimer = setTimeout(() => {
-                bulkStatus.val = null;
-                bulkClearTimer = null;
-            }, 1500);
-        }
+            const rawVerified = await readGga("SaltLick");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < upgrades.length; i++) {
+                const verified = toLevelInt(verifiedArr[i], upgrades[i].maxLevel);
+                if (verified !== expectedLevels[i])
+                    throw new Error(`Write mismatch at SaltLick[${i}]: expected ${expectedLevels[i]}, got ${verified}`);
+                getLevelState(i).val = verified;
+            }
+        });
     };
 
     const load = async (showSpinner = true) => {
@@ -200,7 +194,14 @@ export const SaltLickTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -214,7 +215,14 @@ export const SaltLickTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();

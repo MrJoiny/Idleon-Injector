@@ -46,7 +46,7 @@ const PAGES = [
 ];
 
 const ForgeRow = ({ upgrade, levelState }) => {
-    const inputVal = van.state(String(levelState.val ?? 0));
+    const inputVal = van.state("0");
     const { status, run } = useWriteStatus();
 
     van.derive(() => {
@@ -57,11 +57,21 @@ const ForgeRow = ({ upgrade, levelState }) => {
         const lvl = Math.min(upgrade.max, Math.max(0, Number(targetVal)));
         if (isNaN(lvl)) return;
 
-        await run(async () => {
-            await writeGga(`FurnaceLevels[${upgrade.index}]`, lvl);
-            levelState.val = lvl;
-            inputVal.val = String(lvl);
-        });
+        await run(
+            async () => {
+                const path = `FurnaceLevels[${upgrade.index}]`;
+                await writeGga(path, lvl);
+                const verified = Math.min(upgrade.max, Math.max(0, Math.round(Number(await readGga(path)))));
+                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+                return verified;
+            },
+            {
+                onSuccess: (verified) => {
+                    levelState.val = verified;
+                    inputVal.val = String(verified);
+                },
+            }
+        );
     };
 
     return div(
@@ -85,7 +95,15 @@ const ForgeRow = ({ upgrade, levelState }) => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn",
+                                "feature-btn--apply",
+                                status.val === "loading" ? "feature-btn--loading" : "",
+                                status.val === "success" ? "feature-row--success" : "",
+                                status.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         onclick: () => doSet(inputVal.val),
                         disabled: () => status.val === "loading",
                     },

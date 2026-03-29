@@ -65,7 +65,7 @@
     border-color: var(--c-border-strong);
 }
 
-/* .liquid-section--success / .liquid-section--error → .flash-success / .flash-error */
+/* Success/error state comes from .feature-row--success / .feature-row--error */
 
 .liquid-section__top {
     display: flex;
@@ -102,3 +102,4 @@
 .liquid-section__set-btn {
     flex-shrink: 0;
 }
+

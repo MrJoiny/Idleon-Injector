@@ -47,14 +47,26 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
         if (isNaN(lvl) || isNaN(dep)) return;
 
         await run(async () => {
-            await writeGga(`StatueLevels[${index}][0]`, lvl);
-            await writeGga(`StatueLevels[${index}][1]`, dep);
-            await writeGga(`StatueG[${index}]`, tier);
+            const levelPath = `StatueLevels[${index}][0]`;
+            const depPath = `StatueLevels[${index}][1]`;
+            const tierPath = `StatueG[${index}]`;
+            await writeGga(levelPath, lvl);
+            const verifiedLvl = Math.max(0, Math.round(Number(await readGga(levelPath))));
+            if (verifiedLvl !== lvl)
+                throw new Error(`Write mismatch at ${levelPath}: expected ${lvl}, got ${verifiedLvl}`);
+            await writeGga(depPath, dep);
+            const verifiedDep = Math.max(0, Math.round(Number(await readGga(depPath))));
+            if (verifiedDep !== dep)
+                throw new Error(`Write mismatch at ${depPath}: expected ${dep}, got ${verifiedDep}`);
+            await writeGga(tierPath, tier);
+            const verifiedTier = Math.round(Number(await readGga(tierPath)));
+            if (verifiedTier !== tier)
+                throw new Error(`Write mismatch at ${tierPath}: expected ${tier}, got ${verifiedTier}`);
 
             // Update display states locally — no page-wide re-render needed.
-            levelDisplay.val = lvl;
-            depositedDisplay.val = dep;
-            tierDisplay.val = tier;
+            levelDisplay.val = verifiedLvl;
+            depositedDisplay.val = verifiedDep;
+            tierDisplay.val = verifiedTier;
         });
     };
 

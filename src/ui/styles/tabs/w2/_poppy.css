@@ -1,6 +1,6 @@
 /* Poppy tab */
 
-.feature-row--warn {
+.feature-row--warn:not(.feature-row--success):not(.feature-row--error) {
     border-color: var(--c-warning) !important;
     background: var(--c-accent-dim-solid);
 }

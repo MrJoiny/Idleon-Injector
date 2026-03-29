@@ -44,9 +44,12 @@ const AnvilRow = ({ category, valueState, onSetApplied }) => {
         const pts = Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
 
         await run(async () => {
-            await writeGga(`AnvilPAstats[${category.index}]`, pts);
-            await onSetApplied?.(category.index, pts);
-            inputVal.val = String(valueState.val ?? pts);
+            const path = `AnvilPAstats[${category.index}]`;
+            await writeGga(path, pts);
+            const verified = Math.max(0, Math.round(Number(await readGga(path))));
+            if (verified !== pts) throw new Error(`Write mismatch at ${path}: expected ${pts}, got ${verified}`);
+            await onSetApplied?.(category.index, verified);
+            inputVal.val = String(valueState.val ?? verified);
         });
     };
 

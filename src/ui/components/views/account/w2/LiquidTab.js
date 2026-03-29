@@ -93,8 +93,12 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
         if (isNaN(val)) return;
         await run(async () => {
             await writeGga(writePath, val);
-            valueState.val = val; // update shared state (also refreshes display)
-            inputVal.val = String(val);
+            const rawVerified = await readGga(writePath);
+            const verified =
+                mode === "float" ? Math.max(0, roundTo2(rawVerified)) : Math.max(0, Math.round(Number(rawVerified)));
+            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
+            valueState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -103,8 +107,8 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
             class: () =>
                 [
                     "liquid-section",
-                    status.val === "success" ? "liquid-section--success" : "",
-                    status.val === "error" ? "liquid-section--error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),

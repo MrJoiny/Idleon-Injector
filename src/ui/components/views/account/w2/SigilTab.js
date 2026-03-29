@@ -55,8 +55,11 @@ const SigilCard = ({ index, tierState, nameState }) => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(tierInput.val))));
         if (isNaN(tier)) return;
         await run(async () => {
-            await writeGga(`CauldronP2W[4][${2 * index + 1}]`, tier);
-            tierState.val = tier;
+            const path = `CauldronP2W[4][${2 * index + 1}]`;
+            await writeGga(path, tier);
+            const verified = Math.min(4, Math.max(-1, Math.round(Number(await readGga(path)))));
+            if (verified !== tier) throw new Error(`Write mismatch at ${path}: expected ${tier}, got ${verified}`);
+            tierState.val = verified;
         });
     };
 
@@ -67,8 +70,8 @@ const SigilCard = ({ index, tierState, nameState }) => {
                 return [
                     "tier-card",
                     `sigil-card--${t.cls}`,
-                    status.val === "success" ? "sigil-card--flash-success" : "",
-                    status.val === "error" ? "sigil-card--flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" ");
@@ -124,8 +127,7 @@ export const SigilTab = () => {
 
     // SET ALL state
     const setAllTier = van.state("-1");
-    const setAllStatus = van.state(null);
-    let setAllClearTimer = null;
+    const { status: setAllStatus, run: runSetAll } = useWriteStatus();
 
     // ── Load ───────────────────────────────────────────────────────────────
 
@@ -165,35 +167,24 @@ export const SigilTab = () => {
     // ── SET ALL ────────────────────────────────────────────────────────────
 
     const doSetAll = async () => {
-        if (setAllClearTimer) {
-            clearTimeout(setAllClearTimer);
-            setAllClearTimer = null;
-        }
-
         const tier = Math.min(4, Math.max(-1, Math.round(Number(setAllTier.val))));
         if (isNaN(tier)) return;
-        setAllStatus.val = "loading";
-        try {
-            const results = await Promise.allSettled(
-                sigilTier.map((state, i) =>
-                    writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier).then(() => {
-                        state.val = tier;
-                    })
-                )
-            );
-            const failed = results.filter((r) => r.status === "rejected").length;
-            setAllStatus.val = failed === 0 ? "success" : "error";
-            setAllClearTimer = setTimeout(() => {
-                if (setAllStatus.val !== "loading") setAllStatus.val = null;
-                setAllClearTimer = null;
-            }, 1500);
-        } catch {
-            setAllStatus.val = "error";
-            setAllClearTimer = setTimeout(() => {
-                if (setAllStatus.val !== "loading") setAllStatus.val = null;
-                setAllClearTimer = null;
-            }, 1500);
-        }
+        await runSetAll(async () => {
+            for (let i = 0; i < sigilTier.length; i++) {
+                await writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier);
+                await new Promise((r) => setTimeout(r, 20));
+            }
+            const rawVerified = await readGga("CauldronP2W[4]");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < sigilTier.length; i++) {
+                const verified = Math.min(4, Math.max(-1, Math.round(Number(verifiedArr[2 * i + 1] ?? -1))));
+                if (verified !== tier)
+                    throw new Error(
+                        `Write mismatch at CauldronP2W[4][${2 * i + 1}]: expected ${tier}, got ${verified}`
+                    );
+                sigilTier[i].val = verified;
+            }
+        });
     };
 
     // ── Build DOM (once) ───────────────────────────────────────────────────
@@ -203,8 +194,8 @@ export const SigilTab = () => {
             class: () =>
                 [
                     "tier-setall-bar",
-                    setAllStatus.val === "success" ? "sigil-setall-bar--success" : "",
-                    setAllStatus.val === "error" ? "sigil-setall-bar--error" : "",
+                    setAllStatus.val === "success" ? "feature-row--success" : "",
+                    setAllStatus.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),

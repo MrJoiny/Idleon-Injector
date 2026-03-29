@@ -132,7 +132,7 @@ export const usePersistentPaneReady = () => {
  *
  * Usage:
  *   const { status, run } = useWriteStatus();            // default 1 200 ms clear
- *   const { status, run } = useWriteStatus({ successMs: 1500, errorMs: 1500 });
+ *   const { status, run } = useWriteStatus();
  *
  *   await run(async () => {
  *       await writeGga("SomeKey", value);

@@ -16,7 +16,13 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { RefreshErrorBanner, largeFormatter, largeParser, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import {
+    RefreshErrorBanner,
+    largeFormatter,
+    largeParser,
+    usePersistentPaneReady,
+    useWriteStatus,
+} from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -99,8 +105,13 @@ const PoppyRow = ({ field, fieldState, onWrite }) => {
         if (num === null) return;
         await run(async () => {
             await onWrite(field.index, num);
-            fieldState.val = num;
-            inputVal.val = String(num);
+            const verified = resolveNum(String(await readGga(`OptionsListAccount[${field.index}]`)));
+            if (verified !== num)
+                throw new Error(
+                    `Write mismatch at OptionsListAccount[${field.index}]: expected ${num}, got ${verified}`
+                );
+            fieldState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -193,7 +204,6 @@ export const PoppyTab = () => {
 
     const onWrite = async (index, value) => {
         await writeGga(`OptionsListAccount[${index}]`, value);
-        fieldStates.get(index).val = value;
     };
 
     const rowList = div(

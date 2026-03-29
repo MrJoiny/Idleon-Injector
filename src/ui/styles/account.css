@@ -139,8 +139,25 @@
     border-color: var(--c-border-strong);
     z-index: 100;
 }
+
+.option-item.feature-row--success:hover {
+    border-color: var(--c-success);
+}
+
+.option-item.feature-row--error:hover {
+    border-color: var(--c-danger);
+}
 .option-item.has-warning {
     border-color: var(--c-warning);
+}
+
+/* Warning rows should still show definitive write outcome colors. */
+.option-item.has-warning.feature-row--success {
+    border-color: var(--c-success);
+}
+
+.option-item.has-warning.feature-row--error {
+    border-color: var(--c-danger);
 }
 
 .option-description {

@@ -8,8 +8,8 @@
  *   .tab-container      flex column fill — replaces .*-tab container blocks
  *   .scrollable-panel   flex-grow + overflow-y:auto + padding:14px
  *   .grid-4col          4-equal-column grid with 10px gap
- *   .flash-success      green border+bg flash (SET success)
- *   .flash-error        red border+bg flash (SET error)
+ *   .feature-row--success  green success feedback (canonical)
+ *   .feature-row--error    red error feedback (canonical)
  *   .select-base        shared select element base style
  *
  * ── Class anatomy ─────────────────────────────────────────────────────────
@@ -148,30 +148,17 @@
     border-color: var(--c-border-strong);
 }
 
-/* ── Flash state — shared by all card/row components ─────────────────────── */
-/* New components: use .flash-success / .flash-error directly.               */
-/* Existing class names kept here so no JS changes are required.             */
+/* ── Feedback state — shared by all card/row components ─────────────────────── */
+/* Canonical hooks: .feature-row--success / .feature-row--error              */
 
-.flash-success,
-.feature-row--success,
-.bubble-card--success,
-.liquid-section--success,
-.p2w-row--success,
-.sigil-setall-bar--success,
-.sigil-card--flash-success {
+.feature-row--success {
     border-color: var(--c-success) !important;
-    background: var(--c-success-10);
+    background: var(--c-success-10) !important;
 }
 
-.flash-error,
-.feature-row--error,
-.bubble-card--error,
-.liquid-section--error,
-.p2w-row--error,
-.sigil-setall-bar--error,
-.sigil-card--flash-error {
+.feature-row--error {
     border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
+    background: var(--c-danger-10) !important;
 }
 
 /* Info cell */
@@ -483,4 +470,3 @@
     display: flex;
     flex-direction: column;
 }
-

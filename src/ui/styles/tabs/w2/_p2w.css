@@ -128,7 +128,7 @@
     border-color: var(--c-border-strong);
 }
 
-/* .p2w-row--success / .p2w-row--error → .flash-success / .flash-error */
+/* Success/error state comes from .feature-row--success / .feature-row--error */
 
 .p2w-row__label {
     font-size: 0.68rem;
@@ -175,3 +175,4 @@
 .p2w-simple-rows .p2w-row__controls .number-input-wrapper {
     width: 120px;
 }
+

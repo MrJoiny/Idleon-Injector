@@ -46,14 +46,17 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
     });
 
     const doSet = async (field, val) => {
-        const n = Math.max(0, Number(val));
+        const n = Math.max(0, Math.round(Number(val)));
         if (isNaN(n)) return;
         await run(async () => {
-            await writeGga(`Refinery[${gameIndex}][${field}]`, n);
+            const path = `Refinery[${gameIndex}][${field}]`;
+            await writeGga(path, n);
+            const verified = Math.max(0, Math.round(Number(await readGga(path))));
+            if (verified !== n) throw new Error(`Write mismatch at ${path}: expected ${n}, got ${verified}`);
             if (field === 1) {
-                levelState.val = n;
+                levelState.val = verified;
             } else {
-                chargeState.val = n;
+                chargeState.val = verified;
             }
         });
     };

@@ -71,9 +71,9 @@ const WorshipChargeRow = ({
         const next = toInt(rawValue, { min: 0 });
 
         await run(async () => {
-            await writeCharge(playerName, next);
-            chargeState.val = next;
-            inputVal.val = String(next);
+            const verified = await writeCharge(playerName, next);
+            chargeState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -143,9 +143,9 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) => {
         const next = toInt(rawValue, { min: 0 });
 
         await run(async () => {
-            await writeWave(index, next);
-            waveState.val = next;
-            inputVal.val = String(next);
+            const verified = await writeWave(index, next);
+            waveState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -225,16 +225,22 @@ export const WorshipTab = () => {
             activeCharacterNameRef.val.length > 0 &&
             activeCharacterNameRef.val === playerName;
 
-        if (isActiveCharacter) {
-            await writeGga("PlayerStuff[0]", nextCharge);
-            return;
-        }
+        const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        await writeGga(`PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`, nextCharge);
+        await writeGga(writePath, nextCharge);
+        const verified = toInt(await readGga(writePath), { min: 0 });
+        if (verified !== nextCharge)
+            throw new Error(`Write mismatch at ${writePath}: expected ${nextCharge}, got ${verified}`);
+        return verified;
     };
 
     const writeWave = async (waveIndex, nextWave) => {
-        await writeGga(`TotemInfo[0][${waveIndex}]`, nextWave);
+        const writePath = `TotemInfo[0][${waveIndex}]`;
+        await writeGga(writePath, nextWave);
+        const verified = toInt(await readGga(writePath), { min: 0 });
+        if (verified !== nextWave)
+            throw new Error(`Write mismatch at ${writePath}: expected ${nextWave}, got ${verified}`);
+        return verified;
     };
 
     const load = async (showSpinner = true) => {

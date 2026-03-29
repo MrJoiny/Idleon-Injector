@@ -92,8 +92,8 @@ const RackRow = ({ row, onRemove }) => {
                 [
                     "feature-row",
                     "hat-rack-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -191,6 +191,29 @@ export const HatRackTab = () => {
         }
     };
 
+    const verifyRackState = async (expectedRack, contextLabel) => {
+        let rawVerifiedRack;
+        try {
+            rawVerifiedRack = await readGga(RACK_PATH);
+        } catch (e) {
+            const msg = `Failed reading full rack after ${contextLabel}. Rack may be inconsistent. Press REFRESH to resync.`;
+            writeWarning.val = msg;
+            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+        }
+
+        const expected = normalizeRackIds(expectedRack);
+        const actual = normalizeRackIds(rawVerifiedRack);
+        const mismatchIndex = expected.findIndex((itemId, index) => actual[index] !== itemId);
+        const hasMismatch = mismatchIndex !== -1 || actual.length !== expected.length;
+        if (hasMismatch) {
+            const msg = `Rack read-back mismatch after ${contextLabel}: expected [${expected.join(
+                ", "
+            )}], got [${actual.join(", ")}]. Press REFRESH to resync.`;
+            writeWarning.val = msg;
+            throw new Error(msg);
+        }
+    };
+
     const rewriteRack = async (nextRack) => {
         writeWarning.val = null;
         for (let i = 0; i < nextRack.length; i++) {
@@ -209,26 +232,29 @@ export const HatRackTab = () => {
             writeWarning.val = msg;
             throw new Error(e?.message ? `${msg} (${e.message})` : msg);
         }
+        await verifyRackState(nextRack, "rewrite");
     };
 
-    const appendToRack = async (currentLength, items) => {
+    const appendToRack = async (currentRack, items) => {
         writeWarning.val = null;
+        const baseRack = normalizeRackIds(currentRack);
         for (let i = 0; i < items.length; i++) {
             try {
-                await writeGga(`${RACK_PATH}[${currentLength + i}]`, items[i]);
+                await writeGga(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
             } catch (e) {
-                const msg = `Failed writing rack item at index ${currentLength + i}. Rack may be inconsistent. Press REFRESH to resync.`;
+                const msg = `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`;
                 writeWarning.val = msg;
                 throw new Error(e?.message ? `${msg} (${e.message})` : msg);
             }
         }
         try {
-            await writeGga(`${RACK_PATH}.length`, currentLength + items.length);
+            await writeGga(`${RACK_PATH}.length`, baseRack.length + items.length);
         } catch (e) {
             const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
             throw new Error(e?.message ? `${msg} (${e.message})` : msg);
         }
+        await verifyRackState([...baseRack, ...items], "append");
     };
 
     const removeAtIndex = async (index) => {
@@ -256,7 +282,7 @@ export const HatRackTab = () => {
             try {
                 const currentRack = [...currentRackIds.val];
                 if (currentRack.includes(itemId)) return;
-                await appendToRack(currentRack.length, [itemId]);
+                await appendToRack(currentRack, [itemId]);
                 withPreservedScroll(() => applyRackState([...currentRack, itemId]));
             } finally {
                 mutating.val = false;
@@ -279,7 +305,7 @@ export const HatRackTab = () => {
                     .map((item) => item.itemId)
                     .filter((itemId) => !currentRack.includes(itemId));
                 if (toAdd.length === 0) return;
-                await appendToRack(currentRack.length, toAdd);
+                await appendToRack(currentRack, toAdd);
                 withPreservedScroll(() => applyRackState([...currentRack, ...toAdd]));
             } finally {
                 mutating.val = false;
@@ -345,8 +371,8 @@ export const HatRackTab = () => {
                                 class: () =>
                                     [
                                         "hat-rack-add-row",
-                                        addStatus.val === "success" ? "flash-success" : "",
-                                        addStatus.val === "error" ? "flash-error" : "",
+                                        addStatus.val === "success" ? "feature-row--success" : "",
+                                        addStatus.val === "error" ? "feature-row--error" : "",
                                     ]
                                         .filter(Boolean)
                                         .join(" "),

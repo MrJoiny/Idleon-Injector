@@ -238,9 +238,14 @@ const MinibossRow = ({ mob, killState }) => {
         const num = resolveNum(raw);
         if (num === null) return;
         await run(async () => {
-            await writeGga(`Ninja[105][${mob.mobIndex}]`, num);
-            killState.val = String(num);
-            inputVal.val = String(num);
+            const path = `Ninja[105][${mob.mobIndex}]`;
+            await writeGga(path, num);
+            const verified = toInt(await readGga(path));
+            if (verified !== num) {
+                throw new Error(`Death Note write mismatch at ${path}: expected ${num}, got ${verified}`);
+            }
+            killState.val = String(verified);
+            inputVal.val = String(verified);
         });
     };
 

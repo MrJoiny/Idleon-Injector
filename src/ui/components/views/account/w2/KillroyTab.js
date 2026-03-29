@@ -104,8 +104,12 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
         if (val === null) return;
         await run(async () => {
             await writeGga(writePath, val);
-            valueState.val = val;
-            inputVal.val = String(val);
+            const rawVerified = await readGga(writePath);
+            const parsed = Math.round(Number(rawVerified));
+            const verified = field.allowNegative ? (Number.isFinite(parsed) ? parsed : val) : Math.max(0, parsed);
+            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
+            valueState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -116,8 +120,8 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
                     "feature-row",
                     "killroy-row",
                     field.blurred ? "killroy-row--blur" : "",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -172,8 +176,11 @@ const KillroyAirhornRow = ({ valueState }) => {
     const doToggle = async () => {
         const next = toNum(valueState.val, 0) === 0 ? 1 : 0;
         await run(async () => {
-            await writeGga(`OptionsListAccount[${AIRHORN_INDEX}]`, next);
-            valueState.val = next;
+            const path = `OptionsListAccount[${AIRHORN_INDEX}]`;
+            await writeGga(path, next);
+            const verified = Math.round(Number(await readGga(path)));
+            if (verified !== next) throw new Error(`Airhorn toggle mismatch: expected ${next}, got ${verified}`);
+            valueState.val = verified;
         });
     };
 
@@ -183,8 +190,8 @@ const KillroyAirhornRow = ({ valueState }) => {
                 [
                     "feature-row",
                     "killroy-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -215,7 +222,7 @@ export const KillroyTab = () => {
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
     const addKillsInput = van.state("0");
-    const addStatus = van.state(null);
+    const { status: addStatus, run: runAddEntry } = useWriteStatus();
 
     const valueStates = new Map(FIELD_INDEXES.map((idx) => [idx, van.state(0)]));
     const pbScoreStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(0)]));
@@ -363,24 +370,21 @@ export const KillroyTab = () => {
         const mobId = addMobId.val;
         const kills = Math.max(0, Math.round(Number(addKillsInput.val)));
         if (!mobId || !Number.isFinite(kills)) return;
-        addStatus.val = "loading";
-        try {
-            await writeGga(`KRbest.h[${mobId}]`, kills);
+        await runAddEntry(async () => {
+            const path = `KRbest.h[${mobId}]`;
+            await writeGga(path, kills);
+            const verified = Math.max(0, Math.round(Number(await readGga(path))));
+            if (verified !== kills) throw new Error(`Write mismatch at ${path}: expected ${kills}, got ${verified}`);
             const mobLabel = allowedMobs.val.find((m) => m.mobId === mobId)?.mobName ?? mobId;
             const nextRows = [...(bestByMob.val ?? [])];
             const existingIndex = nextRows.findIndex((row) => row.mobKey === mobId);
             if (existingIndex >= 0) {
-                nextRows[existingIndex] = { ...nextRows[existingIndex], kills };
+                nextRows[existingIndex] = { ...nextRows[existingIndex], kills: verified };
             } else {
-                nextRows.push({ mobKey: mobId, mobName: mobLabel, kills });
+                nextRows.push({ mobKey: mobId, mobName: mobLabel, kills: verified });
             }
             bestByMob.val = nextRows;
-            addStatus.val = "success";
-            setTimeout(() => (addStatus.val = null), 1200);
-        } catch {
-            addStatus.val = "error";
-            setTimeout(() => (addStatus.val = null), 1200);
-        }
+        });
     };
 
     load();
@@ -469,8 +473,8 @@ export const KillroyTab = () => {
                     class: () =>
                         [
                             "killroy-add-row",
-                            addStatus.val === "success" ? "flash-success" : "",
-                            addStatus.val === "error" ? "flash-error" : "",
+                            addStatus.val === "success" ? "feature-row--success" : "",
+                            addStatus.val === "error" ? "feature-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),

@@ -184,10 +184,6 @@
     gap: 10px;
 }
 
-.cogs-modal-details--hidden {
-    display: none;
-}
-
 .cogs-selection-state {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -392,5 +388,4 @@
         flex-direction: column;
         align-items: center;
     }
-
 }

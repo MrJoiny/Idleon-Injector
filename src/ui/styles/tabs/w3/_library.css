@@ -84,17 +84,6 @@
     opacity: 0.8;
 }
 
-.talent-row__blocked-action {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 140px;
-    padding: 0 12px;
-    font-size: 12px;
-    opacity: 0.75;
-    white-space: nowrap;
-}
-
 /* Section header separating each class page */
 .talents-group-header {
     display: flex;

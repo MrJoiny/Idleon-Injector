@@ -4,7 +4,7 @@
  * Data sources:
  *   cList.StarQuests[i]     — [mapId, x, y, req1, req2, playersNeeded, starPoints, desc, type]
  *   gga.StarSignProg[i][0]  — string of player letters who completed (e.g. "_ab")
- *   gga.StarSignProg[i][1]  — 1 if unlocked, 0 if not
+ *   gga.StarSignProg[i][1]  — claimed flag (1 = claimed, 0 = not claimed)
  *
  * Player → letter mapping (Number2Letter):
  *   Player 1 → "_", Player 2 → "a", Player 3 → "b", ... Player 10 → "i"
@@ -62,9 +62,23 @@ const parseProgress = (str) =>
 
 // Encode player list back to string
 const encodeProgress = (players) => players.map(playerToLetter).filter(Boolean).join("");
+const isUnlockedByProgress = (players, playersNeeded) => players.length >= playersNeeded;
 
 // Get display name for a player slot (1-based)
 const playerName = (num, usernames) => usernames[num - 1] ?? `Player ${num}`;
+
+const normalizeNumber = (value, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+};
+
+const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
+    The_Buff_Guy: 1,
+    Flexo_Bendo: 1,
+    The_Book_Worm: 1,
+    The_Fuzzy_Dice: 1,
+});
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj ?? {}, key);
 
 // ── DragList: simple drag-reorder list ────────────────────────────────────
 // Returns a DOM element with draggable items. onChange(newOrder) fires on drop.
@@ -115,7 +129,7 @@ const DragList = ({ items, renderItem, onChange }) => {
 
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const players = van.state([...sign.players]);
-    const { status, run } = useWriteStatus({ successMs: 1500, errorMs: 1500 });
+    const { status, run } = useWriteStatus();
     const progressFill = div({ class: "starsign-progress-fill" });
 
     van.derive(() => {
@@ -135,11 +149,15 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const doSave = async () => {
         await run(async () => {
             const str = encodeProgress(players.val);
-            const unlocked = players.val.length >= sign.playersNeeded ? 1 : 0;
+
             await writeGga(`StarSignProg[${sign.index}][0]`, str);
-            await new Promise((r) => setTimeout(r, 150));
-            await writeGga(`StarSignProg[${sign.index}][1]`, unlocked);
-            onSave?.({ index: sign.index, progress: str, unlocked });
+            const verifiedStr = String((await readGga(`StarSignProg[${sign.index}][0]`)) ?? "");
+            if (verifiedStr !== str)
+                throw new Error(
+                    `Write mismatch at StarSignProg[${sign.index}][0]: expected "${str}", got "${verifiedStr}"`
+                );
+
+            await onSave?.({ index: sign.index, progress: verifiedStr });
         });
     };
 
@@ -244,7 +262,15 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        [
+                            "feature-btn",
+                            "feature-btn--apply",
+                            status.val === "loading" ? "feature-btn--loading" : "",
+                            status.val === "success" ? "feature-row--success" : "",
+                            status.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
                     onclick: doSave,
                     disabled: () => status.val === "loading",
                 },
@@ -252,7 +278,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             ),
             () =>
                 status.val === "error"
-                    ? span({ class: "starsign-save-error" }, "Save failed — check game is running")
+                    ? span({ class: "starsign-feature-row--error" }, "Save failed — check game is running")
                     : null
         )
     );
@@ -294,20 +320,50 @@ export const StarSignsTab = () => {
     const loading = van.state(false);
     const error = van.state(null);
     const activeSign = van.state(null); // sign object being edited
-    const bulkStatus = van.state(null); // null | loading-unlock | loading-random | loading-reset | success | error
-    let bulkStatusTimer = null;
+    const { status: unlockStatus, run: runUnlock } = useWriteStatus();
+    const { status: randomStatus, run: runRandom } = useWriteStatus();
+    const { status: resetStatus, run: runReset } = useWriteStatus();
+    const isAnyLoading = () =>
+        unlockStatus.val === "loading" || randomStatus.val === "loading" || resetStatus.val === "loading";
 
-    const setBulkStatus = (next, autoClearMs = 0) => {
-        bulkStatus.val = next;
-        if (bulkStatusTimer) {
-            clearTimeout(bulkStatusTimer);
-            bulkStatusTimer = null;
+    const writeAndVerifyClaimed = async (index, claimed) => {
+        const expected = claimed ? 1 : 0;
+        await writeGga(`StarSignProg[${index}][1]`, expected);
+        const verified = Math.round(normalizeNumber(await readGga(`StarSignProg[${index}][1]`), 0));
+        if (verified !== expected) {
+            throw new Error(`Write mismatch at StarSignProg[${index}][1]: expected ${expected}, got ${verified}`);
         }
-        if (autoClearMs > 0) {
-            bulkStatusTimer = setTimeout(() => {
-                bulkStatus.val = null;
-                bulkStatusTimer = null;
-            }, autoClearMs);
+    };
+
+    const writeAndVerifyOptions40 = async (total) => {
+        const expected = normalizeNumber(total, 0);
+        await writeGga("OptionsListAccount[40]", expected);
+        const verified = normalizeNumber(await readGga("OptionsListAccount[40]"), 0);
+        if (verified !== expected) {
+            throw new Error(`Write mismatch at OptionsListAccount[40]: expected ${expected}, got ${verified}`);
+        }
+    };
+
+    const applyPointsDeltaAndVerify = async (delta) => {
+        const current = normalizeNumber(await readGga("OptionsListAccount[40]"), 0);
+        const next = current + normalizeNumber(delta, 0);
+        await writeAndVerifyOptions40(next);
+    };
+
+    const resetStarSignsUnlockedToDefault = async () => {
+        await writeGga("StarSignsUnlocked.h", { ...DEFAULT_UNLOCKED_STAR_SIGNS });
+
+        const verifiedRaw = await readGga("StarSignsUnlocked.h");
+        const verifiedMap = verifiedRaw && typeof verifiedRaw === "object" ? verifiedRaw : {};
+        const expectedKeys = Object.keys(DEFAULT_UNLOCKED_STAR_SIGNS).sort();
+        const verifiedKeys = Object.keys(verifiedMap).sort();
+        if (expectedKeys.length !== verifiedKeys.length || expectedKeys.some((k, i) => k !== verifiedKeys[i])) {
+            throw new Error("Write mismatch at StarSignsUnlocked.h: keys do not match default set");
+        }
+        for (const key of expectedKeys) {
+            if (!hasOwn(verifiedMap, key) || normalizeNumber(verifiedMap[key], 0) !== 1) {
+                throw new Error(`Write mismatch at StarSignsUnlocked.h[${key}]: expected 1`);
+            }
         }
     };
 
@@ -329,15 +385,21 @@ export const StarSignsTab = () => {
             );
 
             signs.val = quests
-                .map((q, i) => ({
-                    index: i,
-                    label: labels[i],
-                    desc: cleanDesc(q[7]),
-                    playersNeeded: parseInt(q[5]) || 1,
-                    players: parseProgress(prog[i]?.[0]),
-                    unlocked: prog[i]?.[1] === 1 || prog[i]?.[1] === "1",
-                    usernames,
-                }))
+                .map((q, i) => {
+                    const playersNeeded = parseInt(q[5]) || 1;
+                    const players = parseProgress(prog[i]?.[0]);
+                    return {
+                        index: i,
+                        label: labels[i],
+                        desc: cleanDesc(q[7]),
+                        playersNeeded,
+                        rewardPoints: normalizeNumber(q[6], 0),
+                        claimed: Math.round(normalizeNumber(prog[i]?.[1], 0)),
+                        players,
+                        unlocked: isUnlockedByProgress(players, playersNeeded),
+                        usernames,
+                    };
+                })
                 .filter((s) => s.desc.length > 0);
         } catch (e) {
             error.val = e.message || "Failed to read star signs";
@@ -347,17 +409,40 @@ export const StarSignsTab = () => {
     };
 
     // After saving from detail, update local state without full reload
-    const handleSave = ({ index, progress, unlocked }) => {
+    const handleSave = async ({ index, progress }) => {
         if (!signs.val) return;
-        signs.val = signs.val.map((s) =>
-            s.index === index ? { ...s, players: parseProgress(progress), unlocked: unlocked === 1 } : s
-        );
+        const prevSign = signs.val.find((s) => s.index === index);
+        const nextSigns = signs.val.map((s) => {
+            if (s.index !== index) return s;
+            const players = parseProgress(progress);
+            return { ...s, players, unlocked: isUnlockedByProgress(players, s.playersNeeded) };
+        });
+        const updatedSign = nextSigns.find((s) => s.index === index);
+        if (updatedSign && prevSign) {
+            const wasUnlocked = Boolean(prevSign.unlocked);
+            const isUnlocked = Boolean(updatedSign.unlocked);
+            if (!wasUnlocked && isUnlocked) {
+                await writeAndVerifyClaimed(index, 1);
+                await applyPointsDeltaAndVerify(normalizeNumber(updatedSign.rewardPoints, 0));
+                updatedSign.claimed = 1;
+            } else if (wasUnlocked && !isUnlocked) {
+                await writeAndVerifyClaimed(index, 0);
+                await applyPointsDeltaAndVerify(-normalizeNumber(updatedSign.rewardPoints, 0));
+                updatedSign.claimed = 0;
+            } else {
+                updatedSign.claimed = Math.round(normalizeNumber(prevSign.claimed, 0));
+            }
+        }
+        signs.val = nextSigns;
         // Also update detail sign
         if (activeSign.val?.index === index) {
+            const nextPlayers = parseProgress(progress);
             activeSign.val = {
                 ...activeSign.val,
-                players: parseProgress(progress),
-                unlocked: unlocked === 1,
+                players: nextPlayers,
+                unlocked: isUnlockedByProgress(nextPlayers, activeSign.val.playersNeeded),
+                rewardPoints: activeSign.val.rewardPoints ?? updatedSign?.rewardPoints ?? 0,
+                claimed: updatedSign?.claimed ?? activeSign.val.claimed ?? 0,
                 usernames: activeSign.val?.usernames ?? [],
             };
         }
@@ -367,36 +452,48 @@ export const StarSignsTab = () => {
 
     const resetAll = async () => {
         if (!signs.val) return;
-        setBulkStatus("loading-reset");
-        try {
-            const nextSigns = [];
-            for (const sign of signs.val) {
+        await runReset(async () => {
+            const list = signs.val;
+            for (const sign of list) {
                 await writeGga(`StarSignProg[${sign.index}][0]`, "");
                 await new Promise((r) => setTimeout(r, 40));
                 await writeGga(`StarSignProg[${sign.index}][1]`, 0);
                 await new Promise((r) => setTimeout(r, 40));
-                nextSigns.push({ ...sign, players: [], unlocked: false });
             }
-
+            const rawVerified = await readGga("StarSignProg");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const sign of list) {
+                const verifiedEntry = toIndexedArray(verifiedArr[sign.index] ?? []);
+                const verifiedProgress = String(verifiedEntry[0] ?? "");
+                const verifiedClaimed = Math.round(Number(verifiedEntry[1] ?? 0));
+                if (verifiedProgress !== "")
+                    throw new Error(
+                        `Write mismatch at StarSignProg[${sign.index}][0]: expected "", got "${verifiedProgress}"`
+                    );
+                if (verifiedClaimed !== 0)
+                    throw new Error(
+                        `Write mismatch at StarSignProg[${sign.index}][1]: expected 0, got ${verifiedClaimed}`
+                    );
+            }
+            await writeAndVerifyOptions40(0);
+            await resetStarSignsUnlockedToDefault();
+            const nextSigns = list.map((s) => ({ ...s, players: [], unlocked: false, claimed: 0 }));
             signs.val = nextSigns;
             if (activeSign.val) {
                 const updated = nextSigns.find((s) => s.index === activeSign.val.index);
                 if (updated) activeSign.val = { ...updated };
             }
-
-            setBulkStatus("success", 1200);
-        } catch {
-            setBulkStatus("error", 1200);
-            await load();
-        }
+        });
     };
 
     const unlockAll = async (randomize) => {
         if (!signs.val) return;
-        setBulkStatus(randomize ? "loading-random" : "loading-unlock");
-        try {
+        const runFn = randomize ? runRandom : runUnlock;
+        await runFn(async () => {
+            const list = signs.val;
             const nextSigns = [];
-            for (const sign of signs.val) {
+            const expectedProgressByIndex = new Map();
+            for (const sign of list) {
                 const needed = sign.playersNeeded;
                 const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
                 if (randomize) {
@@ -410,22 +507,36 @@ export const StarSignsTab = () => {
                 const str = encodeProgress(players);
                 await writeGga(`StarSignProg[${sign.index}][0]`, str);
                 await new Promise((r) => setTimeout(r, 40));
-                await writeGga(`StarSignProg[${sign.index}][1]`, 1);
-                await new Promise((r) => setTimeout(r, 40));
-                nextSigns.push({ ...sign, players, unlocked: true });
+                expectedProgressByIndex.set(sign.index, str);
+                nextSigns.push({ ...sign, players, unlocked: true, claimed: 1 });
             }
-
+            const rawVerified = await readGga("StarSignProg");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const sign of list) {
+                const verifiedEntry = toIndexedArray(verifiedArr[sign.index] ?? []);
+                const verifiedProgress = String(verifiedEntry[0] ?? "");
+                const expectedProgress = expectedProgressByIndex.get(sign.index) ?? "";
+                if (verifiedProgress !== expectedProgress)
+                    throw new Error(
+                        `Write mismatch at StarSignProg[${sign.index}][0]: expected "${expectedProgress}", got "${verifiedProgress}"`
+                    );
+            }
+            let totalDelta = 0;
+            for (const sign of list) {
+                if (Math.round(normalizeNumber(sign.claimed, 0)) === 0) {
+                    totalDelta += normalizeNumber(sign.rewardPoints, 0);
+                }
+                await writeAndVerifyClaimed(sign.index, 1);
+            }
+            if (totalDelta !== 0) {
+                await applyPointsDeltaAndVerify(totalDelta);
+            }
             signs.val = nextSigns;
             if (activeSign.val) {
                 const updated = nextSigns.find((s) => s.index === activeSign.val.index);
                 if (updated) activeSign.val = { ...updated };
             }
-
-            setBulkStatus("success", 1200);
-        } catch {
-            setBulkStatus("error", 1200);
-            await load();
-        }
+        });
     };
 
     return div(
@@ -446,11 +557,18 @@ export const StarSignsTab = () => {
                     button(
                         {
                             class: () =>
-                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-unlock" ? "feature-btn--loading" : ""}`,
-                            disabled: () => String(bulkStatus.val).startsWith("loading"),
+                                [
+                                    "feature-btn feature-btn--apply",
+                                    unlockStatus.val === "loading" ? "feature-btn--loading" : "",
+                                    unlockStatus.val === "success" ? "feature-row--success" : "",
+                                    unlockStatus.val === "error" ? "feature-row--error" : "",
+                                ]
+                                    .filter(Boolean)
+                                    .join(" "),
+                            disabled: isAnyLoading,
                             onclick: () => unlockAll(false),
                         },
-                        () => (bulkStatus.val === "loading-unlock" ? "…" : "UNLOCK ALL")
+                        () => (unlockStatus.val === "loading" ? "…" : "UNLOCK ALL")
                     ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
@@ -458,11 +576,18 @@ export const StarSignsTab = () => {
                     button(
                         {
                             class: () =>
-                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading-random" ? "feature-btn--loading" : ""}`,
-                            disabled: () => String(bulkStatus.val).startsWith("loading"),
+                                [
+                                    "feature-btn feature-btn--apply",
+                                    randomStatus.val === "loading" ? "feature-btn--loading" : "",
+                                    randomStatus.val === "success" ? "feature-row--success" : "",
+                                    randomStatus.val === "error" ? "feature-row--error" : "",
+                                ]
+                                    .filter(Boolean)
+                                    .join(" "),
+                            disabled: isAnyLoading,
                             onclick: () => unlockAll(true),
                         },
-                        () => (bulkStatus.val === "loading-random" ? "…" : "RANDOMIZE ALL")
+                        () => (randomStatus.val === "loading" ? "…" : "RANDOMIZE ALL")
                     ),
                     "Unlock all signs with a random player order per sign"
                 ),
@@ -470,11 +595,18 @@ export const StarSignsTab = () => {
                     button(
                         {
                             class: () =>
-                                `feature-btn feature-btn--danger ${bulkStatus.val === "loading-reset" ? "feature-btn--loading" : ""}`,
-                            disabled: () => String(bulkStatus.val).startsWith("loading"),
+                                [
+                                    "feature-btn feature-btn--danger",
+                                    resetStatus.val === "loading" ? "feature-btn--loading" : "",
+                                    resetStatus.val === "success" ? "feature-row--success" : "",
+                                    resetStatus.val === "error" ? "feature-row--error" : "",
+                                ]
+                                    .filter(Boolean)
+                                    .join(" "),
+                            disabled: isAnyLoading,
                             onclick: resetAll,
                         },
-                        () => (bulkStatus.val === "loading-reset" ? "…" : "RESET ALL")
+                        () => (resetStatus.val === "loading" ? "…" : "RESET ALL")
                     ),
                     "Clear all star sign progress and lock everything"
                 ),

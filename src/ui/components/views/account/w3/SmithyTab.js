@@ -56,6 +56,15 @@ const uniq = (arr) => {
     return out;
 };
 
+const normalizeStoredSetKeys = (rawOrList) => {
+    if (Array.isArray(rawOrList)) {
+        return uniq(
+            rawOrList.map((entry) => String(entry ?? "").trim()).filter((entry) => entry.length > 0 && entry !== "0")
+        );
+    }
+    return uniq(parseStoredSets(rawOrList));
+};
+
 const toObject = (raw) => {
     const value = unwrapH(raw);
     return value && typeof value === "object" ? value : {};
@@ -183,8 +192,8 @@ const SmithyRow = ({ row, onRemove }) => {
                 [
                     "feature-row",
                     "smithy-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -285,15 +294,40 @@ export const SmithyTab = () => {
         }
     };
 
+    const verifyStoredSets = async (expectedSetKeys, contextLabel) => {
+        let rawVerifiedSets;
+        try {
+            rawVerifiedSets = await readGga(STORED_SETS_PATH);
+        } catch (e) {
+            const msg = `Failed reading full smithy state after ${contextLabel}. Smithy may be inconsistent. Press REFRESH to resync.`;
+            writeWarning.val = msg;
+            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+        }
+
+        const expected = normalizeStoredSetKeys(expectedSetKeys);
+        const actual = normalizeStoredSetKeys(rawVerifiedSets);
+        const mismatchIndex = expected.findIndex((setKey, index) => actual[index] !== setKey);
+        const hasMismatch = mismatchIndex !== -1 || actual.length !== expected.length;
+        if (hasMismatch) {
+            const msg = `Smithy read-back mismatch after ${contextLabel}: expected [${expected.join(
+                ", "
+            )}], got [${actual.join(", ")}]. Press REFRESH to resync.`;
+            writeWarning.val = msg;
+            throw new Error(msg);
+        }
+    };
+
     const writeStoredSets = async (setKeys) => {
         writeWarning.val = null;
+        const expectedSetKeys = normalizeStoredSetKeys(setKeys);
         try {
-            await writeGga(STORED_SETS_PATH, encodeStoredSets(setKeys));
+            await writeGga(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
         } catch (e) {
             const msg = "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
             throw new Error(e?.message ? `${msg} (${e.message})` : msg);
         }
+        await verifyStoredSets(expectedSetKeys, "write");
     };
 
     const refreshAfterWrite = async () => {
@@ -425,8 +459,8 @@ export const SmithyTab = () => {
                                 class: () =>
                                     [
                                         "smithy-add-row",
-                                        addStatus.val === "success" ? "flash-success" : "",
-                                        addStatus.val === "error" ? "flash-error" : "",
+                                        addStatus.val === "success" ? "feature-row--success" : "",
+                                        addStatus.val === "error" ? "feature-row--error" : "",
                                     ]
                                         .filter(Boolean)
                                         .join(" "),

@@ -85,11 +85,19 @@ const StampRow = ({
         const maxLvl = step > 0 && lvl > 0 ? Math.ceil(lvl / step) * step : lvl;
 
         await run(async () => {
-            await writeGga(`StampLevel[${page}][${order}]`, lvl);
-            await writeGga(`StampLevelMAX[${page}][${order}]`, maxLvl);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-            maxLevelDisplay.val = maxLvl;
+            const levelPath = `StampLevel[${page}][${order}]`;
+            const maxPath = `StampLevelMAX[${page}][${order}]`;
+            await writeGga(levelPath, lvl);
+            const verifiedLvl = Math.max(0, Math.round(Number(await readGga(levelPath))));
+            if (verifiedLvl !== lvl)
+                throw new Error(`Write mismatch at ${levelPath}: expected ${lvl}, got ${verifiedLvl}`);
+            await writeGga(maxPath, maxLvl);
+            const verifiedMaxLvl = Math.max(0, Math.round(Number(await readGga(maxPath))));
+            if (verifiedMaxLvl !== maxLvl)
+                throw new Error(`Write mismatch at ${maxPath}: expected ${maxLvl}, got ${verifiedMaxLvl}`);
+            inputVal.val = String(verifiedLvl);
+            levelDisplay.val = verifiedLvl;
+            maxLevelDisplay.val = verifiedMaxLvl;
         });
     };
 
@@ -199,6 +207,13 @@ export const StampsTab = () => {
             await writeGga(`Compass[4][${i}]`, ordered[i]);
         }
         await writeGga("Compass[4].length", ordered.length);
+
+        const verifiedCodes = normalizeExaltedCodes(await readGga("Compass[4]")).sort(sortStampCodes);
+        if (verifiedCodes.length !== ordered.length || verifiedCodes.some((code, index) => code !== ordered[index])) {
+            throw new Error(
+                `Write mismatch at Compass[4]: expected [${ordered.join(", ")}], got [${verifiedCodes.join(", ")}]`
+            );
+        }
     };
 
     const load = async () => {

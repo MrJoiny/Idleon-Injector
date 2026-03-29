@@ -106,7 +106,7 @@ function getBlockedLibraryTalentIds(rawBlockedList) {
  * }} props
  */
 const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBookAvailable, bonus }) => {
-    const maxInput = van.state(String(maxState.val ?? 0));
+    const maxInput = van.state("0");
     const { status, run } = useWriteStatus();
 
     van.derive(() => {
@@ -116,13 +116,25 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
     const isLoading = () => status.val === "loading";
 
     const setMax = (raw) =>
-        run(async () => {
-            if (!isBookAvailable) return;
+        run(
+            async () => {
+                if (!isBookAvailable) return;
 
-            const lvl = Math.max(0, Math.min(maxBookLv, toNum(raw)));
-            await writeGga(`SkillLevelsMAX[${talentId}]`, lvl);
-            maxState.val = lvl;
-        });
+                const lvl = Math.max(0, Math.min(maxBookLv, toNum(raw)));
+                const path = `SkillLevelsMAX[${talentId}]`;
+                await writeGga(path, lvl);
+                const verified = Math.max(0, Math.min(maxBookLv, Math.round(Number(await readGga(path)))));
+                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+                return verified;
+            },
+            {
+                onSuccess: (verified) => {
+                    if (typeof verified !== "number") return;
+                    maxState.val = verified;
+                    maxInput.val = String(verified);
+                },
+            }
+        );
 
     return div(
         {
@@ -169,7 +181,16 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
                       {
                           type: "button",
                           onmousedown: (e) => e.preventDefault(),
-                          class: () => `feature-btn feature-btn--apply ${isLoading() ? "feature-btn--loading" : ""}`,
+                          class: () =>
+                              [
+                                  "feature-btn",
+                                  "feature-btn--apply",
+                                  isLoading() ? "feature-btn--loading" : "",
+                                  status.val === "success" ? "feature-row--success" : "",
+                                  status.val === "error" ? "feature-row--error" : "",
+                              ]
+                                  .filter(Boolean)
+                                  .join(" "),
                           disabled: isLoading,
                           onclick: (e) => {
                               e.preventDefault();
@@ -190,8 +211,7 @@ export const LibraryTab = () => {
     const error = van.state(null);
     const data = van.state(null);
     const maxBookLvHeader = van.state(null);
-    const bulkStatus = van.state(null);
-    let bulkDoneTimer = null;
+    const { status: bulkStatus, run: runBulk } = useWriteStatus();
 
     const curStates = new Map();
     const maxStates = new Map();
@@ -208,39 +228,32 @@ export const LibraryTab = () => {
 
     // MAX ALL only affects talents whose books are actually available in Library.
     const doMaxAll = async () => {
-        if (bulkDoneTimer) {
-            clearTimeout(bulkDoneTimer);
-            bulkDoneTimer = null;
-        }
         if (!data.val?.groups?.length) return;
-
-        bulkStatus.val = "loading";
-        try {
+        await runBulk(async () => {
             const cap = data.val.maxBookLv;
             const blocked = data.val.blockedLibraryTalentIds ?? new Set();
+            const writtenIds = [];
 
             for (const group of data.val.groups) {
                 for (const t of group.talents) {
                     if (blocked.has(Number(t.talentId))) continue;
-
                     await writeGga(`SkillLevelsMAX[${t.talentId}]`, cap);
-                    getMaxState(t.talentId).val = cap;
+                    writtenIds.push(t.talentId);
                     await new Promise((r) => setTimeout(r, 20));
                 }
             }
 
-            bulkStatus.val = "done";
-            bulkDoneTimer = setTimeout(() => {
-                if (bulkStatus.val === "done") bulkStatus.val = null;
-                bulkDoneTimer = null;
-            }, 1500);
-        } catch {
-            bulkStatus.val = null;
-            if (bulkDoneTimer) {
-                clearTimeout(bulkDoneTimer);
-                bulkDoneTimer = null;
+            if (writtenIds.length === 0) return;
+
+            const rawVerified = await readGga("SkillLevelsMAX");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const talentId of writtenIds) {
+                const verified = Math.max(0, Math.min(cap, Math.round(Number(verifiedArr[talentId] ?? 0))));
+                if (verified !== cap)
+                    throw new Error(`Write mismatch at SkillLevelsMAX[${talentId}]: expected ${cap}, got ${verified}`);
+                getMaxState(talentId).val = verified;
             }
-        }
+        });
     };
 
     const load = async (showSpinner = true) => {
@@ -304,7 +317,7 @@ export const LibraryTab = () => {
             for (const cId of classIds) {
                 for (let slot = 0; slot < 15; slot++) {
                     const talentId = talentOrder[15 * (cId - 1) + slot];
-                    if (talentId != null) allTalentIds.push(talentId);
+                    if (talentId !== null) allTalentIds.push(talentId);
                 }
             }
 
@@ -327,7 +340,7 @@ export const LibraryTab = () => {
 
                     for (let slot = 0; slot < 15; slot++) {
                         const talentId = talentOrder[15 * (cId - 1) + slot];
-                        if (talentId == null) continue;
+                        if (talentId === null) continue;
 
                         getCurState(talentId).val = toNum(skillLevels[talentId]);
                         getMaxState(talentId).val = toNum(skillLevelsMAX[talentId]);
@@ -457,14 +470,21 @@ export const LibraryTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
                             doMaxAll();
                         },
                     },
-                    () => (bulkStatus.val === "done" ? "MAXED!" : "MAX ALL")
+                    "MAX ALL"
                 ),
                 button({ class: "btn-secondary", onclick: load }, "REFRESH")
             )

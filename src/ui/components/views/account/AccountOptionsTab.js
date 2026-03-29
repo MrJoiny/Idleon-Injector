@@ -13,8 +13,51 @@ import { SearchBar } from "../../SearchBar.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
+import { readGga, writeGga } from "../../../services/api.js";
+import { useWriteStatus } from "./featureShared.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
+
+const normalizeForCompare = (value) => {
+    if (Array.isArray(value)) return value.map((entry) => normalizeForCompare(entry));
+    if (value && typeof value === "object") {
+        const out = {};
+        for (const key of Object.keys(value).sort()) out[key] = normalizeForCompare(value[key]);
+        return out;
+    }
+    return value;
+};
+
+const compareOptionValues = (type, expected, actual) => {
+    if (type === "number") {
+        const expectedNum = Number(expected);
+        const actualNum = Number(actual);
+        if (Number.isNaN(expectedNum) && Number.isNaN(actualNum)) return true;
+        return Object.is(expectedNum, actualNum);
+    }
+
+    if (type === "boolean") return Boolean(expected) === Boolean(actual);
+
+    if (type === "object") {
+        return JSON.stringify(normalizeForCompare(expected)) === JSON.stringify(normalizeForCompare(actual));
+    }
+
+    return String(expected) === String(actual);
+};
+
+const valueToDisplay = (type, value) => {
+    if (type === "object" && value !== null) return JSON.stringify(value);
+    return value;
+};
+
+const isSameDisplayList = (a, b) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i].index !== b[i].index) return false;
+        if (a[i].schema !== b[i].schema) return false;
+    }
+    return true;
+};
 
 export const AccountOptionsTab = () => {
     const ui = vanX.reactive({
@@ -23,6 +66,7 @@ export const AccountOptionsTab = () => {
         hideAI: false,
         displayList: [],
     });
+    let lastOptionsRef = null;
 
     const handleLoad = () => {
         ui.isUnlocked = true;
@@ -36,8 +80,6 @@ export const AccountOptionsTab = () => {
         const schema = store.data.accountSchema;
         const term = ui.filterText.toLowerCase();
         const hide = ui.hideAI;
-
-        const _len = data.length;
 
         if (!data || data.length === 0) {
             ui.displayList = [];
@@ -55,9 +97,15 @@ export const AccountOptionsTab = () => {
                 if (!name.includes(term) && !index.toString().includes(term)) continue;
             }
 
+            // Keep list entries stable by index/schema for write-state persistence.
+            // `val` is included for initial row hydration only.
             results.push({ index, val, schema: sch });
         }
-        ui.displayList = results;
+        const optionsRefChanged = lastOptionsRef !== data;
+        lastOptionsRef = data;
+        if (optionsRefChanged || !isSameDisplayList(ui.displayList, results)) {
+            ui.displayList = results;
+        }
     });
 
     return div({ class: "account-sub-tab-pane-inner" }, () => {
@@ -135,22 +183,27 @@ const OptionItem = (index, rawVal, schema) => {
     const normalizedInit = type === "object" && rawVal !== null ? JSON.stringify(rawVal) : rawVal;
 
     const currentVal = van.state(normalizedInit);
-    const status = van.state(null);
+    const { status, run } = useWriteStatus();
 
     const handleApply = async () => {
-        try {
+        if (status.val === "loading") return;
+        await run(async () => {
             let val = currentVal.val;
             if (type === "number") val = Number(val);
             else if (type === "boolean") val = Boolean(val);
             else if (type === "object") val = JSON.parse(val);
 
-            await store.updateAccountOption(index, val);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1000);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1000);
-        }
+            const path = `OptionsListAccount[${index}]`;
+            await writeGga(path, val);
+            const verifiedVal = await readGga(path);
+            if (!compareOptionValues(type, val, verifiedVal)) {
+                throw new Error(
+                    `Write mismatch at ${path}: expected ${JSON.stringify(val)}, got ${JSON.stringify(verifiedVal)}`
+                );
+            }
+            store.data.accountOptions[index] = verifiedVal;
+            currentVal.val = valueToDisplay(type, verifiedVal);
+        });
     };
 
     const name = schema ? schema.name : "UNDOCUMENTED INDEX";
@@ -162,8 +215,8 @@ const OptionItem = (index, rawVal, schema) => {
         {
             class: () =>
                 `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
-                    status.val === "success" ? "save-success" : ""
-                } ${status.val === "error" ? "save-error" : ""}`,
+                    status.val === "success" ? "feature-row--success" : ""
+                } ${status.val === "error" ? "feature-row--error" : ""}`,
             "data-index": index,
         },
         div(
@@ -196,7 +249,24 @@ const OptionItem = (index, rawVal, schema) => {
                         value: currentVal,
                         oninput: (e) => (currentVal.val = e.target.value),
                     }),
-            withTooltip(button({ class: "option-apply-button", onclick: handleApply }, "SET"), "Write to game memory")
+            withTooltip(
+                button(
+                    {
+                        class: () =>
+                            [
+                                "option-apply-button",
+                                status.val === "success" ? "feature-row--success" : "",
+                                status.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
+                        onclick: handleApply,
+                        disabled: () => status.val === "loading",
+                    },
+                    () => (status.val === "loading" ? "..." : "SET")
+                ),
+                "Write to game memory"
+            )
         )
     );
 };

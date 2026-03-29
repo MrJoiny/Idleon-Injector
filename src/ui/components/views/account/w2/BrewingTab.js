@@ -56,8 +56,8 @@ function encodePrisma(set) {
 }
 
 const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
-    const inputVal = van.state(String(levels.val?.[bubble.index] ?? 0));
-    const levelDisplay = van.state(levels.val?.[bubble.index] ?? 0);
+    const inputVal = van.state("0");
+    const levelDisplay = van.state(0);
     const { status, run } = useWriteStatus();
 
     const prismaBlocked = bubble.isBigBubble === true;
@@ -79,12 +79,22 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         const lvl = Math.max(0, Number(raw));
         if (isNaN(lvl)) return;
 
-        await run(async () => {
-            await writeGga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
-            setLocalLevel(lvl);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-        });
+        await run(
+            async () => {
+                const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
+                await writeGga(path, lvl);
+                const verified = Math.max(0, Math.round(Number(await readGga(path))));
+                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+                return verified;
+            },
+            {
+                onSuccess: (verified) => {
+                    setLocalLevel(verified);
+                    inputVal.val = String(verified);
+                    levelDisplay.val = verified;
+                },
+            }
+        );
     };
 
     const doTogglePrisma = async () => {
@@ -95,7 +105,12 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             const next = new Set(prismaSet.val ?? new Set());
             next.has(code) ? next.delete(code) : next.add(code);
             await writeGga("OptionsListAccount[384]", encodePrisma(next));
-            prismaSet.val = next;
+            const rawVerified = await readGga("OptionsListAccount[384]");
+            const verifiedSet = parsePrisma(rawVerified);
+            if (verifiedSet.has(code) !== next.has(code)) {
+                throw new Error(`Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`);
+            }
+            prismaSet.val = verifiedSet;
         });
     };
 
@@ -106,8 +121,8 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
                     "bubble-card",
                     `bubble-card--${cauldron.id}`,
                     isPrisma.val ? "bubble-card--prisma" : "",
-                    status.val === "success" ? "bubble-card--success" : "",
-                    status.val === "error" ? "bubble-card--error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -133,7 +148,15 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        [
+                            "feature-btn",
+                            "feature-btn--apply",
+                            status.val === "loading" ? "feature-btn--loading" : "",
+                            status.val === "success" ? "feature-row--success" : "",
+                            status.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -157,8 +180,8 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
     );
 };
 
-const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkStatuses }) => {
-    const bulkStatus = bulkStatuses.get(cauldron.id);
+const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
+    const { status: bulkStatus, run: runBulk } = useWriteStatus();
 
     const doSetAll = async () => {
         const lvl = Math.max(0, Number(setAllInput.val));
@@ -169,37 +192,28 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
 
         const currentLevels = toIndexedArray(levels.val ?? []);
         const bubblesToSet = bubbles.filter((bubble) => Number(currentLevels[bubble.index] ?? 0) !== lvl);
-        if (bubblesToSet.length === 0) {
-            bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1000);
-            return;
-        }
+        if (bubblesToSet.length === 0) return;
 
-        bulkStatus.val = "loading";
-        try {
-            let changedCount = 0;
+        await runBulk(async () => {
             for (const bubble of bubblesToSet) {
                 await writeGga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
-                const nextLevels = [...toIndexedArray(levels.val ?? [])];
-                nextLevels[bubble.index] = lvl;
-                levels.val = nextLevels;
-                changedCount += 1;
                 await new Promise((r) => setTimeout(r, 30));
             }
-
-            if (changedCount > 0) {
-                bulkStatus.val = "done";
-                setTimeout(() => (bulkStatus.val = null), 1500);
-                return;
+            const rawVerified = await readGga(`CauldronInfo[${cauldron.index}]`);
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const bubble of bubblesToSet) {
+                const verified = Math.max(0, Math.round(Number(verifiedArr[bubble.index] ?? 0)));
+                if (verified !== lvl)
+                    throw new Error(
+                        `Write mismatch at CauldronInfo[${cauldron.index}][${bubble.index}]: expected ${lvl}, got ${verified}`
+                    );
             }
-
-            bulkStatus.val = "error";
-            setTimeout(() => (bulkStatus.val = null), 1500);
-        } catch (e) {
-            console.error("Bulk set failed", e);
-            bulkStatus.val = "error";
-            setTimeout(() => (bulkStatus.val = null), 1500);
-        }
+            const nextLevels = [...toIndexedArray(levels.val ?? [])];
+            for (const bubble of bubblesToSet) {
+                nextLevels[bubble.index] = lvl;
+            }
+            levels.val = nextLevels;
+        });
     };
 
     return div(
@@ -207,7 +221,16 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
             class: `brewing-column brewing-column--${cauldron.id}`,
         },
         div(
-            { class: "brewing-column__header" },
+            {
+                class: () =>
+                    [
+                        "brewing-column__header",
+                        bulkStatus.val === "success" ? "feature-row--success" : "",
+                        bulkStatus.val === "error" ? "feature-row--error" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" "),
+            },
             span({ class: "brewing-column__label" }, cauldron.label),
             button(
                 {
@@ -217,7 +240,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput, bulkSt
                     onclick: doSetAll,
                     title: "Set all bubbles in this cauldron",
                 },
-                () => (bulkStatus.val === "loading" ? "..." : bulkStatus.val === "done" ? "DONE" : "SET ALL")
+                () => (bulkStatus.val === "loading" ? "..." : "SET ALL")
             )
         ),
         () => {
@@ -241,7 +264,6 @@ export const BrewingTab = () => {
 
     const cauldronLevels = new Map(CAULDRONS.map((c) => [c.id, van.state([])]));
     const bubbleDefs = new Map(CAULDRONS.map((c) => [c.id, van.state([])]));
-    const bulkStatuses = new Map(CAULDRONS.map((c) => [c.id, van.state(null)]));
     const prismaSet = van.state(new Set());
 
     const load = async () => {
@@ -313,7 +335,6 @@ export const BrewingTab = () => {
                         defs: bubbleDefs.get(cauldron.id),
                         prismaSet,
                         setAllInput,
-                        bulkStatuses,
                     })
                 )
             ),

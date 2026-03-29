@@ -92,8 +92,10 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         const val = max > 0 ? Math.min(max, parsed) : parsed;
         await run(async () => {
             await writeGga(writePath, val);
-            valueState.val = val;
-            inputVal.val = String(val);
+            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
+            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
+            valueState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -102,8 +104,8 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
             class: () =>
                 [
                     "p2w-row",
-                    status.val === "success" ? "p2w-row--success" : "",
-                    status.val === "error" ? "p2w-row--error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),

@@ -39,7 +39,7 @@ const sanitizeArcadeName = (raw) =>
         .trim();
 
 const ArcadeCard = ({ entry }) => {
-    const inputVal = van.state(String(entry.levelState.val ?? 0));
+    const inputVal = van.state("0");
     const { status, run } = useWriteStatus();
 
     const isCosmic = van.derive(() => Number(entry.levelState.val ?? 0) >= 101);
@@ -53,9 +53,12 @@ const ArcadeCard = ({ entry }) => {
         if (isNaN(lvl)) return;
 
         await run(async () => {
-            await writeGga(`ArcadeUpg[${entry.index}]`, lvl);
-            entry.levelState.val = lvl;
-            inputVal.val = String(lvl);
+            const path = `ArcadeUpg[${entry.index}]`;
+            await writeGga(path, lvl);
+            const verified = Math.max(0, Math.min(ARCADE_LEVEL_MAX, Math.round(Number(await readGga(path)))));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            entry.levelState.val = verified;
+            inputVal.val = String(verified);
         });
     };
 
@@ -65,8 +68,8 @@ const ArcadeCard = ({ entry }) => {
                 [
                     "arcade-card",
                     isCosmic.val ? "arcade-card--cosmic" : "",
-                    status.val === "success" ? "arcade-card--success" : "",
-                    status.val === "error" ? "arcade-card--error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -106,16 +109,15 @@ export const ArcadeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const refreshError = van.state(null);
-    const bulkStatus = van.state(null);
-    let bulkDoneTimer = null;
+    const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const normalBalls = van.state("0");
     const goldenBalls = van.state("0");
     const cosmicBalls = van.state("0");
-    const normalBallLoading = van.state(false);
-    const goldenBallLoading = van.state(false);
-    const cosmicBallLoading = van.state(false);
+    const normalBallWrite = useWriteStatus();
+    const goldenBallWrite = useWriteStatus();
+    const cosmicBallWrite = useWriteStatus();
 
     // Entries are created once from the first load and then updated in place.
     const upgradeEntries = van.state([]);
@@ -182,75 +184,80 @@ export const ArcadeTab = () => {
     };
 
     const doSetBall = async (ballType, valueState) => {
-        const indexByType = {
-            normal: 74,
-            golden: 75,
-            cosmic: 324,
-        };
-        const loadingByType = {
-            normal: normalBallLoading,
-            golden: goldenBallLoading,
-            cosmic: cosmicBallLoading,
+        const configByType = {
+            normal: { index: 74, writer: normalBallWrite },
+            golden: { index: 75, writer: goldenBallWrite },
+            cosmic: { index: 324, writer: cosmicBallWrite },
         };
 
-        const index = indexByType[ballType];
-        if (index === undefined) return;
-        const ballLoading = loadingByType[ballType];
-        if (!ballLoading || ballLoading.val) return;
+        const config = configByType[ballType];
+        if (!config) return;
+        if (config.writer.status.val === "loading") return;
 
         const numVal = Math.max(0, Number(valueState.val));
         if (isNaN(numVal)) return;
 
-        try {
-            ballLoading.val = true;
-            await writeGga(`OptionsListAccount[${index}]`, numVal);
-            valueState.val = String(numVal);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            ballLoading.val = false;
-        }
+        await config.writer.run(
+            async () => {
+                const path = `OptionsListAccount[${config.index}]`;
+                await writeGga(path, numVal);
+                const verified = Math.max(0, Math.round(Number(await readGga(path))));
+                if (verified !== numVal)
+                    throw new Error(`Write mismatch at ${path}: expected ${numVal}, got ${verified}`);
+                return verified;
+            },
+            {
+                onSuccess: (verified) => {
+                    valueState.val = String(verified);
+                },
+                onError: (err) => {
+                    console.error(err);
+                },
+            }
+        );
     };
 
     const doSetAll = async (targetLevel) => {
-        if (bulkDoneTimer) {
-            clearTimeout(bulkDoneTimer);
-            bulkDoneTimer = null;
-        }
-
         const entries = upgradeEntries.val;
         if (!entries.length) return;
 
         const lvl = Math.max(0, Number(targetLevel));
         if (isNaN(lvl)) return;
 
-        bulkStatus.val = "loading";
-        try {
+        await runBulkSetAll(async () => {
             for (const entry of entries) {
                 await writeGga(`ArcadeUpg[${entry.index}]`, lvl);
-                entry.levelState.val = lvl;
                 await new Promise((r) => setTimeout(r, 20));
             }
-            bulkStatus.val = "done";
-            bulkDoneTimer = setTimeout(() => {
-                if (bulkStatus.val === "done") bulkStatus.val = null;
-                bulkDoneTimer = null;
-            }, 1500);
-        } catch {
-            bulkStatus.val = null;
-            if (bulkDoneTimer) {
-                clearTimeout(bulkDoneTimer);
-                bulkDoneTimer = null;
+            const rawVerified = await readGga("ArcadeUpg");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (const entry of entries) {
+                const verified = Math.max(
+                    0,
+                    Math.min(ARCADE_LEVEL_MAX, Math.round(Number(verifiedArr[entry.index] ?? 0)))
+                );
+                if (verified !== lvl)
+                    throw new Error(`Write mismatch at ArcadeUpg[${entry.index}]: expected ${lvl}, got ${verified}`);
+                entry.levelState.val = verified;
             }
-        }
+        });
     };
 
     load();
 
+    const topBallsFlashClass = () => {
+        const states = [normalBallWrite.status.val, goldenBallWrite.status.val, cosmicBallWrite.status.val];
+        if (states.includes("error")) return "feature-row--error";
+        if (states.includes("success")) return "feature-row--success";
+        return "";
+    };
+
     const content = div(
         { class: () => paneClass("arcade-content") },
         div(
-            { class: "arcade-balls-summary" },
+            {
+                class: () => ["arcade-balls-summary", topBallsFlashClass()].filter(Boolean).join(" "),
+            },
             div(
                 { class: "arcade-ball-item" },
                 span({ class: "arcade-ball-label" }, "Normal:"),
@@ -264,11 +271,11 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${normalBallLoading.val ? "feature-btn--loading" : ""}`,
-                        disabled: () => normalBallLoading.val,
+                            `feature-btn feature-btn--apply ${normalBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        disabled: () => normalBallWrite.status.val === "loading",
                         onclick: () => doSetBall("normal", normalBalls),
                     },
-                    () => (normalBallLoading.val ? "..." : "SET")
+                    () => (normalBallWrite.status.val === "loading" ? "..." : "SET")
                 )
             ),
             div(
@@ -284,11 +291,11 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${goldenBallLoading.val ? "feature-btn--loading" : ""}`,
-                        disabled: () => goldenBallLoading.val,
+                            `feature-btn feature-btn--apply ${goldenBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        disabled: () => goldenBallWrite.status.val === "loading",
                         onclick: () => doSetBall("golden", goldenBalls),
                     },
-                    () => (goldenBallLoading.val ? "..." : "SET")
+                    () => (goldenBallWrite.status.val === "loading" ? "..." : "SET")
                 )
             ),
             div(
@@ -304,11 +311,11 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${cosmicBallLoading.val ? "feature-btn--loading" : ""}`,
-                        disabled: () => cosmicBallLoading.val,
+                            `feature-btn feature-btn--apply ${cosmicBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        disabled: () => cosmicBallWrite.status.val === "loading",
                         onclick: () => doSetBall("cosmic", cosmicBalls),
                     },
-                    () => (cosmicBallLoading.val ? "..." : "SET")
+                    () => (cosmicBallWrite.status.val === "loading" ? "..." : "SET")
                 )
             )
         ),
@@ -334,7 +341,14 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: () => doSetAll(100),
                     },
@@ -343,7 +357,14 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: () => doSetAll(101),
                     },
@@ -352,7 +373,14 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading",
                         onclick: () => doSetAll(0),
                     },

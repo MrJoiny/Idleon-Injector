@@ -101,8 +101,12 @@ const CloudRow = ({ entry }) => {
 
     const doComplete = async () => {
         await run(async () => {
-            await writeGga(`WeeklyBoss.h.d_${entry.cloudIndex}`, entry.required);
-            entry.progressState.val = entry.required;
+            const path = `WeeklyBoss.h.d_${entry.cloudIndex}`;
+            await writeGga(path, entry.required);
+            const verified = toInt(await readGga(path), { mode: "floor" });
+            if (verified !== entry.required)
+                throw new Error(`Write mismatch at ${path}: expected ${entry.required}, got ${verified}`);
+            entry.progressState.val = verified;
         });
     };
 
@@ -157,9 +161,12 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
         const lvl = Math.max(0, Math.min(entry.maxLevel, toInt(raw, { mode: "floor" })));
         await run(async () => {
             // Dream[0] and Dream[1] are reserved; upgrades start at Dream[2]
-            await writeGga(`Dream[${entry.index + 2}]`, lvl);
-            entry.levelState.val = lvl;
-            inputVal.val = String(lvl);
+            const path = `Dream[${entry.index + 2}]`;
+            await writeGga(path, lvl);
+            const verified = Math.max(0, Math.min(entry.maxLevel, toInt(await readGga(path), { mode: "floor" })));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            entry.levelState.val = verified;
+            inputVal.val = String(verified);
             // BarFillReq and cloud visibility depend on upgrade levels
             await onAfterSet();
         });
@@ -189,7 +196,8 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
                 value: inputVal,
                 oninput: (e) => (inputVal.val = e.target.value),
                 onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { mode: "floor" }) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(entry.maxLevel, toInt(inputVal.val, { mode: "floor" }) + 1))),
+                onIncrement: () =>
+                    (inputVal.val = String(Math.min(entry.maxLevel, toInt(inputVal.val, { mode: "floor" }) + 1))),
             }),
             button(
                 {
@@ -230,13 +238,15 @@ export const EquinoxTab = () => {
     let cachedDreamChallengeArr = [];
 
     // Fill Bar
-    const { status: fillBarStatus, run: fillBarRun } = useWriteStatus({ successMs: 1200 });
+    const { status: fillBarStatus, run: fillBarRun } = useWriteStatus();
     const doFillBar = () =>
         fillBarRun(async () => {
             const req = barFillReqState.val;
             if (!req) return;
             await writeGga("Dream[0]", req);
-            barFillState.val = req;
+            const verified = toInt(await readGga("Dream[0]"), { mode: "floor" });
+            if (verified !== req) throw new Error(`Write mismatch at Dream[0]: expected ${req}, got ${verified}`);
+            barFillState.val = verified;
         });
 
     // ── Cloud entry helpers ───────────────────────────────────────────────────
@@ -363,7 +373,11 @@ export const EquinoxTab = () => {
             }
 
             // ── Clouds ────────────────────────────────────────────────────────
-            const visibleIndexes = getVisibleCloudIndexes(toInt(dreamArr[2], { mode: "floor" }), cachedDreamChallengeArr, weeklyBossMap);
+            const visibleIndexes = getVisibleCloudIndexes(
+                toInt(dreamArr[2], { mode: "floor" }),
+                cachedDreamChallengeArr,
+                weeklyBossMap
+            );
             updateCloudEntries(visibleIndexes, weeklyBossMap, cachedDreamChallengeArr);
 
             markReady();
@@ -450,7 +464,15 @@ export const EquinoxTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${fillBarStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn",
+                                "feature-btn--apply",
+                                fillBarStatus.val === "loading" ? "feature-btn--loading" : "",
+                                fillBarStatus.val === "success" ? "feature-row--success" : "",
+                                fillBarStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => fillBarStatus.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();

@@ -60,7 +60,9 @@ const PONumField = ({ label, valueState, writePath }) => {
         if (isNaN(val)) return;
         await run(async () => {
             await writeGga(writePath, val);
-            valueState.val = val;
+            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
+            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
+            valueState.val = verified;
         });
     };
 
@@ -69,8 +71,8 @@ const PONumField = ({ label, valueState, writePath }) => {
             class: () =>
                 [
                     "po-field-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -104,13 +106,12 @@ const POToggleField = ({ valueState, writePath }) => {
 
     const doToggle = async () => {
         const next = valueState.val ? 0 : 1;
-        await run(
-            async () => {
-                await writeGga(writePath, next);
-                valueState.val = next;
-            },
-            { successMs: 1000 }
-        );
+        await run(async () => {
+            await writeGga(writePath, next);
+            const verified = Math.round(Number(await readGga(writePath)));
+            if (verified !== next) throw new Error(`Write mismatch at ${writePath}: expected ${next}, got ${verified}`);
+            valueState.val = verified;
+        });
     };
 
     return button(
@@ -119,6 +120,8 @@ const POToggleField = ({ valueState, writePath }) => {
                 [
                     "po-toggle-btn",
                     valueState.val ? "po-toggle-btn--done" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                     status.val === "loading" ? "feature-btn--loading" : "",
                 ]
                     .filter(Boolean)
@@ -237,7 +240,9 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
         if (isNaN(val)) return;
         await run(async () => {
             await writeGga(writePath, val);
-            valueState.val = val;
+            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
+            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
+            valueState.val = verified;
             if (typeof onAfterWrite === "function") onAfterWrite();
         });
     };
@@ -247,8 +252,8 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             class: () =>
                 [
                     "po-currency-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -271,7 +276,15 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                        [
+                            "feature-btn",
+                            "feature-btn--apply",
+                            status.val === "loading" ? "feature-btn--loading" : "",
+                            status.val === "success" ? "feature-row--success" : "",
+                            status.val === "error" ? "feature-row--error" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" "),
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
@@ -284,7 +297,7 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
 // PostOfficeTab ─────────────────────────────────────────────────────────────
 
 const POBoxRow = ({ box, onAfterWrite = null }) => {
-    const inputVal = van.state(String(box.current.val));
+    const inputVal = van.state("0");
     const { status, run } = useWriteStatus();
 
     van.derive(() => {
@@ -300,11 +313,21 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
     const doSet = async () => {
         const val = clampToCap(inputVal.val);
         if (val === null) return;
-        await run(async () => {
-            await writeGga(`PostOfficeInfo[3][${box.index}][0]`, val);
-            box.current.val = val;
-            if (typeof onAfterWrite === "function") onAfterWrite();
-        });
+        await run(
+            async () => {
+                const path = `PostOfficeInfo[3][${box.index}][0]`;
+                await writeGga(path, val);
+                const verified = Math.max(0, Math.round(Number(await readGga(path))));
+                if (verified !== val) throw new Error(`Write mismatch at ${path}: expected ${val}, got ${verified}`);
+                return verified;
+            },
+            {
+                onSuccess: (verified) => {
+                    box.current.val = verified;
+                    if (typeof onAfterWrite === "function") onAfterWrite();
+                },
+            }
+        );
     };
 
     return div(
@@ -312,8 +335,8 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
             class: () =>
                 [
                     "po-box-row",
-                    status.val === "success" ? "flash-success" : "",
-                    status.val === "error" ? "flash-error" : "",
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -498,29 +521,45 @@ export const PostOfficeTab = () => {
     const doMaxAllBoxes = async () => {
         if (boxCount.val <= 0) return;
         await runBoxBulkWrite(async () => {
-            // Write sequentially to avoid dropped/raced writes on deep nested PostOfficeInfo paths.
-            for (let i = 0; i < boxCount.val; i++) {
-                const nextVal = boxStates[i].cap.val;
-                await writeGga(`PostOfficeInfo[3][${i}][0]`, nextVal);
-                boxStates[i].current.val = nextVal;
-                recomputeSummary();
+            const count = boxCount.val;
+            const nextVals = Array.from({ length: count }, (_, i) => boxStates[i].cap.val);
+            for (let i = 0; i < count; i++) {
+                await writeGga(`PostOfficeInfo[3][${i}][0]`, nextVals[i]);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            await load();
+            const rawVerified = await readGga("PostOfficeInfo[3]");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < count; i++) {
+                const row = toIndexedArray(verifiedArr[i] ?? []);
+                const verified = Math.max(0, Math.round(Number(row[0] ?? 0)));
+                if (verified !== nextVals[i])
+                    throw new Error(
+                        `Write mismatch at PostOfficeInfo[3][${i}][0]: expected ${nextVals[i]}, got ${verified}`
+                    );
+                boxStates[i].current.val = verified;
+            }
+            recomputeSummary();
         });
     };
 
     const doResetBoxes = async () => {
         if (boxCount.val <= 0) return;
         await runBoxBulkWrite(async () => {
-            // Same sequential strategy for consistency with MAX ALL.
-            for (let i = 0; i < boxCount.val; i++) {
+            const count = boxCount.val;
+            for (let i = 0; i < count; i++) {
                 await writeGga(`PostOfficeInfo[3][${i}][0]`, 0);
-                boxStates[i].current.val = 0;
-                recomputeSummary();
                 await new Promise((r) => setTimeout(r, 20));
             }
-            await load();
+            const rawVerified = await readGga("PostOfficeInfo[3]");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < count; i++) {
+                const row = toIndexedArray(verifiedArr[i] ?? []);
+                const verified = Math.max(0, Math.round(Number(row[0] ?? 0)));
+                if (verified !== 0)
+                    throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected 0, got ${verified}`);
+                boxStates[i].current.val = 0;
+            }
+            recomputeSummary();
         });
     };
 
@@ -624,7 +663,16 @@ export const PostOfficeTab = () => {
     const boxesScroll = div(
         { class: () => paneClass("po-scroll scrollable-panel") },
         div(
-            { class: "po-bulk-bar" },
+            {
+                class: () =>
+                    [
+                        "po-bulk-bar",
+                        boxBulkStatus.val === "success" ? "feature-row--success" : "",
+                        boxBulkStatus.val === "error" ? "feature-row--error" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" "),
+            },
             button(
                 {
                     class: () =>

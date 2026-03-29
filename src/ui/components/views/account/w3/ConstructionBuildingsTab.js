@@ -51,9 +51,16 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
         const lvl = Math.max(0, Math.min(maxLevel, Number(raw)));
         if (isNaN(lvl)) return;
         await run(async () => {
-            await writeGga(`TowerInfo[${index}]`, lvl);
-            await writeGga(`TowerInfo[${index + BUILDING_COUNT}]`, lvl);
-            levelState.val = lvl;
+            const path = `TowerInfo[${index}]`;
+            const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
+            await writeGga(path, lvl);
+            await writeGga(pathPending, lvl);
+            const verified = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(path)))));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            const verifiedPending = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(pathPending)))));
+            if (verifiedPending !== lvl)
+                throw new Error(`Write mismatch at ${pathPending}: expected ${lvl}, got ${verifiedPending}`);
+            levelState.val = verified;
         });
     };
 
@@ -131,7 +138,7 @@ export const ConstructionBuildingsTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const data = van.state(null);
-    const bulkStatus = van.state(null);
+    const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
 
     const load = async () => {
@@ -171,20 +178,24 @@ export const ConstructionBuildingsTab = () => {
 
     const doMaxAll = async () => {
         if (!data.val) return;
-        bulkStatus.val = "loading";
-        try {
+        await runMaxAll(async () => {
+            const buildings = data.val.buildings;
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                const maxLv = data.val.buildings[i]?.maxLevel ?? 0;
+                const maxLv = buildings[i]?.maxLevel ?? 0;
                 await writeGga(`TowerInfo[${i}]`, maxLv);
                 await writeGga(`TowerInfo[${i + BUILDING_COUNT}]`, maxLv);
-                levelStates[i].val = maxLv;
                 await new Promise((r) => setTimeout(r, 30));
             }
-            bulkStatus.val = "done";
-            setTimeout(() => (bulkStatus.val = null), 1500);
-        } catch {
-            bulkStatus.val = null;
-        }
+            const rawVerified = await readGga("TowerInfo");
+            const verifiedArr = toIndexedArray(rawVerified ?? []);
+            for (let i = 0; i < BUILDING_COUNT; i++) {
+                const maxLv = buildings[i]?.maxLevel ?? 0;
+                const verified = Math.max(0, Math.min(maxLv, Math.round(Number(verifiedArr[i] ?? 0))));
+                if (verified !== maxLv)
+                    throw new Error(`Write mismatch at TowerInfo[${i}]: expected ${maxLv}, got ${verified}`);
+                levelStates[i].val = verified;
+            }
+        });
     };
 
     load();
@@ -206,14 +217,21 @@ export const ConstructionBuildingsTab = () => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn feature-btn--apply",
+                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
+                                bulkStatus.val === "success" ? "feature-row--success" : "",
+                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         disabled: () => bulkStatus.val === "loading" || loading.val,
                         onclick: (e) => {
                             e.preventDefault();
                             doMaxAll();
                         },
                     },
-                    () => (bulkStatus.val === "loading" ? "MAXING…" : bulkStatus.val === "done" ? "✓ DONE" : "MAX ALL")
+                    () => (bulkStatus.val === "loading" ? "MAXING…" : "MAX ALL")
                 ),
                 button({ class: "btn-secondary", onclick: load }, "REFRESH")
             )

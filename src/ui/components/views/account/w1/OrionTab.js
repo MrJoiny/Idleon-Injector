@@ -105,8 +105,13 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
         if (num === null) return;
         await run(async () => {
             await onWrite(field.index, num);
-            fieldState.val = num; // only this row's badge re-renders
-            inputVal.val = String(num);
+            const verified = resolveNum(String(await readGga(`OptionsListAccount[${field.index}]`)));
+            if (verified !== num)
+                throw new Error(
+                    `Write mismatch at OptionsListAccount[${field.index}]: expected ${num}, got ${verified}`
+                );
+            fieldState.val = verified; // only this row's badge re-renders
+            inputVal.val = String(verified);
         });
     };
 
@@ -194,7 +199,6 @@ export const OrionTab = () => {
 
     const onWrite = async (index, value) => {
         await writeGga(`OptionsListAccount[${index}]`, value);
-        fieldStates.get(index).val = value;
     };
 
     // Built once, stays in the DOM permanently.

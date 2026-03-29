@@ -35,9 +35,12 @@ const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
         const lvl = Math.max(0, Number(targetVal));
         if (isNaN(lvl)) return;
         await run(async () => {
-            await writeGga(`UpgVault[${index}]`, lvl);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
+            const path = `UpgVault[${index}]`;
+            await writeGga(path, lvl);
+            const verified = Math.max(0, Math.round(Number(await readGga(path))));
+            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
+            inputVal.val = String(verified);
+            levelDisplay.val = verified;
         });
     };
 

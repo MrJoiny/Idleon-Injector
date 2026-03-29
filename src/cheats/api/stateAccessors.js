@@ -149,14 +149,11 @@ export function readComputed(namespace, name, args = []) {
 /**
  * Write a game value by dot/bracket path string.
  * @param {string} path - Path like "gga.StampLevel[0][3]"
- * @param {number|string|boolean|null} value - Primitive value to write
+ * @param {any} value - JSON-serializable value to write
  * @returns {{ ok: true } | { error: string }}
  */
 export function writePath(path, value) {
     if (value === undefined) return { error: "Missing value" };
-    if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null) {
-        return { error: "value must be a primitive (number, string, boolean, or null)" };
-    }
     const resolved = resolvePath(path);
     if (resolved.error) return resolved;
     const { target, prop } = resolved;

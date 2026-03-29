@@ -535,12 +535,12 @@ exports.injectorConfig = ${new_injectorConfig};
         if (value === undefined) {
             return res.status(400).json({ error: "Missing value" });
         }
-        if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null) {
-            return res.status(400).json({ error: "value must be a primitive (number, string, boolean, or null)" });
-        }
 
         const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const serialized = JSON.stringify(value);
+        if (serialized === undefined) {
+            return res.status(400).json({ error: "value must be JSON-serializable" });
+        }
 
         try {
             const result = await Runtime.evaluate({
