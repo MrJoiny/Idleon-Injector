@@ -42,8 +42,8 @@ const SHOP_FIELDS = [
     { index: 107, label: "TALENT DROPS LEVEL" },
     { index: 108, label: "BONUS SKULLS LEVEL" },
     { index: 109, label: "RESPAWN LEVEL" },
-    { index: 110, label: "5TH BONUS LEVEL", blurred: true },
-    { index: 111, label: "6TH BONUS LEVEL", blurred: true },
+    { index: 110, label: "DUNGEON DROPS LEVEL" },
+    { index: 111, label: "PEARL DROPS LEVEL"},
 ];
 
 const META_FIELDS = [
