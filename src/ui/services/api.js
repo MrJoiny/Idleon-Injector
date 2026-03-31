@@ -59,6 +59,10 @@ export async function fetchConfig() {
     return _request("/config");
 }
 
+export async function fetchAppInfo() {
+    return _request("/app-info");
+}
+
 export async function updateSessionConfig(updatedConfig) {
     return _request("/config/update", {
         method: "POST",

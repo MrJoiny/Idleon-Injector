@@ -21,7 +21,7 @@ const { createLogger } = require("../utils/logger");
 const log = createLogger("Game");
 
 const IDLEON_APP_ID = 1476970;
-const DEFAULT_TIMEOUT = 30000;
+const DEFAULT_TIMEOUT = 60000;
 const POLL_INTERVAL = 500;
 const COMMON_STEAM_PATHS = [
     "/usr/bin/steam",
@@ -158,7 +158,7 @@ function attach(name) {
 
                 reject(new Error("Timeout waiting for game to start"));
             }
-        }, 30000);
+        }, DEFAULT_TIMEOUT);
 
         idleon.on("close", () => {
             clearTimeout(timeoutId);
@@ -171,7 +171,7 @@ function attach(name) {
 
 /**
  * Automatic Linux attach with Steam integration
- * @param {number} timeout - Timeout in milliseconds (default: 30000)
+ * @param {number} timeout - Timeout in milliseconds (default: 60000)
  * @returns {Promise<string>} WebSocket URL for Chrome DevTools Protocol
  */
 async function autoAttachLinux(timeout = DEFAULT_TIMEOUT) {

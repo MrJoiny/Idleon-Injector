@@ -48,10 +48,6 @@ export function getAutoCompleteSuggestions() {
         });
     }
 
-    // here are items stored that are not visible in the w5 slab
-    const itemBlacklist = new Set(cList.RANDOlist[17]);
-    itemBlacklist.delete("COIN");
-
     const allBundles = getAllBundles();
 
     // cheat commands (skip "cheats" since it's already added as first)
@@ -69,8 +65,13 @@ export function getAutoCompleteSuggestions() {
     // item commands (drop, nomore, multiplestacks)
     addChoices(choices, itemDefs, (code, item) => {
         if (!item.h.displayName) return null;
-        if (itemBlacklist.has(code)) return null;
-        const name = item.h.displayName.replace(/_/g, " ");
+        let name;
+        // get the right message names for the cards
+        if (code.startsWith("Cards")) {
+            name = monsterDefs[item.h.desc_line1]?.h.Name?.replace(/_/g, " ") ?? item.h.desc_line1;
+        } else {
+            name = item.h.displayName.replace(/_/g, " ");
+        }
         // filtering out ui items named strung jewels
         if (code !== "Quest66" && name === "Strung Jewels") return null;
 
@@ -122,7 +123,7 @@ export function getAutoCompleteSuggestions() {
     for (const [name, code] of allBundles) {
         choices.push({
             value: `buy ${code}`,
-            message: name,
+            message: name + " (One Time Use, does not provide gems and pets)",
             category: "buy",
         });
     }

@@ -3,7 +3,7 @@
  *
  * Cheats for minigame manipulation:
  * - Mining, Fishing, Catching, Choppin, Poing
- * - Hoops, Darts, Wisdom Monument, Scratch, Minehead
+ * - Hoops, Darts, Wisdom Monument, Scratch, Minehead, Gold Pot Rush
  *
  * Proxies are set up at startup via setupMinigameProxies() in setup.js.
  * These commands only toggle cheatState booleans.
@@ -28,5 +28,6 @@ registerCheats({
         { name: "minehead", message: "minehead minigame visual reveal" },
         { name: "log", message: "gaming log minigame card reveal" },
         { name: "valentine", message: "valentine chocolate minigame cheat" },
+        { name: "goldrush", message: "gold pot rush ball drop speed cheat" },
     ],
 });

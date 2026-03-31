@@ -19,6 +19,7 @@ const { getRuntimePath } = require("../utils/runtimePaths");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
 const { createLogger } = require("../utils/logger");
+const { version } = require("../../../package.json");
 
 const log = createLogger("API");
 
@@ -39,6 +40,15 @@ function setupApiRoutes(app, context, client, config) {
 
     app.get("/api/heartbeat", (req, res) => {
         res.json({ status: "online", timestamp: Date.now() });
+    });
+
+    app.get("/api/app-info", (req, res) => {
+        try {
+            res.json({ version });
+        } catch (error) {
+            log.error("Error in /api/app-info:", error);
+            res.status(500).json({ error: error.message });
+        }
     });
 
     app.get("/api/cheats", async (req, res) => {

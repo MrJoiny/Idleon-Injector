@@ -56,6 +56,11 @@ function checkForUpdates(currentVersion) {
                                 updateAvailable: true,
                                 latestVersion: latestVersion,
                                 url: release.html_url,
+                                assets: (release.assets || []).map((a) => ({
+                                    name: a.name,
+                                    url: a.browser_download_url,
+                                    size: a.size,
+                                })),
                             });
                         } else {
                             resolve({ updateAvailable: false });
