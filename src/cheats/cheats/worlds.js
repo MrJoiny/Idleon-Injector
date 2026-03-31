@@ -8,7 +8,7 @@
  * - W4: breeding, spice, kitchens, lab, arena, mainframe, ribbon, chips, etc.
  * - W5: sailing, endercaptains, gaming, divinity, collider, holes, jargems
  * - W6: farming, ninja, summoning, grimoire, endless, ninjaitem, sumunit, etc.
- * - W7: spelunk, gallery, reef, clam, zenith, spelunkmana, spelunkdepth, etc.
+ * - W7: spelunk, gallery, sushi, reef, clam, zenith, spelunkmana, spelunkdepth, etc.
  */
 
 import { registerCheats } from "../core/registration.js";
@@ -275,6 +275,7 @@ registerCheats({
     subcheats: [
         { name: "spelunk", message: "spelunk cheats" },
         { name: "gallery", message: "gallery cheats" },
+        { name: "sushi", message: "sushi cheats, check config file" },
         { name: "reef", message: "coral reef nullify cost" },
         { name: "clam", message: "clam cheats" },
         { name: "coralkid", message: "coral kid nullify cost" },

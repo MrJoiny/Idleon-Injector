@@ -17,6 +17,7 @@
  * - Bubbastuff (W7 bubba)
  * - Spelunk (spelunk, big fish)
  * - Gallery (gallery cheats)
+ * - SushiStuff (W7 sushi)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
@@ -122,4 +123,7 @@ export function setupEvents579Proxies() {
 
     // Gallery (W7)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Gallery", [{ state: "w7.gallery" }]);
+
+    // Sushi (W7)
+    createConfigLookupProxy(ActorEvents579, "_customBlock_SushiStuff", [{ state: "w7.sushi" }]);
 }
