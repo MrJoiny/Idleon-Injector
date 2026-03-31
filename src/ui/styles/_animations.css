@@ -47,7 +47,7 @@
 
 @keyframes flashGreen {
     0% {
-        background-color: var(--c-accent-20);
+        background-color: var(--c-success-20);
     }
 
     100% {
@@ -106,21 +106,13 @@
     background: var(--c-danger-10) !important;
 }
 
-.save-success {
-    animation: flashGreen 1s ease-out;
-}
-
-.save-error {
-    animation: flashRed 1s ease-out;
-}
-
 /* Animation for saving success/error on inputs */
-.option-item.save-success {
+.option-item.feature-row--success {
     animation: flashGreen 1s ease-out;
     border-color: var(--c-success);
 }
 
-.option-item.save-error {
+.option-item.feature-row--error {
     animation: flashRed 1s ease-out;
     border-color: var(--c-danger);
 }

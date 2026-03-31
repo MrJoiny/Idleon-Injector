@@ -1,13 +1,21 @@
 /**
- * Feature Pages — Universal Component Styles
+ * Feature Pages — Shared Component Styles
  *
  * Shared by every world sub-tab feature (Stamps, Forge, Alchemy, etc.).
- * Add a new feature page → zero new CSS files. Just use these classes.
+ * Component-specific CSS lives in tabs/wX/ folders and is @imported by style.css.
  *
- * Class anatomy:
+ * ── Utility classes (use these in new components) ─────────────────────────
+ *   .tab-container      flex column fill — replaces .*-tab container blocks
+ *   .scrollable-panel   flex-grow + overflow-y:auto + padding:14px
+ *   .grid-4col          4-equal-column grid with 10px gap
+ *   .feature-row--success  green success feedback (canonical)
+ *   .feature-row--error    red error feedback (canonical)
+ *   .select-base        shared select element base style
+ *
+ * ── Class anatomy ─────────────────────────────────────────────────────────
  *   .feature-header          top info + refresh bar
  *   .feature-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
- *   .feature-list            scrollable list container
+ *   .feature-list            scrollable list container (incorporates .scrollable-panel)
  *   .feature-row             one data row  (grid: info | badge | controls)
  *   .feature-row__info       left: index badge + name
  *   .feature-row__badge      centre: read-only status (e.g. "LV 50 / 100")
@@ -18,17 +26,25 @@
  *   .feature-btn--loading    spinner state
  */
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+/* ── Layout containers ───────────────────────────────────────────────────── */
 
-/* ── world-feature: top-level layout container for feature tabs ─────────────
-   Used as: div({ class: "world-feature scroll-container" })
-   scroll-container handles overflow-y; world-feature handles flex layout.    */
+/* world-feature: used by W1 tabs (Statues, StarSigns, etc.) */
 .world-feature {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
 }
+
+/* tab-container: use this for new feature tab wrappers */
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
 
 .feature-header {
     display: flex;
@@ -67,44 +83,19 @@
 }
 
 .feature-page-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    color: var(--c-text-muted);
-    padding: 6px 20px;
-    font-size: 0.8rem;
-    font-family: var(--font-display);
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: color 0.15s;
-    position: relative;
-    bottom: -1px;
-}
-
-.feature-page-btn:hover {
-    color: var(--c-text-main);
-}
-
-.feature-page-btn.active {
-    color: var(--c-accent);
-    border-color: var(--c-border);
-    border-bottom-color: var(--c-panel-dim);
-    background: var(--c-panel-dim);
-}
-
-.feature-page-btn.active::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--c-accent);
-    box-shadow: 0 0 5px var(--c-accent-glow);
+    --tab-nav-padding: 6px 20px;
+    --tab-nav-font-size: 0.8rem;
+    --tab-nav-letter-spacing: 0.05em;
+    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-bg: var(--c-panel-dim);
+    --tab-nav-active-indicator: var(--c-accent);
+    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
 }
 
 /* ── Scrollable list ─────────────────────────────────────────────────────── */
 
+/* feature-list: used by W1 tabs. Incorporates .scrollable-panel behavior.
+   New tabs should use .scrollable-panel directly on their scroll container. */
 .feature-list {
     display: flex;
     flex-direction: column;
@@ -112,6 +103,25 @@
     padding: 14px;
     flex: 1;
     overflow-y: auto;
+}
+
+/* Flex-grow scrollable content area — use on new scroll containers */
+.scrollable-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+}
+
+/* Shared hidden-until-ready state used by persistent panes */
+.is-hidden-until-ready {
+    display: none !important;
+}
+
+/* 4-equal-column grid used by cauldron / liquid layouts */
+.grid-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .feature-loader {
@@ -138,14 +148,17 @@
     border-color: var(--c-border-strong);
 }
 
+/* ── Feedback state — shared by all card/row components ─────────────────────── */
+/* Canonical hooks: .feature-row--success / .feature-row--error              */
+
 .feature-row--success {
     border-color: var(--c-success) !important;
-    background: var(--c-success-10);
+    background: var(--c-success-10) !important;
 }
 
 .feature-row--error {
     border-color: var(--c-danger) !important;
-    background: var(--c-danger-10);
+    background: var(--c-danger-10) !important;
 }
 
 /* Info cell */
@@ -216,8 +229,12 @@
 }
 
 .feature-btn--apply {
+    min-width: 54px;
+    border: 1px solid var(--c-border);
     background: var(--c-control-border-strong);
     color: var(--c-white);
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .feature-btn--apply:hover:not(:disabled) {
@@ -246,6 +263,112 @@
     cursor: not-allowed;
 }
 
+/* Shared compact card/grid controls used by Sigils and Sailing Artifacts */
+.tier-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tier-setall-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.tier-setall-bar__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-dim);
+    white-space: nowrap;
+}
+
+.tier-setall-bar__select {
+    padding: 0 8px;
+    height: 30px;
+    font-size: 0.78rem;
+    font-family: var(--font-display);
+}
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+.tier-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.tier-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.tier-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tier-card__index {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--c-text-dim);
+    background: var(--c-black-40);
+    padding: 1px 4px;
+    flex-shrink: 0;
+}
+
+.tier-card__name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--c-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tier-card__badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tier-card__select {
+    padding: 0 6px;
+    height: 28px;
+    width: 100%;
+    font-size: 0.72rem;
+    font-family: var(--font-display);
+}
+
+.tier-card__set-btn {
+    width: 100%;
+}
+
 /* Anvil — info row (Points Remaining banner) */
 .feature-row--info {
     border-color: var(--c-accent) !important;
@@ -257,433 +380,20 @@
     font-weight: 700;
 }
 
-/* ── Statue tiers ─────────────────────────────────────────────────────── */
-.statue-tier-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-    margin-left: 6px;
-    text-transform: uppercase;
-    border: 1px solid currentColor;
-}
+/* ── Select base — shared dropdown style ─────────────────────────────────── */
+/* Add .select-base to any select element; keep only unique props in the      */
+/* component class (height, width, font-size, font-family, padding).          */
 
-.tier--stone {
-    color: var(--c-tier-stone);
-}
-
-.tier--gold {
-    color: var(--c-tier-gold);
-}
-
-.tier--onyx {
-    color: var(--c-tier-onyx);
-}
-
-.tier--zenith {
-    color: var(--c-tier-zenith);
-}
-
-.feature-row.tier--gold {
-    border-color: var(--c-tier-gold-35);
-}
-
-.feature-row.tier--onyx {
-    border-color: var(--c-tier-onyx-35);
-}
-
-.feature-row.tier--zenith {
-    border-color: var(--c-tier-zenith-35);
-}
-
-.statue-tier-select {
+.select-base {
     background: var(--c-panel);
     color: var(--c-text);
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 0 6px;
-    height: 32px;
-    width: 180px;
-    font-size: 0.8rem;
     cursor: pointer;
 }
 
-.statue-tier-select:focus {
+.select-base:focus {
     outline: none;
     border-color: var(--c-accent);
-}
-
-/* ── Statue stacked controls ──────────────────────────────────────────── */
-.feature-row__controls--stack {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-}
-
-.feature-row__controls--stack .number-input-wrapper {
-    width: 180px;
-}
-
-.statue-control-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.statue-control-label {
-    font-size: 0.7rem;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    width: 60px;
-    text-align: right;
-}
-
-/* ── Orion tab ────────────────────────────────────────────────────────── */
-.feature-row--warn {
-    border-color: var(--c-warning) !important;
-    background: var(--c-accent-dim-solid);
-}
-
-.orion-warn-badge {
-    font-size: 0.65rem;
-    color: var(--c-warning);
-    margin-left: 8px;
-    font-style: italic;
-}
-
-.orion-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--c-text-dim);
-    padding: 8px 4px 4px;
-    border-bottom: 1px solid var(--c-border);
-    margin-bottom: 2px;
-}
-
-/* Wide number input for large values (Orion feathers etc) */
-.feature-row__controls--wide .number-input-wrapper {
-    width: 120px;
-}
-
-.feature-row__controls--wide .number-input-wrapper input {
-    min-width: 6ch;
-    font-size: 0.8rem;
-}
-
-.feature-row__controls--xl .number-input-wrapper {
-    width: 180px;
-}
-
-.feature-row__controls--xl .number-input-wrapper input {
-    min-width: 10ch;
-    font-size: 0.8rem;
-}
-
-/* ── Star Signs ───────────────────────────────────────────────────────── */
-.starsign-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 8px;
-    padding: 4px 0;
-}
-
-.starsign-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-    cursor: pointer;
-    transition:
-        border-color 0.15s,
-        background 0.15s;
-}
-
-.starsign-card:hover {
-    border-color: var(--c-accent);
-    background: var(--c-panel-hover);
-}
-
-.starsign-card--unlocked {
-    border-color: var(--c-accent-40);
-}
-
-.starsign-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-}
-
-.starsign-label-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid currentColor;
-}
-
-.starsign-card-desc {
-    font-size: 0.75rem;
-    color: var(--c-text-dim);
-    margin: 0 0 8px;
-    line-height: 1.4;
-}
-
-.starsign-card-bar {
-    height: 4px;
-    background: var(--c-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-}
-
-.starsign-card-fill {
-    height: 100%;
-    background: var(--c-accent);
-    border-radius: var(--radius-sm);
-    transition: width 0.3s;
-}
-
-.starsign-status {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.starsign-status.unlocked {
-    color: var(--c-accent);
-}
-
-.starsign-status.locked {
-    color: var(--c-text-dim);
-}
-
-/* Group colour tints */
-.sign-A .starsign-label-badge,
-.starsign-label-badge.sign-A {
-    color: var(--c-sign-a);
-}
-
-.sign-B .starsign-label-badge,
-.starsign-label-badge.sign-B {
-    color: var(--c-sign-b);
-}
-
-.sign-C .starsign-label-badge,
-.starsign-label-badge.sign-C {
-    color: var(--c-sign-c);
-}
-
-.sign-D .starsign-label-badge,
-.starsign-label-badge.sign-D {
-    color: var(--c-sign-d);
-}
-
-.sign-E .starsign-label-badge,
-.starsign-label-badge.sign-E {
-    color: var(--c-sign-e);
-}
-
-.sign-F .starsign-label-badge,
-.starsign-label-badge.sign-F {
-    color: var(--c-sign-f);
-}
-
-/* Detail view */
-.starsign-detail {
-    padding: 4px 0;
-}
-
-.starsign-back-btn {
-    background: none;
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 4px 12px;
-    cursor: pointer;
-    color: var(--c-text);
-    font-size: 0.8rem;
-    margin-bottom: 0;
-}
-
-.starsign-back-btn:hover {
-    border-color: var(--c-accent);
-}
-
-.starsign-detail-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.starsign-detail-label {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 4px;
-}
-
-.starsign-detail-desc {
-    font-size: 0.8rem;
-    color: var(--c-text-dim);
-    margin: 0;
-}
-
-.starsign-needed-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border: 1px solid var(--c-accent);
-    border-radius: var(--radius-sm);
-    color: var(--c-accent);
-    white-space: nowrap;
-}
-
-.starsign-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--c-text-dim);
-    margin: 12px 0 6px;
-}
-
-/* Drag list */
-.starsign-drag-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 12px;
-}
-
-.starsign-drag-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    cursor: grab;
-    user-select: none;
-}
-
-.starsign-drag-row:active,
-.starsign-drag-row.dragging {
-    cursor: grabbing;
-    opacity: 0.5;
-}
-
-.starsign-drag-row.drag-over {
-    border-color: var(--c-accent);
-    background: var(--c-panel-hover);
-}
-
-.starsign-drag-handle {
-    color: var(--c-text-dim);
-    font-size: 1rem;
-}
-
-.starsign-player-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-}
-
-.starsign-player-num {
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.starsign-player-letter {
-    font-size: 0.7rem;
-    font-family: monospace;
-    background: var(--c-border);
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-}
-
-.starsign-remove-btn {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--c-danger);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0 4px;
-}
-
-.starsign-remove-btn:hover {
-    color: var(--c-danger);
-}
-
-/* Empty state */
-.starsign-empty-players {
-    font-size: 0.8rem;
-    color: var(--c-text-dim);
-    padding: 12px;
-    border: 1px dashed var(--c-border);
-    border-radius: var(--radius-sm);
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-/* Add row */
-.starsign-add-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-/* Progress */
-.starsign-progress-bar-wrap {
-    margin-bottom: 16px;
-}
-
-.starsign-progress-label {
-    font-size: 0.8rem;
-    margin-bottom: 6px;
-}
-
-.starsign-unlocked-text {
-    color: var(--c-accent);
-    font-weight: 700;
-}
-
-.starsign-locked-text {
-    color: var(--c-text-dim);
-}
-
-.starsign-progress-bar {
-    height: 6px;
-    background: var(--c-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-}
-
-.starsign-progress-fill {
-    height: 100%;
-    background: var(--c-accent);
-    border-radius: var(--radius-sm);
-    transition: width 0.3s;
-}
-
-/* Actions */
-.starsign-detail-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.starsign-save-error {
-    font-size: 0.75rem;
-    color: var(--c-danger);
 }
 
 /* ── Feature header actions group ──────────────────────────────────────── */
@@ -708,4 +418,55 @@
 .warning-highlight-zenith {
     color: var(--c-tier-zenith);
     font-weight: 700;
+}
+
+/* ── Vials tab ───────────────────────────────────────────────────────────── */
+/* Container properties handled by .tab-container                             */
+
+/* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
+/* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win, Sigils)
+   and W3 Construction (Buildings, Cogs).
+   Container properties handled by .tab-container                             */
+
+.alchemy-sub-nav {
+    display: flex;
+    gap: 2px;
+    padding: 6px 14px 0;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.alchemy-sub-btn {
+    --tab-nav-padding: 5px 16px;
+    --tab-nav-font-size: 0.72rem;
+    --tab-nav-font-family: var(--font-display);
+    --tab-nav-letter-spacing: 0.05em;
+    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-bg: var(--c-panel-dim);
+    --tab-nav-active-indicator: var(--c-accent);
+    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
+}
+
+.alchemy-sub-btn--stub {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.alchemy-sub-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.alchemy-pane {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.alchemy-pane--active {
+    display: flex;
+    flex-direction: column;
 }

@@ -1,0 +1,149 @@
+/* ── Equinox Tab ──────────────────────────────────────────────────────────── */
+
+/* Persistent content pane — single scroll container for the whole tab.
+   flex:1 + overflow-y:auto fills the pane and lets everything scroll together.
+   Individual children manage their own horizontal padding. */
+.equinox-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 14px;
+}
+
+/* Row group — plain flex-column with gap; NOT a scroll container.
+   Replaces .feature-list for cloud/upgrade rows so they flow into the
+   single .equinox-content scroll rather than creating isolated scroll areas. */
+.equinox-row-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 14px;
+    margin-top: 4px;
+}
+
+/* Overview section wrapping the bar and stats */
+.equinox-overview {
+    padding: 10px 14px 12px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    margin-bottom: 6px;
+}
+
+.equinox-overview__row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.equinox-overview__label {
+    font-size: 0.65rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-text-muted);
+    flex-shrink: 0;
+}
+
+.equinox-overview__value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--c-text-main);
+}
+
+.equinox-overview__rate {
+    font-size: 0.72rem;
+    color: var(--c-accent);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Progress bar */
+.equinox-bar {
+    height: 10px;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    overflow: hidden;
+    position: relative;
+}
+
+.equinox-bar__fill {
+    height: 100%;
+    width: var(--equinox-fill-width, 0%);
+    background: var(--c-accent);
+    transition: width 0.3s ease;
+    min-width: 0;
+}
+
+.equinox-bar__fill--full {
+    background: var(--c-success);
+}
+
+/* Shared section header (CLOUDS / UPGRADES) */
+.equinox-section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 4px 12px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    font-size: 0.68rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-text-muted);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.equinox-section-header__badge {
+    font-size: 0.65rem;
+    color: var(--c-accent);
+    letter-spacing: 0.04em;
+}
+
+.equinox-section-header__badge--empty {
+    color: var(--c-text-muted);
+    opacity: 0.55;
+}
+
+/* Cloud info note — plain italic line */
+.equinox-clouds-note {
+    padding: 5px 12px 4px;
+    font-size: 0.68rem;
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+/* Cloud warning — orange/amber block with left accent border */
+.equinox-clouds-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 12px 8px;
+    margin: 4px 0 6px;
+    background: var(--c-equinox-warning-10);
+    border-left: 3px solid var(--c-equinox-warning);
+    color: var(--c-equinox-warning);
+    font-size: 0.7rem;
+    line-height: 1.45;
+}
+
+.equinox-clouds-warning svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
+}
+
+/* Empty state within a section (no rows yet) */
+.equinox-empty-section {
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    color: var(--c-text-muted);
+    opacity: 0.6;
+    font-style: italic;
+}

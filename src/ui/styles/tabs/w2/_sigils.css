@@ -1,0 +1,54 @@
+/* Sigils uses shared tier-* layout classes from _feature-pages.css.
+   This file keeps only sigil-specific color mapping. */
+
+/* Tier-based border + background tint */
+.sigil-card--unlocked {
+    border-color: var(--c-ui-blue-45);
+    background: var(--c-ui-blue-04);
+}
+
+.sigil-card--boosted {
+    border-color: var(--c-ui-yellow-45);
+    background: var(--c-ui-yellow-04);
+}
+
+.sigil-card--ionized {
+    border-color: var(--c-ui-red-45);
+    background: var(--c-ui-red-04);
+}
+
+.sigil-card--ethereal {
+    border-color: var(--c-ui-purple-45);
+    background: var(--c-ui-purple-04);
+}
+
+.sigil-card--eclectic {
+    border-color: var(--c-ui-green-45);
+    background: var(--c-ui-green-04);
+}
+
+/* Tier badge colors */
+.sigil-tier-badge--locked {
+    color: var(--c-text-dim);
+    border-color: var(--c-border);
+}
+
+.sigil-tier-badge--unlocked {
+    color: var(--c-ui-blue);
+}
+
+.sigil-tier-badge--boosted {
+    color: var(--c-ui-yellow);
+}
+
+.sigil-tier-badge--ionized {
+    color: var(--c-ui-red);
+}
+
+.sigil-tier-badge--ethereal {
+    color: var(--c-ui-purple);
+}
+
+.sigil-tier-badge--eclectic {
+    color: var(--c-ui-green);
+}
