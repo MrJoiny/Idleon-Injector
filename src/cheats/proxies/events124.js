@@ -87,6 +87,7 @@ export function setupEvents124Proxies() {
             }
         }
 
+        // Sum bonus values from owned cards that are not currently equipped.
         const nonEquippedTotals = Object.create(null);
 
         for (const cardId in cardInfo) {
@@ -127,6 +128,7 @@ export function setupEvents124Proxies() {
             nonEquippedTotals[bonusName] = (Number(nonEquippedTotals[bonusName]) || 0) + cardLevel * cardValue;
         }
 
+        // Add only the missing passive delta so existing passive sources are not double-counted.
         for (const bonusName in nonEquippedTotals) {
             const currentBonus = Number(bonusMap.h[bonusName]) || 0;
             const equippedBonus = Number(equippedOnlyMap.h[bonusName]) || 0;
