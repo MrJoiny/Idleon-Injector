@@ -124,10 +124,6 @@ export function setupEvents124Proxies() {
         }
 
         for (const bonusName in nonEquippedTotals) {
-            if (!Object.prototype.hasOwnProperty.call(nonEquippedTotals, bonusName)) {
-                continue;
-            }
-
             const currentBonus = Number(bonusMap.h[bonusName]) || 0;
             const equippedBonus = Number(equippedOnlyMap.h[bonusName]) || 0;
             const alreadyIncludedPassiveBonus = Math.max(currentBonus - equippedBonus, 0);
