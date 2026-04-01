@@ -18,6 +18,7 @@ import { getMultiplyValue } from "../helpers/values.js";
 
 // Game card calculation treats only the first 10 Cards[2] slots as equipped.
 const MAX_EQUIPPED_CARD_SLOTS = 10;
+const cardLvReadErrorLogged = new Set();
 
 /**
  * Setup all ActorEvents_124 proxies.
@@ -114,7 +115,10 @@ export function setupEvents124Proxies() {
             try {
                 cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
             } catch (error) {
-                console.error("[wide cardpassive] CardLv read failed", { cardIdKey, error });
+                if (!cardLvReadErrorLogged.has(cardIdKey)) {
+                    cardLvReadErrorLogged.add(cardIdKey);
+                    console.error("[wide cardpassive] CardLv read failed", { cardIdKey, error });
+                }
             }
             if (cardLevel === 0) {
                 continue;
