@@ -71,7 +71,7 @@ export function setupEvents124Proxies() {
         const bonusMap = gga?.DNSM?.h?.CardBonusS;
         const equippedOnlyMap = gga?.DNSM?.h?.CardBonusS_old;
 
-        if (!cardSlots || !cardInfo || !bonusMap?.h || !equippedOnlyMap?.h) {
+        if (!Array.isArray(cardSlots) || !cardInfo || !bonusMap?.h || !equippedOnlyMap?.h) {
             return base;
         }
 
