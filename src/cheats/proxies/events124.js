@@ -105,7 +105,12 @@ export function setupEvents124Proxies() {
             }
 
             const bonusName = String(cardData[3] ?? "");
-            const cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
+            let cardLevel = 0;
+            try {
+                cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
+            } catch (error) {
+                console.error("[wide cardpassive] CardLv read failed", { cardIdKey, error });
+            }
             const cardValue = Number(cardData[4]) || 0;
             if (cardLevel === 0) {
                 continue;
