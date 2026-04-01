@@ -71,7 +71,19 @@ export function setupEvents124Proxies() {
         const bonusMap = gga?.DNSM?.h?.CardBonusS;
         const equippedOnlyMap = gga?.DNSM?.h?.CardBonusS_old;
 
-        if (!Array.isArray(cardSlots) || !cardInfo || !bonusMap?.h || !equippedOnlyMap?.h) {
+        const bonusH =
+            typeof bonusMap === "object" && bonusMap !== null && typeof bonusMap.h === "object" && bonusMap.h !== null
+                ? bonusMap.h
+                : null;
+        const equippedH =
+            typeof equippedOnlyMap === "object" &&
+            equippedOnlyMap !== null &&
+            typeof equippedOnlyMap.h === "object" &&
+            equippedOnlyMap.h !== null
+                ? equippedOnlyMap.h
+                : null;
+
+        if (!Array.isArray(cardSlots) || !cardInfo || !bonusH || !equippedH) {
             return base;
         }
 
@@ -129,13 +141,13 @@ export function setupEvents124Proxies() {
 
         // Add only the missing passive delta so existing passive sources are not double-counted.
         for (const bonusName in nonEquippedTotals) {
-            const currentBonus = Number(bonusMap.h[bonusName]) || 0;
-            const equippedBonus = Number(equippedOnlyMap.h[bonusName]) || 0;
+            const currentBonus = Number(bonusH[bonusName]) || 0;
+            const equippedBonus = Number(equippedH[bonusName]) || 0;
             const alreadyIncludedPassiveBonus = Math.max(currentBonus - equippedBonus, 0);
             const missingPassiveBonus = Number(nonEquippedTotals[bonusName]) - alreadyIncludedPassiveBonus;
 
             if (missingPassiveBonus > 0) {
-                bonusMap.h[bonusName] = currentBonus + missingPassiveBonus;
+                bonusH[bonusName] = currentBonus + missingPassiveBonus;
             }
         }
 
