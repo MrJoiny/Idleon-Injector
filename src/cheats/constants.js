@@ -189,6 +189,8 @@ export const knownBundles = [
     ["Glimbo Pack", "bon_r"],
     ["Heavy Metals Armor Pack", "bon_s"],
     ["Sweet And Lovely Pack", "bon_t"],
+    ["Pot Of Gold Pack", "bon_u"],
+    ["Kelp N Roll Pack", "bon_v"],
 ];
 
 // Item types to exclude from bulk commands (invalid or problematic types)

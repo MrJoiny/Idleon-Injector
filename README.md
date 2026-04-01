@@ -129,6 +129,10 @@ npm run validate
 - [Platforms](docs/platforms.md) - Steam, web, and OS-specific setup.
 - [Web UI](docs/ui.md) - VanJS dashboard and components.
 
+## Contributing
+
+Want to contribute? Check out the [Contributing Guide](CONTRIBUTING.md).
+
 ## Troubleshooting
 
 - **Game doesn't start**: Ensure Steam is running.

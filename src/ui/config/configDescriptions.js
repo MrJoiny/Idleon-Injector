@@ -441,6 +441,16 @@ export const configDescriptions = {
     "cheatConfig.w7.gallery.InitializeNametagBonuses": "Gallery: Logic for initializing nametag bonuses",
     "cheatConfig.w7.gallery.PodiumsOwned_Lv4": "Gallery: Level 4 podiums owned (max 19)",
 
+    // Sushi
+    "cheatConfig.w7.sushi.UpgLvREQ": "Sushi: Upgrade level requirements. (lower is better)",
+    "cheatConfig.w7.sushi.UpgCost": "Sushi: Upgrade costs. (lower is better)",
+    "cheatConfig.w7.sushi.FuelCost": "Sushi: Sushi fuel costs. (lower is better)",
+    "cheatConfig.w7.sushi.FuelGen": "Sushi: Fuel generation rate",
+    "cheatConfig.w7.sushi.FuelCap": "Sushi: Maximum fuel capacity",
+    "cheatConfig.w7.sushi.CurrencyperHR": "Sushi: Money generation per hour",
+    "cheatConfig.w7.sushi.KnowledgeXP_req": "Sushi: Knowledge XP requirements per level. (lower is better)",
+    "cheatConfig.w7.sushi.KnowledgeXP_multi": "Sushi: Knowledge XP gain multiplier",
+
     // Reef
     "cheatConfig.w7.reef.ReefCost": "Reef: Costs. (lower is better)",
 

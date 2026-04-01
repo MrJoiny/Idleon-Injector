@@ -49,10 +49,12 @@ registerCheats({
         { name: "dartshop", message: "dartshop cost nullify" },
         {
             name: "guildpoints",
-            message: "Adds 1200 guild points to the guild",
-            fn: function () {
-                firebase.guildPointAdjust(1200);
-                return "Added 1200 guild points to the guild";
+            message: "Adds guild points to the guild (max 1200 per week)",
+            needsParam: true,
+            fn: function (params) {
+                const amount = parseInt(params[1]) || 1200;
+                firebase.guildPointAdjust(amount);
+                return `Added ${amount} guild points to the guild`;
             },
         },
         {
