@@ -57,16 +57,16 @@ export function setupEvents124Proxies() {
 
     // All cards passive
     createMethodProxy(ActorEvents124, "_customBlock_TalentCalc", (base, mode) => {
-        const ActorEvents12 = events(12);
-        const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
-
-        if (
-            !cheatState.wide.cardpassive ||
-            mode !== -4 || // -4 is TalentCalc's card-bonus rebuild phase.
-            typeof runCodeOfType !== "function"
-        ) {
+        if (!cheatState.wide.cardpassive || mode !== -4) {
             return base;
         }
+
+        const ActorEvents12 = events(12);
+        const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
+        if (typeof runCodeOfType !== "function") {
+            return base;
+        }
+
         const cardSlots = gga?.Cards?.[2];
         const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior?.("ActorEvents_312")?._GenINFO?.[45]?.h;
         const bonusMap = gga?.DNSM?.h?.CardBonusS;
