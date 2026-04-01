@@ -11,6 +11,7 @@ import { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementPro
 import { setupGameAttributeProxies } from "./gameAttributes.js";
 import { setupCListProxy } from "./clist.js";
 import { setupEvents012Proxies } from "./events012.js";
+import { setupEvents020Proxies } from "./events020.js";
 import { setupItemGetNotificationProxy } from "./events034.js";
 import { setupEvents038Proxies } from "./events038.js";
 import { setupAutoLootProxy } from "./events044.js";
@@ -50,6 +51,7 @@ export function setupAllProxies() {
 
     // ActorEvents proxies by event number
     setupEvents012Proxies();
+    setupEvents020Proxies();
     setupAutoLootProxy();
     setupItemGetNotificationProxy();
     setupEvents038Proxies();
