@@ -5,7 +5,7 @@
  * - StampCostss (stamp upgrade cost reduction)
  * - AFKgainrates (AFK gain multiplier)
  * - LoadPlayerInfo (perfect obols on load)
- * - CardBonusREAL (all cards passive)
+ * - TalentCalc (all cards passive)
  * - GetTalentNumber (talent modifications)
  * - MonsterKill (plunderous respawn)
  */
@@ -55,61 +55,77 @@ export function setupEvents124Proxies() {
     const ActorEvents12 = events(12);
     const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
 
-    createMethodProxy(ActorEvents124, "_customBlock_CardBonusREAL", (base, bonusId) => {
-        if (!cheatState.wide.cardpassive || typeof runCodeOfType !== "function") {
+    createMethodProxy(ActorEvents124, "_customBlock_TalentCalc", (base, mode) => {
+        if (!cheatState.wide.cardpassive || mode !== -4 || typeof runCodeOfType !== "function") {
             return base;
         }
-
         const cardSlots = gga?.Cards?.[2];
         const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior("ActorEvents_312")?._GenINFO?.[45]?.h;
+        const bonusMap = gga?.DNSM?.h?.CardBonusS;
         const equippedOnlyMap = gga?.DNSM?.h?.CardBonusS_old;
-        const bonusNamesById = gga?.CustomMaps?.h?.IDforCardBonus?.h;
 
-        if (!cardSlots || !cardInfo || !equippedOnlyMap?.h || !bonusNamesById) {
-            return base;
-        }
-
-        const targetBonusName = String(bonusNamesById[String(bonusId)] ?? "");
-        if (targetBonusName === "") {
+        if (!cardSlots || !cardInfo || !bonusMap?.h || !equippedOnlyMap?.h) {
             return base;
         }
 
         const equippedCards = new Set();
-        for (let i = 0; i < 10; i++) {
-            const cardId = cardSlots[i];
-            if (cardId && cardId !== "B") {
-                equippedCards.add(cardId);
+        const equippedSlotCount = Math.min(cardSlots.length, 10);
+
+        for (let i = 0; i < equippedSlotCount; i++) {
+            const slotCardId = cardSlots[i];
+            const slotCardKey = String(slotCardId ?? "");
+            if (slotCardKey !== "" && slotCardKey !== "B") {
+                equippedCards.add(slotCardKey);
             }
         }
 
-        let nonEquippedBonusTotal = 0;
+        const nonEquippedTotals = Object.create(null);
 
         for (const cardId in cardInfo) {
-            if (!Object.hasOwn(cardInfo, cardId) || cardId === "Blank" || equippedCards.has(cardId)) {
+            const cardIdKey = String(cardId);
+
+            if (
+                !Object.prototype.hasOwnProperty.call(cardInfo, cardId) ||
+                cardIdKey === "Blank" ||
+                equippedCards.has(cardIdKey)
+            ) {
                 continue;
             }
 
-            const cardData = cardInfo[cardId];
-            if (!cardData || cardData.length < 5 || String(cardData[3] ?? "") !== targetBonusName) {
+            const cardData = cardInfo[cardIdKey];
+            if (!Array.isArray(cardData) || cardData.length < 5) {
                 continue;
             }
 
-            const cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", String(cardId)])) || 0;
+            const bonusName = String(cardData[3] ?? "");
+            const cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
+            const cardValue = Number(cardData[4]) || 0;
             if (cardLevel === 0) {
                 continue;
             }
 
-            nonEquippedBonusTotal += cardLevel * (Number(cardData[4]) || 0);
+            if (bonusName === "" || cardValue === 0) {
+                continue;
+            }
+
+            nonEquippedTotals[bonusName] = (Number(nonEquippedTotals[bonusName]) || 0) + cardLevel * cardValue;
         }
 
-        const equippedOnlyBonus = Number(equippedOnlyMap.h[targetBonusName]) || 0;
-        const alreadyIncludedPassiveBonus = (Number(base) || 0) - equippedOnlyBonus;
-        const missingPassiveBonus = nonEquippedBonusTotal - alreadyIncludedPassiveBonus;
+        for (const bonusName in nonEquippedTotals) {
+            if (!Object.prototype.hasOwnProperty.call(nonEquippedTotals, bonusName)) {
+                continue;
+            }
 
-        if (missingPassiveBonus <= 0) {
-            return base;
+            const currentBonus = Number(bonusMap.h[bonusName]) || 0;
+            const equippedBonus = Number(equippedOnlyMap.h[bonusName]) || 0;
+            const alreadyIncludedPassiveBonus = Math.max(currentBonus - equippedBonus, 0);
+            const missingPassiveBonus = Number(nonEquippedTotals[bonusName]) - alreadyIncludedPassiveBonus;
+
+            if (missingPassiveBonus > 0) {
+                bonusMap.h[bonusName] = currentBonus + missingPassiveBonus;
+            }
         }
 
-        return (Number(base) || 0) + missingPassiveBonus;
+        return base;
     });
 }
