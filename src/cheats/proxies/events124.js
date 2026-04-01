@@ -67,7 +67,7 @@ export function setupEvents124Proxies() {
             return base;
         }
         const cardSlots = gga?.Cards?.[2];
-        const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior("ActorEvents_312")?._GenINFO?.[45]?.h;
+        const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior?.("ActorEvents_312")?._GenINFO?.[45]?.h;
         const bonusMap = gga?.DNSM?.h?.CardBonusS;
         const equippedOnlyMap = gga?.DNSM?.h?.CardBonusS_old;
 
