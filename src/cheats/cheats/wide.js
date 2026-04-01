@@ -5,7 +5,7 @@
  * - gembuylimit, mtx, post, guild, task, quest, star
  * - giant, gems, plunderous, candy, candytime, nodmg
  * - hidenames, noanim, eventitems, autoloot, perfectobols, autoparty
- * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy
+ * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy, cardpassive
  */
 
 import { registerCheats } from "../core/registration.js";
@@ -82,5 +82,6 @@ registerCheats({
                 return `Copied CardPreset to ${count} player(s).`;
             },
         },
+        { name: "cardpassive", message: "all cards always give bonus (passive)" },
     ],
 });
