@@ -16,8 +16,6 @@ import { rollAllObols } from "../helpers/obolRolling.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
-// Game card calculation treats only the first 10 Cards[2] slots as equipped.
-const MAX_EQUIPPED_CARD_SLOTS = 10;
 const cardLvReadErrorLogged = new Set();
 
 /**
@@ -58,6 +56,7 @@ export function setupEvents124Proxies() {
     // All cards passive
     createMethodProxy(ActorEvents124, "_customBlock_TalentCalc", (base, mode) => {
         if (!cheatState.wide.cardpassive || mode !== -4) {
+            // -4 is the TalentCalc card-bonus rebuild phase.
             return base;
         }
 
@@ -77,7 +76,7 @@ export function setupEvents124Proxies() {
         }
 
         const equippedCards = new Set();
-        const equippedSlotCount = Math.min(cardSlots.length, MAX_EQUIPPED_CARD_SLOTS);
+        const equippedSlotCount = Math.min(cardSlots.length, 10); // Game treats only first 10 slots as equipped.
 
         for (let i = 0; i < equippedSlotCount; i++) {
             const slotCardId = cardSlots[i];
@@ -91,7 +90,7 @@ export function setupEvents124Proxies() {
         const nonEquippedTotals = Object.create(null);
 
         for (const cardId in cardInfo) {
-            const cardIdKey = String(cardId);
+            const cardIdKey = cardId;
 
             if (
                 !Object.prototype.hasOwnProperty.call(cardInfo, cardId) ||
