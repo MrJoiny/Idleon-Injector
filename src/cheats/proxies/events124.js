@@ -55,10 +55,10 @@ export function setupEvents124Proxies() {
     });
 
     // All cards passive
-    const ActorEvents12 = events(12);
-    const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
-
     createMethodProxy(ActorEvents124, "_customBlock_TalentCalc", (base, mode) => {
+        const ActorEvents12 = events(12);
+        const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
+
         if (
             !cheatState.wide.cardpassive ||
             mode !== -4 || // -4 is TalentCalc's card-bonus rebuild phase.
@@ -105,18 +105,18 @@ export function setupEvents124Proxies() {
             }
 
             const bonusName = String(cardData[3] ?? "");
+            const cardValue = Number(cardData[4]) || 0;
+            if (bonusName === "" || cardValue === 0) {
+                continue;
+            }
+
             let cardLevel = 0;
             try {
                 cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
             } catch (error) {
                 console.error("[wide cardpassive] CardLv read failed", { cardIdKey, error });
             }
-            const cardValue = Number(cardData[4]) || 0;
             if (cardLevel === 0) {
-                continue;
-            }
-
-            if (bonusName === "" || cardValue === 0) {
                 continue;
             }
 
