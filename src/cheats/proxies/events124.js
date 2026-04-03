@@ -66,14 +66,8 @@ export function setupEvents124Proxies() {
         const bonusH = gga.DNSM.h.CardBonusS.h;
         const equippedH = gga.DNSM.h.CardBonusS_old.h;
 
-        if (!Array.isArray(cardSlots) || !cardInfo || !bonusH || !equippedH) {
-            return base;
-        }
-
         const equippedCards = new Set();
-        const equippedSlotCount = Math.min(cardSlots.length, 10); // Game treats only first 10 slots as equipped.
-
-        for (let i = 0; i < equippedSlotCount; i++) {
+        for (let i = 0; i < 10; i++) {
             const slotCardId = cardSlots[i];
             if (slotCardId && slotCardId !== "B") {
                 equippedCards.add(slotCardId);
@@ -89,17 +83,13 @@ export function setupEvents124Proxies() {
             }
 
             const cardData = cardInfo[cardId];
-            if (!Array.isArray(cardData) || cardData.length < 5) {
-                continue;
-            }
-
             const bonusName = cardData[3];
             const cardValue = Number(cardData[4]) || 0;
             if (!bonusName || cardValue === 0) {
                 continue;
             }
 
-            const cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardId])) || 0;
+            const cardLevel = Number(runCodeOfType("CardLv", cardId)) || 0;
             if (cardLevel === 0) {
                 continue;
             }
