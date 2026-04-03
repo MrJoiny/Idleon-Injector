@@ -59,12 +59,12 @@ export function setupEvents124Proxies() {
         }
 
         const ActorEvents12 = events(12);
-        const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
+        const runCodeOfType = ActorEvents12._customBlock_RunCodeOfTypeXforThingY;
 
-        const cardSlots = gga?.Cards?.[2];
-        const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior?.("ActorEvents_312")?._GenINFO?.[45]?.h;
-        const bonusH = gga?.DNSM?.h?.CardBonusS?.h;
-        const equippedH = gga?.DNSM?.h?.CardBonusS_old?.h;
+        const cardSlots = gga.Cards[2];
+        const cardInfo = gga.PixelHelperActor[6].behaviors.getBehavior("ActorEvents_312")._GenINFO[45].h;
+        const bonusH = gga.DNSM.h.CardBonusS.h;
+        const equippedH = gga.DNSM.h.CardBonusS_old.h;
 
         if (!Array.isArray(cardSlots) || !cardInfo || !bonusH || !equippedH) {
             return base;
@@ -75,9 +75,8 @@ export function setupEvents124Proxies() {
 
         for (let i = 0; i < equippedSlotCount; i++) {
             const slotCardId = cardSlots[i];
-            const slotCardKey = String(slotCardId ?? "");
-            if (slotCardKey !== "" && slotCardKey !== "B") {
-                equippedCards.add(slotCardKey);
+            if (slotCardId && slotCardId !== "B") {
+                equippedCards.add(slotCardId);
             }
         }
 
@@ -94,9 +93,9 @@ export function setupEvents124Proxies() {
                 continue;
             }
 
-            const bonusName = String(cardData[3] ?? "");
+            const bonusName = cardData[3];
             const cardValue = Number(cardData[4]) || 0;
-            if (bonusName === "" || cardValue === 0) {
+            if (!bonusName || cardValue === 0) {
                 continue;
             }
 
@@ -105,18 +104,18 @@ export function setupEvents124Proxies() {
                 continue;
             }
 
-            nonEquippedTotals[bonusName] = (Number(nonEquippedTotals[bonusName]) || 0) + cardLevel * cardValue;
+            nonEquippedTotals[bonusName] = (nonEquippedTotals[bonusName] || 0) + cardLevel * cardValue;
         }
 
         // Add only the missing passive delta so existing passive sources are not double-counted.
         for (const bonusName in nonEquippedTotals) {
             const currentBonus = Number(bonusH[bonusName]) || 0;
             const equippedBonus = Number(equippedH[bonusName]) || 0;
-            const alreadyIncludedPassiveBonus = Math.max(currentBonus - equippedBonus, 0);
-            const missingPassiveBonus = Number(nonEquippedTotals[bonusName]) - alreadyIncludedPassiveBonus;
+            const alreadyPassive = Math.max(currentBonus - equippedBonus, 0);
+            const missingPassive = nonEquippedTotals[bonusName] - alreadyPassive;
 
-            if (missingPassiveBonus > 0) {
-                bonusH[bonusName] = currentBonus + missingPassiveBonus;
+            if (missingPassive > 0) {
+                bonusH[bonusName] = currentBonus + missingPassive;
             }
         }
 
