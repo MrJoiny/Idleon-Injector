@@ -16,8 +16,6 @@ import { rollAllObols } from "../helpers/obolRolling.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
-const cardLvReadErrorLogged = new Set();
-
 /**
  * Setup all ActorEvents_124 proxies.
  */
@@ -68,22 +66,17 @@ export function setupEvents124Proxies() {
 
         const cardSlots = gga?.Cards?.[2];
         const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior?.("ActorEvents_312")?._GenINFO?.[45]?.h;
-        const bonusMap = gga?.DNSM?.h?.CardBonusS;
-        const equippedOnlyMap = gga?.DNSM?.h?.CardBonusS_old;
+        const bonusH = gga?.DNSM?.h?.CardBonusS?.h;
+        const equippedH = gga?.DNSM?.h?.CardBonusS_old?.h;
 
-        const bonusH =
-            typeof bonusMap === "object" && bonusMap !== null && typeof bonusMap.h === "object" && bonusMap.h !== null
-                ? bonusMap.h
-                : null;
-        const equippedH =
-            typeof equippedOnlyMap === "object" &&
-            equippedOnlyMap !== null &&
-            typeof equippedOnlyMap.h === "object" &&
-            equippedOnlyMap.h !== null
-                ? equippedOnlyMap.h
-                : null;
-
-        if (!Array.isArray(cardSlots) || !cardInfo || !bonusH || !equippedH) {
+        if (
+            !Array.isArray(cardSlots) ||
+            !cardInfo ||
+            typeof bonusH !== "object" ||
+            bonusH === null ||
+            typeof equippedH !== "object" ||
+            equippedH === null
+        ) {
             return base;
         }
 
@@ -123,14 +116,11 @@ export function setupEvents124Proxies() {
                 continue;
             }
 
-            let cardLevel = 0;
+            let cardLevel;
             try {
                 cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
-            } catch (error) {
-                if (!cardLvReadErrorLogged.has(cardIdKey)) {
-                    cardLvReadErrorLogged.add(cardIdKey);
-                    console.error("[wide cardpassive] CardLv read failed", { cardIdKey, error });
-                }
+            } catch {
+                cardLevel = 0;
             }
             if (cardLevel === 0) {
                 continue;
