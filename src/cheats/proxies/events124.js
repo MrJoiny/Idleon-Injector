@@ -60,23 +60,13 @@ export function setupEvents124Proxies() {
 
         const ActorEvents12 = events(12);
         const runCodeOfType = ActorEvents12?._customBlock_RunCodeOfTypeXforThingY;
-        if (typeof runCodeOfType !== "function") {
-            return base;
-        }
 
         const cardSlots = gga?.Cards?.[2];
         const cardInfo = gga?.PixelHelperActor?.[6]?.behaviors?.getBehavior?.("ActorEvents_312")?._GenINFO?.[45]?.h;
         const bonusH = gga?.DNSM?.h?.CardBonusS?.h;
         const equippedH = gga?.DNSM?.h?.CardBonusS_old?.h;
 
-        if (
-            !Array.isArray(cardSlots) ||
-            !cardInfo ||
-            typeof bonusH !== "object" ||
-            bonusH === null ||
-            typeof equippedH !== "object" ||
-            equippedH === null
-        ) {
+        if (!Array.isArray(cardSlots) || !cardInfo || !bonusH || !equippedH) {
             return base;
         }
 
@@ -94,18 +84,12 @@ export function setupEvents124Proxies() {
         // Sum bonus values from owned cards that are not currently equipped.
         const nonEquippedTotals = Object.create(null);
 
-        for (const cardId in cardInfo) {
-            const cardIdKey = cardId;
-
-            if (
-                !Object.prototype.hasOwnProperty.call(cardInfo, cardId) ||
-                cardIdKey === "Blank" ||
-                equippedCards.has(cardIdKey)
-            ) {
+        for (const cardId of Object.keys(cardInfo)) {
+            if (cardId === "Blank" || equippedCards.has(cardId)) {
                 continue;
             }
 
-            const cardData = cardInfo[cardIdKey];
+            const cardData = cardInfo[cardId];
             if (!Array.isArray(cardData) || cardData.length < 5) {
                 continue;
             }
@@ -116,12 +100,7 @@ export function setupEvents124Proxies() {
                 continue;
             }
 
-            let cardLevel;
-            try {
-                cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardIdKey])) || 0;
-            } catch {
-                cardLevel = 0;
-            }
+            const cardLevel = Number(Reflect.apply(runCodeOfType, ActorEvents12, ["CardLv", cardId])) || 0;
             if (cardLevel === 0) {
                 continue;
             }
