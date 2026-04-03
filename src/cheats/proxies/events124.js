@@ -67,8 +67,10 @@ export function setupEvents124Proxies() {
         const equippedH = gga.DNSM.h.CardBonusS_old.h;
 
         const equippedCards = new Set();
+        // Native calc reads equipped cards from slots 0..9 (10 total).
         for (let i = 0; i < 10; i++) {
             const slotCardId = cardSlots[i];
+            // "B" means empty/blank slot.
             if (slotCardId && slotCardId !== "B") {
                 equippedCards.add(slotCardId);
             }
