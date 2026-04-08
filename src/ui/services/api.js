@@ -177,6 +177,72 @@ export async function writeGga(path, value) {
 }
 
 /**
+ * Unified read/write helper with built-in typed verification.
+ * Read mode:
+ *   gga(path)
+ * Write mode:
+ *   gga(path, value)
+ *
+ * @param {string} path
+ * @param {any=} value
+ * @returns {Promise<any|boolean>}
+ */
+export async function gga(path, value) {
+    const ggaPath = `gga.${path}`;
+    const isWrite = arguments.length >= 2;
+
+    if (!isWrite) {
+        const data = await _request("/game/gga/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath }),
+        });
+        return data.value;
+    }
+
+    try {
+        await _request("/game/gga/write", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath, value }),
+        });
+
+        const verifiedData = await _request("/game/gga/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath }),
+        });
+        const verifiedValue = verifiedData.value;
+        const isObjectLike = value !== null && typeof value === "object";
+        const isArrayLike = Array.isArray(value);
+        let matches = false;
+
+        if (typeof value === "number") {
+            matches = Object.is(Number(value), Number(verifiedValue));
+        } else if (typeof value === "string") {
+            matches = String(verifiedValue) === String(value);
+        } else if (isArrayLike || isObjectLike) {
+            matches = JSON.stringify(verifiedValue) === JSON.stringify(value);
+        } else {
+            console.error(`[gga] Unsupported verify type at ${path}: ${typeof value}`);
+            return false;
+        }
+
+        if (!matches) {
+            console.error(
+                `[gga] Write mismatch at ${path}: expected ${JSON.stringify(value)}, got ${JSON.stringify(verifiedValue)}`
+            );
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error(`[gga] Write failed at ${path}:`, error);
+        return false;
+    }
+}
+
+/**
  * Read a computed value from a game helper family.
  * Example: readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index])
  *
