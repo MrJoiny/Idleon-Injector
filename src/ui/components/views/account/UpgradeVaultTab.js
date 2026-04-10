@@ -1,13 +1,15 @@
-/**
+﻿/**
  * Upgrade Vault Tab
  *
  * Reads/writes gga.UpgVault[index] for all vault upgrades.
  *
  * Data sources:
- *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
+ *   cList.UpgradeVault[i][0] = name (underscores + è£½ stripped)
  *   cList.UpgradeVault[i][4] = base max level (soft cap)
  *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
  *                 = real max level (includes Glimbo trade bonuses)
+ *   gga.BundlesReceived.h.bon_u
+ *                 = Pot Of Gold bundle flag (0 or 1) for +0/+10 max bonus
  *   gga.UpgVault[i]                = current level
  *
  * Write: gga.UpgVault[XX] = YY
@@ -111,7 +113,13 @@ export const UpgradeVaultTab = () => {
                           .sort((a, b) => Number(a) - Number(b))
                           .map((k) => raw[k]);
 
-            const [rawInfo, rawLevels] = await Promise.all([readCList("UpgradeVault"), gga("UpgVault")]);
+            const [rawInfo, rawLevels, rawBonU] = await Promise.all([
+                readCList("UpgradeVault"),
+                gga("UpgVault"),
+                gga("BundlesReceived.h.bon_u").catch(() => 0),
+            ]);
+            const bonU = Number(rawBonU);
+            const bundleBonus = bonU === 1 ? 10 : 0;
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
@@ -146,7 +154,8 @@ export const UpgradeVaultTab = () => {
                     if (!name) return null;
                     const baseMax = toNum(entry?.[4]);
                     if (baseMax <= 0) return null;
-                    const realMax = realMaxes[i] ?? baseMax;
+                    const computedMax = realMaxes[i] ?? baseMax;
+                    const realMax = computedMax + bundleBonus;
                     return { index: i, name, baseMax, realMax };
                 })
                 .filter(Boolean);
@@ -171,7 +180,7 @@ export const UpgradeVaultTab = () => {
                 h3("UPGRADE VAULT"),
                 p(
                     { class: "feature-header__desc" },
-                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses"
+                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus"
                 )
             ),
             withTooltip(
@@ -183,7 +192,7 @@ export const UpgradeVaultTab = () => {
         div(
             { class: "warning-banner" },
             Icons.Warning(),
-            " Max level is sourced directly from the game's VaultUpgMaxLV formula (base + Glimbo trade bonuses). " +
+            " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
                 "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
 
