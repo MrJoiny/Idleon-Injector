@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -78,7 +78,6 @@ const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
     The_Book_Worm: 1,
     The_Fuzzy_Dice: 1,
 });
-const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj ?? {}, key);
 
 // ── DragList: simple drag-reorder list ────────────────────────────────────
 // Returns a DOM element with draggable items. onChange(newOrder) fires on drop.
@@ -149,15 +148,10 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const doSave = async () => {
         await run(async () => {
             const str = encodeProgress(players.val);
-
-            await writeGga(`StarSignProg[${sign.index}][0]`, str);
-            const verifiedStr = String((await readGga(`StarSignProg[${sign.index}][0]`)) ?? "");
-            if (verifiedStr !== str)
-                throw new Error(
-                    `Write mismatch at StarSignProg[${sign.index}][0]: expected "${str}", got "${verifiedStr}"`
-                );
-
-            await onSave?.({ index: sign.index, progress: verifiedStr });
+            const path = `StarSignProg[${sign.index}][0]`;
+            const ok = await gga(path, str);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await onSave?.({ index: sign.index, progress: str });
         });
     };
 
@@ -328,43 +322,28 @@ export const StarSignsTab = () => {
 
     const writeAndVerifyClaimed = async (index, claimed) => {
         const expected = claimed ? 1 : 0;
-        await writeGga(`StarSignProg[${index}][1]`, expected);
-        const verified = Math.round(normalizeNumber(await readGga(`StarSignProg[${index}][1]`), 0));
-        if (verified !== expected) {
-            throw new Error(`Write mismatch at StarSignProg[${index}][1]: expected ${expected}, got ${verified}`);
-        }
+        const path = `StarSignProg[${index}][1]`;
+        const ok = await gga(path, expected);
+        if (!ok) throw new Error(`Write mismatch at ${path}`);
     };
 
     const writeAndVerifyOptions40 = async (total) => {
         const expected = normalizeNumber(total, 0);
-        await writeGga("OptionsListAccount[40]", expected);
-        const verified = normalizeNumber(await readGga("OptionsListAccount[40]"), 0);
-        if (verified !== expected) {
-            throw new Error(`Write mismatch at OptionsListAccount[40]: expected ${expected}, got ${verified}`);
-        }
+        const path = "OptionsListAccount[40]";
+        const ok = await gga(path, expected);
+        if (!ok) throw new Error(`Write mismatch at ${path}`);
     };
 
     const applyPointsDeltaAndVerify = async (delta) => {
-        const current = normalizeNumber(await readGga("OptionsListAccount[40]"), 0);
+        const current = normalizeNumber(await gga("OptionsListAccount[40]"), 0);
         const next = current + normalizeNumber(delta, 0);
         await writeAndVerifyOptions40(next);
     };
 
     const resetStarSignsUnlockedToDefault = async () => {
-        await writeGga("StarSignsUnlocked.h", { ...DEFAULT_UNLOCKED_STAR_SIGNS });
-
-        const verifiedRaw = await readGga("StarSignsUnlocked.h");
-        const verifiedMap = verifiedRaw && typeof verifiedRaw === "object" ? verifiedRaw : {};
-        const expectedKeys = Object.keys(DEFAULT_UNLOCKED_STAR_SIGNS).sort();
-        const verifiedKeys = Object.keys(verifiedMap).sort();
-        if (expectedKeys.length !== verifiedKeys.length || expectedKeys.some((k, i) => k !== verifiedKeys[i])) {
-            throw new Error("Write mismatch at StarSignsUnlocked.h: keys do not match default set");
-        }
-        for (const key of expectedKeys) {
-            if (!hasOwn(verifiedMap, key) || normalizeNumber(verifiedMap[key], 0) !== 1) {
-                throw new Error(`Write mismatch at StarSignsUnlocked.h[${key}]: expected 1`);
-            }
-        }
+        const path = "StarSignsUnlocked.h";
+        const ok = await gga(path, { ...DEFAULT_UNLOCKED_STAR_SIGNS });
+        if (!ok) throw new Error(`Write mismatch at ${path}`);
     };
 
     const load = async () => {
@@ -373,8 +352,8 @@ export const StarSignsTab = () => {
         try {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
                 readCList("StarQuests"),
-                readGga("StarSignProg"),
-                readGga("GetPlayersUsernames"),
+                gga("StarSignProg"),
+                gga("GetPlayersUsernames"),
             ]);
 
             const quests = toIndexedArray(rawQuests ?? []);
@@ -455,25 +434,14 @@ export const StarSignsTab = () => {
         await runReset(async () => {
             const list = signs.val;
             for (const sign of list) {
-                await writeGga(`StarSignProg[${sign.index}][0]`, "");
+                const progressPath = `StarSignProg[${sign.index}][0]`;
+                const claimedPath = `StarSignProg[${sign.index}][1]`;
+                const okProgress = await gga(progressPath, "");
+                if (!okProgress) throw new Error(`Write mismatch at ${progressPath}`);
                 await new Promise((r) => setTimeout(r, 40));
-                await writeGga(`StarSignProg[${sign.index}][1]`, 0);
+                const okClaimed = await gga(claimedPath, 0);
+                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
                 await new Promise((r) => setTimeout(r, 40));
-            }
-            const rawVerified = await readGga("StarSignProg");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
-            for (const sign of list) {
-                const verifiedEntry = toIndexedArray(verifiedArr[sign.index] ?? []);
-                const verifiedProgress = String(verifiedEntry[0] ?? "");
-                const verifiedClaimed = Math.round(Number(verifiedEntry[1] ?? 0));
-                if (verifiedProgress !== "")
-                    throw new Error(
-                        `Write mismatch at StarSignProg[${sign.index}][0]: expected "", got "${verifiedProgress}"`
-                    );
-                if (verifiedClaimed !== 0)
-                    throw new Error(
-                        `Write mismatch at StarSignProg[${sign.index}][1]: expected 0, got ${verifiedClaimed}`
-                    );
             }
             await writeAndVerifyOptions40(0);
             await resetStarSignsUnlockedToDefault();
@@ -492,7 +460,6 @@ export const StarSignsTab = () => {
         await runFn(async () => {
             const list = signs.val;
             const nextSigns = [];
-            const expectedProgressByIndex = new Map();
             for (const sign of list) {
                 const needed = sign.playersNeeded;
                 const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
@@ -505,21 +472,11 @@ export const StarSignsTab = () => {
                 }
                 const players = pool.slice(0, needed);
                 const str = encodeProgress(players);
-                await writeGga(`StarSignProg[${sign.index}][0]`, str);
+                const progressPath = `StarSignProg[${sign.index}][0]`;
+                const okProgress = await gga(progressPath, str);
+                if (!okProgress) throw new Error(`Write mismatch at ${progressPath}`);
                 await new Promise((r) => setTimeout(r, 40));
-                expectedProgressByIndex.set(sign.index, str);
                 nextSigns.push({ ...sign, players, unlocked: true, claimed: 1 });
-            }
-            const rawVerified = await readGga("StarSignProg");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
-            for (const sign of list) {
-                const verifiedEntry = toIndexedArray(verifiedArr[sign.index] ?? []);
-                const verifiedProgress = String(verifiedEntry[0] ?? "");
-                const expectedProgress = expectedProgressByIndex.get(sign.index) ?? "";
-                if (verifiedProgress !== expectedProgress)
-                    throw new Error(
-                        `Write mismatch at StarSignProg[${sign.index}][0]: expected "${expectedProgress}", got "${verifiedProgress}"`
-                    );
             }
             let totalDelta = 0;
             for (const sign of list) {

@@ -30,7 +30,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -104,14 +104,10 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
         const num = resolveNum(raw);
         if (num === null) return;
         await run(async () => {
-            await onWrite(field.index, num);
-            const verified = resolveNum(String(await readGga(`OptionsListAccount[${field.index}]`)));
-            if (verified !== num)
-                throw new Error(
-                    `Write mismatch at OptionsListAccount[${field.index}]: expected ${num}, got ${verified}`
-                );
-            fieldState.val = verified; // only this row's badge re-renders
-            inputVal.val = String(verified);
+            const ok = await onWrite(field.index, num);
+            if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]`);
+            fieldState.val = num; // only this row's badge re-renders
+            inputVal.val = String(num);
         });
     };
 
@@ -186,7 +182,7 @@ export const OrionTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const results = await Promise.all(ALL_FIELDS.map((f) => readGga(`OptionsListAccount[${f.index}]`)));
+            const results = await Promise.all(ALL_FIELDS.map((f) => gga(`OptionsListAccount[${f.index}]`)));
             ALL_FIELDS.forEach((f, i) => {
                 fieldStates.get(f.index).val = results[i] ?? 0;
             });
@@ -198,7 +194,7 @@ export const OrionTab = () => {
     };
 
     const onWrite = async (index, value) => {
-        await writeGga(`OptionsListAccount[${index}]`, value);
+        return await gga(`OptionsListAccount[${index}]`, value);
     };
 
     // Built once, stays in the DOM permanently.

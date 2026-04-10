@@ -11,7 +11,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -45,11 +45,10 @@ const AnvilRow = ({ category, valueState, onSetApplied }) => {
 
         await run(async () => {
             const path = `AnvilPAstats[${category.index}]`;
-            await writeGga(path, pts);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== pts) throw new Error(`Write mismatch at ${path}: expected ${pts}, got ${verified}`);
-            await onSetApplied?.(category.index, verified);
-            inputVal.val = String(valueState.val ?? verified);
+            const ok = await gga(path, pts);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await onSetApplied?.(category.index, pts);
+            inputVal.val = String(valueState.val ?? pts);
         });
     };
 
@@ -130,7 +129,7 @@ export const AnvilTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const raw = await readGga("AnvilPAstats");
+            const raw = await gga("AnvilPAstats");
             const arr = toIndexedArray(raw);
             for (let i = 0; i < statStates.length; i++) {
                 statStates[i].val = Number(arr[i] ?? 0);
@@ -150,7 +149,7 @@ export const AnvilTab = () => {
 
         // Keep "Points Remaining" fresh without forcing a list rebuild.
         try {
-            const remainingRaw = await readGga("AnvilPAstats[0]");
+            const remainingRaw = await gga("AnvilPAstats[0]");
             const remaining = Number(remainingRaw);
             if (Number.isFinite(remaining)) statStates[0].val = remaining;
         } catch {

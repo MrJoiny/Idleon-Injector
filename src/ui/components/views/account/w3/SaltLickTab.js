@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -41,11 +41,10 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) => {
 
         await run(async () => {
             const path = `SaltLick[${index}]`;
-            await writeGga(path, lvl);
-            const verified = toLevelInt(await readGga(path), maxLevel);
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            levelState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+            levelState.val = lvl;
+            inputVal.val = String(lvl);
         });
     };
 
@@ -113,16 +112,16 @@ export const SaltLickTab = () => {
                 toLevelInt(targetLevel === null ? u.maxLevel : targetLevel, u.maxLevel)
             );
             for (let i = 0; i < upgrades.length; i++) {
-                await writeGga(`SaltLick[${i}]`, expectedLevels[i]);
+                const path = `SaltLick[${i}]`;
+                const ok = await gga(path, expectedLevels[i]);
+                if (!ok)
+                    throw new Error(
+                        `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
+                    );
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("SaltLick");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < upgrades.length; i++) {
-                const verified = toLevelInt(verifiedArr[i], upgrades[i].maxLevel);
-                if (verified !== expectedLevels[i])
-                    throw new Error(`Write mismatch at SaltLick[${i}]: expected ${expectedLevels[i]}, got ${verified}`);
-                getLevelState(i).val = verified;
+                getLevelState(i).val = expectedLevels[i];
             }
         });
     };
@@ -131,7 +130,7 @@ export const SaltLickTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawDefs] = await Promise.all([readGga("SaltLick"), readCList("SaltLicks")]);
+            const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
 
             const defs = toIndexedArray(rawDefs ?? []);
             const upgrades = defs.map((entry, i) => {

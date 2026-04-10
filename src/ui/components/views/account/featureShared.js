@@ -135,7 +135,7 @@ export const usePersistentPaneReady = () => {
  *   const { status, run } = useWriteStatus();
  *
  *   await run(async () => {
- *       await writeGga("SomeKey", value);
+ *       await gga("SomeKey", value);
  *       localState.val = value;
  *   });
  *

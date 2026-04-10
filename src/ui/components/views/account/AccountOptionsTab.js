@@ -13,37 +13,10 @@ import { SearchBar } from "../../SearchBar.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
-import { readGga, writeGga } from "../../../services/api.js";
+import { gga } from "../../../services/api.js";
 import { useWriteStatus } from "./featureShared.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
-
-const normalizeForCompare = (value) => {
-    if (Array.isArray(value)) return value.map((entry) => normalizeForCompare(entry));
-    if (value && typeof value === "object") {
-        const out = {};
-        for (const key of Object.keys(value).sort()) out[key] = normalizeForCompare(value[key]);
-        return out;
-    }
-    return value;
-};
-
-const compareOptionValues = (type, expected, actual) => {
-    if (type === "number") {
-        const expectedNum = Number(expected);
-        const actualNum = Number(actual);
-        if (Number.isNaN(expectedNum) && Number.isNaN(actualNum)) return true;
-        return Object.is(expectedNum, actualNum);
-    }
-
-    if (type === "boolean") return Boolean(expected) === Boolean(actual);
-
-    if (type === "object") {
-        return JSON.stringify(normalizeForCompare(expected)) === JSON.stringify(normalizeForCompare(actual));
-    }
-
-    return String(expected) === String(actual);
-};
 
 const valueToDisplay = (type, value) => {
     if (type === "object" && value !== null) return JSON.stringify(value);
@@ -194,15 +167,10 @@ const OptionItem = (index, rawVal, schema) => {
             else if (type === "object") val = JSON.parse(val);
 
             const path = `OptionsListAccount[${index}]`;
-            await writeGga(path, val);
-            const verifiedVal = await readGga(path);
-            if (!compareOptionValues(type, val, verifiedVal)) {
-                throw new Error(
-                    `Write mismatch at ${path}: expected ${JSON.stringify(val)}, got ${JSON.stringify(verifiedVal)}`
-                );
-            }
-            store.data.accountOptions[index] = verifiedVal;
-            currentVal.val = valueToDisplay(type, verifiedVal);
+            const ok = await gga(path, val);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            store.data.accountOptions[index] = val;
+            currentVal.val = valueToDisplay(type, val);
         });
     };
 

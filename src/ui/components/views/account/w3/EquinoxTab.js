@@ -25,7 +25,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -102,11 +102,9 @@ const CloudRow = ({ entry }) => {
     const doComplete = async () => {
         await run(async () => {
             const path = `WeeklyBoss.h.d_${entry.cloudIndex}`;
-            await writeGga(path, entry.required);
-            const verified = toInt(await readGga(path), { mode: "floor" });
-            if (verified !== entry.required)
-                throw new Error(`Write mismatch at ${path}: expected ${entry.required}, got ${verified}`);
-            entry.progressState.val = verified;
+            const ok = await gga(path, entry.required);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${entry.required}, got failed verification`);
+            entry.progressState.val = entry.required;
         });
     };
 
@@ -162,11 +160,10 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
         await run(async () => {
             // Dream[0] and Dream[1] are reserved; upgrades start at Dream[2]
             const path = `Dream[${entry.index + 2}]`;
-            await writeGga(path, lvl);
-            const verified = Math.max(0, Math.min(entry.maxLevel, toInt(await readGga(path), { mode: "floor" })));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            entry.levelState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+            entry.levelState.val = lvl;
+            inputVal.val = String(lvl);
             // BarFillReq and cloud visibility depend on upgrade levels
             await onAfterSet();
         });
@@ -243,10 +240,9 @@ export const EquinoxTab = () => {
         fillBarRun(async () => {
             const req = barFillReqState.val;
             if (!req) return;
-            await writeGga("Dream[0]", req);
-            const verified = toInt(await readGga("Dream[0]"), { mode: "floor" });
-            if (verified !== req) throw new Error(`Write mismatch at Dream[0]: expected ${req}, got ${verified}`);
-            barFillState.val = verified;
+            const ok = await gga("Dream[0]", req);
+            if (!ok) throw new Error(`Write mismatch at Dream[0]: expected ${req}, got failed verification`);
+            barFillState.val = req;
         });
 
     // ── Cloud entry helpers ───────────────────────────────────────────────────
@@ -289,8 +285,8 @@ export const EquinoxTab = () => {
     const refreshAfterUpgrade = async () => {
         try {
             const [rawDream, rawWeeklyBoss, newBarFillReq] = await Promise.all([
-                readGga("Dream"),
-                readGga("WeeklyBoss.h").catch(() => ({})),
+                gga("Dream"),
+                gga("WeeklyBoss.h").catch(() => ({})),
                 readComputed("dream", "BarFillReq", [0]).catch(() => barFillReqState.val),
             ]);
 
@@ -319,10 +315,10 @@ export const EquinoxTab = () => {
         try {
             const [rawDream, rawDreamUpg, rawDreamChallenge, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] =
                 await Promise.all([
-                    readGga("Dream"),
+                    gga("Dream"),
                     readCList("DreamUpg"),
                     readCList("DreamChallenge"),
-                    readGga("WeeklyBoss.h").catch(() => ({})),
+                    gga("WeeklyBoss.h").catch(() => ({})),
                     readComputed("dream", "BarFillReq", [0]).catch(() => 0),
                     readComputed("dream", "BarFillRate", [0]).catch(() => 0),
                     readComputed("dream", "UpgUnlocked", [0]).catch(() => 0),

@@ -133,7 +133,7 @@ const MyRow = ({ levelState }) => {
 
 ```js
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -154,10 +154,9 @@ const Row = ({ valueState, index }) => {
         if (!Number.isFinite(next)) return;
         await run(async () => {
             const path = `SomePath[${index}]`;
-            await writeGga(path, next);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== next) throw new Error(`Write mismatch at ${path}: expected ${next}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(path, next);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${next}`);
+            valueState.val = next;
         });
     };
 
@@ -190,7 +189,7 @@ export const MyTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const arr = toIndexedArray(await readGga("SomePath"));
+            const arr = toIndexedArray(await gga("SomePath"));
             rows.forEach((st, i) => {
                 st.val = Number(arr[i] ?? 0);
             });
@@ -224,7 +223,7 @@ export const MyTab = () => {
 
 ```js
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { AsyncFeatureBody } from "../featureShared.js";
@@ -240,7 +239,7 @@ export const MyTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const raw = await readGga("SomePath");
+            const raw = await gga("SomePath");
             data.val = { items: raw ?? [] };
         } catch (e) {
             error.val = e?.message ?? "Failed to load";
@@ -270,7 +269,7 @@ export const MyTab = () => {
 
 ```js
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -291,10 +290,9 @@ const Card = ({ index, valueState, nameState }) => {
         if (!Number.isFinite(next)) return;
         await run(async () => {
             const path = `SomeGridPath[${index}]`;
-            await writeGga(path, next);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== next) throw new Error(`Write mismatch at ${path}: expected ${next}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(path, next);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${next}`);
+            valueState.val = next;
         });
     };
 
@@ -345,7 +343,7 @@ export const MyGridTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const arr = toIndexedArray(await readGga("SomeGridPath"));
+            const arr = toIndexedArray(await gga("SomeGridPath"));
             count.val = arr.length;
             ensureCount(count.val);
             for (let i = 0; i < count.val; i++) {

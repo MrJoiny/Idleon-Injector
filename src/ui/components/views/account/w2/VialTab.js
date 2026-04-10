@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -35,11 +35,10 @@ const VialRow = ({ vial, initialLevel }) => {
 
         await run(async () => {
             const path = `CauldronInfo[4][${vial.index}]`;
-            await writeGga(path, lvl);
-            const verified = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(await readGga(path)))));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            inputVal.val = String(verified);
-            levelDisplay.val = verified;
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
+            inputVal.val = String(lvl);
+            levelDisplay.val = lvl;
         });
     };
 
@@ -94,7 +93,7 @@ export const VialTab = () => {
         error.val = null;
         try {
             const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
-                readGga("CauldronInfo"),
+                gga("CauldronInfo"),
                 readCList("AlchemyDescription"),
             ]);
 
@@ -126,15 +125,9 @@ export const VialTab = () => {
 
         await runBulk(async () => {
             for (const v of vials) {
-                await writeGga(`CauldronInfo[4][${v.index}]`, lvl);
+                const ok = await gga(`CauldronInfo[4][${v.index}]`, lvl);
+                if (!ok) throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}`);
                 await new Promise((r) => setTimeout(r, 30));
-            }
-            const rawVerified = await readGga("CauldronInfo[4]");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
-            for (const v of vials) {
-                const verified = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(verifiedArr[v.index] ?? 0))));
-                if (verified !== lvl)
-                    throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}, got ${verified}`);
             }
             vialDefs.val = vials.map((v) => ({ ...v, level: lvl }));
         });

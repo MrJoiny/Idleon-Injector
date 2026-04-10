@@ -300,7 +300,7 @@ const AccountService = {
                     hasSchema
                         ? Promise.resolve(null)
                         : fetch("/config/optionsAccountSchema.json").catch(() => ({ ok: false })),
-                    API.readGga("OptionsListAccount"),
+                    API.gga("OptionsListAccount"),
                 ]);
 
                 if (schemaRes?.ok) {

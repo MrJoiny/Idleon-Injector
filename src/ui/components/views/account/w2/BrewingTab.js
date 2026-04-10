@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -82,10 +82,9 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         await run(
             async () => {
                 const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
-                await writeGga(path, lvl);
-                const verified = Math.max(0, Math.round(Number(await readGga(path))));
-                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-                return verified;
+                const ok = await gga(path, lvl);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
+                return lvl;
             },
             {
                 onSuccess: (verified) => {
@@ -104,13 +103,10 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             const code = prismaCode(cauldron.prismaKey, bubble.index);
             const next = new Set(prismaSet.val ?? new Set());
             next.has(code) ? next.delete(code) : next.add(code);
-            await writeGga("OptionsListAccount[384]", encodePrisma(next));
-            const rawVerified = await readGga("OptionsListAccount[384]");
-            const verifiedSet = parsePrisma(rawVerified);
-            if (verifiedSet.has(code) !== next.has(code)) {
-                throw new Error(`Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`);
-            }
-            prismaSet.val = verifiedSet;
+            const encoded = encodePrisma(next);
+            const ok = await gga("OptionsListAccount[384]", encoded);
+            if (!ok) throw new Error(`Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`);
+            prismaSet.val = next;
         });
     };
 
@@ -196,17 +192,12 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
 
         await runBulk(async () => {
             for (const bubble of bubblesToSet) {
-                await writeGga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
-                await new Promise((r) => setTimeout(r, 30));
-            }
-            const rawVerified = await readGga(`CauldronInfo[${cauldron.index}]`);
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
-            for (const bubble of bubblesToSet) {
-                const verified = Math.max(0, Math.round(Number(verifiedArr[bubble.index] ?? 0)));
-                if (verified !== lvl)
+                const ok = await gga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
+                if (!ok)
                     throw new Error(
-                        `Write mismatch at CauldronInfo[${cauldron.index}][${bubble.index}]: expected ${lvl}, got ${verified}`
+                        `Write mismatch at CauldronInfo[${cauldron.index}][${bubble.index}]: expected ${lvl}`
                     );
+                await new Promise((r) => setTimeout(r, 30));
             }
             const nextLevels = [...toIndexedArray(levels.val ?? [])];
             for (const bubble of bubblesToSet) {
@@ -274,8 +265,8 @@ export const BrewingTab = () => {
 
         try {
             const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
-                readGga("CauldronInfo"),
-                readGga("OptionsListAccount[384]"),
+                gga("CauldronInfo"),
+                gga("OptionsListAccount[384]"),
                 readCList("AlchemyDescription"),
             ]);
 

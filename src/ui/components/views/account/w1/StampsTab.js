@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -87,17 +87,13 @@ const StampRow = ({
         await run(async () => {
             const levelPath = `StampLevel[${page}][${order}]`;
             const maxPath = `StampLevelMAX[${page}][${order}]`;
-            await writeGga(levelPath, lvl);
-            const verifiedLvl = Math.max(0, Math.round(Number(await readGga(levelPath))));
-            if (verifiedLvl !== lvl)
-                throw new Error(`Write mismatch at ${levelPath}: expected ${lvl}, got ${verifiedLvl}`);
-            await writeGga(maxPath, maxLvl);
-            const verifiedMaxLvl = Math.max(0, Math.round(Number(await readGga(maxPath))));
-            if (verifiedMaxLvl !== maxLvl)
-                throw new Error(`Write mismatch at ${maxPath}: expected ${maxLvl}, got ${verifiedMaxLvl}`);
-            inputVal.val = String(verifiedLvl);
-            levelDisplay.val = verifiedLvl;
-            maxLevelDisplay.val = verifiedMaxLvl;
+            const okLevel = await gga(levelPath, lvl);
+            if (!okLevel) throw new Error(`Write mismatch at ${levelPath}`);
+            const okMax = await gga(maxPath, maxLvl);
+            if (!okMax) throw new Error(`Write mismatch at ${maxPath}`);
+            inputVal.val = String(lvl);
+            levelDisplay.val = lvl;
+            maxLevelDisplay.val = maxLvl;
         });
     };
 
@@ -204,16 +200,11 @@ export const StampsTab = () => {
             .sort(sortStampCodes);
 
         for (let i = 0; i < ordered.length; i++) {
-            await writeGga(`Compass[4][${i}]`, ordered[i]);
+            const ok = await gga(`Compass[4][${i}]`, ordered[i]);
+            if (!ok) throw new Error(`Write mismatch at Compass[4][${i}]`);
         }
-        await writeGga("Compass[4].length", ordered.length);
-
-        const verifiedCodes = normalizeExaltedCodes(await readGga("Compass[4]")).sort(sortStampCodes);
-        if (verifiedCodes.length !== ordered.length || verifiedCodes.some((code, index) => code !== ordered[index])) {
-            throw new Error(
-                `Write mismatch at Compass[4]: expected [${ordered.join(", ")}], got [${verifiedCodes.join(", ")}]`
-            );
-        }
+        const okLength = await gga("Compass[4].length", ordered.length);
+        if (!okLength) throw new Error("Write mismatch at Compass[4].length");
     };
 
     const load = async () => {
@@ -221,9 +212,9 @@ export const StampsTab = () => {
         error.val = null;
         try {
             const [levels, maxLevels, rawExaltedCodes] = await Promise.all([
-                readGga("StampLevel"),
-                readGga("StampLevelMAX"),
-                readGga("Compass[4]"),
+                gga("StampLevel"),
+                gga("StampLevelMAX"),
+                gga("Compass[4]"),
             ]);
 
             const levelsByPage = toIndexedArray(levels ?? []);

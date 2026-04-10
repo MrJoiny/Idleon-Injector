@@ -20,7 +20,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -92,13 +92,10 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
         const val = mode === "float" ? Math.max(0, roundTo2(raw)) : Math.max(0, Math.round(Number(raw)));
         if (isNaN(val)) return;
         await run(async () => {
-            await writeGga(writePath, val);
-            const rawVerified = await readGga(writePath);
-            const verified =
-                mode === "float" ? Math.max(0, roundTo2(rawVerified)) : Math.max(0, Math.round(Number(rawVerified)));
-            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
-            valueState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(writePath, val);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            valueState.val = val;
+            inputVal.val = String(val);
         });
     };
 
@@ -191,7 +188,7 @@ export const LiquidTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const raw = await readGga("CauldronInfo");
+            const raw = await gga("CauldronInfo");
             const amounts = toIndexedArray(raw?.[6] ?? []);
             const upgradesRaw = toIndexedArray(raw?.[8] ?? []);
 

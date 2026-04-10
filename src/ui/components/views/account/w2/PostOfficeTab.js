@@ -28,7 +28,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -59,10 +59,9 @@ const PONumField = ({ label, valueState, writePath }) => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
         await run(async () => {
-            await writeGga(writePath, val);
-            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
-            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(writePath, val);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            valueState.val = val;
         });
     };
 
@@ -107,10 +106,9 @@ const POToggleField = ({ valueState, writePath }) => {
     const doToggle = async () => {
         const next = valueState.val ? 0 : 1;
         await run(async () => {
-            await writeGga(writePath, next);
-            const verified = Math.round(Number(await readGga(writePath)));
-            if (verified !== next) throw new Error(`Write mismatch at ${writePath}: expected ${next}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(writePath, next);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${next}`);
+            valueState.val = next;
         });
     };
 
@@ -239,10 +237,9 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
         await run(async () => {
-            await writeGga(writePath, val);
-            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
-            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(writePath, val);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            valueState.val = val;
             if (typeof onAfterWrite === "function") onAfterWrite();
         });
     };
@@ -316,10 +313,9 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
         await run(
             async () => {
                 const path = `PostOfficeInfo[3][${box.index}][0]`;
-                await writeGga(path, val);
-                const verified = Math.max(0, Math.round(Number(await readGga(path))));
-                if (verified !== val) throw new Error(`Write mismatch at ${path}: expected ${val}, got ${verified}`);
-                return verified;
+                const ok = await gga(path, val);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${val}`);
+                return val;
             },
             {
                 onSuccess: (verified) => {
@@ -434,10 +430,10 @@ export const PostOfficeTab = () => {
             };
 
             const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
-                readGga("PostOfficeInfo"),
-                readGga("CurrenciesOwned"),
-                readGga("OptionsListAccount"),
-                readGga("DNSM.h.AlchVials.h.BoxPoints").catch(() => 0),
+                gga("PostOfficeInfo"),
+                gga("CurrenciesOwned"),
+                gga("OptionsListAccount"),
+                gga("DNSM.h.AlchVials.h.BoxPoints").catch(() => 0),
                 readPostOfficeBoxDefs(),
             ]);
 
@@ -524,19 +520,12 @@ export const PostOfficeTab = () => {
             const count = boxCount.val;
             const nextVals = Array.from({ length: count }, (_, i) => boxStates[i].cap.val);
             for (let i = 0; i < count; i++) {
-                await writeGga(`PostOfficeInfo[3][${i}][0]`, nextVals[i]);
+                const ok = await gga(`PostOfficeInfo[3][${i}][0]`, nextVals[i]);
+                if (!ok) throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected ${nextVals[i]}`);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("PostOfficeInfo[3]");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < count; i++) {
-                const row = toIndexedArray(verifiedArr[i] ?? []);
-                const verified = Math.max(0, Math.round(Number(row[0] ?? 0)));
-                if (verified !== nextVals[i])
-                    throw new Error(
-                        `Write mismatch at PostOfficeInfo[3][${i}][0]: expected ${nextVals[i]}, got ${verified}`
-                    );
-                boxStates[i].current.val = verified;
+                boxStates[i].current.val = nextVals[i];
             }
             recomputeSummary();
         });
@@ -547,16 +536,11 @@ export const PostOfficeTab = () => {
         await runBoxBulkWrite(async () => {
             const count = boxCount.val;
             for (let i = 0; i < count; i++) {
-                await writeGga(`PostOfficeInfo[3][${i}][0]`, 0);
+                const ok = await gga(`PostOfficeInfo[3][${i}][0]`, 0);
+                if (!ok) throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected 0`);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("PostOfficeInfo[3]");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < count; i++) {
-                const row = toIndexedArray(verifiedArr[i] ?? []);
-                const verified = Math.max(0, Math.round(Number(row[0] ?? 0)));
-                if (verified !== 0)
-                    throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected 0, got ${verified}`);
                 boxStates[i].current.val = 0;
             }
             recomputeSummary();

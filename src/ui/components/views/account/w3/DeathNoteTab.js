@@ -20,7 +20,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -89,27 +89,18 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
                 const dbPath = playerDbKillsLeftPath(playerName, mob.mapIndex);
 
                 if (isCurrentPlayer) {
-                    await writeGga(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
-                    await writeGga(dbPath, newKillsLeft);
-                } else {
-                    await writeGga(dbPath, newKillsLeft);
+                    const liveOk = await gga(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
+                    if (!liveOk)
+                        throw new Error(
+                            `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`
+                        );
                 }
 
-                let verifiedLeft;
-                try {
-                    verifiedLeft = toInt(await readGga(dbPath));
-                } catch (err) {
-                    if (!isCurrentPlayer) throw err;
-                    verifiedLeft = toInt(await readGga(liveKillsLeftPath(mob.mapIndex)));
-                }
+                const dbOk = await gga(dbPath, newKillsLeft);
+                if (!dbOk) throw new Error(`Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`);
 
-                if (verifiedLeft !== newKillsLeft) {
-                    throw new Error(`Death Note write mismatch: expected ${newKillsLeft}, got ${verifiedLeft}`);
-                }
-
-                const verifiedKills = Math.max(0, mob.required - verifiedLeft);
-                killState.val = String(verifiedKills);
-                inputVal.val = String(verifiedKills);
+                killState.val = String(num);
+                inputVal.val = String(num);
             },
             {
                 onError: (error) => {
@@ -239,13 +230,10 @@ const MinibossRow = ({ mob, killState }) => {
         if (num === null) return;
         await run(async () => {
             const path = `Ninja[105][${mob.mobIndex}]`;
-            await writeGga(path, num);
-            const verified = toInt(await readGga(path));
-            if (verified !== num) {
-                throw new Error(`Death Note write mismatch at ${path}: expected ${num}, got ${verified}`);
-            }
-            killState.val = String(verified);
-            inputVal.val = String(verified);
+            const ok = await gga(path, num);
+            if (!ok) throw new Error(`Death Note write mismatch at ${path}: expected ${num}`);
+            killState.val = String(num);
+            inputVal.val = String(num);
         });
     };
 
@@ -428,16 +416,16 @@ export const DeathNoteTab = () => {
                 rawMinibossIds,
                 rawMinibossKills,
             ] = await Promise.all([
-                readGga("CustomLists.h.DeathNoteMobs"),
-                readGga("CustomLists.h.MapAFKtarget"),
-                readGga("CustomLists.h.MapDetails"),
-                readGga("MonsterDefinitionsGET.h"),
-                readGga("UserInfo[0]"),
-                readGga("GetPlayersUsernames"),
-                readGga("KillsLeft2Advance"),
-                readGga("PlayerDATABASE"),
-                readGga("CustomLists.h.NinjaInfo[30]"),
-                readGga("Ninja[105]"),
+                gga("CustomLists.h.DeathNoteMobs"),
+                gga("CustomLists.h.MapAFKtarget"),
+                gga("CustomLists.h.MapDetails"),
+                gga("MonsterDefinitionsGET.h"),
+                gga("UserInfo[0]"),
+                gga("GetPlayersUsernames"),
+                gga("KillsLeft2Advance"),
+                gga("PlayerDATABASE"),
+                gga("CustomLists.h.NinjaInfo[30]"),
+                gga("Ninja[105]"),
             ]);
 
             if (seq !== dnStore.loadSeq) return;

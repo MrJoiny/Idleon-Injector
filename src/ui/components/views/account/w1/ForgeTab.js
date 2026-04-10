@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -60,10 +60,9 @@ const ForgeRow = ({ upgrade, levelState }) => {
         await run(
             async () => {
                 const path = `FurnaceLevels[${upgrade.index}]`;
-                await writeGga(path, lvl);
-                const verified = Math.min(upgrade.max, Math.max(0, Math.round(Number(await readGga(path)))));
-                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-                return verified;
+                const ok = await gga(path, lvl);
+                if (!ok) throw new Error(`Write mismatch at ${path}`);
+                return lvl;
             },
             {
                 onSuccess: (verified) => {
@@ -139,7 +138,7 @@ export const ForgeTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const raw = await readGga("FurnaceLevels");
+            const raw = await gga("FurnaceLevels");
             const levels = toIndexedArray(raw);
             for (let i = 0; i < levelStates.length; i++) {
                 levelStates[i].val = Number(levels[i] ?? 0);

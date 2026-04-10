@@ -23,7 +23,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -251,11 +251,11 @@ export const CogsTab = () => {
 
         try {
             const [rawUnlock, rawCaps, rawFlags, rawCogOrder, rawCogMap] = await Promise.all([
-                readGga("FlagUnlock"),
+                gga("FlagUnlock"),
                 readCList("FlagReqs").catch(() => []),
-                readGga("FlagsPlaced").catch(() => []),
-                readGga("CogOrder").catch(() => []),
-                readGga("CogMap").catch(() => []),
+                gga("FlagsPlaced").catch(() => []),
+                gga("CogOrder").catch(() => []),
+                gga("CogMap").catch(() => []),
             ]);
 
             const unlockArr = toIndexedArray(rawUnlock ?? []);
@@ -293,11 +293,9 @@ export const CogsTab = () => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;
         await runLockWrite(async () => {
             const unlockPath = `FlagUnlock[${index}]`;
-            await writeGga(unlockPath, next);
-            const verifiedUnlock = toNum(await readGga(unlockPath));
-            if (verifiedUnlock !== next)
-                throw new Error(`Write mismatch at ${unlockPath}: expected ${next}, got ${verifiedUnlock}`);
-            slotValues[index].val = verifiedUnlock;
+            const unlockOk = await gga(unlockPath, next);
+            if (!unlockOk) throw new Error(`Write mismatch at ${unlockPath}: expected ${next}`);
+            slotValues[index].val = next;
 
             // If a flag is placed on this slot, clear its FlagsPlaced entry to prevent
             // the flag-charge system from overwriting the -11 sentinel and re-locking the slot.
@@ -306,10 +304,8 @@ export const CogsTab = () => {
                 const pos = arr.findIndex((v) => toNum(v) === index);
                 if (pos >= 0) {
                     const flagPath = `FlagsPlaced[${pos}]`;
-                    await writeGga(flagPath, -1);
-                    const verifiedFlag = toNum(await readGga(flagPath));
-                    if (verifiedFlag !== -1)
-                        throw new Error(`Write mismatch at ${flagPath}: expected -1, got ${verifiedFlag}`);
+                    const flagOk = await gga(flagPath, -1);
+                    if (!flagOk) throw new Error(`Write mismatch at ${flagPath}: expected -1`);
                     const newRaw = [...arr];
                     newRaw[pos] = -1;
                     flagsRaw.val = newRaw;
@@ -329,10 +325,8 @@ export const CogsTab = () => {
         const writeVal = numVal !== null ? numVal : rawValue;
         await runCogMapWrite(async () => {
             const writePath = `CogMap[${cogIdx}].h.${field}`;
-            await writeGga(writePath, writeVal);
-            const rawVerified = await readGga(writePath);
-            const match = numVal !== null ? Number(rawVerified) === numVal : String(rawVerified) === String(writeVal);
-            if (!match) throw new Error(`Write mismatch at ${writePath}: expected ${writeVal}, got ${rawVerified}`);
+            const ok = await gga(writePath, writeVal);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${writeVal}`);
             cogMapStats[index].val = { ...cogMapStats[index].val, [field]: writeVal };
         });
     };
@@ -354,11 +348,9 @@ export const CogsTab = () => {
             const newId = `CogSm${normalizedType}${normalizedTier}`;
 
             const cogOrderPath = `CogOrder[${slot}]`;
-            await writeGga(cogOrderPath, newId);
-            const verifiedId = String(await readGga(cogOrderPath));
-            if (verifiedId !== newId)
-                throw new Error(`Write mismatch at ${cogOrderPath}: expected ${newId}, got ${verifiedId}`);
-            cogOrders[index].val = verifiedId;
+            const ok = await gga(cogOrderPath, newId);
+            if (!ok) throw new Error(`Write mismatch at ${cogOrderPath}: expected ${newId}`);
+            cogOrders[index].val = newId;
             tinyTypeInput.val = TINY_COG_TYPES.has(normalizedType) ? normalizedType : "_";
             tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(normalizedTier) ? normalizedTier : 0)));
             void refreshActiveCogName(index);

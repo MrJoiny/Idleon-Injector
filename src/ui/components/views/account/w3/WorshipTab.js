@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
+import { readComputed, gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -227,20 +227,16 @@ export const WorshipTab = () => {
 
         const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        await writeGga(writePath, nextCharge);
-        const verified = toInt(await readGga(writePath), { min: 0 });
-        if (verified !== nextCharge)
-            throw new Error(`Write mismatch at ${writePath}: expected ${nextCharge}, got ${verified}`);
-        return verified;
+        const ok = await gga(writePath, nextCharge);
+        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextCharge}`);
+        return nextCharge;
     };
 
     const writeWave = async (waveIndex, nextWave) => {
         const writePath = `TotemInfo[0][${waveIndex}]`;
-        await writeGga(writePath, nextWave);
-        const verified = toInt(await readGga(writePath), { min: 0 });
-        if (verified !== nextWave)
-            throw new Error(`Write mismatch at ${writePath}: expected ${nextWave}, got ${verified}`);
-        return verified;
+        const ok = await gga(writePath, nextWave);
+        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextWave}`);
+        return nextWave;
     };
 
     const load = async (showSpinner = true) => {
@@ -248,7 +244,7 @@ export const WorshipTab = () => {
         error.val = null;
 
         try {
-            const rawNames = await readGga("GetPlayersUsernames");
+            const rawNames = await gga("GetPlayersUsernames");
             const playerNames = toIndexedArray(rawNames ?? []).filter(
                 (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
             );
@@ -258,10 +254,10 @@ export const WorshipTab = () => {
                     playerNames.length
                         ? readGgaEntries("PlayerDATABASE.h", playerNames, ["PlayerStuff"])
                         : Promise.resolve({}),
-                    readGga("UserInfo[0]").catch(() => null),
-                    readGga("PlayerStuff[0]").catch(() => null),
+                    gga("UserInfo[0]").catch(() => null),
+                    gga("PlayerStuff[0]").catch(() => null),
                     readComputed("skillStats", "WorshipChargeMax", []).catch(() => null),
-                    readGga("TotemInfo[0]").catch(() => []),
+                    gga("TotemInfo[0]").catch(() => []),
                 ]);
 
             activeCharacterNameRef.val = activeCharacterName;

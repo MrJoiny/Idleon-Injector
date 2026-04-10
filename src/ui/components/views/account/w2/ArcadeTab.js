@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -54,11 +54,10 @@ const ArcadeCard = ({ entry }) => {
 
         await run(async () => {
             const path = `ArcadeUpg[${entry.index}]`;
-            await writeGga(path, lvl);
-            const verified = Math.max(0, Math.min(ARCADE_LEVEL_MAX, Math.round(Number(await readGga(path)))));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            entry.levelState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
+            entry.levelState.val = lvl;
+            inputVal.val = String(lvl);
         });
     };
 
@@ -129,11 +128,11 @@ export const ArcadeTab = () => {
 
         try {
             const [rawNormal, rawGolden, rawCosmic, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
-                readGga("OptionsListAccount[74]"),
-                readGga("OptionsListAccount[75]"),
-                readGga("OptionsListAccount[324]"),
+                gga("OptionsListAccount[74]"),
+                gga("OptionsListAccount[75]"),
+                gga("OptionsListAccount[324]"),
                 readCList("ArcadeShopInfo"),
-                readGga("ArcadeUpg"),
+                gga("ArcadeUpg"),
             ]);
 
             normalBalls.val = String(rawNormal ?? 0);
@@ -200,11 +199,9 @@ export const ArcadeTab = () => {
         await config.writer.run(
             async () => {
                 const path = `OptionsListAccount[${config.index}]`;
-                await writeGga(path, numVal);
-                const verified = Math.max(0, Math.round(Number(await readGga(path))));
-                if (verified !== numVal)
-                    throw new Error(`Write mismatch at ${path}: expected ${numVal}, got ${verified}`);
-                return verified;
+                const ok = await gga(path, numVal);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${numVal}`);
+                return numVal;
             },
             {
                 onSuccess: (verified) => {
@@ -226,19 +223,12 @@ export const ArcadeTab = () => {
 
         await runBulkSetAll(async () => {
             for (const entry of entries) {
-                await writeGga(`ArcadeUpg[${entry.index}]`, lvl);
+                const ok = await gga(`ArcadeUpg[${entry.index}]`, lvl);
+                if (!ok) throw new Error(`Write mismatch at ArcadeUpg[${entry.index}]: expected ${lvl}`);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("ArcadeUpg");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (const entry of entries) {
-                const verified = Math.max(
-                    0,
-                    Math.min(ARCADE_LEVEL_MAX, Math.round(Number(verifiedArr[entry.index] ?? 0)))
-                );
-                if (verified !== lvl)
-                    throw new Error(`Write mismatch at ArcadeUpg[${entry.index}]: expected ${lvl}, got ${verified}`);
-                entry.levelState.val = verified;
+                entry.levelState.val = lvl;
             }
         });
     };

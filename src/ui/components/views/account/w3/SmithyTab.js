@@ -9,7 +9,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -169,7 +169,7 @@ const readWithFallback = async (paths) => {
     let lastError = null;
     for (const path of paths) {
         try {
-            return await readGga(path);
+            return await gga(path);
         } catch (e) {
             lastError = e;
         }
@@ -271,9 +271,9 @@ export const SmithyTab = () => {
             const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] = await Promise.all([
                 readWithFallback(EQUIP_SETS_PATHS),
                 readWithFallback(SET_ORDER_PATHS).catch(() => null),
-                readGga(STORED_SETS_PATH),
-                readGga(EQUIPPED_MAIN_PATH),
-                readGga(EQUIPPED_EXTRA_PATH),
+                gga(STORED_SETS_PATH),
+                gga(EQUIPPED_MAIN_PATH),
+                gga(EQUIPPED_EXTRA_PATH),
             ]);
 
             if (seq !== loadSeq) return;
@@ -294,40 +294,18 @@ export const SmithyTab = () => {
         }
     };
 
-    const verifyStoredSets = async (expectedSetKeys, contextLabel) => {
-        let rawVerifiedSets;
-        try {
-            rawVerifiedSets = await readGga(STORED_SETS_PATH);
-        } catch (e) {
-            const msg = `Failed reading full smithy state after ${contextLabel}. Smithy may be inconsistent. Press REFRESH to resync.`;
-            writeWarning.val = msg;
-            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-        }
-
-        const expected = normalizeStoredSetKeys(expectedSetKeys);
-        const actual = normalizeStoredSetKeys(rawVerifiedSets);
-        const mismatchIndex = expected.findIndex((setKey, index) => actual[index] !== setKey);
-        const hasMismatch = mismatchIndex !== -1 || actual.length !== expected.length;
-        if (hasMismatch) {
-            const msg = `Smithy read-back mismatch after ${contextLabel}: expected [${expected.join(
-                ", "
-            )}], got [${actual.join(", ")}]. Press REFRESH to resync.`;
-            writeWarning.val = msg;
-            throw new Error(msg);
-        }
-    };
-
     const writeStoredSets = async (setKeys) => {
         writeWarning.val = null;
         const expectedSetKeys = normalizeStoredSetKeys(setKeys);
         try {
-            await writeGga(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
+            const ok = await gga(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
+            if (!ok)
+                throw new Error("Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.");
         } catch (e) {
             const msg = "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
             throw new Error(e?.message ? `${msg} (${e.message})` : msg);
         }
-        await verifyStoredSets(expectedSetKeys, "write");
     };
 
     const refreshAfterWrite = async () => {

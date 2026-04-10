@@ -14,7 +14,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -53,14 +53,12 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) => {
         await run(async () => {
             const path = `TowerInfo[${index}]`;
             const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
-            await writeGga(path, lvl);
-            await writeGga(pathPending, lvl);
-            const verified = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(path)))));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            const verifiedPending = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(pathPending)))));
-            if (verifiedPending !== lvl)
-                throw new Error(`Write mismatch at ${pathPending}: expected ${lvl}, got ${verifiedPending}`);
-            levelState.val = verified;
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+            const okPending = await gga(pathPending, lvl);
+            if (!okPending)
+                throw new Error(`Write mismatch at ${pathPending}: expected ${lvl}, got failed verification`);
+            levelState.val = lvl;
         });
     };
 
@@ -145,7 +143,7 @@ export const ConstructionBuildingsTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const [levels, rawBuildingInfo] = await Promise.all([readGga("TowerInfo"), readCList("TowerInfo")]);
+            const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
             const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
             const maxInfos = await Promise.all(
@@ -182,18 +180,17 @@ export const ConstructionBuildingsTab = () => {
             const buildings = data.val.buildings;
             for (let i = 0; i < BUILDING_COUNT; i++) {
                 const maxLv = buildings[i]?.maxLevel ?? 0;
-                await writeGga(`TowerInfo[${i}]`, maxLv);
-                await writeGga(`TowerInfo[${i + BUILDING_COUNT}]`, maxLv);
+                const path = `TowerInfo[${i}]`;
+                const pathPending = `TowerInfo[${i + BUILDING_COUNT}]`;
+                const ok = await gga(path, maxLv);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${maxLv}, got failed verification`);
+                const okPending = await gga(pathPending, maxLv);
+                if (!okPending)
+                    throw new Error(`Write mismatch at ${pathPending}: expected ${maxLv}, got failed verification`);
                 await new Promise((r) => setTimeout(r, 30));
             }
-            const rawVerified = await readGga("TowerInfo");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                const maxLv = buildings[i]?.maxLevel ?? 0;
-                const verified = Math.max(0, Math.min(maxLv, Math.round(Number(verifiedArr[i] ?? 0))));
-                if (verified !== maxLv)
-                    throw new Error(`Write mismatch at TowerInfo[${i}]: expected ${maxLv}, got ${verified}`);
-                levelStates[i].val = verified;
+                levelStates[i].val = buildings[i]?.maxLevel ?? 0;
             }
         });
     };

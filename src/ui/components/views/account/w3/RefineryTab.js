@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readGgaEntries, writeGga } from "../../../../services/api.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -50,13 +50,12 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
         if (isNaN(n)) return;
         await run(async () => {
             const path = `Refinery[${gameIndex}][${field}]`;
-            await writeGga(path, n);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== n) throw new Error(`Write mismatch at ${path}: expected ${n}, got ${verified}`);
+            const ok = await gga(path, n);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${n}, got failed verification`);
             if (field === 1) {
-                levelState.val = verified;
+                levelState.val = n;
             } else {
-                chargeState.val = verified;
+                chargeState.val = n;
             }
         });
     };
@@ -171,7 +170,7 @@ export const RefineryTab = () => {
         try {
             const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
             const [raw, nameEntries] = await Promise.all([
-                readGga("Refinery"),
+                gga("Refinery"),
                 readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
             ]);
 

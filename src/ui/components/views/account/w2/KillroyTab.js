@@ -26,7 +26,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, readGgaEntries, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readGgaEntries, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -43,7 +43,7 @@ const SHOP_FIELDS = [
     { index: 108, label: "BONUS SKULLS LEVEL" },
     { index: 109, label: "RESPAWN LEVEL" },
     { index: 110, label: "DUNGEON DROPS LEVEL" },
-    { index: 111, label: "PEARL DROPS LEVEL"},
+    { index: 111, label: "PEARL DROPS LEVEL" },
 ];
 
 const META_FIELDS = [
@@ -103,13 +103,10 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
         const val = normalize(inputVal.val);
         if (val === null) return;
         await run(async () => {
-            await writeGga(writePath, val);
-            const rawVerified = await readGga(writePath);
-            const parsed = Math.round(Number(rawVerified));
-            const verified = field.allowNegative ? (Number.isFinite(parsed) ? parsed : val) : Math.max(0, parsed);
-            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
-            valueState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(writePath, val);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            valueState.val = val;
+            inputVal.val = String(val);
         });
     };
 
@@ -177,10 +174,9 @@ const KillroyAirhornRow = ({ valueState }) => {
         const next = toNum(valueState.val, 0) === 0 ? 1 : 0;
         await run(async () => {
             const path = `OptionsListAccount[${AIRHORN_INDEX}]`;
-            await writeGga(path, next);
-            const verified = Math.round(Number(await readGga(path)));
-            if (verified !== next) throw new Error(`Airhorn toggle mismatch: expected ${next}, got ${verified}`);
-            valueState.val = verified;
+            const ok = await gga(path, next);
+            if (!ok) throw new Error(`Airhorn toggle mismatch: expected ${next}`);
+            valueState.val = next;
         });
     };
 
@@ -239,11 +235,11 @@ export const KillroyTab = () => {
         refreshError.val = null;
         try {
             const valueJobs = FIELD_INDEXES.map((idx) =>
-                readGga(`OptionsListAccount[${idx}]`).then((v) => ({ idx, value: toNum(v, 0) }))
+                gga(`OptionsListAccount[${idx}]`).then((v) => ({ idx, value: toNum(v, 0) }))
             );
 
             const pbJobs = PB_TOME_FIELDS.map((f) =>
-                readGga(`OptionsListAccount[${f.scoreIndex}]`).then((v) => ({ key: f.key, value: toNum(v, 0) }))
+                gga(`OptionsListAccount[${f.scoreIndex}]`).then((v) => ({ key: f.key, value: toNum(v, 0) }))
             );
             const pbLabelJobs = PB_TOME_FIELDS.map((f) =>
                 readCList(`Tome[${f.tomeIndex}]`)
@@ -259,7 +255,7 @@ export const KillroyTab = () => {
                 Promise.all(valueJobs),
                 Promise.all(pbJobs),
                 Promise.all(pbLabelJobs),
-                readGga("KRbest.h"),
+                gga("KRbest.h"),
             ]);
 
             for (const { idx, value } of fieldValues) {
@@ -372,16 +368,15 @@ export const KillroyTab = () => {
         if (!mobId || !Number.isFinite(kills)) return;
         await runAddEntry(async () => {
             const path = `KRbest.h[${mobId}]`;
-            await writeGga(path, kills);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== kills) throw new Error(`Write mismatch at ${path}: expected ${kills}, got ${verified}`);
+            const ok = await gga(path, kills);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${kills}`);
             const mobLabel = allowedMobs.val.find((m) => m.mobId === mobId)?.mobName ?? mobId;
             const nextRows = [...(bestByMob.val ?? [])];
             const existingIndex = nextRows.findIndex((row) => row.mobKey === mobId);
             if (existingIndex >= 0) {
-                nextRows[existingIndex] = { ...nextRows[existingIndex], kills: verified };
+                nextRows[existingIndex] = { ...nextRows[existingIndex], kills };
             } else {
-                nextRows.push({ mobKey: mobId, mobName: mobLabel, kills: verified });
+                nextRows.push({ mobKey: mobId, mobName: mobLabel, kills });
             }
             bestByMob.val = nextRows;
         });

@@ -8,7 +8,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -50,23 +50,16 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
             const levelPath = `StatueLevels[${index}][0]`;
             const depPath = `StatueLevels[${index}][1]`;
             const tierPath = `StatueG[${index}]`;
-            await writeGga(levelPath, lvl);
-            const verifiedLvl = Math.max(0, Math.round(Number(await readGga(levelPath))));
-            if (verifiedLvl !== lvl)
-                throw new Error(`Write mismatch at ${levelPath}: expected ${lvl}, got ${verifiedLvl}`);
-            await writeGga(depPath, dep);
-            const verifiedDep = Math.max(0, Math.round(Number(await readGga(depPath))));
-            if (verifiedDep !== dep)
-                throw new Error(`Write mismatch at ${depPath}: expected ${dep}, got ${verifiedDep}`);
-            await writeGga(tierPath, tier);
-            const verifiedTier = Math.round(Number(await readGga(tierPath)));
-            if (verifiedTier !== tier)
-                throw new Error(`Write mismatch at ${tierPath}: expected ${tier}, got ${verifiedTier}`);
+            const okLvl = await gga(levelPath, lvl);
+            if (!okLvl) throw new Error(`Write mismatch at ${levelPath}`);
+            const okDep = await gga(depPath, dep);
+            if (!okDep) throw new Error(`Write mismatch at ${depPath}`);
+            const okTier = await gga(tierPath, tier);
+            if (!okTier) throw new Error(`Write mismatch at ${tierPath}`);
 
-            // Update display states locally — no page-wide re-render needed.
-            levelDisplay.val = verifiedLvl;
-            depositedDisplay.val = verifiedDep;
-            tierDisplay.val = verifiedTier;
+            levelDisplay.val = lvl;
+            depositedDisplay.val = dep;
+            tierDisplay.val = tier;
         });
     };
 
@@ -164,7 +157,6 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
         )
     );
 };
-
 // ── StatuesTab ────────────────────────────────────────────────────────────
 
 export const StatuesTab = () => {
@@ -178,8 +170,8 @@ export const StatuesTab = () => {
         try {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readCList("StatueInfo"),
-                readGga("StatueLevels"),
-                readGga("StatueG"),
+                gga("StatueLevels"),
+                gga("StatueG"),
             ]);
             data.val = {
                 info: toIndexedArray(rawInfo),

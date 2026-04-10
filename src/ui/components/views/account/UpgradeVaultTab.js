@@ -14,7 +14,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readComputed, readCList } from "../../../services/api.js";
+import { gga, readComputed, readCList } from "../../../services/api.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
@@ -36,11 +36,10 @@ const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
         if (isNaN(lvl)) return;
         await run(async () => {
             const path = `UpgVault[${index}]`;
-            await writeGga(path, lvl);
-            const verified = Math.max(0, Math.round(Number(await readGga(path))));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            inputVal.val = String(verified);
-            levelDisplay.val = verified;
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            inputVal.val = String(lvl);
+            levelDisplay.val = lvl;
         });
     };
 
@@ -112,7 +111,7 @@ export const UpgradeVaultTab = () => {
                           .sort((a, b) => Number(a) - Number(b))
                           .map((k) => raw[k]);
 
-            const [rawInfo, rawLevels] = await Promise.all([readCList("UpgradeVault"), readGga("UpgVault")]);
+            const [rawInfo, rawLevels] = await Promise.all([readCList("UpgradeVault"), gga("UpgVault")]);
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);

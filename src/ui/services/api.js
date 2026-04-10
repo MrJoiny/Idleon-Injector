@@ -115,21 +115,6 @@ export async function searchGga(query, keys) {
 }
 
 /**
- * Read a game value by dot/bracket path.
- * The "gga." prefix is automatically prepended.
- * @param {string} path - e.g. "StampLevel" or "StampLevel[0][3]"
- * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
- */
-export async function readGga(path) {
-    const data = await _request("/game/gga/read", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: `gga.${path}` }),
-    });
-    return data.value;
-}
-
-/**
  * Read a value from cList (gga.CustomLists.h) by dot/bracket path.
  * @param {string} path - e.g. "Tome[27]" or "RANDOlist[16]"
  * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
@@ -161,27 +146,70 @@ export async function readGgaEntries(rootPath, keys, fields) {
     return data.value || {};
 }
 
-/**
- * Write a JSON-serializable value to a game path.
- * The "gga." prefix is automatically prepended.
- * @param {string} path - e.g. "StampLevel[0][3]"
- * @param {any} value - Number, string, boolean, null, object, or array
- * @returns {Promise<{ ok: true }>}
- */
-export async function writeGga(path, value) {
-    return _request("/game/gga/write", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: `gga.${path}`, value }),
-    });
-}
+const normalizeForCompare = (input) => {
+    if (Array.isArray(input)) return input.map((entry) => normalizeForCompare(entry));
+    if (input && typeof input === "object") {
+        const out = {};
+        for (const key of Object.keys(input).sort()) out[key] = normalizeForCompare(input[key]);
+        return out;
+    }
+    return input;
+};
+
+const coerceNumericForCompare = (input) => {
+    if (typeof input === "number") return Number.isNaN(input) ? undefined : input;
+    if (typeof input === "string") {
+        const trimmed = input.trim();
+        if (!trimmed) return undefined;
+        const parsed = Number(trimmed);
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+};
+
+const coerceBooleanForCompare = (input) => {
+    if (typeof input === "boolean") return input;
+    if (typeof input === "number") {
+        if (input === 1) return true;
+        if (input === 0) return false;
+        return undefined;
+    }
+    if (typeof input === "string") {
+        const normalized = input.trim().toLowerCase();
+        if (normalized === "true" || normalized === "1") return true;
+        if (normalized === "false" || normalized === "0") return false;
+        return undefined;
+    }
+    return undefined;
+};
+
+const matchesVerifiedValue = (expected, actual) => {
+    if (typeof expected === "number") {
+        const normalizedActual = coerceNumericForCompare(actual);
+        if (typeof normalizedActual === "undefined") return false;
+        return Object.is(expected, normalizedActual);
+    }
+    if (typeof expected === "string") return String(actual) === String(expected);
+    if (typeof expected === "boolean") return coerceBooleanForCompare(actual) === expected;
+    if (expected === null) return actual === null;
+    if (Array.isArray(expected) || (expected && typeof expected === "object")) {
+        return JSON.stringify(normalizeForCompare(actual)) === JSON.stringify(normalizeForCompare(expected));
+    }
+    if (typeof expected === "undefined") return typeof actual === "undefined";
+    return Object.is(actual, expected);
+};
 
 /**
  * Unified read/write helper with built-in typed verification.
  * Read mode:
- *   gga(path)
+ *   gga(path) -> returns the raw resolved value
  * Write mode:
- *   gga(path, value)
+ *   gga(path, value) -> returns true/false
+ *
+ * Verification is semantic/coercive by design for account-page workflows:
+ * - numbers can match numeric strings (e.g. 1 === "1")
+ * - booleans can match 1/0 and "true"/"false"
+ * - objects/arrays are normalized before structural comparison
  *
  * @param {string} path
  * @param {any=} value
@@ -213,20 +241,7 @@ export async function gga(path, value) {
             body: JSON.stringify({ path: ggaPath }),
         });
         const verifiedValue = verifiedData.value;
-        const isObjectLike = value !== null && typeof value === "object";
-        const isArrayLike = Array.isArray(value);
-        let matches = false;
-
-        if (typeof value === "number") {
-            matches = Object.is(Number(value), Number(verifiedValue));
-        } else if (typeof value === "string") {
-            matches = String(verifiedValue) === String(value);
-        } else if (isArrayLike || isObjectLike) {
-            matches = JSON.stringify(verifiedValue) === JSON.stringify(value);
-        } else {
-            console.error(`[gga] Unsupported verify type at ${path}: ${typeof value}`);
-            return false;
-        }
+        const matches = matchesVerifiedValue(value, verifiedValue);
 
         if (!matches) {
             console.error(

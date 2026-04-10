@@ -22,7 +22,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -122,10 +122,9 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
 
                 const lvl = Math.max(0, Math.min(maxBookLv, toNum(raw)));
                 const path = `SkillLevelsMAX[${talentId}]`;
-                await writeGga(path, lvl);
-                const verified = Math.max(0, Math.min(maxBookLv, Math.round(Number(await readGga(path)))));
-                if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-                return verified;
+                const ok = await gga(path, lvl);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+                return lvl;
             },
             {
                 onSuccess: (verified) => {
@@ -232,26 +231,21 @@ export const LibraryTab = () => {
         await runBulk(async () => {
             const cap = data.val.maxBookLv;
             const blocked = data.val.blockedLibraryTalentIds ?? new Set();
-            const writtenIds = [];
 
             for (const group of data.val.groups) {
                 for (const t of group.talents) {
                     if (blocked.has(Number(t.talentId))) continue;
-                    await writeGga(`SkillLevelsMAX[${t.talentId}]`, cap);
-                    writtenIds.push(t.talentId);
+                    const path = `SkillLevelsMAX[${t.talentId}]`;
+                    const ok = await gga(path, cap);
+                    if (!ok) throw new Error(`Write mismatch at ${path}: expected ${cap}, got failed verification`);
                     await new Promise((r) => setTimeout(r, 20));
                 }
             }
-
-            if (writtenIds.length === 0) return;
-
-            const rawVerified = await readGga("SkillLevelsMAX");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
-            for (const talentId of writtenIds) {
-                const verified = Math.max(0, Math.min(cap, Math.round(Number(verifiedArr[talentId] ?? 0))));
-                if (verified !== cap)
-                    throw new Error(`Write mismatch at SkillLevelsMAX[${talentId}]: expected ${cap}, got ${verified}`);
-                getMaxState(talentId).val = verified;
+            for (const group of data.val.groups) {
+                for (const t of group.talents) {
+                    if (blocked.has(Number(t.talentId))) continue;
+                    getMaxState(t.talentId).val = cap;
+                }
             }
         });
     };
@@ -273,16 +267,16 @@ export const LibraryTab = () => {
                 rawMaxBookLv,
                 rawTalentDL2,
             ] = await Promise.all([
-                readGga("UserInfo[0]"),
-                readGga("CharacterClass"),
-                readGga("SkillLevels"),
-                readGga("SkillLevelsMAX"),
+                gga("UserInfo[0]"),
+                gga("CharacterClass"),
+                gga("SkillLevels"),
+                gga("SkillLevelsMAX"),
                 readCList("TalentOrder"),
                 readCList("TalentIconNames"),
                 readCList("ClassNames"),
                 readCList("RANDOlist[16]").catch(() => []),
                 readComputed("workbench", "maxBookLv", [0, 0]).catch(() => 0),
-                readGga("DNSM.h.TalentDL2").catch(() => []),
+                gga("DNSM.h.TalentDL2").catch(() => []),
             ]);
 
             if (rawUserInfo === null || rawUserInfo === undefined) {

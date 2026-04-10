@@ -29,7 +29,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readComputed } from "../../../../services/api.js";
+import { gga, readComputed } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -91,11 +91,10 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         const max = Number(maxState.val);
         const val = max > 0 ? Math.min(max, parsed) : parsed;
         await run(async () => {
-            await writeGga(writePath, val);
-            const verified = Math.max(0, Math.round(Number(await readGga(writePath))));
-            if (verified !== val) throw new Error(`Write mismatch at ${writePath}: expected ${val}, got ${verified}`);
-            valueState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(writePath, val);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            valueState.val = val;
+            inputVal.val = String(val);
         });
     };
 
@@ -179,10 +178,7 @@ export const Pay2WinTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const [rawP2W, rawDraconic] = await Promise.all([
-                readGga("CauldronP2W"),
-                readGga("OptionsListAccount[123]"),
-            ]);
+            const [rawP2W, rawDraconic] = await Promise.all([gga("CauldronP2W"), gga("OptionsListAccount[123]")]);
             const p2w = toIndexedArray(rawP2W ?? []);
             const brew0 = toIndexedArray(p2w[0] ?? []);
             const liq1 = toIndexedArray(p2w[1] ?? []);

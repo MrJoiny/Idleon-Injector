@@ -14,7 +14,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readGga, writeGga, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -38,11 +38,10 @@ const AtomRow = ({ index, name, maxLevel, levelState }) => {
 
         await run(async () => {
             const path = `Atoms[${index}]`;
-            await writeGga(path, lvl);
-            const verified = Math.max(0, Math.min(maxLevel, Math.round(Number(await readGga(path)))));
-            if (verified !== lvl) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got ${verified}`);
-            levelState.val = verified;
-            inputVal.val = String(verified);
+            const ok = await gga(path, lvl);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+            levelState.val = lvl;
+            inputVal.val = String(lvl);
         });
     };
 
@@ -108,16 +107,16 @@ export const AtomColliderTab = () => {
             const atoms = data.val.atoms;
             const expectedLevels = atoms.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
             for (let i = 0; i < atoms.length; i++) {
-                await writeGga(`Atoms[${i}]`, expectedLevels[i]);
+                const path = `Atoms[${i}]`;
+                const ok = await gga(path, expectedLevels[i]);
+                if (!ok)
+                    throw new Error(
+                        `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
+                    );
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("Atoms");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < atoms.length; i++) {
-                const verified = Math.max(0, Math.min(atoms[i].maxLevel, Math.round(Number(verifiedArr[i] ?? 0))));
-                if (verified !== expectedLevels[i])
-                    throw new Error(`Write mismatch at Atoms[${i}]: expected ${expectedLevels[i]}, got ${verified}`);
-                getLevelState(i).val = verified;
+                getLevelState(i).val = expectedLevels[i];
             }
         });
     };
@@ -126,7 +125,7 @@ export const AtomColliderTab = () => {
         if (showSpinner) loading.val = true;
         error.val = null;
         try {
-            const [rawLevels, rawAtomInfo] = await Promise.all([readGga("Atoms"), readCList("AtomInfo")]);
+            const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
 
             const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
 

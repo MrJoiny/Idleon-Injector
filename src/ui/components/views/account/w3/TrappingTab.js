@@ -20,7 +20,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput, getNumberInputLiveRaw } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -387,13 +387,14 @@ export const TrappingTab = () => {
 
     const onWriteField = async (playerName, trapIndex, fieldIndex, value, isCurrentPlayer) => {
         if (isCurrentPlayer) {
-            await writeGga(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value);
+            const liveOk = await gga(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value);
+            if (!liveOk)
+                throw new Error(`Write mismatch at PlacedTraps[${trapIndex}][${fieldIndex}]: expected ${value}`);
         }
         const dbPath = `${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`;
-        await writeGga(dbPath, value);
-        const verified = Math.max(0, Math.round(Number(await readGga(dbPath))));
-        if (verified !== value) throw new Error(`Write mismatch at ${dbPath}: expected ${value}, got ${verified}`);
-        return verified;
+        const ok = await gga(dbPath, value);
+        if (!ok) throw new Error(`Write mismatch at ${dbPath}: expected ${value}`);
+        return value;
     };
 
     const load = async (showSpinner = true) => {
@@ -402,11 +403,11 @@ export const TrappingTab = () => {
 
         try {
             const [rawNames, rawCurrentPlayer, rawPlayerDb, rawItemDefs, rawMonsterDefs] = await Promise.all([
-                readGga("GetPlayersUsernames"),
-                readGga("UserInfo[0]").catch(() => ""),
-                readGga("PlayerDATABASE.h"),
-                readGga("ItemDefinitionsGET.h").catch(() => ({})),
-                readGga("MonsterDefinitionsGET.h").catch(() => ({})),
+                gga("GetPlayersUsernames"),
+                gga("UserInfo[0]").catch(() => ""),
+                gga("PlayerDATABASE.h"),
+                gga("ItemDefinitionsGET.h").catch(() => ({})),
+                gga("MonsterDefinitionsGET.h").catch(() => ({})),
             ]);
 
             const playerNames = toIndexedArray(rawNames ?? []).filter(

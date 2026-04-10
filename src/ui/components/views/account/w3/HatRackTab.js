@@ -10,7 +10,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -175,10 +175,10 @@ export const HatRackTab = () => {
         error.val = null;
         try {
             if (forceDefsReload || !itemDefsCache) {
-                const defs = await readGga(ITEM_DEFS_PATH);
+                const defs = await gga(ITEM_DEFS_PATH);
                 itemDefsCache = defs && typeof defs === "object" ? defs : {};
             }
-            const rawRack = await readGga(RACK_PATH);
+            const rawRack = await gga(RACK_PATH);
             if (seq !== loadSeq) return;
             applyRackState(rawRack);
             data.val = { loaded: true };
@@ -191,56 +191,16 @@ export const HatRackTab = () => {
         }
     };
 
-    const verifyRackState = async (expectedRack, contextLabel) => {
-        let rawVerifiedRack;
-        try {
-            rawVerifiedRack = await readGga(RACK_PATH);
-        } catch (e) {
-            const msg = `Failed reading full rack after ${contextLabel}. Rack may be inconsistent. Press REFRESH to resync.`;
-            writeWarning.val = msg;
-            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-        }
-
-        const expected = normalizeRackIds(expectedRack);
-        const actual = normalizeRackIds(rawVerifiedRack);
-        const mismatchIndex = expected.findIndex((itemId, index) => actual[index] !== itemId);
-        const hasMismatch = mismatchIndex !== -1 || actual.length !== expected.length;
-        if (hasMismatch) {
-            const msg = `Rack read-back mismatch after ${contextLabel}: expected [${expected.join(
-                ", "
-            )}], got [${actual.join(", ")}]. Press REFRESH to resync.`;
-            writeWarning.val = msg;
-            throw new Error(msg);
-        }
-    };
-
-    const rewriteRack = async (nextRack) => {
-        writeWarning.val = null;
-        for (let i = 0; i < nextRack.length; i++) {
-            try {
-                await writeGga(`${RACK_PATH}[${i}]`, nextRack[i]);
-            } catch (e) {
-                const msg = `Failed writing rack item at index ${i}. Rack may be inconsistent. Press REFRESH to resync.`;
-                writeWarning.val = msg;
-                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-            }
-        }
-        try {
-            await writeGga(`${RACK_PATH}.length`, nextRack.length);
-        } catch (e) {
-            const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
-            writeWarning.val = msg;
-            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-        }
-        await verifyRackState(nextRack, "rewrite");
-    };
-
     const appendToRack = async (currentRack, items) => {
         writeWarning.val = null;
         const baseRack = normalizeRackIds(currentRack);
         for (let i = 0; i < items.length; i++) {
             try {
-                await writeGga(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
+                const ok = await gga(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
+                if (!ok)
+                    throw new Error(
+                        `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`
+                    );
             } catch (e) {
                 const msg = `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`;
                 writeWarning.val = msg;
@@ -248,13 +208,13 @@ export const HatRackTab = () => {
             }
         }
         try {
-            await writeGga(`${RACK_PATH}.length`, baseRack.length + items.length);
+            const ok = await gga(`${RACK_PATH}.length`, baseRack.length + items.length);
+            if (!ok) throw new Error("Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.");
         } catch (e) {
             const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
             throw new Error(e?.message ? `${msg} (${e.message})` : msg);
         }
-        await verifyRackState([...baseRack, ...items], "append");
     };
 
     const removeAtIndex = async (index) => {
@@ -264,8 +224,17 @@ export const HatRackTab = () => {
 
         mutating.val = true;
         try {
-            const nextRack = currentRack.filter((_, i) => i !== index);
-            await rewriteRack(nextRack);
+            const nextRack = [...currentRack];
+            nextRack.splice(index, 1);
+            writeWarning.val = null;
+            try {
+                const ok = await gga(RACK_PATH, nextRack);
+                if (!ok) throw new Error("Write verification failed");
+            } catch (e) {
+                const msg = "Failed updating rack after removal. Rack may be inconsistent. Press REFRESH to resync.";
+                writeWarning.val = msg;
+                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+            }
             withPreservedScroll(() => applyRackState(nextRack));
         } finally {
             mutating.val = false;

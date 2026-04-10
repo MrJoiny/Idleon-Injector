@@ -16,7 +16,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -56,10 +56,9 @@ const SigilCard = ({ index, tierState, nameState }) => {
         if (isNaN(tier)) return;
         await run(async () => {
             const path = `CauldronP2W[4][${2 * index + 1}]`;
-            await writeGga(path, tier);
-            const verified = Math.min(4, Math.max(-1, Math.round(Number(await readGga(path)))));
-            if (verified !== tier) throw new Error(`Write mismatch at ${path}: expected ${tier}, got ${verified}`);
-            tierState.val = verified;
+            const ok = await gga(path, tier);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${tier}`);
+            tierState.val = tier;
         });
     };
 
@@ -136,7 +135,7 @@ export const SigilTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const [rawP2W, rawSigilDesc] = await Promise.all([readGga("CauldronP2W"), readCList("SigilDesc")]);
+            const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);
 
             // Fill tier values from CauldronP2W[4][2*i + 1]
             const sig4 = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);
@@ -171,18 +170,12 @@ export const SigilTab = () => {
         if (isNaN(tier)) return;
         await runSetAll(async () => {
             for (let i = 0; i < sigilTier.length; i++) {
-                await writeGga(`CauldronP2W[4][${2 * i + 1}]`, tier);
+                const ok = await gga(`CauldronP2W[4][${2 * i + 1}]`, tier);
+                if (!ok) throw new Error(`Write mismatch at CauldronP2W[4][${2 * i + 1}]: expected ${tier}`);
                 await new Promise((r) => setTimeout(r, 20));
             }
-            const rawVerified = await readGga("CauldronP2W[4]");
-            const verifiedArr = toIndexedArray(rawVerified ?? []);
             for (let i = 0; i < sigilTier.length; i++) {
-                const verified = Math.min(4, Math.max(-1, Math.round(Number(verifiedArr[2 * i + 1] ?? -1))));
-                if (verified !== tier)
-                    throw new Error(
-                        `Write mismatch at CauldronP2W[4][${2 * i + 1}]: expected ${tier}, got ${verified}`
-                    );
-                sigilTier[i].val = verified;
+                sigilTier[i].val = tier;
             }
         });
     };
