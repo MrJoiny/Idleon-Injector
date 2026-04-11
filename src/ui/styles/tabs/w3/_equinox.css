@@ -139,6 +139,8 @@
     opacity: 0.9;
 }
 
+/* Nightmare clouds (display index #36+, internal index >= 35) */
+.feature-row.cloud-row--nightmare:not(.feature-row--success):not(.feature-row--error) {
     border-color: var(--c-ui-red-45);
     background: linear-gradient(90deg, var(--c-ui-red-04), var(--c-danger-08));
 }
