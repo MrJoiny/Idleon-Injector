@@ -167,8 +167,15 @@ export const Search = () => {
         }
 
         for (const path of desiredPaths) {
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+
+            if (subscribedMonitorPaths.has(path) && !resolvedMonitor.entry) {
+                subscribedMonitorPaths.delete(path);
+            }
+
             if (subscribedMonitorPaths.has(path)) continue;
-            store.subscribeMonitor(monitorPathForSearchResult(path));
+            store.subscribeMonitor(monitorPath);
             subscribedMonitorPaths.add(path);
         }
 
@@ -248,6 +255,12 @@ export const Search = () => {
 
     van.derive(() => {
         saveLocalFavoriteKeys(ui.favoriteKeys);
+    });
+
+    van.derive(() => {
+        ui.savedResults;
+        store.data.monitorValues;
+        reconcileMonitorSubscriptions();
     });
 
     const getFilteredResults = () => {

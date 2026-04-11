@@ -7,6 +7,7 @@
 import { gga } from "../core/globals.js";
 import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
+import { parsePath } from "../utils/pathResolver.js";
 
 export function getGgaKeys() {
     return Object.keys(gga)
@@ -54,7 +55,7 @@ function matchesQuery(value, parsedQuery) {
 
     if (parsedQuery.isContains && parsedQuery.type === "string") {
         if (typeof value === "string") {
-            return value.toLowerCase().includes(String(parsedQuery.value).toLowerCase());
+            return value.toLowerCase().includes(parsedQuery.value.toLowerCase());
         }
         return false;
     }
@@ -91,56 +92,8 @@ function formatValue(value) {
     return String(value);
 }
 
-function splitPath(path) {
-    if (typeof path !== "string" || !path) return [];
-
-    const parts = [];
-    let buf = "";
-    let i = 0;
-
-    const flush = () => {
-        const t = buf.trim();
-        if (t) parts.push(t);
-        buf = "";
-    };
-
-    while (i < path.length) {
-        const ch = path[i];
-
-        if (ch === ".") {
-            flush();
-            i += 1;
-            continue;
-        }
-
-        if (ch === "[") {
-            flush();
-            const end = path.indexOf("]", i);
-            if (end === -1) {
-                buf += ch;
-                i += 1;
-                continue;
-            }
-
-            let inside = path.slice(i + 1, end).trim();
-            if ((inside.startsWith('"') && inside.endsWith('"')) || (inside.startsWith("'") && inside.endsWith("'"))) {
-                inside = inside.slice(1, -1);
-            }
-            if (inside) parts.push(inside);
-            i = end + 1;
-            continue;
-        }
-
-        buf += ch;
-        i += 1;
-    }
-
-    flush();
-    return parts;
-}
-
 function getValueAtPath(root, path) {
-    const parts = splitPath(path);
+    const parts = parsePath(path);
     let cur = root;
 
     for (const key of parts) {
@@ -163,7 +116,7 @@ function searchGgaWithinPaths(query, withinPaths) {
     for (const fullPath of withinPaths) {
         if (typeof fullPath !== "string" || !fullPath) continue;
 
-        const topKey = splitPath(fullPath)[0];
+        const topKey = parsePath(fullPath)[0];
         if (!topKey) continue;
         if (!(topKey in gga) || blacklist_gga.has(topKey)) continue;
 
@@ -186,16 +139,12 @@ function searchGgaWithinPaths(query, withinPaths) {
     return { results, totalCount: results.length };
 }
 
-export function searchGga(query, keys, optionsOrWithinPaths = null) {
+export function searchGga(query, keys, options = null) {
     if (!gga || query === undefined || query === null) {
         return { results: [], totalCount: 0 };
     }
 
-    const withinPaths = Array.isArray(optionsOrWithinPaths)
-        ? optionsOrWithinPaths
-        : optionsOrWithinPaths && Array.isArray(optionsOrWithinPaths.withinPaths)
-          ? optionsOrWithinPaths.withinPaths
-          : null;
+    const withinPaths = options && Array.isArray(options.withinPaths) ? options.withinPaths : null;
 
     if (withinPaths && withinPaths.length > 0) {
         return searchGgaWithinPaths(query, withinPaths);

@@ -379,6 +379,12 @@ exports.injectorConfig = ${new_injectorConfig};
             });
         }
 
+        if (typeof query !== "string") {
+            return res.status(400).json({
+                error: "Invalid query type: query must be a string",
+            });
+        }
+
         const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
         if (!hasWithinPaths && (!Array.isArray(keys) || keys.length === 0)) {
             return res.status(400).json({ error: "Missing required parameters: keys (array) or withinPaths (array)" });

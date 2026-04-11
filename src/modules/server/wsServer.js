@@ -121,11 +121,6 @@ function scheduleMonitorSubscribeRetry(ws, path, id, retryAttempt) {
 
         const monitorMap = clientMonitorState.get(ws);
         if (!monitorMap || !monitorMap.has(id)) return;
-        if (globalWatchersByPath.has(path)) {
-            sendMonitorStateToClient(ws);
-            return;
-        }
-
         void handleMonitorSubscribe(ws, path, retryAttempt + 1, true);
     }, MONITOR_SUBSCRIBE_RETRY_DELAY_MS);
 
@@ -561,6 +556,18 @@ function getConnectedClients() {
  */
 function closeWebSocket() {
     if (wss) {
+        if (runtimeRef && contextRef) {
+            void runtimeRef
+                .evaluate({
+                    expression: "window.monitorUnwrapAll()",
+                    awaitPromise: true,
+                    returnByValue: true,
+                })
+                .catch((err) => {
+                    log.error("Error unwrapping all monitors during shutdown:", err.message);
+                });
+        }
+
         for (const client of clients) {
             client.close();
         }
