@@ -1,360 +1,90 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
-import { FAVORITE_KEYS } from "../../state/constants.js";
-import { detectQueryType, copyToClipboard } from "../../utils/index.js";
-import { Loader } from "../Loader.js";
-import { EmptyState } from "../EmptyState.js";
-import { Icons } from "../../assets/icons.js";
-import * as API from "../../services/api.js";
+import { detectQueryType } from "../../utils/index.js";
+import {
+    NEW_SCAN_TYPES,
+    NEXT_SCAN_TYPES,
+    isInputlessScanType,
+    requiresSecondaryInput,
+    needsPreviousSnapshot,
+    buildSnapshotFromResults,
+    filterResultsByScanType,
+} from "./search/scanUtils.js";
+import {
+    seedEditValue,
+    expectedUiType,
+    validateEditDraft,
+    monitorPathForSearchResult,
+    monitorIdFromMonitorPath,
+    formatMonitorValue,
+    getMonitorHistory,
+    resolveMonitorEntry,
+    getUiTypeFromRawValue,
+    getDraftFromRawValue,
+    getResultValue,
+} from "./search/valueUtils.js";
+import {
+    uniqueStrings,
+    normalizeFavoriteKeys,
+    loadLocalFavoriteKeys,
+    saveLocalFavoriteKeys,
+    normalizeSavedEntry,
+    loadSearchWorkspace,
+    buildSearchWorkspace,
+    saveSearchWorkspace,
+    pickInitialSelectedKeys,
+    normalizeFilterText,
+    matchesEntryFilter,
+} from "./search/workspaceUtils.js";
+import { KeysSection, SearchInputSection, ResultsSection, SavedResultsSection } from "./search/sections.js";
 
-const { div, input, button, span, label, details, summary } = van.tags;
-
-/**
- * Key checkbox component for the whitelist.
- */
-const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
-    const isChecked = () => selectedKeys.includes(keyName);
-
-    return label(
-        { class: () => `key-checkbox ${isChecked() ? "checked" : ""}`, title: keyName },
-        input({
-            type: "checkbox",
-            checked: isChecked,
-            onchange: (e) => onChange(keyName, e.target.checked),
-        }),
-        span({ class: "key-checkbox-label" }, keyName)
-    );
-};
-
-/**
- * Search result item component.
- */
-const ResultItem = ({ result }) => {
-    const copyFeedback = van.state(null);
-
-    const handleCopy = (e) => {
-        e.stopPropagation();
-        const success = copyToClipboard(`gga.${result.path}`);
-        copyFeedback.val = success ? "success" : "error";
-        store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
-        setTimeout(() => (copyFeedback.val = null), 1500);
-    };
-
-    const handleMonitor = (e) => {
-        e.stopPropagation();
-        store.subscribeMonitor(`gga.${result.path}`);
-        store.notify(`Added ${result.path} to monitor`);
-    };
-
-    return div(
-        {
-            class: () => `search-result-item ${copyFeedback.val === "success" ? "copied" : ""}`,
-            onclick: handleCopy,
-            title: "Click to copy full access path",
-        },
-        span({ class: "result-path" }, result.path),
-        span({ class: "result-equals" }, "="),
-        span({ class: `result-value type-${result.type}` }, result.formattedValue),
-        div(
-            { class: "result-actions" },
-            button(
-                {
-                    class: "result-action-btn monitor-btn",
-                    title: "Send to Monitor",
-                    onclick: handleMonitor,
-                },
-                Icons.Eye()
-            ),
-            span({ class: "result-copy-icon" }, () => (copyFeedback.val === "success" ? Icons.Check() : Icons.Copy()))
-        )
-    );
-};
-
-/**
- * Reusable search button component.
- */
-const SearchButton = ({ isSearching, disabled, onClick }) =>
-    button(
-        {
-            class: () => `search-btn ${isSearching() ? "loading" : ""}`,
-            onclick: onClick,
-            disabled: () => isSearching() || disabled(),
-        },
-        () => (isSearching() ? "..." : "SEARCH"),
-        Icons.Search()
-    );
-
-/**
- * Keys Section (Left Column)
- */
-const KeysSection = ({ ui, handlers }) =>
-    div(
-        { class: "search-keys-section" },
-        div(
-            { class: "section-header" },
-            span({ class: "section-title" }, "SEARCH IN KEYS"),
-            div(
-                { class: "section-actions" },
-                button(
-                    {
-                        class: () => `btn-small ${handlers.areAllSelected() ? "active" : ""}`,
-                        onclick: handlers.toggleAll,
-                        title: () => (handlers.areAllSelected() ? "Deselect all keys" : "Select all keys"),
-                    },
-                    () => (handlers.areAllSelected() ? "NONE" : "ALL")
-                ),
-                button(
-                    {
-                        class: "btn-small",
-                        onclick: () => handlers.selectKeys(handlers.getValidFavorites()),
-                        title: "Select all favorites",
-                    },
-                    "FAV"
-                ),
-                button({ class: "btn-small", onclick: handlers.clearSelection, title: "Clear selection" }, "CLEAR")
-            )
-        ),
-        div(
-            { class: "keys-content scroll-container" },
-            // Favorites section
-            div({ class: "keys-group" }, div({ class: "keys-group-header" }, "★ FAVORITES"), () => {
-                if (ui.isLoading) {
-                    return div({ class: "keys-loading" }, "Loading");
-                }
-                const validFavorites = handlers.getValidFavorites();
-                if (validFavorites.length === 0) {
-                    return div({ class: "keys-loading" }, "No keys available");
-                }
-                return div(
-                    { class: "keys-grid" },
-                    ...validFavorites.map((key) =>
-                        KeyCheckbox({
-                            keyName: key,
-                            selectedKeys: ui.selectedKeys,
-                            onChange: handlers.handleKeyChange,
-                        })
-                    )
-                );
-            }),
-            // All keys expandable section
-            details(
-                {
-                    class: "keys-group expandable",
-                    open: ui.allKeysExpanded,
-                    ontoggle: (e) => (ui.allKeysExpanded = e.target.open),
-                },
-                summary({ class: "keys-group-header" }, () => `ALL KEYS (${handlers.getOtherKeys().length} MORE)`),
-                div(
-                    { class: "keys-expand-content" },
-                    div(
-                        { class: "keys-filter" },
-                        input({
-                            type: "text",
-                            class: "keys-filter-input",
-                            placeholder: "FILTER KEYS",
-                            value: () => ui.allKeysFilter,
-                            oninput: (e) => (ui.allKeysFilter = e.target.value),
-                        })
-                    ),
-                    () => {
-                        const otherKeys = handlers.getOtherKeys();
-                        return div(
-                            { class: "keys-grid" },
-                            ...otherKeys.map((key) =>
-                                KeyCheckbox({
-                                    keyName: key,
-                                    selectedKeys: ui.selectedKeys,
-                                    onChange: handlers.handleKeyChange,
-                                })
-                            )
-                        );
-                    }
-                )
-            )
-        ),
-        // Selected count
-        div({ class: "keys-footer" }, () =>
-            span({ class: "selected-count" }, `${ui.selectedKeys.length} keys selected`)
-        )
-    );
-
-/**
- * Search Input Section (Top Right)
- */
-const SearchInputSection = ({ ui, handlers }) =>
-    div(
-        { class: "search-input-section" },
-        div(
-            { class: "section-header" },
-            span({ class: "section-title" }, "SEARCH VALUE"),
-            button(
-                {
-                    class: () => `btn-small range-toggle ${ui.range.enabled ? "active" : ""}`,
-                    onclick: handlers.toggleRangeMode,
-                    title: "Toggle range search mode",
-                },
-                () => (ui.range.enabled ? "RANGE: ON" : "RANGE: OFF")
-            )
-        ),
-        div(
-            { class: "search-input-content" },
-            () => {
-                if (ui.range.enabled) {
-                    return div(
-                        { class: "search-input-row range-row" },
-                        input({
-                            type: "text",
-                            class: "search-query-input range-input",
-                            placeholder: "MIN",
-                            value: () => ui.range.min,
-                            oninput: (e) => (ui.range.min = e.target.value),
-                            onkeydown: handlers.handleKeyDown,
-                        }),
-                        span({ class: "range-separator" }, "TO"),
-                        input({
-                            type: "text",
-                            class: "search-query-input range-input",
-                            placeholder: "MAX",
-                            value: () => ui.range.max,
-                            oninput: (e) => (ui.range.max = e.target.value),
-                            onkeydown: handlers.handleKeyDown,
-                        }),
-                        SearchButton({
-                            isSearching: () => ui.isSearching,
-                            disabled: () => ui.selectedKeys.length === 0,
-                            onClick: handlers.handleSearch,
-                        })
-                    );
-                }
-                return div(
-                    { class: "search-input-row" },
-                    input({
-                        type: "text",
-                        class: "search-query-input",
-                        placeholder: "SEARCH_VALUE",
-                        value: () => ui.searchQuery,
-                        oninput: handlers.handleQueryInput,
-                        onkeydown: handlers.handleKeyDown,
-                    }),
-                    SearchButton({
-                        isSearching: () => ui.isSearching,
-                        disabled: () => ui.selectedKeys.length === 0,
-                        onClick: handlers.handleSearch,
-                    })
-                );
-            },
-            div({ class: "search-type-hint" }, () => {
-                if (ui.range.enabled) {
-                    return span({ class: "type-label" }, "MODE: NUMBER RANGE (MIN ≤ VALUE ≤ MAX)");
-                }
-                return span(
-                    span({ class: "type-label" }, "DETECTED TYPE: "),
-                    span({ class: () => `type-value type-${ui.detectedType}` }, () => ui.detectedType.toUpperCase())
-                );
-            })
-        )
-    );
-
-/**
- * Results Section (Bottom Right)
- */
-const ResultsSection = ({ ui, handlers }) =>
-    div(
-        { class: "search-results-section" },
-        div(
-            { class: "section-header" },
-            span({ class: "section-title" }, "RESULTS"),
-            () => {
-                if (ui.totalCount > 0) {
-                    return span(
-                        { class: "results-count" },
-                        `FOUND ${ui.totalCount} MATCH${ui.totalCount === 1 ? "" : "ES"}`
-                    );
-                }
-                return null;
-            },
-            button(
-                {
-                    class: "btn-icon refresh-btn",
-                    onclick: handlers.handleSearch,
-                    disabled: () => ui.isSearching || !handlers.hasValidQuery(),
-                    title: "Refresh search",
-                },
-                Icons.Refresh()
-            )
-        ),
-        div({ class: "results-content scroll-container" }, () => {
-            if (ui.isSearching) {
-                return Loader({ text: "Searching" });
-            }
-
-            if (ui.error) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "SEARCH ERROR",
-                    subtitle: ui.error,
-                });
-            }
-
-            if (ui.results.length === 0) {
-                if (handlers.hasValidQuery()) {
-                    return EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO RESULTS",
-                        subtitle: "Try a different search value or select more keys",
-                    });
-                }
-                return EmptyState({
-                    icon: Icons.Search(),
-                    title: "SEARCH GGA",
-                    subtitle: "Enter a value and click Search to find where it's stored",
-                });
-            }
-
-            const visibleResults = ui.results.slice(0, ui.displayLimit);
-            const hasMore = ui.results.length > ui.displayLimit;
-            const remaining = ui.results.length - ui.displayLimit;
-
-            return div(
-                { class: "results-list" },
-                ...visibleResults.map((result) => ResultItem({ result })),
-                hasMore
-                    ? button(
-                          {
-                              class: "load-more-btn",
-                              onclick: () => (ui.displayLimit += 50),
-                          },
-                          `LOAD MORE (${remaining} REMAINING)`
-                      )
-                    : null
-            );
-        })
-    );
+const { div } = van.tags;
 
 export const Search = () => {
-    // Consolidated state
+    const restoredWorkspace = loadSearchWorkspace() || {};
+    const localFavoriteKeys = loadLocalFavoriteKeys();
+    const initialSearchQuery = "";
+
     const ui = vanX.reactive({
         allKeys: [],
-        selectedKeys: [],
-        searchQuery: "",
-        range: { enabled: false, min: "", max: "" },
-        detectedType: "empty",
+        favoriteKeys: normalizeFavoriteKeys(localFavoriteKeys),
+        selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
+        searchQuery: initialSearchQuery,
+        searchQuery2: "",
+        resultsFilter: "",
+        savedFilter: "",
+        resultsFilterApplied: "",
+        savedFilterApplied: "",
+        detectedType: detectQueryType(initialSearchQuery),
+        scanTypeNew: "exact_value",
+        scanTypeNext: "exact_value",
+        scanSessionActive: false,
+        previousSnapshot: {},
         isLoading: false,
         isSearching: false,
         results: [],
-        totalCount: 0,
         displayLimit: 50,
         error: null,
         allKeysExpanded: false,
         allKeysFilter: "",
+        scopePaths: [],
+        lastSearchMode: "new",
+        edit: { path: null, draft: "", type: "" },
+        isSettingValue: false,
+        hasSearched: false,
+        savedResults: Array.isArray(restoredWorkspace.savedResults)
+            ? restoredWorkspace.savedResults.map(normalizeSavedEntry).filter(Boolean)
+            : [],
+        savedEdit: { path: null, draft: "", type: "" },
+        isRefreshingSavedResults: false,
+        monitorToggleNonce: 0,
     });
 
-    // Derived values
-    const getValidFavorites = () => FAVORITE_KEYS.filter((k) => ui.allKeys.includes(k));
+    const getValidFavorites = () => normalizeFavoriteKeys(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
 
     const getOtherKeys = () => {
-        const favSet = new Set(FAVORITE_KEYS);
+        const favSet = new Set(getValidFavorites());
         let keys = ui.allKeys.filter((k) => !favSet.has(k));
         if (ui.allKeysFilter) {
             const filter = ui.allKeysFilter.toLowerCase();
@@ -365,9 +95,6 @@ export const Search = () => {
 
     const areAllSelected = () => ui.allKeys.length > 0 && ui.selectedKeys.length === ui.allKeys.length;
 
-    const hasValidQuery = () => (ui.range.enabled ? ui.range.min.trim() && ui.range.max.trim() : ui.searchQuery.trim());
-
-    // Generic key selection handler
     const updateSelection = (keys, select) => {
         if (select) {
             const newKeys = new Set(ui.selectedKeys);
@@ -379,35 +106,287 @@ export const Search = () => {
         }
     };
 
-    // Handlers
+    const getResolvedMonitorEntry = (path) => {
+        return resolveMonitorEntry(path, store.data.monitorValues || {});
+    };
+
+    const getMonitorUnsubscribeId = (monitorPath, resolvedMonitor) => {
+        return resolvedMonitor?.id || monitorIdFromMonitorPath(monitorPath);
+    };
+
+    let resultsFilterTimer = null;
+    let savedFilterTimer = null;
+    let resultsFilterSeq = 0;
+    let savedFilterSeq = 0;
+    let workspacePersistTimer = null;
+    const subscribedMonitorPaths = new Set();
+    const monitorToggleLocksByPath = new Map();
+    const MONITOR_TOGGLE_LOCK_MS = 280;
+    const filterCache = {
+        results: { source: null, query: "", values: [] },
+        saved: { source: null, query: "", values: [] },
+    };
+
+    const isMonitorToggleLocked = (path) => {
+        ui.monitorToggleNonce;
+
+        const lockUntil = monitorToggleLocksByPath.get(path);
+        if (!lockUntil) return false;
+
+        if (Date.now() >= lockUntil) {
+            monitorToggleLocksByPath.delete(path);
+            return false;
+        }
+
+        return true;
+    };
+
+    const lockMonitorToggle = (path) => {
+        const lockUntil = Date.now() + MONITOR_TOGGLE_LOCK_MS;
+        monitorToggleLocksByPath.set(path, lockUntil);
+        ui.monitorToggleNonce += 1;
+
+        setTimeout(() => {
+            const current = monitorToggleLocksByPath.get(path);
+            if (current !== lockUntil) return;
+
+            monitorToggleLocksByPath.delete(path);
+            ui.monitorToggleNonce += 1;
+        }, MONITOR_TOGGLE_LOCK_MS + 20);
+    };
+
+    const reconcileMonitorSubscriptions = () => {
+        const desiredPaths = new Set();
+
+        for (const entry of ui.savedResults) {
+            if (!entry?.path) continue;
+
+            if (entry.monitorEnabled === false) continue;
+
+            desiredPaths.add(entry.path);
+        }
+
+        for (const path of desiredPaths) {
+            if (subscribedMonitorPaths.has(path)) continue;
+            store.subscribeMonitor(monitorPathForSearchResult(path));
+            subscribedMonitorPaths.add(path);
+        }
+
+        for (const path of [...subscribedMonitorPaths]) {
+            if (desiredPaths.has(path)) continue;
+
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            subscribedMonitorPaths.delete(path);
+        }
+    };
+
+    const restoreSavedMonitorsWithRetry = () => {
+        if (ui.savedResults.length === 0) return;
+
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        const trySubscribe = () => {
+            reconcileMonitorSubscriptions();
+            attempts += 1;
+
+            if (attempts < maxAttempts) {
+                setTimeout(trySubscribe, 1500);
+            }
+        };
+
+        trySubscribe();
+    };
+
+    const updateValueInUi = (path, payload) => {
+        const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
+
+        ui.results = ui.results.map((r) =>
+            r.path === path
+                ? {
+                      ...r,
+                      formattedValue: payload.formattedValue ?? r.formattedValue,
+                      type: payload.type ?? r.type,
+                      ...(hasPayloadValue ? { value: payload.value } : {}),
+                  }
+                : r
+        );
+
+        ui.savedResults = ui.savedResults.map((entry) => {
+            if (entry.path !== path) return entry;
+
+            const nextEntry = {
+                ...entry,
+                formattedValue: payload.formattedValue ?? entry.formattedValue,
+                type: payload.type ?? entry.type,
+                ...(hasPayloadValue ? { value: payload.value } : {}),
+            };
+
+            nextEntry.lastLiveRaw = hasPayloadValue ? payload.value : nextEntry.lastLiveRaw;
+            nextEntry.lastLiveFormatted =
+                payload.formattedValue ?? nextEntry.lastLiveFormatted ?? nextEntry.formattedValue;
+            nextEntry.lastLiveType = payload.type ?? nextEntry.lastLiveType ?? nextEntry.type;
+
+            return nextEntry;
+        });
+    };
+
+    van.derive(() => {
+        const snapshot = buildSearchWorkspace(ui);
+
+        if (workspacePersistTimer !== null) {
+            clearTimeout(workspacePersistTimer);
+        }
+
+        workspacePersistTimer = setTimeout(() => {
+            workspacePersistTimer = null;
+            saveSearchWorkspace(snapshot);
+        }, 180);
+    });
+
+    van.derive(() => {
+        saveLocalFavoriteKeys(ui.favoriteKeys);
+    });
+
+    const getFilteredResults = () => {
+        const source = ui.results;
+        const query = normalizeFilterText(ui.resultsFilterApplied);
+        const cache = filterCache.results;
+
+        if (cache.source === source && cache.query === query) {
+            return cache.values;
+        }
+
+        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
+        cache.source = source;
+        cache.query = query;
+        cache.values = values;
+        return values;
+    };
+
+    const getFilteredSavedResults = () => {
+        const source = ui.savedResults;
+        const query = normalizeFilterText(ui.savedFilterApplied);
+        const cache = filterCache.saved;
+
+        if (cache.source === source && cache.query === query) {
+            return cache.values;
+        }
+
+        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
+        cache.source = source;
+        cache.query = query;
+        cache.values = values;
+        return values;
+    };
+
     const handlers = {
         getValidFavorites,
         getOtherKeys,
         areAllSelected,
-        hasValidQuery,
+        getFilteredResults,
+        getFilteredSavedResults,
 
         handleKeyChange: (keyName, isChecked) => updateSelection([keyName], isChecked),
 
         toggleAll: () => {
-            if (areAllSelected()) {
-                ui.selectedKeys = [];
-            } else {
-                ui.selectedKeys = [...ui.allKeys];
-            }
+            if (areAllSelected()) ui.selectedKeys = [];
+            else ui.selectedKeys = [...ui.allKeys];
         },
 
         selectKeys: (keys) => updateSelection(keys, true),
-        clearSelection: () => (ui.selectedKeys = []),
+        clearSelection: () => {
+            ui.selectedKeys = [];
+        },
 
-        toggleRangeMode: () => {
-            ui.range.enabled = !ui.range.enabled;
-            if (ui.range.enabled) {
-                ui.searchQuery = "";
-                ui.detectedType = "empty";
-            } else {
-                ui.range.min = "";
-                ui.range.max = "";
+        isMonitorToggleLocked,
+
+        isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
+
+        toggleFavoriteKey: (keyName) => {
+            const hasKey = ui.favoriteKeys.includes(keyName);
+            if (hasKey) {
+                ui.favoriteKeys = ui.favoriteKeys.filter((key) => key !== keyName);
+                return;
             }
+
+            ui.favoriteKeys = [...ui.favoriteKeys, keyName];
+        },
+
+        handleResultsFilterInput: (e) => {
+            const value = e.target.value;
+            const seq = ++resultsFilterSeq;
+
+            ui.resultsFilter = value;
+            if (resultsFilterTimer !== null) clearTimeout(resultsFilterTimer);
+
+            resultsFilterTimer = setTimeout(() => {
+                if (seq !== resultsFilterSeq) return;
+                resultsFilterTimer = null;
+                ui.resultsFilterApplied = value;
+                ui.displayLimit = 50;
+            }, 120);
+        },
+
+        clearResultsFilter: () => {
+            if (resultsFilterTimer !== null) {
+                clearTimeout(resultsFilterTimer);
+                resultsFilterTimer = null;
+            }
+
+            resultsFilterSeq += 1;
+            ui.resultsFilter = "";
+            ui.resultsFilterApplied = "";
+            ui.displayLimit = 50;
+        },
+
+        handleSavedFilterInput: (e) => {
+            const value = e.target.value;
+            const seq = ++savedFilterSeq;
+
+            ui.savedFilter = value;
+            if (savedFilterTimer !== null) clearTimeout(savedFilterTimer);
+
+            savedFilterTimer = setTimeout(() => {
+                if (seq !== savedFilterSeq) return;
+                savedFilterTimer = null;
+                ui.savedFilterApplied = value;
+            }, 120);
+        },
+
+        clearSavedFilter: () => {
+            if (savedFilterTimer !== null) {
+                clearTimeout(savedFilterTimer);
+                savedFilterTimer = null;
+            }
+
+            savedFilterSeq += 1;
+            ui.savedFilter = "";
+            ui.savedFilterApplied = "";
+        },
+
+        startNewScan: () => {
+            ui.scanSessionActive = false;
+            ui.lastSearchMode = "new";
+            ui.scopePaths = [];
+            ui.previousSnapshot = {};
+            ui.results = [];
+            ui.displayLimit = 50;
+            ui.error = null;
+            ui.hasSearched = false;
+            handlers.cancelEdit();
+            handlers.cancelSavedEdit();
+            store.notify("Scan reset. Ready for first scan.", "success");
+        },
+
+        handleNewScanTypeChange: (e) => {
+            ui.scanTypeNew = e.target.value;
+        },
+
+        handleNextScanTypeChange: (e) => {
+            ui.scanTypeNext = e.target.value;
         },
 
         handleQueryInput: (e) => {
@@ -415,69 +394,408 @@ export const Search = () => {
             ui.detectedType = detectQueryType(e.target.value);
         },
 
-        handleKeyDown: (e) => {
-            if (e.key === "Enter") handlers.handleSearch();
+        handleQuery2Input: (e) => {
+            ui.searchQuery2 = e.target.value;
         },
 
-        handleSearch: async () => {
-            if (ui.selectedKeys.length === 0) {
+        getPrimaryPlaceholder: (scanType) => {
+            switch (scanType) {
+                case "bigger_than":
+                    return "BIGGER THAN";
+                case "smaller_than":
+                    return "SMALLER THAN";
+                case "value_between":
+                    return "MIN VALUE";
+                case "increased_value_by":
+                    return "INCREASED BY";
+                case "decreased_value_by":
+                    return "DECREASED BY";
+                default:
+                    return "VALUE";
+            }
+        },
+
+        handleKeyDown: (e) => {
+            if (e.key === "Enter") handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
+        },
+
+        addToSavedResults: (result) => {
+            if (!result?.path) return;
+
+            if (ui.savedResults.some((entry) => entry.path === result.path)) {
+                store.notify("Already in saved list");
+                return;
+            }
+
+            const monitorPath = monitorPathForSearchResult(result.path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            const initialHistory = getMonitorHistory(resolvedMonitor.entry).slice(0, 10);
+            const seededHistory =
+                initialHistory.length > 0 ? initialHistory : [{ value: getResultValue(result), ts: Date.now() }];
+
+            const entry = {
+                path: result.path,
+                formattedValue: result.formattedValue,
+                value: getResultValue(result),
+                type: result.type,
+                lastLiveRaw: getResultValue(result),
+                lastLiveFormatted: result.formattedValue,
+                lastLiveType: result.type,
+                lastHistory: seededHistory,
+                monitorEnabled: true,
+            };
+
+            ui.savedResults = [...ui.savedResults, entry];
+
+            store.subscribeMonitor(monitorPath);
+            subscribedMonitorPaths.add(result.path);
+
+            store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
+        },
+
+        toggleSavedMonitor: (path, enabled) => {
+            lockMonitorToggle(path);
+
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            const currentHistory = getMonitorHistory(resolvedMonitor.entry);
+            const hasCurrentLive = currentHistory.length > 0;
+            const currentLiveRaw = hasCurrentLive ? currentHistory[0].value : undefined;
+
+            ui.savedResults = ui.savedResults.map((entry) => {
+                if (entry.path !== path) return entry;
+
+                const nextEntry = {
+                    ...entry,
+                    monitorEnabled: enabled,
+                };
+
+                if (!enabled && hasCurrentLive) {
+                    nextEntry.lastLiveRaw = currentLiveRaw;
+                    nextEntry.lastLiveFormatted = formatMonitorValue(currentLiveRaw);
+                    nextEntry.lastLiveType = getUiTypeFromRawValue(currentLiveRaw, entry.type);
+                }
+
+                if (!enabled && currentHistory.length > 0) {
+                    nextEntry.lastHistory = currentHistory.slice(0, 10);
+                }
+
+                return nextEntry;
+            });
+
+            if (enabled) {
+                store.subscribeMonitor(monitorPath);
+                subscribedMonitorPaths.add(path);
+                store.notify("Enabled watcher for " + path);
+                return;
+            }
+
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            subscribedMonitorPaths.delete(path);
+            store.notify("Stopped watcher for " + path);
+        },
+
+        removeSavedResult: (path) => {
+            const monitorPath = monitorPathForSearchResult(path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            subscribedMonitorPaths.delete(path);
+
+            ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
+            if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
+            store.notify(`Removed ${path} from saved list`);
+        },
+
+        clearSavedResults: () => {
+            if (ui.savedResults.length === 0) return;
+
+            for (const entry of ui.savedResults) {
+                const monitorPath = monitorPathForSearchResult(entry.path);
+                const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+                store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+                subscribedMonitorPaths.delete(entry.path);
+            }
+
+            ui.savedResults = [];
+            handlers.cancelSavedEdit();
+            store.notify("Saved list cleared");
+        },
+
+        refreshSavedResults: async () => {
+            if (ui.savedResults.length === 0) return;
+
+            const withinPaths = ui.savedResults.map((entry) => entry.path);
+
+            try {
+                ui.isRefreshingSavedResults = true;
+
+                const data = await store.searchGga("", ui.selectedKeys, { withinPaths });
+                const nextByPath = new Map((data.results || []).map((entry) => [entry.path, entry]));
+
+                ui.savedResults = ui.savedResults.map((entry) => {
+                    const next = nextByPath.get(entry.path);
+                    if (!next) return entry;
+
+                    const nextValue = getResultValue(next);
+                    const nextType = next.type ?? entry.type;
+                    const nextFormatted = next.formattedValue ?? entry.formattedValue;
+
+                    const updated = {
+                        ...entry,
+                        formattedValue: nextFormatted,
+                        value: nextValue,
+                        type: nextType,
+                        lastLiveRaw: nextValue,
+                        lastLiveFormatted: nextFormatted,
+                        lastLiveType: nextType,
+                    };
+
+                    return updated;
+                });
+
+                store.notify("Saved list refreshed", "success");
+            } catch (e) {
+                store.notify(e?.message || "Failed to refresh saved list", "error");
+            } finally {
+                ui.isRefreshingSavedResults = false;
+            }
+        },
+
+        startSavedEdit: (entry) => {
+            handlers.cancelEdit();
+            ui.savedEdit.path = entry.path;
+
+            const monitorPath = monitorPathForSearchResult(entry.path);
+            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
+            const liveHistory = getMonitorHistory(resolvedMonitor.entry);
+
+            if (entry.monitorEnabled && liveHistory.length > 0) {
+                const liveRaw = liveHistory[0].value;
+                ui.savedEdit.draft = getDraftFromRawValue(liveRaw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(liveRaw, expectedUiType(entry));
+                return;
+            }
+
+            const hasCachedLive = Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw");
+            if (hasCachedLive) {
+                const raw = entry.lastLiveRaw;
+                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(raw, entry.lastLiveType ?? expectedUiType(entry));
+                return;
+            }
+
+            const hasStoredValue = Object.prototype.hasOwnProperty.call(entry, "value") || entry.type === "undefined";
+            if (hasStoredValue) {
+                const raw = entry.type === "undefined" ? undefined : entry.value;
+                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(raw, expectedUiType(entry));
+                return;
+            }
+
+            ui.savedEdit.draft = seedEditValue(entry);
+            ui.savedEdit.type = expectedUiType(entry);
+        },
+
+        cancelSavedEdit: () => {
+            ui.savedEdit.path = null;
+            ui.savedEdit.draft = "";
+            ui.savedEdit.type = "";
+        },
+
+        saveSavedEdit: async () => {
+            if (!ui.savedEdit.path) return;
+
+            const type = ui.savedEdit.type;
+            const raw = ui.savedEdit.draft;
+            const validation = validateEditDraft(type, raw);
+
+            if (!validation.ok) {
+                store.notify(validation.error, "error");
+                return;
+            }
+
+            try {
+                ui.isSettingValue = true;
+                const resp = await store.setGgaValue(ui.savedEdit.path, validation.valueToSend);
+                updateValueInUi(ui.savedEdit.path, resp);
+                store.notify(`Updated ${ui.savedEdit.path}`, "success");
+                handlers.cancelSavedEdit();
+            } catch (e) {
+                store.notify(e?.message || "Failed to update value", "error");
+            } finally {
+                ui.isSettingValue = false;
+            }
+        },
+
+        startEdit: (result) => {
+            handlers.cancelSavedEdit();
+            ui.edit.path = result.path;
+            ui.edit.draft = seedEditValue(result);
+            ui.edit.type = expectedUiType(result);
+        },
+
+        cancelEdit: () => {
+            ui.edit.path = null;
+            ui.edit.draft = "";
+            ui.edit.type = "";
+        },
+
+        saveEdit: async () => {
+            if (!ui.edit.path) return;
+
+            const type = ui.edit.type;
+            const raw = ui.edit.draft;
+            const validation = validateEditDraft(type, raw);
+
+            if (!validation.ok) {
+                store.notify(validation.error, "error");
+                return;
+            }
+
+            try {
+                ui.isSettingValue = true;
+                const resp = await store.setGgaValue(ui.edit.path, validation.valueToSend);
+                updateValueInUi(ui.edit.path, resp);
+
+                store.notify(`Updated ${ui.edit.path}`, "success");
+                handlers.cancelEdit();
+            } catch (e) {
+                store.notify(e?.message || "Failed to update value", "error");
+            } finally {
+                ui.isSettingValue = false;
+            }
+        },
+
+        handleSearch: async (mode = "new") => {
+            handlers.cancelEdit();
+            handlers.cancelSavedEdit();
+
+            const isNext = mode === "next";
+            const scanType = isNext ? ui.scanTypeNext : ui.scanTypeNew;
+            const allowedScanTypes = isNext ? NEXT_SCAN_TYPES : NEW_SCAN_TYPES;
+
+            if (!allowedScanTypes.includes(scanType)) {
+                store.notify(
+                    isNext
+                        ? "This scan type is only available for NEW scans"
+                        : "This scan type is only available for NEXT scans",
+                    "error"
+                );
+                return;
+            }
+
+            if (isNext) {
+                if (!ui.scopePaths || ui.scopePaths.length === 0) {
+                    store.notify("Run a NEW search first to build a list for NEXT search", "error");
+                    return;
+                }
+            } else if (ui.selectedKeys.length === 0) {
                 store.notify("Select at least one key to search in", "error");
                 return;
             }
 
-            let query;
-            if (ui.range.enabled) {
-                const min = ui.range.min.trim();
-                const max = ui.range.max.trim();
-                if (!min || !max) {
-                    store.notify("Enter both min and max values for range search", "error");
+            const query = String(ui.searchQuery ?? "");
+            const queryTrimmed = query.trim();
+            const query2 = String(ui.searchQuery2 ?? "");
+            const query2Trimmed = query2.trim();
+            const inputless = isInputlessScanType(scanType);
+            const hasSecondaryInput = requiresSecondaryInput(scanType);
+
+            if (!isNext && scanType === "exact_value" && queryTrimmed === "") {
+                store.notify("Enter a value for EXACT VALUE, or choose UNKNOWN INITIAL VALUE", "error");
+                return;
+            }
+
+            if (!inputless && scanType !== "exact_value" && queryTrimmed === "") {
+                store.notify("Enter a value for this scan type", "error");
+                return;
+            }
+
+            if (
+                (scanType === "bigger_than" ||
+                    scanType === "smaller_than" ||
+                    scanType === "increased_value_by" ||
+                    scanType === "decreased_value_by") &&
+                (queryTrimmed === "" || Number.isNaN(Number(queryTrimmed)))
+            ) {
+                store.notify("This scan type requires a numeric value", "error");
+                return;
+            }
+
+            if (hasSecondaryInput) {
+                if (queryTrimmed === "" || query2Trimmed === "") {
+                    store.notify("Enter both values for VALUE BETWEEN", "error");
                     return;
                 }
-                if (isNaN(Number(min)) || isNaN(Number(max))) {
-                    store.notify("Range values must be numbers", "error");
-                    return;
-                }
-                query = `${min}-${max}`;
-            } else {
-                query = ui.searchQuery.trim();
-                if (!query) {
-                    store.notify("Enter a search value", "error");
+
+                if (Number.isNaN(Number(queryTrimmed)) || Number.isNaN(Number(query2Trimmed))) {
+                    store.notify("VALUE BETWEEN requires numeric bounds", "error");
                     return;
                 }
             }
 
+            if (isNext && needsPreviousSnapshot(scanType) && Object.keys(ui.previousSnapshot || {}).length === 0) {
+                store.notify("This NEXT scan type needs a previous result baseline", "error");
+                return;
+            }
+
+            ui.hasSearched = true;
             ui.isSearching = true;
             ui.error = null;
             ui.displayLimit = 50;
+            ui.lastSearchMode = mode;
+
+            const requestOptions = isNext ? { withinPaths: [...ui.scopePaths] } : null;
 
             try {
-                const data = await API.searchGga(query, ui.selectedKeys);
-                ui.results = data.results || [];
-                ui.totalCount = data.totalCount || 0;
+                const baseData =
+                    scanType === "exact_value"
+                        ? isNext
+                            ? await store.searchGga(query, ui.selectedKeys, requestOptions)
+                            : await store.searchGga(query, ui.selectedKeys)
+                        : isNext
+                          ? await store.searchGga("", ui.selectedKeys, requestOptions)
+                          : await store.searchGga("", ui.selectedKeys);
+
+                const filteredResults =
+                    scanType === "exact_value"
+                        ? baseData.results || []
+                        : filterResultsByScanType(baseData.results || [], {
+                              scanType,
+                              query: inputless ? "" : query,
+                              query2: hasSecondaryInput ? query2 : "",
+                              previousSnapshot: ui.previousSnapshot,
+                          });
+
+                ui.results = filteredResults;
+                ui.scopePaths = filteredResults.map((r) => r.path);
+                ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
+                ui.scanSessionActive = true;
             } catch (err) {
                 ui.error = err.message || "Search failed";
                 ui.results = [];
-                ui.totalCount = 0;
+                ui.scopePaths = [];
             } finally {
                 ui.isSearching = false;
             }
         },
     };
 
-    // Load keys on mount
     (async () => {
         ui.isLoading = true;
         ui.error = null;
         try {
-            const allKeys = await API.fetchGgaKeys();
+            const allKeys = await store.fetchGgaKeys();
             ui.allKeys = allKeys;
             const validFavorites = getValidFavorites();
-            ui.selectedKeys = validFavorites.slice(0, 8);
+            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys, validFavorites);
         } catch (err) {
             ui.error = err.message || "Failed to load GGA keys";
         } finally {
             ui.isLoading = false;
         }
+
+        restoreSavedMonitorsWithRetry();
     })();
 
     return div(
@@ -488,7 +806,8 @@ export const Search = () => {
             div(
                 { class: "search-right-column" },
                 SearchInputSection({ ui, handlers }),
-                ResultsSection({ ui, handlers })
+                ResultsSection({ ui, handlers }),
+                SavedResultsSection({ ui, handlers })
             )
         )
     );

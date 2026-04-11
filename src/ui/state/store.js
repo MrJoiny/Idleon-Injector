@@ -331,9 +331,42 @@ const AccountService = {
     },
 };
 
+function formatSearchValue(value) {
+    if (value === null) return "null";
+    if (value === undefined) return "undefined";
+    if (typeof value === "string") {
+        const maxLen = 100;
+        if (value.length > maxLen) {
+            return `"${value.substring(0, maxLen)}..."`;
+        }
+        return `"${value}"`;
+    }
+    if (typeof value === "object") return "[object]";
+    return String(value);
+}
+
+const SearchService = {
+    fetchGgaKeys: async () => {
+        return API.fetchGgaKeys();
+    },
+    searchGga: async (query, keys, options = null) => {
+        return API.searchGga(query, keys, options);
+    },
+    setGgaValue: async (path, value) => {
+        await API.writeGga(path, value);
+        return {
+            success: true,
+            path,
+            type: value === null ? "object" : typeof value,
+            value,
+            formattedValue: formatSearchValue(value),
+        };
+    },
+};
+
 const MonitorService = {
     subscribe: (path) => {
-        const id = path.replace(/[[\]]/g, "-").replace(/\./g, "-");
+        const id = "mon:" + encodeURIComponent(path);
         sendMonitorSubscribe(id, path);
     },
     unsubscribe: (id) => {
@@ -364,6 +397,10 @@ const store = {
 
     loadAccountOptions: AccountService.loadAccountOptions,
     updateAccountOption: AccountService.updateAccountOption,
+
+    fetchGgaKeys: SearchService.fetchGgaKeys,
+    searchGga: SearchService.searchGga,
+    setGgaValue: SearchService.setGgaValue,
 
     subscribeMonitor: MonitorService.subscribe,
     unsubscribeMonitor: MonitorService.unsubscribe,
