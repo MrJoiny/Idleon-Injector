@@ -113,6 +113,7 @@ const CloudRow = ({ entry }) => {
             class: () =>
                 [
                     "feature-row",
+                    entry.cloudIndex >= 35 ? "cloud-row--nightmare" : "",
                     status.val === "success" ? "feature-row--success" : "",
                     status.val === "error" ? "feature-row--error" : "",
                 ]

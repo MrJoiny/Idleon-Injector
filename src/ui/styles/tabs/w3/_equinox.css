@@ -139,6 +139,21 @@
     opacity: 0.9;
 }
 
+    border-color: var(--c-ui-red-45);
+    background: linear-gradient(90deg, var(--c-ui-red-04), var(--c-danger-08));
+}
+
+.feature-row.cloud-row--nightmare:not(.feature-row--success):not(.feature-row--error) .feature-row__index {
+    background: var(--c-danger-20);
+    color: var(--c-danger-soft-text);
+}
+
+.feature-row.cloud-row--nightmare:not(.feature-row--success):not(.feature-row--error) .feature-row__badge {
+    color: var(--c-danger-soft-text);
+    background: var(--c-danger-08);
+    border-color: var(--c-ui-red-45);
+}
+
 /* Empty state within a section (no rows yet) */
 .equinox-empty-section {
     padding: 10px 14px;
