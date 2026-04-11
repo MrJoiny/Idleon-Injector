@@ -409,9 +409,7 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
             globalWatchersById.set(id, normalizedPath);
         }
 
-        if (alreadyWatching) {
-            await seedClientCurrentValue(ws, id, normalizedPath);
-        }
+        await seedClientCurrentValue(ws, id, normalizedPath);
 
         sendMonitorStateToClient(ws);
     } catch (err) {
