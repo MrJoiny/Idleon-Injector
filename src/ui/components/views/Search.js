@@ -597,6 +597,14 @@ export const Search = () => {
                 return;
             }
 
+            const cachedHistory = Array.isArray(entry.lastHistory) ? entry.lastHistory : [];
+            if (cachedHistory.length > 0) {
+                const raw = cachedHistory[0].value;
+                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
+                ui.savedEdit.type = getUiTypeFromRawValue(raw, entry.lastLiveType ?? expectedUiType(entry));
+                return;
+            }
+
             const hasStoredValue = Object.prototype.hasOwnProperty.call(entry, "value") || entry.type === "undefined";
             if (hasStoredValue) {
                 const raw = entry.type === "undefined" ? undefined : entry.value;

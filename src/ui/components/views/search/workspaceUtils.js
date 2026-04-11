@@ -48,6 +48,10 @@ export function normalizeSavedEntry(entry) {
         normalized.value = entry.value;
     }
 
+    if (Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw")) {
+        normalized.lastLiveRaw = entry.lastLiveRaw;
+    }
+
     if (typeof entry.lastLiveFormatted === "string") {
         normalized.lastLiveFormatted = entry.lastLiveFormatted;
     }

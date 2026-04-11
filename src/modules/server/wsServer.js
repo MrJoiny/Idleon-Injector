@@ -19,7 +19,7 @@ const clients = new Set();
 /** @type {Map<WebSocket, Map<string, { path: string, history: Array<{ value: any, ts: number }> }>>} */
 const clientMonitorState = new Map();
 
-/** @type {Map<string, { id: string, path: string, refCount: number }>} */
+/** @type {Map<string, { id: string, path: string, refCount: number, releasePromise?: Promise<void>|null }>} */
 const globalWatchersByPath = new Map();
 
 /** @type {Map<string, string>} */
@@ -188,21 +188,36 @@ async function releaseGlobalWatcher(path) {
         return;
     }
 
-    globalWatchersByPath.delete(path);
-    globalWatchersById.delete(watcher.id);
-
-    if (!runtimeRef || !contextRef) return;
-
-    try {
-        const escapedId = escapeForDoubleQuotedJsString(watcher.id);
-        await runtimeRef.evaluate({
-            expression: `window.monitorUnwrap("${escapedId}")`,
-            awaitPromise: true,
-            returnByValue: true,
-        });
-    } catch (err) {
-        log.error(`Error unsubscribing monitor ${watcher.id}:`, err.message);
+    if (watcher.releasePromise) {
+        await watcher.releasePromise;
+        return;
     }
+
+    watcher.releasePromise = (async () => {
+        if (runtimeRef && contextRef) {
+            try {
+                const escapedId = escapeForDoubleQuotedJsString(watcher.id);
+                await runtimeRef.evaluate({
+                    expression: `window.monitorUnwrap("${escapedId}")`,
+                    awaitPromise: true,
+                    returnByValue: true,
+                });
+            } catch (err) {
+                log.error(`Error unsubscribing monitor ${watcher.id}:`, err.message);
+            }
+        }
+
+        const currentWatcher = globalWatchersByPath.get(path);
+        if (currentWatcher !== watcher || watcher.refCount > 0) {
+            watcher.releasePromise = null;
+            return;
+        }
+
+        globalWatchersByPath.delete(path);
+        globalWatchersById.delete(watcher.id);
+    })();
+
+    await watcher.releasePromise;
 }
 
 async function cleanupClientSubscriptions(ws) {
@@ -344,7 +359,12 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
 
     monitorMap.set(id, { path: normalizedPath, history: [] });
 
-    const existingWatcher = globalWatchersByPath.get(normalizedPath);
+    let existingWatcher = globalWatchersByPath.get(normalizedPath);
+    if (existingWatcher?.releasePromise) {
+        await existingWatcher.releasePromise;
+        existingWatcher = globalWatchersByPath.get(normalizedPath);
+    }
+
     if (existingWatcher) {
         existingWatcher.refCount += 1;
         clearMonitorSubscribeRetry(ws, id);
