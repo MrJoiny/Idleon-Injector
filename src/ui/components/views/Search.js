@@ -429,7 +429,9 @@ export const Search = () => {
         },
 
         handleKeyDown: (e) => {
-            if (e.key === "Enter") handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
+            if (e.key === "Enter" && !ui.isSearching) {
+                handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
+            }
         },
 
         addToSavedResults: (result) => {
@@ -688,6 +690,8 @@ export const Search = () => {
         },
 
         handleSearch: async (mode = "new") => {
+            if (ui.isSearching) return;
+
             handlers.cancelEdit();
             handlers.cancelSavedEdit();
 
