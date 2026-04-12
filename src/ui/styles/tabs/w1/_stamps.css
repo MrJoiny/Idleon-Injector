@@ -1,0 +1,30 @@
+/* W1 - Stamps tab */
+
+.stamp-row--exalted {
+    border-color: var(--c-accent);
+    background: var(--c-accent-06);
+}
+
+.stamp-row__controls {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.stamp-exalted-btn {
+    min-width: 104px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-dim);
+}
+
+.stamp-exalted-btn:hover:not(:disabled) {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+}
+
+.stamp-exalted-btn--active {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+    background: var(--c-accent-06);
+    font-weight: 700;
+}

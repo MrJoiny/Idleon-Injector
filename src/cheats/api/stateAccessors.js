@@ -4,10 +4,12 @@
  * Functions for accessing and modifying game state:
  * - Unified path-based read/write (readPath, writePath)
  * - Selective object-entry reads for large maps (readEntries)
+ * - Small computed-value bridge for internal helper families
  * - cheatState access
  */
 
 import { cheatState } from "../core/state.js";
+import { events } from "../core/globals.js";
 import { resolvePath } from "../utils/pathResolver.js";
 
 export function getcheatStateList() {
@@ -95,16 +97,63 @@ export function readEntries(rootPath, keys, fields = null) {
 }
 
 /**
+ * Read a computed value from a game helper family.
+ * Uses the same injected ActorEvents access pattern as the minigame cheats:
+ * events(345), events(579), etc. The UI never touches ActorEvents directly.
+ *
+ * Supported namespaces:
+ * - workbench     -> events(345)._customBlock_WorkbenchStuff(name, ...args)
+ * - alchemy       -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
+ * - summoning     -> events(579)._customBlock_Summoning(name, ...args)
+ * - atomCollider  -> events(579)._customBlock_AtomCollider(name, ...args)
+ * - runCode       -> events(12)._customBlock_RunCodeOfTypeXforThingY(name, ...args)
+ * - runCodeType   -> events(12)._customBlock_RunCodeOfType(name)
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array=} args
+ * @returns {{ value: any } | { error: string }}
+ */
+export function readComputed(namespace, name, args = []) {
+    if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
+    if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
+    if (!Array.isArray(args)) return { error: "args must be an array" };
+
+    const sources = {
+        workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
+        alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
+        summoning: { eventId: 579, method: "_customBlock_Summoning" },
+        atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
+        runCode: { eventId: 12, method: "_customBlock_RunCodeOfTypeXforThingY" },
+        runCodeType: { eventId: 12, method: "_customBlock_RunCodeOfType" },
+        dream: { eventId: 579, method: "_customBlock_Dreamstuff" },
+        skillStats: { eventId: 12, method: "_customBlock_SkillStats" },
+    };
+
+    const source = sources[namespace];
+    if (!source) return { error: `Unsupported computed namespace: ${namespace}` };
+    if (typeof events !== "function") return { error: "ActorEvents bridge unavailable" };
+
+    try {
+        const actorEvents = events(source.eventId);
+        const fn = actorEvents?.[source.method];
+        if (typeof fn !== "function") {
+            return { error: `Computed helper unavailable: ${namespace}.${name}` };
+        }
+        return { value: Reflect.apply(fn, actorEvents, [name, ...args]) };
+    } catch (e) {
+        return { error: `Computed helper threw (${namespace}.${name}): ${e?.message ?? String(e)}` };
+    }
+}
+
+/**
  * Write a game value by dot/bracket path string.
  * @param {string} path - Path like "gga.StampLevel[0][3]"
- * @param {number|string|boolean|null} value - Primitive value to write
+ * @param {any} value - JSON-serializable value to write
  * @returns {{ ok: true } | { error: string }}
  */
 export function writePath(path, value) {
     if (value === undefined) return { error: "Missing value" };
-    if (typeof value !== "number" && typeof value !== "string" && typeof value !== "boolean" && value !== null) {
-        return { error: "value must be a primitive (number, string, boolean, or null)" };
-    }
     const resolved = resolvePath(path);
     if (resolved.error) return resolved;
     const { target, prop } = resolved;

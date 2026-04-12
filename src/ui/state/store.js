@@ -300,7 +300,7 @@ const AccountService = {
                     hasSchema
                         ? Promise.resolve(null)
                         : fetch("/config/optionsAccountSchema.json").catch(() => ({ ok: false })),
-                    API.readGga("OptionsListAccount"),
+                    API.gga("OptionsListAccount"),
                 ]);
 
                 if (schemaRes?.ok) {
@@ -315,19 +315,6 @@ const AccountService = {
             },
             (e) => `Error loading options: ${e.message}`
         );
-    },
-
-    updateAccountOption: async (index, value) => {
-        try {
-            // Optimistic UI Update
-            dataState.accountOptions[index] = value;
-            await API.writeGga(`OptionsListAccount[${index}]`, value);
-            Actions.notify(`WROTE "${value}" TO INDEX ${index}`);
-        } catch (e) {
-            Actions.notify(`Failed to update Index ${index}: ${e.message}`, "error");
-            // Re-throw to allow component to handle local error state (e.g., red border)
-            throw e;
-        }
     },
 };
 
@@ -363,7 +350,6 @@ const store = {
     saveConfig: ConfigService.saveConfig,
 
     loadAccountOptions: AccountService.loadAccountOptions,
-    updateAccountOption: AccountService.updateAccountOption,
 
     subscribeMonitor: MonitorService.subscribe,
     unsubscribeMonitor: MonitorService.unsubscribe,

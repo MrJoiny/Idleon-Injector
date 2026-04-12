@@ -1,0 +1,51 @@
+/* Poppy tab */
+
+.feature-row--warn:not(.feature-row--success):not(.feature-row--error) {
+    border-color: var(--c-warning) !important;
+    background: var(--c-accent-dim-solid);
+}
+
+.poppy-warn-badge {
+    font-size: 0.65rem;
+    color: var(--c-warning);
+    margin-left: 8px;
+    font-style: italic;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.poppy-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-dim);
+    padding: 8px 4px 4px;
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.poppy-section-label--spiral {
+    color: var(--c-accent);
+    border-bottom-color: var(--c-accent);
+    margin-top: 8px;
+}
+
+.poppy-section-label--tar {
+    color: var(--c-warning);
+    border-bottom-color: var(--c-warning);
+    margin-top: 8px;
+}
+
+.poppy-row__controls--xl .number-input-wrapper {
+    width: 180px;
+}
+
+.poppy-row__controls--xl .number-input-wrapper input {
+    min-width: 10ch;
+    font-size: 0.8rem;
+}
