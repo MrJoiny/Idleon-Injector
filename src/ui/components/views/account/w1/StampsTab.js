@@ -11,9 +11,9 @@
  *   ItemDefinitionsGET.h.Stamp{A|B|C}{N}.desc_line1  -> step metadata (index 4)
  *
  * Exalted code format in Compass[4]:
- *   "a1"  -> page A, stamp 1
- *   "b7"  -> page B, stamp 7
- *   "c12" -> page C, stamp 12
+ *   "_1" -> page 0, stamp index 1
+ *   "a0" -> page 1, stamp index 0
+ *   "b4" -> page 2, stamp index 4
  *
  * SET behavior:
  *   Writes both StampLevel and StampLevelMAX.
@@ -38,7 +38,8 @@ const PAGES = [
     { id: 2, label: "MISC" },
 ];
 const PAGE_LETTERS = ["A", "B", "C"];
-const EXALTED_CODE_REGEX = /^[a-z]\d+$/;
+const EXALTED_PAGE_PREFIXES = ["_", "a", "b"];
+const EXALTED_CODE_REGEX = /^[_ab]\d+$/;
 
 const normalizeExaltedCodes = (rawCodes) =>
     toIndexedArray(rawCodes)
@@ -49,7 +50,7 @@ const normalizeExaltedCodes = (rawCodes) =>
         )
         .filter((code) => EXALTED_CODE_REGEX.test(code));
 
-const makeExaltedStampCode = (page, order) => `${(PAGE_LETTERS[page] ?? "A").toLowerCase()}${order + 1}`;
+const makeExaltedStampCode = (page, order) => `${EXALTED_PAGE_PREFIXES[page] ?? "_"}${order}`;
 
 const sortStampCodes = (a, b) => {
     const letterDelta = a.charCodeAt(0) - b.charCodeAt(0);
