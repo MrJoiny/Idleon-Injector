@@ -1,6 +1,6 @@
 {
     "name": "idleon-injector-ui",
-    "version": "3.0.0",
+    "version": "2.1.4",
     "description": "A cheat injector for Legends of Idleon",
     "main": "src/main.js",
     "bin": "src/main.js",
