@@ -64,6 +64,21 @@ function getClientRetryMap(ws) {
     return retryMap;
 }
 
+function hasClientMonitorSubscription(ws, id) {
+    const monitorMap = clientMonitorState.get(ws);
+    return !!monitorMap && monitorMap.has(id);
+}
+
+function countMonitorSubscribers(id) {
+    let count = 0;
+    for (const monitorMap of clientMonitorState.values()) {
+        if (monitorMap.has(id)) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
 function clearMonitorSubscribeRetry(ws, id) {
     const retryMap = monitorSubscribeRetryTimers.get(ws);
     if (!retryMap) return;
@@ -366,7 +381,11 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
     }
 
     if (existingWatcher) {
-        existingWatcher.refCount += 1;
+        if (!hasClientMonitorSubscription(ws, id)) {
+            return;
+        }
+
+        existingWatcher.refCount = countMonitorSubscribers(id);
         clearMonitorSubscribeRetry(ws, id);
         await seedClientCurrentValue(ws, id, normalizedPath);
         sendMonitorStateToClient(ws);
@@ -421,17 +440,26 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
 
         clearMonitorSubscribeRetry(ws, id);
 
+        const subscriberCount = countMonitorSubscribers(id);
+        if (subscriberCount === 0) {
+            globalWatchersByPath.set(normalizedPath, { id, path: normalizedPath, refCount: 1 });
+            globalWatchersById.set(id, normalizedPath);
+            await releaseGlobalWatcher(normalizedPath);
+            return;
+        }
+
         const watcherAfterWrap = globalWatchersByPath.get(normalizedPath);
         if (watcherAfterWrap) {
-            watcherAfterWrap.refCount += 1;
+            watcherAfterWrap.refCount = subscriberCount;
         } else {
-            globalWatchersByPath.set(normalizedPath, { id, path: normalizedPath, refCount: 1 });
+            globalWatchersByPath.set(normalizedPath, { id, path: normalizedPath, refCount: subscriberCount });
             globalWatchersById.set(id, normalizedPath);
         }
 
-        await seedClientCurrentValue(ws, id, normalizedPath);
-
-        sendMonitorStateToClient(ws);
+        if (hasClientMonitorSubscription(ws, id)) {
+            await seedClientCurrentValue(ws, id, normalizedPath);
+            sendMonitorStateToClient(ws);
+        }
     } catch (err) {
         if (isTransientMonitorSubscribeError(err.message)) {
             log.debug(`Monitor subscribe pending for ${id}: ${err.message}`);

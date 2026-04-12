@@ -794,8 +794,10 @@ export const Search = () => {
                 ui.scanSessionActive = true;
             } catch (err) {
                 ui.error = err.message || "Search failed";
-                ui.results = [];
-                ui.scopePaths = [];
+                if (!isNext) {
+                    ui.results = [];
+                    ui.scopePaths = [];
+                }
             } finally {
                 ui.isSearching = false;
             }
