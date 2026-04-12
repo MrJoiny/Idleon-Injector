@@ -1,0 +1,15 @@
+/* ── Construction — MAX button ───────────────────────────────────────────── */
+
+.construction-btn--max {
+    background: var(--c-accent-06);
+    color: var(--c-accent);
+    border: 1px solid var(--c-accent-20);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.construction-btn--max:hover:not(:disabled) {
+    background: var(--c-accent);
+    color: var(--c-black);
+}

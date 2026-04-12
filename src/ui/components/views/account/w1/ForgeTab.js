@@ -1,24 +1,26 @@
 /**
- * W1 — Forge Tab
+ * W1 - Forge Tab
  *
- * FurnaceLevels layout (indices 0–5, index 6 = XP progress, ignored):
+ * FurnaceLevels layout (indices 0-5, index 6 = XP progress, ignored):
  *   Page 1:
- *     [0] New Forge Slot      — max 16
- *     [1] Ore Capacity Boost  — max 50
- *     [2] Forge Speed         — max 90
+ *     [0] New Forge Slot      - max 16
+ *     [1] Ore Capacity Boost  - max 50
+ *     [2] Forge Speed         - max 90
  *   Page 2:
- *     [3] Forge EXP Gain      — max 85
- *     [4] Bar Bonanza         — max 75
- *     [5] Puff Puff Go        — max 60
+ *     [3] Forge EXP Gain      - max 85
+ *     [4] Bar Bonanza         - max 75
+ *     [5] Puff Puff Go        - max 60
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -43,29 +45,32 @@ const PAGES = [
     },
 ];
 
-// ── ForgeRow ──────────────────────────────────────────────────────────────
-
-const ForgeRow = ({ upgrade, levels, onReload }) => {
-    const inputVal = van.state(String(levels.val?.[upgrade.index] ?? 0));
-    const status = van.state(null);
+const ForgeRow = ({ upgrade, levelState }) => {
+    const inputVal = van.state("0");
+    const { status, run } = useWriteStatus();
 
     van.derive(() => {
-        inputVal.val = String(levels.val?.[upgrade.index] ?? 0);
+        inputVal.val = String(levelState.val ?? 0);
     });
 
     const doSet = async (targetVal) => {
         const lvl = Math.min(upgrade.max, Math.max(0, Number(targetVal)));
         if (isNaN(lvl)) return;
-        status.val = "loading";
-        try {
-            await writeGga(`FurnaceLevels[${upgrade.index}]`, lvl);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-            await onReload?.();
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+
+        await run(
+            async () => {
+                const path = `FurnaceLevels[${upgrade.index}]`;
+                const ok = await gga(path, lvl);
+                if (!ok) throw new Error(`Write mismatch at ${path}`);
+                return lvl;
+            },
+            {
+                onSuccess: (verified) => {
+                    levelState.val = verified;
+                    inputVal.val = String(verified);
+                },
+            }
+        );
     };
 
     return div(
@@ -76,7 +81,7 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
                 }`,
         },
         div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, upgrade.label)),
-        span({ class: "feature-row__badge" }, () => `LV ${levels.val?.[upgrade.index] ?? 0} / ${upgrade.max}`),
+        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0} / ${upgrade.max}`),
         div(
             { class: "feature-row__controls" },
             NumberInput({
@@ -89,7 +94,15 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            [
+                                "feature-btn",
+                                "feature-btn--apply",
+                                status.val === "loading" ? "feature-btn--loading" : "",
+                                status.val === "success" ? "feature-row--success" : "",
+                                status.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
                         onclick: () => doSet(inputVal.val),
                         disabled: () => status.val === "loading",
                     },
@@ -112,26 +125,29 @@ const ForgeRow = ({ upgrade, levels, onReload }) => {
     );
 };
 
-// ── ForgeTab ──────────────────────────────────────────────────────────────
-
 export const ForgeTab = () => {
     const activePage = van.state(0);
-    const levels = van.state(null);
-    const loading = van.state(false);
+    const loading = van.state(true);
     const error = van.state(null);
+    const refreshError = van.state(null);
+    const levelStates = Array.from({ length: 6 }, () => van.state(0));
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const load = async () => {
         loading.val = true;
         error.val = null;
+        refreshError.val = null;
         try {
-            const raw = await readGga("FurnaceLevels");
-            levels.val = Array.isArray(raw)
-                ? raw
-                : Object.keys(raw)
-                      .sort((a, b) => a - b)
-                      .map((k) => raw[k]);
+            const raw = await gga("FurnaceLevels");
+            const levels = toIndexedArray(raw);
+            for (let i = 0; i < levelStates.length; i++) {
+                levelStates[i].val = Number(levels[i] ?? 0);
+            }
+            markReady();
         } catch (e) {
-            error.val = e.message || "Failed to read forge data";
+            const message = e.message || "Failed to read forge data";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
@@ -139,9 +155,22 @@ export const ForgeTab = () => {
 
     load();
 
+    const rowList = div({ class: () => paneClass("feature-list") }, () => {
+        const page = PAGES[activePage.val];
+        return div(
+            { class: "forge-upgrades-list" },
+            ...page.upgrades.map((upgrade) =>
+                ForgeRow({
+                    upgrade,
+                    levelState: levelStates[upgrade.index],
+                })
+            )
+        );
+    });
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
+
     return div(
         { class: "world-feature scroll-container" },
-
         div(
             { class: "feature-header" },
             div(
@@ -154,8 +183,6 @@ export const ForgeTab = () => {
                 "Re-read forge levels from game memory"
             )
         ),
-
-        // Page tabs
         div(
             { class: "feature-page-nav" },
             ...PAGES.map((pg) =>
@@ -168,28 +195,18 @@ export const ForgeTab = () => {
                 )
             )
         ),
-
-        () => {
-            if (loading.val)
-                return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING FORGE" }))
-                );
-
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
-                );
-
-            if (!levels.val) return div({ class: "feature-list" });
-
-            const page = PAGES[activePage.val];
-
-            return div(
-                { class: "feature-list" },
-                ...page.upgrades.map((upgrade) => ForgeRow({ upgrade, levels, onReload: load }))
-            );
-        }
+        renderRefreshErrorBanner,
+        () =>
+            loading.val && !initialized.val
+                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING FORGE" })))
+                : null,
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? div(
+                      { class: "feature-list" },
+                      EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
+                  )
+                : null,
+        rowList
     );
 };

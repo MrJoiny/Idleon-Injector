@@ -115,16 +115,15 @@ export async function searchGga(query, keys) {
 }
 
 /**
- * Read a game value by dot/bracket path.
- * The "gga." prefix is automatically prepended.
- * @param {string} path - e.g. "StampLevel" or "StampLevel[0][3]"
+ * Read a value from cList (gga.CustomLists.h) by dot/bracket path.
+ * @param {string} path - e.g. "Tome[27]" or "RANDOlist[16]"
  * @returns {Promise<any>} The resolved value (unwrapped from { value } envelope)
  */
-export async function readGga(path) {
+export async function readCList(path) {
     const data = await _request("/game/gga/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: `gga.${path}` }),
+        body: JSON.stringify({ path: `gga.CustomLists.h.${path}` }),
     });
     return data.value;
 }
@@ -147,17 +146,131 @@ export async function readGgaEntries(rootPath, keys, fields) {
     return data.value || {};
 }
 
+const normalizeForCompare = (input) => {
+    if (Array.isArray(input)) return input.map((entry) => normalizeForCompare(entry));
+    if (input && typeof input === "object") {
+        const out = {};
+        for (const key of Object.keys(input).sort()) out[key] = normalizeForCompare(input[key]);
+        return out;
+    }
+    return input;
+};
+
+const coerceNumericForCompare = (input) => {
+    if (typeof input === "number") return Number.isNaN(input) ? undefined : input;
+    if (typeof input === "string") {
+        const trimmed = input.trim();
+        if (!trimmed) return undefined;
+        const parsed = Number(trimmed);
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+};
+
+const coerceBooleanForCompare = (input) => {
+    if (typeof input === "boolean") return input;
+    if (typeof input === "number") {
+        if (input === 1) return true;
+        if (input === 0) return false;
+        return undefined;
+    }
+    if (typeof input === "string") {
+        const normalized = input.trim().toLowerCase();
+        if (normalized === "true" || normalized === "1") return true;
+        if (normalized === "false" || normalized === "0") return false;
+        return undefined;
+    }
+    return undefined;
+};
+
+const matchesVerifiedValue = (expected, actual) => {
+    if (typeof expected === "number") {
+        const normalizedActual = coerceNumericForCompare(actual);
+        if (typeof normalizedActual === "undefined") return false;
+        return Object.is(expected, normalizedActual);
+    }
+    if (typeof expected === "string") return String(actual) === String(expected);
+    if (typeof expected === "boolean") return coerceBooleanForCompare(actual) === expected;
+    if (expected === null) return actual === null;
+    if (Array.isArray(expected) || (expected && typeof expected === "object")) {
+        return JSON.stringify(normalizeForCompare(actual)) === JSON.stringify(normalizeForCompare(expected));
+    }
+    if (typeof expected === "undefined") return typeof actual === "undefined";
+    return Object.is(actual, expected);
+};
+
 /**
- * Write a primitive value to a game path.
- * The "gga." prefix is automatically prepended.
- * @param {string} path - e.g. "StampLevel[0][3]"
- * @param {number|string|boolean|null} value
- * @returns {Promise<{ ok: true }>}
+ * Unified read/write helper with built-in typed verification.
+ * Read mode:
+ *   gga(path) -> returns the raw resolved value
+ * Write mode:
+ *   gga(path, value) -> returns true/false
+ *
+ * Verification is semantic/coercive by design for account-page workflows:
+ * - numbers can match numeric strings (e.g. 1 === "1")
+ * - booleans can match 1/0 and "true"/"false"
+ * - objects/arrays are normalized before structural comparison
+ *
+ * @param {string} path
+ * @param {any=} value
+ * @returns {Promise<any|boolean>}
  */
-export async function writeGga(path, value) {
-    return _request("/game/gga/write", {
+export async function gga(path, value) {
+    const ggaPath = `gga.${path}`;
+    const isWrite = arguments.length >= 2;
+
+    if (!isWrite) {
+        const data = await _request("/game/gga/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath }),
+        });
+        return data.value;
+    }
+
+    try {
+        await _request("/game/gga/write", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath, value }),
+        });
+
+        const verifiedData = await _request("/game/gga/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: ggaPath }),
+        });
+        const verifiedValue = verifiedData.value;
+        const matches = matchesVerifiedValue(value, verifiedValue);
+
+        if (!matches) {
+            console.error(
+                `[gga] Write mismatch at ${path}: expected ${JSON.stringify(value)}, got ${JSON.stringify(verifiedValue)}`
+            );
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error(`[gga] Write failed at ${path}:`, error);
+        return false;
+    }
+}
+
+/**
+ * Read a computed value from a game helper family.
+ * Example: readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index])
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array=} args
+ * @returns {Promise<any>}
+ */
+export async function readComputed(namespace, name, args = []) {
+    const data = await _request("/game/computed/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: `gga.${path}`, value }),
+        body: JSON.stringify({ namespace, name, args }),
     });
+    return data.value;
 }

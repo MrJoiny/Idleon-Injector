@@ -4,7 +4,7 @@
  * Account-wide cheats:
  * - gembuylimit, mtx, post, guild, task, quest, star
  * - giant, gems, plunderous, candy, candytime, nodmg
- * - hidenames, noanim, eventitems, autoloot, perfectobols, autoparty
+ * - hidenames, noanim, bigmodel, eventitems, autoloot, perfectobols, autoparty
  * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy, cardpassive
  */
 
@@ -35,6 +35,7 @@ registerCheats({
         { name: "nodmg", message: "no damage numbers" },
         { name: "hidenames", message: "hide player names in world and UI" },
         { name: "noanim", message: "stop all game animations" },
+        { name: "bigmodel", message: "set all player model sizes on spawn", configurable: true },
         { name: "eventitems", message: "unlimited event item drops" },
         { name: "autoloot", message: "autoloot immeditely to chest. Check config for more" },
         { name: "autoparty", message: "Automatically add on screen players to your party" },

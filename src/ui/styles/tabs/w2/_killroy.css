@@ -1,0 +1,147 @@
+/* Killroy tab */
+
+.killroy-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.killroy-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 10px 12px;
+}
+
+.killroy-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 6px;
+}
+
+.killroy-section__title {
+    color: var(--c-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.killroy-section__note {
+    color: var(--c-text-dim);
+    font-size: 0.68rem;
+    font-style: italic;
+}
+
+.killroy-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.killroy-row .number-input-wrapper {
+    width: 120px;
+}
+
+.killroy-row--blur {
+    opacity: 0.5;
+    border-left: 3px solid var(--c-warning);
+}
+
+.killroy-row__locked {
+    color: var(--c-text-muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.killroy-best-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.killroy-best-toolbar__label {
+    color: var(--c-text-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+}
+
+.killroy-best-toolbar__select {
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.killroy-best-toolbar__count {
+    margin-left: auto;
+    color: var(--c-text-muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+.killroy-add-row {
+    display: grid;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel);
+    padding: 8px;
+}
+
+.killroy-add-row__label {
+    color: var(--c-text-dim);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+}
+
+.killroy-add-row__select {
+    min-width: 240px;
+}
+
+.killroy-add-row .number-input-wrapper {
+    width: 120px;
+}
+
+.killroy-best-table-wrap {
+    border: 1px solid var(--c-border);
+    overflow: auto;
+}
+
+.killroy-best-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.killroy-best-table th,
+.killroy-best-table td {
+    border-bottom: 1px solid var(--c-border);
+    padding: 6px 8px;
+    font-size: 0.72rem;
+}
+
+.killroy-best-table th {
+    background: var(--c-panel);
+    color: var(--c-text-dim);
+    text-align: left;
+    letter-spacing: 0.06em;
+}
+
+.killroy-best-table__mob {
+    color: var(--c-text-main);
+}
+
+.killroy-best-table__kills {
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+}
+
+.killroy-best-table__empty {
+    color: var(--c-text-muted);
+    text-align: center;
+    padding: 14px;
+}

@@ -1,0 +1,6 @@
+/* Forge upgrade list — page-scoped column layout */
+.forge-upgrades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}

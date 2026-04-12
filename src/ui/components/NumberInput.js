@@ -1,6 +1,9 @@
 import van from "../vendor/van-1.6.0.js";
 
 const { div, input, button } = van.tags;
+const liveRawByState = new WeakMap();
+
+export const getNumberInputLiveRaw = (state) => liveRawByState.get(state);
 
 /**
  * Parse user input to a plain JS number. Handles:
@@ -93,6 +96,7 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
             onfocus(e) {
                 isFocused = true;
                 inputEl.value = formatter(value.val);
+                liveRawByState.set(value, inputEl.value);
                 if (userOnfocus) userOnfocus(e);
             },
 
@@ -101,6 +105,7 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
                 // triggers all subscribers immediately, which can cause ancestor
                 // reactive closures to rebuild their DOM subtrees — destroying this
                 // input element, losing focus, and resetting scroll position.
+                liveRawByState.set(value, e.target.value);
                 if (userOninput) userOninput(e);
             },
 
@@ -113,6 +118,7 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
                 } else {
                     inputEl.value = formatter(value.val);
                 }
+                liveRawByState.delete(value);
                 if (userOnblur) userOnblur(e);
             },
         });
@@ -129,8 +135,8 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
         return div(
             { class: "number-input-wrapper" },
             inputEl,
-            button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
-            button({ class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
+            button({ type: "button", class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
+            button({ type: "button", class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
         );
     }
 
@@ -164,7 +170,7 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
     return div(
         { class: "number-input-wrapper" },
         input({ type: "text", value, oninput: handleInput, ...restInputProps }),
-        button({ class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
-        button({ class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
+        button({ type: "button", class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
+        button({ type: "button", class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
     );
 };

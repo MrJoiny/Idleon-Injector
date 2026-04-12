@@ -1,5 +1,5 @@
 /**
- * W1 — Anvil Tab
+ * W1 - Anvil Tab
  *
  * AnvilPAstats layout:
  *   [0] = points remaining  (read from game after every change)
@@ -11,12 +11,14 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readGga, writeGga } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { toIndexedArray } from "../../../../utils/index.js";
+import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -28,29 +30,26 @@ const CATEGORIES = [
     { label: "Capacity", index: 5, max: null },
 ];
 
-// ── AnvilRow ──────────────────────────────────────────────────────────────
+const AnvilRow = ({ category, valueState, onSetApplied }) => {
+    const inputVal = van.state(String(valueState.val ?? 0));
+    const { status, run } = useWriteStatus();
 
-const AnvilRow = ({ category, getStats, onReload }) => {
-    const inputVal = van.state(String(getStats()?.[category.index] ?? 0));
-    const status = van.state(null);
+    van.derive(() => {
+        inputVal.val = String(valueState.val ?? 0);
+    });
 
     const doSet = async (targetVal) => {
         const raw = Number(targetVal);
         if (isNaN(raw)) return;
         const pts = Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
-        status.val = "loading";
-        try {
-            await writeGga(`AnvilPAstats[${category.index}]`, pts);
-            status.val = "success";
-            setTimeout(() => (status.val = null), 1200);
-            // Small delay so the game has time to commit the write before we re-read
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            const fresh = await onReload?.();
-            inputVal.val = String(fresh?.[category.index] ?? pts);
-        } catch {
-            status.val = "error";
-            setTimeout(() => (status.val = null), 1200);
-        }
+
+        await run(async () => {
+            const path = `AnvilPAstats[${category.index}]`;
+            const ok = await gga(path, pts);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await onSetApplied?.(category.index, pts);
+            inputVal.val = String(valueState.val ?? pts);
+        });
     };
 
     return div(
@@ -66,7 +65,7 @@ const AnvilRow = ({ category, getStats, onReload }) => {
             category.max !== null ? span({ class: "feature-row__index" }, `max ${category.max}`) : null
         ),
         span({ class: "feature-row__badge" }, () => {
-            const val = getStats()?.[category.index] ?? 0;
+            const val = valueState.val ?? 0;
             return category.max !== null ? `${val} / ${category.max}` : `${val} pts`;
         }),
         div(
@@ -118,38 +117,67 @@ const AnvilRow = ({ category, getStats, onReload }) => {
     );
 };
 
-// ── AnvilTab ──────────────────────────────────────────────────────────────
-
 export const AnvilTab = () => {
-    const stats = van.state(null);
-    const loading = van.state(false);
+    const loading = van.state(true);
     const error = van.state(null);
+    const refreshError = van.state(null);
+    const statStates = Array.from({ length: 6 }, () => van.state(0));
+    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
-    // Returns fresh array from game, also updates reactive stats
     const load = async () => {
         loading.val = true;
         error.val = null;
+        refreshError.val = null;
         try {
-            const raw = await readGga("AnvilPAstats");
-            const arr = Array.isArray(raw)
-                ? raw
-                : Object.keys(raw)
-                      .sort((a, b) => a - b)
-                      .map((k) => raw[k]);
-            stats.val = arr;
-            return arr;
+            const raw = await gga("AnvilPAstats");
+            const arr = toIndexedArray(raw);
+            for (let i = 0; i < statStates.length; i++) {
+                statStates[i].val = Number(arr[i] ?? 0);
+            }
+            markReady();
         } catch (e) {
-            error.val = e.message || "Failed to read anvil data";
+            const message = e.message || "Failed to read anvil data";
+            if (!initialized.val) error.val = message;
+            else refreshError.val = message;
         } finally {
             loading.val = false;
         }
     };
 
+    const applyStatUpdate = async (index, value) => {
+        statStates[index].val = value;
+
+        // Keep "Points Remaining" fresh without forcing a list rebuild.
+        try {
+            const remainingRaw = await gga("AnvilPAstats[0]");
+            const remaining = Number(remainingRaw);
+            if (Number.isFinite(remaining)) statStates[0].val = remaining;
+        } catch {
+            // Best-effort refresh only; keep optimistic state if read fails.
+        }
+    };
+
     load();
+
+    const rowList = div(
+        { class: () => paneClass("feature-list") },
+        div(
+            { class: "feature-row feature-row--info" },
+            span({ class: "feature-row__name" }, "Points Remaining"),
+            span({ class: "feature-row__badge feature-row__badge--highlight" }, () => `${statStates[0].val ?? 0} pts`)
+        ),
+        ...CATEGORIES.map((cat) =>
+            AnvilRow({
+                category: cat,
+                valueState: statStates[cat.index],
+                onSetApplied: applyStatUpdate,
+            })
+        )
+    );
+    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
     return div(
         { class: "world-feature scroll-container" },
-
         div(
             { class: "feature-header" },
             div(
@@ -162,50 +190,24 @@ export const AnvilTab = () => {
                 "Re-read anvil stats from game memory"
             )
         ),
-
         div(
             { class: "warning-banner" },
             Icons.Warning(),
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
-
-        () => {
-            if (loading.val)
-                return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING ANVIL" }))
-                );
-
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "ANVIL READ FAILED", subtitle: error.val })
-                );
-
-            if (!stats.val) return div({ class: "feature-list" });
-
-            return div(
-                { class: "feature-list" },
-
-                // Points remaining — always read from game (index 0)
-                div(
-                    { class: "feature-row feature-row--info" },
-                    span({ class: "feature-row__name" }, "Points Remaining"),
-                    span(
-                        { class: "feature-row__badge feature-row__badge--highlight" },
-                        () => `${stats.val?.[0] ?? 0} pts`
-                    )
-                ),
-
-                ...CATEGORIES.map((cat) =>
-                    AnvilRow({
-                        category: cat,
-                        getStats: () => stats.val,
-                        onReload: load,
-                    })
-                )
-            );
-        }
+        renderRefreshErrorBanner,
+        () =>
+            loading.val && !initialized.val
+                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ANVIL" })))
+                : null,
+        () =>
+            !loading.val && error.val && !initialized.val
+                ? div(
+                      { class: "feature-list" },
+                      EmptyState({ icon: Icons.SearchX(), title: "ANVIL READ FAILED", subtitle: error.val })
+                  )
+                : null,
+        rowList
     );
 };
