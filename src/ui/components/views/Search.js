@@ -797,6 +797,8 @@ export const Search = () => {
                 if (!isNext) {
                     ui.results = [];
                     ui.scopePaths = [];
+                    ui.previousSnapshot = {};
+                    ui.scanSessionActive = false;
                 }
             } finally {
                 ui.isSearching = false;
