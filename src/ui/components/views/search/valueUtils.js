@@ -2,6 +2,11 @@ export function seedEditValue(result) {
     const formattedValue = String(result.formattedValue ?? "");
 
     if (result.type === "string") {
+        // Search result display strings are truncated for the list UI, so edits must start from the raw value.
+        if (Object.prototype.hasOwnProperty.call(result, "value")) {
+            return String(result.value ?? "");
+        }
+
         if (
             (formattedValue.startsWith('"') && formattedValue.endsWith('"')) ||
             (formattedValue.startsWith("'") && formattedValue.endsWith("'"))
