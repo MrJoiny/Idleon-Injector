@@ -393,10 +393,10 @@ exports.injectorConfig = ${new_injectorConfig};
         try {
             const keysJson = JSON.stringify(keys);
             const withinPathsJson = JSON.stringify(withinPaths || null);
-            const escapedQuery = query.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+            const serializedQuery = JSON.stringify(query);
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga('${escapedQuery}', ${keysJson}, { withinPaths: ${withinPathsJson} })`,
+                expression: `searchGga(${serializedQuery}, ${keysJson}, { withinPaths: ${withinPathsJson} })`,
                 awaitPromise: true,
                 returnByValue: true,
             });
