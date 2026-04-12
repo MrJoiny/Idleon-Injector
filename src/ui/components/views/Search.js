@@ -722,7 +722,7 @@ export const Search = () => {
             const inputless = isInputlessScanType(scanType);
             const hasSecondaryInput = requiresSecondaryInput(scanType);
 
-            if (!isNext && scanType === "exact_value" && queryTrimmed === "") {
+            if (scanType === "exact_value" && queryTrimmed === "") {
                 store.notify("Enter a value for EXACT VALUE, or choose UNKNOWN INITIAL VALUE", "error");
                 return;
             }
