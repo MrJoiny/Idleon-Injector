@@ -553,7 +553,7 @@ export const StarSignsTab = () => {
                         {
                             class: () =>
                                 [
-                                    "feature-btn feature-btn--danger",
+                                    "feature-btn feature-btn--max-reset",
                                     resetStatus.val === "loading" ? "feature-btn--loading" : "",
                                     resetStatus.val === "success" ? "feature-row--success" : "",
                                     resetStatus.val === "error" ? "feature-row--error" : "",

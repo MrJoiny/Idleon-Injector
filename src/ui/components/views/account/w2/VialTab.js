@@ -7,8 +7,8 @@
  * Levels stored in: CauldronInfo[4]
  * Level range: 0-13 (integer)
  *
- * Each VialRow holds its own local levelDisplay state. SET updates in place
- * without triggering a full list re-render.
+ * Uses one persistent van.state per vial level so row writes and bulk updates
+ * both update the same committed state without rebuilding row-local truth.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -18,68 +18,37 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 const MAX_VIAL_LEVEL = 13;
 
-const VialRow = ({ vial, initialLevel }) => {
-    const inputVal = van.state(String(initialLevel ?? 0));
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const { status, run } = useWriteStatus();
-
-    const doSet = async (raw) => {
-        const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(raw))));
-        if (isNaN(lvl)) return;
-
-        await run(async () => {
-            const path = `CauldronInfo[4][${vial.index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+const VialRow = ({ vial, levelState }) =>
+    EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(rawValue))));
+            return Number.isNaN(lvl) ? null : lvl;
         },
-        div(
-            { class: "feature-row__info" },
+        write: async (nextLevel) => {
+            const path = `CauldronInfo[4][${vial.index}]`;
+            const ok = await gga(path, nextLevel);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}`);
+            return nextLevel;
+        },
+        renderInfo: () => [
             span({ class: "feature-row__index" }, `#${vial.index}`),
-            span({ class: "feature-row__name" }, vial.name)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${MAX_VIAL_LEVEL}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(MAX_VIAL_LEVEL, Number(inputVal.val) + 1))),
-            }),
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
+            span({ class: "feature-row__name" }, vial.name),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${MAX_VIAL_LEVEL}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.min(MAX_VIAL_LEVEL, Math.max(0, next + delta));
+        },
+    });
 
 export const VialTab = () => {
     const loading = van.state(true);
@@ -87,6 +56,12 @@ export const VialTab = () => {
     const vialDefs = van.state([]);
     const setAllInput = van.state("13");
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
+    const levelStates = [];
+
+    const getLevelState = (index) => {
+        if (!levelStates[index]) levelStates[index] = van.state(0);
+        return levelStates[index];
+    };
 
     const load = async () => {
         loading.val = true;
@@ -107,7 +82,9 @@ export const VialTab = () => {
                     const name = String(entryArr[0] ?? "VIAL")
                         .replace(/_/g, " ")
                         .trim();
-                    return { name, index: idx, level: Number(rawLevels[idx] ?? 0) };
+                    const level = Number(rawLevels[idx] ?? 0);
+                    getLevelState(idx).val = Number.isFinite(level) ? level : 0;
+                    return { name, index: idx };
                 })
                 .filter((v) => v.name.toUpperCase() !== "VIAL" && v.name.trim() !== "");
         } catch (e) {
@@ -129,7 +106,9 @@ export const VialTab = () => {
                 if (!ok) throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}`);
                 await new Promise((r) => setTimeout(r, 30));
             }
-            vialDefs.val = vials.map((v) => ({ ...v, level: lvl }));
+            for (const v of vials) {
+                getLevelState(v.index).val = lvl;
+            }
         });
     };
 
@@ -145,7 +124,7 @@ export const VialTab = () => {
         renderEmpty: () =>
             EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." }),
         renderContent: (vials) =>
-            div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, initialLevel: v.level }))),
+            div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
     });
 
     return div(

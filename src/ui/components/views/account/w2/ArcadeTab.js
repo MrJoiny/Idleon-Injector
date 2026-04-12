@@ -26,6 +26,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -326,58 +327,31 @@ export const ArcadeTab = () => {
                 h3({}, "ARCADE UPGRADES"),
                 p({ class: "feature-header__desc" }, "Manage Arcade balls and upgrade levels.")
             ),
-            div(
-                { class: "feature-header__actions" },
-                button(
+            FeatureBulkActionBar({
+                actions: [
                     {
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: () => doSetAll(100),
+                        label: "MAX ALL",
+                        status: bulkStatus,
+                        tooltip: "Set every Arcade upgrade to 100",
+                        onClick: () => doSetAll(100),
                     },
-                    "MAX ALL"
-                ),
-                button(
                     {
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: () => doSetAll(101),
+                        label: "MAX ALL COSMIC",
+                        status: bulkStatus,
+                        tooltip: "Set every Arcade upgrade to 101",
+                        onClick: () => doSetAll(101),
                     },
-                    "MAX ALL COSMIC"
-                ),
-                button(
                     {
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: () => doSetAll(0),
+                        label: "RESET ALL",
+                        status: bulkStatus,
+                        tooltip: "Reset every Arcade upgrade to 0",
+                        onClick: () => doSetAll(0),
                     },
-                    "RESET ALL"
-                ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
+                ],
+                refresh: {
+                    onClick: load,
+                },
+            })
         ),
         () =>
             !loading.val && refreshError.val

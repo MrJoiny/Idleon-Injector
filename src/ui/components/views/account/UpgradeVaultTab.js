@@ -17,90 +17,62 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, readComputed, readCList } from "../../../services/api.js";
-import { NumberInput } from "../../NumberInput.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
-import { cleanName, toNum, useWriteStatus } from "./featureShared.js";
+import { EditableNumberRow } from "./EditableNumberRow.js";
+import { cleanName, toNum } from "./featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
-const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
-    const inputVal = van.state(String(initialLevel ?? 0));
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const { status, run } = useWriteStatus();
-
-    const doSet = async (targetVal) => {
-        const lvl = Math.max(0, Number(targetVal));
-        if (isNaN(lvl)) return;
-        await run(async () => {
-            const path = `UpgVault[${index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-        });
-    };
-
+const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
 
-    return div(
-        {
-            class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
-                }`,
+    return EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.max(0, Number(rawValue));
+            return Number.isNaN(lvl) ? null : lvl;
         },
-        div(
-            { class: "feature-row__info" },
+        write: async (nextLevel) => {
+            const path = `UpgVault[${index}]`;
+            const ok = await gga(path, nextLevel);
+            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            return nextLevel;
+        },
+        renderInfo: () => [
             span({ class: "feature-row__name" }, name),
-            span({ class: "feature-row__index" }, `#${index}`)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${realMax}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                `Set level for ${name} (max: ${maxLabel})`
-            ),
-            withTooltip(
-                button(
-                    {
-                        class: "feature-btn feature-btn--apply",
-                        onclick: () => doSet(realMax),
-                        disabled: () => status.val === "loading",
-                    },
-                    "MAX"
-                ),
-                `Set to max level (${maxLabel})`
-            )
-        )
-    );
+            span({ class: "feature-row__index" }, `#${index}`),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${realMax}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, next + delta);
+        },
+        wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level for ${name} (max: ${maxLabel})`),
+        maxAction: {
+            value: realMax,
+            tooltip: `Set to max level (${maxLabel})`,
+        },
+    });
 };
 
 // ── UpgradeVaultTab ───────────────────────────────────────────────────────
 
 export const UpgradeVaultTab = () => {
-    const data = van.state(null); // { upgrades: [{name, baseMax, realMax}], levels: [] }
+    const data = van.state(null); // { upgrades: [{ index, name, baseMax, realMax }] }
     const loading = van.state(false);
     const error = van.state(null);
+    const levelStates = [];
+
+    const getLevelState = (index) => {
+        if (!levelStates[index]) levelStates[index] = van.state(0);
+        return levelStates[index];
+    };
 
     const load = async () => {
         loading.val = true;
@@ -160,7 +132,11 @@ export const UpgradeVaultTab = () => {
                 })
                 .filter(Boolean);
 
-            data.val = { upgrades, levels };
+            upgrades.forEach((upgrade) => {
+                getLevelState(upgrade.index).val = toNum(levels?.[upgrade.index]);
+            });
+
+            data.val = { upgrades };
         } catch (e) {
             error.val = e.message || "Failed to read Upgrade Vault data";
         } finally {
@@ -211,7 +187,7 @@ export const UpgradeVaultTab = () => {
 
             if (!data.val) return div({ class: "feature-list" });
 
-            const { upgrades, levels } = data.val;
+            const { upgrades } = data.val;
 
             if (!upgrades.length)
                 return div(
@@ -231,7 +207,7 @@ export const UpgradeVaultTab = () => {
                         name: u.name,
                         baseMax: u.baseMax,
                         realMax: u.realMax,
-                        initialLevel: levels?.[u.index] ?? 0,
+                        levelState: getLevelState(u.index),
                     })
                 )
             );

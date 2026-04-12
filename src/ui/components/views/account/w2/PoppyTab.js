@@ -10,18 +10,17 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import {
     RefreshErrorBanner,
     largeFormatter,
     largeParser,
     usePersistentPaneReady,
-    useWriteStatus,
 } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
@@ -81,16 +80,6 @@ const PoppyRow = ({ field, fieldState, onWrite }) => {
     const isFloat = field.float;
     const step = isFloat ? 0.1 : 1;
 
-    const inputVal = van.state(String(fieldState.val ?? 0));
-    const { status, run } = useWriteStatus();
-
-    let isFocused = false;
-
-    van.derive(() => {
-        const v = fieldState.val;
-        if (v !== undefined && !isFocused) inputVal.val = String(v);
-    });
-
     const resolveNum = (raw) => {
         if (isFormatted) {
             const n = parseNumber(raw);
@@ -100,74 +89,34 @@ const PoppyRow = ({ field, fieldState, onWrite }) => {
         return isNaN(n) ? null : isFloat ? n : Math.round(n);
     };
 
-    const doSet = async (raw) => {
-        const num = resolveNum(raw);
-        if (num === null) return;
-        await run(async () => {
-            const ok = await onWrite(field.index, num);
-            if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]: expected ${num}`);
-            fieldState.val = num;
-            inputVal.val = String(num);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    field.warn ? "feature-row--warn" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState: fieldState,
+        normalize: (rawValue) => resolveNum(rawValue),
+        write: async (nextValue) => {
+            const ok = await onWrite(field.index, nextValue);
+            if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]: expected ${nextValue}`);
+            return nextValue;
         },
-        div(
-            { class: "feature-row__info" },
+        renderInfo: () => [
             span({ class: "feature-row__name" }, field.label),
-            field.warn ? span({ class: "poppy-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null
-        ),
-        span({ class: `feature-row__badge ${field.live ? "feature-row__badge--highlight" : ""}` }, () => {
-            const v = fieldState.val;
-            if (v === undefined) return "-";
-            return isFormatted ? formatNumber(v) : String(v);
-        }),
-        div(
-            { class: "feature-row__controls poppy-row__controls--xl" },
-            NumberInput({
-                value: inputVal,
-                mode: isFloat ? "float" : "int",
-                ...(isFormatted ? { formatter: largeFormatter, parser: largeParser } : {}),
-                onfocus: () => {
-                    isFocused = true;
-                },
-                onblur: () => {
-                    isFocused = false;
-                },
-                onDecrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(Math.max(0, cur - step));
-                },
-                onIncrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(cur + step);
-                },
-            }),
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                `Write value to OptionsListAccount[${field.index}]`
-            )
-        )
-    );
+            field.warn ? span({ class: "poppy-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null,
+        ],
+        renderBadge: (currentValue) => {
+            if (currentValue === undefined) return "-";
+            return isFormatted ? formatNumber(currentValue) : String(currentValue);
+        },
+        rowClass: () => (field.warn ? "feature-row--warn" : ""),
+        badgeClass: () => (field.live ? "feature-row__badge--highlight" : ""),
+        controlsClass: "poppy-row__controls--xl",
+        inputMode: isFloat ? "float" : "int",
+        inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
+        adjustInput: (rawValue, delta) => {
+            const cur = resolveNum(rawValue) ?? 0;
+            return Math.max(0, cur + step * delta);
+        },
+        wrapApplyButton: (applyButton) =>
+            withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
+    });
 };
 
 export const PoppyTab = () => {

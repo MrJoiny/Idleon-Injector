@@ -15,12 +15,12 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
@@ -39,96 +39,39 @@ const getEffectiveBuildingMax = async (baseMax, index) => {
 
 // ── BuildingRow ────────────────────────────────────────────────────────────
 
-const BuildingRow = ({ index, name, maxLevel, levelState }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(levelState.val ?? 0);
-    });
-
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(maxLevel, Number(raw)));
-        if (isNaN(lvl)) return;
-        await run(async () => {
+const BuildingRow = ({ index, name, maxLevel, levelState }) =>
+    EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.max(0, Math.min(maxLevel, Number(rawValue)));
+            return Number.isNaN(lvl) ? null : lvl;
+        },
+        write: async (nextLevel) => {
             const path = `TowerInfo[${index}]`;
             const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
-            const okPending = await gga(pathPending, lvl);
+            const ok = await gga(path, nextLevel);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
+            const okPending = await gga(pathPending, nextLevel);
             if (!okPending)
-                throw new Error(`Write mismatch at ${pathPending}: expected ${lvl}, got failed verification`);
-            levelState.val = lvl;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+                throw new Error(`Write mismatch at ${pathPending}: expected ${nextLevel}, got failed verification`);
+            return nextLevel;
         },
-
-        div(
-            { class: "feature-row__info" },
+        renderInfo: () => [
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name)
-        ),
-
-        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0} / ${maxLevel}`),
-
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, Number(inputVal.val) + 1))),
-            }),
-            withTooltip(
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSet(inputVal.val);
-                        },
-                    },
-                    () => (status.val === "loading" ? "…" : "SET")
-                ),
-                `Set level (max ${maxLevel})`
-            ),
-            withTooltip(
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `feature-btn construction-btn--max ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            inputVal.val = String(maxLevel);
-                            doSet(maxLevel);
-                        },
-                    },
-                    "MAX"
-                ),
-                `Set to max level (${maxLevel})`
-            )
-        )
-    );
-};
+            span({ class: "feature-row__name" }, name),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${maxLevel}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, Math.min(maxLevel, next + delta));
+        },
+        wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level (max ${maxLevel})`),
+        maxAction: {
+            value: maxLevel,
+            tooltip: `Set to max level (${maxLevel})`,
+        },
+    });
 
 // ── ConstructionBuildingsTab ───────────────────────────────────────────────
 
@@ -215,7 +158,7 @@ export const ConstructionBuildingsTab = () => {
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
                             [
-                                "feature-btn feature-btn--apply",
+                                "feature-btn feature-btn--max-reset",
                                 bulkStatus.val === "loading" ? "feature-btn--loading" : "",
                                 bulkStatus.val === "success" ? "feature-row--success" : "",
                                 bulkStatus.val === "error" ? "feature-row--error" : "",

@@ -15,79 +15,39 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, span, h3, p } = van.tags;
 
-const AtomRow = ({ index, name, maxLevel, levelState }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(levelState.val ?? 0);
-    });
-
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(maxLevel, toNum(raw)));
-        if (isNaN(lvl)) return;
-
-        await run(async () => {
-            const path = `Atoms[${index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
-            levelState.val = lvl;
-            inputVal.val = String(lvl);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+const AtomRow = ({ index, name, maxLevel, levelState }) =>
+    EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.max(0, Math.min(maxLevel, toNum(rawValue)));
+            return Number.isNaN(lvl) ? null : lvl;
         },
-        div(
-            { class: "feature-row__info" },
+        write: async (nextLevel) => {
+            const path = `Atoms[${index}]`;
+            const ok = await gga(path, nextLevel);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
+            return nextLevel;
+        },
+        renderInfo: () => [
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelState.val} / ${maxLevel}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toNum(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, toNum(inputVal.val) + 1))),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
+            span({ class: "feature-row__name" }, name),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevel}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = toNum(rawValue, toNum(currentValue, 0));
+            return Math.max(0, Math.min(maxLevel, base + delta));
+        },
+    });
 
 export const AtomColliderTab = () => {
     const loading = van.state(true);
@@ -196,52 +156,25 @@ export const AtomColliderTab = () => {
                     "Set Atom Collider upgrade levels. Max levels are computed from game data."
                 )
             ),
-            div(
-                { class: "feature-header__actions" },
-                button(
+            FeatureBulkActionBar({
+                actions: [
                     {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSetAll(null);
-                        },
+                        label: "MAX ALL",
+                        status: bulkStatus,
+                        tooltip: "Set every atom to its computed max level",
+                        onClick: () => doSetAll(null),
                     },
-                    "MAX ALL"
-                ),
-                button(
                     {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSetAll(0);
-                        },
+                        label: "RESET ALL",
+                        status: bulkStatus,
+                        tooltip: "Reset every atom to 0",
+                        onClick: () => doSetAll(0),
                     },
-                    "RESET ALL"
-                ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
+                ],
+                refresh: {
+                    onClick: load,
+                },
+            })
         ),
         renderBody
     );

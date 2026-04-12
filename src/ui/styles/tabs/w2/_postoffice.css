@@ -41,17 +41,6 @@
     flex-wrap: wrap;
 }
 
-.po-box-bulk-btn {
-    background: var(--c-panel);
-    color: var(--c-text-main);
-    border: 1px solid var(--c-border);
-}
-
-.po-box-bulk-btn:hover:not(:disabled) {
-    background: var(--c-panel-dim);
-    border-color: var(--c-border-strong);
-}
-
 .po-boxes-list {
     display: flex;
     flex-direction: column;

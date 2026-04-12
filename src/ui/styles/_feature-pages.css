@@ -225,7 +225,9 @@
     white-space: nowrap;
     transition:
         background 0.15s,
-        color 0.15s;
+        color 0.15s,
+        border-color 0.15s,
+        filter 0.15s;
 }
 
 .feature-btn--apply {
@@ -251,6 +253,19 @@
 .feature-btn--danger:hover:not(:disabled) {
     background: var(--c-danger);
     color: var(--c-white);
+}
+
+.feature-btn--max-reset {
+    min-width: 54px;
+    background: var(--c-danger);
+    color: var(--c-white);
+    border: 1px solid var(--c-danger);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.feature-btn--max-reset:hover:not(:disabled) {
+    filter: brightness(1.08);
 }
 
 .feature-btn--loading {

@@ -660,7 +660,7 @@ export const PostOfficeTab = () => {
             button(
                 {
                     class: () =>
-                        `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                        `feature-btn feature-btn--max-reset${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => boxBulkStatus.val === "loading",
                     onclick: doMaxAllBoxes,
                 },
@@ -669,7 +669,7 @@ export const PostOfficeTab = () => {
             button(
                 {
                     class: () =>
-                        `feature-btn po-box-bulk-btn${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                        `feature-btn feature-btn--max-reset${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
                     disabled: () => boxBulkStatus.val === "loading",
                     onclick: doResetBoxes,
                 },

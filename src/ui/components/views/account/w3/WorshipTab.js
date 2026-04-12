@@ -25,6 +25,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
@@ -131,68 +132,22 @@ const WorshipChargeRow = ({
     );
 };
 
-const WorshipWaveRow = ({ index, name, waveState, writeWave }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(waveState.val ?? 0);
-    });
-
-    const doSet = async (rawValue) => {
-        const next = toInt(rawValue, { min: 0 });
-
-        await run(async () => {
-            const verified = await writeWave(index, next);
-            waveState.val = verified;
-            inputVal.val = String(verified);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
+const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
+    EditableNumberRow({
+        valueState: waveState,
+        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
+        write: async (nextWave) => writeWave(index, nextWave),
+        renderInfo: () => [
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name)
-        ),
-        span({ class: "feature-row__badge" }, () => `BEST WAVE ${waveState.val ?? 0}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { min: 0 }) - 1))),
-                onIncrement: () => (inputVal.val = String(toInt(inputVal.val, { min: 0 }) + 1)),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
+            span({ class: "feature-row__name" }, name),
+        ],
+        renderBadge: (currentValue) => `BEST WAVE ${currentValue ?? 0}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = toInt(rawValue, { min: 0, fallback: currentValue ?? 0 });
+            return Math.max(0, base + delta);
+        },
+        rowClass: "killroy-row",
+    });
 
 export const WorshipTab = () => {
     const loading = van.state(true);

@@ -24,20 +24,19 @@
  *     display:none while loading). This keeps VanJS reactive bindings alive
  *     across refreshes — if rowList were removed and re-inserted, VanJS would
  *     GC the badge closures and they'd stop updating.
- *   - isFocused is a single boolean shared between OrionRow and NumberInput via
- *     onfocus/onblur props. It prevents the fieldState → inputVal derive from
- *     overwriting in-progress user input.
+ *   - OrionRow uses the shared EditableNumberRow primitive for focus-safe input
+ *     syncing, status handling, and SET behavior.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { largeFormatter, largeParser, useWriteStatus } from "../featureShared.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { largeFormatter, largeParser } from "../featureShared.js";
 
 const { div, button, span, h3, p } = van.tags;
 
@@ -77,20 +76,6 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
     const isFloat = field.float;
     const step = isFloat ? 0.1 : 1;
 
-    const inputVal = van.state(String(fieldState.val ?? 0));
-    const { status, run } = useWriteStatus();
-
-    // isFocused is set by onfocus/onblur forwarded from NumberInput.
-    // It prevents the derive below from stomping on in-progress user input.
-    let isFocused = false;
-
-    // When fieldState changes (load / refresh / doSet), push the new value into
-    // the input — but only when the user isn't actively typing.
-    van.derive(() => {
-        const v = fieldState.val;
-        if (v !== undefined && !isFocused) inputVal.val = String(v);
-    });
-
     const resolveNum = (raw) => {
         if (isFormatted) {
             const n = parseNumber(raw);
@@ -100,74 +85,34 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
         return isNaN(n) ? null : isFloat ? n : Math.round(n);
     };
 
-    const doSet = async (raw) => {
-        const num = resolveNum(raw);
-        if (num === null) return;
-        await run(async () => {
-            const ok = await onWrite(field.index, num);
+    return EditableNumberRow({
+        valueState: fieldState,
+        normalize: (rawValue) => resolveNum(rawValue),
+        write: async (nextValue) => {
+            const ok = await onWrite(field.index, nextValue);
             if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]`);
-            fieldState.val = num; // only this row's badge re-renders
-            inputVal.val = String(num);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    field.warn ? "feature-row--warn" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+            return nextValue;
         },
-        div(
-            { class: "feature-row__info" },
+        renderInfo: () => [
             span({ class: "feature-row__name" }, field.label),
-            field.warn ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null
-        ),
-        span({ class: `feature-row__badge ${field.live ? "feature-row__badge--highlight" : ""}` }, () => {
-            const v = fieldState.val;
-            if (v === undefined) return "—";
-            return isFormatted ? formatNumber(v) : String(v);
-        }),
-        div(
-            { class: "feature-row__controls feature-row__controls--xl" },
-            NumberInput({
-                value: inputVal,
-                mode: isFloat ? "float" : "int",
-                ...(isFormatted ? { formatter: largeFormatter, parser: largeParser } : {}),
-                onfocus: () => {
-                    isFocused = true;
-                },
-                onblur: () => {
-                    isFocused = false;
-                },
-                onDecrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(Math.max(0, cur - step));
-                },
-                onIncrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(cur + step);
-                },
-            }),
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                `Write value to OptionsListAccount[${field.index}]`
-            )
-        )
-    );
+            field.warn ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null,
+        ],
+        renderBadge: (currentValue) => {
+            if (currentValue === undefined) return "—";
+            return isFormatted ? formatNumber(currentValue) : String(currentValue);
+        },
+        rowClass: () => (field.warn ? "feature-row--warn" : ""),
+        badgeClass: () => (field.live ? "feature-row__badge--highlight" : ""),
+        controlsClass: "feature-row__controls--xl",
+        inputMode: isFloat ? "float" : "int",
+        inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
+        adjustInput: (rawValue, delta) => {
+            const cur = resolveNum(rawValue) ?? 0;
+            return Math.max(0, cur + step * delta);
+        },
+        wrapApplyButton: (applyButton) =>
+            withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
+    });
 };
 
 // ── OrionTab ──────────────────────────────────────────────────────────────

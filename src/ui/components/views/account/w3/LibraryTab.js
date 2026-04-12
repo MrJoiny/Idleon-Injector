@@ -23,14 +23,15 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, strong } = van.tags;
+const { div, span, h3, p, strong } = van.tags;
 
 // ── Game helpers ─────────────────────────────────────────────────────────────
 
@@ -106,101 +107,52 @@ function getBlockedLibraryTalentIds(rawBlockedList) {
  * }} props
  */
 const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBookAvailable, bonus }) => {
-    const maxInput = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        maxInput.val = String(Math.max(0, Math.min(maxBookLv, toNum(maxState.val ?? 0))));
-    });
-
-    const isLoading = () => status.val === "loading";
-
-    const setMax = (raw) =>
-        run(
-            async () => {
-                if (!isBookAvailable) return;
-
-                const lvl = Math.max(0, Math.min(maxBookLv, toNum(raw)));
-                const path = `SkillLevelsMAX[${talentId}]`;
-                const ok = await gga(path, lvl);
-                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
-                return lvl;
-            },
-            {
-                onSuccess: (verified) => {
-                    if (typeof verified !== "number") return;
-                    maxState.val = verified;
-                    maxInput.val = String(verified);
-                },
-            }
-        );
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row talent-row",
-                    !isBookAvailable ? "talent-row--unavailable" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, talentId),
+    if (!isBookAvailable) {
+        return div(
+            { class: "feature-row talent-row talent-row--unavailable" },
             div(
-                { class: "talent-row__text" },
-                span({ class: "feature-row__name" }, talentName),
-                !isBookAvailable
-                    ? div({ class: "talent-row__notice" }, "This is not a Library book and can't be set.")
-                    : null
-            )
-        ),
-        bonus > 0
-            ? span(
-                  { class: "feature-row__badge talent-row__badge--with-bonus" },
-                  () => curState.val,
-                  span({ class: "talent-row__bonus" }, ` +${bonus}`),
-                  () => ` / ${maxState.val}`
-              )
-            : span({ class: "feature-row__badge" }, () => `${curState.val} / ${maxState.val}`),
-        isBookAvailable
-            ? div(
-                  { class: "feature-row__controls" },
-                  NumberInput({
-                      mode: "int",
-                      value: maxInput,
-                      oninput: (e) => (maxInput.val = e.target.value),
-                      onDecrement: () => (maxInput.val = String(Math.max(0, toNum(maxInput.val) - 1))),
-                      onIncrement: () => (maxInput.val = String(Math.min(maxBookLv, toNum(maxInput.val) + 1))),
-                  }),
-                  button(
-                      {
-                          type: "button",
-                          onmousedown: (e) => e.preventDefault(),
-                          class: () =>
-                              [
-                                  "feature-btn",
-                                  "feature-btn--apply",
-                                  isLoading() ? "feature-btn--loading" : "",
-                                  status.val === "success" ? "feature-row--success" : "",
-                                  status.val === "error" ? "feature-row--error" : "",
-                              ]
-                                  .filter(Boolean)
-                                  .join(" "),
-                          disabled: isLoading,
-                          onclick: (e) => {
-                              e.preventDefault();
-                              setMax(maxInput.val);
-                          },
-                      },
-                      "SET MAX"
+                { class: "feature-row__info" },
+                span({ class: "feature-row__index" }, talentId),
+                div(
+                    { class: "talent-row__text" },
+                    span({ class: "feature-row__name" }, talentName),
+                    div({ class: "talent-row__notice" }, "This is not a Library book and can't be set.")
+                )
+            ),
+            bonus > 0
+                ? span(
+                      { class: "feature-row__badge talent-row__badge--with-bonus" },
+                      span({}, () => curState.val, span({ class: "talent-row__bonus" }, ` +${bonus}`), () => ` / ${maxState.val}`)
                   )
-              )
-            : null
-    );
+                : span({ class: "feature-row__badge" }, () => `${curState.val} / ${maxState.val}`)
+        );
+    }
+
+    return EditableNumberRow({
+        valueState: maxState,
+        normalize: (rawValue) => Math.max(0, Math.min(maxBookLv, toNum(rawValue))),
+        write: async (nextLevel) => {
+            const path = `SkillLevelsMAX[${talentId}]`;
+            const ok = await gga(path, nextLevel);
+            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
+            return nextLevel;
+        },
+        renderInfo: () => [
+            span({ class: "feature-row__index" }, talentId),
+            div({ class: "talent-row__text" }, span({ class: "feature-row__name" }, talentName)),
+        ],
+        renderBadge: () =>
+            bonus > 0
+                ? span({}, () => curState.val, span({ class: "talent-row__bonus" }, ` +${bonus}`), () => ` / ${maxState.val}`)
+                : `${curState.val} / ${maxState.val}`,
+        badgeClass: () => (bonus > 0 ? "talent-row__badge--with-bonus" : ""),
+        rowClass: "talent-row",
+        applyLabel: "SET MAX",
+        adjustInput: (rawValue, delta, currentValue) => {
+            const next = toNum(rawValue, toNum(currentValue, 0)) + delta;
+            return Math.max(0, Math.min(maxBookLv, next));
+        },
+    });
 };
 
 // ── LibraryTab ───────────────────────────────────────────────────────────────
@@ -447,9 +399,8 @@ export const LibraryTab = () => {
                     "Set max talent levels for the active in-game character. Current levels are read-only."
                 )
             ),
-            div(
-                { class: "feature-header__actions" },
-                div(
+            FeatureBulkActionBar({
+                leading: div(
                     {
                         class: () =>
                             `library-maxbooklv${maxBookLvHeader.val === null ? " library-maxbooklv--hidden" : ""}`,
@@ -459,29 +410,18 @@ export const LibraryTab = () => {
                         maxBookLvHeader.val !== null ? String(maxBookLvHeader.val) : "—"
                     )
                 ),
-                button(
+                actions: [
                     {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doMaxAll();
-                        },
+                        label: "MAX ALL",
+                        status: bulkStatus,
+                        tooltip: "Set all available Library books to the current max book level",
+                        onClick: () => doMaxAll(),
                     },
-                    "MAX ALL"
-                ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
+                ],
+                refresh: {
+                    onClick: load,
+                },
+            })
         ),
         renderBody
     );

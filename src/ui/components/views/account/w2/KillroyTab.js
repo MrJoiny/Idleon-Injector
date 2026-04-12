@@ -31,6 +31,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, p, table, thead, tbody, tr, th, td, select, option } = van.tags;
@@ -85,13 +86,6 @@ const Section = (title, note, rows) =>
     );
 
 const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disableEdit = false }) => {
-    const inputVal = van.state(String(valueState.val));
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(valueState.val);
-    });
-
     const normalize = (raw) => {
         const parsed = Math.round(Number(raw));
         if (!Number.isFinite(parsed)) return null;
@@ -99,72 +93,59 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
         return Math.max(0, parsed);
     };
 
-    const doSet = async () => {
-        const val = normalize(inputVal.val);
-        if (val === null) return;
-        await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
-            valueState.val = val;
-            inputVal.val = String(val);
-        });
-    };
+    if (disableEdit) {
+        return div(
+            {
+                class: () =>
+                    [
+                        "feature-row",
+                        "killroy-row",
+                        field.blurred ? "killroy-row--blur" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" "),
+            },
+            div(
+                { class: "feature-row__info" },
+                span({ class: "feature-row__name" }, () => {
+                    const label = field?.label;
+                    if (label && typeof label === "object" && "val" in label) return label.val;
+                    return label ?? "";
+                })
+            ),
+            span({ class: "feature-row__badge" }, () => {
+                if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
+                return String(valueState.val);
+            }),
+            div({ class: "feature-row__controls" }, span({ class: "killroy-row__locked" }, "LOCKED"))
+        );
+    }
 
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    field.blurred ? "killroy-row--blur" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState,
+        normalize,
+        write: async (nextValue) => {
+            const ok = await gga(writePath, nextValue);
+            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextValue}`);
+            return nextValue;
         },
-        div(
-            { class: "feature-row__info" },
+        renderInfo: () =>
             span({ class: "feature-row__name" }, () => {
                 const label = field?.label;
                 if (label && typeof label === "object" && "val" in label) return label.val;
                 return label ?? "";
-            })
-        ),
-        span({ class: "feature-row__badge" }, () => {
-            if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
-            return String(valueState.val);
-        }),
-        div(
-            { class: "feature-row__controls" },
-            disableEdit
-                ? span({ class: "killroy-row__locked" }, "LOCKED")
-                : [
-                      NumberInput({
-                          mode: "int",
-                          value: inputVal,
-                          oninput: (e) => (inputVal.val = e.target.value),
-                          onDecrement: () => {
-                              const next = toNum(inputVal.val, toNum(valueState.val, 0)) - 1;
-                              inputVal.val = String(field.allowNegative ? next : Math.max(0, next));
-                          },
-                          onIncrement: () => {
-                              const next = toNum(inputVal.val, toNum(valueState.val, 0)) + 1;
-                              inputVal.val = String(next);
-                          },
-                      }),
-                      button(
-                          {
-                              class: () =>
-                                  `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                              disabled: () => status.val === "loading",
-                              onclick: doSet,
-                          },
-                          () => (status.val === "loading" ? "..." : "SET")
-                      ),
-                  ]
-        )
-    );
+            }),
+        renderBadge: (currentValue) =>
+            typeof getBadgeText === "function" ? getBadgeText(currentValue) : String(currentValue),
+        adjustInput: (rawValue, delta, currentValue) => {
+            const next = toNum(rawValue, toNum(currentValue, 0)) + delta;
+            return field.allowNegative ? next : Math.max(0, next);
+        },
+        rowClass: () =>
+            ["killroy-row", field.blurred ? "killroy-row--blur" : ""]
+                .filter(Boolean)
+                .join(" "),
+    });
 };
 
 const KillroyAirhornRow = ({ valueState }) => {
