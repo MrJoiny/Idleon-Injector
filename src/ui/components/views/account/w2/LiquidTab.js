@@ -8,11 +8,12 @@
  *   Liquid 3 (unlocked Alchemy Lv 35): Trench Seawater
  *   Liquid 4 (unlocked Alchemy Lv 80): Toxic Mercury
  *
- * Data paths (all within CauldronInfo):
+ * Data paths:
  *   [6][i]         → current liquid amount   (i = 0..3)
  *   [8][4+i][2][1] → cap upgrade level        (i = 0..3)
  *   [8][4+i][3][1] → rate upgrade level       (i = 0..3)
- *
+ *   OptionsListAccount[371+2*i] -> mirrored cap level      (i = 0..3)
+ *   OptionsListAccount[372+2*i] -> mirrored rate level     (i = 0..3)
  * Re-render strategy:
  *   Per-liquid van.state objects are created ONCE and updated in-place on
  *   every load/refresh. The grid DOM is never torn down after first mount —
@@ -79,7 +80,7 @@ const roundTo2 = (v) => {
 // Takes a reactive `valueState` (van.state) so refresh updates the display
 // in-place without recreating this element.
 
-const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
+const LiquidControl = ({ label, valueState, writePaths, mode = "int" }) => {
     const inputVal = van.state(String(valueState.val));
     const { status, run } = useWriteStatus();
 
@@ -92,8 +93,10 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
         const val = mode === "float" ? Math.max(0, roundTo2(raw)) : Math.max(0, Math.round(Number(raw)));
         if (isNaN(val)) return;
         await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            for (const path of writePaths) {
+                const ok = await gga(path, val);
+                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${val}`);
+            }
             valueState.val = val;
             inputVal.val = String(val);
         });
@@ -150,19 +153,25 @@ const LiquidColumn = ({ liquid, states }) =>
         LiquidControl({
             label: "AMOUNT",
             valueState: states.amount,
-            writePath: `CauldronInfo[6][${liquid.index}]`,
+            writePaths: [`CauldronInfo[6][${liquid.index}]`],
             mode: "float",
         }),
         LiquidControl({
             label: "CAP UPGRADE",
             valueState: states.cap,
-            writePath: `CauldronInfo[8][${liquid.upgradeIndex}][2][1]`,
+            writePaths: [
+                `CauldronInfo[8][${liquid.upgradeIndex}][2][1]`,
+                `OptionsListAccount[${371 + 2 * liquid.index}]`,
+            ],
             mode: "int",
         }),
         LiquidControl({
             label: "RATE UPGRADE",
             valueState: states.rate,
-            writePath: `CauldronInfo[8][${liquid.upgradeIndex}][3][1]`,
+            writePaths: [
+                `CauldronInfo[8][${liquid.upgradeIndex}][3][1]`,
+                `OptionsListAccount[${372 + 2 * liquid.index}]`,
+            ],
             mode: "int",
         })
     );
