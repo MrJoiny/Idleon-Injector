@@ -9,6 +9,7 @@
  *   [204]              -> highest killroy score on warrior
  *   [205]              -> highest killroy score on archer
  *   [206]              -> highest killroy score on mage
+ *   [227..230]         -> shop meta bonus values
  *   [467..471]         -> meta bonus values
  *
  * Tome label rows (name/label only):
@@ -47,6 +48,10 @@ const SHOP_FIELDS = [
 ];
 
 const META_FIELDS = [
+    { index: 227, label: "3RD WEEKLY FIGHT UNLOCK FLAG" },
+    { index: 228, label: "ARTIFACT FIND CHANCE BONUS" },
+    { index: 229, label: "CROP EVOLUTION CHANCE BONUS" },
+    { index: 230, label: "JADE GAIN BONUS" },
     { index: 467, label: "GALLERY BONUS" },
     { index: 468, label: "MASTERCLASS BONUS" },
     { index: 469, label: "W7 SKILL XP BONUS" },
