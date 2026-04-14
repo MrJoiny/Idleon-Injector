@@ -14,10 +14,12 @@ import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div, button, span, select, option } = van.tags;
 
 const RACK_PATH = "Spelunk[46]";
 const ITEM_DEFS_PATH = "ItemDefinitionsGET.h";
@@ -393,33 +395,22 @@ export const HatRackTab = () => {
             })(),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "HAT RACK"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets."
-                )
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button(
-                    {
-                        class: "btn-secondary",
-                        disabled: () => loading.val || mutating.val,
-                        onclick: () => {
-                            if (mutating.val) return;
-                            load(true, true);
-                        },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "HAT RACK",
+            description: "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets.",
+            actions: button(
+                {
+                    class: "btn-secondary",
+                    disabled: () => loading.val || mutating.val,
+                    onclick: () => {
+                        if (mutating.val) return;
+                        load(true, true);
                     },
-                    "REFRESH"
-                )
-            )
-        ),
-        renderBody
-    );
+                },
+                "REFRESH"
+            ),
+        }),
+        body: renderBody,
+    });
 };

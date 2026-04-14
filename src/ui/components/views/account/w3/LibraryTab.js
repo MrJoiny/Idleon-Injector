@@ -29,9 +29,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, span, h3, p, strong } = van.tags;
+const { div, span, strong } = van.tags;
 
 // ── Game helpers ─────────────────────────────────────────────────────────────
 
@@ -122,7 +124,12 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
             bonus > 0
                 ? span(
                       { class: "feature-row__badge talent-row__badge--with-bonus" },
-                      span({}, () => curState.val, span({ class: "talent-row__bonus" }, ` +${bonus}`), () => ` / ${maxState.val}`)
+                      span(
+                          {},
+                          () => curState.val,
+                          span({ class: "talent-row__bonus" }, ` +${bonus}`),
+                          () => ` / ${maxState.val}`
+                      )
                   )
                 : span({ class: "feature-row__badge" }, () => `${curState.val} / ${maxState.val}`)
         );
@@ -143,7 +150,12 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
         ],
         renderBadge: () =>
             bonus > 0
-                ? span({}, () => curState.val, span({ class: "talent-row__bonus" }, ` +${bonus}`), () => ` / ${maxState.val}`)
+                ? span(
+                      {},
+                      () => curState.val,
+                      span({ class: "talent-row__bonus" }, ` +${bonus}`),
+                      () => ` / ${maxState.val}`
+                  )
                 : `${curState.val} / ${maxState.val}`,
         badgeClass: () => (bonus > 0 ? "talent-row__badge--with-bonus" : ""),
         rowClass: "talent-row",
@@ -387,19 +399,12 @@ export const LibraryTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "LIBRARY"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Set max talent levels for the active in-game character. Current levels are read-only."
-                )
-            ),
-            FeatureBulkActionBar({
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "LIBRARY",
+            description: "Set max talent levels for the active in-game character. Current levels are read-only.",
+            wrapActions: false,
+            actions: FeatureBulkActionBar({
                 leading: div(
                     {
                         class: () =>
@@ -421,8 +426,8 @@ export const LibraryTab = () => {
                 refresh: {
                     onClick: load,
                 },
-            })
-        ),
-        renderBody
-    );
+            }),
+        }),
+        body: renderBody,
+    });
 };

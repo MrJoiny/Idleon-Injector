@@ -32,9 +32,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, table, thead, tbody, tr, th, td, select, option } = van.tags;
+const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
 const CURRENCY_FIELDS = [{ index: 105, label: "KILLROY SKULLS" }];
 
@@ -511,24 +513,20 @@ export const KillroyTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "KILLROY STATE LIBRARY"),
-                p({ class: "feature-header__desc" }, "Currencies, upgrades, meta bonuses, and records for W2 Killroy.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-        renderRefreshErrorBanner,
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-        scrollPane
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "KILLROY STATE LIBRARY",
+            description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: scrollPane,
+    });
 };

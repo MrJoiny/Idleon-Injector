@@ -36,9 +36,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { largeFormatter, largeParser } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 // ── Field definitions ─────────────────────────────────────────────────────
 //
@@ -110,8 +112,7 @@ const OrionRow = ({ field, fieldState, onWrite }) => {
             const cur = resolveNum(rawValue) ?? 0;
             return Math.max(0, cur + step * delta);
         },
-        wrapApplyButton: (applyButton) =>
-            withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
+        wrapApplyButton: (applyButton) => withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
     });
 };
 
@@ -155,49 +156,43 @@ export const OrionTab = () => {
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("ORION"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage Orion the Great Horned Owl — loads once, refreshes after each set"
-                )
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "ORION",
+            description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: () => load() }, "REFRESH"),
                 "Re-read Orion data from game"
-            )
-        ),
-
-        div(
+            ),
+        }),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " ",
             span({ class: "warning-highlight-accent" }, "Bonuses of Orion"),
             " and ",
             span({ class: "warning-highlight-accent" }, "The Great Mega Reset"),
-            " are permanent — keep values between 70–90. ",
+            " are permanent - keep values between 70-90. ",
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
-            " is permanent — keep between 30–40."
+            " is permanent - keep between 30-40."
         ),
-
-        () =>
-            loading.val
-                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" })))
-                : null,
-
-        () =>
-            !loading.val && error.val
-                ? div(
-                      { class: "feature-list" },
-                      EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
-                  )
-                : null,
-
-        rowList
-    );
+        body: [
+            () =>
+                loading.val
+                    ? div(
+                          { class: "feature-list" },
+                          div({ class: "feature-loader" }, Loader({ text: "READING ORION" }))
+                      )
+                    : null,
+            () =>
+                !loading.val && error.val
+                    ? div(
+                          { class: "feature-list" },
+                          EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
+                      )
+                    : null,
+            rowList,
+        ],
+    });
 };

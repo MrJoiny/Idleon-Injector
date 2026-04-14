@@ -28,9 +28,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 const ARCADE_LEVEL_MAX = 101;
 
 const sanitizeArcadeName = (raw) =>
@@ -318,16 +320,13 @@ export const ArcadeTab = () => {
         }
     );
 
-    return div(
-        { class: "arcade-tab tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ARCADE UPGRADES"),
-                p({ class: "feature-header__desc" }, "Manage Arcade balls and upgrade levels.")
-            ),
-            FeatureBulkActionBar({
+    return FeatureTabFrame({
+        rootClass: "arcade-tab tab-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "ARCADE UPGRADES",
+            description: "Manage Arcade balls and upgrade levels.",
+            wrapActions: false,
+            actions: FeatureBulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -351,9 +350,9 @@ export const ArcadeTab = () => {
                 refresh: {
                     onClick: load,
                 },
-            })
-        ),
-        () =>
+            }),
+        }),
+        refreshError: () =>
             !loading.val && refreshError.val
                 ? div(
                       { class: "warning-banner" },
@@ -362,11 +361,13 @@ export const ArcadeTab = () => {
                       refreshError.val
                   )
                 : null,
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-        content
-    );
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: content,
+    });
 };

@@ -19,9 +19,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const CAULDRONS = [
     { id: "orange", label: "ORANGE", index: 0, prismaKey: "_" },
@@ -331,17 +333,11 @@ export const BrewingTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY - BREWING"),
-                p({ class: "feature-header__desc" }, "Set bubble levels and toggle Prisma upgrades.")
-            ),
-            div(
-                { class: "feature-header__actions" },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "ALCHEMY - BREWING",
+            description: "Set bubble levels and toggle Prisma upgrades.",
+            actions: [
                 div(
                     { class: "brewing-setall-row" },
                     span({ class: "brewing-setall-label" }, "SET ALL LEVEL:"),
@@ -356,10 +352,10 @@ export const BrewingTab = () => {
                         })
                     )
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-        renderRefreshErrorBanner,
-        renderBody
-    );
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            ],
+        }),
+        refreshError: renderRefreshErrorBanner,
+        body: renderBody,
+    });
 };

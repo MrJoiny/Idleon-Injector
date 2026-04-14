@@ -21,9 +21,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div, button, span, select, option } = van.tags;
 
 // ── Sigil tier definitions ──────────────────────────────────────────────────
 
@@ -224,32 +226,20 @@ export const SigilTab = () => {
     const scroll = div({ class: () => paneClass("tier-scroll scrollable-panel") }, setAllBar, grid);
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "tab-container" },
-
-        // Header
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY — SIGILS"),
-                p({ class: "feature-header__desc" }, "Manage tier and unlock status for all 24 alchemy sigils.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        renderRefreshErrorBanner,
-
-        // Loader — only before first successful load
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-
-        // Error — only on failed initial load
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-
-        // Content — always in DOM; hidden via CSS until initialized
-        scroll
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "ALCHEMY - SIGILS",
+            description: "Manage tier and unlock status for all 24 alchemy sigils.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: scroll,
+    });
 };

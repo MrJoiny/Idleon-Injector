@@ -18,9 +18,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const CATEGORIES = [
     { label: "Money Points", index: 1, max: 600 },
@@ -127,38 +129,36 @@ export const AnvilTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "world-feature scroll-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("ANVIL"),
-                p({ class: "feature-header__desc" }, "Manage point allocation for Bonus Exp, Speed/hr, and Capacity")
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "ANVIL",
+            description: "Manage point allocation for Bonus Exp, Speed/hr, and Capacity",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read anvil stats from game memory"
-            )
-        ),
-        div(
+            ),
+        }),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
-        renderRefreshErrorBanner,
-        () =>
-            loading.val && !initialized.val
-                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ANVIL" })))
-                : null,
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? div(
-                      { class: "feature-list" },
-                      EmptyState({ icon: Icons.SearchX(), title: "ANVIL READ FAILED", subtitle: error.val })
-                  )
-                : null,
-        rowList
-    );
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () =>
+                loading.val && !initialized.val
+                    ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ANVIL" })))
+                    : null,
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? div(
+                          { class: "feature-list" },
+                          EmptyState({ icon: Icons.SearchX(), title: "ANVIL READ FAILED", subtitle: error.val })
+                      )
+                    : null,
+        ],
+        body: rowList,
+    });
 };

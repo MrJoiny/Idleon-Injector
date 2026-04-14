@@ -21,9 +21,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const BUILDING_COUNT = 27;
 
@@ -140,18 +142,11 @@ export const ConstructionBuildingsTab = () => {
 
     load();
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "CONSTRUCTION — BUILDINGS"),
-                p({ class: "feature-header__desc" }, "Set building levels. Each building has its own max.")
-            ),
-            div(
-                { class: "feature-header__actions" },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "CONSTRUCTION - BUILDINGS",
+            description: "Set building levels. Each building has its own max.",
+            actions: [
                 button(
                     {
                         type: "button",
@@ -171,13 +166,12 @@ export const ConstructionBuildingsTab = () => {
                             doMaxAll();
                         },
                     },
-                    () => (bulkStatus.val === "loading" ? "MAXING…" : "MAX ALL")
+                    () => (bulkStatus.val === "loading" ? "MAXING..." : "MAX ALL")
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-
-        () => {
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            ],
+        }),
+        body: () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
             if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
             if (!data.val) return null;
@@ -197,6 +191,6 @@ export const ConstructionBuildingsTab = () => {
                     })
                 )
             );
-        }
-    );
+        },
+    });
 };

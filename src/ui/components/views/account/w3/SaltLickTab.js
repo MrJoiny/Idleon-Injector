@@ -7,7 +7,7 @@
  *   cList.SaltLicks[n][4] - max level for upgrade n
  *
  * Array length is taken from cList.SaltLicks (authoritative game table).
- * gga.SaltLick may contain more entries than there are actual upgrades — it is
+ * gga.SaltLick may contain more entries than there are actual upgrades - it is
  * implicitly trimmed because load() only iterates over defs.length entries.
  */
 
@@ -19,9 +19,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, span, h3, p } = van.tags;
+const { div, span } = van.tags;
 
 const toLevelInt = (value, maxLevel) => {
     const n = Math.trunc(toNum(value));
@@ -72,10 +74,11 @@ export const SaltLickTab = () => {
             for (let i = 0; i < upgrades.length; i++) {
                 const path = `SaltLick[${i}]`;
                 const ok = await gga(path, expectedLevels[i]);
-                if (!ok)
+                if (!ok) {
                     throw new Error(
                         `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
                     );
+                }
                 await new Promise((r) => setTimeout(r, 20));
             }
             for (let i = 0; i < upgrades.length; i++) {
@@ -139,12 +142,12 @@ export const SaltLickTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div({}, h3({}, "SALT LICK"), p({ class: "feature-header__desc" }, "Set Salt Lick upgrade levels.")),
-            FeatureBulkActionBar({
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "SALT LICK",
+            description: "Set Salt Lick upgrade levels.",
+            wrapActions: false,
+            actions: FeatureBulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -162,8 +165,8 @@ export const SaltLickTab = () => {
                 refresh: {
                     onClick: load,
                 },
-            })
-        ),
-        renderBody
-    );
+            }),
+        }),
+        body: renderBody,
+    });
 };

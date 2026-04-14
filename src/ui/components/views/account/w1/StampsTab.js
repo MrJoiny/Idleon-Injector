@@ -28,9 +28,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const PAGES = [
     { id: 0, label: "COMBAT" },
@@ -267,36 +269,29 @@ export const StampsTab = () => {
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("STAMPS"),
-                p({ class: "feature-header__desc" }, "Change stamp levels and toggle exalted stamps")
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "STAMPS",
+            description: "Change stamp levels and toggle exalted stamps",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read stamp data from game memory"
-            )
-        ),
-
-        div(
+            ),
+        }),
+        subNav: div(
             { class: "feature-page-nav" },
             ...PAGES.map((pg) =>
                 button(
                     {
-                        class: () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
+                        class: () => "feature-page-btn " + (activePage.val === pg.id ? "active" : ""),
                         onclick: () => (activePage.val = pg.id),
                     },
                     pg.label
                 )
             )
         ),
-
-        () => {
+        body: () => {
             if (loading.val) {
                 return div(
                     { class: "feature-list" },
@@ -336,7 +331,7 @@ export const StampsTab = () => {
                     StampRow({
                         page,
                         order,
-                        name: names[order] ?? `Stamp ${PAGE_LETTERS[page]}${order + 1}`,
+                        name: names[order] ?? ("Stamp " + PAGE_LETTERS[page] + (order + 1)),
                         step: steps[order] ?? 0,
                         initialLevel: data.levels?.[page]?.[order] ?? 0,
                         initialMaxLevel: data.maxLevels?.[page]?.[order] ?? 0,
@@ -346,6 +341,6 @@ export const StampsTab = () => {
                     })
                 )
             );
-        }
-    );
+        },
+    });
 };

@@ -20,9 +20,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const PAGES = [
     {
@@ -116,21 +118,17 @@ export const ForgeTab = () => {
     });
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "world-feature scroll-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("FORGE"),
-                p({ class: "feature-header__desc" }, "Set forge upgrade levels — each upgrade has a hard maximum")
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "FORGE",
+            description: "Set forge upgrade levels — each upgrade has a hard maximum",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read forge levels from game memory"
-            )
-        ),
-        div(
+            ),
+        }),
+        subNav: div(
             { class: "feature-page-nav" },
             ...PAGES.map((pg) =>
                 button(
@@ -142,18 +140,20 @@ export const ForgeTab = () => {
                 )
             )
         ),
-        renderRefreshErrorBanner,
-        () =>
-            loading.val && !initialized.val
-                ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING FORGE" })))
-                : null,
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? div(
-                      { class: "feature-list" },
-                      EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
-                  )
-                : null,
-        rowList
-    );
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () =>
+                loading.val && !initialized.val
+                    ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING FORGE" })))
+                    : null,
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? div(
+                          { class: "feature-list" },
+                          EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
+                      )
+                    : null,
+        ],
+        body: rowList,
+    });
 };

@@ -27,6 +27,8 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import {
     AsyncFeatureBody,
     cleanName,
@@ -37,7 +39,7 @@ import {
     useWriteStatus,
 } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const trapStateKey = (playerName, trapIndex, field) => `${playerName}:${trapIndex}:${field}`;
 const trapBasePath = (playerName, trapIndex) => `PlayerDATABASE.h[${playerName}].h.PldTraps[${trapIndex}]`;
@@ -495,20 +497,13 @@ export const TrappingTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "TRAPPING"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player."
-                )
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-        renderBody
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "TRAPPING",
+            description:
+                "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        body: renderBody,
+    });
 };

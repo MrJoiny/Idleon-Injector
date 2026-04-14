@@ -15,9 +15,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div, button, span, select, option } = van.tags;
 
 const TIERS = [
     { value: 0, label: "Stone" },
@@ -187,23 +189,17 @@ export const StatuesTab = () => {
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("STATUES"),
-                p({ class: "feature-header__desc" }, "Set statue levels, deposited amounts, and upgrade tiers")
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "STATUES",
+            description: "Set statue levels, deposited amounts, and upgrade tiers",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read statue data from game memory"
-            )
-        ),
-
-        div(
+            ),
+        }),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " Tier upgrades require specific tools: ",
@@ -212,10 +208,9 @@ export const StatuesTab = () => {
             span({ class: "warning-highlight-onyx" }, "Onyx Tools"),
             " for Onyx, ",
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
-            " for Zenith. Note that this is only visual to the StatueMan in W1, when set to any rarity it will give their full bonus"
+            " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-
-        () => {
+        body: () => {
             if (loading.val)
                 return div(
                     { class: "feature-list" },
@@ -254,6 +249,6 @@ export const StatuesTab = () => {
                     })
                 )
             );
-        }
-    );
+        },
+    });
 };

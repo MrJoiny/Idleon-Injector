@@ -44,6 +44,13 @@
     overflow: hidden;
 }
 
+.feature-tab-frame {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
 .feature-header {
@@ -54,6 +61,24 @@
     border-bottom: 1px solid var(--c-border);
     flex-shrink: 0;
     gap: 12px;
+}
+
+.feature-tab-header__main {
+    min-width: 0;
+    flex: 1;
+}
+
+.feature-tab-header__title {
+    margin: 0;
+}
+
+.feature-tab-header__desc {
+    max-width: 80ch;
+}
+
+.feature-tab-header__actions {
+    flex-shrink: 0;
+    justify-content: flex-end;
 }
 
 .feature-header h3 {

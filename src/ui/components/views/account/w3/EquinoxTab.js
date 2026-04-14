@@ -31,9 +31,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 // All displayed numbers are plain integers — no decimals, no thousands commas
 const fmtInt = (v) => String(toInt(v, { mode: "floor" }));
@@ -444,18 +446,11 @@ export const EquinoxTab = () => {
         }
     );
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "EQUINOX"),
-                p({ class: "feature-header__desc" }, "Dream bar fill, active clouds, and upgrade levels.")
-            ),
-            div(
-                { class: "feature-header__actions" },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "EQUINOX",
+            description: "Dream bar fill, active clouds, and upgrade levels.",
+            actions: [
                 button(
                     {
                         type: "button",
@@ -478,17 +473,17 @@ export const EquinoxTab = () => {
                     },
                     () => (fillBarStatus.val === "success" ? "FILLED!" : "FILL BAR")
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-
-        renderRefreshError,
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-
-        content
-    );
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            ],
+        }),
+        refreshError: renderRefreshError,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: content,
+    });
 };

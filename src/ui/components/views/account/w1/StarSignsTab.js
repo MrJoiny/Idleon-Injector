@@ -25,9 +25,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, h4, p, select, option } = van.tags;
+const { div, button, span, h4, p, select, option } = van.tags;
 
 // Player 1..10 → letter
 const PLAYER_LETTERS = ["_", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
@@ -496,20 +498,12 @@ export const StarSignsTab = () => {
         });
     };
 
-    return div(
-        {
-            class: "world-feature scroll-container starsigns-scroll-container",
-        },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("STAR SIGNS"),
-                p({ class: "feature-header__desc" }, "Assign players (1–10) and drag to reorder completion order")
-            ),
-            div(
-                { class: "feature-header__actions" },
+    return FeatureTabFrame({
+        rootClass: "world-feature scroll-container starsigns-scroll-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "STAR SIGNS",
+            description: "Assign players (1-10) and drag to reorder completion order",
+            actions: [
                 withTooltip(
                     button(
                         {
@@ -525,7 +519,7 @@ export const StarSignsTab = () => {
                             disabled: isAnyLoading,
                             onclick: () => unlockAll(false),
                         },
-                        () => (unlockStatus.val === "loading" ? "…" : "UNLOCK ALL")
+                        () => (unlockStatus.val === "loading" ? "..." : "UNLOCK ALL")
                     ),
                     "Unlock all signs using players in order: _abcdefghi"
                 ),
@@ -544,7 +538,7 @@ export const StarSignsTab = () => {
                             disabled: isAnyLoading,
                             onclick: () => unlockAll(true),
                         },
-                        () => (randomStatus.val === "loading" ? "…" : "RANDOMIZE ALL")
+                        () => (randomStatus.val === "loading" ? "..." : "RANDOMIZE ALL")
                     ),
                     "Unlock all signs with a random player order per sign"
                 ),
@@ -563,18 +557,17 @@ export const StarSignsTab = () => {
                             disabled: isAnyLoading,
                             onclick: resetAll,
                         },
-                        () => (resetStatus.val === "loading" ? "…" : "RESET ALL")
+                        () => (resetStatus.val === "loading" ? "..." : "RESET ALL")
                     ),
                     "Clear all star sign progress and lock everything"
                 ),
                 withTooltip(
                     button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                     "Re-read star sign data from game"
-                )
-            )
-        ),
-
-        () => {
+                ),
+            ],
+        }),
+        body: () => {
             if (loading.val)
                 return div(
                     { class: "feature-list" },
@@ -613,6 +606,6 @@ export const StarSignsTab = () => {
                     })
                 )
             );
-        }
-    );
+        },
+    });
 };

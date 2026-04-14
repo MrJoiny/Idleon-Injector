@@ -35,9 +35,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 // ── Hardcoded column names (cannot be sourced at runtime) ──────────────────
 
@@ -382,23 +384,13 @@ export const Pay2WinTab = () => {
         buildSimpleSection("PLAYER BOOSTS", "P2W player alchemy boosts", PLAYER_LABELS, playerVal, playerMax, 3)
     );
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY — PAY 2 WIN"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts."
-                )
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        () =>
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "ALCHEMY - PAY 2 WIN",
+            description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        refreshError: () =>
             !loading.val && refreshError.val
                 ? div(
                       { class: "warning-banner" },
@@ -407,14 +399,13 @@ export const Pay2WinTab = () => {
                       refreshError.val
                   )
                 : null,
-
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-
-        scroll
-    );
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: scroll,
+    });
 };

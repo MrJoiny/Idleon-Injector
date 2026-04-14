@@ -13,10 +13,12 @@ import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div, button, span, select, option } = van.tags;
 
 const EQUIP_SETS_PATHS = ["CustomMaps.h.EquipmentSets", "CustomMaps.EquipmentSets"];
 const SET_ORDER_PATHS = ["CustomLists.h.RANDOlist[113]", "CustomLists.RANDOlist[113]"];
@@ -490,33 +492,22 @@ export const SmithyTab = () => {
             })(),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "SMITHY"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list."
-                )
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button(
-                    {
-                        class: "btn-secondary",
-                        disabled: () => loading.val || mutating.val,
-                        onclick: () => {
-                            if (mutating.val) return;
-                            load(true);
-                        },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "SMITHY",
+            description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",
+            actions: button(
+                {
+                    class: "btn-secondary",
+                    disabled: () => loading.val || mutating.val,
+                    onclick: () => {
+                        if (mutating.val) return;
+                        load(true);
                     },
-                    "REFRESH"
-                )
-            )
-        ),
-        renderBody
-    );
+                },
+                "REFRESH"
+            ),
+        }),
+        body: renderBody,
+    });
 };

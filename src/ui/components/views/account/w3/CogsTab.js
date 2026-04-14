@@ -30,9 +30,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p, input } = van.tags;
+const { div, button, span, h3, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
 
 const FlagIcon = (props = {}) =>
@@ -816,23 +818,20 @@ export const CogsTab = () => {
 
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "CONSTRUCTION - COGS"),
-                p({ class: "feature-header__desc" }, "Click a slot to view details and edit CogMap fields.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-        renderRefreshErrorBanner,
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-        boardPane
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "CONSTRUCTION - COGS",
+            description: "Click a slot to view details and edit CogMap fields.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: boardPane,
+    });
 };

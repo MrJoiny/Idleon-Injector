@@ -10,7 +10,7 @@
  *
  * Array length is taken from cList.AtomInfo (authoritative source).
  * All per-atom max level requests are fetched in parallel during load via
- * Promise.all — readComputed returns 0 on failure so the tab still renders.
+ * Promise.all - readComputed returns 0 on failure so the tab still renders.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -21,9 +21,11 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
-const { div, span, h3, p } = van.tags;
+const { div, span } = van.tags;
 
 const AtomRow = ({ index, name, maxLevel, levelState }) =>
     EditableNumberRow({
@@ -69,10 +71,11 @@ export const AtomColliderTab = () => {
             for (let i = 0; i < atoms.length; i++) {
                 const path = `Atoms[${i}]`;
                 const ok = await gga(path, expectedLevels[i]);
-                if (!ok)
+                if (!ok) {
                     throw new Error(
                         `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
                     );
+                }
                 await new Promise((r) => setTimeout(r, 20));
             }
             for (let i = 0; i < atoms.length; i++) {
@@ -144,19 +147,12 @@ export const AtomColliderTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ATOM COLLIDER"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Set Atom Collider upgrade levels. Max levels are computed from game data."
-                )
-            ),
-            FeatureBulkActionBar({
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "ATOM COLLIDER",
+            description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
+            wrapActions: false,
+            actions: FeatureBulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -174,8 +170,8 @@ export const AtomColliderTab = () => {
                 refresh: {
                     onClick: load,
                 },
-            })
-        ),
-        renderBody
-    );
+            }),
+        }),
+        body: renderBody,
+    });
 };

@@ -26,9 +26,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 // ── Liquid definitions ────────────────────────────────────────────────────
 // Names hardcoded — see file header comment.
@@ -221,33 +223,20 @@ export const LiquidTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "tab-container" },
-
-        // Header
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY — LIQUID"),
-                p({ class: "feature-header__desc" }, "Edit current liquid amounts and cap / rate upgrade levels.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        renderRefreshErrorBanner,
-
-        // Loader — only shown before the first successful load
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-
-        // Error — only shown when the initial load fails
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-
-        // Grid — always in DOM; hidden via CSS until first load completes,
-        // then states update in-place on every subsequent refresh.
-        grid
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "ALCHEMY — LIQUID",
+            description: "Edit current liquid amounts and cap / rate upgrade levels.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: grid,
+    });
 };

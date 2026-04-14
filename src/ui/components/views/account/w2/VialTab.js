@@ -19,9 +19,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const MAX_VIAL_LEVEL = 13;
 
@@ -127,17 +129,12 @@ export const VialTab = () => {
             div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
     });
 
-    return div(
-        { class: "vials-tab tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY — VIALS"),
-                p({ class: "feature-header__desc" }, "Set vial levels (0–13) for all alchemy vials.")
-            ),
-            div(
-                { class: "feature-header__actions" },
+    return FeatureTabFrame({
+        rootClass: "vials-tab tab-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "ALCHEMY - VIALS",
+            description: "Set vial levels (0-13) for all alchemy vials.",
+            actions: [
                 div(
                     {
                         class: () =>
@@ -172,9 +169,9 @@ export const VialTab = () => {
                             bulkStatus.val === "loading" ? "..." : bulkStatus.val === "success" ? "\u2713" : "SET ALL"
                     )
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-        renderBody
-    );
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            ],
+        }),
+        body: renderBody,
+    });
 };

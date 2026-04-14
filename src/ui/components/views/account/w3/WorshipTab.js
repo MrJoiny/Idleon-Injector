@@ -26,9 +26,11 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const WORSHIP_TOTEM_NAMES = [
     "Goblin Gorefest",
@@ -293,17 +295,12 @@ export const WorshipTab = () => {
             ),
     });
 
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "W3 - WORSHIP"),
-                p({ class: "feature-header__desc" }, "Edit worship charge and best worship waves.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-        renderBody
-    );
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "W3 - WORSHIP",
+            description: "Edit worship charge and best worship waves.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        body: renderBody,
+    });
 };

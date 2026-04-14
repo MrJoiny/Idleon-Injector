@@ -16,6 +16,8 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import {
     RefreshErrorBanner,
     largeFormatter,
@@ -23,7 +25,7 @@ import {
     usePersistentPaneReady,
 } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const PINNED_FIELDS = [
     { index: 271, label: "Poppy Permanent Bonus Level", warn: "Permanent bonus - keep between 70-90" },
@@ -165,22 +167,17 @@ export const PoppyTab = () => {
 
     load();
 
-    return div(
-        { class: "poppy-tab tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("POPPY"),
-                p({ class: "feature-header__desc" }, "Poppy clicker values and Tar Pit progression controls")
-            ),
-            withTooltip(
+    return FeatureTabFrame({
+        rootClass: "poppy-tab tab-container feature-tab-frame",
+        header: FeatureTabHeader({
+            title: "POPPY",
+            description: "Poppy clicker values and Tar Pit progression controls",
+            actions: withTooltip(
                 button({ class: "btn-secondary", onclick: () => load() }, "REFRESH"),
                 "Re-read Poppy data from game"
-            )
-        ),
-
-        div(
+            ),
+        }),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " ",
@@ -191,16 +188,17 @@ export const PoppyTab = () => {
             span({ class: "warning-highlight-accent" }, "Greatest Catch / Megafish"),
             " is also permanent progression."
         ),
-
-        renderRefreshErrorBanner,
-        () =>
-            loading.val && !initialized.val
-                ? div({ class: "feature-loader" }, Loader({ text: "READING POPPY" }))
-                : null,
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "POPPY READ FAILED", subtitle: error.val })
-                : null,
-        rowList
-    );
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () =>
+                loading.val && !initialized.val
+                    ? div({ class: "feature-loader" }, Loader({ text: "READING POPPY" }))
+                    : null,
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "POPPY READ FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: rowList,
+    });
 };

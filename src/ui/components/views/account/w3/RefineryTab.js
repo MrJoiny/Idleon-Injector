@@ -17,9 +17,11 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const REFINERY_COUNT = 9;
 const REFINERY_OFFSET = 3; // gga.Refinery[3] = first refinery
@@ -202,43 +204,35 @@ export const RefineryTab = () => {
 
     load();
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "W3 - REFINERY",
+            description: "Set refinery levels and salt charges.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        topNotices: [
             div(
-                {},
-                h3({}, "W3 — REFINERY"),
-                p({ class: "feature-header__desc" }, "Set refinery levels and salt charges.")
+                { class: "refinery-notice refinery-notice--polymer" },
+                span({ class: "refinery-notice__icon" }, Icons.Wrench()),
+                span(
+                    {},
+                    "Refineries 7-9 require the ",
+                    span({ class: "refinery-notice__highlight" }, "Polymer Refinery"),
+                    " research to be unlocked in-game before they are available."
+                )
             ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        // Notices
-        div(
-            { class: "refinery-notice refinery-notice--polymer" },
-            span({ class: "refinery-notice__icon" }, Icons.Wrench()),
-            span(
-                {},
-                "Refineries 7–9 require the ",
-                span({ class: "refinery-notice__highlight" }, "Polymer Refinery"),
-                " research to be unlocked in-game before they are available."
-            )
-        ),
-        div(
-            { class: "refinery-notice refinery-notice--placeholder" },
-            span({ class: "refinery-notice__icon" }, Icons.Warning()),
-            span(
-                {},
-                "Refinery 9 is a ",
-                span({ class: "refinery-notice__highlight" }, "placeholder"),
-                " — it does not exist in the game yet and setting it has no effect."
-            )
-        ),
-
-        // List
-        () => {
+            div(
+                { class: "refinery-notice refinery-notice--placeholder" },
+                span({ class: "refinery-notice__icon" }, Icons.Warning()),
+                span(
+                    {},
+                    "Refinery 9 is a ",
+                    span({ class: "refinery-notice__highlight" }, "placeholder"),
+                    " - it does not exist in the game yet and setting it has no effect."
+                )
+            ),
+        ],
+        body: () => {
             if (loading.val) return div({ class: "feature-loader" }, Loader());
             if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
             if (!data.val) return null;
@@ -254,6 +248,6 @@ export const RefineryTab = () => {
                     })
                 )
             );
-        }
-    );
+        },
+    });
 };

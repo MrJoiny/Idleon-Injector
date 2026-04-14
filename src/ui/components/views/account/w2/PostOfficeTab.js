@@ -34,9 +34,11 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 const SHIPMENT_COUNT = 6;
 const POST_OFFICE_SUBTABS = [
@@ -689,59 +691,43 @@ export const PostOfficeTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return div(
-        { class: "tab-container" },
-
-        // Header
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "POST OFFICE"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage shipment streaks, shields, order completions and delivery point currencies."
-                )
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        div(
+    return FeatureTabFrame({
+        header: FeatureTabHeader({
+            title: "POST OFFICE",
+            description: "Manage shipment streaks, shields, order completions and delivery point currencies.",
+            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+        }),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " ",
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
         ),
-        renderRefreshErrorBanner,
-
-        div(
+        subNav: div(
             { class: "alchemy-sub-nav" },
             ...POST_OFFICE_SUBTABS.map((tab) =>
                 button(
                     {
-                        class: () => `alchemy-sub-btn ${activeSubTab.val === tab.id ? "active" : ""}`,
+                        class: () => "alchemy-sub-btn " + (activeSubTab.val === tab.id ? "active" : ""),
                         onclick: () => (activeSubTab.val = tab.id),
                     },
                     tab.label
                 )
             )
         ),
-
-        // Loader ? only before first successful load
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-
-        // Error ? only on failed initial load
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                : null,
-
-        // Content ? always in DOM; hidden via CSS until initialized
-        div(
+        refreshError: renderRefreshErrorBanner,
+        initialState: [
+            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
+            () =>
+                !loading.val && error.val && !initialized.val
+                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
+                    : null,
+        ],
+        body: div(
             { class: "po-sub-content" },
-            div({ class: () => `po-pane ${activeSubTab.val === "deliveries" ? "po-pane--active" : ""}` }, scroll),
-            div({ class: () => `po-pane ${activeSubTab.val === "boxes" ? "po-pane--active" : ""}` }, boxesScroll)
-        )
-    );
+            div({ class: () => "po-pane " + (activeSubTab.val === "deliveries" ? "po-pane--active" : "") }, scroll),
+            div({ class: () => "po-pane " + (activeSubTab.val === "boxes" ? "po-pane--active" : "") }, boxesScroll)
+        ),
+    });
 };
