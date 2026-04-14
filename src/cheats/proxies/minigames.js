@@ -20,9 +20,26 @@
  * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatState, cheatConfig } from "../core/state.js";
 import { behavior, events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
+
+// Find the highest-tier active fish, skipping bombs (type 5) and optionally whales (type 6)
+function findBestFish(genInfo) {
+    const fishes = genInfo[4];
+    let bestIndex = -1;
+    let bestType = -1;
+    for (let i = 0; i < fishes.length; i++) {
+        const f = fishes[i];
+        if (f[0] < 500 && f[1] !== 5
+            && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6)
+            && f[1] > bestType) {
+            bestType = f[1];
+            bestIndex = i;
+        }
+    }
+    return bestIndex;
+}
 
 // mining, fishing, catching
 function setupEvents229Minigames() {
@@ -35,23 +52,62 @@ function setupEvents229Minigames() {
         return Reflect.apply(originalMining, this, args);
     };
 
-    // fishing block game over
-    const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
-    ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
-        if (cheatState.minigame.fishing) return; // Skip original entirely
-        return Reflect.apply(originalFishing, this, args);
-    };
-
-    // catching proxy _GenInfo array for static positions
+    // catching and fishing proxy _GenInfo array
     createMethodProxy(ActorEvents229.prototype, "init", function (base) {
         this._GenInfo = new Proxy(this._GenInfo, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
 
                 const index = Number(prop);
+
                 if (cheatState.minigame.catching) {
                     if (index === 31) return 70;
                     if (index === 33) return [95, 95, 95, 95, 95];
+                }
+
+                if (cheatState.minigame.fishing) {
+                    if (index === 4) {
+                        const fishes = Reflect.get(target, prop, receiver);
+                        const bobber = target[8];
+                        const bestIndex = findBestFish(target);
+
+                        if (bestIndex !== -1) {
+                            const bobberX = bobber[0];
+                            return new Proxy(fishes, {
+                                get(fTarget, fProp) {
+                                    if (String(fProp) === String(bestIndex)) {
+                                        return new Proxy(fTarget[fProp], {
+                                            get(fishTarget, fishProp) {
+                                                if (String(fishProp) === "0") {
+                                                    // game marks fish as dead by setting X >= 500; respect that or it loops catches forever
+                                                    if (fishTarget[0] >= 500) return fishTarget[0];
+                                                    return bobberX;
+                                                }
+                                                return Reflect.get(fishTarget, fishProp);
+                                            }
+                                        });
+                                    }
+                                    return Reflect.get(fTarget, fProp);
+                                }
+                            });
+                        }
+                        return fishes;
+                    }
+
+                    // fish swim offset (GenInfo[13]) shifts the visual position; zero it so our faked base X actually aligns
+                    if (index === 13) {
+                        const sines = Reflect.get(target, prop, receiver);
+                        const bestIndex = findBestFish(target);
+                        if (bestIndex !== -1) {
+                            return new Proxy(sines, {
+                                get(sTarget, sProp) {
+                                    if (String(sProp) === String(bestIndex)) return 0;
+                                    return Reflect.get(sTarget, sProp);
+                                }
+                            });
+                        }
+                        return sines;
+                    }
                 }
 
                 return Reflect.get(target, prop, receiver);

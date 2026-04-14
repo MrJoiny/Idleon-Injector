@@ -778,6 +778,11 @@ exports.cheatConfig = {
             // Grid_CanWeSelect: (t) => t,
         },
     },
+    minigame: {
+        fishing: {
+            skipWhale: true, // turn on/off for megalodon farming
+        },
+    },
 };
 
 exports.injectorConfig = {
