@@ -20,21 +20,25 @@ export const renderTabNav = ({
     activeClass = "active",
     stubClass = null,
     isStub = () => false,
+    renderLabel = (tab) => tab.label,
+    getButtonProps = null,
 }) =>
     div(
-        { class: navClass },
+        { class: joinClasses("feature-sub-nav", navClass) },
         ...tabs.map((tab) =>
             button(
                 {
+                    ...(typeof getButtonProps === "function" ? getButtonProps(tab) : {}),
                     class: () =>
                         joinClasses(
-                            buttonClass,
+                            "feature-sub-tab-btn",
+                            typeof buttonClass === "function" ? buttonClass(tab) : buttonClass,
                             activeId.val === tab.id && activeClass,
                             stubClass && isStub(tab) && stubClass
                         ),
                     onclick: () => (activeId.val = tab.id),
                 },
-                tab.label
+                renderLabel(tab)
             )
         )
     );

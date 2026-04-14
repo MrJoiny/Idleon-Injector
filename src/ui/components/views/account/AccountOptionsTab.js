@@ -15,6 +15,7 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { gga } from "../../../services/api.js";
 import { useWriteStatus } from "./featureShared.js";
+import { AccountPageShell } from "./components/AccountPageShell.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
 
@@ -35,6 +36,7 @@ const isSameDisplayList = (a, b) => {
 export const AccountOptionsTab = () => {
     const ui = vanX.reactive({
         isUnlocked: false,
+        awaitingInitialLoad: false,
         filterText: "",
         hideAI: false,
         displayList: [],
@@ -44,7 +46,10 @@ export const AccountOptionsTab = () => {
     const handleLoad = () => {
         ui.isUnlocked = true;
         if (!store.data.accountOptions.length) {
-            store.loadAccountOptions();
+            ui.awaitingInitialLoad = true;
+            store.loadAccountOptions().finally(() => {
+                ui.awaitingInitialLoad = false;
+            });
         }
     };
 
@@ -96,12 +101,12 @@ export const AccountOptionsTab = () => {
             );
         }
 
-        return div(
-            { class: "options-account-layout scroll-container" },
-
-            div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
-
-            div(
+        return AccountPageShell({
+            rootClass: "account-sub-tab-pane-inner feature-tab-frame",
+            title: "ACCOUNT OPTIONS",
+            description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
+            topNotices: div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
+            subNav: div(
                 { class: "control-bar sticky-header" },
                 withTooltip(
                     button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
@@ -128,26 +133,27 @@ export const AccountOptionsTab = () => {
                     })
                 )
             ),
-
-            div({ id: "options-account-content", class: "options-account-content" }, () => {
-                if (store.app.isLoading) {
-                    return div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }));
-                }
-
-                if (ui.displayList.length === 0) {
-                    return EmptyState({
+            loading: () => ui.awaitingInitialLoad || store.app.isLoading,
+            isEmpty: () => ui.displayList.length === 0,
+            renderLoading: () => div({ id: "options-account-content", class: "options-account-content" }, div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }))),
+            renderEmpty: () =>
+                div(
+                    { id: "options-account-content", class: "options-account-content" },
+                    EmptyState({
                         icon: Icons.SearchX(),
                         title: "NO OPTIONS MATCH",
                         subtitle: "Adjust your filter or search term",
-                    });
-                }
-
-                return vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
-                    const { index, val, schema } = itemState.val;
-                    return OptionItem(index, val, schema);
-                });
-            })
-        );
+                    })
+                ),
+            renderBody: () =>
+                div(
+                    { id: "options-account-content", class: "options-account-content" },
+                    vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
+                        const { index, val, schema } = itemState.val;
+                        return OptionItem(index, val, schema);
+                    })
+                ),
+        });
     });
 };
 

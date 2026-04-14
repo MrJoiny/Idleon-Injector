@@ -308,36 +308,6 @@
 
 /* ── Point Sources section ───────────────────────────────────────────────── */
 
-.po-section {
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.po-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--c-border);
-}
-
-.po-section__title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--c-accent);
-}
-
-.po-section__subtitle {
-    font-size: 0.65rem;
-    color: var(--c-text-dim);
-    font-style: italic;
-}
-
 .po-section__rows {
     display: flex;
     flex-direction: column;

@@ -16,7 +16,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import {
     RefreshErrorBanner,
@@ -167,7 +167,7 @@ export const PoppyTab = () => {
 
     load();
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "poppy-tab tab-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "POPPY",

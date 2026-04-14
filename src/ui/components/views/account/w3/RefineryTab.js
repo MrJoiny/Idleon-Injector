@@ -17,7 +17,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
@@ -204,7 +204,7 @@ export const RefineryTab = () => {
 
     load();
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "W3 - REFINERY",
             description: "Set refinery levels and salt charges.",

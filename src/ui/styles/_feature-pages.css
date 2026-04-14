@@ -98,13 +98,10 @@
 /* ── Secondary page nav (e.g. Combat / Skills / Misc) ────────────────────── */
 
 .feature-page-nav {
-    display: flex;
     gap: 4px;
     padding: 8px 16px 0;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-panel-dim);
-    flex-shrink: 0;
-    flex-wrap: wrap;
 }
 
 .feature-page-btn {
@@ -154,6 +151,41 @@
     height: 160px;
     align-items: center;
     justify-content: center;
+}
+
+.feature-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 10px 12px;
+}
+
+.feature-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.feature-section__title {
+    color: var(--c-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.feature-section__note {
+    color: var(--c-text-dim);
+    font-size: 0.68rem;
+    font-style: italic;
+}
+
+.feature-section__meta {
+    margin-left: auto;
 }
 
 /* ── Data row ────────────────────────────────────────────────────────────── */
@@ -469,13 +501,10 @@
    Container properties handled by .tab-container                             */
 
 .alchemy-sub-nav {
-    display: flex;
     gap: 2px;
     padding: 6px 14px 0;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-panel-dim);
-    flex-shrink: 0;
-    flex-wrap: wrap;
 }
 
 .alchemy-sub-btn {

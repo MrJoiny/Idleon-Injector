@@ -1,9 +1,9 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { NumberInput } from "../../NumberInput.js";
-import { withTooltip } from "../../Tooltip.js";
+import { FeatureActionButton } from "./components/FeatureActionButton.js";
 import { useWriteStatus } from "./featureShared.js";
 
-const { div, span, button } = van.tags;
+const { div, span } = van.tags;
 
 const toNodes = (content) => {
     if (content === null || content === undefined) return [];
@@ -73,42 +73,32 @@ export const EditableNumberRow = ({
         });
     };
 
-    const applyButton = button(
-        {
-            type: "button",
-            onmousedown: (e) => e.preventDefault(),
-            class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-            disabled: () => status.val === "loading",
-            onclick: (e) => {
-                e.preventDefault();
-                applyValue();
-            },
+    const applyButton = FeatureActionButton({
+        label: () => (typeof applyLabel === "function" ? applyLabel() : applyLabel),
+        status,
+        onClick: (e) => {
+            e.preventDefault();
+            applyValue();
         },
-        () => (status.val === "loading" ? "..." : typeof applyLabel === "function" ? applyLabel() : applyLabel)
-    );
+    });
 
     const renderBuiltInAction = (action, fallbackLabel, fallbackValue) => {
         if (!action) return null;
 
         const actionValue = action.value ?? fallbackValue;
         const actionLabel = action.label ?? fallbackLabel;
-        const actionButton = button(
-            {
-                type: "button",
-                onmousedown: (e) => e.preventDefault(),
-                class: () =>
-                    `feature-btn feature-btn--max-reset${status.val === "loading" ? " feature-btn--loading" : ""}`,
-                disabled: () => status.val === "loading",
-                onclick: (e) => {
-                    e.preventDefault();
-                    applyValue(actionValue);
-                },
+        const actionButton = FeatureActionButton({
+            label: typeof actionLabel === "function" ? actionLabel : actionLabel,
+            status,
+            variant: "max-reset",
+            tooltip: action.tooltip ?? null,
+            onClick: (e) => {
+                e.preventDefault();
+                applyValue(actionValue);
             },
-            typeof actionLabel === "function" ? actionLabel : actionLabel
-        );
+        });
 
-        const tooltip = action.tooltip ?? null;
-        return tooltip ? withTooltip(actionButton, typeof tooltip === "function" ? tooltip() : tooltip) : actionButton;
+        return actionButton;
     };
 
     const wrappedApplyButton = typeof wrapApplyButton === "function" ? wrapApplyButton(applyButton) : applyButton;

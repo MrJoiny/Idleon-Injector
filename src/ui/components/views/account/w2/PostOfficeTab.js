@@ -34,9 +34,12 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureActionButton } from "../components/FeatureActionButton.js";
+import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -557,91 +560,78 @@ export const PostOfficeTab = () => {
     );
 
     // ── DOM: Point Sources section ─────────────────────────────────────────
-    const pointsSection = div(
-        { class: "po-section" },
-
-        div(
-            { class: "po-section__header" },
-            span({ class: "po-section__title" }, "POINT SOURCES & CURRENCY"),
-            span({ class: "po-section__subtitle" }, "Values that contribute to your available upgrade points")
-        ),
-
-        div(
-            { class: "po-section__rows" },
-
-            CurrencyRow({
-                label: "DELIVERY COMPLETE",
-                note: null,
-                valueState: boxComplete,
-                writePath: "CurrenciesOwned.h.DeliveryBoxComplete",
-                onAfterWrite: recomputeSummary,
-            }),
-            CurrencyRow({
-                label: "DELIVERY STREAK",
-                note: null,
-                valueState: boxStreak,
-                writePath: "CurrenciesOwned.h.DeliveryBoxStreak",
-                onAfterWrite: recomputeSummary,
-            }),
-            CurrencyRow({
-                label: "BONUS POINTS",
-                note: null,
-                valueState: opt347,
-                writePath: "OptionsListAccount[347]",
-                onAfterWrite: recomputeSummary,
-            }),
-
-            // Misc divider
-            div({ class: "po-section__divider" }, "MISC SOURCES (contribute to DeliveryBoxMisc)"),
-
-            CurrencyRow({
-                label: "MISC OPTION",
-                note: null,
-                valueState: opt131,
-                writePath: "OptionsListAccount[131]",
-                onAfterWrite: recomputeSummary,
-            }),
-            CurrencyRow({
-                label: "VIAL BOX POINTS",
-                note: null,
-                valueState: boxPoints,
-                readOnly: true,
-            }),
-            CurrencyRow({
-                label: "DELIVERY MISC",
-                note: null,
-                valueState: boxMisc,
-                readOnly: true,
-            })
-        ),
-
-        // Points summary
-        div(
-            { class: "po-points-summary" },
-
+    const pointsSection = FeatureSection({
+        title: "POINT SOURCES & CURRENCY",
+        note: "Values that contribute to your available upgrade points",
+        body: [
             div(
-                { class: "po-points-summary__row" },
-                span({ class: "po-points-summary__label" }, "TOTAL EARNED"),
-                span({ class: "po-points-summary__value po-points-summary__value--earned" }, () =>
-                    String(totalEarned.val)
+                { class: "po-section__rows" },
+                CurrencyRow({
+                    label: "DELIVERY COMPLETE",
+                    note: null,
+                    valueState: boxComplete,
+                    writePath: "CurrenciesOwned.h.DeliveryBoxComplete",
+                    onAfterWrite: recomputeSummary,
+                }),
+                CurrencyRow({
+                    label: "DELIVERY STREAK",
+                    note: null,
+                    valueState: boxStreak,
+                    writePath: "CurrenciesOwned.h.DeliveryBoxStreak",
+                    onAfterWrite: recomputeSummary,
+                }),
+                CurrencyRow({
+                    label: "BONUS POINTS",
+                    note: null,
+                    valueState: opt347,
+                    writePath: "OptionsListAccount[347]",
+                    onAfterWrite: recomputeSummary,
+                }),
+                div({ class: "po-section__divider" }, "MISC SOURCES (contribute to DeliveryBoxMisc)"),
+                CurrencyRow({
+                    label: "MISC OPTION",
+                    note: null,
+                    valueState: opt131,
+                    writePath: "OptionsListAccount[131]",
+                    onAfterWrite: recomputeSummary,
+                }),
+                CurrencyRow({
+                    label: "VIAL BOX POINTS",
+                    note: null,
+                    valueState: boxPoints,
+                    readOnly: true,
+                }),
+                CurrencyRow({
+                    label: "DELIVERY MISC",
+                    note: null,
+                    valueState: boxMisc,
+                    readOnly: true,
+                })
+            ),
+            div(
+                { class: "po-points-summary" },
+                div(
+                    { class: "po-points-summary__row" },
+                    span({ class: "po-points-summary__label" }, "TOTAL EARNED"),
+                    span({ class: "po-points-summary__value po-points-summary__value--earned" }, () =>
+                        String(totalEarned.val)
+                    )
+                ),
+                div(
+                    { class: "po-points-summary__row" },
+                    span({ class: "po-points-summary__label" }, "SPENT ON UPGRADES"),
+                    span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `−${spentPoints.val}`)
+                ),
+                div(
+                    { class: "po-points-summary__row po-points-summary__row--highlight" },
+                    span({ class: "po-points-summary__label" }, "AVAILABLE POINTS"),
+                    span({ class: "po-points-summary__value po-points-summary__value--available" }, () =>
+                        String(availablePoints.val)
+                    )
                 )
             ),
-
-            div(
-                { class: "po-points-summary__row" },
-                span({ class: "po-points-summary__label" }, "SPENT ON UPGRADES"),
-                span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `−${spentPoints.val}`)
-            ),
-
-            div(
-                { class: "po-points-summary__row po-points-summary__row--highlight" },
-                span({ class: "po-points-summary__label" }, "AVAILABLE POINTS"),
-                span({ class: "po-points-summary__value po-points-summary__value--available" }, () =>
-                    String(availablePoints.val)
-                )
-            )
-        )
-    );
+        ],
+    });
 
     // ── DOM: Scrollable content ────────────────────────────────────────────
     const scroll = div({ class: () => paneClass("po-scroll scrollable-panel") }, shipmentsSection, pointsSection);
@@ -659,24 +649,18 @@ export const PostOfficeTab = () => {
                         .filter(Boolean)
                         .join(" "),
             },
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--max-reset${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
-                    disabled: () => boxBulkStatus.val === "loading",
-                    onclick: doMaxAllBoxes,
-                },
-                "MAX ALL"
-            ),
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--max-reset${boxBulkStatus.val === "loading" ? " feature-btn--loading" : ""}`,
-                    disabled: () => boxBulkStatus.val === "loading",
-                    onclick: doResetBoxes,
-                },
-                "RESET"
-            )
+            FeatureActionButton({
+                label: "MAX ALL",
+                status: boxBulkStatus,
+                variant: "max-reset",
+                onClick: doMaxAllBoxes,
+            }),
+            FeatureActionButton({
+                label: "RESET",
+                status: boxBulkStatus,
+                variant: "max-reset",
+                onClick: doResetBoxes,
+            })
         ),
         div({ class: "po-boxes-list" }, () =>
             boxCount.val <= 0
@@ -691,7 +675,7 @@ export const PostOfficeTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "POST OFFICE",
             description: "Manage shipment streaks, shields, order completions and delivery point currencies.",
@@ -704,18 +688,12 @@ export const PostOfficeTab = () => {
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
         ),
-        subNav: div(
-            { class: "alchemy-sub-nav" },
-            ...POST_OFFICE_SUBTABS.map((tab) =>
-                button(
-                    {
-                        class: () => "alchemy-sub-btn " + (activeSubTab.val === tab.id ? "active" : ""),
-                        onclick: () => (activeSubTab.val = tab.id),
-                    },
-                    tab.label
-                )
-            )
-        ),
+        subNav: renderTabNav({
+            tabs: POST_OFFICE_SUBTABS,
+            activeId: activeSubTab,
+            navClass: "alchemy-sub-nav",
+            buttonClass: "alchemy-sub-btn",
+        }),
         refreshError: renderRefreshErrorBanner,
         initialState: [
             () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),

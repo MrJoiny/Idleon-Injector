@@ -13,7 +13,10 @@ import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureActionButton } from "../components/FeatureActionButton.js";
+import { FeatureRow } from "../components/FeatureRow.js";
+import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -188,42 +191,28 @@ const SmithyRow = ({ row, onRemove }) => {
         });
     };
 
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "smithy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
+    return FeatureRow({
+        rowClass: "smithy-row",
+        status,
+        info: [
             span({ class: "feature-row__index" }, row.index + 1),
             div(
                 { class: "smithy-row__name-group" },
                 span({ class: "feature-row__name" }, row.displayName || row.setKey),
                 span({ class: "smithy-row__set-key" }, row.setKey)
             )
+        ],
+        badge: () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY"),
+        controls: button(
+            {
+                class: () => `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                disabled: () => status.val === "loading" || onRemove.isBusy(),
+                onmousedown: (e) => e.preventDefault(),
+                onclick: removeRow,
+            },
+            () => (status.val === "loading" ? "..." : "REMOVE")
         ),
-        span({ class: "feature-row__badge" }, () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY")),
-        div(
-            { class: "feature-row__controls" },
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading" || onRemove.isBusy(),
-                    onmousedown: (e) => e.preventDefault(),
-                    onclick: removeRow,
-                },
-                () => (status.val === "loading" ? "..." : "REMOVE")
-            )
-        )
-    );
+    });
 };
 
 export const SmithyTab = () => {
@@ -400,20 +389,14 @@ export const SmithyTab = () => {
                             ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val)
                             : null,
 
-                    div(
-                        { class: "smithy-section" },
-                        div(
-                            { class: "smithy-section__header" },
-                            span({ class: "smithy-section__title" }, "ON SMITHY"),
-                            span(
-                                { class: "smithy-section__note" },
-                                () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`
-                            )
-                        ),
-                        () => {
+                    FeatureSection({
+                        title: "ON SMITHY",
+                        note: () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`,
+                        body: () => {
                             const rows = smithyRows.val;
-                            if (rows.length === 0)
+                            if (rows.length === 0) {
                                 return div({ class: "smithy-empty" }, "No equipment sets currently stored.");
+                            }
 
                             return div(
                                 { class: "smithy-rows" },
@@ -424,17 +407,13 @@ export const SmithyTab = () => {
                                     })
                                 )
                             );
-                        }
-                    ),
+                        },
+                    }),
 
-                    div(
-                        { class: "smithy-section" },
-                        div(
-                            { class: "smithy-section__header" },
-                            span({ class: "smithy-section__title" }, "ADD EQUIPMENT SET"),
-                            span({ class: "smithy-section__note" }, () => `${addableCount.val} AVAILABLE`)
-                        ),
-                        div(
+                    FeatureSection({
+                        title: "ADD EQUIPMENT SET",
+                        note: () => `${addableCount.val} AVAILABLE`,
+                        body: div(
                             {
                                 class: () =>
                                     [
@@ -459,40 +438,32 @@ export const SmithyTab = () => {
                                               option({ value: entry.setKey }, `${entry.displayName} (${entry.setKey})`)
                                           ))
                                 ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val ||
-                                        addStatus.val === "loading" ||
-                                        !selectedAddSetKey.val ||
-                                        addOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addSelected,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD")
-                            ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val || addStatus.val === "loading" || addOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addAllAvailable,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD ALL")
-                            )
-                        )
-                    )
+                            FeatureActionButton({
+                                label: "ADD",
+                                status: addStatus,
+                                variant: "apply",
+                                disabled: () =>
+                                    mutating.val ||
+                                    !selectedAddSetKey.val ||
+                                    addOptions.val.length === 0,
+                                onClick: addSelected,
+                            }),
+                            FeatureActionButton({
+                                label: "ADD ALL",
+                                status: addStatus,
+                                variant: "danger",
+                                disabled: () => mutating.val || addOptions.val.length === 0,
+                                onClick: addAllAvailable,
+                            })
+                        ),
+                    })
                 );
                 scrollEl = root;
                 return root;
             })(),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "SMITHY",
             description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",

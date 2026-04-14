@@ -18,9 +18,9 @@ import { W4Tab } from "./account/W4Tab.js";
 import { W5Tab } from "./account/W5Tab.js";
 import { W6Tab } from "./account/W6Tab.js";
 import { W7Tab } from "./account/W7Tab.js";
-import { renderLazyPanes } from "./account/tabShared.js";
+import { renderLazyPanes, renderTabNav } from "./account/tabShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 /**
  * Tab definitions.
@@ -45,22 +45,15 @@ export const Account = () => {
         { id: "options-account-tab", class: "tab-pane account-tab-layout" },
 
         // Sub-navigation
-        div(
-            { class: "account-sub-nav" },
-            ...ACCOUNT_TABS.map((tab) =>
-                button(
-                    {
-                        class: () =>
-                            `account-sub-tab-button ${activeTab.val === tab.id ? "active" : ""} ${
-                                tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"
-                            }`,
-                        onclick: () => (activeTab.val = tab.id),
-                        title: tab.label,
-                    },
-                    tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label
-                )
-            )
-        ),
+        renderTabNav({
+            tabs: ACCOUNT_TABS,
+            activeId: activeTab,
+            navClass: "account-sub-nav",
+            buttonClass: (tab) =>
+                `account-sub-tab-button ${tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"}`,
+            renderLabel: (tab) => (tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label),
+            getButtonProps: (tab) => ({ title: tab.label }),
+        }),
 
         // Tab panes — lazy-mount: component is created (and its data fetched)
         // only when the user first activates that tab. The div stays in the DOM

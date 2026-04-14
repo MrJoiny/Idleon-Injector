@@ -29,7 +29,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { cleanName, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
@@ -569,7 +569,7 @@ export const DeathNoteTab = () => {
 
     const activeSubTab = van.state(DN_SUBTABS[0].id);
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "DEATH NOTE",
             description: "View kill counts per character for each mob in the Death Note.",

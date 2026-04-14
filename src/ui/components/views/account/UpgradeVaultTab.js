@@ -22,9 +22,10 @@ import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
+import { AccountPageShell } from "./components/AccountPageShell.js";
 import { cleanName, toNum } from "./featureShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, button, span } = van.tags;
 
 // ── VaultRow ──────────────────────────────────────────────────────────────
 
@@ -146,62 +147,36 @@ export const UpgradeVaultTab = () => {
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("UPGRADE VAULT"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus"
-                )
-            ),
-            withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read vault levels from game memory"
-            )
-        ),
-
-        div(
+    return AccountPageShell({
+        title: "UPGRADE VAULT",
+        description:
+            "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+        actions: withTooltip(button({ class: "btn-secondary", onclick: load }, "REFRESH"), "Re-read vault levels from game memory"),
+        topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
                 "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
-
-        () => {
-            if (loading.val)
-                return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING VAULT" }))
-                );
-
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "VAULT READ FAILED", subtitle: error.val })
-                );
-
-            if (!data.val) return div({ class: "feature-list" });
-
-            const { upgrades } = data.val;
-
-            if (!upgrades.length)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO VAULT DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    })
-                );
-
-            return div(
+        loading,
+        error,
+        isEmpty: () => !data.val || data.val.upgrades.length === 0,
+        renderLoading: () => div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING VAULT" }))),
+        renderError: (message) =>
+            div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "VAULT READ FAILED", subtitle: message })),
+        renderEmpty: () =>
+            div(
                 { class: "feature-list" },
-                ...upgrades.map((u) =>
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO VAULT DATA",
+                    subtitle: "Ensure the game is running, then hit REFRESH",
+                })
+            ),
+        renderBody: () =>
+            div(
+                { class: "feature-list" },
+                ...data.val.upgrades.map((u) =>
                     VaultRow({
                         index: u.index,
                         name: u.name,
@@ -210,7 +185,6 @@ export const UpgradeVaultTab = () => {
                         levelState: getLevelState(u.index),
                     })
                 )
-            );
-        }
-    );
+            ),
+    });
 };

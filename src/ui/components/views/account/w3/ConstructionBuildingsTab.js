@@ -21,7 +21,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { toNum, useWriteStatus } from "../featureShared.js";
 
@@ -142,7 +142,7 @@ export const ConstructionBuildingsTab = () => {
 
     load();
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "CONSTRUCTION - BUILDINGS",
             description: "Set building levels. Each building has its own max.",

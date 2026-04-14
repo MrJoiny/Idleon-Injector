@@ -36,7 +36,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { largeFormatter, largeParser } from "../featureShared.js";
 
@@ -156,7 +156,7 @@ export const OrionTab = () => {
 
     load();
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "world-feature scroll-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "ORION",

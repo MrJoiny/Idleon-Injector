@@ -26,7 +26,9 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureRow } from "../components/FeatureRow.js";
+import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
 
@@ -42,13 +44,6 @@ const WORSHIP_TOTEM_NAMES = [
     "Breezy Battle",
     "Pufferblob Brawl",
 ];
-
-const Section = (title, rows) =>
-    div(
-        { class: "killroy-section" },
-        div({ class: "killroy-section__header" }, span({ class: "killroy-section__title" }, title)),
-        div({ class: "killroy-rows" }, ...rows)
-    );
 
 const WorshipChargeRow = ({
     index,
@@ -80,24 +75,14 @@ const WorshipChargeRow = ({
         });
     };
 
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
+    return FeatureRow({
+        rowClass: "killroy-row",
+        status,
+        info: [
             span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, playerName)
-        ),
-        span({ class: "feature-row__badge" }, () => {
+            span({ class: "feature-row__name" }, playerName),
+        ],
+        badge: () => {
             const current = chargeState.val ?? 0;
             const active = isActiveCharacter();
             const maxLabel =
@@ -106,9 +91,8 @@ const WorshipChargeRow = ({
                     : "?";
 
             return active ? `CHARGE ${current} / ${maxLabel} - ACTIVE` : `CHARGE ${current}`;
-        }),
-        div(
-            { class: "feature-row__controls" },
+        },
+        controls: [
             NumberInput({
                 mode: "int",
                 value: inputVal,
@@ -120,8 +104,7 @@ const WorshipChargeRow = ({
                 {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -129,9 +112,9 @@ const WorshipChargeRow = ({
                     },
                 },
                 () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
+            ),
+        ],
+    });
 };
 
 const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
@@ -269,33 +252,40 @@ export const WorshipTab = () => {
         renderContent: (resolved) =>
             div(
                 { class: "killroy-scroll scrollable-panel" },
-                Section(
-                    "WORSHIP CHARGE",
-                    resolved.players.map((player, index) =>
-                        WorshipChargeRow({
-                            index,
-                            playerName: player.playerName,
-                            chargeState: getChargeState(player.playerName),
-                            activeCharacterNameRef,
-                            activeMaxChargeRef,
-                            writeCharge,
-                        })
-                    )
-                ),
-                Section("TOWER DEFENSE", [
-                    ...resolved.towerRows.map((row) =>
-                        WorshipWaveRow({
-                            index: row.index,
-                            name: row.name,
-                            waveState: getWaveState(row.index),
-                            writeWave,
-                        })
+                FeatureSection({
+                    title: "WORSHIP CHARGE",
+                    body: div(
+                        { class: "killroy-rows" },
+                        ...resolved.players.map((player, index) =>
+                            WorshipChargeRow({
+                                index,
+                                playerName: player.playerName,
+                                chargeState: getChargeState(player.playerName),
+                                activeCharacterNameRef,
+                                activeMaxChargeRef,
+                                writeCharge,
+                            })
+                        )
                     ),
-                ])
+                }),
+                FeatureSection({
+                    title: "TOWER DEFENSE",
+                    body: div(
+                        { class: "killroy-rows" },
+                        ...resolved.towerRows.map((row) =>
+                            WorshipWaveRow({
+                                index: row.index,
+                                name: row.name,
+                                waveState: getWaveState(row.index),
+                                writeWave,
+                            })
+                        )
+                    ),
+                })
             ),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "W3 - WORSHIP",
             description: "Edit worship charge and best worship waves.",

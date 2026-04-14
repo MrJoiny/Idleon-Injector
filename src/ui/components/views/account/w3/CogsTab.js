@@ -30,7 +30,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -818,7 +818,7 @@ export const CogsTab = () => {
 
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "CONSTRUCTION - COGS",
             description: "Click a slot to view details and edit CogMap fields.",

@@ -21,7 +21,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -226,7 +226,7 @@ export const SigilTab = () => {
     const scroll = div({ class: () => paneClass("tier-scroll scrollable-panel") }, setAllBar, grid);
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "ALCHEMY - SIGILS",
             description: "Manage tier and unlock status for all 24 alchemy sigils.",

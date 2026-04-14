@@ -32,7 +32,9 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureRow } from "../components/FeatureRow.js";
+import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -76,17 +78,6 @@ const AIRHORN_INDEX = 115;
 const ALL_FIELD_DEFS = [...CURRENCY_FIELDS, ...SHOP_FIELDS, ...META_FIELDS, ...RECORD_FIELDS, { index: AIRHORN_INDEX }];
 const FIELD_INDEXES = Array.from(new Set(ALL_FIELD_DEFS.map((f) => f.index)));
 
-const Section = (title, note, rows) =>
-    div(
-        { class: "killroy-section" },
-        div(
-            { class: "killroy-section__header" },
-            span({ class: "killroy-section__title" }, title),
-            note ? span({ class: "killroy-section__note" }, note) : null
-        ),
-        div({ class: "killroy-rows" }, ...rows)
-    );
-
 const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disableEdit = false }) => {
     const normalize = (raw) => {
         const parsed = Math.round(Number(raw));
@@ -96,31 +87,25 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
     };
 
     if (disableEdit) {
-        return div(
-            {
-                class: () =>
-                    [
-                        "feature-row",
-                        "killroy-row",
-                        field.blurred ? "killroy-row--blur" : "",
-                    ]
-                        .filter(Boolean)
-                        .join(" "),
-            },
-            div(
-                { class: "feature-row__info" },
-                span({ class: "feature-row__name" }, () => {
-                    const label = field?.label;
-                    if (label && typeof label === "object" && "val" in label) return label.val;
-                    return label ?? "";
-                })
-            ),
-            span({ class: "feature-row__badge" }, () => {
+        return FeatureRow({
+            rowClass: () =>
+                [
+                    "killroy-row",
+                    field.blurred ? "killroy-row--blur" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
+            info: span({ class: "feature-row__name" }, () => {
+                const label = field?.label;
+                if (label && typeof label === "object" && "val" in label) return label.val;
+                return label ?? "";
+            }),
+            badge: () => {
                 if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
                 return String(valueState.val);
-            }),
-            div({ class: "feature-row__controls" }, span({ class: "killroy-row__locked" }, "LOCKED"))
-        );
+            },
+            controls: span({ class: "killroy-row__locked" }, "LOCKED"),
+        });
     }
 
     return EditableNumberRow({
@@ -163,33 +148,20 @@ const KillroyAirhornRow = ({ valueState }) => {
         });
     };
 
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, "AIRHORN RESET")),
-        span({ class: "feature-row__badge" }, () => (toNum(valueState.val, 0) === 0 ? "OFF" : "ON")),
-        div(
-            { class: "feature-row__controls" },
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: doToggle,
-                },
-                () => (status.val === "loading" ? "..." : "TOGGLE")
-            )
-        )
-    );
+    return FeatureRow({
+        rowClass: "killroy-row",
+        status,
+        info: span({ class: "feature-row__name" }, "AIRHORN RESET"),
+        badge: () => (toNum(valueState.val, 0) === 0 ? "OFF" : "ON"),
+        controls: button(
+            {
+                class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                disabled: () => status.val === "loading",
+                onclick: doToggle,
+            },
+            () => (status.val === "loading" ? "..." : "TOGGLE")
+        ),
+    });
 };
 
 export const KillroyTab = () => {
@@ -369,151 +341,156 @@ export const KillroyTab = () => {
     const scrollPane = div(
         { class: () => paneClass("killroy-scroll scrollable-panel") },
 
-        Section("CURRENCY / AVAILABILITY", "Most-used Killroy currencies and weekly reset flag", [
-            ...CURRENCY_FIELDS.map((field) =>
-                KillroyNumRow({
-                    field,
-                    valueState: getState(field.index),
-                    writePath: `OptionsListAccount[${field.index}]`,
-                })
-            ),
-            KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) }),
-        ]),
-
-        Section(
-            "SHOP UPGRADES",
-            "Classic Killroy shop level tracks",
-            SHOP_FIELDS.map((field) =>
-                KillroyNumRow({
-                    field,
-                    valueState: getState(field.index),
-                    writePath: `OptionsListAccount[${field.index}]`,
-                    disableEdit: Boolean(field.blurred),
-                })
-            )
-        ),
-
-        Section(
-            "META BONUSES",
-            "Account-wide Killroy bonus values",
-            META_FIELDS.map((field) =>
-                KillroyNumRow({
-                    field,
-                    valueState: getState(field.index),
-                    writePath: `OptionsListAccount[${field.index}]`,
-                    disableEdit: Boolean(field.blurred),
-                })
-            )
-        ),
-
-        div(
-            { class: "killroy-section" },
-            div(
-                { class: "killroy-section__header" },
-                span({ class: "killroy-section__title" }, "RECORDS / TOME"),
-                span({ class: "killroy-section__note" }, "KRbest.h table (sortable) and PB summaries")
-            ),
-
-            div(
+        FeatureSection({
+            title: "CURRENCY / AVAILABILITY",
+            note: "Most-used Killroy currencies and weekly reset flag",
+            body: div(
                 { class: "killroy-rows" },
-                ...RECORD_FIELDS.map((field) =>
+                ...CURRENCY_FIELDS.map((field) =>
                     KillroyNumRow({
                         field,
                         valueState: getState(field.index),
                         writePath: `OptionsListAccount[${field.index}]`,
                     })
                 ),
-                ...PB_TOME_FIELDS.map((field) =>
+                KillroyAirhornRow({ valueState: getState(AIRHORN_INDEX) })
+            ),
+        }),
+
+        FeatureSection({
+            title: "SHOP UPGRADES",
+            note: "Classic Killroy shop level tracks",
+            body: div(
+                { class: "killroy-rows" },
+                ...SHOP_FIELDS.map((field) =>
                     KillroyNumRow({
-                        field: { ...field, label: getPbLabelState(field.key) ?? field.label },
-                        valueState: getPbState(field.key),
-                        writePath: `OptionsListAccount[${field.scoreIndex}]`,
+                        field,
+                        valueState: getState(field.index),
+                        writePath: `OptionsListAccount[${field.index}]`,
+                        disableEdit: Boolean(field.blurred),
                     })
                 )
             ),
+        }),
 
-            div(
-                { class: "killroy-best-toolbar" },
-                span({ class: "killroy-best-toolbar__label" }, "SORT"),
-                select(
-                    {
-                        class: "select-base killroy-best-toolbar__select",
-                        value: sortBy,
-                        onchange: (e) => (sortBy.val = e.target.value),
-                    },
-                    ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label))
-                ),
-                span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`)
-            ),
-
-            div(
-                {
-                    class: () =>
-                        [
-                            "killroy-add-row",
-                            addStatus.val === "success" ? "feature-row--success" : "",
-                            addStatus.val === "error" ? "feature-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                },
-                span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
-                () =>
-                    select(
-                        {
-                            class: "select-base killroy-add-row__select",
-                            value: addMobId,
-                            onchange: (e) => (addMobId.val = e.target.value),
-                        },
-                        ...((allowedMobs.val ?? []).length === 0
-                            ? [option({ value: "" }, "No Killroy mobs found")]
-                            : (allowedMobs.val ?? []).map((mob) =>
-                                  option({ value: mob.mobId }, `${mob.mobName || mob.mobId} (${mob.mobId})`)
-                              ))
-                    ),
-                NumberInput({
-                    mode: "int",
-                    value: addKillsInput,
-                    oninput: (e) => (addKillsInput.val = e.target.value),
-                    onDecrement: () => (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
-                    onIncrement: () => (addKillsInput.val = String(toNum(addKillsInput.val, 0) + 1)),
-                }),
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                        disabled: () => addStatus.val === "loading" || !addMobId.val,
-                        onclick: setBestEntry,
-                    },
-                    () => (addStatus.val === "loading" ? "..." : "SET")
+        FeatureSection({
+            title: "META BONUSES",
+            note: "Account-wide Killroy bonus values",
+            body: div(
+                { class: "killroy-rows" },
+                ...META_FIELDS.map((field) =>
+                    KillroyNumRow({
+                        field,
+                        valueState: getState(field.index),
+                        writePath: `OptionsListAccount[${field.index}]`,
+                        disableEdit: Boolean(field.blurred),
+                    })
                 )
             ),
+        }),
 
-            div(
-                { class: "killroy-best-table-wrap" },
-                table({ class: "killroy-best-table" }, thead(tr(th({}, "MOB"), th({}, "BEST KILLS"))), () => {
-                    const rows = sortedBestRows();
-                    if (rows.length === 0) {
+        FeatureSection({
+            title: "RECORDS / TOME",
+            note: "KRbest.h table (sortable) and PB summaries",
+            body: [
+                div(
+                    { class: "killroy-rows" },
+                    ...RECORD_FIELDS.map((field) =>
+                        KillroyNumRow({
+                            field,
+                            valueState: getState(field.index),
+                            writePath: `OptionsListAccount[${field.index}]`,
+                        })
+                    ),
+                    ...PB_TOME_FIELDS.map((field) =>
+                        KillroyNumRow({
+                            field: { ...field, label: getPbLabelState(field.key) ?? field.label },
+                            valueState: getPbState(field.key),
+                            writePath: `OptionsListAccount[${field.scoreIndex}]`,
+                        })
+                    )
+                ),
+                div(
+                    { class: "killroy-best-toolbar" },
+                    span({ class: "killroy-best-toolbar__label" }, "SORT"),
+                    select(
+                        {
+                            class: "select-base killroy-best-toolbar__select",
+                            value: sortBy,
+                            onchange: (e) => (sortBy.val = e.target.value),
+                        },
+                        ...SORT_OPTIONS.map((opt) => option({ value: opt.id }, opt.label))
+                    ),
+                    span({ class: "killroy-best-toolbar__count" }, () => `${sortedBestRows().length} ENTRIES`)
+                ),
+                div(
+                    {
+                        class: () =>
+                            [
+                                "killroy-add-row",
+                                addStatus.val === "success" ? "feature-row--success" : "",
+                                addStatus.val === "error" ? "feature-row--error" : "",
+                            ]
+                                .filter(Boolean)
+                                .join(" "),
+                    },
+                    span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
+                    () =>
+                        select(
+                            {
+                                class: "select-base killroy-add-row__select",
+                                value: addMobId,
+                                onchange: (e) => (addMobId.val = e.target.value),
+                            },
+                            ...((allowedMobs.val ?? []).length === 0
+                                ? [option({ value: "" }, "No Killroy mobs found")]
+                                : (allowedMobs.val ?? []).map((mob) =>
+                                      option({ value: mob.mobId }, `${mob.mobName || mob.mobId} (${mob.mobId})`)
+                                  ))
+                        ),
+                    NumberInput({
+                        mode: "int",
+                        value: addKillsInput,
+                        oninput: (e) => (addKillsInput.val = e.target.value),
+                        onDecrement: () => (addKillsInput.val = String(Math.max(0, toNum(addKillsInput.val, 0) - 1))),
+                        onIncrement: () => (addKillsInput.val = String(toNum(addKillsInput.val, 0) + 1)),
+                    }),
+                    button(
+                        {
+                            class: () =>
+                                `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            disabled: () => addStatus.val === "loading" || !addMobId.val,
+                            onclick: setBestEntry,
+                        },
+                        () => (addStatus.val === "loading" ? "..." : "SET")
+                    )
+                ),
+                div(
+                    { class: "killroy-best-table-wrap" },
+                    table({ class: "killroy-best-table" }, thead(tr(th({}, "MOB"), th({}, "BEST KILLS"))), () => {
+                        const rows = sortedBestRows();
+                        if (rows.length === 0) {
+                            return tbody(
+                                tr(td({ class: "killroy-best-table__empty", colspan: 2 }, "No KRbest.h entries found."))
+                            );
+                        }
+
                         return tbody(
-                            tr(td({ class: "killroy-best-table__empty", colspan: 2 }, "No KRbest.h entries found."))
-                        );
-                    }
-
-                    return tbody(
-                        ...rows.map((row) =>
-                            tr(
-                                td({ class: "killroy-best-table__mob" }, row.mobName),
-                                td({ class: "killroy-best-table__kills" }, String(row.kills))
+                            ...rows.map((row) =>
+                                tr(
+                                    td({ class: "killroy-best-table__mob" }, row.mobName),
+                                    td({ class: "killroy-best-table__kills" }, String(row.kills))
+                                )
                             )
-                        )
-                    );
-                })
-            )
-        )
+                        );
+                    })
+                ),
+            ],
+        })
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "KILLROY STATE LIBRARY",
             description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",

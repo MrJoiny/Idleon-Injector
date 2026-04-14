@@ -18,7 +18,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
 
@@ -129,7 +129,7 @@ export const AnvilTab = () => {
     );
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "world-feature scroll-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "ANVIL",

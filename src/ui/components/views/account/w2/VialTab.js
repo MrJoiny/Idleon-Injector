@@ -19,7 +19,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
@@ -129,7 +129,7 @@ export const VialTab = () => {
             div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "vials-tab tab-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "ALCHEMY - VIALS",

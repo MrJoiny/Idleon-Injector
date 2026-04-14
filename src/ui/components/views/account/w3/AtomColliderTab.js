@@ -21,7 +21,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
@@ -147,7 +147,7 @@ export const AtomColliderTab = () => {
             ),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "ATOM COLLIDER",
             description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",

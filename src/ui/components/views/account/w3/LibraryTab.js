@@ -29,7 +29,8 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { FeatureRow } from "../components/FeatureRow.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
@@ -110,29 +111,27 @@ function getBlockedLibraryTalentIds(rawBlockedList) {
  */
 const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBookAvailable, bonus }) => {
     if (!isBookAvailable) {
-        return div(
-            { class: "feature-row talent-row talent-row--unavailable" },
-            div(
-                { class: "feature-row__info" },
+        return FeatureRow({
+            rowClass: "talent-row talent-row--unavailable",
+            info: [
                 span({ class: "feature-row__index" }, talentId),
                 div(
                     { class: "talent-row__text" },
                     span({ class: "feature-row__name" }, talentName),
                     div({ class: "talent-row__notice" }, "This is not a Library book and can't be set.")
                 )
-            ),
-            bonus > 0
-                ? span(
-                      { class: "feature-row__badge talent-row__badge--with-bonus" },
-                      span(
+            ],
+            badgeClass: () => (bonus > 0 ? "talent-row__badge--with-bonus" : ""),
+            badge:
+                bonus > 0
+                    ? span(
                           {},
                           () => curState.val,
                           span({ class: "talent-row__bonus" }, ` +${bonus}`),
                           () => ` / ${maxState.val}`
                       )
-                  )
-                : span({ class: "feature-row__badge" }, () => `${curState.val} / ${maxState.val}`)
-        );
+                    : () => `${curState.val} / ${maxState.val}`,
+        });
     }
 
     return EditableNumberRow({
@@ -399,7 +398,7 @@ export const LibraryTab = () => {
             ),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "LIBRARY",
             description: "Set max talent levels for the active in-game character. Current levels are read-only.",

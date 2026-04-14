@@ -20,9 +20,10 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
+import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -118,7 +119,7 @@ export const ForgeTab = () => {
     });
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "world-feature scroll-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "FORGE",
@@ -128,18 +129,12 @@ export const ForgeTab = () => {
                 "Re-read forge levels from game memory"
             ),
         }),
-        subNav: div(
-            { class: "feature-page-nav" },
-            ...PAGES.map((pg) =>
-                button(
-                    {
-                        class: () => `feature-page-btn ${activePage.val === pg.id ? "active" : ""}`,
-                        onclick: () => (activePage.val = pg.id),
-                    },
-                    pg.label
-                )
-            )
-        ),
+        subNav: renderTabNav({
+            tabs: PAGES,
+            activeId: activePage,
+            navClass: "feature-page-nav",
+            buttonClass: "feature-page-btn",
+        }),
         refreshError: renderRefreshErrorBanner,
         initialState: [
             () =>

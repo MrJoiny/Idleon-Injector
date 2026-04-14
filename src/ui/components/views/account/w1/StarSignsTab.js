@@ -25,7 +25,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
@@ -498,7 +498,7 @@ export const StarSignsTab = () => {
         });
     };
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         rootClass: "world-feature scroll-container starsigns-scroll-container feature-tab-frame",
         header: FeatureTabHeader({
             title: "STAR SIGNS",

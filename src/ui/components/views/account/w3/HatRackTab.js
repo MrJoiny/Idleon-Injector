@@ -14,7 +14,7 @@ import { gga } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -395,7 +395,7 @@ export const HatRackTab = () => {
             })(),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "HAT RACK",
             description: "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets.",

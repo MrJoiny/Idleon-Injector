@@ -6,36 +6,6 @@
     gap: 12px;
 }
 
-.killroy-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    padding: 10px 12px;
-}
-
-.killroy-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    border-bottom: 1px solid var(--c-border);
-    padding-bottom: 6px;
-}
-
-.killroy-section__title {
-    color: var(--c-accent);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.killroy-section__note {
-    color: var(--c-text-dim);
-    font-size: 0.68rem;
-    font-style: italic;
-}
-
 .killroy-rows {
     display: flex;
     flex-direction: column;

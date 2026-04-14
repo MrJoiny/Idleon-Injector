@@ -11,22 +11,22 @@
 /* ── Top account sub-nav ─────────────────────────────────────────────────── */
 
 .account-sub-nav {
-    display: flex;
     gap: 4px;
     padding: 10px 10px 0;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-panel);
-    flex-shrink: 0;
-    flex-wrap: wrap;
     position: sticky;
     top: 0;
     z-index: 1001;
 }
 
-.account-sub-tab-button,
-.world-sub-tab-btn,
-.feature-page-btn,
-.alchemy-sub-btn {
+.feature-sub-nav {
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.feature-sub-tab-btn {
     background: transparent;
     border: 1px solid transparent;
     border-bottom: none;
@@ -43,28 +43,19 @@
     bottom: -1px;
 }
 
-.account-sub-tab-button:hover,
-.world-sub-tab-btn:hover,
-.feature-page-btn:hover,
-.alchemy-sub-btn:hover {
+.feature-sub-tab-btn:hover {
     color: var(--tab-nav-hover-color, var(--c-text-main));
     background: var(--tab-nav-hover-bg, var(--c-white-03));
 }
 
-.account-sub-tab-button.active,
-.world-sub-tab-btn.active,
-.feature-page-btn.active,
-.alchemy-sub-btn.active {
+.feature-sub-tab-btn.active {
     color: var(--tab-nav-active-color, var(--c-text-main));
     border-color: var(--c-border);
     border-bottom-color: var(--tab-nav-active-bg, var(--c-panel-dim));
     background: var(--tab-nav-active-bg, var(--c-panel-dim));
 }
 
-.account-sub-tab-button.active::after,
-.world-sub-tab-btn.active::after,
-.feature-page-btn.active::after,
-.alchemy-sub-btn.active::after {
+.feature-sub-tab-btn.active::after {
     content: "";
     position: absolute;
     top: 0;
@@ -209,13 +200,10 @@
 /* ── World inner sub-nav ─────────────────────────────────────────────────── */
 
 .world-sub-nav {
-    display: flex;
     gap: 4px;
     padding: 8px 16px 0;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-panel-dim);
-    flex-shrink: 0;
-    flex-wrap: wrap;
 }
 
 .world-sub-tab-btn {

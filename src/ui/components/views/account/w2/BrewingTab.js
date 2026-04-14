@@ -19,7 +19,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureTabFrame } from "../components/FeatureTabFrame.js";
+import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus } from "../featureShared.js";
 
@@ -333,7 +333,7 @@ export const BrewingTab = () => {
             ),
     });
 
-    return FeatureTabFrame({
+    return AccountPageShell({
         header: FeatureTabHeader({
             title: "ALCHEMY - BREWING",
             description: "Set bubble levels and toggle Prisma upgrades.",

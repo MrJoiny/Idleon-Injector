@@ -6,36 +6,6 @@
     gap: 12px;
 }
 
-.smithy-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    padding: 10px 12px;
-}
-
-.smithy-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    border-bottom: 1px solid var(--c-border);
-    padding-bottom: 6px;
-}
-
-.smithy-section__title {
-    color: var(--c-accent);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.smithy-section__note {
-    color: var(--c-text-dim);
-    font-size: 0.68rem;
-    font-style: italic;
-}
-
 .smithy-rows {
     display: flex;
     flex-direction: column;
