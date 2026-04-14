@@ -7,7 +7,7 @@
  *
  * Supported minigames:
  * - Mining (ActorEvents_229) - Never game over
- * - Fishing (ActorEvents_229) - Never game over
+ * - Fishing (ActorEvents_229) - Fish aimbot
  * - Catching (ActorEvents_229) - Static fly/hoop positions
  * - Choppin (ActorEvents_116) - Gold zone fills bar
  * - Hoops (ActorEvents_510) - Perfect ball/hoop position
@@ -66,47 +66,17 @@ function setupEvents229Minigames() {
                 }
 
                 if (cheatState.minigame.fishing) {
-                    if (index === 4) {
-                        const fishes = Reflect.get(target, prop, receiver);
-                        const bobber = target[8];
-                        const bestIndex = findBestFish(target);
-
-                        if (bestIndex !== -1) {
-                            const bobberX = bobber[0];
-                            return new Proxy(fishes, {
-                                get(fTarget, fProp) {
-                                    if (String(fProp) === String(bestIndex)) {
-                                        return new Proxy(fTarget[fProp], {
-                                            get(fishTarget, fishProp) {
-                                                if (String(fishProp) === "0") {
-                                                    // game marks fish as dead by setting X >= 500; respect that or it loops catches forever
-                                                    if (fishTarget[0] >= 500) return fishTarget[0];
-                                                    return bobberX;
-                                                }
-                                                return Reflect.get(fishTarget, fishProp);
-                                            }
-                                        });
-                                    }
-                                    return Reflect.get(fTarget, fProp);
-                                }
-                            });
-                        }
-                        return fishes;
-                    }
-
-                    // fish swim offset (GenInfo[13]) shifts the visual position; zero it so our faked base X actually aligns
-                    if (index === 13) {
-                        const sines = Reflect.get(target, prop, receiver);
+                    if (index === 4 || index === 13) {
                         const bestIndex = findBestFish(target);
                         if (bestIndex !== -1) {
-                            return new Proxy(sines, {
-                                get(sTarget, sProp) {
-                                    if (String(sProp) === String(bestIndex)) return 0;
-                                    return Reflect.get(sTarget, sProp);
-                                }
-                            });
+                            const fishes = target[4];
+                            const bobber = target[8];
+                            const sines = target[13];
+
+                            fishes[bestIndex][0] = bobber[0];
+                            // fish swim offset shifts visual X; zero it so base X snap stays aligned
+                            sines[bestIndex] = 0;
                         }
-                        return sines;
                     }
                 }
 
