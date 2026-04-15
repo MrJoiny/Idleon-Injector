@@ -2,7 +2,6 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
-import { FeatureTabFrame } from "./FeatureTabFrame.js";
 import { FeatureTabHeader } from "./FeatureTabHeader.js";
 
 const { div } = van.tags;
@@ -41,10 +40,9 @@ export const AccountPageShell = ({
     rootClass = "tab-container feature-tab-frame",
     wrapActions = true,
 }) =>
-    FeatureTabFrame({
-        rootClass,
-        header:
-            header ??
+    div(
+        { class: rootClass },
+        header ??
             FeatureTabHeader({
                 title,
                 description,
@@ -55,7 +53,7 @@ export const AccountPageShell = ({
         subNav,
         refreshError,
         initialState,
-        body: () => {
+        () => {
             const isLoading = Boolean(resolveValue(loading));
             const errorMessage = resolveValue(error);
             const empty = Boolean(resolveValue(isEmpty));
@@ -88,5 +86,5 @@ export const AccountPageShell = ({
             }
 
             return renderNode(resolvedBody);
-        },
-    });
+        }
+    );
