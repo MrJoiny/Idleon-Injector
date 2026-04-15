@@ -62,6 +62,7 @@ export function setupEvents124Proxies() {
         const runCodeOfType = ActorEvents12._customBlock_RunCodeOfTypeXforThingY;
 
         const cardSlots = gga.Cards[2];
+        // cList.CardStuff as object array with the key as index 0
         const cardInfo = gga.PixelHelperActor[6].behaviors.getBehavior("ActorEvents_312")._GenINFO[45].h;
         const bonusH = gga.DNSM.h.CardBonusS.h;
         const equippedH = gga.DNSM.h.CardBonusS_old.h;
