@@ -537,6 +537,49 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
+    app.post("/api/game/computed/read-many", async (req, res) => {
+        const { namespace, name, argSets } = await req.json();
+
+        if (!namespace || typeof namespace !== "string") {
+            return res.status(400).json({ error: "Missing or invalid namespace (must be a non-empty string)" });
+        }
+        if (!name || typeof name !== "string") {
+            return res.status(400).json({ error: "Missing or invalid name (must be a non-empty string)" });
+        }
+        if (!Array.isArray(argSets)) {
+            return res.status(400).json({ error: "argSets must be an array" });
+        }
+        if (!argSets.every(Array.isArray)) {
+            return res.status(400).json({ error: "argSets must contain arrays" });
+        }
+
+        const escapedNamespace = namespace.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const escapedName = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const argSetsJson = JSON.stringify(argSets);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readComputedValues("${escapedNamespace}", "${escapedName}", ${argSetsJson})`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                const ex = result.exceptionDetails;
+                const details = ex.exception?.description ?? ex.text;
+                return res.status(500).json({ error: "Computed batch read failed", details });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read computed batch: ${namespace}.${name} (${argSets.length} items)`);
+            res.json({ value: data.value || [] });
+        } catch (err) {
+            log.error("Error in /api/game/computed/read-many:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.post("/api/game/gga/write", async (req, res) => {
         const { path, value } = await req.json();
         if (!path || typeof path !== "string") {

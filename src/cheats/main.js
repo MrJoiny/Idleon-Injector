@@ -18,7 +18,7 @@ import { cheats, cheat as coreCheat } from "./core/registration.js";
 import { setup as coreSetup } from "./core/setup.js";
 // Static cheats register automatically when this module is imported
 import "./cheats/register.js";
-import { getcheatStateList, readPath, readEntries, readComputed, writePath } from "./api/stateAccessors.js";
+import { getcheatStateList, readPath, readEntries, readComputed, readComputedMany, writePath } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
 import { monitor } from "./core/valueMonitor.js";
@@ -67,6 +67,7 @@ window.getGgaKeys = getGgaKeys;
 window.readGamePath = readPath;
 window.readGameEntries = readEntries;
 window.readComputedValue = readComputed;
+window.readComputedValues = readComputedMany;
 window.writeGamePath = writePath;
 
 // Monitor API

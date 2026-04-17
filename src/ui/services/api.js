@@ -274,3 +274,20 @@ export async function readComputed(namespace, name, args = []) {
     });
     return data.value;
 }
+
+/**
+ * Read many computed values from one game helper family in one backend/CDP round-trip.
+ *
+ * @param {string} namespace
+ * @param {string} name
+ * @param {Array[]=} argSets
+ * @returns {Promise<Array<{ ok: boolean, value?: any, error?: string }>>}
+ */
+export async function readComputedMany(namespace, name, argSets = []) {
+    const data = await _request("/game/computed/read-many", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ namespace, name, argSets }),
+    });
+    return data.value || [];
+}
