@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -130,17 +130,15 @@ export const ArcadeTab = () => {
         refreshError.val = null;
 
         try {
-            const [rawNormal, rawGolden, rawCosmic, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
-                gga("OptionsListAccount[74]"),
-                gga("OptionsListAccount[75]"),
-                gga("OptionsListAccount[324]"),
+            const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
+                readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
                 readCList("ArcadeShopInfo"),
                 gga("ArcadeUpg"),
             ]);
 
-            normalBalls.val = String(rawNormal ?? 0);
-            goldenBalls.val = String(rawGolden ?? 0);
-            cosmicBalls.val = String(rawCosmic ?? 0);
+            normalBalls.val = String(rawOptions?.["74"] ?? 0);
+            goldenBalls.val = String(rawOptions?.["75"] ?? 0);
+            cosmicBalls.val = String(rawOptions?.["324"] ?? 0);
 
             const shopInfo = toIndexedArray(rawArcadeShopInfo ?? []);
             const upgLevels = toIndexedArray(rawArcadeUpg ?? []);

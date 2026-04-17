@@ -28,7 +28,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -437,7 +437,7 @@ export const PostOfficeTab = () => {
             const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
                 gga("PostOfficeInfo"),
                 gga("CurrenciesOwned"),
-                gga("OptionsListAccount"),
+                readGgaEntries("OptionsListAccount", ["131", "347"]),
                 gga("DNSM.h.AlchVials.h.BoxPoints").catch(() => 0),
                 readPostOfficeBoxDefs(),
             ]);
@@ -498,9 +498,8 @@ export const PostOfficeTab = () => {
             boxMisc.val = Number(curr.DeliveryBoxMisc ?? 0);
 
             // Parse OptionsListAccount
-            const opts = toIndexedArray(rawOpts ?? []);
-            opt347.val = Number(opts[347] ?? 0);
-            opt131.val = Number(opts[131] ?? 0);
+            opt347.val = Number(rawOpts?.["347"] ?? 0);
+            opt131.val = Number(rawOpts?.["131"] ?? 0);
 
             // AlchVials BoxPoints
             boxPoints.val = Number(rawBoxPts ?? 0);

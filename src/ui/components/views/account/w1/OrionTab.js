@@ -29,7 +29,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -128,9 +128,10 @@ export const OrionTab = () => {
         loading.val = true;
         error.val = null;
         try {
-            const results = await Promise.all(ALL_FIELDS.map((f) => gga(`OptionsListAccount[${f.index}]`)));
-            ALL_FIELDS.forEach((f, i) => {
-                fieldStates.get(f.index).val = results[i] ?? 0;
+            const keys = ALL_FIELDS.map((f) => String(f.index));
+            const results = await readGgaEntries("OptionsListAccount", keys);
+            ALL_FIELDS.forEach((f) => {
+                fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
             });
         } catch (e) {
             error.val = e.message || "Failed to read Orion data";
@@ -177,7 +178,7 @@ export const OrionTab = () => {
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent - keep between 30-40."
         ),
-        body: [
+        body: div(
             () =>
                 loading.val
                     ? div(
@@ -192,7 +193,7 @@ export const OrionTab = () => {
                           EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
                       )
                     : null,
-            rowList,
-        ],
+            rowList
+        ),
     });
 };

@@ -9,7 +9,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -135,9 +135,10 @@ export const PoppyTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const results = await Promise.all(ALL_FIELDS.map((f) => gga(`OptionsListAccount[${f.index}]`)));
-            ALL_FIELDS.forEach((f, i) => {
-                fieldStates.get(f.index).val = results[i] ?? 0;
+            const keys = ALL_FIELDS.map((f) => String(f.index));
+            const results = await readGgaEntries("OptionsListAccount", keys);
+            ALL_FIELDS.forEach((f) => {
+                fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
             });
             markReady();
         } catch (e) {

@@ -189,12 +189,8 @@ export const KillroyTab = () => {
         error.val = null;
         refreshError.val = null;
         try {
-            const valueJobs = FIELD_INDEXES.map((idx) =>
-                gga(`OptionsListAccount[${idx}]`).then((v) => ({ idx, value: toNum(v, 0) }))
-            );
-
-            const pbJobs = PB_TOME_FIELDS.map((f) =>
-                gga(`OptionsListAccount[${f.scoreIndex}]`).then((v) => ({ key: f.key, value: toNum(v, 0) }))
+            const optionKeys = Array.from(
+                new Set([...FIELD_INDEXES, ...PB_TOME_FIELDS.map((f) => f.scoreIndex)].map((idx) => String(idx)))
             );
             const pbLabelJobs = PB_TOME_FIELDS.map((f) =>
                 readCList(`Tome[${f.tomeIndex}]`)
@@ -206,20 +202,19 @@ export const KillroyTab = () => {
                     .catch(() => ({ key: f.key, label: null }))
             );
 
-            const [fieldValues, pbValues, pbLabels, rawBestByMob] = await Promise.all([
-                Promise.all(valueJobs),
-                Promise.all(pbJobs),
+            const [rawOptionValues, pbLabels, rawBestByMob] = await Promise.all([
+                readGgaEntries("OptionsListAccount", optionKeys),
                 Promise.all(pbLabelJobs),
                 gga("KRbest.h"),
             ]);
 
-            for (const { idx, value } of fieldValues) {
+            for (const idx of FIELD_INDEXES) {
                 const st = getState(idx);
-                if (st) st.val = value;
+                if (st) st.val = toNum(rawOptionValues?.[String(idx)], 0);
             }
-            for (const { key, value } of pbValues) {
-                const st = getPbState(key);
-                if (st) st.val = value;
+            for (const f of PB_TOME_FIELDS) {
+                const st = getPbState(f.key);
+                if (st) st.val = toNum(rawOptionValues?.[String(f.scoreIndex)], 0);
             }
             for (const { key, label } of pbLabels) {
                 const st = getPbLabelState(key);
