@@ -14,16 +14,13 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
+import { usePersistentPaneReady } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -118,8 +115,6 @@ export const ForgeTab = () => {
             )
         );
     });
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     return AccountPageShell({
         rootClass: "world-feature scroll-container feature-tab-frame",
         header: FeatureTabHeader({
@@ -136,20 +131,10 @@ export const ForgeTab = () => {
             navClass: "feature-page-nav",
             buttonClass: "feature-page-btn",
         }),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () =>
-                loading.val && !initialized.val
-                    ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING FORGE" })))
-                    : null,
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? div(
-                          { class: "feature-list" },
-                          EmptyState({ icon: Icons.SearchX(), title: "FORGE READ FAILED", subtitle: error.val })
-                      )
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
+        persistentLoadingText: "READING FORGE",
+        persistentErrorTitle: "FORGE READ FAILED",
+        persistentInitialWrapperClass: "feature-list",
         body: rowList,
     });
 };

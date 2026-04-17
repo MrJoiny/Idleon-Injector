@@ -28,16 +28,13 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
@@ -495,22 +492,13 @@ export const KillroyTab = () => {
             ],
         })
     );
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "KILLROY STATE LIBRARY",
             description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
         body: scrollPane,
     });
 };

@@ -27,14 +27,12 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { RefreshErrorBanner, toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -419,8 +417,6 @@ export const EquinoxTab = () => {
 
     // ── Persistent content (built once, updated via states) ───────────────────
 
-    const renderRefreshError = RefreshErrorBanner({ error: refreshError });
-
     const content = div(
         { class: () => paneClass("equinox-content") },
 
@@ -502,14 +498,7 @@ export const EquinoxTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        refreshError: renderRefreshError,
-        initialState: [
-            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
         body: content,
     });
 };

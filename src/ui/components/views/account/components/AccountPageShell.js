@@ -39,52 +39,109 @@ export const AccountPageShell = ({
     body = null,
     rootClass = "tab-container feature-tab-frame",
     wrapActions = true,
+    persistentState = null,
+    persistentLoadingText = null,
+    persistentErrorTitle = "LOAD FAILED",
+    persistentInitialWrapperClass = null,
 }) =>
-    div(
-        { class: rootClass },
-        header ??
-            FeatureTabHeader({
-                title,
-                description,
-                actions,
-                wrapActions,
-            }),
-        topNotices,
-        subNav,
-        refreshError,
-        initialState,
-        () => {
-            const isLoading = Boolean(resolveValue(loading));
-            const errorMessage = resolveValue(error);
-            const empty = Boolean(resolveValue(isEmpty));
-            const resolvedBody = renderBody ?? body;
+    (() => {
+        const wrapPersistentInitial = (node) =>
+            persistentInitialWrapperClass ? div({ class: persistentInitialWrapperClass }, node) : node;
 
-            if (isLoading) {
-                return renderNode(renderLoading) ?? div({ class: "feature-loader" }, Loader());
+        const resolvedRefreshError =
+            refreshError ??
+            (persistentState?.refreshError
+                ? () => {
+                      const message = resolveValue(persistentState.refreshError);
+                      return message
+                          ? div(
+                                { class: "warning-banner" },
+                                Icons.Warning(),
+                                " Refresh failed. Showing last loaded values. ",
+                                message
+                            )
+                          : null;
+                  }
+                : null);
+
+        const resolvedInitialState =
+            initialState ??
+            (persistentState
+                ? [
+                      () => {
+                          const isLoading = Boolean(resolveValue(persistentState.loading));
+                          const isInitialized = Boolean(resolveValue(persistentState.initialized));
+                          if (!isLoading || isInitialized) return null;
+
+                          const loader =
+                              persistentLoadingText !== null
+                                  ? Loader({ text: persistentLoadingText })
+                                  : Loader();
+                          return wrapPersistentInitial(div({ class: "feature-loader" }, loader));
+                      },
+                      () => {
+                          const isLoading = Boolean(resolveValue(persistentState.loading));
+                          const isInitialized = Boolean(resolveValue(persistentState.initialized));
+                          const errorMessage = resolveValue(persistentState.error);
+                          if (isLoading || isInitialized || !errorMessage) return null;
+
+                          return wrapPersistentInitial(
+                              EmptyState({
+                                  icon: Icons.SearchX(),
+                                  title: persistentErrorTitle,
+                                  subtitle: String(errorMessage),
+                              })
+                          );
+                      },
+                  ]
+                : null);
+
+        return div(
+            { class: rootClass },
+            header ??
+                FeatureTabHeader({
+                    title,
+                    description,
+                    actions,
+                    wrapActions,
+                }),
+            topNotices,
+            subNav,
+            resolvedRefreshError,
+            resolvedInitialState,
+            () => {
+                const isLoading = Boolean(resolveValue(loading));
+                const errorMessage = resolveValue(error);
+                const empty = Boolean(resolveValue(isEmpty));
+                const resolvedBody = renderBody ?? body;
+
+                if (isLoading) {
+                    return renderNode(renderLoading) ?? div({ class: "feature-loader" }, Loader());
+                }
+
+                if (errorMessage) {
+                    return (
+                        renderNode(renderError, errorMessage) ??
+                        EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "LOAD FAILED",
+                            subtitle: String(errorMessage),
+                        })
+                    );
+                }
+
+                if (empty) {
+                    return (
+                        renderNode(renderEmpty) ??
+                        EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "NO DATA",
+                            subtitle: "Nothing to display.",
+                        })
+                    );
+                }
+
+                return renderNode(resolvedBody);
             }
-
-            if (errorMessage) {
-                return (
-                    renderNode(renderError, errorMessage) ??
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "LOAD FAILED",
-                        subtitle: String(errorMessage),
-                    })
-                );
-            }
-
-            if (empty) {
-                return (
-                    renderNode(renderEmpty) ??
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO DATA",
-                        subtitle: "Nothing to display.",
-                    })
-                );
-            }
-
-            return renderNode(resolvedBody);
-        }
-    );
+        );
+    })();

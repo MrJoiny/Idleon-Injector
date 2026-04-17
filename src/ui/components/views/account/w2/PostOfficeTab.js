@@ -30,8 +30,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
@@ -39,7 +37,7 @@ import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -680,8 +678,6 @@ export const PostOfficeTab = () => {
                   )
         )
     );
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "POST OFFICE",
@@ -701,14 +697,7 @@ export const PostOfficeTab = () => {
             navClass: "alchemy-sub-nav",
             buttonClass: "alchemy-sub-btn",
         }),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
         body: div(
             { class: "po-sub-content" },
             div({ class: () => "po-pane " + (activeSubTab.val === "deliveries" ? "po-pane--active" : "") }, scroll),

@@ -22,14 +22,11 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -221,22 +218,13 @@ export const LiquidTab = () => {
         { class: () => paneClass("liquid-grid grid-4col scrollable-panel") },
         ...LIQUIDS.map((liq, i) => LiquidColumn({ liquid: liq, states: liquidStates[i] }))
     );
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "ALCHEMY — LIQUID",
             description: "Edit current liquid amounts and cap / rate upgrade levels.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
         body: grid,
     });
 };

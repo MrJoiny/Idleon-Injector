@@ -24,16 +24,13 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readCList } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
-import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
@@ -825,22 +822,13 @@ export const CogsTab = () => {
     // injected UI hierarchy.
     van.add(document.body, popup);
 
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "CONSTRUCTION - COGS",
             description: "Click a slot to view details and edit CogMap fields.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
         body: boardPane,
     });
 };

@@ -10,8 +10,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
@@ -19,12 +17,7 @@ import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import {
-    RefreshErrorBanner,
-    largeFormatter,
-    largeParser,
-    usePersistentPaneReady,
-} from "../featureShared.js";
+import { largeFormatter, largeParser, usePersistentPaneReady } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -129,8 +122,6 @@ export const PoppyTab = () => {
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
-
     const load = async () =>
         runPersistentAccountLoad(
             {
@@ -190,17 +181,9 @@ export const PoppyTab = () => {
             span({ class: "warning-highlight-accent" }, "Greatest Catch / Megafish"),
             " is also permanent progression."
         ),
-        refreshError: renderRefreshErrorBanner,
-        initialState: [
-            () =>
-                loading.val && !initialized.val
-                    ? div({ class: "feature-loader" }, Loader({ text: "READING POPPY" }))
-                    : null,
-            () =>
-                !loading.val && error.val && !initialized.val
-                    ? EmptyState({ icon: Icons.SearchX(), title: "POPPY READ FAILED", subtitle: error.val })
-                    : null,
-        ],
+        persistentState: { loading, error, refreshError, initialized },
+        persistentLoadingText: "READING POPPY",
+        persistentErrorTitle: "POPPY READ FAILED",
         body: rowList,
     });
 };
