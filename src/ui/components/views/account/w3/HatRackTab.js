@@ -20,6 +20,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 const { div, button, span, h3, p, select, option } = van.tags;
 
 const RACK_PATH = "Spelunk[46]";
+const SLAB_HISTORY_PATH = "Cards[1]";
 const ITEM_DEFS_PATH = "ItemDefinitionsGET.h";
 
 const getDef = (raw) => raw?.h ?? raw;
@@ -33,6 +34,11 @@ const getName = (itemId, raw) => {
 
 const normalizeRackIds = (rawRack) =>
     toIndexedArray(rawRack ?? [])
+        .map((entry) => String(entry ?? "").trim())
+        .filter((entry) => entry.length > 0);
+
+const normalizeSlabHistoryIds = (rawCards) =>
+    toIndexedArray(rawCards ?? [])
         .map((entry) => String(entry ?? "").trim())
         .filter((entry) => entry.length > 0);
 
@@ -217,10 +223,56 @@ export const HatRackTab = () => {
         }
     };
 
+    const writeSlabHistory = async (nextHistory, failMessage) => {
+        try {
+            const ok = await gga(SLAB_HISTORY_PATH, nextHistory);
+            if (!ok) throw new Error("Write verification failed");
+        } catch (e) {
+            writeWarning.val = failMessage;
+            throw new Error(e?.message ? `${failMessage} (${e.message})` : failMessage);
+        }
+    };
+
+    const appendToSlabHistory = async (items) => {
+        if (!Array.isArray(items) || items.length === 0) return;
+        try {
+            const currentHistory = normalizeSlabHistoryIds(await gga(SLAB_HISTORY_PATH));
+            const nextHistory = [...currentHistory, ...items];
+            await writeSlabHistory(
+                nextHistory,
+                "Failed updating slab history after rack add. Slab may be inconsistent. Press REFRESH to resync."
+            );
+        } catch (e) {
+            if (e instanceof Error) throw e;
+            throw new Error(
+                "Failed updating slab history after rack add. Slab may be inconsistent. Press REFRESH to resync."
+            );
+        }
+    };
+
+    const removeFromSlabHistory = async (itemId) => {
+        if (!itemId) return;
+        try {
+            const currentHistory = normalizeSlabHistoryIds(await gga(SLAB_HISTORY_PATH));
+            const nextHistory = currentHistory.filter((id) => id !== itemId);
+            if (nextHistory.length === currentHistory.length) return;
+            await writeSlabHistory(
+                nextHistory,
+                "Failed updating slab history after rack removal. Slab may be inconsistent. Press REFRESH to resync."
+            );
+        } catch (e) {
+            if (e instanceof Error) throw e;
+            throw new Error(
+                "Failed updating slab history after rack removal. Slab may be inconsistent. Press REFRESH to resync."
+            );
+        }
+    };
+
     const removeAtIndex = async (index) => {
         if (mutating.val) return;
         const currentRack = [...currentRackIds.val];
         if (index < 0 || index >= currentRack.length) return;
+        const removedItemId = currentRack[index];
 
         mutating.val = true;
         try {
@@ -235,6 +287,7 @@ export const HatRackTab = () => {
                 writeWarning.val = msg;
                 throw new Error(e?.message ? `${msg} (${e.message})` : msg);
             }
+            await removeFromSlabHistory(removedItemId);
             withPreservedScroll(() => applyRackState(nextRack));
         } finally {
             mutating.val = false;
@@ -252,6 +305,7 @@ export const HatRackTab = () => {
                 const currentRack = [...currentRackIds.val];
                 if (currentRack.includes(itemId)) return;
                 await appendToRack(currentRack, [itemId]);
+                await appendToSlabHistory([itemId]);
                 withPreservedScroll(() => applyRackState([...currentRack, itemId]));
             } finally {
                 mutating.val = false;
@@ -275,6 +329,7 @@ export const HatRackTab = () => {
                     .filter((itemId) => !currentRack.includes(itemId));
                 if (toAdd.length === 0) return;
                 await appendToRack(currentRack, toAdd);
+                await appendToSlabHistory(toAdd);
                 withPreservedScroll(() => applyRackState([...currentRack, ...toAdd]));
             } finally {
                 mutating.val = false;
@@ -402,7 +457,7 @@ export const HatRackTab = () => {
                 h3({}, "HAT RACK"),
                 p(
                     { class: "feature-header__desc" },
-                    "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets."
+                    "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets. Note: adding/removing hats here also adds/removes them from Slab (Cards[1])."
                 )
             ),
             div(
