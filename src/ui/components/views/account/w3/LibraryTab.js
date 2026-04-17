@@ -22,7 +22,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, readCList } from "../../../../services/api.js";
+import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -279,14 +279,19 @@ export const LibraryTab = () => {
             }
 
             // Fetch bonus levels for all talents in parallel.
-            const bonusResults = await Promise.all(
-                allTalentIds.map((talentId) =>
-                    readComputed("runCode", "AllTalentLV", [String(talentId)]).catch(() => 0)
-                )
-            );
+            let bonusResults = null;
+            try {
+                bonusResults = await readComputedMany(
+                    "runCode",
+                    "AllTalentLV",
+                    allTalentIds.map((talentId) => [String(talentId)])
+                );
+            } catch {
+                // Batch read unavailable - fall back to 0 bonus for all rows.
+            }
             const bonusMap = new Map();
             allTalentIds.forEach((talentId, i) => {
-                bonusMap.set(talentId, toNum(bonusResults[i]));
+                bonusMap.set(talentId, bonusResults?.[i]?.ok ? toNum(bonusResults[i].value) : 0);
             });
 
             const groups = classIds

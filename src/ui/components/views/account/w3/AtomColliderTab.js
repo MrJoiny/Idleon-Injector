@@ -6,15 +6,15 @@
  *   cList.AtomInfo[b][0] - atom name (underscores -> spaces)
  *
  * Max level is computed via:
- *   readComputed("atomCollider", "AtomMaxLv", [b, 0])
+ *   readComputedMany("atomCollider", "AtomMaxLv", [[b, 0], ...])
  *
  * Array length is taken from cList.AtomInfo (authoritative source).
- * All per-atom max level requests are fetched in parallel during load via
- * Promise.all - readComputed returns 0 on failure so the tab still renders.
+ * All per-atom max level requests are batch-fetched during load.
+ * Failed entries fall back to 0 so the tab still renders.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -92,13 +92,21 @@ export const AtomColliderTab = () => {
 
             const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
 
-            const maxLevels = await Promise.all(
-                atomInfoArr.map((_, i) =>
-                    readComputed("atomCollider", "AtomMaxLv", [i, 0])
-                        .then((v) => toNum(v))
-                        .catch(() => 0)
-                )
-            );
+            let computedResults = null;
+            try {
+                computedResults = await readComputedMany(
+                    "atomCollider",
+                    "AtomMaxLv",
+                    atomInfoArr.map((_, i) => [i, 0])
+                );
+            } catch {
+                // Batch read unavailable - fall back to 0 for all rows.
+            }
+
+            const maxLevels = atomInfoArr.map((_, i) => {
+                const item = computedResults?.[i];
+                return item?.ok ? toNum(item.value) : 0;
+            });
 
             const atoms = atomInfoArr.map((entry, i) => {
                 const entryArr = toIndexedArray(entry ?? []);

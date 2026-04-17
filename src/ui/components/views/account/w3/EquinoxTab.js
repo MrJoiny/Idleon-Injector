@@ -25,7 +25,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, readCList } from "../../../../services/api.js";
+import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -339,13 +339,21 @@ export const EquinoxTab = () => {
             // ── Upgrades ──────────────────────────────────────────────────────
             const count = toInt(upgUnlocked, { mode: "floor" });
 
-            const maxLevels = await Promise.all(
-                Array.from({ length: count }, (_, i) =>
-                    readComputed("dream", "UpgMaxLV", [i])
-                        .then((v) => toInt(v, { mode: "floor" }))
-                        .catch(() => 0)
-                )
-            );
+            let computedResults = null;
+            try {
+                computedResults = await readComputedMany(
+                    "dream",
+                    "UpgMaxLV",
+                    Array.from({ length: count }, (_, i) => [i])
+                );
+            } catch {
+                // Batch read unavailable - fall back to 0 for all rows.
+            }
+
+            const maxLevels = Array.from({ length: count }, (_, i) => {
+                const item = computedResults?.[i];
+                return item?.ok ? toInt(item.value, { mode: "floor" }) : 0;
+            });
 
             const dreamUpgArr = toIndexedArray(rawDreamUpg ?? []);
             const newUpgrades = Array.from({ length: count }, (_, i) => ({

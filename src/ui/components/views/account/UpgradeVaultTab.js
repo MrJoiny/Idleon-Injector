@@ -6,7 +6,7 @@
  * Data sources:
  *   cList.UpgradeVault[i][0] = name (underscores + è£½ stripped)
  *   cList.UpgradeVault[i][4] = base max level (soft cap)
- *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
+ *   VaultUpgMaxLV via readComputedMany("summoning", "VaultUpgMaxLV", [[i, 0], ...])
  *                 = real max level (includes Glimbo trade bonuses)
  *   gga.BundlesReceived.h.bon_u
  *                 = Pot Of Gold bundle flag (0 or 1) for +0/+10 max bonus
@@ -16,7 +16,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga, readComputed, readCList } from "../../../services/api.js";
+import { gga, readComputedMany, readCList } from "../../../services/api.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
@@ -96,30 +96,21 @@ export const UpgradeVaultTab = () => {
 
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
+            const argSets = info.map((_, i) => [i, 0]);
 
-            // Probe whether the summoning computed namespace is available (requires injector restart
-            // after the summoning namespace was added to stateAccessors). If the probe succeeds,
-            // fetch real max levels for all upgrades; otherwise fall back to baseMax for all.
-            let useComputed = false;
+            let computedResults = null;
             try {
-                await readComputed("summoning", "VaultUpgMaxLV", [0, 0]);
-                useComputed = true;
+                computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
             } catch {
-                // Summoning namespace unavailable — injector restart required, silently use baseMax
+                // Batch read unavailable — silently fall back to baseMax for all rows.
             }
 
-            const realMaxes = useComputed
-                ? await Promise.all(
-                      info.map(async (_, i) => {
-                          try {
-                              const v = toNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
-                              return v > 0 ? v : null;
-                          } catch {
-                              return null;
-                          }
-                      })
-                  )
-                : info.map(() => null);
+            const realMaxes =
+                computedResults?.map((item) => {
+                    if (!item?.ok) return null;
+                    const value = toNum(item.value);
+                    return value > 0 ? value : null;
+                }) ?? info.map(() => null);
 
             const upgrades = info
                 .map((entry, i) => {

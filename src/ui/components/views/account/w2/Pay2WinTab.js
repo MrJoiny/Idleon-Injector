@@ -10,7 +10,7 @@
  * Sigils (CauldronP2W[4]) are managed in SigilTab.
  * CauldronP2W[5] is intentionally omitted (not a valid P2W category).
  *
- * Max levels via readComputed("alchemy", "CauldronLvMAX", [b, e, ""+f]).
+ * Max levels via readComputedMany("alchemy", "CauldronLvMAX", [[b, e, ""+f], ...]).
  *
  * Row labels — hardcoded (no accessible runtime source for these strings):
  *   Brewing:        Speed / New Bubble / Boost Req  (f = 0 / 1 / 2)
@@ -29,7 +29,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readComputed } from "../../../../services/api.js";
+import { gga, readComputedMany } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
@@ -216,62 +216,57 @@ export const Pay2WinTab = () => {
                 playerMax[e].val = 0;
             }
 
-            // Fetch max levels in parallel
-            const maxJobs = [];
+            const maxTargets = [];
 
             for (let e = 0; e < 4; e++) {
                 for (let f = 0; f < 3; f++) {
-                    const ce = e,
-                        cf = f;
-                    maxJobs.push(
-                        readComputed("alchemy", "CauldronLvMAX", [0, ce, "" + cf])
-                            .then((v) => {
-                                brewMax[ce][cf].val = Number(v ?? 0);
-                            })
-                            .catch(() => {
-                                brewMax[ce][cf].val = 0;
-                            })
-                    );
+                    maxTargets.push({
+                        args: [0, e, String(f)],
+                        apply: (value) => {
+                            brewMax[e][f].val = Number(value ?? 0);
+                        },
+                    });
                 }
             }
             for (let e = 0; e < 4; e++) {
                 for (let f = 0; f < 2; f++) {
-                    const ce = e,
-                        cf = f;
-                    maxJobs.push(
-                        readComputed("alchemy", "CauldronLvMAX", [1, ce, "" + cf])
-                            .then((v) => {
-                                liqMax[ce][cf].val = Number(v ?? 0);
-                            })
-                            .catch(() => {
-                                liqMax[ce][cf].val = 0;
-                            })
-                    );
+                    maxTargets.push({
+                        args: [1, e, String(f)],
+                        apply: (value) => {
+                            liqMax[e][f].val = Number(value ?? 0);
+                        },
+                    });
                 }
             }
             for (let e = 0; e < 2; e++) {
-                const ce = e;
-                maxJobs.push(
-                    readComputed("alchemy", "CauldronLvMAX", [2, ce, "0"])
-                        .then((v) => {
-                            vialsUpgMax[ce].val = Number(v ?? 0);
-                        })
-                        .catch(() => {
-                            vialsUpgMax[ce].val = 0;
-                        })
-                );
-                maxJobs.push(
-                    readComputed("alchemy", "CauldronLvMAX", [3, ce, "0"])
-                        .then((v) => {
-                            playerMax[ce].val = Number(v ?? 0);
-                        })
-                        .catch(() => {
-                            playerMax[ce].val = 0;
-                        })
-                );
+                maxTargets.push({
+                    args: [2, e, "0"],
+                    apply: (value) => {
+                        vialsUpgMax[e].val = Number(value ?? 0);
+                    },
+                });
+                maxTargets.push({
+                    args: [3, e, "0"],
+                    apply: (value) => {
+                        playerMax[e].val = Number(value ?? 0);
+                    },
+                });
             }
 
-            await Promise.all(maxJobs);
+            let maxResults = null;
+            try {
+                maxResults = await readComputedMany(
+                    "alchemy",
+                    "CauldronLvMAX",
+                    maxTargets.map((entry) => entry.args)
+                );
+            } catch {
+                // Batch read unavailable - keep all max states at 0.
+            }
+
+            maxTargets.forEach((entry, i) => {
+                entry.apply(maxResults?.[i]?.ok ? maxResults[i].value : 0);
+            });
             markReady();
         } catch (e) {
             const message = e?.message ?? "Failed to load";

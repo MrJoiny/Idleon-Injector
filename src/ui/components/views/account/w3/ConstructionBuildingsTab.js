@@ -14,7 +14,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -28,16 +28,6 @@ import { toNum, useWriteStatus } from "../featureShared.js";
 const { div, button, span } = van.tags;
 
 const BUILDING_COUNT = 27;
-
-const getEffectiveBuildingMax = async (baseMax, index) => {
-    try {
-        const extraMax = toNum(await readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index]));
-        return { baseMax, extraMax, maxLevel: baseMax + extraMax };
-    } catch {
-        // Fall back to the base cap if the computed helper is unavailable.
-        return { baseMax, extraMax: 0, maxLevel: baseMax };
-    }
-};
 
 // ── BuildingRow ────────────────────────────────────────────────────────────
 
@@ -91,18 +81,24 @@ export const ConstructionBuildingsTab = () => {
             const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
             const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
-            const maxInfos = await Promise.all(
-                buildingInfo.map(async (entry, i) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const baseMax = toNum(entryArr[8]);
-                    return getEffectiveBuildingMax(baseMax, i);
-                })
-            );
+            const argSets = buildingInfo.map((entry, i) => {
+                const entryArr = toIndexedArray(entry ?? []);
+                return [toNum(entryArr[8]), i];
+            });
+
+            let computedResults = null;
+            try {
+                computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
+            } catch {
+                // Batch read unavailable - fall back to the base cap for all rows.
+            }
 
             const buildings = buildingInfo.map((entry, i) => {
                 const entryArr = toIndexedArray(entry ?? []);
                 const name = String(entryArr[0] ?? "").replace(/_/g, " ");
-                const { baseMax, extraMax, maxLevel } = maxInfos[i] ?? { baseMax: 0, extraMax: 0, maxLevel: 0 };
+                const baseMax = toNum(entryArr[8]);
+                const extraMax = computedResults?.[i]?.ok ? toNum(computedResults[i].value) : 0;
+                const maxLevel = baseMax + extraMax;
                 return { name, baseMax, extraMax, maxLevel };
             });
 
