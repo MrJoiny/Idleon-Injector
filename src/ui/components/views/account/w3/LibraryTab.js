@@ -31,6 +31,7 @@ import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
@@ -213,11 +214,10 @@ export const LibraryTab = () => {
         });
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
-
-        try {
+    const load = async () =>
+        runAccountLoad(
+            { loading, error, label: "Library", fallbackMessage: "Failed to load library data" },
+            async () => {
             const [
                 rawUserInfo,
                 rawCharClass,
@@ -237,20 +237,18 @@ export const LibraryTab = () => {
                 readCList("TalentOrder"),
                 readCList("TalentIconNames"),
                 readCList("ClassNames"),
-                readCList("RANDOlist[16]").catch(() => []),
-                readComputed("workbench", "maxBookLv", [0, 0]).catch(() => 0),
-                gga("DNSM.h.TalentDL2").catch(() => []),
+                readCList("RANDOlist[16]"),
+                readComputed("workbench", "maxBookLv", [0, 0]),
+                gga("DNSM.h.TalentDL2"),
             ]);
 
             if (rawUserInfo === null || rawUserInfo === undefined) {
-                error.val = "select-char";
-                return;
+                throw new Error("select-char");
             }
 
             const classId = toNum(rawCharClass);
             if (!classId) {
-                error.val = "No active character loaded.";
-                return;
+                throw new Error("No active character loaded.");
             }
 
             const maxBookLv = Math.max(1, toNum(rawMaxBookLv));
@@ -279,19 +277,18 @@ export const LibraryTab = () => {
             }
 
             // Fetch bonus levels for all talents in parallel.
-            let bonusResults = null;
-            try {
-                bonusResults = await readComputedMany(
-                    "runCode",
-                    "AllTalentLV",
-                    allTalentIds.map((talentId) => [String(talentId)])
-                );
-            } catch {
-                // Batch read unavailable - fall back to 0 bonus for all rows.
-            }
+            const bonusResults = await readComputedMany(
+                "runCode",
+                "AllTalentLV",
+                allTalentIds.map((talentId) => [String(talentId)])
+            );
             const bonusMap = new Map();
             allTalentIds.forEach((talentId, i) => {
-                bonusMap.set(talentId, bonusResults?.[i]?.ok ? toNum(bonusResults[i].value) : 0);
+                const item = bonusResults?.[i];
+                if (!item?.ok) {
+                    throw new Error(item?.error || `Failed to read AllTalentLV for talent ${talentId}`);
+                }
+                bonusMap.set(talentId, toNum(item.value));
             });
 
             const groups = classIds
@@ -325,14 +322,9 @@ export const LibraryTab = () => {
                 groups,
                 blockedLibraryTalentIds,
             };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load library";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
+        });
 
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,

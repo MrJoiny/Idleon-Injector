@@ -28,6 +28,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
@@ -124,64 +125,63 @@ export const ArcadeTab = () => {
     // Entries are created once from the first load and then updated in place.
     const upgradeEntries = van.state([]);
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Arcade",
+                fallbackMessage: "Failed to load Arcade data",
+            },
+            async () => {
+                const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
+                    readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
+                    readCList("ArcadeShopInfo"),
+                    gga("ArcadeUpg"),
+                ]);
 
-        try {
-            const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
-                readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
-                readCList("ArcadeShopInfo"),
-                gga("ArcadeUpg"),
-            ]);
+                normalBalls.val = String(rawOptions?.["74"] ?? 0);
+                goldenBalls.val = String(rawOptions?.["75"] ?? 0);
+                cosmicBalls.val = String(rawOptions?.["324"] ?? 0);
 
-            normalBalls.val = String(rawOptions?.["74"] ?? 0);
-            goldenBalls.val = String(rawOptions?.["75"] ?? 0);
-            cosmicBalls.val = String(rawOptions?.["324"] ?? 0);
+                const shopInfo = toIndexedArray(rawArcadeShopInfo ?? []);
+                const upgLevels = toIndexedArray(rawArcadeUpg ?? []);
+                const parsed = [];
 
-            const shopInfo = toIndexedArray(rawArcadeShopInfo ?? []);
-            const upgLevels = toIndexedArray(rawArcadeUpg ?? []);
+                for (let i = 0; i < shopInfo.length; i++) {
+                    const infoRow = toIndexedArray(shopInfo[i] ?? []);
+                    const rawName = String(infoRow[0] ?? "").trim();
+                    if (!rawName || rawName.toUpperCase() === "BLANK") continue;
 
-            const parsed = [];
-            for (let i = 0; i < shopInfo.length; i++) {
-                const infoRow = toIndexedArray(shopInfo[i] ?? []);
-                const rawName = String(infoRow[0] ?? "").trim();
-                if (!rawName || rawName.toUpperCase() === "BLANK") continue;
+                    parsed.push({
+                        index: i,
+                        name: sanitizeArcadeName(rawName),
+                        level: Number(upgLevels[i] ?? 0),
+                    });
+                }
 
-                parsed.push({
-                    index: i,
-                    name: sanitizeArcadeName(rawName),
-                    level: Number(upgLevels[i] ?? 0),
-                });
-            }
+                const existing = upgradeEntries.val;
+                const sameShape =
+                    existing.length === parsed.length &&
+                    existing.every((entry, i) => entry.index === parsed[i].index && entry.name === parsed[i].name);
 
-            const existing = upgradeEntries.val;
-            const sameShape =
-                existing.length === parsed.length &&
-                existing.every((entry, i) => entry.index === parsed[i].index && entry.name === parsed[i].name);
+                if (!sameShape) {
+                    upgradeEntries.val = parsed.map((item) => ({
+                        index: item.index,
+                        name: item.name,
+                        levelState: van.state(item.level),
+                    }));
+                    return;
+                }
 
-            if (!sameShape) {
-                upgradeEntries.val = parsed.map((item) => ({
-                    index: item.index,
-                    name: item.name,
-                    levelState: van.state(item.level),
-                }));
-            } else {
                 parsed.forEach((item, i) => {
                     existing[i].levelState.val = item.level;
                 });
             }
-
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load Arcade data";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
-    };
+        );
 
     const doSetBall = async (ballType, valueState) => {
         const configByType = {

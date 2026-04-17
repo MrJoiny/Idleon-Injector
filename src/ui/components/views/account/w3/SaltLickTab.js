@@ -18,6 +18,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -87,37 +88,34 @@ export const SaltLickTab = () => {
         });
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
+    const load = async () =>
+        runAccountLoad(
+            { loading, error, label: "Salt Lick", fallbackMessage: "Failed to load Salt Lick data" },
+            async () => {
+                const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
 
-            const defs = toIndexedArray(rawDefs ?? []);
-            const upgrades = defs.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`)
-                    .replace(/\+\{/g, "")
-                    .replace(/_/g, " ")
-                    .trim();
-                const maxLevel = Math.max(0, Math.trunc(toNum(entryArr[4])));
-                return { name, maxLevel };
-            });
+                const defs = toIndexedArray(rawDefs ?? []);
+                const upgrades = defs.map((entry, i) => {
+                    const entryArr = toIndexedArray(entry ?? []);
+                    const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`)
+                        .replace(/\+\{/g, "")
+                        .replace(/_/g, " ")
+                        .trim();
+                    const maxLevel = Math.max(0, Math.trunc(toNum(entryArr[4])));
+                    return { name, maxLevel };
+                });
 
-            const rawArr = toIndexedArray(rawLevels ?? []);
-            upgrades.forEach((u, i) => {
-                getLevelState(i).val = toLevelInt(rawArr[i], u.maxLevel);
-            });
+                const rawArr = toIndexedArray(rawLevels ?? []);
+                const nextLevels = upgrades.map((u, i) => toLevelInt(rawArr[i], u.maxLevel));
+                nextLevels.forEach((level, i) => {
+                    getLevelState(i).val = level;
+                });
 
-            data.val = { upgrades };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
+                data.val = { upgrades };
+            }
+        );
 
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,

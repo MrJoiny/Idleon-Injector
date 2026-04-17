@@ -10,7 +10,6 @@
  *
  * Array length is taken from cList.AtomInfo (authoritative source).
  * All per-atom max level requests are batch-fetched during load.
- * Failed entries fall back to 0 so the tab still renders.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -20,6 +19,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -84,53 +84,46 @@ export const AtomColliderTab = () => {
         });
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
-
-            const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
-
-            let computedResults = null;
-            try {
-                computedResults = await readComputedMany(
+    const load = async () =>
+        runAccountLoad(
+            { loading, error, label: "Atom Collider", fallbackMessage: "Failed to load Atom Collider data" },
+            async () => {
+                const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
+                const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
+                const computedResults = await readComputedMany(
                     "atomCollider",
                     "AtomMaxLv",
                     atomInfoArr.map((_, i) => [i, 0])
                 );
-            } catch {
-                // Batch read unavailable - fall back to 0 for all rows.
+
+                const maxLevels = atomInfoArr.map((_, i) => {
+                    const item = computedResults?.[i];
+                    if (!item?.ok) {
+                        throw new Error(item?.error || `Failed to read AtomMaxLv for atom index ${i}`);
+                    }
+                    return toNum(item.value);
+                });
+
+                const atoms = atomInfoArr.map((entry, i) => {
+                    const entryArr = toIndexedArray(entry ?? []);
+                    const name = String(entryArr[0] ?? `Atom ${i + 1}`)
+                        .replace(/\+\{/g, "")
+                        .replace(/_/g, " ")
+                        .trim();
+                    return { name, maxLevel: maxLevels[i] ?? 0 };
+                });
+
+                const rawArr = toIndexedArray(rawLevels ?? []);
+                const nextLevels = atoms.map((_, i) => toNum(rawArr[i]));
+                nextLevels.forEach((level, i) => {
+                    getLevelState(i).val = level;
+                });
+
+                data.val = { atoms };
             }
+        );
 
-            const maxLevels = atomInfoArr.map((_, i) => {
-                const item = computedResults?.[i];
-                return item?.ok ? toNum(item.value) : 0;
-            });
-
-            const atoms = atomInfoArr.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[0] ?? `Atom ${i + 1}`)
-                    .replace(/\+\{/g, "")
-                    .replace(/_/g, " ")
-                    .trim();
-                return { name, maxLevel: maxLevels[i] ?? 0 };
-            });
-
-            const rawArr = toIndexedArray(rawLevels ?? []);
-            atoms.forEach((_, i) => {
-                getLevelState(i).val = toNum(rawArr[i]);
-            });
-
-            data.val = { atoms };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
-
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,

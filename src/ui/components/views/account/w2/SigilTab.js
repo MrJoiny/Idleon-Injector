@@ -22,6 +22,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -132,11 +133,18 @@ export const SigilTab = () => {
 
     // ── Load ───────────────────────────────────────────────────────────────
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Sigils",
+                fallbackMessage: "Failed to load sigils",
+            },
+            async () => {
             const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);
 
             // Fill tier values from CauldronP2W[4][2*i + 1]
@@ -152,16 +160,8 @@ export const SigilTab = () => {
                 const raw = String(entry[0] ?? "").trim();
                 sigilName[i].val = raw ? raw.replace(/_/g, " ").toUpperCase() : `#${i}`;
             }
-
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     load();
 

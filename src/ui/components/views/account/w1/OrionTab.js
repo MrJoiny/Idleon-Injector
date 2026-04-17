@@ -35,6 +35,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -124,21 +125,14 @@ export const OrionTab = () => {
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Orion", fallbackMessage: "Failed to read Orion data" }, async () => {
             const keys = ALL_FIELDS.map((f) => String(f.index));
             const results = await readGgaEntries("OptionsListAccount", keys);
-            ALL_FIELDS.forEach((f) => {
+            for (const f of ALL_FIELDS) {
                 fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
-            });
-        } catch (e) {
-            error.val = e.message || "Failed to read Orion data";
-        } finally {
-            loading.val = false;
-        }
-    };
+            }
+        });
 
     const onWrite = async (index, value) => {
         return await gga(`OptionsListAccount[${index}]`, value);
@@ -178,22 +172,11 @@ export const OrionTab = () => {
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent - keep between 30-40."
         ),
-        body: div(
-            () =>
-                loading.val
-                    ? div(
-                          { class: "feature-list" },
-                          div({ class: "feature-loader" }, Loader({ text: "READING ORION" }))
-                      )
-                    : null,
-            () =>
-                !loading.val && error.val
-                    ? div(
-                          { class: "feature-list" },
-                          EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
-                      )
-                    : null,
-            rowList
-        ),
+        loading,
+        error,
+        renderLoading: () => div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" }))),
+        renderError: (message) =>
+            div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: message })),
+        body: rowList,
     });
 };

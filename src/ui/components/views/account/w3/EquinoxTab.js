@@ -32,6 +32,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -310,49 +311,51 @@ export const EquinoxTab = () => {
 
     // ── Full load ─────────────────────────────────────────────────────────────
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Equinox",
+                fallbackMessage: "Failed to load Equinox data",
+            },
+            async () => {
             const [rawDream, rawDreamUpg, rawDreamChallenge, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] =
                 await Promise.all([
                     gga("Dream"),
                     readCList("DreamUpg"),
                     readCList("DreamChallenge"),
-                    gga("WeeklyBoss.h").catch(() => ({})),
-                    readComputed("dream", "BarFillReq", [0]).catch(() => 0),
-                    readComputed("dream", "BarFillRate", [0]).catch(() => 0),
-                    readComputed("dream", "UpgUnlocked", [0]).catch(() => 0),
+                    gga("WeeklyBoss.h"),
+                    readComputed("dream", "BarFillReq", [0]),
+                    readComputed("dream", "BarFillRate", [0]),
+                    readComputed("dream", "UpgUnlocked", [0]),
                 ]);
 
             const dreamArr = toIndexedArray(rawDream ?? []);
             const weeklyBossMap = rawWeeklyBoss ?? {};
-            cachedDreamChallengeArr = toIndexedArray(rawDreamChallenge ?? []);
+            const nextDreamChallengeArr = toIndexedArray(rawDreamChallenge ?? []);
 
             // ── Bar ───────────────────────────────────────────────────────────
-            barFillState.val = toInt(dreamArr[0], { mode: "floor" });
-            barFillReqState.val = toInt(barFillReq, { mode: "floor" });
-            barFillRateState.val = toInt(barFillRate, { mode: "floor" });
+            const nextBarFill = toInt(dreamArr[0], { mode: "floor" });
+            const nextBarFillReq = toInt(barFillReq, { mode: "floor" });
+            const nextBarFillRate = toInt(barFillRate, { mode: "floor" });
 
             // ── Upgrades ──────────────────────────────────────────────────────
             const count = toInt(upgUnlocked, { mode: "floor" });
 
-            let computedResults = null;
-            try {
-                computedResults = await readComputedMany(
-                    "dream",
-                    "UpgMaxLV",
-                    Array.from({ length: count }, (_, i) => [i])
-                );
-            } catch {
-                // Batch read unavailable - fall back to 0 for all rows.
-            }
+            const computedResults = await readComputedMany(
+                "dream",
+                "UpgMaxLV",
+                Array.from({ length: count }, (_, i) => [i])
+            );
 
             const maxLevels = Array.from({ length: count }, (_, i) => {
-                const item = computedResults?.[i];
-                return item?.ok ? toInt(item.value, { mode: "floor" }) : 0;
+                const item = computedResults[i];
+                if (!item?.ok) throw new Error(`UpgMaxLV failed for upgrade ${i}`);
+                return toInt(item.value, { mode: "floor" });
             });
 
             const dreamUpgArr = toIndexedArray(rawDreamUpg ?? []);
@@ -382,20 +385,35 @@ export const EquinoxTab = () => {
             // ── Clouds ────────────────────────────────────────────────────────
             const visibleIndexes = getVisibleCloudIndexes(
                 toInt(dreamArr[2], { mode: "floor" }),
-                cachedDreamChallengeArr,
+                nextDreamChallengeArr,
                 weeklyBossMap
             );
-            updateCloudEntries(visibleIndexes, weeklyBossMap, cachedDreamChallengeArr);
 
-            markReady();
-        } catch (e) {
-            const msg = e?.message ?? "Failed to load Equinox data";
-            if (!initialized.val) error.val = msg;
-            else refreshError.val = msg;
-        } finally {
-            loading.val = false;
+            barFillState.val = nextBarFill;
+            barFillReqState.val = nextBarFillReq;
+            barFillRateState.val = nextBarFillRate;
+            cachedDreamChallengeArr = nextDreamChallengeArr;
+
+            if (existingUpg.length !== newUpgrades.length) {
+                // Count changed - rebuild
+                upgradeEntries.val = newUpgrades.map((u) => ({
+                    index: u.index,
+                    name: u.name,
+                    maxLevel: u.maxLevel,
+                    levelState: van.state(u.level),
+                }));
+            } else {
+                // Same count - update values in-place without rebuilding rows
+                newUpgrades.forEach((u, i) => {
+                    existingUpg[i].name = u.name;
+                    existingUpg[i].maxLevel = u.maxLevel;
+                    existingUpg[i].levelState.val = u.level;
+                });
+            }
+
+            updateCloudEntries(visibleIndexes, weeklyBossMap, nextDreamChallengeArr);
         }
-    };
+        );
 
     load();
 

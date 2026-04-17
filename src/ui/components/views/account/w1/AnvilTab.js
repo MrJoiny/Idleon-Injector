@@ -19,6 +19,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
 
@@ -77,25 +78,25 @@ export const AnvilTab = () => {
     const statStates = Array.from({ length: 6 }, () => van.state(0));
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Anvil",
+                fallbackMessage: "Failed to read anvil data",
+            },
+            async () => {
             const raw = await gga("AnvilPAstats");
             const arr = toIndexedArray(raw);
             for (let i = 0; i < statStates.length; i++) {
                 statStates[i].val = Number(arr[i] ?? 0);
             }
-            markReady();
-        } catch (e) {
-            const message = e.message || "Failed to read anvil data";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     const applyStatUpdate = async (index, value) => {
         statStates[index].val = value;

@@ -7,11 +7,11 @@
  *       The full DOM is built once before the first load. Reactive van.state
  *       objects update individual cells in-place, so refresh never causes a
  *       scroll-position jump or a full list rebuild.
- *       → use usePersistentPaneReady  +  useWriteStatus
+ *       → use usePersistentPaneReady  +  runPersistentAccountLoad  +  useWriteStatus
  *
  *  B) Re-render-on-load tabs (Vials, AtomCollider, SaltLick):
  *       The list is cheap to rebuild and doesn't use persistent row state.
- *       → use AsyncFeatureBody  +  useWriteStatus
+ *       → use runAccountLoad  +  AsyncFeatureBody  +  useWriteStatus
  */
 
 import van from "../../../vendor/van-1.6.0.js";

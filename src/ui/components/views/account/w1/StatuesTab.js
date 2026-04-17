@@ -16,6 +16,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
@@ -166,10 +167,8 @@ export const StatuesTab = () => {
     const loading = van.state(false);
     const error = van.state(null);
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Statues", fallbackMessage: "Failed to read statue data" }, async () => {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readCList("StatueInfo"),
                 gga("StatueLevels"),
@@ -180,12 +179,7 @@ export const StatuesTab = () => {
                 levels: toIndexedArray(rawLevels),
                 tiers: toIndexedArray(rawTiers),
             };
-        } catch (e) {
-            error.val = e.message || "Failed to read statue data";
-        } finally {
-            loading.val = false;
-        }
-    };
+        });
 
     load();
 

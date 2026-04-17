@@ -15,6 +15,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -171,26 +172,29 @@ export const HatRackTab = () => {
         writeWarning.val = null;
     };
 
-    const load = async (showSpinner = true, forceDefsReload = false) => {
+    const load = async () => {
         const seq = ++loadSeq;
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            if (forceDefsReload || !itemDefsCache) {
-                const defs = await gga(ITEM_DEFS_PATH);
-                itemDefsCache = defs && typeof defs === "object" ? defs : {};
+        return runAccountLoad(
+            { loading, error, label: "Hat Rack", fallbackMessage: "Failed to load hat rack data" },
+            async () => {
+                let nextItemDefs = itemDefsCache;
+                if (!nextItemDefs) {
+                    const defs = await gga(ITEM_DEFS_PATH);
+                    nextItemDefs = defs && typeof defs === "object" ? defs : {};
+                }
+
+                const rawRack = await gga(RACK_PATH);
+                if (seq !== loadSeq) return;
+
+                itemDefsCache = nextItemDefs;
+                applyRackState(rawRack);
+                data.val = { loaded: true };
             }
-            const rawRack = await gga(RACK_PATH);
-            if (seq !== loadSeq) return;
-            applyRackState(rawRack);
-            data.val = { loaded: true };
-        } catch (e) {
-            if (seq !== loadSeq) return;
-            error.val = e?.message ?? "Failed to load hat rack data";
-            data.val = null;
-        } finally {
-            if (showSpinner && seq === loadSeq) loading.val = false;
-        }
+        ).then((result) => {
+            if (seq !== loadSeq) return result;
+            if (typeof result === "undefined") data.val = null;
+            return result;
+        });
     };
 
     const appendToRack = async (currentRack, items) => {
@@ -284,7 +288,7 @@ export const HatRackTab = () => {
         });
     };
 
-    load(true, true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,
@@ -405,7 +409,7 @@ export const HatRackTab = () => {
                     disabled: () => loading.val || mutating.val,
                     onclick: () => {
                         if (mutating.val) return;
-                        load(true, true);
+                        load();
                     },
                 },
                 "REFRESH"

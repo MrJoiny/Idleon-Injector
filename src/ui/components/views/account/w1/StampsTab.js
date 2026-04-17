@@ -29,6 +29,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
@@ -210,10 +211,8 @@ export const StampsTab = () => {
         if (!okLength) throw new Error("Write mismatch at Compass[4].length");
     };
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Stamps", fallbackMessage: "Failed to read stamp data" }, async () => {
             const [levels, maxLevels, rawExaltedCodes] = await Promise.all([
                 gga("StampLevel"),
                 gga("StampLevelMAX"),
@@ -261,12 +260,7 @@ export const StampsTab = () => {
 
             exaltedCodes.val = new Set(normalizeExaltedCodes(rawExaltedCodes));
             gameData.val = { levels: levelsByPage, maxLevels: maxLevelsByPage, names, steps };
-        } catch (e) {
-            error.val = e.message || "Failed to read stamp data";
-        } finally {
-            loading.val = false;
-        }
-    };
+        });
 
     load();
 

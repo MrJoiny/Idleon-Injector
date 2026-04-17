@@ -25,6 +25,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
@@ -179,62 +180,69 @@ export const WorshipTab = () => {
         return nextWave;
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
+    const load = async () =>
+        runAccountLoad(
+            { loading, error, label: "Worship", fallbackMessage: "Failed to load worship data" },
+            async () => {
+                const rawNames = await gga("GetPlayersUsernames");
+                const playerNames = toIndexedArray(rawNames ?? []).filter(
+                    (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
+                );
 
-        try {
-            const rawNames = await gga("GetPlayersUsernames");
-            const playerNames = toIndexedArray(rawNames ?? []).filter(
-                (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
-            );
+                const [playerEntries, activeCharacterName, activeLiveCharge, activeMaxCharge, rawTotemInfo0] =
+                    await Promise.all([
+                        playerNames.length
+                            ? readGgaEntries("PlayerDATABASE.h", playerNames, ["PlayerStuff"])
+                            : Promise.resolve({}),
+                        gga("UserInfo[0]"),
+                        gga("PlayerStuff[0]"),
+                        readComputed("skillStats", "WorshipChargeMax", []),
+                        gga("TotemInfo[0]"),
+                    ]);
 
-            const [playerEntries, activeCharacterName, activeLiveCharge, activeMaxCharge, rawTotemInfo0] =
-                await Promise.all([
-                    playerNames.length
-                        ? readGgaEntries("PlayerDATABASE.h", playerNames, ["PlayerStuff"])
-                        : Promise.resolve({}),
-                    gga("UserInfo[0]").catch(() => null),
-                    gga("PlayerStuff[0]").catch(() => null),
-                    readComputed("skillStats", "WorshipChargeMax", []).catch(() => null),
-                    gga("TotemInfo[0]").catch(() => []),
-                ]);
+                const nextActiveCharacterName = activeCharacterName;
+                const nextActiveMaxCharge =
+                    activeMaxCharge === null || activeMaxCharge === undefined
+                        ? null
+                        : toInt(activeMaxCharge, { min: 0 });
 
-            activeCharacterNameRef.val = activeCharacterName;
-            activeMaxChargeRef.val =
-                activeMaxCharge === null || activeMaxCharge === undefined ? null : toInt(activeMaxCharge, { min: 0 });
+                const nextCharges = [];
+                const players = playerNames.map((playerName) => {
+                    const playerStuff = toIndexedArray(playerEntries?.[playerName]?.PlayerStuff ?? []);
+                    const storedCharge = toInt(playerStuff[0], { min: 0 });
 
-            const players = playerNames.map((playerName) => {
-                const playerStuff = toIndexedArray(playerEntries?.[playerName]?.PlayerStuff ?? []);
-                const storedCharge = toInt(playerStuff[0], { min: 0 });
+                    const charge =
+                        typeof nextActiveCharacterName === "string" &&
+                        nextActiveCharacterName.length > 0 &&
+                        nextActiveCharacterName === playerName
+                            ? toInt(activeLiveCharge, { min: 0 })
+                            : storedCharge;
 
-                const charge =
-                    typeof activeCharacterName === "string" &&
-                    activeCharacterName.length > 0 &&
-                    activeCharacterName === playerName
-                        ? toInt(activeLiveCharge, { min: 0 })
-                        : storedCharge;
+                    nextCharges.push({ playerName, charge });
+                    return { playerName };
+                });
 
-                getChargeState(playerName).val = charge;
-                return { playerName };
-            });
+                const totemWaves = toIndexedArray(rawTotemInfo0 ?? []);
+                const nextWaves = [];
+                const towerRows = WORSHIP_TOTEM_NAMES.map((name, index) => {
+                    const wave = toInt(totemWaves[index], { min: 0 });
+                    nextWaves.push({ index, wave });
+                    return { index, name };
+                });
 
-            const totemWaves = toIndexedArray(rawTotemInfo0 ?? []);
-            const towerRows = WORSHIP_TOTEM_NAMES.map((name, index) => {
-                const wave = toInt(totemWaves[index], { min: 0 });
-                getWaveState(index).val = wave;
-                return { index, name };
-            });
+                activeCharacterNameRef.val = nextActiveCharacterName;
+                activeMaxChargeRef.val = nextActiveMaxCharge;
+                nextCharges.forEach(({ playerName, charge }) => {
+                    getChargeState(playerName).val = charge;
+                });
+                nextWaves.forEach(({ index, wave }) => {
+                    getWaveState(index).val = wave;
+                });
+                data.val = { players, towerRows };
+            }
+        );
 
-            data.val = { players, towerRows };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load worship data";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
-
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,

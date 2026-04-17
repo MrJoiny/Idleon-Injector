@@ -27,6 +27,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -185,11 +186,18 @@ export const LiquidTab = () => {
         rate: van.state(0),
     }));
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Liquid",
+                fallbackMessage: "Failed to load liquids",
+            },
+            async () => {
             const raw = await gga("CauldronInfo");
             const amounts = toIndexedArray(raw?.[6] ?? []);
             const upgradesRaw = toIndexedArray(raw?.[8] ?? []);
@@ -202,16 +210,8 @@ export const LiquidTab = () => {
                 liquidStates[i].cap.val = Number(capRow[1] ?? 0);
                 liquidStates[i].rate.val = Number(rateRow[1] ?? 0);
             });
-
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     load();
 

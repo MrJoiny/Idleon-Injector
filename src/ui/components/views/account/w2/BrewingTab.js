@@ -20,6 +20,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus } from "../featureShared.js";
 
@@ -260,47 +261,55 @@ export const BrewingTab = () => {
     const prismaSet = van.state(new Set());
 
     const load = async () => {
-        loading.val = true;
-        error.val = null;
         refreshError.val = null;
         const hadData = data.val !== null;
 
-        try {
-            const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
-                gga("CauldronInfo"),
-                gga("OptionsListAccount[384]"),
-                readCList("AlchemyDescription"),
-            ]);
+        const result = await runAccountLoad(
+            { loading, error, label: "Brewing", fallbackMessage: "Failed to load brewing data" },
+            async () => {
+                const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
+                    gga("CauldronInfo"),
+                    gga("OptionsListAccount[384]"),
+                    readCList("AlchemyDescription"),
+                ]);
 
-            prismaSet.val = parsePrisma(rawPrismaStr);
+                const nextPrismaSet = parsePrisma(rawPrismaStr);
+                const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
+                const descArr = toIndexedArray(rawAlchemyDesc ?? []);
+                const nextLevelsById = new Map();
+                const nextDefsById = new Map();
 
-            const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
-            const descArr = toIndexedArray(rawAlchemyDesc ?? []);
+                CAULDRONS.forEach((c) => {
+                    nextLevelsById.set(c.id, toIndexedArray(levelsArr[c.index] ?? []));
 
-            CAULDRONS.forEach((c) => {
-                cauldronLevels.get(c.id).val = toIndexedArray(levelsArr[c.index] ?? []);
+                    const cauldronDesc = toIndexedArray(descArr[c.index] ?? []);
+                    nextDefsById.set(
+                        c.id,
+                        cauldronDesc
+                            .map((entry, idx) => {
+                                const entryArr = toIndexedArray(entry ?? []);
+                                const name = String(entryArr[0] ?? "BUBBLE")
+                                    .replace(/_/g, " ")
+                                    .trim();
+                                const isBigBubble = Number(entryArr[10] ?? 0) === 1;
+                                return { name, index: idx, isBigBubble };
+                            })
+                            .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== "")
+                    );
+                });
 
-                const cauldronDesc = toIndexedArray(descArr[c.index] ?? []);
-                bubbleDefs.get(c.id).val = cauldronDesc
-                    .map((entry, idx) => {
-                        const entryArr = toIndexedArray(entry ?? []);
-                        const name = String(entryArr[0] ?? "BUBBLE")
-                            .replace(/_/g, " ")
-                            .trim();
-                        const isBigBubble = Number(entryArr[10] ?? 0) === 1;
-                        return { name, index: idx, isBigBubble };
-                    })
-                    .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== "");
-            });
+                prismaSet.val = nextPrismaSet;
+                CAULDRONS.forEach((c) => {
+                    cauldronLevels.get(c.id).val = nextLevelsById.get(c.id);
+                    bubbleDefs.get(c.id).val = nextDefsById.get(c.id);
+                });
+                data.val = CAULDRONS;
+            }
+        );
 
-            data.val = CAULDRONS;
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!hadData) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
+        if (typeof result !== "undefined" || !hadData) return;
+        refreshError.val = error.val;
+        error.val = null;
     };
 
     load();

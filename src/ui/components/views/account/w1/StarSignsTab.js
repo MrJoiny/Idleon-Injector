@@ -26,6 +26,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
@@ -348,10 +349,8 @@ export const StarSignsTab = () => {
         if (!ok) throw new Error(`Write mismatch at ${path}`);
     };
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Star Signs", fallbackMessage: "Failed to read star signs" }, async () => {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
                 readCList("StarQuests"),
                 gga("StarSignProg"),
@@ -382,12 +381,7 @@ export const StarSignsTab = () => {
                     };
                 })
                 .filter((s) => s.desc.length > 0);
-        } catch (e) {
-            error.val = e.message || "Failed to read star signs";
-        } finally {
-            loading.val = false;
-        }
-    };
+        });
 
     // After saving from detail, update local state without full reload
     const handleSave = async ({ index, progress }) => {

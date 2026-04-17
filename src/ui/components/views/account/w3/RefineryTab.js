@@ -18,6 +18,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus } from "../featureShared.js";
 
@@ -166,10 +167,8 @@ export const RefineryTab = () => {
     const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
     const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Refinery", fallbackMessage: "Failed to load refinery data" }, async () => {
             const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
             const [raw, nameEntries] = await Promise.all([
                 gga("Refinery"),
@@ -195,12 +194,7 @@ export const RefineryTab = () => {
             }
 
             data.val = { names };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
-        }
-    };
+        });
 
     load();
 

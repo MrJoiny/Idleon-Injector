@@ -34,6 +34,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
@@ -425,95 +426,102 @@ export const PostOfficeTab = () => {
     const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
 
     // ── Load ───────────────────────────────────────────────────────────────
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
-            const readPostOfficeBoxDefs = async () => {
-                return readCList("PostOffUpgradeInfo").catch(() => []);
-            };
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Post Office",
+                fallbackMessage: "Failed to load Post Office data",
+            },
+            async () => {
+                const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
+                    gga("PostOfficeInfo"),
+                    gga("CurrenciesOwned"),
+                    readGgaEntries("OptionsListAccount", ["131", "347"]),
+                    gga("DNSM.h.AlchVials.h.BoxPoints"),
+                    readCList("PostOffUpgradeInfo"),
+                ]);
 
-            const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
-                gga("PostOfficeInfo"),
-                gga("CurrenciesOwned"),
-                readGgaEntries("OptionsListAccount", ["131", "347"]),
-                gga("DNSM.h.AlchVials.h.BoxPoints").catch(() => 0),
-                readPostOfficeBoxDefs(),
-            ]);
+                const po = toIndexedArray(rawPO ?? []);
+                const orders = toIndexedArray(po[0] ?? []);
+                const perShipment = toIndexedArray(po[1] ?? []);
+                const bonuses = toIndexedArray(po[2] ?? []);
+                const upgrades = toIndexedArray(po[3] ?? []);
+                const nextShipments = [];
 
-            // Parse PostOfficeInfo
-            const po = toIndexedArray(rawPO ?? []);
-            const orders = toIndexedArray(po[0] ?? []);
-            const perShipment = toIndexedArray(po[1] ?? []);
-            const bonuses = toIndexedArray(po[2] ?? []);
-            const upgrades = toIndexedArray(po[3] ?? []);
+                for (let s = 0; s < SHIPMENT_COUNT; s++) {
+                    const order = toIndexedArray(orders[s] ?? []);
+                    const ship = toIndexedArray(perShipment[s] ?? []);
+                    const bonus = toIndexedArray(bonuses[s] ?? []);
 
-            for (let s = 0; s < SHIPMENT_COUNT; s++) {
-                const order = toIndexedArray(orders[s] ?? []);
-                const ship = toIndexedArray(perShipment[s] ?? []);
-                const bonus = toIndexedArray(bonuses[s] ?? []);
-                const st = shipmentStates[s];
+                    nextShipments.push({
+                        itemId: String(order[0] ?? ""),
+                        orderQty: Number(order[1] ?? 0),
+                        completed: Number(order[2] ?? 0),
+                        streak: Number(ship[1] ?? 0),
+                        shield: Number(ship[2] ?? 0),
+                        streakBonus: Number(bonus[0] ?? 0),
+                    });
+                }
 
-                st.itemId.val = String(order[0] ?? "");
-                st.orderQty.val = Number(order[1] ?? 0);
-                st.completed.val = Number(order[2] ?? 0);
-                st.streak.val = Number(ship[1] ?? 0);
-                st.shield.val = Number(ship[2] ?? 0);
-                st.streakBonus.val = Number(bonus[0] ?? 0);
+                const boxDefs = toIndexedArray(rawBoxDefs ?? []);
+                const nextBoxes = [];
+                for (let i = 0; i < boxDefs.length; i++) {
+                    const defRow = toIndexedArray(boxDefs[i] ?? []);
+                    const upgRow = toIndexedArray(upgrades[i] ?? []);
+                    const capRaw = defRow[15];
+                    const cap = Math.floor(Number(capRaw));
+                    nextBoxes.push({
+                        name: String(defRow[0] ?? `BOX ${i + 1}`)
+                            .replace(/_/g, " ")
+                            .trim(),
+                        cap: Number.isFinite(cap) ? Math.max(0, cap) : 0,
+                        current: Number(upgRow[0] ?? 0),
+                    });
+                }
+
+                const curr = rawCurrencies?.h ?? rawCurrencies ?? {};
+                const nextBoxComplete = Number(curr.DeliveryBoxComplete ?? 0);
+                const nextBoxStreak = Number(curr.DeliveryBoxStreak ?? 0);
+                const nextOpt347 = Number(rawOpts?.["347"] ?? 0);
+                const nextOpt131 = Number(rawOpts?.["131"] ?? 0);
+                const nextBoxPoints = Number(rawBoxPts ?? 0);
+
+                for (let s = 0; s < SHIPMENT_COUNT; s++) {
+                    const nextShipment = nextShipments[s];
+                    const st = shipmentStates[s];
+
+                    st.itemId.val = nextShipment.itemId;
+                    st.orderQty.val = nextShipment.orderQty;
+                    st.completed.val = nextShipment.completed;
+                    st.streak.val = nextShipment.streak;
+                    st.shield.val = nextShipment.shield;
+                    st.streakBonus.val = nextShipment.streakBonus;
+                }
+
+                ensureBoxStateCount(nextBoxes.length);
+                boxCount.val = nextBoxes.length;
+
+                for (let i = 0; i < nextBoxes.length; i++) {
+                    const nextBox = nextBoxes[i];
+                    const box = boxStates[i];
+                    box.name.val = nextBox.name;
+                    box.cap.val = nextBox.cap;
+                    box.current.val = nextBox.current;
+                }
+
+                boxComplete.val = nextBoxComplete;
+                boxStreak.val = nextBoxStreak;
+                opt347.val = nextOpt347;
+                opt131.val = nextOpt131;
+                boxPoints.val = nextBoxPoints;
+                recomputeSummary();
             }
-
-            // Sum spent upgrade points from PostOfficeInfo[3]
-            let spent = 0;
-            for (let i = 0; i < upgrades.length; i++) {
-                const row = toIndexedArray(upgrades[i] ?? []);
-                spent += Number(row[0] ?? 0);
-            }
-            spentPoints.val = spent;
-
-            const boxDefs = toIndexedArray(rawBoxDefs ?? []);
-            boxCount.val = boxDefs.length;
-            ensureBoxStateCount(boxCount.val);
-
-            for (let i = 0; i < boxCount.val; i++) {
-                const defRow = toIndexedArray(boxDefs[i] ?? []);
-                const upgRow = toIndexedArray(upgrades[i] ?? []);
-                const box = boxStates[i];
-
-                box.name.val = String(defRow[0] ?? `BOX ${i + 1}`)
-                    .replace(/_/g, " ")
-                    .trim();
-                // cap comes from PostOffUpgradeInfo[i][15] (string-like values such as "400.1")
-                const capRaw = defRow[15];
-                // true max spend is floor(cap)
-                const cap = Math.floor(Number(capRaw));
-                box.cap.val = Number.isFinite(cap) ? Math.max(0, cap) : 0;
-                box.current.val = Number(upgRow[0] ?? 0);
-            }
-
-            // Parse currencies
-            const curr = rawCurrencies?.h ?? rawCurrencies ?? {};
-            boxComplete.val = Number(curr.DeliveryBoxComplete ?? 0);
-            boxStreak.val = Number(curr.DeliveryBoxStreak ?? 0);
-            boxMisc.val = Number(curr.DeliveryBoxMisc ?? 0);
-
-            // Parse OptionsListAccount
-            opt347.val = Number(rawOpts?.["347"] ?? 0);
-            opt131.val = Number(rawOpts?.["131"] ?? 0);
-
-            // AlchVials BoxPoints
-            boxPoints.val = Number(rawBoxPts ?? 0);
-            recomputeSummary();
-
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
-    };
+        );
 
     load();
 

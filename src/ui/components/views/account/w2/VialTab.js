@@ -18,6 +18,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -65,10 +66,8 @@ export const VialTab = () => {
         return levelStates[index];
     };
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Vials", fallbackMessage: "Failed to load vial data" }, async () => {
             const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
                 gga("CauldronInfo"),
                 readCList("AlchemyDescription"),
@@ -78,23 +77,26 @@ export const VialTab = () => {
             const vialDesc = toIndexedArray(descArr[4] ?? []);
             const rawLevels = toIndexedArray(rawCauldronInfo?.[4] ?? []);
 
-            vialDefs.val = vialDesc
+            const nextVialDefs = vialDesc
                 .map((entry, idx) => {
                     const entryArr = toIndexedArray(entry ?? []);
                     const name = String(entryArr[0] ?? "VIAL")
                         .replace(/_/g, " ")
                         .trim();
                     const level = Number(rawLevels[idx] ?? 0);
-                    getLevelState(idx).val = Number.isFinite(level) ? level : 0;
-                    return { name, index: idx };
+                    return {
+                        name,
+                        index: idx,
+                        level: Number.isFinite(level) ? level : 0,
+                    };
                 })
                 .filter((v) => v.name.toUpperCase() !== "VIAL" && v.name.trim() !== "");
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
-        }
-    };
+
+            nextVialDefs.forEach((vial) => {
+                getLevelState(vial.index).val = vial.level;
+            });
+            vialDefs.val = nextVialDefs.map(({ name, index }) => ({ name, index }));
+        });
 
     const doSetAll = async () => {
         const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(setAllInput.val))));

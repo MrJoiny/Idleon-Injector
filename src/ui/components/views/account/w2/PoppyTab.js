@@ -15,6 +15,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -130,25 +131,25 @@ export const PoppyTab = () => {
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
     const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
-            const keys = ALL_FIELDS.map((f) => String(f.index));
-            const results = await readGgaEntries("OptionsListAccount", keys);
-            ALL_FIELDS.forEach((f) => {
-                fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
-            });
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to read Poppy data";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
-    };
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Poppy",
+                fallbackMessage: "Failed to read Poppy data",
+            },
+            async () => {
+                const keys = ALL_FIELDS.map((f) => String(f.index));
+                const results = await readGgaEntries("OptionsListAccount", keys);
+                for (const f of ALL_FIELDS) {
+                    fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
+                }
+            }
+        );
 
     const onWrite = async (index, value) => {
         return gga(`OptionsListAccount[${index}]`, value);

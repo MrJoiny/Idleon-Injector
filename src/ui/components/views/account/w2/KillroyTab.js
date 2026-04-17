@@ -35,6 +35,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -184,11 +185,18 @@ export const KillroyTab = () => {
     const getPbState = (key) => pbScoreStates.get(key);
     const getPbLabelState = (key) => pbLabelStates.get(key);
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Killroy",
+                fallbackMessage: "Failed to load Killroy data",
+            },
+            async () => {
             const optionKeys = Array.from(
                 new Set([...FIELD_INDEXES, ...PB_TOME_FIELDS.map((f) => f.scoreIndex)].map((idx) => String(idx)))
             );
@@ -199,7 +207,6 @@ export const KillroyTab = () => {
                         const labelRaw = arr.find((x) => typeof x === "string" && x.trim().length > 0);
                         return { key: f.key, label: labelRaw };
                     })
-                    .catch(() => ({ key: f.key, label: null }))
             );
 
             const [rawOptionValues, pbLabels, rawBestByMob] = await Promise.all([
@@ -207,22 +214,22 @@ export const KillroyTab = () => {
                 Promise.all(pbLabelJobs),
                 gga("KRbest.h"),
             ]);
-
-            for (const idx of FIELD_INDEXES) {
-                const st = getState(idx);
-                if (st) st.val = toNum(rawOptionValues?.[String(idx)], 0);
-            }
-            for (const f of PB_TOME_FIELDS) {
-                const st = getPbState(f.key);
-                if (st) st.val = toNum(rawOptionValues?.[String(f.scoreIndex)], 0);
-            }
-            for (const { key, label } of pbLabels) {
-                const st = getPbLabelState(key);
-                if (!st) continue;
-                if (typeof label === "string" && label.trim().length > 0) {
-                    st.val = label.replace(/_/g, " ");
-                }
-            }
+            const nextFieldValues = new Map(
+                FIELD_INDEXES.map((idx) => [idx, toNum(rawOptionValues?.[String(idx)], 0)])
+            );
+            const nextPbScores = new Map(
+                PB_TOME_FIELDS.map((f) => [f.key, toNum(rawOptionValues?.[String(f.scoreIndex)], 0)])
+            );
+            const nextPbLabels = new Map(
+                PB_TOME_FIELDS.map((f) => {
+                    const found = pbLabels.find((entry) => entry.key === f.key);
+                    const label =
+                        typeof found?.label === "string" && found.label.trim().length > 0
+                            ? found.label.replace(/_/g, " ")
+                            : f.label;
+                    return [f.key, label];
+                })
+            );
 
             const rawEntries = Object.entries(rawBestByMob ?? {})
                 .map(([mobKey, kills]) => ({ mobKey, kills: toNum(kills, 0) }))
@@ -232,7 +239,7 @@ export const KillroyTab = () => {
             const mobDefs =
                 mobKeys.length > 0 ? await readGgaEntries("MonsterDefinitionsGET.h", mobKeys, ["Name"]) : {};
 
-            bestByMob.val = rawEntries.map((entry) => {
+            const nextBestByMob = rawEntries.map((entry) => {
                 const rawName = mobDefs?.[entry.mobKey]?.Name;
                 const mobName =
                     typeof rawName === "string" && rawName.length > 0 ? rawName.replace(/_/g, " ") : entry.mobKey;
@@ -276,21 +283,26 @@ export const KillroyTab = () => {
                     };
                 })
                 .sort((a, b) => a.mobName.localeCompare(b.mobName) || a.mobId.localeCompare(b.mobId));
+
+            for (const idx of FIELD_INDEXES) {
+                const st = getState(idx);
+                if (st) st.val = nextFieldValues.get(idx) ?? 0;
+            }
+            for (const f of PB_TOME_FIELDS) {
+                const scoreState = getPbState(f.key);
+                if (scoreState) scoreState.val = nextPbScores.get(f.key) ?? 0;
+                const labelState = getPbLabelState(f.key);
+                if (labelState) labelState.val = nextPbLabels.get(f.key) ?? f.label;
+            }
+            bestByMob.val = nextBestByMob;
             allowedMobs.val = nextAllowedMobs;
             if (nextAllowedMobs.length === 0) {
                 addMobId.val = "";
             } else if (!nextAllowedMobs.some((mob) => mob.mobId === addMobId.val)) {
                 addMobId.val = nextAllowedMobs[0].mobId;
             }
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load Killroy data";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     const sortedBestRows = () => {
         const rows = [...(bestByMob.val ?? [])];

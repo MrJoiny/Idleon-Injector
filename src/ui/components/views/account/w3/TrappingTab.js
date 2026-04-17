@@ -29,6 +29,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import {
     AsyncFeatureBody,
     cleanName,
@@ -399,17 +400,14 @@ export const TrappingTab = () => {
         return value;
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
-
-        try {
+    const load = async () =>
+        runAccountLoad({ loading, error, label: "Trapping" }, async () => {
             const [rawNames, rawCurrentPlayer, rawPlayerDb, rawItemDefs, rawMonsterDefs] = await Promise.all([
                 gga("GetPlayersUsernames"),
-                gga("UserInfo[0]").catch(() => ""),
+                gga("UserInfo[0]"),
                 gga("PlayerDATABASE.h"),
-                gga("ItemDefinitionsGET.h").catch(() => ({})),
-                gga("MonsterDefinitionsGET.h").catch(() => ({})),
+                gga("ItemDefinitionsGET.h"),
+                gga("MonsterDefinitionsGET.h"),
             ]);
 
             const playerNames = toIndexedArray(rawNames ?? []).filter(
@@ -452,14 +450,9 @@ export const TrappingTab = () => {
             const snapshot = { currentPlayer, players };
             setTrapStatesFromSnapshot(snapshot);
             data.val = snapshot;
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load trapping data";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
+        });
 
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,

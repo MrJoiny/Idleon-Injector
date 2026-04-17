@@ -22,6 +22,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { toNum, useWriteStatus } from "../featureShared.js";
 
@@ -74,10 +75,15 @@ export const ConstructionBuildingsTab = () => {
     const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad(
+            {
+                loading,
+                error,
+                label: "Construction Buildings",
+                fallbackMessage: "Failed to load construction buildings",
+            },
+            async () => {
             const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
             const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
@@ -85,19 +91,16 @@ export const ConstructionBuildingsTab = () => {
                 const entryArr = toIndexedArray(entry ?? []);
                 return [toNum(entryArr[8]), i];
             });
-
-            let computedResults = null;
-            try {
-                computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
-            } catch {
-                // Batch read unavailable - fall back to the base cap for all rows.
-            }
+            const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
 
             const buildings = buildingInfo.map((entry, i) => {
                 const entryArr = toIndexedArray(entry ?? []);
                 const name = String(entryArr[0] ?? "").replace(/_/g, " ");
                 const baseMax = toNum(entryArr[8]);
-                const extraMax = computedResults?.[i]?.ok ? toNum(computedResults[i].value) : 0;
+                if (!computedResults[i]?.ok) {
+                    throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
+                }
+                const extraMax = toNum(computedResults[i].value);
                 const maxLevel = baseMax + extraMax;
                 return { name, baseMax, extraMax, maxLevel };
             });
@@ -108,12 +111,8 @@ export const ConstructionBuildingsTab = () => {
             }
 
             data.val = { buildings };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     const doMaxAll = async () => {
         if (!data.val) return;

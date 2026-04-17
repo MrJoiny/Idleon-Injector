@@ -32,6 +32,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshErrorBanner, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h3, input } = van.tags;
@@ -246,18 +247,23 @@ export const CogsTab = () => {
         }
     };
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Cogs",
+            },
+            async () => {
             const [rawUnlock, rawCaps, rawFlags, rawCogOrder, rawCogMap] = await Promise.all([
                 gga("FlagUnlock"),
-                readCList("FlagReqs").catch(() => []),
-                gga("FlagsPlaced").catch(() => []),
-                gga("CogOrder").catch(() => []),
-                gga("CogMap").catch(() => []),
+                readCList("FlagReqs"),
+                gga("FlagsPlaced"),
+                gga("CogOrder"),
+                gga("CogMap"),
             ]);
 
             const unlockArr = toIndexedArray(rawUnlock ?? []);
@@ -265,31 +271,34 @@ export const CogsTab = () => {
             const flagsArr = toIndexedArray(rawFlags ?? []);
             const cogOrderArr = toIndexedArray(rawCogOrder ?? []);
             const cogMapArr = toIndexedArray(rawCogMap ?? []);
-
-            for (let i = 0; i < TOTAL_SLOT_COUNT; i++) slotValues[i].val = toNum(unlockArr[i]);
-            for (let i = 0; i < MAIN_SLOT_COUNT; i++) slotCaps[i].val = toNum(capArr[i]);
-            flaggedSlots.val = new Set(flagsArr.map((v) => toNum(v)).filter((v) => v >= 0));
-            flagsRaw.val = [...flagsArr];
+            const nextSlotValues = Array.from({ length: TOTAL_SLOT_COUNT }, (_, i) => toNum(unlockArr[i]));
+            const nextSlotCaps = Array.from({ length: MAIN_SLOT_COUNT }, (_, i) => toNum(capArr[i]));
+            const nextFlagsRaw = [...flagsArr];
+            const nextFlaggedSlots = new Set(nextFlagsRaw.map((v) => toNum(v)).filter((v) => v >= 0));
+            const nextCogOrders = Array.from({ length: TOTAL_SLOT_COUNT }, (_, i) => {
+                const cogIdx = getCogOrderIndex(i);
+                return cogOrderArr[cogIdx] ?? "Blank";
+            });
+            const nextCogMapStats = Array.from({ length: TOTAL_SLOT_COUNT }, (_, i) => {
+                const cogIdx = getCogOrderIndex(i);
+                return cloneCogMapStats(cogMapArr[cogIdx]);
+            });
 
             for (let i = 0; i < TOTAL_SLOT_COUNT; i++) {
-                const cogIdx = getCogOrderIndex(i);
-                cogOrders[i].val = cogOrderArr[cogIdx] ?? "Blank";
-                cogMapStats[i].val = cloneCogMapStats(cogMapArr[cogIdx]);
+                slotValues[i].val = nextSlotValues[i];
+                cogOrders[i].val = nextCogOrders[i];
+                cogMapStats[i].val = nextCogMapStats[i];
             }
+            for (let i = 0; i < MAIN_SLOT_COUNT; i++) slotCaps[i].val = nextSlotCaps[i];
+
+            flaggedSlots.val = nextFlaggedSlots;
+            flagsRaw.val = nextFlagsRaw;
             if (activeSlot.val !== null) {
                 void refreshActiveCogName(activeSlot.val);
                 syncTinyInputsFromSlot(activeSlot.val);
             }
-
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load cogs board";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     const setSlotLockState = async (index, unlock) => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;

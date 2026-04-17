@@ -23,6 +23,7 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
+import { runAccountLoad } from "./accountLoadPolicy.js";
 import { cleanName, toNum } from "./featureShared.js";
 
 const { div, button, span } = van.tags;
@@ -75,10 +76,10 @@ export const UpgradeVaultTab = () => {
         return levelStates[index];
     };
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        runAccountLoad(
+            { loading, error, label: "Upgrade Vault", fallbackMessage: "Failed to read Upgrade Vault data" },
+            async () => {
             const toArr = (raw) =>
                 Array.isArray(raw)
                     ? raw
@@ -89,7 +90,7 @@ export const UpgradeVaultTab = () => {
             const [rawInfo, rawLevels, rawBonU] = await Promise.all([
                 readCList("UpgradeVault"),
                 gga("UpgVault"),
-                gga("BundlesReceived.h.bon_u").catch(() => 0),
+                gga("BundlesReceived.h.bon_u"),
             ]);
             const bonU = Number(rawBonU);
             const bundleBonus = bonU === 1 ? 10 : 0;
@@ -97,20 +98,15 @@ export const UpgradeVaultTab = () => {
             const info = toArr(rawInfo ?? []);
             const levels = toArr(rawLevels ?? []);
             const argSets = info.map((_, i) => [i, 0]);
+            const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
 
-            let computedResults = null;
-            try {
-                computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
-            } catch {
-                // Batch read unavailable — silently fall back to baseMax for all rows.
-            }
-
-            const realMaxes =
-                computedResults?.map((item) => {
-                    if (!item?.ok) return null;
+            const realMaxes = computedResults.map((item, i) => {
+                    if (!item?.ok) {
+                        throw new Error(`VaultUpgMaxLV failed for upgrade ${i}`);
+                    }
                     const value = toNum(item.value);
-                    return value > 0 ? value : null;
-                }) ?? info.map(() => null);
+                    return value > 0 ? value : 0;
+                });
 
             const upgrades = info
                 .map((entry, i) => {
@@ -118,7 +114,7 @@ export const UpgradeVaultTab = () => {
                     if (!name) return null;
                     const baseMax = toNum(entry?.[4]);
                     if (baseMax <= 0) return null;
-                    const computedMax = realMaxes[i] ?? baseMax;
+                    const computedMax = realMaxes[i];
                     const realMax = computedMax + bundleBonus;
                     return { index: i, name, baseMax, realMax };
                 })
@@ -129,12 +125,8 @@ export const UpgradeVaultTab = () => {
             });
 
             data.val = { upgrades };
-        } catch (e) {
-            error.val = e.message || "Failed to read Upgrade Vault data";
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     load();
 

@@ -17,6 +17,7 @@ import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -254,35 +255,35 @@ export const SmithyTab = () => {
         writeWarning.val = null;
     };
 
-    const load = async (showSpinner = true) => {
+    const load = async () => {
         const seq = ++loadSeq;
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] = await Promise.all([
-                readWithFallback(EQUIP_SETS_PATHS),
-                readWithFallback(SET_ORDER_PATHS).catch(() => null),
-                gga(STORED_SETS_PATH),
-                gga(EQUIPPED_MAIN_PATH),
-                gga(EQUIPPED_EXTRA_PATH),
-            ]);
+        return runAccountLoad(
+            { loading, error, label: "Smithy", fallbackMessage: "Failed to load smithy data" },
+            async () => {
+                const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] =
+                    await Promise.all([
+                        readWithFallback(EQUIP_SETS_PATHS),
+                        readWithFallback(SET_ORDER_PATHS),
+                        gga(STORED_SETS_PATH),
+                        gga(EQUIPPED_MAIN_PATH),
+                        gga(EQUIPPED_EXTRA_PATH),
+                    ]);
 
-            if (seq !== loadSeq) return;
-            applySmithyState({
-                rawEquipSets,
-                rawSetOrder,
-                rawStoredSets,
-                rawEquippedMain,
-                rawEquippedExtra,
-            });
-            data.val = { loaded: true };
-        } catch (e) {
-            if (seq !== loadSeq) return;
-            error.val = e?.message ?? "Failed to load smithy data";
-            data.val = null;
-        } finally {
-            if (showSpinner && seq === loadSeq) loading.val = false;
-        }
+                if (seq !== loadSeq) return;
+                applySmithyState({
+                    rawEquipSets,
+                    rawSetOrder,
+                    rawStoredSets,
+                    rawEquippedMain,
+                    rawEquippedExtra,
+                });
+                data.val = { loaded: true };
+            }
+        ).then((result) => {
+            if (seq !== loadSeq) return result;
+            if (typeof result === "undefined") data.val = null;
+            return result;
+        });
     };
 
     const writeStoredSets = async (setKeys) => {
@@ -301,7 +302,7 @@ export const SmithyTab = () => {
 
     const refreshAfterWrite = async () => {
         const prevTop = scrollEl?.scrollTop ?? 0;
-        await load(false);
+        await load();
         requestAnimationFrame(() => {
             if (scrollEl) scrollEl.scrollTop = prevTop;
         });
@@ -363,7 +364,7 @@ export const SmithyTab = () => {
         });
     };
 
-    load(true);
+    load();
 
     const renderBody = AsyncFeatureBody({
         loading,
@@ -473,7 +474,7 @@ export const SmithyTab = () => {
                     disabled: () => loading.val || mutating.val,
                     onclick: () => {
                         if (mutating.val) return;
-                        load(true);
+                        load();
                     },
                 },
                 "REFRESH"

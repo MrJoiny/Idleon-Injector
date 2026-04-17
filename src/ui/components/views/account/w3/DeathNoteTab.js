@@ -30,6 +30,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { cleanName, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
@@ -400,12 +401,16 @@ export const DeathNoteTab = () => {
         paneStore.listNode.replaceChildren(...rows);
     };
 
-    const load = async (showSpinner = true) => {
-        const seq = ++dnStore.loadSeq;
-        if (showSpinner) loading.val = true;
-        error.val = null;
-
-        try {
+    const load = async () =>
+        runAccountLoad(
+            {
+                loading,
+                error,
+                label: "Death Note",
+                fallbackMessage: "Failed to load death note data",
+            },
+            async () => {
+                const seq = ++dnStore.loadSeq;
             const [
                 rawDeathNoteMobs,
                 rawMapTargets,
@@ -554,17 +559,12 @@ export const DeathNoteTab = () => {
             };
 
             data.val = snapshot;
-        } catch (e) {
-            if (seq !== dnStore.loadSeq) return;
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            if (seq === dnStore.loadSeq && showSpinner) loading.val = false;
-        }
-    };
+            }
+        );
 
     if (!dnStore.didInit) {
         dnStore.didInit = true;
-        queueMicrotask(() => load(true));
+        queueMicrotask(() => load());
     }
 
     const activeSubTab = van.state(DN_SUBTABS[0].id);
@@ -573,7 +573,7 @@ export const DeathNoteTab = () => {
         header: FeatureTabHeader({
             title: "DEATH NOTE",
             description: "View kill counts per character for each mob in the Death Note.",
-            actions: button({ type: "button", class: "btn-secondary", onclick: () => load(true) }, "REFRESH"),
+            actions: button({ type: "button", class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
         body: div(
             { class: "dn-panels" },

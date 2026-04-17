@@ -21,6 +21,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { RefreshErrorBanner, usePersistentPaneReady } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
@@ -83,25 +84,25 @@ export const ForgeTab = () => {
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Forge",
+                fallbackMessage: "Failed to read forge data",
+            },
+            async () => {
             const raw = await gga("FurnaceLevels");
             const levels = toIndexedArray(raw);
             for (let i = 0; i < levelStates.length; i++) {
                 levelStates[i].val = Number(levels[i] ?? 0);
             }
-            markReady();
-        } catch (e) {
-            const message = e.message || "Failed to read forge data";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
         }
-    };
+        );
 
     load();
 

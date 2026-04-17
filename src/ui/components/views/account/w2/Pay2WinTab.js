@@ -36,6 +36,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
 
@@ -175,11 +176,18 @@ export const Pay2WinTab = () => {
 
     // ── Load ───────────────────────────────────────────────────────────────
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
+    const load = async () =>
+        runPersistentAccountLoad(
+            {
+                loading,
+                error,
+                refreshError,
+                initialized,
+                markReady,
+                label: "Pay 2 Win",
+                fallbackMessage: "Failed to load pay 2 win data",
+            },
+            async () => {
             const [rawP2W, rawDraconic] = await Promise.all([gga("CauldronP2W"), gga("OptionsListAccount[123]")]);
             const p2w = toIndexedArray(rawP2W ?? []);
             const brew0 = toIndexedArray(p2w[0] ?? []);
@@ -188,34 +196,19 @@ export const Pay2WinTab = () => {
             const plr3 = toIndexedArray(p2w[3] ?? []);
             const draconicRaw = Number(rawDraconic ?? 0);
             const draconic = Number.isFinite(draconicRaw) ? Math.min(4, Math.max(0, draconicRaw)) : 0;
+            const nextBrewVal = Array.from({ length: 4 }, (_, e) =>
+                Array.from({ length: 3 }, (_, f) => Number(brew0[f + 3 * e] ?? 0))
+            );
+            const nextLiqVal = Array.from({ length: 4 }, (_, e) =>
+                Array.from({ length: 2 }, (_, f) => Number(liq1[f + 2 * e] ?? 0))
+            );
+            const nextVialsUpgVal = Array.from({ length: 2 }, (_, e) => Number(via2[e] ?? 0));
+            const nextPlayerVal = Array.from({ length: 2 }, (_, e) => Number(plr3[e] ?? 0));
 
-            // Fill values
-            for (let e = 0; e < 4; e++) for (let f = 0; f < 3; f++) brewVal[e][f].val = Number(brew0[f + 3 * e] ?? 0);
-
-            for (let e = 0; e < 4; e++) for (let f = 0; f < 2; f++) liqVal[e][f].val = Number(liq1[f + 2 * e] ?? 0);
-
-            for (let e = 0; e < 2; e++) {
-                vialsUpgVal[e].val = Number(via2[e] ?? 0);
-                playerVal[e].val = Number(plr3[e] ?? 0);
-            }
-            draconicVal.val = draconic;
-
-            // Reset max states before computed reads so stale maxima never survive a failed refresh.
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 3; f++) {
-                    brewMax[e][f].val = 0;
-                }
-            }
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 2; f++) {
-                    liqMax[e][f].val = 0;
-                }
-            }
-            for (let e = 0; e < 2; e++) {
-                vialsUpgMax[e].val = 0;
-                playerMax[e].val = 0;
-            }
-
+            const nextBrewMax = Array.from({ length: 4 }, () => Array.from({ length: 3 }, () => 0));
+            const nextLiqMax = Array.from({ length: 4 }, () => Array.from({ length: 2 }, () => 0));
+            const nextVialsUpgMax = Array.from({ length: 2 }, () => 0);
+            const nextPlayerMax = Array.from({ length: 2 }, () => 0);
             const maxTargets = [];
 
             for (let e = 0; e < 4; e++) {
@@ -223,7 +216,7 @@ export const Pay2WinTab = () => {
                     maxTargets.push({
                         args: [0, e, String(f)],
                         apply: (value) => {
-                            brewMax[e][f].val = Number(value ?? 0);
+                            nextBrewMax[e][f] = Number(value ?? 0);
                         },
                     });
                 }
@@ -233,7 +226,7 @@ export const Pay2WinTab = () => {
                     maxTargets.push({
                         args: [1, e, String(f)],
                         apply: (value) => {
-                            liqMax[e][f].val = Number(value ?? 0);
+                            nextLiqMax[e][f] = Number(value ?? 0);
                         },
                     });
                 }
@@ -242,40 +235,51 @@ export const Pay2WinTab = () => {
                 maxTargets.push({
                     args: [2, e, "0"],
                     apply: (value) => {
-                        vialsUpgMax[e].val = Number(value ?? 0);
+                        nextVialsUpgMax[e] = Number(value ?? 0);
                     },
                 });
                 maxTargets.push({
                     args: [3, e, "0"],
                     apply: (value) => {
-                        playerMax[e].val = Number(value ?? 0);
+                        nextPlayerMax[e] = Number(value ?? 0);
                     },
                 });
             }
 
-            let maxResults = null;
-            try {
-                maxResults = await readComputedMany(
-                    "alchemy",
-                    "CauldronLvMAX",
-                    maxTargets.map((entry) => entry.args)
-                );
-            } catch {
-                // Batch read unavailable - keep all max states at 0.
-            }
+            const maxResults = await readComputedMany(
+                "alchemy",
+                "CauldronLvMAX",
+                maxTargets.map((entry) => entry.args)
+            );
 
             maxTargets.forEach((entry, i) => {
-                entry.apply(maxResults?.[i]?.ok ? maxResults[i].value : 0);
+                if (!maxResults[i]?.ok) {
+                    throw new Error(`CauldronLvMAX failed for target ${i}`);
+                }
+                entry.apply(maxResults[i].value);
             });
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
+
+            for (let e = 0; e < 4; e++) {
+                for (let f = 0; f < 3; f++) {
+                    brewVal[e][f].val = nextBrewVal[e][f];
+                    brewMax[e][f].val = nextBrewMax[e][f];
+                }
+            }
+            for (let e = 0; e < 4; e++) {
+                for (let f = 0; f < 2; f++) {
+                    liqVal[e][f].val = nextLiqVal[e][f];
+                    liqMax[e][f].val = nextLiqMax[e][f];
+                }
+            }
+            for (let e = 0; e < 2; e++) {
+                vialsUpgVal[e].val = nextVialsUpgVal[e];
+                vialsUpgMax[e].val = nextVialsUpgMax[e];
+                playerVal[e].val = nextPlayerVal[e];
+                playerMax[e].val = nextPlayerMax[e];
+            }
+            draconicVal.val = draconic;
         }
-    };
+        );
 
     load();
 
