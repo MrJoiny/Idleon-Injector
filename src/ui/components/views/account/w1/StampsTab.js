@@ -23,7 +23,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -31,7 +30,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -280,56 +279,50 @@ export const StampsTab = () => {
             navClass: "feature-page-nav",
             buttonClass: "feature-page-btn",
         }),
-        body: () => {
-            if (loading.val) {
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data: gameData,
+            isEmpty: (resolved) => {
+                const page = activePage.val;
+                const names = resolved.names?.[page] ?? [];
+                const levelCount = resolved.levels?.[page]?.length ?? 0;
+                const maxLevelCount = resolved.maxLevels?.[page]?.length ?? 0;
+                return Math.max(names.length, levelCount, maxLevelCount) === 0;
+            },
+            renderEmpty: () =>
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO STAMP DATA",
+                    subtitle: "Ensure the game is running, then hit REFRESH",
+                }),
+            renderContent: (resolved) => {
+                const page = activePage.val;
+                const names = resolved.names?.[page] ?? [];
+                const steps = resolved.steps?.[page] ?? [];
+                const count = Math.max(
+                    names.length,
+                    resolved.levels?.[page]?.length ?? 0,
+                    resolved.maxLevels?.[page]?.length ?? 0
+                );
+
                 return div(
                     { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING STAMPS" }))
+                    ...Array.from({ length: count }, (_, order) =>
+                        StampRow({
+                            page,
+                            order,
+                            name: names[order] ?? ("Stamp " + PAGE_LETTERS[page] + (order + 1)),
+                            step: steps[order] ?? 0,
+                            initialLevel: resolved.levels?.[page]?.[order] ?? 0,
+                            initialMaxLevel: resolved.maxLevels?.[page]?.[order] ?? 0,
+                            exaltedCodes,
+                            writeExaltedCodes,
+                            exaltedBusy,
+                        })
+                    )
                 );
-            }
-
-            if (error.val) {
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "STAMP READ FAILED", subtitle: error.val })
-                );
-            }
-
-            const data = gameData.val;
-            if (!data) return div({ class: "feature-list" });
-
-            const page = activePage.val;
-            const names = data.names?.[page] ?? [];
-            const steps = data.steps?.[page] ?? [];
-            const count = Math.max(names.length, data.levels?.[page]?.length ?? 0, data.maxLevels?.[page]?.length ?? 0);
-
-            if (count === 0) {
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO STAMP DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    })
-                );
-            }
-
-            return div(
-                { class: "feature-list" },
-                ...Array.from({ length: count }, (_, order) =>
-                    StampRow({
-                        page,
-                        order,
-                        name: names[order] ?? ("Stamp " + PAGE_LETTERS[page] + (order + 1)),
-                        step: steps[order] ?? 0,
-                        initialLevel: data.levels?.[page]?.[order] ?? 0,
-                        initialMaxLevel: data.maxLevels?.[page]?.[order] ?? 0,
-                        exaltedCodes,
-                        writeExaltedCodes,
-                        exaltedBusy,
-                    })
-                )
-            );
-        },
+            },
+        }),
     });
 };

@@ -20,7 +20,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -28,7 +27,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -561,45 +560,42 @@ export const StarSignsTab = () => {
                 ),
             ],
         }),
-        body: () => {
-            if (loading.val)
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data: signs,
+            isEmpty: (resolved) => resolved.length === 0,
+            renderEmpty: () =>
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO STAR SIGN DATA",
+                    subtitle: "Ensure the game is running, then hit REFRESH",
+                }),
+            renderContent: (resolved) => {
+                if (activeSign.val) {
+                    return div(
+                        { class: "feature-list" },
+                        StarSignDetail({
+                            sign: activeSign.val,
+                            usernames: activeSign.val.usernames ?? [],
+                            onSave: handleSave,
+                            onBack: () => (activeSign.val = null),
+                        })
+                    );
+                }
+
                 return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING STAR SIGNS" }))
+                    { class: "starsign-grid" },
+                    ...resolved.map((sign) =>
+                        StarSignCard({
+                            sign,
+                            onClick: (selectedSign) => {
+                                activeSign.val = { ...selectedSign };
+                            },
+                        })
+                    )
                 );
-
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "READ FAILED", subtitle: error.val })
-                );
-
-            if (!signs.val) return div({ class: "feature-list" });
-
-            // Detail view
-            if (activeSign.val)
-                return div(
-                    { class: "feature-list" },
-                    StarSignDetail({
-                        sign: activeSign.val,
-                        usernames: activeSign.val.usernames ?? [],
-                        onSave: handleSave,
-                        onBack: () => (activeSign.val = null),
-                    })
-                );
-
-            // Card grid view
-            return div(
-                { class: "starsign-grid" },
-                ...signs.val.map((sign) =>
-                    StarSignCard({
-                        sign,
-                        onClick: (s) => {
-                            activeSign.val = { ...s };
-                        },
-                    })
-                )
-            );
-        },
+            },
+        }),
     });
 };

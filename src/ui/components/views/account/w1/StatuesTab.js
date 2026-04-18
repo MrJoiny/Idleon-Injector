@@ -10,7 +10,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -18,7 +17,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -204,45 +203,38 @@ export const StatuesTab = () => {
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
             " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-        body: () => {
-            if (loading.val)
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data,
+            isEmpty: (resolved) =>
+                !(resolved.info ?? [])
+                    .map((entry, index) => ({ index, name: entry?.[0] }))
+                    .filter((statue) => statue.name && statue.name.trim().length > 0).length,
+            renderEmpty: () =>
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO STATUE DATA",
+                    subtitle: "Ensure the game is running, then hit REFRESH",
+                }),
+            renderContent: (resolved) => {
+                const statues = (resolved.info ?? [])
+                    .map((entry, index) => ({ index, name: entry?.[0] }))
+                    .filter((statue) => statue.name && statue.name.trim().length > 0);
+
                 return div(
                     { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING STATUES" }))
+                    ...statues.map((statue) =>
+                        StatueRow({
+                            index: statue.index,
+                            name: statue.name,
+                            initialLevel: resolved.levels?.[statue.index]?.[0] ?? 0,
+                            initialDeposited: resolved.levels?.[statue.index]?.[1] ?? 0,
+                            initialTier: resolved.tiers?.[statue.index] ?? 0,
+                        })
+                    )
                 );
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "STATUE READ FAILED", subtitle: error.val })
-                );
-            if (!data.val) return div({ class: "feature-list" });
-
-            const statues = (data.val.info ?? [])
-                .map((entry, i) => ({ index: i, name: entry?.[0] }))
-                .filter((s) => s.name && s.name.trim().length > 0);
-
-            if (statues.length === 0)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO STATUE DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    })
-                );
-
-            return div(
-                { class: "feature-list" },
-                ...statues.map((s) =>
-                    StatueRow({
-                        index: s.index,
-                        name: s.name,
-                        initialLevel: data.val.levels?.[s.index]?.[0] ?? 0,
-                        initialDeposited: data.val.levels?.[s.index]?.[1] ?? 0,
-                        initialTier: data.val.tiers?.[s.index] ?? 0,
-                    })
-                )
-            );
-        },
+            },
+        }),
     });
 };
