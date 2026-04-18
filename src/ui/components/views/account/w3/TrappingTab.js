@@ -22,7 +22,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { NumberInput, getNumberInputLiveRaw } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -458,8 +457,6 @@ export const TrappingTab = () => {
         loading,
         error,
         data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: (resolved) => !resolved.players.length,
         renderEmpty: () =>
             EmptyState({

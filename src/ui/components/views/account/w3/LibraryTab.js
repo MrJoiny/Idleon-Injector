@@ -23,7 +23,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -330,7 +329,6 @@ export const LibraryTab = () => {
         loading,
         error,
         data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
         renderError: (message) => {
             if (message === "select-char") {
                 return EmptyState({

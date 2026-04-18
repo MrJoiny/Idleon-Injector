@@ -21,7 +21,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -248,8 +247,6 @@ export const WorshipTab = () => {
         loading,
         error,
         data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: (resolved) => !resolved.players.length && !resolved.towerRows.length,
         renderEmpty: () =>
             EmptyState({

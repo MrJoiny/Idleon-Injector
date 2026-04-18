@@ -15,7 +15,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, readCList } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -24,7 +23,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { toNum, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -84,34 +83,34 @@ export const ConstructionBuildingsTab = () => {
                 fallbackMessage: "Failed to load construction buildings",
             },
             async () => {
-            const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
+                const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
-            const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
-            const argSets = buildingInfo.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                return [toNum(entryArr[8]), i];
-            });
-            const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
+                const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
+                const argSets = buildingInfo.map((entry, i) => {
+                    const entryArr = toIndexedArray(entry ?? []);
+                    return [toNum(entryArr[8]), i];
+                });
+                const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
 
-            const buildings = buildingInfo.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[0] ?? "").replace(/_/g, " ");
-                const baseMax = toNum(entryArr[8]);
-                if (!computedResults[i]?.ok) {
-                    throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
+                const buildings = buildingInfo.map((entry, i) => {
+                    const entryArr = toIndexedArray(entry ?? []);
+                    const name = String(entryArr[0] ?? "").replace(/_/g, " ");
+                    const baseMax = toNum(entryArr[8]);
+                    if (!computedResults[i]?.ok) {
+                        throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
+                    }
+                    const extraMax = toNum(computedResults[i].value);
+                    const maxLevel = baseMax + extraMax;
+                    return { name, baseMax, extraMax, maxLevel };
+                });
+
+                const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
+                for (let i = 0; i < BUILDING_COUNT; i++) {
+                    levelStates[i].val = toNum(nextLevels[i]);
                 }
-                const extraMax = toNum(computedResults[i].value);
-                const maxLevel = baseMax + extraMax;
-                return { name, baseMax, extraMax, maxLevel };
-            });
 
-            const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
-            for (let i = 0; i < BUILDING_COUNT; i++) {
-                levelStates[i].val = toNum(nextLevels[i]);
+                data.val = { buildings };
             }
-
-            data.val = { buildings };
-        }
         );
 
     const doMaxAll = async () => {
@@ -166,26 +165,25 @@ export const ConstructionBuildingsTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        body: () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-            if (!data.val) return null;
-
-            const buildings = data.val.buildings;
-            if (!buildings.length)
-                return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
-
-            return div(
-                { class: "feature-list" },
-                ...buildings.map((b, i) =>
-                    BuildingRow({
-                        index: i,
-                        name: b.name,
-                        maxLevel: b.maxLevel,
-                        levelState: levelStates[i],
-                    })
-                )
-            );
-        },
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data,
+            isEmpty: (resolved) => !resolved.buildings.length,
+            renderEmpty: () =>
+                EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." }),
+            renderContent: (resolved) =>
+                div(
+                    { class: "feature-list" },
+                    ...resolved.buildings.map((building, index) =>
+                        BuildingRow({
+                            index,
+                            name: building.name,
+                            maxLevel: building.maxLevel,
+                            levelState: levelStates[index],
+                        })
+                    )
+                ),
+        }),
     });
 };

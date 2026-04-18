@@ -22,13 +22,21 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
-import { cleanName, largeFormatter, largeParser, toInt, unwrapH, useWriteStatus } from "../featureShared.js";
+import {
+    cleanName,
+    largeFormatter,
+    largeParser,
+    renderFeatureError,
+    renderFeatureLoading,
+    toInt,
+    unwrapH,
+    useWriteStatus,
+} from "../featureShared.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -320,14 +328,8 @@ const WorldPanel = ({ worldKey, loading, error, data, getPaneStore, reconcilePan
 
     return div(
         { class: "dn-world-panel" },
-        () => (loading.val ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader())) : null),
-        () =>
-            !loading.val && error.val
-                ? div(
-                      { class: "feature-list" },
-                      EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val })
-                  )
-                : null,
+        () => (loading.val ? div({ class: "feature-list" }, renderFeatureLoading()) : null),
+        () => (!loading.val && error.val ? div({ class: "feature-list" }, renderFeatureError(error.val)) : null),
         () => {
             if (loading.val || error.val) return null;
             const hasRows = !!(data.val && data.val.worlds?.[worldKey]?.length > 0);

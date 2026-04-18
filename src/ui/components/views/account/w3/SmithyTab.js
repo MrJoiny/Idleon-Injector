@@ -10,7 +10,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { FeatureActionButton } from "../components/FeatureActionButton.js";
@@ -366,8 +365,6 @@ export const SmithyTab = () => {
         loading,
         error,
         data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: () => totalSetCount.val === 0,
         renderEmpty: () =>
             EmptyState({

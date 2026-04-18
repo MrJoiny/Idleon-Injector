@@ -14,13 +14,11 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -168,33 +166,36 @@ export const RefineryTab = () => {
     const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Refinery", fallbackMessage: "Failed to load refinery data" }, async () => {
-            const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
-            const [raw, nameEntries] = await Promise.all([
-                gga("Refinery"),
-                readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
-            ]);
+        runAccountLoad(
+            { loading, error, label: "Refinery", fallbackMessage: "Failed to load refinery data" },
+            async () => {
+                const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
+                const [raw, nameEntries] = await Promise.all([
+                    gga("Refinery"),
+                    readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
+                ]);
 
-            const names = refineryKeys.map((k, i) => {
-                const entry = nameEntries[k];
-                return entry?.displayName ?? `Refinery ${i + 1}`;
-            });
+                const names = refineryKeys.map((k, i) => {
+                    const entry = nameEntries[k];
+                    return entry?.displayName ?? `Refinery ${i + 1}`;
+                });
 
-            const levels = [];
-            const charges = [];
-            for (let i = 0; i < REFINERY_COUNT; i++) {
-                const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
-                charges.push(entry[0] ?? 0);
-                levels.push(entry[1] ?? 0);
+                const levels = [];
+                const charges = [];
+                for (let i = 0; i < REFINERY_COUNT; i++) {
+                    const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
+                    charges.push(entry[0] ?? 0);
+                    levels.push(entry[1] ?? 0);
+                }
+
+                for (let i = 0; i < REFINERY_COUNT; i++) {
+                    chargeStates[i].val = Number(charges[i] ?? 0);
+                    levelStates[i].val = Number(levels[i] ?? 0);
+                }
+
+                data.val = { names };
             }
-
-            for (let i = 0; i < REFINERY_COUNT; i++) {
-                chargeStates[i].val = Number(charges[i] ?? 0);
-                levelStates[i].val = Number(levels[i] ?? 0);
-            }
-
-            data.val = { names };
-        });
+        );
 
     load();
 
@@ -226,22 +227,22 @@ export const RefineryTab = () => {
                 )
             ),
         ],
-        body: () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-            if (!data.val) return null;
-
-            return div(
-                { class: "feature-list" },
-                ...Array.from({ length: REFINERY_COUNT }, (_, i) =>
-                    RefineryRow({
-                        refIndex: i,
-                        name: data.val.names[i] ?? `Refinery ${i + 1}`,
-                        levelState: levelStates[i],
-                        chargeState: chargeStates[i],
-                    })
-                )
-            );
-        },
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data,
+            renderContent: (resolved) =>
+                div(
+                    { class: "feature-list" },
+                    ...Array.from({ length: REFINERY_COUNT }, (_, index) =>
+                        RefineryRow({
+                            refIndex: index,
+                            name: resolved.names[index] ?? `Refinery ${index + 1}`,
+                            levelState: levelStates[index],
+                            chargeState: chargeStates[index],
+                        })
+                    )
+                ),
+        }),
     });
 };

@@ -16,6 +16,8 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
+import { Loader } from "../../Loader.js";
+import { EmptyState } from "../../EmptyState.js";
 import { formatNumber, parseNumber } from "../../../utils/numberFormat.js";
 
 const { div } = van.tags;
@@ -88,6 +90,11 @@ export const RefreshErrorBanner =
                   error.val
               )
             : null;
+
+export const renderFeatureLoading = () => div({ class: "feature-loader" }, Loader());
+
+export const renderFeatureError = (message) =>
+    EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message });
 
 // ── usePersistentPaneReady ─────────────────────────────────────────────────
 
@@ -220,8 +227,7 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
  *       loading,
  *       error,
  *       data: myDefs,                             // van.state or plain value
- *       renderLoading: () => div(...),            // shown while loading
- *       renderError:   (msg) => EmptyState(...),  // shown on initial load failure
+ *       // default loading/error UI is provided when omitted
  *       isEmpty:       (d) => d.length === 0,     // optional empty-check
  *       renderEmpty:   () => EmptyState(...),     // shown when isEmpty is true
  *       renderContent: (d) => div(...d.map(...)), // shown on success
@@ -245,8 +251,8 @@ export const AsyncFeatureBody =
         loading,
         error,
         data = null,
-        renderLoading = null,
-        renderError = null,
+        renderLoading = renderFeatureLoading,
+        renderError = renderFeatureError,
         isEmpty = null,
         renderEmpty = null,
         renderContent,

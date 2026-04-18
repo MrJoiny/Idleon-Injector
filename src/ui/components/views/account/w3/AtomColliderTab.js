@@ -14,7 +14,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, readCList } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -129,8 +128,6 @@ export const AtomColliderTab = () => {
         loading,
         error,
         data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
         isEmpty: (resolved) => !resolved.atoms.length,
         renderEmpty: () =>
             EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
