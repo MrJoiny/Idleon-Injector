@@ -72,6 +72,7 @@ window.writeGamePath = writePath;
 // Monitor API
 window.monitorWrap = (id, path) => monitor.wrap(id, path);
 window.monitorUnwrap = (id) => monitor.unwrap(id);
+window.monitorUnwrapAll = () => monitor.unwrapAll();
 window.monitorList = () => monitor.list();
 
 // State objects
