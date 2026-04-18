@@ -365,20 +365,6 @@ export const EquinoxTab = () => {
             }));
 
             const existingUpg = upgradeEntries.val;
-            if (existingUpg.length !== newUpgrades.length) {
-                // Count changed — rebuild
-                upgradeEntries.val = newUpgrades.map((u) => ({
-                    index: u.index,
-                    name: u.name,
-                    maxLevel: u.maxLevel,
-                    levelState: van.state(u.level),
-                }));
-            } else {
-                // Same count — update levels in-place only
-                newUpgrades.forEach((u, i) => {
-                    existingUpg[i].levelState.val = u.level;
-                });
-            }
 
             // ── Clouds ────────────────────────────────────────────────────────
             const visibleIndexes = getVisibleCloudIndexes(
