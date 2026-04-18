@@ -131,7 +131,6 @@ export const ArcadeTab = () => {
                 initialized,
                 markReady,
                 label: "Arcade",
-                fallbackMessage: "Failed to load Arcade data",
             },
             async () => {
                 const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([

@@ -410,7 +410,6 @@ export const DeathNoteTab = () => {
                 loading,
                 error,
                 label: "Death Note",
-                fallbackMessage: "Failed to load death note data",
             },
             async () => {
                 const [

@@ -191,7 +191,6 @@ export const KillroyTab = () => {
                 initialized,
                 markReady,
                 label: "Killroy",
-                fallbackMessage: "Failed to load Killroy data",
             },
             async () => {
             const optionKeys = Array.from(

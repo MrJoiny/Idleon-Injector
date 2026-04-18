@@ -168,7 +168,7 @@ export const StatuesTab = () => {
     const error = van.state(null);
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Statues", fallbackMessage: "Failed to read statue data" }, async () => {
+        runAccountLoad({ loading, error, label: "Statues" }, async () => {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readCList("StatueInfo"),
                 gga("StatueLevels"),

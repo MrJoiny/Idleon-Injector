@@ -89,7 +89,7 @@ export const SaltLickTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Salt Lick", fallbackMessage: "Failed to load Salt Lick data" },
+            { loading, error, label: "Salt Lick" },
             async () => {
                 const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
 

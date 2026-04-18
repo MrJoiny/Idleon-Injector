@@ -85,7 +85,6 @@ export const AnvilTab = () => {
                 initialized,
                 markReady,
                 label: "Anvil",
-                fallbackMessage: "Failed to read anvil data",
             },
             async () => {
             const raw = await gga("AnvilPAstats");

@@ -433,7 +433,6 @@ export const PostOfficeTab = () => {
                 initialized,
                 markReady,
                 label: "Post Office",
-                fallbackMessage: "Failed to load Post Office data",
             },
             async () => {
                 const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([

@@ -131,7 +131,6 @@ export const PoppyTab = () => {
                 initialized,
                 markReady,
                 label: "Poppy",
-                fallbackMessage: "Failed to read Poppy data",
             },
             async () => {
                 const keys = ALL_FIELDS.map((f) => String(f.index));

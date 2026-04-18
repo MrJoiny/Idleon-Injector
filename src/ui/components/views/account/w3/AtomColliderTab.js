@@ -85,7 +85,7 @@ export const AtomColliderTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Atom Collider", fallbackMessage: "Failed to load Atom Collider data" },
+            { loading, error, label: "Atom Collider" },
             async () => {
                 const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
                 const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);

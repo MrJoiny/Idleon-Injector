@@ -78,7 +78,7 @@ export const UpgradeVaultTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Upgrade Vault", fallbackMessage: "Failed to read Upgrade Vault data" },
+            { loading, error, label: "Upgrade Vault" },
             async () => {
             const toArr = (raw) =>
                 Array.isArray(raw)

@@ -181,7 +181,7 @@ export const WorshipTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Worship", fallbackMessage: "Failed to load worship data" },
+            { loading, error, label: "Worship" },
             async () => {
                 const rawNames = await gga("GetPlayersUsernames");
                 const playerNames = toIndexedArray(rawNames ?? []).filter(

@@ -318,7 +318,6 @@ export const EquinoxTab = () => {
                 initialized,
                 markReady,
                 label: "Equinox",
-                fallbackMessage: "Failed to load Equinox data",
             },
             async () => {
             const [rawDream, rawDreamUpg, rawDreamChallenge, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] =

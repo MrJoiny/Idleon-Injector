@@ -192,7 +192,6 @@ export const LiquidTab = () => {
                 initialized,
                 markReady,
                 label: "Liquid",
-                fallbackMessage: "Failed to load liquids",
             },
             async () => {
             const raw = await gga("CauldronInfo");

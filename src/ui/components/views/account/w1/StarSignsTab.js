@@ -350,7 +350,7 @@ export const StarSignsTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Star Signs", fallbackMessage: "Failed to read star signs" }, async () => {
+        runAccountLoad({ loading, error, label: "Star Signs" }, async () => {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
                 readCList("StarQuests"),
                 gga("StarSignProg"),

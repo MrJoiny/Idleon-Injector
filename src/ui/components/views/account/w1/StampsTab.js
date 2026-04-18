@@ -212,7 +212,7 @@ export const StampsTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Stamps", fallbackMessage: "Failed to read stamp data" }, async () => {
+        runAccountLoad({ loading, error, label: "Stamps" }, async () => {
             const [levels, maxLevels, rawExaltedCodes] = await Promise.all([
                 gga("StampLevel"),
                 gga("StampLevelMAX"),

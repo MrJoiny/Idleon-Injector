@@ -215,7 +215,7 @@ export const LibraryTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Library", fallbackMessage: "Failed to load library data" },
+            { loading, error, label: "Library" },
             async () => {
             const [
                 rawUserInfo,

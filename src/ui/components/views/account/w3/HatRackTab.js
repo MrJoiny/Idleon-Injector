@@ -171,7 +171,7 @@ export const HatRackTab = () => {
 
     const load = async () => {
         return runAccountLoad(
-            { loading, error, label: "Hat Rack", fallbackMessage: "Failed to load hat rack data" },
+            { loading, error, label: "Hat Rack" },
             async () => {
                 let nextItemDefs = itemDefsCache;
                 if (!nextItemDefs) {

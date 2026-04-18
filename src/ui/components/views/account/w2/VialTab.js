@@ -66,7 +66,7 @@ export const VialTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Vials", fallbackMessage: "Failed to load vial data" }, async () => {
+        runAccountLoad({ loading, error, label: "Vials" }, async () => {
             const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
                 gga("CauldronInfo"),
                 readCList("AlchemyDescription"),

@@ -264,7 +264,7 @@ export const BrewingTab = () => {
         const hadData = data.val !== null;
 
         const result = await runAccountLoad(
-            { loading, error, label: "Brewing", fallbackMessage: "Failed to load brewing data" },
+            { loading, error, label: "Brewing" },
             async () => {
                 const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
                     gga("CauldronInfo"),

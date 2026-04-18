@@ -182,7 +182,6 @@ export const Pay2WinTab = () => {
                 initialized,
                 markReady,
                 label: "Pay 2 Win",
-                fallbackMessage: "Failed to load pay 2 win data",
             },
             async () => {
             const [rawP2W, rawDraconic] = await Promise.all([gga("CauldronP2W"), gga("OptionsListAccount[123]")]);

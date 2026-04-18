@@ -167,7 +167,7 @@ export const RefineryTab = () => {
 
     const load = async () =>
         runAccountLoad(
-            { loading, error, label: "Refinery", fallbackMessage: "Failed to load refinery data" },
+            { loading, error, label: "Refinery" },
             async () => {
                 const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
                 const [raw, nameEntries] = await Promise.all([

@@ -139,7 +139,6 @@ export const SigilTab = () => {
                 initialized,
                 markReady,
                 label: "Sigils",
-                fallbackMessage: "Failed to load sigils",
             },
             async () => {
             const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);

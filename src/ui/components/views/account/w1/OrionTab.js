@@ -126,7 +126,7 @@ export const OrionTab = () => {
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Orion", fallbackMessage: "Failed to read Orion data" }, async () => {
+        runAccountLoad({ loading, error, label: "Orion" }, async () => {
             const keys = ALL_FIELDS.map((f) => String(f.index));
             const results = await readGgaEntries("OptionsListAccount", keys);
             for (const f of ALL_FIELDS) {

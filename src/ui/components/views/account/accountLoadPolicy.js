@@ -19,6 +19,11 @@ const logLoadFailure = (label, phase, error) => {
     console.error(`[account-load] ${label} ${phase} failed:`, error);
 };
 
+const getFallbackMessage = (label, fallbackMessage) => {
+    if (fallbackMessage) return fallbackMessage;
+    return `Failed to load ${String(label ?? "account page").trim().toLowerCase()} data`;
+};
+
 /**
  * Standard load handler for account pages that only use `loading` and `error`.
  *
@@ -39,7 +44,7 @@ export const runAccountLoad = async ({ loading, error, label = "Account page", f
         return await task();
     } catch (caughtError) {
         logLoadFailure(label, "load", caughtError);
-        error.val = getErrorMessage(caughtError, fallbackMessage);
+        error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
         return undefined;
     } finally {
         loading.val = false;
@@ -79,7 +84,7 @@ export const runPersistentAccountLoad = async (
     } catch (caughtError) {
         logLoadFailure(label, wasInitialized ? "refresh" : "initial load", caughtError);
 
-        const message = getErrorMessage(caughtError, fallbackMessage);
+        const message = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
         if (!wasInitialized) error.val = message;
         else refreshError.val = message;
         return undefined;

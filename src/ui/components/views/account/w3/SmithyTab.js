@@ -255,7 +255,7 @@ export const SmithyTab = () => {
 
     const load = async () => {
         return runAccountLoad(
-            { loading, error, label: "Smithy", fallbackMessage: "Failed to load smithy data" },
+            { loading, error, label: "Smithy" },
             async () => {
                 const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] =
                     await Promise.all([

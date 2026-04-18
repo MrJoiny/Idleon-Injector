@@ -90,7 +90,6 @@ export const ForgeTab = () => {
                 initialized,
                 markReady,
                 label: "Forge",
-                fallbackMessage: "Failed to read forge data",
             },
             async () => {
             const raw = await gga("FurnaceLevels");

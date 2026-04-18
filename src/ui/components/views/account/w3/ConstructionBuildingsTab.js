@@ -80,7 +80,6 @@ export const ConstructionBuildingsTab = () => {
                 loading,
                 error,
                 label: "Construction Buildings",
-                fallbackMessage: "Failed to load construction buildings",
             },
             async () => {
                 const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
