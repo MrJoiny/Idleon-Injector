@@ -234,7 +234,6 @@ export const SmithyTab = () => {
 
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let scrollEl = null;
-    let loadSeq = 0;
 
     const applySmithyState = (rawLoadedData) => {
         const result = buildSmithyState(rawLoadedData);
@@ -256,7 +255,6 @@ export const SmithyTab = () => {
     };
 
     const load = async () => {
-        const seq = ++loadSeq;
         return runAccountLoad(
             { loading, error, label: "Smithy", fallbackMessage: "Failed to load smithy data" },
             async () => {
@@ -269,7 +267,6 @@ export const SmithyTab = () => {
                         gga(EQUIPPED_EXTRA_PATH),
                     ]);
 
-                if (seq !== loadSeq) return;
                 applySmithyState({
                     rawEquipSets,
                     rawSetOrder,
@@ -280,7 +277,6 @@ export const SmithyTab = () => {
                 data.val = { loaded: true };
             }
         ).then((result) => {
-            if (seq !== loadSeq) return result;
             if (typeof result === "undefined") data.val = null;
             return result;
         });

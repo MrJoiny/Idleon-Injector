@@ -45,7 +45,6 @@ const liveKillsLeftPath = (mapIndex) => `KillsLeft2Advance[${mapIndex}][0]`;
 // Persistent local store so remounts do not recreate all state and cause snapback.
 const dnStore = {
     didInit: false,
-    loadSeq: 0,
     killStateMap: new Map(),
     expandStateMap: new Map(),
     paneStoreMap: new Map(),
@@ -401,8 +400,10 @@ export const DeathNoteTab = () => {
         paneStore.listNode.replaceChildren(...rows);
     };
 
-    const load = async () =>
-        runAccountLoad(
+    const load = async () => {
+        if (loading.val) return undefined;
+
+        return runAccountLoad(
             {
                 loading,
                 error,
@@ -410,157 +411,149 @@ export const DeathNoteTab = () => {
                 fallbackMessage: "Failed to load death note data",
             },
             async () => {
-                const seq = ++dnStore.loadSeq;
-            const [
-                rawDeathNoteMobs,
-                rawMapTargets,
-                rawMapDetails,
-                rawMonsterDefs,
-                currentPlayer,
-                rawPlayerNames,
-                rawKillsLeft,
-                rawPlayerDb,
-                rawMinibossIds,
-                rawMinibossKills,
-            ] = await Promise.all([
-                gga("CustomLists.h.DeathNoteMobs"),
-                gga("CustomLists.h.MapAFKtarget"),
-                gga("CustomLists.h.MapDetails"),
-                gga("MonsterDefinitionsGET.h"),
-                gga("UserInfo[0]"),
-                gga("GetPlayersUsernames"),
-                gga("KillsLeft2Advance"),
-                gga("PlayerDATABASE"),
-                gga("CustomLists.h.NinjaInfo[30]"),
-                gga("Ninja[105]"),
-            ]);
+                const [
+                    rawDeathNoteMobs,
+                    rawMapTargets,
+                    rawMapDetails,
+                    rawMonsterDefs,
+                    currentPlayer,
+                    rawPlayerNames,
+                    rawKillsLeft,
+                    rawPlayerDb,
+                    rawMinibossIds,
+                    rawMinibossKills,
+                ] = await Promise.all([
+                    gga("CustomLists.h.DeathNoteMobs"),
+                    gga("CustomLists.h.MapAFKtarget"),
+                    gga("CustomLists.h.MapDetails"),
+                    gga("MonsterDefinitionsGET.h"),
+                    gga("UserInfo[0]"),
+                    gga("GetPlayersUsernames"),
+                    gga("KillsLeft2Advance"),
+                    gga("PlayerDATABASE"),
+                    gga("CustomLists.h.NinjaInfo[30]"),
+                    gga("Ninja[105]"),
+                ]);
 
-            if (seq !== dnStore.loadSeq) return;
+                const deathNoteGroups = toIndexedArray(rawDeathNoteMobs ?? []);
+                const mapTargets = toIndexedArray(rawMapTargets ?? []);
+                const mapDetails = toIndexedArray(rawMapDetails ?? []);
+                const monsterDefs = unwrapH(rawMonsterDefs) || {};
+                const killsLeftArr = toIndexedArray(rawKillsLeft ?? []);
+                const playerDb = unwrapH(rawPlayerDb) || {};
+                const minibossIds = toIndexedArray(rawMinibossIds ?? []);
+                const minibossKills = toIndexedArray(rawMinibossKills ?? []);
+                const playerNamesFromList = toIndexedArray(rawPlayerNames ?? []).filter(
+                    (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
+                );
 
-            const deathNoteGroups = toIndexedArray(rawDeathNoteMobs ?? []);
-            const mapTargets = toIndexedArray(rawMapTargets ?? []);
-            const mapDetails = toIndexedArray(rawMapDetails ?? []);
-            const monsterDefs = unwrapH(rawMonsterDefs) || {};
-            const killsLeftArr = toIndexedArray(rawKillsLeft ?? []);
-            const playerDb = unwrapH(rawPlayerDb) || {};
-            const minibossIds = toIndexedArray(rawMinibossIds ?? []);
-            const minibossKills = toIndexedArray(rawMinibossKills ?? []);
-            const playerNamesFromList = toIndexedArray(rawPlayerNames ?? []).filter(
-                (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
-            );
+                const currentPlayerName = String(currentPlayer ?? "");
+                const SENTINEL_NAMES = new Set(["Player", "Current", ""]);
+                const hasRealCurrentPlayer = !SENTINEL_NAMES.has(currentPlayerName);
+                const candidateNames = Array.from(new Set([...playerNamesFromList, ...Object.keys(playerDb)]))
+                    .map((name) => String(name))
+                    .filter((name) => name.trim().length > 0 && !name.startsWith("__"))
+                    .filter((name) => {
+                        if (name === currentPlayerName) return true;
+                        const pdata = unwrapH(playerDb[name]) || {};
+                        return pdata && pdata.KillsLeft2Advance !== undefined;
+                    });
+                const otherPlayers = candidateNames.filter((name) => name !== currentPlayerName);
 
-            const currentPlayerName = String(currentPlayer ?? "");
-            const SENTINEL_NAMES = new Set(["Player", "Current", ""]);
-            const hasRealCurrentPlayer = !SENTINEL_NAMES.has(currentPlayerName);
-            const candidateNames = Array.from(new Set([...playerNamesFromList, ...Object.keys(playerDb)]))
-                .map((name) => String(name))
-                .filter((name) => name.trim().length > 0 && !name.startsWith("__"))
-                .filter((name) => {
-                    if (name === currentPlayerName) return true;
-                    const pdata = unwrapH(playerDb[name]) || {};
-                    return pdata && pdata.KillsLeft2Advance !== undefined;
+                const getMobName = (mobId) => {
+                    const def = unwrapH(monsterDefs[mobId]) || {};
+                    return cleanName(def.Name || def.displayName || def.name || mobId, mobId);
+                };
+
+                const mapIndexByMobId = new Map();
+                mapTargets.forEach((target, mapIndex) => {
+                    const key = String(target ?? "");
+                    if (!key || mapIndexByMobId.has(key)) return;
+                    mapIndexByMobId.set(key, mapIndex);
                 });
-            const otherPlayers = candidateNames.filter((n) => n !== currentPlayerName);
 
-            const getMobName = (mobId) => {
-                const def = unwrapH(monsterDefs[mobId]) || {};
-                return cleanName(def.Name || def.displayName || def.name || mobId, mobId);
-            };
+                const getRequired = (mapIndex) => {
+                    const row = toIndexedArray(mapDetails[mapIndex] ?? []);
+                    const inner = toIndexedArray(row[0] ?? []);
+                    return toInt(inner[0] ?? 0);
+                };
 
-            const mapIndexByMobId = new Map();
-            mapTargets.forEach((target, mapIndex) => {
-                const key = String(target ?? "");
-                if (!key || mapIndexByMobId.has(key)) return;
-                mapIndexByMobId.set(key, mapIndex);
-            });
+                const getCurrentKills = (mapIndex) => {
+                    const required = getRequired(mapIndex);
+                    const left = toInt(toIndexedArray(killsLeftArr[mapIndex] ?? [])[0] ?? required);
+                    return required - left;
+                };
 
-            const getRequired = (mapIndex) => {
-                const row = toIndexedArray(mapDetails[mapIndex] ?? []);
-                const inner = toIndexedArray(row[0] ?? []);
-                return toInt(inner[0] ?? 0);
-            };
+                const getOtherKills = (playerName, mapIndex) => {
+                    const required = getRequired(mapIndex);
+                    const pdata = unwrapH(playerDb[playerName]) || {};
+                    const playerKillsLeft = toIndexedArray(pdata.KillsLeft2Advance ?? []);
+                    const left = toInt(toIndexedArray(playerKillsLeft[mapIndex] ?? [])[0] ?? required);
+                    return required - left;
+                };
 
-            const getCurrentKills = (mapIndex) => {
-                const required = getRequired(mapIndex);
-                const left = toInt(toIndexedArray(killsLeftArr[mapIndex] ?? [])[0] ?? required);
-                return required - left;
-            };
+                const worlds = {};
 
-            const getOtherKills = (playerName, mapIndex) => {
-                const required = getRequired(mapIndex);
-                const pdata = unwrapH(playerDb[playerName]) || {};
-                const pKillsLeft = toIndexedArray(pdata.KillsLeft2Advance ?? []);
-                const left = toInt(toIndexedArray(pKillsLeft[mapIndex] ?? [])[0] ?? required);
-                return required - left;
-            };
+                for (let worldIndex = 0; worldIndex < WORLD_LABELS.length; worldIndex++) {
+                    const worldKey = WORLD_LABELS[worldIndex];
+                    const rawGroup = toIndexedArray(deathNoteGroups[worldIndex] ?? []);
 
-            const worlds = {};
+                    worlds[worldKey] = rawGroup.filter(Boolean).map((mobId) => {
+                        const mapIndex = mapIndexByMobId.get(String(mobId)) ?? -1;
+                        const required = mapIndex >= 0 ? getRequired(mapIndex) : 0;
 
-            for (let wi = 0; wi < WORLD_LABELS.length; wi++) {
-                const worldKey = WORLD_LABELS[wi];
-                const rawGroup = toIndexedArray(deathNoteGroups[wi] ?? []);
+                        const perCharacterKills = {};
+                        if (hasRealCurrentPlayer) {
+                            perCharacterKills[currentPlayerName] = mapIndex >= 0 ? getCurrentKills(mapIndex) : 0;
+                        }
+                        for (const name of otherPlayers) {
+                            perCharacterKills[name] = mapIndex >= 0 ? getOtherKills(name, mapIndex) : 0;
+                        }
 
-                worlds[worldKey] = rawGroup.filter(Boolean).map((mobId) => {
-                    const mapIndex = mapIndexByMobId.get(String(mobId)) ?? -1;
-                    const required = mapIndex >= 0 ? getRequired(mapIndex) : 0;
+                        return {
+                            type: "world",
+                            mobId,
+                            mobName: getMobName(mobId),
+                            mapIndex,
+                            required,
+                            perCharacterKills,
+                        };
+                    });
+                }
 
-                    const perCharacterKills = {};
-                    if (hasRealCurrentPlayer) {
-                        perCharacterKills[currentPlayerName] = mapIndex >= 0 ? getCurrentKills(mapIndex) : 0;
-                    }
-                    for (const name of otherPlayers) {
-                        perCharacterKills[name] = mapIndex >= 0 ? getOtherKills(name, mapIndex) : 0;
-                    }
+                worlds.Miniboss = minibossIds.filter(Boolean).map((mobId, index) => ({
+                    type: "miniboss",
+                    mobId,
+                    mobName: getMobName(mobId),
+                    mobIndex: index,
+                    kills: toInt(minibossKills[index] ?? 0),
+                }));
 
-                    return {
-                        type: "world",
-                        mobId,
-                        mobName: getMobName(mobId),
-                        mapIndex,
-                        required,
-                        perCharacterKills,
-                    };
-                });
-            }
-
-            worlds.Miniboss = minibossIds.filter(Boolean).map((mobId, i) => ({
-                type: "miniboss",
-                mobId,
-                mobName: getMobName(mobId),
-                mobIndex: i,
-                kills: toInt(minibossKills[i] ?? 0),
-            }));
-
-            if (seq !== dnStore.loadSeq) return;
-
-            for (const worldKey of WORLD_LABELS) {
-                for (const mob of worlds[worldKey] ?? []) {
-                    for (const [name, kills] of Object.entries(mob.perCharacterKills)) {
-                        const key = `${mob.mobId}:${name}`;
-                        const v = String(toInt(kills));
-                        if (dnStore.killStateMap.has(key)) dnStore.killStateMap.get(key).val = v;
-                        else dnStore.killStateMap.set(key, van.state(v));
+                for (const worldKey of WORLD_LABELS) {
+                    for (const mob of worlds[worldKey] ?? []) {
+                        for (const [name, kills] of Object.entries(mob.perCharacterKills)) {
+                            const key = `${mob.mobId}:${name}`;
+                            const value = String(toInt(kills));
+                            if (dnStore.killStateMap.has(key)) dnStore.killStateMap.get(key).val = value;
+                            else dnStore.killStateMap.set(key, van.state(value));
+                        }
                     }
                 }
-            }
 
-            for (const mob of worlds.Miniboss) {
-                const key = `${mob.mobId}:_`;
-                const v = String(mob.kills);
-                if (dnStore.killStateMap.has(key)) dnStore.killStateMap.get(key).val = v;
-                else dnStore.killStateMap.set(key, van.state(v));
-            }
+                for (const mob of worlds.Miniboss) {
+                    const key = `${mob.mobId}:_`;
+                    const value = String(mob.kills);
+                    if (dnStore.killStateMap.has(key)) dnStore.killStateMap.get(key).val = value;
+                    else dnStore.killStateMap.set(key, van.state(value));
+                }
 
-            if (seq !== dnStore.loadSeq) return;
-
-            const snapshot = {
-                worlds,
-                currentPlayer: currentPlayerName,
-            };
-
-            data.val = snapshot;
+                data.val = {
+                    worlds,
+                    currentPlayer: currentPlayerName,
+                };
             }
         );
+    };
 
     if (!dnStore.didInit) {
         dnStore.didInit = true;
@@ -573,7 +566,7 @@ export const DeathNoteTab = () => {
         header: FeatureTabHeader({
             title: "DEATH NOTE",
             description: "View kill counts per character for each mob in the Death Note.",
-            actions: button({ type: "button", class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: button({ type: "button", class: "btn-secondary", disabled: loading, onclick: load }, "REFRESH"),
         }),
         body: div(
             { class: "dn-panels" },

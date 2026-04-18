@@ -145,7 +145,6 @@ export const HatRackTab = () => {
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let itemDefsCache = null;
     let scrollEl = null;
-    let loadSeq = 0;
 
     const withPreservedScroll = (fn) => {
         const prevTop = scrollEl?.scrollTop ?? 0;
@@ -173,7 +172,6 @@ export const HatRackTab = () => {
     };
 
     const load = async () => {
-        const seq = ++loadSeq;
         return runAccountLoad(
             { loading, error, label: "Hat Rack", fallbackMessage: "Failed to load hat rack data" },
             async () => {
@@ -184,14 +182,12 @@ export const HatRackTab = () => {
                 }
 
                 const rawRack = await gga(RACK_PATH);
-                if (seq !== loadSeq) return;
 
                 itemDefsCache = nextItemDefs;
                 applyRackState(rawRack);
                 data.val = { loaded: true };
             }
         ).then((result) => {
-            if (seq !== loadSeq) return result;
             if (typeof result === "undefined") data.val = null;
             return result;
         });
