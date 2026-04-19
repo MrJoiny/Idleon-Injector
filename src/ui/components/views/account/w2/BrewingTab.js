@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -193,13 +193,15 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
         if (bubblesToSet.length === 0) return;
 
         await runBulk(async () => {
-            for (const bubble of bubblesToSet) {
-                const ok = await gga(`CauldronInfo[${cauldron.index}][${bubble.index}]`, lvl);
-                if (!ok)
-                    throw new Error(
-                        `Write mismatch at CauldronInfo[${cauldron.index}][${bubble.index}]: expected ${lvl}`
-                    );
-                await new Promise((r) => setTimeout(r, 30));
+            const result = await ggaMany(
+                bubblesToSet.map((bubble) => ({
+                    path: `CauldronInfo[${cauldron.index}][${bubble.index}]`,
+                    value: lvl,
+                }))
+            );
+            const failed = result.results.filter((entry) => !entry.ok);
+            if (failed.length > 0) {
+                throw new Error(`Write mismatch at ${failed[0].path}: expected ${lvl}`);
             }
             const nextLevels = [...toIndexedArray(levels.val ?? [])];
             for (const bubble of bubblesToSet) {
@@ -361,7 +363,6 @@ export const BrewingTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        refreshError: renderRefreshErrorBanner,
-        body: renderBody,
+        body: div(renderRefreshErrorBanner, renderBody),
     });
 };

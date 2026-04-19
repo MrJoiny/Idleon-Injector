@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -67,15 +67,20 @@ export const AtomColliderTab = () => {
         await runBulk(async () => {
             const atoms = data.val.atoms;
             const expectedLevels = atoms.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
+            const writes = [];
             for (let i = 0; i < atoms.length; i++) {
-                const path = `Atoms[${i}]`;
-                const ok = await gga(path, expectedLevels[i]);
-                if (!ok) {
+                if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
+                writes.push({ path: `Atoms[${i}]`, value: expectedLevels[i] });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
                     throw new Error(
-                        `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
+                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}, got failed verification`
                     );
                 }
-                await new Promise((r) => setTimeout(r, 20));
             }
             for (let i = 0; i < atoms.length; i++) {
                 getLevelState(i).val = expectedLevels[i];

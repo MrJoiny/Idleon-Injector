@@ -617,6 +617,51 @@ exports.injectorConfig = ${new_injectorConfig};
         }
     });
 
+    app.post("/api/game/gga/write-many", async (req, res) => {
+        const { writes } = await req.json();
+        if (!Array.isArray(writes) || writes.length === 0) {
+            return res.status(400).json({ error: "Missing or invalid writes (must be a non-empty array)" });
+        }
+
+        for (const [index, entry] of writes.entries()) {
+            if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+                return res.status(400).json({ error: `Invalid write entry at index ${index}` });
+            }
+            if (!entry.path || typeof entry.path !== "string") {
+                return res.status(400).json({ error: `Invalid path at index ${index}` });
+            }
+            if (!Object.prototype.hasOwnProperty.call(entry, "value")) {
+                return res.status(400).json({ error: `Missing value at index ${index}` });
+            }
+        }
+
+        const serialized = JSON.stringify(writes);
+        if (serialized === undefined) {
+            return res.status(400).json({ error: "writes must be JSON-serializable" });
+        }
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `writeGamePaths(${serialized})`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Batch write failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Batch write: ${writes.length} paths`);
+            res.json(data);
+        } catch (err) {
+            log.error("Error in /api/game/gga/write-many:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.post("/api/open-url", async (req, res) => {
         const { url } = await req.json();
         if (!url) {

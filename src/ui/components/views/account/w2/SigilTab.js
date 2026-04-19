@@ -16,7 +16,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
@@ -167,10 +167,17 @@ export const SigilTab = () => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(setAllTier.val))));
         if (isNaN(tier)) return;
         await runSetAll(async () => {
+            const writes = [];
             for (let i = 0; i < sigilTier.length; i++) {
-                const ok = await gga(`CauldronP2W[4][${2 * i + 1}]`, tier);
-                if (!ok) throw new Error(`Write mismatch at CauldronP2W[4][${2 * i + 1}]: expected ${tier}`);
-                await new Promise((r) => setTimeout(r, 20));
+                if (Number(sigilTier[i].val) === tier) continue;
+                writes.push({ path: `CauldronP2W[4][${2 * i + 1}]`, value: tier });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${tier}`);
+                }
             }
             for (let i = 0; i < sigilTier.length; i++) {
                 sigilTier[i].val = tier;

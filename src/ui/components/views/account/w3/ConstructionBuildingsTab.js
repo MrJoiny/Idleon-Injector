@@ -14,7 +14,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -116,16 +116,23 @@ export const ConstructionBuildingsTab = () => {
         if (!data.val) return;
         await runMaxAll(async () => {
             const buildings = data.val.buildings;
+            const writes = [];
             for (let i = 0; i < BUILDING_COUNT; i++) {
                 const maxLv = buildings[i]?.maxLevel ?? 0;
-                const path = `TowerInfo[${i}]`;
-                const pathPending = `TowerInfo[${i + BUILDING_COUNT}]`;
-                const ok = await gga(path, maxLv);
-                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${maxLv}, got failed verification`);
-                const okPending = await gga(pathPending, maxLv);
-                if (!okPending)
-                    throw new Error(`Write mismatch at ${pathPending}: expected ${maxLv}, got failed verification`);
-                await new Promise((r) => setTimeout(r, 30));
+                if (toNum(levelStates[i].val) !== maxLv) {
+                    writes.push({ path: `TowerInfo[${i}]`, value: maxLv });
+                }
+                writes.push({ path: `TowerInfo[${i + BUILDING_COUNT}]`, value: maxLv });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
+                    throw new Error(
+                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}, got failed verification`
+                    );
+                }
             }
             for (let i = 0; i < BUILDING_COUNT; i++) {
                 levelStates[i].val = buildings[i]?.maxLevel ?? 0;

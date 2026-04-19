@@ -28,7 +28,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
+import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -528,10 +528,18 @@ export const PostOfficeTab = () => {
         await runBoxBulkWrite(async () => {
             const count = boxCount.val;
             const nextVals = Array.from({ length: count }, (_, i) => boxStates[i].cap.val);
+            const writes = [];
             for (let i = 0; i < count; i++) {
-                const ok = await gga(`PostOfficeInfo[3][${i}][0]`, nextVals[i]);
-                if (!ok) throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected ${nextVals[i]}`);
-                await new Promise((r) => setTimeout(r, 20));
+                if (Number(boxStates[i].current.val ?? 0) === nextVals[i]) continue;
+                writes.push({ path: `PostOfficeInfo[3][${i}][0]`, value: nextVals[i] });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}`);
+                }
             }
             for (let i = 0; i < count; i++) {
                 boxStates[i].current.val = nextVals[i];
@@ -544,10 +552,17 @@ export const PostOfficeTab = () => {
         if (boxCount.val <= 0) return;
         await runBoxBulkWrite(async () => {
             const count = boxCount.val;
+            const writes = [];
             for (let i = 0; i < count; i++) {
-                const ok = await gga(`PostOfficeInfo[3][${i}][0]`, 0);
-                if (!ok) throw new Error(`Write mismatch at PostOfficeInfo[3][${i}][0]: expected 0`);
-                await new Promise((r) => setTimeout(r, 20));
+                if (Number(boxStates[i].current.val ?? 0) === 0) continue;
+                writes.push({ path: `PostOfficeInfo[3][${i}][0]`, value: 0 });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected 0`);
+                }
             }
             for (let i = 0; i < count; i++) {
                 boxStates[i].current.val = 0;

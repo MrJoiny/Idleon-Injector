@@ -201,3 +201,47 @@ export function writePath(path, value) {
     target[prop] = value;
     return { ok: true };
 }
+
+/**
+ * Write many game values by dot/bracket path strings.
+ * Continues after failures and reports write-stage resolution/assignment errors.
+ * Read-back verification is handled by the UI helper after the batch write returns.
+ *
+ * @param {Array<{ path: string, value: any }>} writes
+ * @returns {{ ok: boolean, results: Array<{ path: string, ok: boolean, error?: string }> } | { error: string }}
+ */
+export function writePaths(writes = []) {
+    if (!Array.isArray(writes) || writes.length === 0) {
+        return { error: "writes must be a non-empty array" };
+    }
+
+    const results = writes.map((entry, index) => {
+        const path = entry?.path;
+        if (!path || typeof path !== "string") {
+            return { path: String(path ?? ""), ok: false, error: `Invalid path at index ${index}` };
+        }
+        if (!entry || !Object.prototype.hasOwnProperty.call(entry, "value")) {
+            return { path, ok: false, error: `Missing value at index ${index}` };
+        }
+
+        try {
+            const resolved = resolvePath(path);
+            if (resolved.error) return { path, ok: false, error: resolved.error };
+
+            const { target, prop } = resolved;
+            if (prop === undefined) {
+                return { path, ok: false, error: "Path must include at least one key below the root" };
+            }
+
+            target[prop] = entry.value;
+            return { path, ok: true };
+        } catch (error) {
+            return { path, ok: false, error: error?.message ?? String(error) };
+        }
+    });
+
+    return {
+        ok: results.every((result) => result.ok),
+        results,
+    };
+}

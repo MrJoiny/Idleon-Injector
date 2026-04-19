@@ -22,7 +22,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
+import { readComputed, readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -194,14 +194,20 @@ export const LibraryTab = () => {
         await runBulk(async () => {
             const cap = data.val.maxBookLv;
             const blocked = data.val.blockedLibraryTalentIds ?? new Set();
+            const writes = [];
 
             for (const group of data.val.groups) {
                 for (const t of group.talents) {
                     if (blocked.has(Number(t.talentId))) continue;
-                    const path = `SkillLevelsMAX[${t.talentId}]`;
-                    const ok = await gga(path, cap);
-                    if (!ok) throw new Error(`Write mismatch at ${path}: expected ${cap}, got failed verification`);
-                    await new Promise((r) => setTimeout(r, 20));
+                    if (toNum(getMaxState(t.talentId).val) === cap) continue;
+                    writes.push({ path: `SkillLevelsMAX[${t.talentId}]`, value: cap });
+                }
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${cap}, got failed verification`);
                 }
             }
             for (const group of data.val.groups) {
@@ -325,74 +331,6 @@ export const LibraryTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderError: (message) => {
-            if (message === "select-char") {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO CHARACTER SELECTED",
-                    subtitle: "Select a character in-game before using this tab.",
-                });
-            }
-            if (message === "No active character loaded.") {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO CHARACTER",
-                    subtitle: "No active character loaded.",
-                });
-            }
-            return EmptyState({
-                icon: Icons.SearchX(),
-                title: "LOAD FAILED",
-                subtitle: message,
-            });
-        },
-        isEmpty: (resolved) => !resolved.groups.length,
-        renderEmpty: () =>
-            EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO DATA",
-                subtitle: "No library data found for this character.",
-            }),
-        renderContent: (resolved) =>
-            div(
-                { class: "feature-list" },
-                div(
-                    { class: "talents-info-banner" },
-                    div(
-                        { class: "talents-info-banner__item" },
-                        span({ class: "talents-info-banner__label" }, "Active Class"),
-                        strong({ class: "talents-info-banner__value" }, resolved.activeClassName)
-                    )
-                ),
-                ...resolved.groups.flatMap((group) => [
-                    div(
-                        { class: "talents-group-header" },
-                        span({ class: "talents-group-header__name" }, group.className),
-                        span(
-                            { class: "talents-group-header__points" },
-                            group.availablePoints.toLocaleString(),
-                            span({ class: "talents-group-header__points-label" }, " pts")
-                        )
-                    ),
-                    ...group.talents.map((t) =>
-                        TalentRow({
-                            talentId: t.talentId,
-                            talentName: t.talentName,
-                            curState: getCurState(t.talentId),
-                            maxState: getMaxState(t.talentId),
-                            maxBookLv: resolved.maxBookLv,
-                            isBookAvailable: t.isBookAvailable,
-                            bonus: t.bonus,
-                        })
-                    ),
-                ])
-            ),
-    });
-
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "LIBRARY",
@@ -414,7 +352,7 @@ export const LibraryTab = () => {
                         label: "MAX ALL",
                         status: bulkStatus,
                         tooltip: "Set all available Library books to the current max book level",
-                        onClick: () => doMaxAll(),
+                        onClick: doMaxAll,
                     },
                 ],
                 refresh: {
@@ -422,6 +360,72 @@ export const LibraryTab = () => {
                 },
             }),
         }),
-        body: renderBody,
+        body: AsyncFeatureBody({
+            loading,
+            error,
+            data,
+            renderError: (message) => {
+                if (message === "select-char") {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO CHARACTER SELECTED",
+                        subtitle: "Select a character in-game before using this tab.",
+                    });
+                }
+                if (message === "No active character loaded.") {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO CHARACTER",
+                        subtitle: "No active character loaded.",
+                    });
+                }
+                return EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "LOAD FAILED",
+                    subtitle: message,
+                });
+            },
+            isEmpty: (resolved) => !resolved.groups.length,
+            renderEmpty: () =>
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO DATA",
+                    subtitle: "No library data found for this character.",
+                }),
+            renderContent: (resolved) =>
+                div(
+                    { class: "feature-list" },
+                    div(
+                        { class: "talents-info-banner" },
+                        div(
+                            { class: "talents-info-banner__item" },
+                            span({ class: "talents-info-banner__label" }, "Active Class"),
+                            strong({ class: "talents-info-banner__value" }, resolved.activeClassName)
+                        )
+                    ),
+                    ...resolved.groups.flatMap((group) => [
+                        div(
+                            { class: "talents-group-header" },
+                            span({ class: "talents-group-header__name" }, group.className),
+                            span(
+                                { class: "talents-group-header__points" },
+                                group.availablePoints.toLocaleString(),
+                                span({ class: "talents-group-header__points-label" }, " pts")
+                            )
+                        ),
+                        ...group.talents.map((t) =>
+                            TalentRow({
+                                talentId: t.talentId,
+                                talentName: t.talentName,
+                                curState: getCurState(t.talentId),
+                                maxState: getMaxState(t.talentId),
+                                maxBookLv: resolved.maxBookLv,
+                                isBookAvailable: t.isBookAvailable,
+                                bonus: t.bonus,
+                            })
+                        ),
+                    ])
+                ),
+        }),
     });
 };

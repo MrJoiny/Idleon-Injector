@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readGgaEntries } from "../../../../services/api.js";
+import { gga, ggaMany, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -202,12 +202,30 @@ export const StampsTab = () => {
             .filter((code) => EXALTED_CODE_REGEX.test(code))
             .sort(sortStampCodes);
 
+        const currentOrdered = [...(exaltedCodes.val ?? new Set())]
+            .map((code) =>
+                String(code ?? "")
+                    .trim()
+                    .toLowerCase()
+            )
+            .filter((code) => EXALTED_CODE_REGEX.test(code))
+            .sort(sortStampCodes);
+        const writes = [];
+
         for (let i = 0; i < ordered.length; i++) {
-            const ok = await gga(`Compass[4][${i}]`, ordered[i]);
-            if (!ok) throw new Error(`Write mismatch at Compass[4][${i}]`);
+            if (ordered[i] === currentOrdered[i]) continue;
+            writes.push({ path: `Compass[4][${i}]`, value: ordered[i] });
         }
-        const okLength = await gga("Compass[4].length", ordered.length);
-        if (!okLength) throw new Error("Write mismatch at Compass[4].length");
+        if (currentOrdered.length !== ordered.length) {
+            writes.push({ path: "Compass[4].length", value: ordered.length });
+        }
+        if (writes.length === 0) return;
+
+        const result = await ggaMany(writes);
+        const failed = result.results.filter((entry) => !entry.ok);
+        if (failed.length > 0) {
+            throw new Error(`Write mismatch at ${failed[0].path}`);
+        }
     };
 
     const load = async () =>

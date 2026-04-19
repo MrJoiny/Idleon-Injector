@@ -258,6 +258,72 @@ export async function gga(path, value) {
 }
 
 /**
+ * Write many GGA paths in one backend/CDP round-trip, then verify from the UI
+ * using follow-up reads so batch verification matches the single-write gga flow.
+ *
+ * @param {Array<{ path: string, value: any }>} writes
+ * @returns {Promise<{ ok: boolean, results: Array<{ path: string, ok: boolean, actual?: any, error?: string }> }>}
+ */
+export async function ggaMany(writes) {
+    const normalizedWrites = Array.isArray(writes)
+        ? writes.map((entry) => ({
+              path: entry.path.startsWith("gga.") ? entry.path : `gga.${entry.path}`,
+              value: entry.value,
+          }))
+        : [];
+
+    const writeResult = await _request("/game/gga/write-many", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ writes: normalizedWrites }),
+    });
+
+    const results = await Promise.all(
+        normalizedWrites.map(async (entry, index) => {
+            const writeEntry = writeResult?.results?.[index];
+            if (!writeEntry?.ok) {
+                return {
+                    path: writeEntry?.path ?? entry.path,
+                    ok: false,
+                    error: writeEntry?.error ?? "Batch write failed",
+                };
+            }
+
+            try {
+                const verifiedData = await _request("/game/gga/read", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path: entry.path }),
+                });
+                const actual = verifiedData.value;
+                const matches = matchesVerifiedValue(entry.value, actual);
+
+                if (!matches) {
+                    console.error(
+                        `[ggaMany] Write mismatch at ${entry.path}: expected ${JSON.stringify(entry.value)}, got ${JSON.stringify(actual)}`
+                    );
+                    return { path: entry.path, ok: false, actual, error: "Write mismatch" };
+                }
+
+                return { path: entry.path, ok: true, actual };
+            } catch (error) {
+                console.error(`[ggaMany] Verification failed at ${entry.path}:`, error);
+                return {
+                    path: entry.path,
+                    ok: false,
+                    error: error?.message ?? String(error),
+                };
+            }
+        })
+    );
+
+    return {
+        ok: results.every((result) => result.ok),
+        results,
+    };
+}
+
+/**
  * Read a computed value from a game helper family.
  * Example: readComputed("workbench", "ExtraMaxLvAtom", [baseMax, index])
  *

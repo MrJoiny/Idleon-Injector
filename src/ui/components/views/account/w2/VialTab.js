@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -104,10 +104,15 @@ export const VialTab = () => {
         if (vials.length === 0) return;
 
         await runBulk(async () => {
-            for (const v of vials) {
-                const ok = await gga(`CauldronInfo[4][${v.index}]`, lvl);
-                if (!ok) throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}`);
-                await new Promise((r) => setTimeout(r, 30));
+            const writes = vials
+                .filter((v) => Number(getLevelState(v.index).val ?? 0) !== lvl)
+                .map((v) => ({ path: `CauldronInfo[4][${v.index}]`, value: lvl }));
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${lvl}`);
+                }
             }
             for (const v of vials) {
                 getLevelState(v.index).val = lvl;

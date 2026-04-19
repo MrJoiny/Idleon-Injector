@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -71,15 +71,20 @@ export const SaltLickTab = () => {
             const expectedLevels = upgrades.map((u) =>
                 toLevelInt(targetLevel === null ? u.maxLevel : targetLevel, u.maxLevel)
             );
+            const writes = [];
             for (let i = 0; i < upgrades.length; i++) {
-                const path = `SaltLick[${i}]`;
-                const ok = await gga(path, expectedLevels[i]);
-                if (!ok) {
+                if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
+                writes.push({ path: `SaltLick[${i}]`, value: expectedLevels[i] });
+            }
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
                     throw new Error(
-                        `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
+                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}, got failed verification`
                     );
                 }
-                await new Promise((r) => setTimeout(r, 20));
             }
             for (let i = 0; i < upgrades.length; i++) {
                 getLevelState(i).val = expectedLevels[i];

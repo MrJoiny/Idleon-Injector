@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
+import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -219,10 +219,15 @@ export const ArcadeTab = () => {
         if (isNaN(lvl)) return;
 
         await runBulkSetAll(async () => {
-            for (const entry of entries) {
-                const ok = await gga(`ArcadeUpg[${entry.index}]`, lvl);
-                if (!ok) throw new Error(`Write mismatch at ArcadeUpg[${entry.index}]: expected ${lvl}`);
-                await new Promise((r) => setTimeout(r, 20));
+            const writes = entries
+                .filter((entry) => Number(entry.levelState.val ?? 0) !== lvl)
+                .map((entry) => ({ path: `ArcadeUpg[${entry.index}]`, value: lvl }));
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.filter((entry) => !entry.ok);
+                if (failed.length > 0) {
+                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${lvl}`);
+                }
             }
             for (const entry of entries) {
                 entry.levelState.val = lvl;

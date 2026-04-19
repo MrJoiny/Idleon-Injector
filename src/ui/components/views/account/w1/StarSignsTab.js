@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
@@ -73,6 +73,8 @@ const normalizeNumber = (value, fallback = 0) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
 };
+
+const normalizeClaimed = (value) => Math.round(normalizeNumber(value, 0));
 
 const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
     The_Buff_Guy: 1,
@@ -309,6 +311,26 @@ const StarSignCard = ({ sign, onClick }) => {
     );
 };
 
+const getClaimedRewardTotal = (list) =>
+    list.reduce(
+        (total, sign) => total + (normalizeClaimed(sign.claimed) ? normalizeNumber(sign.rewardPoints, 0) : 0),
+        0
+    );
+
+const syncActiveSign = (activeSign, nextSigns) => {
+    if (!activeSign.val) return;
+    const updated = nextSigns.find((sign) => sign.index === activeSign.val.index);
+    if (updated) activeSign.val = { ...updated };
+};
+
+const ensureBatchWriteSuccess = (result) => {
+    const failed = result?.results?.filter((entry) => !entry.ok) ?? [];
+    if (!failed.length) return;
+
+    const failedPaths = failed.map((entry) => entry.path || "<unknown path>");
+    throw new Error(`Batch write failed: ${failedPaths.join(", ")}`);
+};
+
 // ── StarSignsTab ──────────────────────────────────────────────────────────
 
 export const StarSignsTab = () => {
@@ -322,29 +344,10 @@ export const StarSignsTab = () => {
     const isAnyLoading = () =>
         unlockStatus.val === "loading" || randomStatus.val === "loading" || resetStatus.val === "loading";
 
-    const writeAndVerifyClaimed = async (index, claimed) => {
-        const expected = claimed ? 1 : 0;
-        const path = `StarSignProg[${index}][1]`;
-        const ok = await gga(path, expected);
-        if (!ok) throw new Error(`Write mismatch at ${path}`);
-    };
-
     const writeAndVerifyOptions40 = async (total) => {
         const expected = normalizeNumber(total, 0);
         const path = "OptionsListAccount[40]";
         const ok = await gga(path, expected);
-        if (!ok) throw new Error(`Write mismatch at ${path}`);
-    };
-
-    const applyPointsDeltaAndVerify = async (delta) => {
-        const current = normalizeNumber(await gga("OptionsListAccount[40]"), 0);
-        const next = current + normalizeNumber(delta, 0);
-        await writeAndVerifyOptions40(next);
-    };
-
-    const resetStarSignsUnlockedToDefault = async () => {
-        const path = "StarSignsUnlocked.h";
-        const ok = await gga(path, { ...DEFAULT_UNLOCKED_STAR_SIGNS });
         if (!ok) throw new Error(`Write mismatch at ${path}`);
     };
 
@@ -373,7 +376,7 @@ export const StarSignsTab = () => {
                         desc: cleanDesc(q[7]),
                         playersNeeded,
                         rewardPoints: normalizeNumber(q[6], 0),
-                        claimed: Math.round(normalizeNumber(prog[i]?.[1], 0)),
+                        claimed: normalizeClaimed(prog[i]?.[1]),
                         players,
                         unlocked: isUnlockedByProgress(players, playersNeeded),
                         usernames,
@@ -396,30 +399,27 @@ export const StarSignsTab = () => {
             const wasUnlocked = Boolean(prevSign.unlocked);
             const isUnlocked = Boolean(updatedSign.unlocked);
             if (!wasUnlocked && isUnlocked) {
-                await writeAndVerifyClaimed(index, 1);
-                await applyPointsDeltaAndVerify(normalizeNumber(updatedSign.rewardPoints, 0));
+                const claimedPath = `StarSignProg[${index}][1]`;
+                const okClaimed = await gga(claimedPath, 1);
+                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
+                await writeAndVerifyOptions40(
+                    getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 1 } : sign)))
+                );
                 updatedSign.claimed = 1;
             } else if (wasUnlocked && !isUnlocked) {
-                await writeAndVerifyClaimed(index, 0);
-                await applyPointsDeltaAndVerify(-normalizeNumber(updatedSign.rewardPoints, 0));
+                const claimedPath = `StarSignProg[${index}][1]`;
+                const okClaimed = await gga(claimedPath, 0);
+                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
+                await writeAndVerifyOptions40(
+                    getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 0 } : sign)))
+                );
                 updatedSign.claimed = 0;
             } else {
-                updatedSign.claimed = Math.round(normalizeNumber(prevSign.claimed, 0));
+                updatedSign.claimed = normalizeClaimed(prevSign.claimed);
             }
         }
         signs.val = nextSigns;
-        // Also update detail sign
-        if (activeSign.val?.index === index) {
-            const nextPlayers = parseProgress(progress);
-            activeSign.val = {
-                ...activeSign.val,
-                players: nextPlayers,
-                unlocked: isUnlockedByProgress(nextPlayers, activeSign.val.playersNeeded),
-                rewardPoints: activeSign.val.rewardPoints ?? updatedSign?.rewardPoints ?? 0,
-                claimed: updatedSign?.claimed ?? activeSign.val.claimed ?? 0,
-                usernames: activeSign.val?.usernames ?? [],
-            };
-        }
+        syncActiveSign(activeSign, nextSigns);
     };
 
     load();
@@ -427,24 +427,34 @@ export const StarSignsTab = () => {
     const resetAll = async () => {
         if (!signs.val) return;
         await runReset(async () => {
-            const list = signs.val;
-            for (const sign of list) {
-                const progressPath = `StarSignProg[${sign.index}][0]`;
-                const claimedPath = `StarSignProg[${sign.index}][1]`;
-                const okProgress = await gga(progressPath, "");
-                if (!okProgress) throw new Error(`Write mismatch at ${progressPath}`);
-                await new Promise((r) => setTimeout(r, 40));
-                const okClaimed = await gga(claimedPath, 0);
-                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
-                await new Promise((r) => setTimeout(r, 40));
-            }
-            await writeAndVerifyOptions40(0);
-            await resetStarSignsUnlockedToDefault();
-            const nextSigns = list.map((s) => ({ ...s, players: [], unlocked: false, claimed: 0 }));
-            signs.val = nextSigns;
-            if (activeSign.val) {
-                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
-                if (updated) activeSign.val = { ...updated };
+            try {
+                const list = signs.val;
+                const nextSigns = list.map((sign) => ({ ...sign, players: [], unlocked: false, claimed: 0 }));
+                const writes = [];
+
+                for (const sign of list) {
+                    if ((sign.players?.length ?? 0) > 0) {
+                        writes.push({ path: `StarSignProg[${sign.index}][0]`, value: "" });
+                    }
+                    if (normalizeClaimed(sign.claimed) !== 0) {
+                        writes.push({ path: `StarSignProg[${sign.index}][1]`, value: 0 });
+                    }
+                }
+
+                if (getClaimedRewardTotal(list) !== 0) {
+                    writes.push({ path: "OptionsListAccount[40]", value: 0 });
+                }
+
+                writes.push({ path: "StarSignsUnlocked.h", value: { ...DEFAULT_UNLOCKED_STAR_SIGNS } });
+
+                const result = await ggaMany(writes);
+                ensureBatchWriteSuccess(result);
+
+                signs.val = nextSigns;
+                syncActiveSign(activeSign, nextSigns);
+            } catch (error) {
+                await load();
+                throw error;
             }
         });
     };
@@ -453,40 +463,46 @@ export const StarSignsTab = () => {
         if (!signs.val) return;
         const runFn = randomize ? runRandom : runUnlock;
         await runFn(async () => {
-            const list = signs.val;
-            const nextSigns = [];
-            for (const sign of list) {
-                const needed = sign.playersNeeded;
-                const pool = [...Array(10).keys()].map((n) => n + 1); // [1..10]
-                if (randomize) {
-                    // Fisher-Yates shuffle
-                    for (let i = pool.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [pool[i], pool[j]] = [pool[j], pool[i]];
+            try {
+                const list = signs.val;
+                const writes = [];
+                const nextSigns = list.map((sign) => {
+                    const pool = [...Array(10).keys()].map((n) => n + 1);
+                    if (randomize) {
+                        for (let i = pool.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [pool[i], pool[j]] = [pool[j], pool[i]];
+                        }
                     }
+
+                    const players = pool.slice(0, sign.playersNeeded);
+                    const progress = encodeProgress(players);
+                    if (progress !== encodeProgress(sign.players)) {
+                        writes.push({ path: `StarSignProg[${sign.index}][0]`, value: progress });
+                    }
+                    if (normalizeClaimed(sign.claimed) !== 1) {
+                        writes.push({ path: `StarSignProg[${sign.index}][1]`, value: 1 });
+                    }
+
+                    return { ...sign, players, unlocked: true, claimed: 1 };
+                });
+
+                const currentTotal = getClaimedRewardTotal(list);
+                const nextTotal = getClaimedRewardTotal(nextSigns);
+                if (nextTotal !== currentTotal) {
+                    writes.push({ path: "OptionsListAccount[40]", value: nextTotal });
                 }
-                const players = pool.slice(0, needed);
-                const str = encodeProgress(players);
-                const progressPath = `StarSignProg[${sign.index}][0]`;
-                const okProgress = await gga(progressPath, str);
-                if (!okProgress) throw new Error(`Write mismatch at ${progressPath}`);
-                await new Promise((r) => setTimeout(r, 40));
-                nextSigns.push({ ...sign, players, unlocked: true, claimed: 1 });
-            }
-            let totalDelta = 0;
-            for (const sign of list) {
-                if (Math.round(normalizeNumber(sign.claimed, 0)) === 0) {
-                    totalDelta += normalizeNumber(sign.rewardPoints, 0);
+
+                if (writes.length > 0) {
+                    const result = await ggaMany(writes);
+                    ensureBatchWriteSuccess(result);
                 }
-                await writeAndVerifyClaimed(sign.index, 1);
-            }
-            if (totalDelta !== 0) {
-                await applyPointsDeltaAndVerify(totalDelta);
-            }
-            signs.val = nextSigns;
-            if (activeSign.val) {
-                const updated = nextSigns.find((s) => s.index === activeSign.val.index);
-                if (updated) activeSign.val = { ...updated };
+
+                signs.val = nextSigns;
+                syncActiveSign(activeSign, nextSigns);
+            } catch (error) {
+                await load();
+                throw error;
             }
         });
     };
