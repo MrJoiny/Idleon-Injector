@@ -157,7 +157,7 @@ export const OrionTab = () => {
             title: "ORION",
             description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
             actions: withTooltip(
-                button({ class: "btn-secondary", onclick: () => load() }, "REFRESH"),
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
                 "Re-read Orion data from game"
             ),
         }),
@@ -172,11 +172,19 @@ export const OrionTab = () => {
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent - keep between 30-40."
         ),
-        loading,
-        error,
-        renderLoading: () => div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" }))),
-        renderError: (message) =>
-            div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: message })),
-        body: rowList,
+        body: div(
+            () =>
+                loading.val
+                    ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" })))
+                    : null,
+            () =>
+                error.val
+                    ? div(
+                          { class: "feature-list" },
+                          EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
+                      )
+                    : null,
+            rowList
+        ),
     });
 };

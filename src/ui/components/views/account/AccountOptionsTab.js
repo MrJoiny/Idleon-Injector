@@ -16,6 +16,7 @@ import { withTooltip } from "../../Tooltip.js";
 import { gga } from "../../../services/api.js";
 import { useWriteStatus } from "./featureShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
+import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
 
@@ -103,8 +104,10 @@ export const AccountOptionsTab = () => {
 
         return AccountPageShell({
             rootClass: "account-sub-tab-pane-inner feature-tab-frame",
-            title: "ACCOUNT OPTIONS",
-            description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
+            header: FeatureTabHeader({
+                title: "ACCOUNT OPTIONS",
+                description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
+            }),
             topNotices: div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
             subNav: div(
                 { class: "control-bar sticky-header" },
@@ -133,26 +136,28 @@ export const AccountOptionsTab = () => {
                     })
                 )
             ),
-            loading: () => ui.awaitingInitialLoad || store.app.isLoading,
-            isEmpty: () => ui.displayList.length === 0,
-            renderLoading: () => div({ id: "options-account-content", class: "options-account-content" }, div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }))),
-            renderEmpty: () =>
-                div(
-                    { id: "options-account-content", class: "options-account-content" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO OPTIONS MATCH",
-                        subtitle: "Adjust your filter or search term",
-                    })
-                ),
-            renderBody: () =>
-                div(
-                    { id: "options-account-content", class: "options-account-content" },
-                    vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
-                        const { index, val, schema } = itemState.val;
-                        return OptionItem(index, val, schema);
-                    })
-                ),
+            body: () =>
+                ui.awaitingInitialLoad || store.app.isLoading
+                    ? div(
+                          { id: "options-account-content", class: "options-account-content" },
+                          div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }))
+                      )
+                    : ui.displayList.length === 0
+                      ? div(
+                            { id: "options-account-content", class: "options-account-content" },
+                            EmptyState({
+                                icon: Icons.SearchX(),
+                                title: "NO OPTIONS MATCH",
+                                subtitle: "Adjust your filter or search term",
+                            })
+                        )
+                      : div(
+                            { id: "options-account-content", class: "options-account-content" },
+                            vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
+                                const { index, val, schema } = itemState.val;
+                                return OptionItem(index, val, schema);
+                            })
+                        ),
         });
     });
 };

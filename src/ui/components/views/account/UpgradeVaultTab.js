@@ -17,14 +17,13 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany, readCList } from "../../../services/api.js";
-import { Loader } from "../../Loader.js";
-import { EmptyState } from "../../EmptyState.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
+import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
 import { runAccountLoad } from "./accountLoadPolicy.js";
-import { cleanName, toNum } from "./featureShared.js";
+import { AsyncFeatureBody, cleanName, toNum } from "./featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -130,44 +129,42 @@ export const UpgradeVaultTab = () => {
 
     load();
 
+    const renderBody = AsyncFeatureBody({
+        loading,
+        error,
+        data,
+        isEmpty: (resolved) => resolved.upgrades.length === 0,
+        renderContent: (resolved) =>
+            div(
+                { class: "feature-list" },
+                ...resolved.upgrades.map((upgrade) =>
+                    VaultRow({
+                        index: upgrade.index,
+                        name: upgrade.name,
+                        baseMax: upgrade.baseMax,
+                        realMax: upgrade.realMax,
+                        levelState: getLevelState(upgrade.index),
+                    })
+                )
+            ),
+    });
+
     return AccountPageShell({
-        title: "UPGRADE VAULT",
-        description:
-            "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
-        actions: withTooltip(button({ class: "btn-secondary", onclick: load }, "REFRESH"), "Re-read vault levels from game memory"),
+        header: FeatureTabHeader({
+            title: "UPGRADE VAULT",
+            description:
+                "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+            actions: withTooltip(
+                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                "Re-read vault levels from game memory"
+            ),
+        }),
         topNotices: div(
             { class: "warning-banner" },
             Icons.Warning(),
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
                 "SET accepts any value ≥ 0 — no hard upper limit enforced."
         ),
-        loading,
-        error,
-        isEmpty: () => !data.val || data.val.upgrades.length === 0,
-        renderLoading: () => div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING VAULT" }))),
-        renderError: (message) =>
-            div({ class: "feature-list" }, EmptyState({ icon: Icons.SearchX(), title: "VAULT READ FAILED", subtitle: message })),
-        renderEmpty: () =>
-            div(
-                { class: "feature-list" },
-                EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO VAULT DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                })
-            ),
-        renderBody: () =>
-            div(
-                { class: "feature-list" },
-                ...data.val.upgrades.map((u) =>
-                    VaultRow({
-                        index: u.index,
-                        name: u.name,
-                        baseMax: u.baseMax,
-                        realMax: u.realMax,
-                        levelState: getLevelState(u.index),
-                    })
-                )
-            ),
+        body: renderBody,
     });
 };
