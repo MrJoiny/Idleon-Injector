@@ -29,7 +29,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, h3, input } = van.tags;
@@ -177,8 +177,7 @@ const stateLabel = (state) => {
 };
 
 export const CogsTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Cogs" });
 
     const selectedSlot = van.state(0);
     const activeSlot = van.state(null);
@@ -243,13 +242,7 @@ export const CogsTab = () => {
     };
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Cogs",
-            },
-            async () => {
+        run(async () => {
             const [rawUnlock, rawCaps, rawFlags, rawCogOrder, rawCogMap] = await Promise.all([
                 gga("FlagUnlock"),
                 readCList("FlagReqs"),
@@ -289,8 +282,7 @@ export const CogsTab = () => {
                 void refreshActiveCogName(activeSlot.val);
                 syncTinyInputsFromSlot(activeSlot.val);
             }
-        }
-        );
+        });
 
     const setSlotLockState = async (index, unlock) => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;

@@ -32,7 +32,7 @@ import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/ap
 import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
@@ -364,8 +364,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
 };
 
 export const PostOfficeTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Post Office" });
     const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
 
     // ── Per-shipment states (created once, updated in-place) ───────────────
@@ -418,13 +417,7 @@ export const PostOfficeTab = () => {
 
     // ── Load ───────────────────────────────────────────────────────────────
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Post Office",
-            },
-            async () => {
+        run(async () => {
                 const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
                     gga("PostOfficeInfo"),
                     gga("CurrenciesOwned"),
@@ -507,8 +500,7 @@ export const PostOfficeTab = () => {
                 opt131.val = nextOpt131;
                 boxPoints.val = nextBoxPoints;
                 recomputeSummary();
-            }
-        );
+        });
 
     load();
 

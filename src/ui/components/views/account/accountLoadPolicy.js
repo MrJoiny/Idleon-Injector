@@ -1,3 +1,5 @@
+import van from "../../../vendor/van-1.6.0.js";
+
 /**
  * Shared account-page load helpers.
  *
@@ -25,59 +27,34 @@ const getFallbackMessage = (label, fallbackMessage) => {
 };
 
 /**
- * Standard load handler for account pages that only use `loading` and `error`.
+ * Hook that owns account-page load state and runs a load task with standard
+ * loading/error transitions and page-level logging.
  *
- * @param {{
+ * @param {{ label?: string, fallbackMessage?: string }} [opts]
+ * @returns {{
  *   loading: import('../../../vendor/van-1.6.0.js').State<boolean>,
  *   error: import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   label?: string,
- *   fallbackMessage?: string,
- * }} states
- * @param {() => Promise<any>} task
- * @returns {Promise<any|undefined>}
+ *   run: (task: () => Promise<any>) => Promise<any|undefined>,
+ * }}
  */
-export const runAccountLoad = async ({ loading, error, label = "Account page", fallbackMessage }, task) => {
-    loading.val = true;
-    error.val = null;
+export const useAccountLoadState = ({ label = "Account page", fallbackMessage } = {}) => {
+    const loading = van.state(true);
+    const error = van.state(null);
 
-    try {
-        return await task();
-    } catch (caughtError) {
-        logLoadFailure(label, "load", caughtError);
-        error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
-        return undefined;
-    } finally {
-        loading.val = false;
-    }
-};
+    const run = async (task) => {
+        loading.val = true;
+        error.val = null;
 
-/**
- * Standard load handler for persistent-pane account pages.
- * The shell owns first-success visibility state; tabs only manage loading/error.
- *
- * @param {{
- *   loading: import('../../../vendor/van-1.6.0.js').State<boolean>,
- *   error: import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   label?: string,
- *   fallbackMessage?: string,
- * }} states
- * @param {() => Promise<any>} task
- * @returns {Promise<any|undefined>}
- */
-export const runPersistentAccountLoad = async (
-    { loading, error, label = "Account page", fallbackMessage },
-    task
-) => {
-    loading.val = true;
-    error.val = null;
-    try {
-        return await task();
-    } catch (caughtError) {
-        logLoadFailure(label, "load", caughtError);
+        try {
+            return await task();
+        } catch (caughtError) {
+            logLoadFailure(label, "load", caughtError);
+            error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
+            return undefined;
+        } finally {
+            loading.val = false;
+        }
+    };
 
-        error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
-        return undefined;
-    } finally {
-        loading.val = false;
-    }
+    return { loading, error, run };
 };

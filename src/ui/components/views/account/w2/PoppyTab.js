@@ -12,7 +12,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -82,25 +82,17 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
     });
 
 export const PoppyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Poppy" });
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Poppy",
-            },
-            async () => {
-                const keys = ALL_FIELDS.map((f) => String(f.index));
-                const results = await readGgaEntries("OptionsListAccount", keys);
-                for (const f of ALL_FIELDS) {
-                    fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
-                }
+        run(async () => {
+            const keys = ALL_FIELDS.map((f) => String(f.index));
+            const results = await readGgaEntries("OptionsListAccount", keys);
+            for (const f of ALL_FIELDS) {
+                fieldStates.get(f.index).val = results[String(f.index)] ?? 0;
             }
-        );
+        });
 
     const onWrite = async (index, value) => {
         return gga(`OptionsListAccount[${index}]`, value);

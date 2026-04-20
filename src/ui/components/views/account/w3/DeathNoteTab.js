@@ -42,7 +42,7 @@ import {
     writeVerified,
 } from "../featureShared.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
@@ -313,8 +313,7 @@ const WorldPanel = ({ worldKey, loading, error, data, getPaneStore, reconcilePan
 // ── DeathNoteTab ──────────────────────────────────────────────────────────────
 
 export const DeathNoteTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Death Note" });
     const data = van.state(null);
 
     const getKillState = (mobId, playerName) => {
@@ -356,13 +355,7 @@ export const DeathNoteTab = () => {
     };
 
     const load = async () => {
-        return runAccountLoad(
-            {
-                loading,
-                error,
-                label: "Death Note",
-            },
-            async () => {
+        return run(async () => {
                 const [
                     rawDeathNoteMobs,
                     rawMapTargets,
@@ -503,8 +496,7 @@ export const DeathNoteTab = () => {
                     worlds,
                     currentPlayer: currentPlayerName,
                 };
-            }
-        );
+        });
     };
 
     if (!dnStore.didInit) {

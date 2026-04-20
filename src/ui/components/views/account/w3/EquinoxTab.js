@@ -30,7 +30,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -221,8 +221,7 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
 // ── EquinoxTab ────────────────────────────────────────────────────────────────
 
 export const EquinoxTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Equinox" });
 
     // Bar — top-level reactive states, always updated in-place
     const barFillState = van.state(0);
@@ -311,13 +310,7 @@ export const EquinoxTab = () => {
     // ── Full load ─────────────────────────────────────────────────────────────
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Equinox",
-            },
-            async () => {
+        run(async () => {
             const [rawDream, rawDreamUpg, rawDreamChallenge, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] =
                 await Promise.all([
                     gga("Dream"),
@@ -393,8 +386,7 @@ export const EquinoxTab = () => {
             }
 
             updateCloudEntries(visibleIndexes, weeklyBossMap, nextDreamChallengeArr);
-        }
-        );
+        });
 
     load();
 

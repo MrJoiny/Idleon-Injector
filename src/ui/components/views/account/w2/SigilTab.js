@@ -19,7 +19,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -114,8 +114,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
 // ── SigilTab ───────────────────────────────────────────────────────────────
 
 export const SigilTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Sigils" });
 
     // Per-sigil states — created once, updated in-place on every load.
     const sigilTier = Array.from({ length: 24 }, () => van.state(-1));
@@ -128,13 +127,7 @@ export const SigilTab = () => {
     // ── Load ───────────────────────────────────────────────────────────────
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Sigils",
-            },
-            async () => {
+        run(async () => {
             const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);
 
             // Fill tier values from CauldronP2W[4][2*i + 1]
@@ -150,8 +143,7 @@ export const SigilTab = () => {
                 const raw = String(entry[0] ?? "").trim();
                 sigilName[i].val = raw ? raw.replace(/_/g, " ").toUpperCase() : `#${i}`;
             }
-        }
-        );
+        });
 
     load();
 

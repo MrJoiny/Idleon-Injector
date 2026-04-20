@@ -16,7 +16,7 @@ import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -216,8 +216,7 @@ const SmithyRow = ({ row, onRemove }) => {
 };
 
 export const SmithyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Smithy" });
     const data = van.state(null);
     const currentStoredSetKeys = van.state([]);
     const smithyRows = van.state([]);
@@ -254,9 +253,7 @@ export const SmithyTab = () => {
     };
 
     const load = async () => {
-        return runAccountLoad(
-            { loading, error, label: "Smithy" },
-            async () => {
+        return run(async () => {
                 const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] =
                     await Promise.all([
                         readWithFallback(EQUIP_SETS_PATHS),
@@ -274,8 +271,7 @@ export const SmithyTab = () => {
                     rawEquippedExtra,
                 });
                 data.val = { loaded: true };
-            }
-        ).then((result) => {
+        }).then((result) => {
             if (typeof result === "undefined") data.val = null;
             return result;
         });

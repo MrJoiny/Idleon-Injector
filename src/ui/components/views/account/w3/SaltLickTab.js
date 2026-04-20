@@ -17,7 +17,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -53,8 +53,7 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
     });
 
 export const SaltLickTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Salt Lick" });
     const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
@@ -93,9 +92,7 @@ export const SaltLickTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Salt Lick" },
-            async () => {
+        run(async () => {
                 const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
 
                 const defs = toIndexedArray(rawDefs ?? []);
@@ -116,8 +113,7 @@ export const SaltLickTab = () => {
                 });
 
                 data.val = { upgrades };
-            }
-        );
+        });
 
     load();
 

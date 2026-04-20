@@ -24,7 +24,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
@@ -135,8 +135,7 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
     });
 
 export const WorshipTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Worship" });
     const data = van.state(null);
 
     const activeCharacterNameRef = van.state(null);
@@ -176,9 +175,7 @@ export const WorshipTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Worship" },
-            async () => {
+        run(async () => {
                 const rawNames = await gga("GetPlayersUsernames");
                 const playerNames = toIndexedArray(rawNames ?? []).filter(
                     (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
@@ -234,8 +231,7 @@ export const WorshipTab = () => {
                     getWaveState(index).val = wave;
                 });
                 data.val = { players, towerRows };
-            }
-        );
+        });
 
     load();
 

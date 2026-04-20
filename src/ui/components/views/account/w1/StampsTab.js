@@ -28,7 +28,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
@@ -185,8 +185,7 @@ const StampRow = ({
 export const StampsTab = () => {
     const activePage = van.state(0);
     const gameData = van.state(null);
-    const loading = van.state(false);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Stamps" });
     const exaltedCodes = van.state(new Set());
     const exaltedBusy = van.state(false);
 
@@ -227,7 +226,7 @@ export const StampsTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Stamps" }, async () => {
+        run(async () => {
             const [levels, maxLevels, rawExaltedCodes] = await Promise.all([
                 gga("StampLevel"),
                 gga("StampLevelMAX"),

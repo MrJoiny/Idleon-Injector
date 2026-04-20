@@ -21,7 +21,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -68,20 +68,13 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
 // ── ConstructionBuildingsTab ───────────────────────────────────────────────
 
 export const ConstructionBuildingsTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Construction Buildings" });
     const data = van.state(null);
     const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
 
     const load = async () =>
-        runAccountLoad(
-            {
-                loading,
-                error,
-                label: "Construction Buildings",
-            },
-            async () => {
+        run(async () => {
                 const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
                 const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
@@ -109,8 +102,7 @@ export const ConstructionBuildingsTab = () => {
                 }
 
                 data.val = { buildings };
-            }
-        );
+        });
 
     const doMaxAll = async () => {
         if (!data.val) return;

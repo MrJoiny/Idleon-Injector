@@ -18,7 +18,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
@@ -73,25 +73,17 @@ const ForgeRow = ({ upgrade, levelState }) =>
 
 export const ForgeTab = () => {
     const activePage = van.state(0);
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Forge" });
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Forge",
-            },
-            async () => {
+        run(async () => {
             const raw = await gga("FurnaceLevels");
             const levels = toIndexedArray(raw);
             for (let i = 0; i < levelStates.length; i++) {
                 levelStates[i].val = Number(levels[i] ?? 0);
             }
-        }
-        );
+        });
 
     load();
 

@@ -25,7 +25,7 @@ import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/ap
 import { NumberInput } from "../../../NumberInput.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus, writeVerified } from "../featureShared.js";
@@ -105,8 +105,7 @@ const ArcadeCard = ({ entry }) => {
 };
 
 export const ArcadeTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Arcade" });
     const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
 
     const normalBalls = van.state("0");
@@ -120,18 +119,12 @@ export const ArcadeTab = () => {
     const upgradeEntries = van.state([]);
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Arcade",
-            },
-            async () => {
-                const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
-                    readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
-                    readCList("ArcadeShopInfo"),
-                    gga("ArcadeUpg"),
-                ]);
+        run(async () => {
+            const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
+                readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
+                readCList("ArcadeShopInfo"),
+                gga("ArcadeUpg"),
+            ]);
 
                 normalBalls.val = String(rawOptions?.["74"] ?? 0);
                 goldenBalls.val = String(rawOptions?.["75"] ?? 0);
@@ -167,11 +160,10 @@ export const ArcadeTab = () => {
                     return;
                 }
 
-                parsed.forEach((item, i) => {
-                    existing[i].levelState.val = item.level;
-                });
-            }
-        );
+            parsed.forEach((item, i) => {
+                existing[i].levelState.val = item.level;
+            });
+        });
 
     const doSetBall = async (ballType, valueState) => {
         const configByType = {

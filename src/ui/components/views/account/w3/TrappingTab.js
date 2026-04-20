@@ -28,7 +28,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import {
     adjustFormattedIntInput,
     AsyncFeatureBody,
@@ -342,8 +342,7 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
 };
 
 export const TrappingTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Trapping" });
     const data = van.state(null);
 
     const valueStates = new Map();
@@ -394,7 +393,7 @@ export const TrappingTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Trapping" }, async () => {
+        run(async () => {
             const [rawNames, rawCurrentPlayer, rawPlayerDb, rawItemDefs, rawMonsterDefs] = await Promise.all([
                 gga("GetPlayersUsernames"),
                 gga("UserInfo[0]"),

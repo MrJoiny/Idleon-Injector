@@ -18,7 +18,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -51,8 +51,7 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
     });
 
 export const AtomColliderTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Atom Collider" });
     const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
@@ -89,9 +88,7 @@ export const AtomColliderTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Atom Collider" },
-            async () => {
+        run(async () => {
                 const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
                 const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
                 const computedResults = await readComputedMany(
@@ -124,8 +121,7 @@ export const AtomColliderTab = () => {
                 });
 
                 data.val = { atoms };
-            }
-        );
+        });
 
     load();
 

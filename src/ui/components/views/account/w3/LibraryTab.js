@@ -30,7 +30,7 @@ import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -169,8 +169,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
 // ── LibraryTab ───────────────────────────────────────────────────────────────
 
 export const LibraryTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Library" });
     const data = van.state(null);
     const maxBookLvHeader = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -220,9 +219,7 @@ export const LibraryTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Library" },
-            async () => {
+        run(async () => {
             const [
                 rawUserInfo,
                 rawCharClass,

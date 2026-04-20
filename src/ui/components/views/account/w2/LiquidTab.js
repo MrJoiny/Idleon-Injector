@@ -24,7 +24,7 @@ import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -169,8 +169,7 @@ const LiquidColumn = ({ liquid, states }) =>
 // ── LiquidTab ─────────────────────────────────────────────────────────────
 
 export const LiquidTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Liquid" });
 
     // Per-liquid reactive states — created once, updated in-place on refresh.
     // Columns are never rebuilt; only their internal bindings react.
@@ -181,13 +180,7 @@ export const LiquidTab = () => {
     }));
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Liquid",
-            },
-            async () => {
+        run(async () => {
             const raw = await gga("CauldronInfo");
             const amounts = toIndexedArray(raw?.[6] ?? []);
             const upgradesRaw = toIndexedArray(raw?.[8] ?? []);
@@ -200,8 +193,7 @@ export const LiquidTab = () => {
                 liquidStates[i].cap.val = Number(capRow[1] ?? 0);
                 liquidStates[i].rate.val = Number(rateRow[1] ?? 0);
             });
-        }
-        );
+        });
 
     load();
 

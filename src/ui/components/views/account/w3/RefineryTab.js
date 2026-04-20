@@ -16,7 +16,7 @@ import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -158,16 +158,13 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
 // ── RefineryTab ────────────────────────────────────────────────────────────
 
 export const RefineryTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Refinery" });
     const data = van.state(null);
     const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
     const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Refinery" },
-            async () => {
+        run(async () => {
                 const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
                 const [raw, nameEntries] = await Promise.all([
                     gga("Refinery"),
@@ -193,8 +190,7 @@ export const RefineryTab = () => {
                 }
 
                 data.val = { names };
-            }
-        );
+        });
 
     load();
 

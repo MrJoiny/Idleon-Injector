@@ -22,7 +22,7 @@ import { withTooltip } from "../../Tooltip.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
-import { runAccountLoad } from "./accountLoadPolicy.js";
+import { useAccountLoadState } from "./accountLoadPolicy.js";
 import { AsyncFeatureBody, cleanName, toNum, writeVerified } from "./featureShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
@@ -65,8 +65,7 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
 
 export const UpgradeVaultTab = () => {
     const data = van.state(null); // { upgrades: [{ index, name, baseMax, realMax }] }
-    const loading = van.state(false);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Upgrade Vault" });
     const levelStates = [];
 
     const getLevelState = (index) => {
@@ -75,9 +74,7 @@ export const UpgradeVaultTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Upgrade Vault" },
-            async () => {
+        run(async () => {
             const [rawInfo, rawLevels, rawBonU] = await Promise.all([
                 readCList("UpgradeVault"),
                 gga("UpgVault"),
@@ -116,8 +113,7 @@ export const UpgradeVaultTab = () => {
             });
 
             data.val = { upgrades };
-        }
-        );
+        });
 
     load();
 

@@ -32,7 +32,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -144,8 +144,7 @@ const KillroyAirhornRow = ({ valueState }) => {
 };
 
 export const KillroyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Killroy" });
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
@@ -162,13 +161,7 @@ export const KillroyTab = () => {
     const getPbLabelState = (key) => pbLabelStates.get(key);
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Killroy",
-            },
-            async () => {
+        run(async () => {
             const optionKeys = Array.from(
                 new Set([...FIELD_INDEXES, ...PB_TOME_FIELDS.map((f) => f.scoreIndex)].map((idx) => String(idx)))
             );
@@ -274,8 +267,7 @@ export const KillroyTab = () => {
             } else if (!nextAllowedMobs.some((mob) => mob.mobId === addMobId.val)) {
                 addMobId.val = nextAllowedMobs[0].mobId;
             }
-        }
-        );
+        });
 
     const sortedBestRows = () => {
         const rows = [...(bestByMob.val ?? [])];

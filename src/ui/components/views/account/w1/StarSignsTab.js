@@ -25,7 +25,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -327,8 +327,7 @@ const ensureBatchWriteSuccess = (result) => {
 
 export const StarSignsTab = () => {
     const signs = van.state(null); // array of sign objects
-    const loading = van.state(false);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Star Signs" });
     const activeSign = van.state(null); // sign object being edited
     const { status: unlockStatus, run: runUnlock } = useWriteStatus();
     const { status: randomStatus, run: runRandom } = useWriteStatus();
@@ -343,7 +342,7 @@ export const StarSignsTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Star Signs" }, async () => {
+        run(async () => {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
                 readCList("StarQuests"),
                 gga("StarSignProg"),

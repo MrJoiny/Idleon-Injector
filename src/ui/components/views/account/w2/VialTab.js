@@ -17,7 +17,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -51,8 +51,7 @@ const VialRow = ({ vial, levelState }) =>
     });
 
 export const VialTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Vials" });
     const vialDefs = van.state([]);
     const setAllInput = van.state("13");
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -64,7 +63,7 @@ export const VialTab = () => {
     };
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Vials" }, async () => {
+        run(async () => {
             const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
                 gga("CauldronInfo"),
                 readCList("AlchemyDescription"),

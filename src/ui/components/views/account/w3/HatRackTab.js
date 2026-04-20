@@ -13,7 +13,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, cleanName, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -124,8 +124,7 @@ const RackRow = ({ row, onRemove }) => {
 };
 
 export const HatRackTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Hat Rack" });
     const data = van.state(null);
     const currentRackIds = van.state([]);
     const rackRows = van.state([]);
@@ -168,9 +167,7 @@ export const HatRackTab = () => {
     };
 
     const load = async () => {
-        return runAccountLoad(
-            { loading, error, label: "Hat Rack" },
-            async () => {
+        return run(async () => {
                 let nextItemDefs = itemDefsCache;
                 if (!nextItemDefs) {
                     const defs = await gga(ITEM_DEFS_PATH);
@@ -182,8 +179,7 @@ export const HatRackTab = () => {
                 itemDefsCache = nextItemDefs;
                 applyRackState(rawRack);
                 data.val = { loaded: true };
-            }
-        ).then((result) => {
+        }).then((result) => {
             if (typeof result === "undefined") data.val = null;
             return result;
         });

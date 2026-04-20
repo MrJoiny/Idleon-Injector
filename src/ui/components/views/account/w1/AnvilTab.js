@@ -17,7 +17,7 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { writeVerified } from "../featureShared.js";
 
@@ -70,25 +70,17 @@ const AnvilRow = ({ category, valueState, onWriteApplied }) =>
     });
 
 export const AnvilTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Anvil" });
     const statStates = Array.from({ length: 6 }, () => van.state(0));
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Anvil",
-            },
-            async () => {
-                const raw = await gga("AnvilPAstats");
-                const arr = toIndexedArray(raw);
-                for (let i = 0; i < statStates.length; i++) {
-                    statStates[i].val = Number(arr[i] ?? 0);
-                }
+        run(async () => {
+            const raw = await gga("AnvilPAstats");
+            const arr = toIndexedArray(raw);
+            for (let i = 0; i < statStates.length; i++) {
+                statStates[i].val = Number(arr[i] ?? 0);
             }
-        );
+        });
 
     const refreshRemainingPoints = async () => {
         // Keep "Points Remaining" fresh without forcing a list rebuild.

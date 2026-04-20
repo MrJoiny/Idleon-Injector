@@ -15,7 +15,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -160,11 +160,10 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
 
 export const StatuesTab = () => {
     const data = van.state(null);
-    const loading = van.state(false);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Statues" });
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Statues" }, async () => {
+        run(async () => {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readCList("StatueInfo"),
                 gga("StatueLevels"),

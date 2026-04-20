@@ -34,7 +34,7 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
@@ -84,13 +84,12 @@ const OrionRow = ({ field, fieldState, onWrite }) =>
 // ── OrionTab ──────────────────────────────────────────────────────────────
 
 export const OrionTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Orion" });
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
 
     const load = async () =>
-        runAccountLoad({ loading, error, label: "Orion" }, async () => {
+        run(async () => {
             const keys = ALL_FIELDS.map((f) => String(f.index));
             const results = await readGgaEntries("OptionsListAccount", keys);
             for (const f of ALL_FIELDS) {

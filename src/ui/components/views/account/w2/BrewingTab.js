@@ -19,7 +19,7 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -250,8 +250,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
 };
 
 export const BrewingTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Brewing" });
     const data = van.state(null);
     const setAllInput = van.state("50000");
 
@@ -260,14 +259,12 @@ export const BrewingTab = () => {
     const prismaSet = van.state(new Set());
 
     const load = async () =>
-        runAccountLoad(
-            { loading, error, label: "Brewing" },
-            async () => {
-                const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
-                    gga("CauldronInfo"),
-                    gga("OptionsListAccount[384]"),
-                    readCList("AlchemyDescription"),
-                ]);
+        run(async () => {
+            const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
+                gga("CauldronInfo"),
+                gga("OptionsListAccount[384]"),
+                readCList("AlchemyDescription"),
+            ]);
 
                 const nextPrismaSet = parsePrisma(rawPrismaStr);
                 const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
@@ -299,9 +296,8 @@ export const BrewingTab = () => {
                     cauldronLevels.get(c.id).val = nextLevelsById.get(c.id);
                     bubbleDefs.get(c.id).val = nextDefsById.get(c.id);
                 });
-                data.val = CAULDRONS;
-            }
-        );
+            data.val = CAULDRONS;
+        });
 
     load();
     const renderBody = AsyncFeatureBody({

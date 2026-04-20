@@ -33,7 +33,7 @@ import { gga, readComputedMany } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
+import { useAccountLoadState } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { useWriteStatus, writeVerified } from "../featureShared.js";
 
@@ -143,8 +143,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
 // ── Pay2WinTab ─────────────────────────────────────────────────────────────
 
 export const Pay2WinTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoadState({ label: "Pay 2 Win" });
 
     // ── Value & max states — created once, updated in-place ───────────────
 
@@ -171,13 +170,7 @@ export const Pay2WinTab = () => {
     // ── Load ───────────────────────────────────────────────────────────────
 
     const load = async () =>
-        runPersistentAccountLoad(
-            {
-                loading,
-                error,
-                label: "Pay 2 Win",
-            },
-            async () => {
+        run(async () => {
             const [rawP2W, rawDraconic] = await Promise.all([gga("CauldronP2W"), gga("OptionsListAccount[123]")]);
             const p2w = toIndexedArray(rawP2W ?? []);
             const brew0 = toIndexedArray(p2w[0] ?? []);
@@ -268,8 +261,7 @@ export const Pay2WinTab = () => {
                 playerMax[e].val = nextPlayerMax[e];
             }
             draconicVal.val = draconic;
-        }
-        );
+        });
 
     load();
 
