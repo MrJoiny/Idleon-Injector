@@ -19,7 +19,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady } from "../featureShared.js";
+import { usePersistentPaneReady, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -41,8 +41,7 @@ const AnvilRow = ({ category, valueState, onSetApplied }) =>
         },
         write: async (nextValue) => {
             const path = `AnvilPAstats[${category.index}]`;
-            const ok = await gga(path, nextValue);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await writeVerified(path, nextValue);
             await onSetApplied?.(category.index, nextValue);
             return valueState.val ?? nextValue;
         },

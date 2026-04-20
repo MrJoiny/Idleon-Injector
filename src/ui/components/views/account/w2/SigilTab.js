@@ -21,7 +21,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -56,8 +56,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
         if (isNaN(tier)) return;
         await run(async () => {
             const path = `CauldronP2W[4][${2 * index + 1}]`;
-            const ok = await gga(path, tier);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${tier}`);
+            await writeVerified(path, tier, { message: `Write mismatch at ${path}: expected ${tier}` });
             tierState.val = tier;
         });
     };

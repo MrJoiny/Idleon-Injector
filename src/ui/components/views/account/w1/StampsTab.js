@@ -30,7 +30,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -90,10 +90,8 @@ const StampRow = ({
         await run(async () => {
             const levelPath = `StampLevel[${page}][${order}]`;
             const maxPath = `StampLevelMAX[${page}][${order}]`;
-            const okLevel = await gga(levelPath, lvl);
-            if (!okLevel) throw new Error(`Write mismatch at ${levelPath}`);
-            const okMax = await gga(maxPath, maxLvl);
-            if (!okMax) throw new Error(`Write mismatch at ${maxPath}`);
+            await writeVerified(levelPath, lvl);
+            await writeVerified(maxPath, maxLvl);
             inputVal.val = String(lvl);
             levelDisplay.val = lvl;
             maxLevelDisplay.val = maxLvl;

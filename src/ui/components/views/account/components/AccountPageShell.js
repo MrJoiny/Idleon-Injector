@@ -5,13 +5,10 @@ import { EmptyState } from "../../../EmptyState.js";
 import { resolveValue } from "../featureShared.js";
 const { div } = van.tags;
 
-const renderNode = (renderer, arg = undefined) => {
-    if (typeof renderer === "function") return renderer(arg);
-    return renderer ?? null;
-};
-
 /**
  * Shared account page wrapper with standard async-state rendering.
+ * `body` is a normal Van child and may itself be a reactive function child.
+ * The shell must pass it through as-is rather than invoking it.
  */
 export const AccountPageShell = ({
     header,
@@ -77,6 +74,6 @@ export const AccountPageShell = ({
             subNav,
             refreshNotice,
             initialState,
-            renderNode(body)
+            body
         );
     })();

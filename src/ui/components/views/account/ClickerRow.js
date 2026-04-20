@@ -3,7 +3,7 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { formatNumber } from "../../../utils/numberFormat.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
-import { largeFormatter, largeParser, resolveNumberInput } from "./featureShared.js";
+import { largeFormatter, largeParser, resolveNumberInput, writeVerified } from "./featureShared.js";
 
 const { span } = van.tags;
 
@@ -28,9 +28,10 @@ export const ClickerRow = ({
         valueState: fieldState,
         normalize: (rawValue) => parseInputValue(rawValue),
         write: async (nextValue) => {
-            const ok = await onWrite(field.index, nextValue);
-            if (!ok) throw new Error(getWriteMismatchMessage(field.index, nextValue));
-            return nextValue;
+            return writeVerified(`OptionsListAccount[${field.index}]`, nextValue, {
+                write: (_path, value) => onWrite(field.index, value),
+                message: () => getWriteMismatchMessage(field.index, nextValue),
+            });
         },
         renderInfo: () => [
             span({ class: "feature-row__name" }, field.label),

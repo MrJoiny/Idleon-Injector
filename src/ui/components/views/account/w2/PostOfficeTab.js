@@ -37,7 +37,7 @@ import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -63,8 +63,7 @@ const PONumField = ({ label, valueState, writePath }) => {
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
         await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
             valueState.val = val;
         });
     };
@@ -110,8 +109,7 @@ const POToggleField = ({ valueState, writePath }) => {
     const doToggle = async () => {
         const next = valueState.val ? 0 : 1;
         await run(async () => {
-            const ok = await gga(writePath, next);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${next}`);
+            await writeVerified(writePath, next, { message: `Write mismatch at ${writePath}: expected ${next}` });
             valueState.val = next;
         });
     };
@@ -241,8 +239,7 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
         const val = Math.max(0, Math.round(Number(inputVal.val)));
         if (isNaN(val)) return;
         await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
             valueState.val = val;
             if (typeof onAfterWrite === "function") onAfterWrite();
         });
@@ -317,9 +314,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
         await run(
             async () => {
                 const path = `PostOfficeInfo[3][${box.index}][0]`;
-                const ok = await gga(path, val);
-                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${val}`);
-                return val;
+                return writeVerified(path, val, { message: `Write mismatch at ${path}: expected ${val}` });
             },
             {
                 onSuccess: (verified) => {

@@ -23,7 +23,7 @@ import { EditableNumberRow } from "./EditableNumberRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
 import { runAccountLoad } from "./accountLoadPolicy.js";
-import { AsyncFeatureBody, cleanName, toNum } from "./featureShared.js";
+import { AsyncFeatureBody, cleanName, toNum, writeVerified } from "./featureShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
 const { div, button, span } = van.tags;
@@ -41,9 +41,7 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
         },
         write: async (nextLevel) => {
             const path = `UpgVault[${index}]`;
-            const ok = await gga(path, nextLevel);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
-            return nextLevel;
+            return writeVerified(path, nextLevel);
         },
         renderInfo: () => [
             span({ class: "feature-row__name" }, name),

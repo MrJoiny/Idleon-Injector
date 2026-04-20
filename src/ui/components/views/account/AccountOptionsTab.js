@@ -14,7 +14,7 @@ import { NumberInput } from "../../NumberInput.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { gga } from "../../../services/api.js";
-import { useWriteStatus } from "./featureShared.js";
+import { useWriteStatus, writeVerified } from "./featureShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
 
@@ -178,8 +178,7 @@ const OptionItem = (index, rawVal, schema) => {
             else if (type === "object") val = JSON.parse(val);
 
             const path = `OptionsListAccount[${index}]`;
-            const ok = await gga(path, val);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await writeVerified(path, val);
             store.data.accountOptions[index] = val;
             currentVal.val = valueToDisplay(type, val);
         });

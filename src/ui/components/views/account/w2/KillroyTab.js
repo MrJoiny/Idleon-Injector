@@ -34,7 +34,7 @@ import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { joinClasses, resolveValue, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { joinClasses, resolveValue, toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
@@ -102,11 +102,8 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
     return EditableNumberRow({
         valueState,
         normalize,
-        write: async (nextValue) => {
-            const ok = await gga(writePath, nextValue);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextValue}`);
-            return nextValue;
-        },
+        write: async (nextValue) =>
+            writeVerified(writePath, nextValue, { message: `Write mismatch at ${writePath}: expected ${nextValue}` }),
         renderInfo: () => span({ class: "feature-row__name" }, labelText),
         renderBadge: (currentValue) =>
             typeof getBadgeText === "function" ? getBadgeText(currentValue) : String(currentValue),
@@ -125,8 +122,7 @@ const KillroyAirhornRow = ({ valueState }) => {
         const next = toNum(valueState.val, 0) === 0 ? 1 : 0;
         await run(async () => {
             const path = `OptionsListAccount[${AIRHORN_INDEX}]`;
-            const ok = await gga(path, next);
-            if (!ok) throw new Error(`Airhorn toggle mismatch: expected ${next}`);
+            await writeVerified(path, next, { message: `Airhorn toggle mismatch: expected ${next}` });
             valueState.val = next;
         });
     };
@@ -312,8 +308,7 @@ export const KillroyTab = () => {
         if (!mobId || !Number.isFinite(kills)) return;
         await runAddEntry(async () => {
             const path = `KRbest.h[${mobId}]`;
-            const ok = await gga(path, kills);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${kills}`);
+            await writeVerified(path, kills, { message: `Write mismatch at ${path}: expected ${kills}` });
             const mobLabel = allowedMobs.val.find((m) => m.mobId === mobId)?.mobName ?? mobId;
             const nextRows = [...(bestByMob.val ?? [])];
             const existingIndex = nextRows.findIndex((row) => row.mobKey === mobId);

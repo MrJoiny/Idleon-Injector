@@ -21,7 +21,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -84,9 +84,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         await run(
             async () => {
                 const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
-                const ok = await gga(path, lvl);
-                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
-                return lvl;
+                return writeVerified(path, lvl, { message: `Write mismatch at ${path}: expected ${lvl}` });
             },
             {
                 onSuccess: (verified) => {
@@ -106,8 +104,9 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
             const next = new Set(prismaSet.val ?? new Set());
             next.has(code) ? next.delete(code) : next.add(code);
             const encoded = encodePrisma(next);
-            const ok = await gga("OptionsListAccount[384]", encoded);
-            if (!ok) throw new Error(`Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`);
+            await writeVerified("OptionsListAccount[384]", encoded, {
+                message: `Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`,
+            });
             prismaSet.val = next;
         });
     };

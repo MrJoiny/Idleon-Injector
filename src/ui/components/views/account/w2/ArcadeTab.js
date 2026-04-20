@@ -28,7 +28,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 const ARCADE_LEVEL_MAX = 101;
@@ -55,8 +55,7 @@ const ArcadeCard = ({ entry }) => {
 
         await run(async () => {
             const path = `ArcadeUpg[${entry.index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
+            await writeVerified(path, lvl, { message: `Write mismatch at ${path}: expected ${lvl}` });
             entry.levelState.val = lvl;
             inputVal.val = String(lvl);
         });
@@ -196,9 +195,7 @@ export const ArcadeTab = () => {
         await config.writer.run(
             async () => {
                 const path = `OptionsListAccount[${config.index}]`;
-                const ok = await gga(path, numVal);
-                if (!ok) throw new Error(`Write mismatch at ${path}: expected ${numVal}`);
-                return numVal;
+                return writeVerified(path, numVal, { message: `Write mismatch at ${path}: expected ${numVal}` });
             },
             {
                 onSuccess: (verified) => {

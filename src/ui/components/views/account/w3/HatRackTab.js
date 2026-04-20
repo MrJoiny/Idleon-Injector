@@ -15,7 +15,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, cleanName, unwrapH, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, cleanName, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -194,11 +194,9 @@ export const HatRackTab = () => {
         const baseRack = normalizeRackIds(currentRack);
         for (let i = 0; i < items.length; i++) {
             try {
-                const ok = await gga(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
-                if (!ok)
-                    throw new Error(
-                        `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`
-                    );
+                await writeVerified(`${RACK_PATH}[${baseRack.length + i}]`, items[i], {
+                    message: `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`,
+                });
             } catch (e) {
                 const msg = `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`;
                 writeWarning.val = msg;
@@ -206,8 +204,9 @@ export const HatRackTab = () => {
             }
         }
         try {
-            const ok = await gga(`${RACK_PATH}.length`, baseRack.length + items.length);
-            if (!ok) throw new Error("Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.");
+            await writeVerified(`${RACK_PATH}.length`, baseRack.length + items.length, {
+                message: "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.",
+            });
         } catch (e) {
             const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
@@ -226,8 +225,7 @@ export const HatRackTab = () => {
             nextRack.splice(index, 1);
             writeWarning.val = null;
             try {
-                const ok = await gga(RACK_PATH, nextRack);
-                if (!ok) throw new Error("Write verification failed");
+                await writeVerified(RACK_PATH, nextRack, { message: "Write verification failed" });
             } catch (e) {
                 const msg = "Failed updating rack after removal. Rack may be inconsistent. Press REFRESH to resync.";
                 writeWarning.val = msg;

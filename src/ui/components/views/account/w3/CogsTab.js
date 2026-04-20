@@ -30,7 +30,7 @@ import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
-import { toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, h3, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
@@ -301,8 +301,7 @@ export const CogsTab = () => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;
         await runLockWrite(async () => {
             const unlockPath = `FlagUnlock[${index}]`;
-            const unlockOk = await gga(unlockPath, next);
-            if (!unlockOk) throw new Error(`Write mismatch at ${unlockPath}: expected ${next}`);
+            await writeVerified(unlockPath, next, { message: `Write mismatch at ${unlockPath}: expected ${next}` });
             slotValues[index].val = next;
 
             // If a flag is placed on this slot, clear its FlagsPlaced entry to prevent
@@ -312,8 +311,7 @@ export const CogsTab = () => {
                 const pos = arr.findIndex((v) => toNum(v) === index);
                 if (pos >= 0) {
                     const flagPath = `FlagsPlaced[${pos}]`;
-                    const flagOk = await gga(flagPath, -1);
-                    if (!flagOk) throw new Error(`Write mismatch at ${flagPath}: expected -1`);
+                    await writeVerified(flagPath, -1, { message: `Write mismatch at ${flagPath}: expected -1` });
                     const newRaw = [...arr];
                     newRaw[pos] = -1;
                     flagsRaw.val = newRaw;
@@ -333,8 +331,9 @@ export const CogsTab = () => {
         const writeVal = numVal !== null ? numVal : rawValue;
         await runCogMapWrite(async () => {
             const writePath = `CogMap[${cogIdx}].h.${field}`;
-            const ok = await gga(writePath, writeVal);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${writeVal}`);
+            await writeVerified(writePath, writeVal, {
+                message: `Write mismatch at ${writePath}: expected ${writeVal}`,
+            });
             cogMapStats[index].val = { ...cogMapStats[index].val, [field]: writeVal };
         });
     };
@@ -356,8 +355,9 @@ export const CogsTab = () => {
             const newId = `CogSm${normalizedType}${normalizedTier}`;
 
             const cogOrderPath = `CogOrder[${slot}]`;
-            const ok = await gga(cogOrderPath, newId);
-            if (!ok) throw new Error(`Write mismatch at ${cogOrderPath}: expected ${newId}`);
+            await writeVerified(cogOrderPath, newId, {
+                message: `Write mismatch at ${cogOrderPath}: expected ${newId}`,
+            });
             cogOrders[index].val = newId;
             tinyTypeInput.val = TINY_COG_TYPES.has(normalizedType) ? normalizedType : "_";
             tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(normalizedTier) ? normalizedTier : 0)));

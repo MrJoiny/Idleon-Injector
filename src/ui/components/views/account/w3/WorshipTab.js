@@ -30,7 +30,7 @@ import { FeatureRow } from "../components/FeatureRow.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -167,16 +167,12 @@ export const WorshipTab = () => {
 
         const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        const ok = await gga(writePath, nextCharge);
-        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextCharge}`);
-        return nextCharge;
+        return writeVerified(writePath, nextCharge, { message: `Write mismatch at ${writePath}: expected ${nextCharge}` });
     };
 
     const writeWave = async (waveIndex, nextWave) => {
         const writePath = `TotemInfo[0][${waveIndex}]`;
-        const ok = await gga(writePath, nextWave);
-        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextWave}`);
-        return nextWave;
+        return writeVerified(writePath, nextWave, { message: `Write mismatch at ${writePath}: expected ${nextWave}` });
     };
 
     const load = async () =>

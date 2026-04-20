@@ -32,7 +32,7 @@ import { FeatureRow } from "../components/FeatureRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, span, strong } = van.tags;
 
@@ -139,9 +139,9 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
         normalize: (rawValue) => Math.max(0, Math.min(maxBookLv, toNum(rawValue))),
         write: async (nextLevel) => {
             const path = `SkillLevelsMAX[${talentId}]`;
-            const ok = await gga(path, nextLevel);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
-            return nextLevel;
+            return writeVerified(path, nextLevel, {
+                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
+            });
         },
         renderInfo: () => [
             span({ class: "feature-row__index" }, talentId),

@@ -18,7 +18,7 @@ import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -285,9 +285,9 @@ export const SmithyTab = () => {
         writeWarning.val = null;
         const expectedSetKeys = normalizeStoredSetKeys(setKeys);
         try {
-            const ok = await gga(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
-            if (!ok)
-                throw new Error("Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.");
+            await writeVerified(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys), {
+                message: "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.",
+            });
         } catch (e) {
             const msg = "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;

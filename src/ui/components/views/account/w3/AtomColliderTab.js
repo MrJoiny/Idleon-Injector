@@ -22,7 +22,7 @@ import { runAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, span } = van.tags;
 
@@ -35,9 +35,9 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
         },
         write: async (nextLevel) => {
             const path = `Atoms[${index}]`;
-            const ok = await gga(path, nextLevel);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
-            return nextLevel;
+            return writeVerified(path, nextLevel, {
+                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
+            });
         },
         renderInfo: () => [
             span({ class: "feature-row__index" }, index + 1),

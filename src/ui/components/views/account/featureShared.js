@@ -15,6 +15,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
+import { gga } from "../../../services/api.js";
 import { Icons } from "../../../assets/icons.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
@@ -178,6 +179,17 @@ export const usePersistentPaneReady = () => {
         paneClass: (baseClass, hiddenClass = "is-hidden-until-ready") =>
             `${baseClass}${initialized.val ? "" : ` ${hiddenClass}`}`,
     };
+};
+
+/**
+ * Write a value through gga (or a compatible writer) and fail if verification
+ * reports a mismatch.
+ */
+export const writeVerified = async (path, value, { write = gga, message = null } = {}) => {
+    const ok = await write(path, value);
+    if (ok) return value;
+
+    throw new Error(typeof message === "function" ? message(path, value) : (message ?? `Write mismatch at ${path}`));
 };
 
 // ── useWriteStatus ─────────────────────────────────────────────────────────

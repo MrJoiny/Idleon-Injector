@@ -17,7 +17,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -52,12 +52,9 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
             const levelPath = `StatueLevels[${index}][0]`;
             const depPath = `StatueLevels[${index}][1]`;
             const tierPath = `StatueG[${index}]`;
-            const okLvl = await gga(levelPath, lvl);
-            if (!okLvl) throw new Error(`Write mismatch at ${levelPath}`);
-            const okDep = await gga(depPath, dep);
-            if (!okDep) throw new Error(`Write mismatch at ${depPath}`);
-            const okTier = await gga(tierPath, tier);
-            if (!okTier) throw new Error(`Write mismatch at ${tierPath}`);
+            await writeVerified(levelPath, lvl);
+            await writeVerified(depPath, dep);
+            await writeVerified(tierPath, tier);
 
             levelDisplay.val = lvl;
             depositedDisplay.val = dep;

@@ -20,7 +20,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady } from "../featureShared.js";
+import { usePersistentPaneReady, writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -55,9 +55,7 @@ const ForgeRow = ({ upgrade, levelState }) =>
         },
         write: async (nextLevel) => {
             const path = `FurnaceLevels[${upgrade.index}]`;
-            const ok = await gga(path, nextLevel);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
-            return nextLevel;
+            return writeVerified(path, nextLevel);
         },
         renderInfo: () => span({ class: "feature-row__name" }, upgrade.label),
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${upgrade.max}`,

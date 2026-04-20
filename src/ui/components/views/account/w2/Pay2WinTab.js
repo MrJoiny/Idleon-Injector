@@ -35,7 +35,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -91,8 +91,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         const max = Number(maxState.val);
         const val = max > 0 ? Math.min(max, parsed) : parsed;
         await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
             valueState.val = val;
             inputVal.val = String(val);
         });

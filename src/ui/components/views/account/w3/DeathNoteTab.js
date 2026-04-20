@@ -39,6 +39,7 @@ import {
     toInt,
     unwrapH,
     useWriteStatus,
+    writeVerified,
 } from "../featureShared.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
@@ -169,16 +170,14 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
             const dbPath = playerDbKillsLeftPath(playerName, mob.mapIndex);
 
             if (isCurrentPlayer) {
-                const liveOk = await gga(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
-                if (!liveOk) {
-                    throw new Error(
-                        `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`
-                    );
-                }
+                await writeVerified(liveKillsLeftPath(mob.mapIndex), newKillsLeft, {
+                    message: `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`,
+                });
             }
 
-            const dbOk = await gga(dbPath, newKillsLeft);
-            if (!dbOk) throw new Error(`Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`);
+            await writeVerified(dbPath, newKillsLeft, {
+                message: `Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`,
+            });
             return num;
         },
         onWriteError: (error, num) => {
@@ -242,9 +241,7 @@ const MinibossRow = ({ mob, killState }) =>
         renderInfo: () => div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, mob.mobName)),
         write: async (num) => {
             const path = `Ninja[105][${mob.mobIndex}]`;
-            const ok = await gga(path, num);
-            if (!ok) throw new Error(`Death Note write mismatch at ${path}: expected ${num}`);
-            return num;
+            return writeVerified(path, num, { message: `Death Note write mismatch at ${path}: expected ${num}` });
         },
     });
 
@@ -359,8 +356,6 @@ export const DeathNoteTab = () => {
     };
 
     const load = async () => {
-        if (loading.val) return undefined;
-
         return runAccountLoad(
             {
                 loading,

@@ -26,7 +26,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -92,8 +92,7 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
         const val = mode === "float" ? Math.max(0, roundTo2(raw)) : Math.max(0, Math.round(Number(raw)));
         if (isNaN(val)) return;
         await run(async () => {
-            const ok = await gga(writePath, val);
-            if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${val}`);
+            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
             valueState.val = val;
             inputVal.val = String(val);
         });

@@ -23,7 +23,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -41,12 +41,12 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
         write: async (nextLevel) => {
             const path = `TowerInfo[${index}]`;
             const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
-            const ok = await gga(path, nextLevel);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${nextLevel}, got failed verification`);
-            const okPending = await gga(pathPending, nextLevel);
-            if (!okPending)
-                throw new Error(`Write mismatch at ${pathPending}: expected ${nextLevel}, got failed verification`);
-            return nextLevel;
+            await writeVerified(path, nextLevel, {
+                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
+            });
+            return writeVerified(pathPending, nextLevel, {
+                message: `Write mismatch at ${pathPending}: expected ${nextLevel}, got failed verification`,
+            });
         },
         renderInfo: () => [
             span({ class: "feature-row__index" }, index + 1),

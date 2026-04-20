@@ -18,7 +18,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -51,8 +51,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
         if (isNaN(n)) return;
         await run(async () => {
             const path = `Refinery[${gameIndex}][${field}]`;
-            const ok = await gga(path, n);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${n}, got failed verification`);
+            await writeVerified(path, n, { message: `Write mismatch at ${path}: expected ${n}, got failed verification` });
             if (field === 1) {
                 levelState.val = n;
             } else {

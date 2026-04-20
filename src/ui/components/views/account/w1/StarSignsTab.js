@@ -27,7 +27,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toInt, toNum, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -146,8 +146,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         await run(async () => {
             const str = encodeProgress(players.val);
             const path = `StarSignProg[${sign.index}][0]`;
-            const ok = await gga(path, str);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
+            await writeVerified(path, str);
             await onSave?.({ index: sign.index, progress: str });
         });
     };
@@ -340,8 +339,7 @@ export const StarSignsTab = () => {
     const writeAndVerifyOptions40 = async (total) => {
         const expected = toNum(total, 0);
         const path = "OptionsListAccount[40]";
-        const ok = await gga(path, expected);
-        if (!ok) throw new Error(`Write mismatch at ${path}`);
+        await writeVerified(path, expected);
     };
 
     const load = async () =>
@@ -393,16 +391,14 @@ export const StarSignsTab = () => {
             const isUnlocked = Boolean(updatedSign.unlocked);
             if (!wasUnlocked && isUnlocked) {
                 const claimedPath = `StarSignProg[${index}][1]`;
-                const okClaimed = await gga(claimedPath, 1);
-                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
+                await writeVerified(claimedPath, 1);
                 await writeAndVerifyOptions40(
                     getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 1 } : sign)))
                 );
                 updatedSign.claimed = 1;
             } else if (wasUnlocked && !isUnlocked) {
                 const claimedPath = `StarSignProg[${index}][1]`;
-                const okClaimed = await gga(claimedPath, 0);
-                if (!okClaimed) throw new Error(`Write mismatch at ${claimedPath}`);
+                await writeVerified(claimedPath, 0);
                 await writeAndVerifyOptions40(
                     getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 0 } : sign)))
                 );

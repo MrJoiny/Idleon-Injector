@@ -32,7 +32,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { toInt, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toInt, toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -103,8 +103,9 @@ const CloudRow = ({ entry }) => {
     const doComplete = async () => {
         await run(async () => {
             const path = `WeeklyBoss.h.d_${entry.cloudIndex}`;
-            const ok = await gga(path, entry.required);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${entry.required}, got failed verification`);
+            await writeVerified(path, entry.required, {
+                message: `Write mismatch at ${path}: expected ${entry.required}, got failed verification`,
+            });
             entry.progressState.val = entry.required;
         });
     };
@@ -162,8 +163,9 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
         await run(async () => {
             // Dream[0] and Dream[1] are reserved; upgrades start at Dream[2]
             const path = `Dream[${entry.index + 2}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
+            await writeVerified(path, lvl, {
+                message: `Write mismatch at ${path}: expected ${lvl}, got failed verification`,
+            });
             entry.levelState.val = lvl;
             inputVal.val = String(lvl);
             // BarFillReq and cloud visibility depend on upgrade levels
@@ -242,8 +244,9 @@ export const EquinoxTab = () => {
         fillBarRun(async () => {
             const req = barFillReqState.val;
             if (!req) return;
-            const ok = await gga("Dream[0]", req);
-            if (!ok) throw new Error(`Write mismatch at Dream[0]: expected ${req}, got failed verification`);
+            await writeVerified("Dream[0]", req, {
+                message: `Write mismatch at Dream[0]: expected ${req}, got failed verification`,
+            });
             barFillState.val = req;
         });
 

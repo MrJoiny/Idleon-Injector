@@ -39,6 +39,7 @@ import {
     toInt,
     unwrapH,
     useWriteStatus,
+    writeVerified,
 } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
@@ -384,14 +385,12 @@ export const TrappingTab = () => {
 
     const onWriteField = async (playerName, trapIndex, fieldIndex, value, isCurrentPlayer) => {
         if (isCurrentPlayer) {
-            const liveOk = await gga(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value);
-            if (!liveOk)
-                throw new Error(`Write mismatch at PlacedTraps[${trapIndex}][${fieldIndex}]: expected ${value}`);
+            await writeVerified(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value, {
+                message: `Write mismatch at PlacedTraps[${trapIndex}][${fieldIndex}]: expected ${value}`,
+            });
         }
         const dbPath = `${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`;
-        const ok = await gga(dbPath, value);
-        if (!ok) throw new Error(`Write mismatch at ${dbPath}: expected ${value}`);
-        return value;
+        return writeVerified(dbPath, value, { message: `Write mismatch at ${dbPath}: expected ${value}` });
     };
 
     const load = async () =>
