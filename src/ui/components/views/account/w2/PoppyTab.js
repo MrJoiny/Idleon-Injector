@@ -12,12 +12,11 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { largeFormatter, largeParser, usePersistentPaneReady } from "../featureShared.js";
+import { usePersistentPaneReady } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -71,49 +70,17 @@ const TAR_PIT_FIELDS = [
 
 const ALL_FIELDS = [...PINNED_FIELDS, ...CORE_FIELDS, ...SPIRAL_FIELDS, ...TAR_PIT_FIELDS];
 
-const PoppyRow = ({ field, fieldState, onWrite }) => {
-    const isFormatted = field.formatted || field.float;
-    const isFloat = field.float;
-    const step = isFloat ? 0.1 : 1;
-
-    const resolveNum = (raw) => {
-        if (isFormatted) {
-            const n = parseNumber(raw);
-            if (n !== null) return isFloat ? n : Math.round(n);
-        }
-        const n = Number(raw);
-        return isNaN(n) ? null : isFloat ? n : Math.round(n);
-    };
-
-    return EditableNumberRow({
-        valueState: fieldState,
-        normalize: (rawValue) => resolveNum(rawValue),
-        write: async (nextValue) => {
-            const ok = await onWrite(field.index, nextValue);
-            if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]: expected ${nextValue}`);
-            return nextValue;
-        },
-        renderInfo: () => [
-            span({ class: "feature-row__name" }, field.label),
-            field.warn ? span({ class: "poppy-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null,
-        ],
-        renderBadge: (currentValue) => {
-            if (currentValue === undefined) return "-";
-            return isFormatted ? formatNumber(currentValue) : String(currentValue);
-        },
-        rowClass: () => (field.warn ? "feature-row--warn" : ""),
-        badgeClass: () => (field.live ? "feature-row__badge--highlight" : ""),
+const PoppyRow = ({ field, fieldState, onWrite }) =>
+    ClickerRow({
+        field,
+        fieldState,
+        onWrite,
+        warnBadgeClass: "poppy-warn-badge",
         controlsClass: "poppy-row__controls--xl",
-        inputMode: isFloat ? "float" : "int",
-        inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
-        adjustInput: (rawValue, delta) => {
-            const cur = resolveNum(rawValue) ?? 0;
-            return Math.max(0, cur + step * delta);
-        },
-        wrapApplyButton: (applyButton) =>
-            withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
+        emptyBadge: "-",
+        getWriteMismatchMessage: (index, nextValue) =>
+            `Write mismatch at OptionsListAccount[${index}]: expected ${nextValue}`,
     });
-};
 
 export const PoppyTab = () => {
     const loading = van.state(true);

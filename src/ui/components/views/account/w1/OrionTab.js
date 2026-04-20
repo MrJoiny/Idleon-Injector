@@ -24,7 +24,7 @@
  *     display:none while loading). This keeps VanJS reactive bindings alive
  *     across refreshes — if rowList were removed and re-inserted, VanJS would
  *     GC the badge closures and they'd stop updating.
- *   - OrionRow uses the shared EditableNumberRow primitive for focus-safe input
+ *   - OrionRow uses the shared ClickerRow primitive for focus-safe input
  *     syncing, status handling, and SET behavior.
  */
 
@@ -34,12 +34,10 @@ import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { largeFormatter, largeParser } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -74,48 +72,14 @@ const ALL_FIELDS = [...PINNED, ...FIELDS];
 
 // ── OrionRow ──────────────────────────────────────────────────────────────
 
-const OrionRow = ({ field, fieldState, onWrite }) => {
-    const isFormatted = field.formatted || field.float;
-    const isFloat = field.float;
-    const step = isFloat ? 0.1 : 1;
-
-    const resolveNum = (raw) => {
-        if (isFormatted) {
-            const n = parseNumber(raw);
-            if (n !== null) return isFloat ? n : Math.round(n);
-        }
-        const n = Number(raw);
-        return isNaN(n) ? null : isFloat ? n : Math.round(n);
-    };
-
-    return EditableNumberRow({
-        valueState: fieldState,
-        normalize: (rawValue) => resolveNum(rawValue),
-        write: async (nextValue) => {
-            const ok = await onWrite(field.index, nextValue);
-            if (!ok) throw new Error(`Write mismatch at OptionsListAccount[${field.index}]`);
-            return nextValue;
-        },
-        renderInfo: () => [
-            span({ class: "feature-row__name" }, field.label),
-            field.warn ? span({ class: "orion-warn-badge" }, Icons.Warning(), ` ${field.warn}`) : null,
-        ],
-        renderBadge: (currentValue) => {
-            if (currentValue === undefined) return "—";
-            return isFormatted ? formatNumber(currentValue) : String(currentValue);
-        },
-        rowClass: () => (field.warn ? "feature-row--warn" : ""),
-        badgeClass: () => (field.live ? "feature-row__badge--highlight" : ""),
+const OrionRow = ({ field, fieldState, onWrite }) =>
+    ClickerRow({
+        field,
+        fieldState,
+        onWrite,
+        warnBadgeClass: "orion-warn-badge",
         controlsClass: "feature-row__controls--xl",
-        inputMode: isFloat ? "float" : "int",
-        inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
-        adjustInput: (rawValue, delta) => {
-            const cur = resolveNum(rawValue) ?? 0;
-            return Math.max(0, cur + step * delta);
-        },
-        wrapApplyButton: (applyButton) => withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
     });
-};
 
 // ── OrionTab ──────────────────────────────────────────────────────────────
 
