@@ -145,7 +145,6 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
 export const Pay2WinTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // ── Value & max states — created once, updated in-place ───────────────
@@ -177,7 +176,6 @@ export const Pay2WinTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Pay 2 Win",
@@ -384,7 +382,7 @@ export const Pay2WinTab = () => {
             description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: scroll,
     });
 };

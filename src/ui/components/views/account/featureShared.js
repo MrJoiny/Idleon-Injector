@@ -129,18 +129,6 @@ export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
     return normalized.replace(/_/g, " ").trim();
 };
 
-export const RefreshErrorBanner =
-    ({ error }) =>
-    () =>
-        error?.val
-            ? div(
-                  { class: "warning-banner" },
-                  Icons.Warning(),
-                  " Refresh failed. Showing last loaded values. ",
-                  error.val
-              )
-            : null;
-
 export const renderFeatureLoading = () => div({ class: "feature-loader" }, Loader());
 
 export const renderFeatureError = (message) =>

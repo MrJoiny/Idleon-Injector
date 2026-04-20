@@ -21,7 +21,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, RefreshErrorBanner, useWriteStatus, writeVerified } from "../featureShared.js";
+import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -252,7 +252,6 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
 export const BrewingTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const data = van.state(null);
     const setAllInput = van.state("50000");
 
@@ -260,11 +259,8 @@ export const BrewingTab = () => {
     const bubbleDefs = new Map(CAULDRONS.map((c) => [c.id, van.state([])]));
     const prismaSet = van.state(new Set());
 
-    const load = async () => {
-        refreshError.val = null;
-        const hadData = data.val !== null;
-
-        const result = await runAccountLoad(
+    const load = async () =>
+        runAccountLoad(
             { loading, error, label: "Brewing" },
             async () => {
                 const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
@@ -307,13 +303,7 @@ export const BrewingTab = () => {
             }
         );
 
-        if (typeof result !== "undefined" || !hadData) return;
-        refreshError.val = error.val;
-        error.val = null;
-    };
-
     load();
-    const renderRefreshErrorBanner = RefreshErrorBanner({ error: refreshError });
     const renderBody = AsyncFeatureBody({
         loading,
         error,
@@ -362,6 +352,6 @@ export const BrewingTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        body: div(renderRefreshErrorBanner, renderBody),
+        body: renderBody,
     });
 };

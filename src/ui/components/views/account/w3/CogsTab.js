@@ -179,7 +179,6 @@ const stateLabel = (state) => {
 export const CogsTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const selectedSlot = van.state(0);
@@ -249,7 +248,6 @@ export const CogsTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Cogs",
@@ -828,7 +826,7 @@ export const CogsTab = () => {
             description: "Click a slot to view details and edit CogMap fields.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: boardPane,
     });
 };

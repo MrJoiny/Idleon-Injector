@@ -116,7 +116,6 @@ const SigilCard = ({ index, tierState, nameState }) => {
 export const SigilTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-sigil states — created once, updated in-place on every load.
@@ -134,7 +133,6 @@ export const SigilTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Sigils",
@@ -232,7 +230,7 @@ export const SigilTab = () => {
             description: "Manage tier and unlock status for all 24 alchemy sigils.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: scroll,
     });
 };

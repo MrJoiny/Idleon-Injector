@@ -171,7 +171,6 @@ const LiquidColumn = ({ liquid, states }) =>
 export const LiquidTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-liquid reactive states — created once, updated in-place on refresh.
@@ -187,7 +186,6 @@ export const LiquidTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Liquid",
@@ -222,7 +220,7 @@ export const LiquidTab = () => {
             description: "Edit current liquid amounts and cap / rate upgrade levels.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: grid,
     });
 };

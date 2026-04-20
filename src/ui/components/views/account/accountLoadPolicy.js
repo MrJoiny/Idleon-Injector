@@ -52,13 +52,12 @@ export const runAccountLoad = async ({ loading, error, label = "Account page", f
 };
 
 /**
- * Standard load handler for persistent-pane account pages that distinguish
- * initial-load failures from refresh failures.
+ * Standard load handler for persistent-pane account pages.
+ * Failed refreshes now use the same blocking error state as initial-load failures.
  *
  * @param {{
  *   loading: import('../../../vendor/van-1.6.0.js').State<boolean>,
  *   error: import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   refreshError: import('../../../vendor/van-1.6.0.js').State<string|null>,
  *   initialized: import('../../../vendor/van-1.6.0.js').State<boolean>,
  *   markReady: () => void,
  *   label?: string,
@@ -68,15 +67,13 @@ export const runAccountLoad = async ({ loading, error, label = "Account page", f
  * @returns {Promise<any|undefined>}
  */
 export const runPersistentAccountLoad = async (
-    { loading, error, refreshError, initialized, markReady, label = "Account page", fallbackMessage },
+    { loading, error, initialized, markReady, label = "Account page", fallbackMessage },
     task
 ) => {
     const wasInitialized = initialized.val;
 
     loading.val = true;
     error.val = null;
-    refreshError.val = null;
-
     try {
         const result = await task();
         if (!wasInitialized) markReady();
@@ -84,9 +81,7 @@ export const runPersistentAccountLoad = async (
     } catch (caughtError) {
         logLoadFailure(label, wasInitialized ? "refresh" : "initial load", caughtError);
 
-        const message = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
-        if (!wasInitialized) error.val = message;
-        else refreshError.val = message;
+        error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
         return undefined;
     } finally {
         loading.val = false;

@@ -75,7 +75,6 @@ export const ForgeTab = () => {
     const activePage = van.state(0);
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
@@ -84,7 +83,6 @@ export const ForgeTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Forge",
@@ -128,7 +126,7 @@ export const ForgeTab = () => {
             navClass: "feature-page-nav",
             buttonClass: "feature-page-btn",
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         persistentLoadingText: "READING FORGE",
         persistentErrorTitle: "FORGE READ FAILED",
         persistentInitialWrapperClass: "feature-list",

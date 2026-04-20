@@ -107,7 +107,6 @@ const ArcadeCard = ({ entry }) => {
 export const ArcadeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
@@ -126,7 +125,6 @@ export const ArcadeTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Arcade",
@@ -348,7 +346,7 @@ export const ArcadeTab = () => {
                 },
             }),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: content,
     });
 };

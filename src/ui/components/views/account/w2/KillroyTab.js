@@ -146,7 +146,6 @@ const KillroyAirhornRow = ({ valueState }) => {
 export const KillroyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
@@ -168,7 +167,6 @@ export const KillroyTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Killroy",
@@ -478,7 +476,7 @@ export const KillroyTab = () => {
             description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: scrollPane,
     });
 };

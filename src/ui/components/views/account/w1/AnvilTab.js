@@ -31,19 +31,21 @@ const CATEGORIES = [
     { label: "Capacity", index: 5, max: null },
 ];
 
-const AnvilRow = ({ category, valueState, onSetApplied }) =>
+const clampCategoryValue = (category, value) => Math.max(0, Math.min(category.max ?? Infinity, value));
+
+const AnvilRow = ({ category, valueState, onWriteApplied }) =>
     EditableNumberRow({
         valueState,
         normalize: (rawValue) => {
             const raw = Number(rawValue);
             if (Number.isNaN(raw)) return null;
-            return Math.max(0, category.max !== null ? Math.min(category.max, raw) : raw);
+            return clampCategoryValue(category, raw);
         },
         write: async (nextValue) => {
             const path = `AnvilPAstats[${category.index}]`;
             await writeVerified(path, nextValue);
-            await onSetApplied?.(category.index, nextValue);
-            return valueState.val ?? nextValue;
+            await onWriteApplied();
+            return nextValue;
         },
         renderInfo: () => [
             span({ class: "feature-row__name" }, category.label),
@@ -54,8 +56,7 @@ const AnvilRow = ({ category, valueState, onSetApplied }) =>
         adjustInput: (rawValue, delta, currentValue) => {
             const base = Number(rawValue);
             const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            const adjusted = next + delta;
-            return Math.max(0, category.max !== null ? Math.min(category.max, adjusted) : adjusted);
+            return clampCategoryValue(category, next + delta);
         },
         wrapApplyButton: (applyButton) =>
             withTooltip(
@@ -71,7 +72,6 @@ const AnvilRow = ({ category, valueState, onSetApplied }) =>
 export const AnvilTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const statStates = Array.from({ length: 6 }, () => van.state(0));
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
@@ -80,23 +80,20 @@ export const AnvilTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Anvil",
             },
             async () => {
-            const raw = await gga("AnvilPAstats");
-            const arr = toIndexedArray(raw);
-            for (let i = 0; i < statStates.length; i++) {
-                statStates[i].val = Number(arr[i] ?? 0);
+                const raw = await gga("AnvilPAstats");
+                const arr = toIndexedArray(raw);
+                for (let i = 0; i < statStates.length; i++) {
+                    statStates[i].val = Number(arr[i] ?? 0);
+                }
             }
-        }
         );
 
-    const applyStatUpdate = async (index, value) => {
-        statStates[index].val = value;
-
+    const refreshRemainingPoints = async () => {
         // Keep "Points Remaining" fresh without forcing a list rebuild.
         try {
             const remainingRaw = await gga("AnvilPAstats[0]");
@@ -120,7 +117,7 @@ export const AnvilTab = () => {
             AnvilRow({
                 category: cat,
                 valueState: statStates[cat.index],
-                onSetApplied: applyStatUpdate,
+                onWriteApplied: refreshRemainingPoints,
             })
         )
     );
@@ -140,7 +137,7 @@ export const AnvilTab = () => {
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         persistentLoadingText: "READING ANVIL",
         persistentErrorTitle: "ANVIL READ FAILED",
         persistentInitialWrapperClass: "feature-list",

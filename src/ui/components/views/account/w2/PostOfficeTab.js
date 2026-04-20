@@ -366,7 +366,6 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
 export const PostOfficeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
 
@@ -424,7 +423,6 @@ export const PostOfficeTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Post Office",
@@ -706,7 +704,7 @@ export const PostOfficeTab = () => {
             navClass: "alchemy-sub-nav",
             buttonClass: "alchemy-sub-btn",
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: div(
             { class: "po-sub-content" },
             div({ class: () => "po-pane " + (activeSubTab.val === "deliveries" ? "po-pane--active" : "") }, scroll),

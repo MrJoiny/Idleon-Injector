@@ -25,20 +25,6 @@ export const AccountPageShell = ({
         const wrapPersistentInitial = (node) =>
             persistentInitialWrapperClass ? div({ class: persistentInitialWrapperClass }, node) : node;
 
-        const refreshNotice = persistentState?.refreshError
-            ? () => {
-                  const message = resolveValue(persistentState.refreshError);
-                  return message
-                      ? div(
-                            { class: "warning-banner" },
-                            Icons.Warning(),
-                            " Refresh failed. Showing last loaded values. ",
-                            message
-                        )
-                      : null;
-              }
-            : null;
-
         const initialState = persistentState
             ? [
                   () => {
@@ -52,9 +38,8 @@ export const AccountPageShell = ({
                   },
                   () => {
                       const isLoading = Boolean(resolveValue(persistentState.loading));
-                      const isInitialized = Boolean(resolveValue(persistentState.initialized));
                       const errorMessage = resolveValue(persistentState.error);
-                      if (isLoading || isInitialized || !errorMessage) return null;
+                      if (isLoading || !errorMessage) return null;
 
                       return wrapPersistentInitial(
                           EmptyState({
@@ -72,8 +57,14 @@ export const AccountPageShell = ({
             header,
             topNotices,
             subNav,
-            refreshNotice,
             initialState,
-            body
+            persistentState
+                ? div(
+                      {
+                          class: () => (resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""),
+                      },
+                      body
+                  )
+                : body
         );
     })();

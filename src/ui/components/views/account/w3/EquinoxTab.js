@@ -223,7 +223,6 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
 export const EquinoxTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Bar — top-level reactive states, always updated in-place
@@ -317,7 +316,6 @@ export const EquinoxTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Equinox",
@@ -486,7 +484,7 @@ export const EquinoxTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         body: content,
     });
 };

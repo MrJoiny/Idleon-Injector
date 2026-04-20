@@ -85,7 +85,6 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
 export const PoppyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const refreshError = van.state(null);
     const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
@@ -94,7 +93,6 @@ export const PoppyTab = () => {
             {
                 loading,
                 error,
-                refreshError,
                 initialized,
                 markReady,
                 label: "Poppy",
@@ -147,7 +145,7 @@ export const PoppyTab = () => {
             span({ class: "warning-highlight-accent" }, "Greatest Catch / Megafish"),
             " is also permanent progression."
         ),
-        persistentState: { loading, error, refreshError, initialized },
+        persistentState: { loading, error, initialized },
         persistentLoadingText: "READING POPPY",
         persistentErrorTitle: "POPPY READ FAILED",
         body: rowList,
