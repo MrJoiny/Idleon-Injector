@@ -34,7 +34,7 @@ import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { joinClasses, resolveValue, toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
@@ -146,7 +146,6 @@ const KillroyAirhornRow = ({ valueState }) => {
 export const KillroyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
@@ -167,8 +166,6 @@ export const KillroyTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Killroy",
             },
             async () => {
@@ -321,7 +318,7 @@ export const KillroyTab = () => {
 
     load();
     const scrollPane = div(
-        { class: () => paneClass("killroy-scroll scrollable-panel") },
+        { class: "killroy-scroll scrollable-panel" },
 
         FeatureSection({
             title: "CURRENCY / AVAILABILITY",
@@ -476,7 +473,7 @@ export const KillroyTab = () => {
             description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: scrollPane,
     });
 };

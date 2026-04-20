@@ -24,13 +24,21 @@ export const AccountPageShell = ({
     (() => {
         const wrapPersistentInitial = (node) =>
             persistentInitialWrapperClass ? div({ class: persistentInitialWrapperClass }, node) : node;
+        const hasLoaded = persistentState ? van.state(false) : null;
+
+        if (persistentState) {
+            van.derive(() => {
+                const isLoading = Boolean(resolveValue(persistentState.loading));
+                const errorMessage = resolveValue(persistentState.error);
+                if (!isLoading && !errorMessage) hasLoaded.val = true;
+            });
+        }
 
         const initialState = persistentState
             ? [
                   () => {
                       const isLoading = Boolean(resolveValue(persistentState.loading));
-                      const isInitialized = Boolean(resolveValue(persistentState.initialized));
-                      if (!isLoading || isInitialized) return null;
+                      if (!isLoading || hasLoaded.val) return null;
 
                       const loader =
                           persistentLoadingText !== null ? Loader({ text: persistentLoadingText }) : Loader();
@@ -61,7 +69,7 @@ export const AccountPageShell = ({
             persistentState
                 ? div(
                       {
-                          class: () => (resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""),
+                          class: () => (!hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""),
                       },
                       body
                   )

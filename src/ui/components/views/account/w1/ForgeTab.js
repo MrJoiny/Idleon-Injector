@@ -20,7 +20,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, writeVerified } from "../featureShared.js";
+import { writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -76,15 +76,12 @@ export const ForgeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const load = async () =>
         runPersistentAccountLoad(
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Forge",
             },
             async () => {
@@ -98,7 +95,7 @@ export const ForgeTab = () => {
 
     load();
 
-    const rowList = div({ class: () => paneClass("feature-list") }, () => {
+    const rowList = div({ class: "feature-list" }, () => {
         const page = PAGES[activePage.val];
         return div(
             { class: "forge-upgrades-list" },
@@ -126,7 +123,7 @@ export const ForgeTab = () => {
             navClass: "feature-page-nav",
             buttonClass: "feature-page-btn",
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         persistentLoadingText: "READING FORGE",
         persistentErrorTitle: "FORGE READ FAILED",
         persistentInitialWrapperClass: "feature-list",

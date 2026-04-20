@@ -53,13 +53,11 @@ export const runAccountLoad = async ({ loading, error, label = "Account page", f
 
 /**
  * Standard load handler for persistent-pane account pages.
- * Failed refreshes now use the same blocking error state as initial-load failures.
+ * The shell owns first-success visibility state; tabs only manage loading/error.
  *
  * @param {{
  *   loading: import('../../../vendor/van-1.6.0.js').State<boolean>,
  *   error: import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   initialized: import('../../../vendor/van-1.6.0.js').State<boolean>,
- *   markReady: () => void,
  *   label?: string,
  *   fallbackMessage?: string,
  * }} states
@@ -67,19 +65,15 @@ export const runAccountLoad = async ({ loading, error, label = "Account page", f
  * @returns {Promise<any|undefined>}
  */
 export const runPersistentAccountLoad = async (
-    { loading, error, initialized, markReady, label = "Account page", fallbackMessage },
+    { loading, error, label = "Account page", fallbackMessage },
     task
 ) => {
-    const wasInitialized = initialized.val;
-
     loading.val = true;
     error.val = null;
     try {
-        const result = await task();
-        if (!wasInitialized) markReady();
-        return result;
+        return await task();
     } catch (caughtError) {
-        logLoadFailure(label, wasInitialized ? "refresh" : "initial load", caughtError);
+        logLoadFailure(label, "load", caughtError);
 
         error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
         return undefined;

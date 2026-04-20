@@ -19,7 +19,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, writeVerified } from "../featureShared.js";
+import { writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -73,15 +73,12 @@ export const AnvilTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const statStates = Array.from({ length: 6 }, () => van.state(0));
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const load = async () =>
         runPersistentAccountLoad(
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Anvil",
             },
             async () => {
@@ -107,7 +104,7 @@ export const AnvilTab = () => {
     load();
 
     const rowList = div(
-        { class: () => paneClass("feature-list") },
+        { class: "feature-list" },
         div(
             { class: "feature-row feature-row--info" },
             span({ class: "feature-row__name" }, "Points Remaining"),
@@ -137,7 +134,7 @@ export const AnvilTab = () => {
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         persistentLoadingText: "READING ANVIL",
         persistentErrorTitle: "ANVIL READ FAILED",
         persistentInitialWrapperClass: "feature-list",

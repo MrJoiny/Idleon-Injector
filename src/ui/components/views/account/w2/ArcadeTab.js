@@ -28,7 +28,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 const ARCADE_LEVEL_MAX = 101;
@@ -108,7 +108,6 @@ export const ArcadeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
     const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const normalBalls = van.state("0");
     const goldenBalls = van.state("0");
@@ -125,8 +124,6 @@ export const ArcadeTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Arcade",
             },
             async () => {
@@ -240,7 +237,7 @@ export const ArcadeTab = () => {
     };
 
     const content = div(
-        { class: () => paneClass("arcade-content") },
+        { class: "arcade-content" },
         div(
             {
                 class: () => ["arcade-balls-summary", topBallsFlashClass()].filter(Boolean).join(" "),
@@ -346,7 +343,7 @@ export const ArcadeTab = () => {
                 },
             }),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: content,
     });
 };

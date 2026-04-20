@@ -37,7 +37,7 @@ import { FeatureActionButton } from "../components/FeatureActionButton.js";
 import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useWriteStatus, writeVerified } from "../featureShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -366,7 +366,6 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
 export const PostOfficeTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
     const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
 
     // ── Per-shipment states (created once, updated in-place) ───────────────
@@ -423,8 +422,6 @@ export const PostOfficeTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Post Office",
             },
             async () => {
@@ -646,10 +643,10 @@ export const PostOfficeTab = () => {
     });
 
     // ── DOM: Scrollable content ────────────────────────────────────────────
-    const scroll = div({ class: () => paneClass("po-scroll scrollable-panel") }, shipmentsSection, pointsSection);
+    const scroll = div({ class: "po-scroll scrollable-panel" }, shipmentsSection, pointsSection);
 
     const boxesScroll = div(
-        { class: () => paneClass("po-scroll scrollable-panel") },
+        { class: "po-scroll scrollable-panel" },
         div(
             {
                 class: () =>
@@ -704,7 +701,7 @@ export const PostOfficeTab = () => {
             navClass: "alchemy-sub-nav",
             buttonClass: "alchemy-sub-btn",
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: div(
             { class: "po-sub-content" },
             div({ class: () => "po-pane " + (activeSubTab.val === "deliveries" ? "po-pane--active" : "") }, scroll),

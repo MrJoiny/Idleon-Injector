@@ -21,7 +21,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -116,7 +116,6 @@ const SigilCard = ({ index, tierState, nameState }) => {
 export const SigilTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-sigil states — created once, updated in-place on every load.
     const sigilTier = Array.from({ length: 24 }, () => van.state(-1));
@@ -133,8 +132,6 @@ export const SigilTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Sigils",
             },
             async () => {
@@ -223,14 +220,14 @@ export const SigilTab = () => {
         )
     );
 
-    const scroll = div({ class: () => paneClass("tier-scroll scrollable-panel") }, setAllBar, grid);
+    const scroll = div({ class: "tier-scroll scrollable-panel" }, setAllBar, grid);
     return AccountPageShell({
         header: FeatureTabHeader({
             title: "ALCHEMY - SIGILS",
             description: "Manage tier and unlock status for all 24 alchemy sigils.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: scroll,
     });
 };

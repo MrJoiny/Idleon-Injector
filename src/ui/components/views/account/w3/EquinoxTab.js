@@ -32,7 +32,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { toInt, toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -223,7 +223,6 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
 export const EquinoxTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Bar — top-level reactive states, always updated in-place
     const barFillState = van.state(0);
@@ -316,8 +315,6 @@ export const EquinoxTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Equinox",
             },
             async () => {
@@ -404,7 +401,7 @@ export const EquinoxTab = () => {
     // ── Persistent content (built once, updated via states) ───────────────────
 
     const content = div(
-        { class: () => paneClass("equinox-content") },
+        { class: "equinox-content" },
 
         // ── Bar overview ──────────────────────────────────────────────────────
         EquinoxBar({ barFillState, barFillReqState, barFillRateState }),
@@ -484,7 +481,7 @@ export const EquinoxTab = () => {
                 button({ class: "btn-secondary", onclick: load }, "REFRESH"),
             ],
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: content,
     });
 };

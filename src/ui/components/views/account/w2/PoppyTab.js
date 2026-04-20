@@ -16,7 +16,6 @@ import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -85,7 +84,6 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
 export const PoppyTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
     const load = async () =>
@@ -93,8 +91,6 @@ export const PoppyTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Poppy",
             },
             async () => {
@@ -111,7 +107,7 @@ export const PoppyTab = () => {
     };
 
     const rowList = div(
-        { class: () => paneClass("feature-list poppy-list") },
+        { class: "feature-list poppy-list" },
         div({ class: "poppy-section-label" }, Icons.Warning(), " Permanent / Sensitive"),
         ...PINNED_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "poppy-section-label" }, "Main Poppy Progress"),
@@ -145,7 +141,7 @@ export const PoppyTab = () => {
             span({ class: "warning-highlight-accent" }, "Greatest Catch / Megafish"),
             " is also permanent progression."
         ),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         persistentLoadingText: "READING POPPY",
         persistentErrorTitle: "POPPY READ FAILED",
         body: rowList,

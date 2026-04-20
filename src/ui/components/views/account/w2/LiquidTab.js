@@ -26,7 +26,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -171,7 +171,6 @@ const LiquidColumn = ({ liquid, states }) =>
 export const LiquidTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // Per-liquid reactive states — created once, updated in-place on refresh.
     // Columns are never rebuilt; only their internal bindings react.
@@ -186,8 +185,6 @@ export const LiquidTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Liquid",
             },
             async () => {
@@ -211,7 +208,7 @@ export const LiquidTab = () => {
     // Grid is built once here and permanently lives in the DOM.
     // Concealed via CSS class until the first load completes.
     const grid = div(
-        { class: () => paneClass("liquid-grid grid-4col scrollable-panel") },
+        { class: "liquid-grid grid-4col scrollable-panel" },
         ...LIQUIDS.map((liq, i) => LiquidColumn({ liquid: liq, states: liquidStates[i] }))
     );
     return AccountPageShell({
@@ -220,7 +217,7 @@ export const LiquidTab = () => {
             description: "Edit current liquid amounts and cap / rate upgrade levels.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: grid,
     });
 };

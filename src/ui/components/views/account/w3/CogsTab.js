@@ -30,7 +30,7 @@ import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
-import { toNum, usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { toNum, useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span, h3, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
@@ -179,7 +179,6 @@ const stateLabel = (state) => {
 export const CogsTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     const selectedSlot = van.state(0);
     const activeSlot = van.state(null);
@@ -248,8 +247,6 @@ export const CogsTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Cogs",
             },
             async () => {
@@ -561,7 +558,7 @@ export const CogsTab = () => {
     );
 
     const boardPane = div(
-        { class: () => paneClass("cogs-scroll scrollable-panel") },
+        { class: "cogs-scroll scrollable-panel" },
         div(
             { class: "cogs-board-shell" },
             div({ class: "cogs-board-content" }, div({ class: "cogs-board-layout" }, leftRail, mainGrid, rightRail))
@@ -826,7 +823,7 @@ export const CogsTab = () => {
             description: "Click a slot to view details and edit CogMap fields.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: boardPane,
     });
 };

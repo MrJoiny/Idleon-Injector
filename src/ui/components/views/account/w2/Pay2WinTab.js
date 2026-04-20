@@ -35,7 +35,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { usePersistentPaneReady, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useWriteStatus, writeVerified } from "../featureShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -145,7 +145,6 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
 export const Pay2WinTab = () => {
     const loading = van.state(true);
     const error = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
 
     // ── Value & max states — created once, updated in-place ───────────────
 
@@ -176,8 +175,6 @@ export const Pay2WinTab = () => {
             {
                 loading,
                 error,
-                initialized,
-                markReady,
                 label: "Pay 2 Win",
             },
             async () => {
@@ -333,7 +330,7 @@ export const Pay2WinTab = () => {
         );
 
     const scroll = div(
-        { class: () => paneClass("p2w-scroll scrollable-panel") },
+        { class: "p2w-scroll scrollable-panel" },
 
         buildCauldronSection(
             "BREWING CAULDRONS",
@@ -382,7 +379,7 @@ export const Pay2WinTab = () => {
             description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
             actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
         }),
-        persistentState: { loading, error, initialized },
+        persistentState: { loading, error },
         body: scroll,
     });
 };
