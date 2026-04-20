@@ -1,13 +1,9 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { withTooltip } from "../../Tooltip.js";
 import { FeatureActionButton } from "./components/FeatureActionButton.js";
+import { toNodes } from "./featureShared.js";
 
 const { div, button } = van.tags;
-
-const toNodes = (content) => {
-    if (content === null || content === undefined) return [];
-    return Array.isArray(content) ? content : [content];
-};
 
 /**
  * Shared header action strip for bulk account-page actions.

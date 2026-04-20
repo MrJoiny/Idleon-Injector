@@ -25,15 +25,17 @@ import { NumberInput, getNumberInputLiveRaw } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { formatNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import {
+    adjustFormattedIntInput,
     AsyncFeatureBody,
     cleanName,
     largeFormatter,
     largeParser,
+    resolveFormattedIntInput,
     toInt,
     unwrapH,
     useWriteStatus,
@@ -81,11 +83,7 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
     const finishStatus = useWriteStatus();
 
     const resolveInputInt = (raw, fallback = 0) => {
-        const parsed = parseNumber(raw);
-        if (parsed !== null) return Math.max(0, Math.round(parsed));
-        const asNumber = Number(raw);
-        if (Number.isFinite(asNumber)) return Math.max(0, Math.round(asNumber));
-        return Math.max(0, toInt(fallback, 0));
+        return resolveFormattedIntInput(raw, Math.max(0, toInt(fallback, 0)));
     };
     const latestRaw = (inputState) => {
         const liveRaw = getNumberInputLiveRaw(inputState);
@@ -163,9 +161,8 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                     value: qtyInput,
                     formatter: largeFormatter,
                     parser: largeParser,
-                    onDecrement: () =>
-                        (qtyInput.val = String(Math.max(0, resolveInputInt(latestRaw(qtyInput), 0) - 1))),
-                    onIncrement: () => (qtyInput.val = String(resolveInputInt(latestRaw(qtyInput), 0) + 1)),
+                    onDecrement: () => (qtyInput.val = String(adjustFormattedIntInput(latestRaw(qtyInput), -1))),
+                    onIncrement: () => (qtyInput.val = String(adjustFormattedIntInput(latestRaw(qtyInput), 1))),
                 })
             ),
             div(
@@ -176,9 +173,8 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                     value: expInput,
                     formatter: largeFormatter,
                     parser: largeParser,
-                    onDecrement: () =>
-                        (expInput.val = String(Math.max(0, resolveInputInt(latestRaw(expInput), 0) - 1))),
-                    onIncrement: () => (expInput.val = String(resolveInputInt(latestRaw(expInput), 0) + 1)),
+                    onDecrement: () => (expInput.val = String(adjustFormattedIntInput(latestRaw(expInput), -1))),
+                    onIncrement: () => (expInput.val = String(adjustFormattedIntInput(latestRaw(expInput), 1))),
                 })
             ),
             div(
@@ -189,9 +185,8 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                     value: rareInput,
                     formatter: largeFormatter,
                     parser: largeParser,
-                    onDecrement: () =>
-                        (rareInput.val = String(Math.max(0, resolveInputInt(latestRaw(rareInput), 0) - 1))),
-                    onIncrement: () => (rareInput.val = String(resolveInputInt(latestRaw(rareInput), 0) + 1)),
+                    onDecrement: () => (rareInput.val = String(adjustFormattedIntInput(latestRaw(rareInput), -1))),
+                    onIncrement: () => (rareInput.val = String(adjustFormattedIntInput(latestRaw(rareInput), 1))),
                 })
             ),
             button(

@@ -34,7 +34,8 @@ import { FeatureSection } from "../components/FeatureSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runPersistentAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { joinClasses, resolveValue, toNum, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
+import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
 
@@ -83,21 +84,13 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
         if (field.allowNegative) return parsed;
         return Math.max(0, parsed);
     };
+    const rowClass = () => joinClasses("killroy-row", field.blurred ? "killroy-row--blur" : "");
+    const labelText = () => resolveValue(field?.label) ?? "";
 
     if (disableEdit) {
         return FeatureRow({
-            rowClass: () =>
-                [
-                    "killroy-row",
-                    field.blurred ? "killroy-row--blur" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-            info: span({ class: "feature-row__name" }, () => {
-                const label = field?.label;
-                if (label && typeof label === "object" && "val" in label) return label.val;
-                return label ?? "";
-            }),
+            rowClass,
+            info: span({ class: "feature-row__name" }, labelText),
             badge: () => {
                 if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
                 return String(valueState.val);
@@ -114,22 +107,14 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
             if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextValue}`);
             return nextValue;
         },
-        renderInfo: () =>
-            span({ class: "feature-row__name" }, () => {
-                const label = field?.label;
-                if (label && typeof label === "object" && "val" in label) return label.val;
-                return label ?? "";
-            }),
+        renderInfo: () => span({ class: "feature-row__name" }, labelText),
         renderBadge: (currentValue) =>
             typeof getBadgeText === "function" ? getBadgeText(currentValue) : String(currentValue),
         adjustInput: (rawValue, delta, currentValue) => {
             const next = toNum(rawValue, toNum(currentValue, 0)) + delta;
             return field.allowNegative ? next : Math.max(0, next);
         },
-        rowClass: () =>
-            ["killroy-row", field.blurred ? "killroy-row--blur" : ""]
-                .filter(Boolean)
-                .join(" "),
+        rowClass,
     });
 };
 
@@ -250,12 +235,13 @@ export const KillroyTab = () => {
                 readCList("MapAFKtarget"),
             ]);
 
-            const toArr = (raw) => (Array.isArray(raw) ? raw : Object.values(raw ?? {}));
-            const mapKeys = [...toArr(rawKillroyMaps69), ...toArr(rawKillroyMaps70), ...toArr(rawKillroyMaps71)].filter(
-                (k) => typeof k === "string" && k.trim().length > 0
-            );
-            const mapNames = toArr(rawMapName);
-            const mapAfkTargets = toArr(rawMapAfk);
+            const mapKeys = [
+                ...toIndexedArray(rawKillroyMaps69),
+                ...toIndexedArray(rawKillroyMaps70),
+                ...toIndexedArray(rawKillroyMaps71),
+            ].filter((k) => typeof k === "string" && k.trim().length > 0);
+            const mapNames = toIndexedArray(rawMapName);
+            const mapAfkTargets = toIndexedArray(rawMapAfk);
 
             const allowedMobIds = [];
             for (const mapKey of mapKeys) {

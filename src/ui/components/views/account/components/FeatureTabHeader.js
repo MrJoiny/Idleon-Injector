@@ -1,11 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
+import { toNodes } from "../featureShared.js";
 
 const { div, h3, p } = van.tags;
-
-const toNodes = (content) => {
-    if (content === null || content === undefined) return [];
-    return Array.isArray(content) ? content : [content];
-};
 
 /**
  * Shared header shell for account feature tabs.

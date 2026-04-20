@@ -24,12 +24,21 @@ const { div } = van.tags;
 
 // ── Internal helper ────────────────────────────────────────────────────────
 
-/** @private Unwrap a plain value, van.state, or zero-arg function. */
-const resolveValue = (valueOrState) => {
+/** Unwrap a plain value, van.state, or zero-arg function. */
+export const resolveValue = (valueOrState) => {
     if (typeof valueOrState === "function") return valueOrState();
     if (valueOrState && typeof valueOrState === "object" && "val" in valueOrState) return valueOrState.val;
     return valueOrState;
 };
+
+/** Normalize nullable/single/array content into an array of renderable nodes. */
+export const toNodes = (content) => {
+    if (content === null || content === undefined) return [];
+    return Array.isArray(content) ? content : [content];
+};
+
+/** Join nullable class-name parts into a single class string. */
+export const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 /**
  * Safely coerce a value to a finite number.
@@ -61,6 +70,46 @@ export const toInt = (value, opts = 0) => {
     const n = toNum(value, toNum(fallback, 0));
     const asInt = mode === "floor" ? Math.floor(n) : Math.round(n);
     return Math.max(min, asInt);
+};
+
+/**
+ * Normalize raw NumberInput text into a finite numeric value.
+ * Supports formatted strings (e.g. "1.2M", "12,345"), float/int output,
+ * optional clamping, and a nullable fallback for invalid input.
+ */
+export const resolveNumberInput = (
+    raw,
+    { formatted = false, float = false, min = -Infinity, max = Infinity, fallback = null } = {}
+) => {
+    let next = null;
+
+    if (formatted) {
+        next = parseNumber(String(raw));
+    }
+
+    if (next === null) {
+        const coerced = Number(raw);
+        if (!Number.isFinite(coerced)) return fallback;
+        next = coerced;
+    }
+
+    const normalized = float ? next : Math.round(next);
+    return Math.max(min, Math.min(max, normalized));
+};
+
+/** Normalize formatted NumberInput text into a clamped integer value. */
+export const resolveFormattedIntInput = (raw, fallback = null, { min = 0, max = Infinity } = {}) =>
+    resolveNumberInput(raw, {
+        formatted: true,
+        min,
+        max,
+        fallback,
+    });
+
+/** Increment or decrement formatted integer input text while preserving a non-negative floor. */
+export const adjustFormattedIntInput = (raw, delta, fallback = 0, { min = 0, max = Infinity } = {}) => {
+    const base = resolveFormattedIntInput(raw, fallback, { min, max });
+    return Math.max(min, Math.min(max, (base ?? fallback ?? min) + delta));
 };
 
 export const largeFormatter = (raw) => {

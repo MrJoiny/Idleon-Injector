@@ -27,7 +27,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, toInt, toNum, useWriteStatus } from "../featureShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -68,13 +68,6 @@ const isUnlockedByProgress = (players, playersNeeded) => players.length >= playe
 
 // Get display name for a player slot (1-based)
 const playerName = (num, usernames) => usernames[num - 1] ?? `Player ${num}`;
-
-const normalizeNumber = (value, fallback = 0) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : fallback;
-};
-
-const normalizeClaimed = (value) => Math.round(normalizeNumber(value, 0));
 
 const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
     The_Buff_Guy: 1,
@@ -313,7 +306,7 @@ const StarSignCard = ({ sign, onClick }) => {
 
 const getClaimedRewardTotal = (list) =>
     list.reduce(
-        (total, sign) => total + (normalizeClaimed(sign.claimed) ? normalizeNumber(sign.rewardPoints, 0) : 0),
+        (total, sign) => total + (toInt(sign.claimed, 0) ? toNum(sign.rewardPoints, 0) : 0),
         0
     );
 
@@ -345,7 +338,7 @@ export const StarSignsTab = () => {
         unlockStatus.val === "loading" || randomStatus.val === "loading" || resetStatus.val === "loading";
 
     const writeAndVerifyOptions40 = async (total) => {
-        const expected = normalizeNumber(total, 0);
+        const expected = toNum(total, 0);
         const path = "OptionsListAccount[40]";
         const ok = await gga(path, expected);
         if (!ok) throw new Error(`Write mismatch at ${path}`);
@@ -375,8 +368,8 @@ export const StarSignsTab = () => {
                         label: labels[i],
                         desc: cleanDesc(q[7]),
                         playersNeeded,
-                        rewardPoints: normalizeNumber(q[6], 0),
-                        claimed: normalizeClaimed(prog[i]?.[1]),
+                        rewardPoints: toNum(q[6], 0),
+                        claimed: toInt(prog[i]?.[1], 0),
                         players,
                         unlocked: isUnlockedByProgress(players, playersNeeded),
                         usernames,
@@ -415,7 +408,7 @@ export const StarSignsTab = () => {
                 );
                 updatedSign.claimed = 0;
             } else {
-                updatedSign.claimed = normalizeClaimed(prevSign.claimed);
+                updatedSign.claimed = toInt(prevSign.claimed, 0);
             }
         }
         signs.val = nextSigns;
@@ -436,7 +429,7 @@ export const StarSignsTab = () => {
                     if ((sign.players?.length ?? 0) > 0) {
                         writes.push({ path: `StarSignProg[${sign.index}][0]`, value: "" });
                     }
-                    if (normalizeClaimed(sign.claimed) !== 0) {
+                    if (toInt(sign.claimed, 0) !== 0) {
                         writes.push({ path: `StarSignProg[${sign.index}][1]`, value: 0 });
                     }
                 }
@@ -480,7 +473,7 @@ export const StarSignsTab = () => {
                     if (progress !== encodeProgress(sign.players)) {
                         writes.push({ path: `StarSignProg[${sign.index}][0]`, value: progress });
                     }
-                    if (normalizeClaimed(sign.claimed) !== 1) {
+                    if (toInt(sign.claimed, 0) !== 1) {
                         writes.push({ path: `StarSignProg[${sign.index}][1]`, value: 1 });
                     }
 

@@ -24,6 +24,7 @@ import { AccountPageShell } from "./components/AccountPageShell.js";
 import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
 import { runAccountLoad } from "./accountLoadPolicy.js";
 import { AsyncFeatureBody, cleanName, toNum } from "./featureShared.js";
+import { toIndexedArray } from "../../../utils/index.js";
 
 const { div, button, span } = van.tags;
 
@@ -79,13 +80,6 @@ export const UpgradeVaultTab = () => {
         runAccountLoad(
             { loading, error, label: "Upgrade Vault" },
             async () => {
-            const toArr = (raw) =>
-                Array.isArray(raw)
-                    ? raw
-                    : Object.keys(raw)
-                          .sort((a, b) => Number(a) - Number(b))
-                          .map((k) => raw[k]);
-
             const [rawInfo, rawLevels, rawBonU] = await Promise.all([
                 readCList("UpgradeVault"),
                 gga("UpgVault"),
@@ -94,8 +88,8 @@ export const UpgradeVaultTab = () => {
             const bonU = Number(rawBonU);
             const bundleBonus = bonU === 1 ? 10 : 0;
 
-            const info = toArr(rawInfo ?? []);
-            const levels = toArr(rawLevels ?? []);
+            const info = toIndexedArray(rawInfo ?? []);
+            const levels = toIndexedArray(rawLevels ?? []);
             const argSets = info.map((_, i) => [i, 0]);
             const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
 

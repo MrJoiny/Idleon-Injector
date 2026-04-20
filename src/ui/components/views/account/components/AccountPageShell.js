@@ -2,13 +2,8 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
+import { resolveValue } from "../featureShared.js";
 const { div } = van.tags;
-
-const resolveValue = (valueOrState) => {
-    if (typeof valueOrState === "function") return valueOrState();
-    if (valueOrState && typeof valueOrState === "object" && "val" in valueOrState) return valueOrState.val;
-    return valueOrState;
-};
 
 const renderNode = (renderer, arg = undefined) => {
     if (typeof renderer === "function") return renderer(arg);

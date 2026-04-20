@@ -1,15 +1,8 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { withTooltip } from "../../../Tooltip.js";
+import { joinClasses, resolveValue } from "../featureShared.js";
 
 const { button } = van.tags;
-
-const resolveValue = (valueOrState) => {
-    if (typeof valueOrState === "function") return valueOrState();
-    if (valueOrState && typeof valueOrState === "object" && "val" in valueOrState) return valueOrState.val;
-    return valueOrState;
-};
-
-const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 const VARIANT_CLASS = {
     apply: "feature-btn feature-btn--apply",

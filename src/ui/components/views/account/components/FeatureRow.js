@@ -1,19 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
+import { joinClasses, resolveValue, toNodes } from "../featureShared.js";
 
 const { div, span } = van.tags;
-
-const toNodes = (content) => {
-    if (content === null || content === undefined) return [];
-    return Array.isArray(content) ? content : [content];
-};
-
-const resolveValue = (valueOrState) => {
-    if (typeof valueOrState === "function") return valueOrState();
-    if (valueOrState && typeof valueOrState === "object" && "val" in valueOrState) return valueOrState.val;
-    return valueOrState;
-};
-
-const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 /**
  * Shared non-numeric row shell for account feature tabs.

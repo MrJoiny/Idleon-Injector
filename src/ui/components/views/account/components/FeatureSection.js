@@ -1,13 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
+import { joinClasses, toNodes } from "../featureShared.js";
 
 const { div, span } = van.tags;
-
-const toNodes = (content) => {
-    if (content === null || content === undefined) return [];
-    return Array.isArray(content) ? content : [content];
-};
-
-const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 /**
  * Shared section wrapper for grouped account feature content.

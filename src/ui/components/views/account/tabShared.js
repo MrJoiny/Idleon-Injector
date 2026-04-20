@@ -1,9 +1,8 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
+import { joinClasses } from "./featureShared.js";
 
 const { div, button, span, h2, p } = van.tags;
-
-const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 export const createComingSoonPlaceholder = (label) =>
     div(

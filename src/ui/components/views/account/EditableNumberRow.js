@@ -1,14 +1,9 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { NumberInput } from "../../NumberInput.js";
 import { FeatureActionButton } from "./components/FeatureActionButton.js";
-import { useWriteStatus } from "./featureShared.js";
+import { toNodes, useWriteStatus } from "./featureShared.js";
 
 const { div, span } = van.tags;
-
-const toNodes = (content) => {
-    if (content === null || content === undefined) return [];
-    return Array.isArray(content) ? content : [content];
-};
 
 /**
  * Shared numeric editor row with focus-safe local input state.

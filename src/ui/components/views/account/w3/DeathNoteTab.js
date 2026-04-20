@@ -26,13 +26,16 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { formatNumber } from "../../../../utils/numberFormat.js";
 import {
+    adjustFormattedIntInput,
     cleanName,
     largeFormatter,
     largeParser,
     renderFeatureError,
     renderFeatureLoading,
+    resolveFormattedIntInput,
+    toNodes,
     toInt,
     unwrapH,
     useWriteStatus,
@@ -69,7 +72,7 @@ const DN_SUBTABS = [
 
 // ── PlayerKillRow (world mobs only) ───────────────────────────────────────────
 
-const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
+const KillCountRow = ({ killState, rowClass, controlsClass, renderInfo, write, onWriteError = null }) => {
     const inputVal = van.state(String(toInt(killState.val)));
     const { status, run } = useWriteStatus();
     let isFocused = false;
@@ -79,67 +82,38 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
         if (v !== undefined && !isFocused) inputVal.val = String(toInt(v));
     });
 
-    const resolveNum = (raw) => {
-        const n = parseNumber(raw);
-        if (n !== null) return Math.round(n);
-        const num = Number(raw);
-        return isNaN(num) ? null : Math.round(num);
-    };
-
     const doSet = async (raw) => {
-        const num = resolveNum(raw);
+        const num = resolveFormattedIntInput(raw);
         if (num === null) return;
-        await run(
-            async () => {
-                if (!Number.isInteger(mob.mapIndex) || mob.mapIndex < 0 || mob.required <= 0) {
-                    throw new Error("Invalid map target for Death Note write");
-                }
-
-                const newKillsLeft = mob.required - num;
-                const dbPath = playerDbKillsLeftPath(playerName, mob.mapIndex);
-
-                if (isCurrentPlayer) {
-                    const liveOk = await gga(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
-                    if (!liveOk)
-                        throw new Error(
-                            `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`
-                        );
-                }
-
-                const dbOk = await gga(dbPath, newKillsLeft);
-                if (!dbOk) throw new Error(`Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`);
-
-                killState.val = String(num);
-                inputVal.val = String(num);
-            },
-            {
-                onError: (error) => {
-                    console.error("[DeathNote][World SET] write failed", {
-                        playerName,
-                        mobId: mob.mobId,
-                        mapIndex: mob.mapIndex,
-                        required: mob.required,
-                        requestedKills: num,
-                        error: error?.message ?? String(error),
-                    });
-                },
+        await run(async () => {
+            try {
+                const verified = await write(num);
+                const committed = String(verified);
+                killState.val = committed;
+                inputVal.val = committed;
+                return committed;
+            } catch (error) {
+                if (typeof onWriteError === "function") onWriteError(error, num);
+                throw error;
             }
-        );
+        });
     };
 
     return div(
         {
             class: () =>
-                `dn-player-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`,
+                [
+                    rowClass,
+                    status.val === "success" ? "feature-row--success" : "",
+                    status.val === "error" ? "feature-row--error" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" "),
         },
-        span(
-            { class: "dn-player-row__name" },
-            playerName,
-            isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, " (you)") : null
-        ),
+        ...toNodes(renderInfo()),
         span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
         div(
-            { class: "dn-player-row__controls" },
+            { class: controlsClass },
             NumberInput({
                 value: inputVal,
                 mode: "int",
@@ -152,12 +126,10 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
                     isFocused = false;
                 },
                 onDecrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(Math.max(0, cur - 1));
+                    inputVal.val = String(adjustFormattedIntInput(inputVal.val, -1));
                 },
                 onIncrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(cur + 1);
+                    inputVal.val = String(adjustFormattedIntInput(inputVal.val, 1));
                 },
             }),
             withTooltip(
@@ -176,6 +148,50 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) => {
         )
     );
 };
+
+const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
+    KillCountRow({
+        killState,
+        rowClass: "dn-player-row",
+        controlsClass: "dn-player-row__controls",
+        renderInfo: () =>
+            span(
+                { class: "dn-player-row__name" },
+                playerName,
+                isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, " (you)") : null
+            ),
+        write: async (num) => {
+            if (!Number.isInteger(mob.mapIndex) || mob.mapIndex < 0 || mob.required <= 0) {
+                throw new Error("Invalid map target for Death Note write");
+            }
+
+            const newKillsLeft = mob.required - num;
+            const dbPath = playerDbKillsLeftPath(playerName, mob.mapIndex);
+
+            if (isCurrentPlayer) {
+                const liveOk = await gga(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
+                if (!liveOk) {
+                    throw new Error(
+                        `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`
+                    );
+                }
+            }
+
+            const dbOk = await gga(dbPath, newKillsLeft);
+            if (!dbOk) throw new Error(`Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`);
+            return num;
+        },
+        onWriteError: (error, num) => {
+            console.error("[DeathNote][World SET] write failed", {
+                playerName,
+                mobId: mob.mobId,
+                mapIndex: mob.mapIndex,
+                required: mob.required,
+                requestedKills: num,
+                error: error?.message ?? String(error),
+            });
+        },
+    });
 
 // ── MobRow (world mobs) ───────────────────────────────────────────────────────
 
@@ -218,79 +234,19 @@ const MobRow = ({ mob, getKillState, getExpandState, currentPlayer }) => {
 
 // ── MinibossRow ───────────────────────────────────────────────────────────────
 
-const MinibossRow = ({ mob, killState }) => {
-    const inputVal = van.state(String(toInt(killState.val)));
-    const { status, run } = useWriteStatus();
-    let isFocused = false;
-
-    van.derive(() => {
-        const v = killState.val;
-        if (v !== undefined && !isFocused) inputVal.val = String(toInt(v));
-    });
-
-    const resolveNum = (raw) => {
-        const n = parseNumber(raw);
-        if (n !== null) return Math.round(n);
-        const num = Number(raw);
-        return isNaN(num) ? null : Math.round(num);
-    };
-
-    const doSet = async (raw) => {
-        const num = resolveNum(raw);
-        if (num === null) return;
-        await run(async () => {
+const MinibossRow = ({ mob, killState }) =>
+    KillCountRow({
+        killState,
+        rowClass: "feature-row",
+        controlsClass: "feature-row__controls feature-row__controls--xl",
+        renderInfo: () => div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, mob.mobName)),
+        write: async (num) => {
             const path = `Ninja[105][${mob.mobIndex}]`;
             const ok = await gga(path, num);
             if (!ok) throw new Error(`Death Note write mismatch at ${path}: expected ${num}`);
-            killState.val = String(num);
-            inputVal.val = String(num);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`,
+            return num;
         },
-        div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, mob.mobName)),
-        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
-        div(
-            { class: "feature-row__controls feature-row__controls--xl" },
-            NumberInput({
-                value: inputVal,
-                mode: "int",
-                formatter: largeFormatter,
-                parser: largeParser,
-                onfocus: () => {
-                    isFocused = true;
-                },
-                onblur: () => {
-                    isFocused = false;
-                },
-                onDecrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(Math.max(0, cur - 1));
-                },
-                onIncrement: () => {
-                    const cur = resolveNum(inputVal.val) ?? 0;
-                    inputVal.val = String(cur + 1);
-                },
-            }),
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                "Write kill count"
-            )
-        )
-    );
-};
+    });
 
 // ── WorldPanel ────────────────────────────────────────────────────────────────
 

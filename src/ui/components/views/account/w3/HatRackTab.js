@@ -15,7 +15,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { runAccountLoad } from "../accountLoadPolicy.js";
 import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
+import { AsyncFeatureBody, cleanName, unwrapH, useWriteStatus } from "../featureShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -23,10 +23,8 @@ const { div, button, span, select, option } = van.tags;
 const RACK_PATH = "Spelunk[46]";
 const ITEM_DEFS_PATH = "ItemDefinitionsGET.h";
 
-const getDef = (raw) => raw?.h ?? raw;
-
 const getName = (itemId, raw) => {
-    const def = getDef(raw);
+    const def = unwrapH(raw);
     return (
         def?.displayName || def?.DisplayName || def?.name || def?.Name || def?.desc_line1 || def?.desc_line2 || itemId
     );
@@ -43,7 +41,7 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
 
     const eligible = Object.entries(itemDefs)
         .map(([itemId, raw]) => {
-            const def = getDef(raw);
+            const def = unwrapH(raw);
             return {
                 itemId,
                 name: cleanName(getName(itemId, raw), "", { stripMarker: true }),
@@ -67,7 +65,7 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
         itemId,
         name: cleanName(getName(itemId, itemDefs[itemId]), "", { stripMarker: true }),
         eligible: eligibleIds.has(itemId),
-        id: eligibleMap[itemId]?.id ?? getDef(itemDefs[itemId])?.ID ?? null,
+        id: eligibleMap[itemId]?.id ?? unwrapH(itemDefs[itemId])?.ID ?? null,
     }));
 
     return {
