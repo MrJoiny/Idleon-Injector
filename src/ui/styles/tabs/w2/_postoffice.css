@@ -1,7 +1,7 @@
 /* ── Post Office tab ─────────────────────────────────────────────────────── */
 /* .po-tab container → .tab-container                                         */
 /* .po-scroll        → .scrollable-panel (flex-grow + overflow + padding)     */
-/* Flash states -> .feature-row--success / .feature-row--error (global)                 */
+/* Flash states -> .account-row--success / .account-row--error (global)                 */
 
 .po-scroll {
     display: flex;
@@ -353,7 +353,7 @@
     border-color: var(--c-border);
 }
 
-/* Flash states handled globally via .feature-row--success / .feature-row--error */
+/* Flash states handled globally via .account-row--success / .account-row--error */
 
 .po-currency-row__info {
     display: flex;
@@ -470,3 +470,4 @@
         grid-template-columns: 1fr;
     }
 }
+

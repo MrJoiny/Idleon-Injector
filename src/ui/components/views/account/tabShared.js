@@ -1,6 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
-import { joinClasses } from "./featureShared.js";
+import { joinClasses } from "./accountShared.js";
 
 const { div, button, span, h2, p } = van.tags;
 
@@ -23,14 +23,14 @@ export const renderTabNav = ({
     getButtonProps = null,
 }) =>
     div(
-        { class: joinClasses("feature-sub-nav", navClass) },
+        { class: joinClasses("account-sub-nav", navClass) },
         ...tabs.map((tab) =>
             button(
                 {
                     ...(typeof getButtonProps === "function" ? getButtonProps(tab) : {}),
                     class: () =>
                         joinClasses(
-                            "feature-sub-tab-btn",
+                            "account-sub-tab-btn",
                             typeof buttonClass === "function" ? buttonClass(tab) : buttonClass,
                             activeId.val === tab.id && activeClass,
                             stubClass && isStub(tab) && stubClass
@@ -109,3 +109,5 @@ export const createWorldComingSoonTab =
             )
         );
     };
+
+

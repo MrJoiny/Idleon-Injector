@@ -30,14 +30,14 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureActionButton } from "../components/FeatureActionButton.js";
-import { FeatureSection } from "../components/FeatureSection.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { ActionButton } from "../components/ActionButton.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -73,8 +73,8 @@ const PONumField = ({ label, valueState, writePath }) => {
             class: () =>
                 [
                     "po-field-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -93,7 +93,7 @@ const PONumField = ({ label, valueState, writePath }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply po-field-row__set-btn${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply po-field-row__set-btn${status.val === "loading" ? " account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
@@ -120,9 +120,9 @@ const POToggleField = ({ valueState, writePath }) => {
                 [
                     "po-toggle-btn",
                     valueState.val ? "po-toggle-btn--done" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                    status.val === "loading" ? "feature-btn--loading" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
+                    status.val === "loading" ? "account-btn--loading" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -250,8 +250,8 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             class: () =>
                 [
                     "po-currency-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -275,11 +275,11 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
                 {
                     class: () =>
                         [
-                            "feature-btn",
-                            "feature-btn--apply",
-                            status.val === "loading" ? "feature-btn--loading" : "",
-                            status.val === "success" ? "feature-row--success" : "",
-                            status.val === "error" ? "feature-row--error" : "",
+                            "account-btn",
+                            "account-btn--apply",
+                            status.val === "loading" ? "account-btn--loading" : "",
+                            status.val === "success" ? "account-row--success" : "",
+                            status.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -330,8 +330,8 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
             class: () =>
                 [
                     "po-box-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -353,7 +353,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply${status.val === "loading" ? " feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply${status.val === "loading" ? " account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: doSet,
                 },
@@ -364,7 +364,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
 };
 
 export const PostOfficeTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Post Office" });
+    const { loading, error, run } = useAccountLoad({ label: "Post Office" });
     const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
 
     // ── Per-shipment states (created once, updated in-place) ───────────────
@@ -561,7 +561,7 @@ export const PostOfficeTab = () => {
     );
 
     // ── DOM: Point Sources section ─────────────────────────────────────────
-    const pointsSection = FeatureSection({
+    const pointsSection = AccountSection({
         title: "POINT SOURCES & CURRENCY",
         note: "Values that contribute to your available upgrade points",
         body: [
@@ -644,19 +644,19 @@ export const PostOfficeTab = () => {
                 class: () =>
                     [
                         "po-bulk-bar",
-                        boxBulkStatus.val === "success" ? "feature-row--success" : "",
-                        boxBulkStatus.val === "error" ? "feature-row--error" : "",
+                        boxBulkStatus.val === "success" ? "account-row--success" : "",
+                        boxBulkStatus.val === "error" ? "account-row--error" : "",
                     ]
                         .filter(Boolean)
                         .join(" "),
             },
-            FeatureActionButton({
+            ActionButton({
                 label: "MAX ALL",
                 status: boxBulkStatus,
                 variant: "max-reset",
                 onClick: doMaxAllBoxes,
             }),
-            FeatureActionButton({
+            ActionButton({
                 label: "RESET",
                 status: boxBulkStatus,
                 variant: "max-reset",
@@ -675,14 +675,12 @@ export const PostOfficeTab = () => {
         )
     );
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "POST OFFICE",
             description: "Manage shipment streaks, shields, order completions and delivery point currencies.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " ",
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
@@ -701,3 +699,5 @@ export const PostOfficeTab = () => {
         ),
     });
 };
+
+

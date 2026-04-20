@@ -25,9 +25,9 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -215,7 +215,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             ),
             button(
                 {
-                    class: "feature-btn feature-btn--apply",
+                    class: "account-btn account-btn--apply",
                     onclick: () => {
                         const sel = document.getElementById(`add-player-select-${sign.index}`);
                         const val = parseInt(sel?.value);
@@ -253,11 +253,11 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                 {
                     class: () =>
                         [
-                            "feature-btn",
-                            "feature-btn--apply",
-                            status.val === "loading" ? "feature-btn--loading" : "",
-                            status.val === "success" ? "feature-row--success" : "",
-                            status.val === "error" ? "feature-row--error" : "",
+                            "account-btn",
+                            "account-btn--apply",
+                            status.val === "loading" ? "account-btn--loading" : "",
+                            status.val === "success" ? "account-row--success" : "",
+                            status.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -268,7 +268,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             ),
             () =>
                 status.val === "error"
-                    ? span({ class: "starsign-feature-row--error" }, "Save failed — check game is running")
+                    ? span({ class: "starsign-account-row--error" }, "Save failed — check game is running")
                     : null
         )
     );
@@ -327,7 +327,7 @@ const ensureBatchWriteSuccess = (result) => {
 
 export const StarSignsTab = () => {
     const signs = van.state(null); // array of sign objects
-    const { loading, error, run } = useAccountLoadState({ label: "Star Signs" });
+    const { loading, error, run } = useAccountLoad({ label: "Star Signs" });
     const activeSign = van.state(null); // sign object being edited
     const { status: unlockStatus, run: runUnlock } = useWriteStatus();
     const { status: randomStatus, run: runRandom } = useWriteStatus();
@@ -496,8 +496,8 @@ export const StarSignsTab = () => {
     };
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container starsigns-scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container starsigns-scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "STAR SIGNS",
             description: "Assign players (1-10) and drag to reorder completion order",
             actions: [
@@ -506,10 +506,10 @@ export const StarSignsTab = () => {
                         {
                             class: () =>
                                 [
-                                    "feature-btn feature-btn--apply",
-                                    unlockStatus.val === "loading" ? "feature-btn--loading" : "",
-                                    unlockStatus.val === "success" ? "feature-row--success" : "",
-                                    unlockStatus.val === "error" ? "feature-row--error" : "",
+                                    "account-btn account-btn--apply",
+                                    unlockStatus.val === "loading" ? "account-btn--loading" : "",
+                                    unlockStatus.val === "success" ? "account-row--success" : "",
+                                    unlockStatus.val === "error" ? "account-row--error" : "",
                                 ]
                                     .filter(Boolean)
                                     .join(" "),
@@ -525,10 +525,10 @@ export const StarSignsTab = () => {
                         {
                             class: () =>
                                 [
-                                    "feature-btn feature-btn--apply",
-                                    randomStatus.val === "loading" ? "feature-btn--loading" : "",
-                                    randomStatus.val === "success" ? "feature-row--success" : "",
-                                    randomStatus.val === "error" ? "feature-row--error" : "",
+                                    "account-btn account-btn--apply",
+                                    randomStatus.val === "loading" ? "account-btn--loading" : "",
+                                    randomStatus.val === "success" ? "account-row--success" : "",
+                                    randomStatus.val === "error" ? "account-row--error" : "",
                                 ]
                                     .filter(Boolean)
                                     .join(" "),
@@ -544,10 +544,10 @@ export const StarSignsTab = () => {
                         {
                             class: () =>
                                 [
-                                    "feature-btn feature-btn--max-reset",
-                                    resetStatus.val === "loading" ? "feature-btn--loading" : "",
-                                    resetStatus.val === "success" ? "feature-row--success" : "",
-                                    resetStatus.val === "error" ? "feature-row--error" : "",
+                                    "account-btn account-btn--max-reset",
+                                    resetStatus.val === "loading" ? "account-btn--loading" : "",
+                                    resetStatus.val === "success" ? "account-row--success" : "",
+                                    resetStatus.val === "error" ? "account-row--error" : "",
                                 ]
                                     .filter(Boolean)
                                     .join(" "),
@@ -564,7 +564,7 @@ export const StarSignsTab = () => {
                 ),
             ],
         }),
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data: signs,
@@ -578,7 +578,7 @@ export const StarSignsTab = () => {
             renderContent: (resolved) => {
                 if (activeSign.val) {
                     return div(
-                        { class: "feature-list" },
+                        { class: "account-list" },
                         StarSignDetail({
                             sign: activeSign.val,
                             usernames: activeSign.val.usernames ?? [],
@@ -603,3 +603,5 @@ export const StarSignsTab = () => {
         }),
     });
 };
+
+

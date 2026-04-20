@@ -12,16 +12,16 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { writeVerified } from "../featureShared.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const CATEGORIES = [
     { label: "Money Points", index: 1, max: 600 },
@@ -48,8 +48,8 @@ const AnvilRow = ({ category, valueState, onWriteApplied }) =>
             return nextValue;
         },
         renderInfo: () => [
-            span({ class: "feature-row__name" }, category.label),
-            category.max !== null ? span({ class: "feature-row__index" }, `max ${category.max}`) : null,
+            span({ class: "account-row__name" }, category.label),
+            category.max !== null ? span({ class: "account-row__index" }, `max ${category.max}`) : null,
         ],
         renderBadge: (currentValue) =>
             category.max !== null ? `${currentValue ?? 0} / ${category.max}` : `${currentValue ?? 0} pts`,
@@ -70,7 +70,7 @@ const AnvilRow = ({ category, valueState, onWriteApplied }) =>
     });
 
 export const AnvilTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Anvil" });
+    const { loading, error, run } = useAccountLoad({ label: "Anvil" });
     const statStates = Array.from({ length: 6 }, () => van.state(0));
 
     const load = async () =>
@@ -96,11 +96,11 @@ export const AnvilTab = () => {
     load();
 
     const rowList = div(
-        { class: "feature-list" },
+        { class: "account-list" },
         div(
-            { class: "feature-row feature-row--info" },
-            span({ class: "feature-row__name" }, "Points Remaining"),
-            span({ class: "feature-row__badge feature-row__badge--highlight" }, () => `${statStates[0].val ?? 0} pts`)
+            { class: "account-row account-row--info" },
+            span({ class: "account-row__name" }, "Points Remaining"),
+            span({ class: "account-row__badge account-row__badge--highlight" }, () => `${statStates[0].val ?? 0} pts`)
         ),
         ...CATEGORIES.map((cat) =>
             AnvilRow({
@@ -110,26 +110,27 @@ export const AnvilTab = () => {
             })
         )
     );
+
     return AccountPageShell({
-        rootClass: "world-feature scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "ANVIL",
             description: "Manage point allocation for Bonus Exp, Speed/hr, and Capacity",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read anvil stats from game memory"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read anvil stats from game memory",
+            }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
         persistentState: { loading, error },
         persistentLoadingText: "READING ANVIL",
         persistentErrorTitle: "ANVIL READ FAILED",
-        persistentInitialWrapperClass: "feature-list",
+        persistentInitialWrapperClass: "account-list",
         body: rowList,
     });
 };
+
+

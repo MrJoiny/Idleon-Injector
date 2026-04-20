@@ -17,11 +17,12 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -39,8 +40,8 @@ const VialRow = ({ vial, levelState }) =>
             return writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
         },
         renderInfo: () => [
-            span({ class: "feature-row__index" }, `#${vial.index}`),
-            span({ class: "feature-row__name" }, vial.name),
+            span({ class: "account-row__index" }, `#${vial.index}`),
+            span({ class: "account-row__name" }, vial.name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${MAX_VIAL_LEVEL}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -51,7 +52,7 @@ const VialRow = ({ vial, levelState }) =>
     });
 
 export const VialTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Vials" });
+    const { loading, error, run } = useAccountLoad({ label: "Vials" });
     const vialDefs = van.state([]);
     const setAllInput = van.state("13");
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -119,7 +120,7 @@ export const VialTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data: vialDefs,
@@ -127,12 +128,12 @@ export const VialTab = () => {
         renderEmpty: () =>
             EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." }),
         renderContent: (vials) =>
-            div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
+            div({ class: "account-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
     });
 
     return AccountPageShell({
-        rootClass: "vials-tab tab-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "vials-tab tab-container account-tab-frame",
+        header: AccountTabHeader({
             title: "ALCHEMY - VIALS",
             description: "Set vial levels (0-13) for all alchemy vials.",
             actions: [
@@ -141,8 +142,8 @@ export const VialTab = () => {
                         class: () =>
                             [
                                 "brewing-setall-row",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                                bulkStatus.val === "success" ? "account-row--success" : "",
+                                bulkStatus.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -162,7 +163,7 @@ export const VialTab = () => {
                     button(
                         {
                             class: () =>
-                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                `account-btn account-btn--apply ${bulkStatus.val === "loading" ? "account-btn--loading" : ""}`,
                             disabled: () => bulkStatus.val === "loading",
                             onclick: doSetAll,
                         },
@@ -170,9 +171,11 @@ export const VialTab = () => {
                             bulkStatus.val === "loading" ? "..." : bulkStatus.val === "success" ? "\u2713" : "SET ALL"
                     )
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                RefreshButton({ onRefresh: load }),
             ],
         }),
         body: renderBody,
     });
 };
+
+

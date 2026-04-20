@@ -11,7 +11,7 @@
  *
  *  B) Re-render-on-load tabs (Vials, AtomCollider, SaltLick):
  *       The list is cheap to rebuild and doesn't use persistent row state.
- *       → use runAccountLoad  +  AsyncFeatureBody  +  useWriteStatus
+ *       → use runAccountLoad  +  AsyncAccountBody  +  useWriteStatus
  */
 
 import van from "../../../vendor/van-1.6.0.js";
@@ -129,9 +129,9 @@ export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
     return normalized.replace(/_/g, " ").trim();
 };
 
-export const renderFeatureLoading = () => div({ class: "feature-loader" }, Loader());
+export const renderAccountLoading = () => div({ class: "account-loader" }, Loader());
 
-export const renderFeatureError = (message) =>
+export const renderAccountError = (message) =>
     EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message });
 
 /**
@@ -229,7 +229,7 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
     return { status, run, clearStatus };
 };
 
-// ── AsyncFeatureBody ───────────────────────────────────────────────────────
+// ── AsyncAccountBody ───────────────────────────────────────────────────────
 
 /**
  * Declarative async-state renderer for tabs that re-render their full list
@@ -237,7 +237,7 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
  * directly as a child of the tab's root div.
  *
  * Usage:
- *   const renderBody = AsyncFeatureBody({
+ *   const renderBody = AsyncAccountBody({
  *       loading,
  *       error,
  *       data: myDefs,                             // van.state or plain value
@@ -260,13 +260,13 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
  *   renderContent:  (data: any) => Element | null,
  * }} props
  */
-export const AsyncFeatureBody =
+export const AsyncAccountBody =
     ({
         loading,
         error,
         data = null,
-        renderLoading = renderFeatureLoading,
-        renderError = renderFeatureError,
+        renderLoading = renderAccountLoading,
+        renderError = renderAccountError,
         isEmpty = null,
         renderEmpty = null,
         renderContent,
@@ -284,3 +284,5 @@ export const AsyncFeatureBody =
 
         return renderContent ? renderContent(resolvedData) : null;
     };
+
+

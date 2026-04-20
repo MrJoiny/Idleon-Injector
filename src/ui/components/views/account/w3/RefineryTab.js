@@ -16,9 +16,10 @@ import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -64,11 +65,11 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
         {
             class: () =>
                 [
-                    "feature-row refinery-row",
+                    "account-row refinery-row",
                     isPolymer ? "refinery-row--polymer" : "",
                     isPlaceholder ? "refinery-row--placeholder" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -76,11 +77,11 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
 
         // Left: index + name + badges
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, refIndex + 1),
+            { class: "account-row__info" },
+            span({ class: "account-row__index" }, refIndex + 1),
             div(
                 { class: "refinery-row__name-group" },
-                span({ class: "feature-row__name" }, name),
+                span({ class: "account-row__name" }, name),
                 div(
                     { class: "refinery-row__badges" },
                     isPolymer
@@ -94,11 +95,11 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
         ),
 
         // Centre: current level
-        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0}`),
+        span({ class: "account-row__badge" }, () => `LV ${levelState.val ?? 0}`),
 
         // Right: level + charge controls
         div(
-            { class: "feature-row__controls feature-row__controls--stack" },
+            { class: "account-row__controls account-row__controls--stack" },
 
             div(
                 { class: "refinery-control-row" },
@@ -115,7 +116,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -141,7 +142,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
                         type: "button",
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => status.val === "loading",
                         onclick: (e) => {
                             e.preventDefault();
@@ -158,7 +159,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
 // ── RefineryTab ────────────────────────────────────────────────────────────
 
 export const RefineryTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Refinery" });
+    const { loading, error, run } = useAccountLoad({ label: "Refinery" });
     const data = van.state(null);
     const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
     const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
@@ -195,10 +196,10 @@ export const RefineryTab = () => {
     load();
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "W3 - REFINERY",
             description: "Set refinery levels and salt charges.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         topNotices: [
             div(
@@ -222,13 +223,13 @@ export const RefineryTab = () => {
                 )
             ),
         ],
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data,
             renderContent: (resolved) =>
                 div(
-                    { class: "feature-list" },
+                    { class: "account-list" },
                     ...Array.from({ length: REFINERY_COUNT }, (_, index) =>
                         RefineryRow({
                             refIndex: index,
@@ -241,3 +242,5 @@ export const RefineryTab = () => {
         }),
     });
 };
+
+

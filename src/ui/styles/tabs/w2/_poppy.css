@@ -1,6 +1,6 @@
 /* Poppy tab */
 
-.feature-row--warn:not(.feature-row--success):not(.feature-row--error) {
+.account-row--warn:not(.account-row--success):not(.account-row--error) {
     border-color: var(--c-warning) !important;
     background: var(--c-accent-dim-solid);
 }
@@ -49,3 +49,4 @@
     min-width: 10ch;
     font-size: 0.8rem;
 }
+

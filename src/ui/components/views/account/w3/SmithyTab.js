@@ -12,13 +12,13 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { FeatureActionButton } from "../components/FeatureActionButton.js";
-import { FeatureRow } from "../components/FeatureRow.js";
-import { FeatureSection } from "../components/FeatureSection.js";
+import { ActionButton } from "../components/ActionButton.js";
+import { AccountRow } from "../components/AccountRow.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -191,21 +191,21 @@ const SmithyRow = ({ row, onRemove }) => {
         });
     };
 
-    return FeatureRow({
+    return AccountRow({
         rowClass: "smithy-row",
         status,
         info: [
-            span({ class: "feature-row__index" }, row.index + 1),
+            span({ class: "account-row__index" }, row.index + 1),
             div(
                 { class: "smithy-row__name-group" },
-                span({ class: "feature-row__name" }, row.displayName || row.setKey),
+                span({ class: "account-row__name" }, row.displayName || row.setKey),
                 span({ class: "smithy-row__set-key" }, row.setKey)
             )
         ],
         badge: () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY"),
         controls: button(
             {
-                class: () => `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                class: () => `account-btn account-btn--danger ${status.val === "loading" ? "account-btn--loading" : ""}`,
                 disabled: () => status.val === "loading" || onRemove.isBusy(),
                 onmousedown: (e) => e.preventDefault(),
                 onclick: removeRow,
@@ -216,7 +216,7 @@ const SmithyRow = ({ row, onRemove }) => {
 };
 
 export const SmithyTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Smithy" });
+    const { loading, error, run } = useAccountLoad({ label: "Smithy" });
     const data = van.state(null);
     const currentStoredSetKeys = van.state([]);
     const smithyRows = van.state([]);
@@ -357,7 +357,7 @@ export const SmithyTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -379,7 +379,7 @@ export const SmithyTab = () => {
                             ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val)
                             : null,
 
-                    FeatureSection({
+                    AccountSection({
                         title: "ON SMITHY",
                         note: () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`,
                         body: () => {
@@ -400,7 +400,7 @@ export const SmithyTab = () => {
                         },
                     }),
 
-                    FeatureSection({
+                    AccountSection({
                         title: "ADD EQUIPMENT SET",
                         note: () => `${addableCount.val} AVAILABLE`,
                         body: div(
@@ -408,8 +408,8 @@ export const SmithyTab = () => {
                                 class: () =>
                                     [
                                         "smithy-add-row",
-                                        addStatus.val === "success" ? "feature-row--success" : "",
-                                        addStatus.val === "error" ? "feature-row--error" : "",
+                                        addStatus.val === "success" ? "account-row--success" : "",
+                                        addStatus.val === "error" ? "account-row--error" : "",
                                     ]
                                         .filter(Boolean)
                                         .join(" "),
@@ -428,7 +428,7 @@ export const SmithyTab = () => {
                                               option({ value: entry.setKey }, `${entry.displayName} (${entry.setKey})`)
                                           ))
                                 ),
-                            FeatureActionButton({
+                            ActionButton({
                                 label: "ADD",
                                 status: addStatus,
                                 variant: "apply",
@@ -438,7 +438,7 @@ export const SmithyTab = () => {
                                     addOptions.val.length === 0,
                                 onClick: addSelected,
                             }),
-                            FeatureActionButton({
+                            ActionButton({
                                 label: "ADD ALL",
                                 status: addStatus,
                                 variant: "danger",
@@ -454,7 +454,7 @@ export const SmithyTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "SMITHY",
             description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",
             actions: button(
@@ -472,3 +472,5 @@ export const SmithyTab = () => {
         body: renderBody,
     });
 };
+
+

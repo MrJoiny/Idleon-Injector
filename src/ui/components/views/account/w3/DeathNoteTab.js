@@ -27,23 +27,24 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
 import {
     adjustFormattedIntInput,
     cleanName,
     largeFormatter,
     largeParser,
-    renderFeatureError,
-    renderFeatureLoading,
+    renderAccountError,
+    renderAccountLoading,
     resolveFormattedIntInput,
     toNodes,
     toInt,
     unwrapH,
     useWriteStatus,
     writeVerified,
-} from "../featureShared.js";
+} from "../accountShared.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { renderLazyPanes, renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -105,14 +106,14 @@ const KillCountRow = ({ killState, rowClass, controlsClass, renderInfo, write, o
             class: () =>
                 [
                     rowClass,
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
         ...toNodes(renderInfo()),
-        span({ class: "feature-row__badge feature-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
+        span({ class: "account-row__badge account-row__badge--highlight" }, () => formatNumber(toInt(killState.val))),
         div(
             { class: controlsClass },
             NumberInput({
@@ -138,7 +139,7 @@ const KillCountRow = ({ killState, rowClass, controlsClass, renderInfo, write, o
                     {
                         type: "button",
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                         onclick: () => doSet(inputVal.val),
                         disabled: () => status.val === "loading",
                     },
@@ -236,9 +237,9 @@ const MobRow = ({ mob, getKillState, getExpandState, currentPlayer }) => {
 const MinibossRow = ({ mob, killState }) =>
     KillCountRow({
         killState,
-        rowClass: "feature-row",
-        controlsClass: "feature-row__controls feature-row__controls--xl",
-        renderInfo: () => div({ class: "feature-row__info" }, span({ class: "feature-row__name" }, mob.mobName)),
+        rowClass: "account-row",
+        controlsClass: "account-row__controls account-row__controls--xl",
+        renderInfo: () => div({ class: "account-row__info" }, span({ class: "account-row__name" }, mob.mobName)),
         write: async (num) => {
             const path = `Ninja[105][${mob.mobIndex}]`;
             return writeVerified(path, num, { message: `Death Note write mismatch at ${path}: expected ${num}` });
@@ -267,7 +268,7 @@ const createPaneSignature = (worldKey, snapshot) => {
 
 const createPaneStore = (worldKey) => ({
     signature: null,
-    listNode: div({ class: `feature-list${worldKey === "Miniboss" ? "" : " dn-mob-list"}` }),
+    listNode: div({ class: `account-list${worldKey === "Miniboss" ? "" : " dn-mob-list"}` }),
 });
 
 const WorldPanel = ({ worldKey, loading, error, data, getPaneStore, reconcilePaneRows }) => {
@@ -281,14 +282,14 @@ const WorldPanel = ({ worldKey, loading, error, data, getPaneStore, reconcilePan
 
     return div(
         { class: "dn-world-panel" },
-        () => (loading.val ? div({ class: "feature-list" }, renderFeatureLoading()) : null),
-        () => (!loading.val && error.val ? div({ class: "feature-list" }, renderFeatureError(error.val)) : null),
+        () => (loading.val ? div({ class: "account-list" }, renderAccountLoading()) : null),
+        () => (!loading.val && error.val ? div({ class: "account-list" }, renderAccountError(error.val)) : null),
         () => {
             if (loading.val || error.val) return null;
             const hasRows = !!(data.val && data.val.worlds?.[worldKey]?.length > 0);
             if (hasRows) return null;
             return div(
-                { class: "feature-list" },
+                { class: "account-list" },
                 EmptyState({
                     icon: Icons.SearchX(),
                     title: isMiniboss ? "NO MINIBOSS DATA" : "NO DATA",
@@ -313,7 +314,7 @@ const WorldPanel = ({ worldKey, loading, error, data, getPaneStore, reconcilePan
 // ── DeathNoteTab ──────────────────────────────────────────────────────────────
 
 export const DeathNoteTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Death Note" });
+    const { loading, error, run } = useAccountLoad({ label: "Death Note" });
     const data = van.state(null);
 
     const getKillState = (mobId, playerName) => {
@@ -507,10 +508,10 @@ export const DeathNoteTab = () => {
     const activeSubTab = van.state(DN_SUBTABS[0].id);
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "DEATH NOTE",
             description: "View kill counts per character for each mob in the Death Note.",
-            actions: button({ type: "button", class: "btn-secondary", disabled: loading, onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load, disabled: loading }),
         }),
         body: div(
             { class: "dn-panels" },
@@ -542,3 +543,5 @@ export const DeathNoteTab = () => {
         ),
     });
 };
+
+

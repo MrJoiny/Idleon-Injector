@@ -37,7 +37,7 @@ const getFallbackMessage = (label, fallbackMessage) => {
  *   run: (task: () => Promise<any>) => Promise<any|undefined>,
  * }}
  */
-export const useAccountLoadState = ({ label = "Account page", fallbackMessage } = {}) => {
+export const useAccountLoad = ({ label = "Account page", fallbackMessage } = {}) => {
     const loading = van.state(true);
     const error = van.state(null);
 
@@ -58,3 +58,5 @@ export const useAccountLoadState = ({ label = "Account page", fallbackMessage } 
 
     return { loading, error, run };
 };
+
+

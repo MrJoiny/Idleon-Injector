@@ -3,7 +3,7 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { formatNumber } from "../../../utils/numberFormat.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
-import { largeFormatter, largeParser, resolveNumberInput, writeVerified } from "./featureShared.js";
+import { largeFormatter, largeParser, resolveNumberInput, writeVerified } from "./accountShared.js";
 
 const { span } = van.tags;
 
@@ -34,15 +34,15 @@ export const ClickerRow = ({
             });
         },
         renderInfo: () => [
-            span({ class: "feature-row__name" }, field.label),
+            span({ class: "account-row__name" }, field.label),
             field.warn ? span({ class: warnBadgeClass }, Icons.Warning(), ` ${field.warn}`) : null,
         ],
         renderBadge: (currentValue) => {
             if (currentValue === undefined) return emptyBadge;
             return isFormatted ? formatNumber(currentValue) : String(currentValue);
         },
-        rowClass: () => (field.warn ? "feature-row--warn" : ""),
-        badgeClass: () => (field.live ? "feature-row__badge--highlight" : ""),
+        rowClass: () => (field.warn ? "account-row--warn" : ""),
+        badgeClass: () => (field.live ? "account-row__badge--highlight" : ""),
         controlsClass,
         inputMode: isFloat ? "float" : "int",
         inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
@@ -53,3 +53,5 @@ export const ClickerRow = ({
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
     });
 };
+
+

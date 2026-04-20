@@ -23,12 +23,12 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { BulkActionBar } from "../BulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus, writeVerified } from "../featureShared.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 const ARCADE_LEVEL_MAX = 101;
@@ -67,8 +67,8 @@ const ArcadeCard = ({ entry }) => {
                 [
                     "arcade-card",
                     isCosmic.val ? "arcade-card--cosmic" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -94,7 +94,7 @@ const ArcadeCard = ({ entry }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -105,7 +105,7 @@ const ArcadeCard = ({ entry }) => {
 };
 
 export const ArcadeTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Arcade" });
+    const { loading, error, run } = useAccountLoad({ label: "Arcade" });
     const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
 
     const normalBalls = van.state("0");
@@ -223,8 +223,8 @@ export const ArcadeTab = () => {
 
     const topBallsFlashClass = () => {
         const states = [normalBallWrite.status.val, goldenBallWrite.status.val, cosmicBallWrite.status.val];
-        if (states.includes("error")) return "feature-row--error";
-        if (states.includes("success")) return "feature-row--success";
+        if (states.includes("error")) return "account-row--error";
+        if (states.includes("success")) return "account-row--success";
         return "";
     };
 
@@ -247,7 +247,7 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${normalBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${normalBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => normalBallWrite.status.val === "loading",
                         onclick: () => doSetBall("normal", normalBalls),
                     },
@@ -267,7 +267,7 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${goldenBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${goldenBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => goldenBallWrite.status.val === "loading",
                         onclick: () => doSetBall("golden", goldenBalls),
                     },
@@ -287,7 +287,7 @@ export const ArcadeTab = () => {
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${cosmicBallWrite.status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${cosmicBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => cosmicBallWrite.status.val === "loading",
                         onclick: () => doSetBall("cosmic", cosmicBalls),
                     },
@@ -304,12 +304,12 @@ export const ArcadeTab = () => {
     );
 
     return AccountPageShell({
-        rootClass: "arcade-tab tab-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "arcade-tab tab-container account-tab-frame",
+        header: AccountTabHeader({
             title: "ARCADE UPGRADES",
             description: "Manage Arcade balls and upgrade levels.",
             wrapActions: false,
-            actions: FeatureBulkActionBar({
+            actions: BulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -339,3 +339,5 @@ export const ArcadeTab = () => {
         body: content,
     });
 };
+
+

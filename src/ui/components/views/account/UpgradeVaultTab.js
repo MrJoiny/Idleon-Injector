@@ -1,10 +1,10 @@
-﻿/**
+/**
  * Upgrade Vault Tab
  *
  * Reads/writes gga.UpgVault[index] for all vault upgrades.
  *
  * Data sources:
- *   cList.UpgradeVault[i][0] = name (underscores + è£½ stripped)
+ *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
  *   cList.UpgradeVault[i][4] = base max level (soft cap)
  *   VaultUpgMaxLV via readComputedMany("summoning", "VaultUpgMaxLV", [[i, 0], ...])
  *                 = real max level (includes Glimbo trade bonuses)
@@ -17,18 +17,18 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany, readCList } from "../../../services/api.js";
-import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
-import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
-import { useAccountLoadState } from "./accountLoadPolicy.js";
-import { AsyncFeatureBody, cleanName, toNum, writeVerified } from "./featureShared.js";
+import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
+import { AccountTabHeader } from "./components/AccountTabHeader.js";
+import { useAccountLoad } from "./accountLoadPolicy.js";
+import { AsyncAccountBody, cleanName, toNum, writeVerified } from "./accountShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
-// ── VaultRow ──────────────────────────────────────────────────────────────
+// -- VaultRow --------------------------------------------------------------
 
 const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
@@ -44,8 +44,8 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
             return writeVerified(path, nextLevel);
         },
         renderInfo: () => [
-            span({ class: "feature-row__name" }, name),
-            span({ class: "feature-row__index" }, `#${index}`),
+            span({ class: "account-row__name" }, name),
+            span({ class: "account-row__index" }, `#${index}`),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${realMax}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -61,11 +61,11 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     });
 };
 
-// ── UpgradeVaultTab ───────────────────────────────────────────────────────
+// -- UpgradeVaultTab -------------------------------------------------------
 
 export const UpgradeVaultTab = () => {
     const data = van.state(null); // { upgrades: [{ index, name, baseMax, realMax }] }
-    const { loading, error, run } = useAccountLoadState({ label: "Upgrade Vault" });
+    const { loading, error, run } = useAccountLoad({ label: "Upgrade Vault" });
     const levelStates = [];
 
     const getLevelState = (index) => {
@@ -117,14 +117,14 @@ export const UpgradeVaultTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
         isEmpty: (resolved) => resolved.upgrades.length === 0,
         renderContent: (resolved) =>
             div(
-                { class: "feature-list" },
+                { class: "account-list" },
                 ...resolved.upgrades.map((upgrade) =>
                     VaultRow({
                         index: upgrade.index,
@@ -138,21 +138,21 @@ export const UpgradeVaultTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "UPGRADE VAULT",
             description:
-                "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read vault levels from game memory"
-            ),
+                "Set levels for all vault upgrades � real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read vault levels from game memory",
+            }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
-                "SET accepts any value ≥ 0 — no hard upper limit enforced."
+                "SET accepts any value = 0 � no hard upper limit enforced."
         ),
         body: renderBody,
     });
 };
+
+

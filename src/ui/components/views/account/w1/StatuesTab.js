@@ -15,9 +15,10 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -67,14 +68,14 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
             class: () => {
                 const tier = tierDisplay.val;
                 const tierClass = ["", "tier--gold", "tier--onyx", "tier--zenith"][tier] ?? "";
-                return `feature-row ${tierClass} ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`;
+                return `account-row ${tierClass} ${status.val === "success" ? "account-row--success" : ""} ${status.val === "error" ? "account-row--error" : ""}`;
             },
         },
 
         // Name + tier badge
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__name" }, name),
+            { class: "account-row__info" },
+            span({ class: "account-row__name" }, name),
             span(
                 {
                     class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][tierDisplay.val]}`,
@@ -84,13 +85,13 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
         ),
 
         // Level badge
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val}`),
+        span({ class: "account-row__badge" }, () => `LV ${levelDisplay.val}`),
 
         // Controls — staged inputs + SET to the right
         div(
-            { class: "feature-row__controls" },
+            { class: "account-row__controls" },
             div(
-                { class: "feature-row__controls--stack" },
+                { class: "account-row__controls--stack" },
 
                 // Row 1: Level
                 div(
@@ -145,7 +146,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                         onclick: doSet,
                         disabled: () => status.val === "loading",
                     },
@@ -160,7 +161,7 @@ const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier })
 
 export const StatuesTab = () => {
     const data = van.state(null);
-    const { loading, error, run } = useAccountLoadState({ label: "Statues" });
+    const { loading, error, run } = useAccountLoad({ label: "Statues" });
 
     const load = async () =>
         run(async () => {
@@ -179,18 +180,16 @@ export const StatuesTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "STATUES",
             description: "Set statue levels, deposited amounts, and upgrade tiers",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read statue data from game memory"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read statue data from game memory",
+            }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " Tier upgrades require specific tools: ",
             span({ class: "warning-highlight-accent" }, "Guilding Tools"),
             " for Gold, ",
@@ -199,7 +198,7 @@ export const StatuesTab = () => {
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
             " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data,
@@ -219,7 +218,7 @@ export const StatuesTab = () => {
                     .filter((statue) => statue.name && statue.name.trim().length > 0);
 
                 return div(
-                    { class: "feature-list" },
+                    { class: "account-list" },
                     ...statues.map((statue) =>
                         StatueRow({
                             index: statue.index,
@@ -234,3 +233,5 @@ export const StatuesTab = () => {
         }),
     });
 };
+
+

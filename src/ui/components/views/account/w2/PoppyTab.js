@@ -11,13 +11,13 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
-import { withTooltip } from "../../../Tooltip.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const PINNED_FIELDS = [
     { index: 271, label: "Poppy Permanent Bonus Level", warn: "Permanent bonus - keep between 70-90" },
@@ -82,7 +82,7 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
     });
 
 export const PoppyTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Poppy" });
+    const { loading, error, run } = useAccountLoad({ label: "Poppy" });
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
     const load = async () =>
@@ -99,7 +99,7 @@ export const PoppyTab = () => {
     };
 
     const rowList = div(
-        { class: "feature-list poppy-list" },
+        { class: "account-list poppy-list" },
         div({ class: "poppy-section-label" }, Icons.Warning(), " Permanent / Sensitive"),
         ...PINNED_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "poppy-section-label" }, "Main Poppy Progress"),
@@ -113,18 +113,16 @@ export const PoppyTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "poppy-tab tab-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "poppy-tab tab-container account-tab-frame",
+        header: AccountTabHeader({
             title: "POPPY",
             description: "Poppy clicker values and Tar Pit progression controls",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: () => load() }, "REFRESH"),
-                "Re-read Poppy data from game"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read Poppy data from game",
+            }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " ",
             span({ class: "warning-highlight-accent" }, "Poppy Permanent Bonus"),
             " should stay around 70-90, and ",
@@ -139,3 +137,5 @@ export const PoppyTab = () => {
         body: rowList,
     });
 };
+
+

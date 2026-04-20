@@ -140,11 +140,11 @@
     z-index: 100;
 }
 
-.option-item.feature-row--success:hover {
+.option-item.account-row--success:hover {
     border-color: var(--c-success);
 }
 
-.option-item.feature-row--error:hover {
+.option-item.account-row--error:hover {
     border-color: var(--c-danger);
 }
 .option-item.has-warning {
@@ -152,11 +152,11 @@
 }
 
 /* Warning rows should still show definitive write outcome colors. */
-.option-item.has-warning.feature-row--success {
+.option-item.has-warning.account-row--success {
     border-color: var(--c-success);
 }
 
-.option-item.has-warning.feature-row--error {
+.option-item.has-warning.account-row--error {
     border-color: var(--c-danger);
 }
 
@@ -215,3 +215,4 @@
     background: var(--c-success);
     color: var(--c-black);
 }
+

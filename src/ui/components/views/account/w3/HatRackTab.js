@@ -13,9 +13,9 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, cleanName, unwrapH, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, cleanName, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -89,30 +89,30 @@ const RackRow = ({ row, onRemove }) => {
         {
             class: () =>
                 [
-                    "feature-row",
+                    "account-row",
                     "hat-rack-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, row.index + 1),
+            { class: "account-row__info" },
+            span({ class: "account-row__index" }, row.index + 1),
             div(
                 { class: "hat-rack-row__name-group" },
-                span({ class: "feature-row__name" }, row.name || row.itemId),
+                span({ class: "account-row__name" }, row.name || row.itemId),
                 span({ class: "hat-rack-row__item-id" }, row.itemId)
             )
         ),
-        span({ class: "feature-row__badge" }, "ON RACK"),
+        span({ class: "account-row__badge" }, "ON RACK"),
         div(
-            { class: "feature-row__controls" },
+            { class: "account-row__controls" },
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--danger ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading" || onRemove.isBusy(),
                     onmousedown: (e) => e.preventDefault(),
                     onclick: removeRow,
@@ -124,7 +124,7 @@ const RackRow = ({ row, onRemove }) => {
 };
 
 export const HatRackTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Hat Rack" });
+    const { loading, error, run } = useAccountLoad({ label: "Hat Rack" });
     const data = van.state(null);
     const currentRackIds = van.state([]);
     const rackRows = van.state([]);
@@ -276,7 +276,7 @@ export const HatRackTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -330,8 +330,8 @@ export const HatRackTab = () => {
                                 class: () =>
                                     [
                                         "hat-rack-add-row",
-                                        addStatus.val === "success" ? "feature-row--success" : "",
-                                        addStatus.val === "error" ? "feature-row--error" : "",
+                                        addStatus.val === "success" ? "account-row--success" : "",
+                                        addStatus.val === "error" ? "account-row--error" : "",
                                     ]
                                         .filter(Boolean)
                                         .join(" "),
@@ -353,7 +353,7 @@ export const HatRackTab = () => {
                             button(
                                 {
                                     class: () =>
-                                        `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                        `account-btn account-btn--apply ${addStatus.val === "loading" ? "account-btn--loading" : ""}`,
                                     disabled: () =>
                                         mutating.val ||
                                         addStatus.val === "loading" ||
@@ -367,7 +367,7 @@ export const HatRackTab = () => {
                             button(
                                 {
                                     class: () =>
-                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                        `account-btn account-btn--danger ${addStatus.val === "loading" ? "account-btn--loading" : ""}`,
                                     disabled: () =>
                                         mutating.val || addStatus.val === "loading" || missingOptions.val.length === 0,
                                     onmousedown: (e) => e.preventDefault(),
@@ -384,7 +384,7 @@ export const HatRackTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "HAT RACK",
             description: "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets.",
             actions: button(
@@ -402,3 +402,5 @@ export const HatRackTab = () => {
         body: renderBody,
     });
 };
+
+

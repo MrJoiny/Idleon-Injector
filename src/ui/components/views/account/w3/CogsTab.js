@@ -28,9 +28,10 @@ import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, h3, input } = van.tags;
 const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
@@ -177,7 +178,7 @@ const stateLabel = (state) => {
 };
 
 export const CogsTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Cogs" });
+    const { loading, error, run } = useAccountLoad({ label: "Cogs" });
 
     const selectedSlot = van.state(0);
     const activeSlot = van.state(null);
@@ -363,8 +364,8 @@ export const CogsTab = () => {
                     class: () =>
                         [
                             "cogs-cog-stat-row",
-                            tinyWriteStatus.val === "success" ? "feature-row--success" : "",
-                            tinyWriteStatus.val === "error" ? "feature-row--error" : "",
+                            tinyWriteStatus.val === "success" ? "account-row--success" : "",
+                            tinyWriteStatus.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -392,7 +393,7 @@ export const CogsTab = () => {
                         {
                             type: "button",
                             class: () =>
-                                `cogs-cog-stat-set-btn feature-btn feature-btn--apply${tinyWriteStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                                `cogs-cog-stat-set-btn account-btn account-btn--apply${tinyWriteStatus.val === "loading" ? " account-btn--loading" : ""}`,
                             disabled: () => tinyWriteStatus.val === "loading",
                             onclick: () => setTinyCog(),
                         },
@@ -405,8 +406,8 @@ export const CogsTab = () => {
                     class: () =>
                         [
                             "cogs-cog-stat-row",
-                            tinyWriteStatus.val === "success" ? "feature-row--success" : "",
-                            tinyWriteStatus.val === "error" ? "feature-row--error" : "",
+                            tinyWriteStatus.val === "success" ? "account-row--success" : "",
+                            tinyWriteStatus.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -434,7 +435,7 @@ export const CogsTab = () => {
                         {
                             type: "button",
                             class: () =>
-                                `cogs-cog-stat-set-btn feature-btn feature-btn--apply${tinyWriteStatus.val === "loading" ? " feature-btn--loading" : ""}`,
+                                `cogs-cog-stat-set-btn account-btn account-btn--apply${tinyWriteStatus.val === "loading" ? " account-btn--loading" : ""}`,
                             disabled: () => tinyWriteStatus.val === "loading",
                             onclick: () => setTinyCog(),
                         },
@@ -617,8 +618,8 @@ export const CogsTab = () => {
                                   class: () =>
                                       [
                                           "cogs-cog-stat-row",
-                                          cogMapWriteStatus.val === "success" ? "feature-row--success" : "",
-                                          cogMapWriteStatus.val === "error" ? "feature-row--error" : "",
+                                          cogMapWriteStatus.val === "success" ? "account-row--success" : "",
+                                          cogMapWriteStatus.val === "error" ? "account-row--error" : "",
                                       ]
                                           .filter(Boolean)
                                           .join(" "),
@@ -639,8 +640,8 @@ export const CogsTab = () => {
                                       {
                                           type: "button",
                                           class: () =>
-                                              "cogs-cog-stat-set-btn feature-btn feature-btn--apply" +
-                                              (cogMapWriteStatus.val === "loading" ? " feature-btn--loading" : ""),
+                                              "cogs-cog-stat-set-btn account-btn account-btn--apply" +
+                                              (cogMapWriteStatus.val === "loading" ? " account-btn--loading" : ""),
                                           disabled: () => readOnly || cogMapWriteStatus.val === "loading",
                                           onclick: () => setCogMapField(key, inputEl.value),
                                       },
@@ -698,8 +699,8 @@ export const CogsTab = () => {
                     class: () =>
                         [
                             "cogs-selection-actions",
-                            lockStatus.val === "success" ? "feature-row--success" : "",
-                            lockStatus.val === "error" ? "feature-row--error" : "",
+                            lockStatus.val === "success" ? "account-row--success" : "",
+                            lockStatus.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -708,7 +709,7 @@ export const CogsTab = () => {
                     {
                         type: "button",
                         class: () =>
-                            `feature-btn feature-btn--danger ${lockStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--danger ${lockStatus.val === "loading" ? "account-btn--loading" : ""}`,
                         // Block lock if: already locked, or a cog/player occupies the slot
                         disabled: () => {
                             const index = getActiveIndex();
@@ -727,7 +728,7 @@ export const CogsTab = () => {
                     {
                         type: "button",
                         class: () =>
-                            `feature-btn feature-btn--apply ${lockStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${lockStatus.val === "loading" ? "account-btn--loading" : ""}`,
                         disabled: () => {
                             const index = getActiveIndex();
                             return (
@@ -810,12 +811,14 @@ export const CogsTab = () => {
     van.add(document.body, popup);
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "CONSTRUCTION - COGS",
             description: "Click a slot to view details and edit CogMap fields.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
         body: boardPane,
     });
 };
+
+

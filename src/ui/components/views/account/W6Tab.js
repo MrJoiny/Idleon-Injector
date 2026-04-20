@@ -7,3 +7,5 @@ export const W6Tab = createWorldComingSoonTab({
     subtitle: "Farming, Sneaking & Beanstalk",
     worldKey: "W6",
 });
+
+

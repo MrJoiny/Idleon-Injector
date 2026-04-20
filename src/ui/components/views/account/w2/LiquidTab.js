@@ -24,9 +24,10 @@ import { gga } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -103,8 +104,8 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
             class: () =>
                 [
                     "liquid-section",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -128,7 +129,7 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply liquid-section__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply liquid-section__set-btn ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -169,7 +170,7 @@ const LiquidColumn = ({ liquid, states }) =>
 // ── LiquidTab ─────────────────────────────────────────────────────────────
 
 export const LiquidTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Liquid" });
+    const { loading, error, run } = useAccountLoad({ label: "Liquid" });
 
     // Per-liquid reactive states — created once, updated in-place on refresh.
     // Columns are never rebuilt; only their internal bindings react.
@@ -204,12 +205,14 @@ export const LiquidTab = () => {
         ...LIQUIDS.map((liq, i) => LiquidColumn({ liquid: liq, states: liquidStates[i] }))
     );
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "ALCHEMY — LIQUID",
             description: "Edit current liquid amounts and cap / rate upgrade levels.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
         body: grid,
     });
 };
+
+

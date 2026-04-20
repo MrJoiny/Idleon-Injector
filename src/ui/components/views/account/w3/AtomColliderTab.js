@@ -17,12 +17,12 @@ import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { BulkActionBar } from "../BulkActionBar.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -40,8 +40,8 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
             });
         },
         renderInfo: () => [
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevel}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -51,7 +51,7 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
     });
 
 export const AtomColliderTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Atom Collider" });
+    const { loading, error, run } = useAccountLoad({ label: "Atom Collider" });
     const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
@@ -125,7 +125,7 @@ export const AtomColliderTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -134,7 +134,7 @@ export const AtomColliderTab = () => {
             EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
         renderContent: (resolved) =>
             div(
-                { class: "feature-list" },
+                { class: "account-list" },
                 ...resolved.atoms.map((a, i) =>
                     AtomRow({
                         index: i,
@@ -147,11 +147,11 @@ export const AtomColliderTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "ATOM COLLIDER",
             description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
             wrapActions: false,
-            actions: FeatureBulkActionBar({
+            actions: BulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -174,3 +174,5 @@ export const AtomColliderTab = () => {
         body: renderBody,
     });
 };
+
+

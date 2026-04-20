@@ -1,6 +1,6 @@
 /* ── Orion tab ────────────────────────────────────────────────────────── */
 
-.feature-row--warn:not(.feature-row--success):not(.feature-row--error) {
+.account-row--warn:not(.account-row--success):not(.account-row--error) {
     border-color: var(--c-warning) !important;
     background: var(--c-accent-dim-solid);
 }
@@ -23,11 +23,12 @@
     margin-bottom: 2px;
 }
 
-.feature-row__controls--xl .number-input-wrapper {
+.account-row__controls--xl .number-input-wrapper {
     width: 180px;
 }
 
-.feature-row__controls--xl .number-input-wrapper input {
+.account-row__controls--xl .number-input-wrapper input {
     min-width: 10ch;
     font-size: 0.8rem;
 }
+

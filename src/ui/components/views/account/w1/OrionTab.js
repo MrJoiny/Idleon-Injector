@@ -33,13 +33,13 @@ import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { withTooltip } from "../../../Tooltip.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 // ── Field definitions ─────────────────────────────────────────────────────
 //
@@ -78,13 +78,13 @@ const OrionRow = ({ field, fieldState, onWrite }) =>
         fieldState,
         onWrite,
         warnBadgeClass: "orion-warn-badge",
-        controlsClass: "feature-row__controls--xl",
+        controlsClass: "account-row__controls--xl",
     });
 
 // ── OrionTab ──────────────────────────────────────────────────────────────
 
 export const OrionTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Orion" });
+    const { loading, error, run } = useAccountLoad({ label: "Orion" });
 
     const fieldStates = new Map(ALL_FIELDS.map((f) => [f.index, van.state(undefined)]));
 
@@ -105,7 +105,7 @@ export const OrionTab = () => {
     // Hidden via class while loading/errored so the user doesn't see stale data,
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
-        { class: () => `feature-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
+        { class: () => `account-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
         div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
         ...PINNED.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
         div({ class: "orion-section-label" }, "Upgrades & Stats"),
@@ -115,18 +115,16 @@ export const OrionTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "ORION",
             description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read Orion data from game"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read Orion data from game",
+            }),
         }),
-        topNotices: div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+        topNotices: WarningBanner(
             " ",
             span({ class: "warning-highlight-accent" }, "Bonuses of Orion"),
             " and ",
@@ -138,12 +136,12 @@ export const OrionTab = () => {
         body: div(
             () =>
                 loading.val
-                    ? div({ class: "feature-list" }, div({ class: "feature-loader" }, Loader({ text: "READING ORION" })))
+                    ? div({ class: "account-list" }, div({ class: "account-loader" }, Loader({ text: "READING ORION" })))
                     : null,
             () =>
                 error.val
                     ? div(
-                          { class: "feature-list" },
+                          { class: "account-list" },
                           EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
                       )
                     : null,
@@ -151,3 +149,5 @@ export const OrionTab = () => {
         ),
     });
 };
+
+

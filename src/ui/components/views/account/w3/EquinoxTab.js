@@ -30,9 +30,10 @@ import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { toInt, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -114,28 +115,28 @@ const CloudRow = ({ entry }) => {
         {
             class: () =>
                 [
-                    "feature-row",
+                    "account-row",
                     entry.cloudIndex >= 35 ? "cloud-row--nightmare" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, entry.cloudIndex + 1),
-            span({ class: "feature-row__name" }, entry.name)
+            { class: "account-row__info" },
+            span({ class: "account-row__index" }, entry.cloudIndex + 1),
+            span({ class: "account-row__name" }, entry.name)
         ),
-        span({ class: "feature-row__badge" }, () => `${fmtInt(entry.progressState.val)} / ${fmtInt(entry.required)}`),
+        span({ class: "account-row__badge" }, () => `${fmtInt(entry.progressState.val)} / ${fmtInt(entry.required)}`),
         div(
-            { class: "feature-row__controls" },
+            { class: "account-row__controls" },
             button(
                 {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -177,21 +178,21 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
         {
             class: () =>
                 [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    "account-row",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, entry.index + 1),
-            span({ class: "feature-row__name" }, entry.name)
+            { class: "account-row__info" },
+            span({ class: "account-row__index" }, entry.index + 1),
+            span({ class: "account-row__name" }, entry.name)
         ),
-        span({ class: "feature-row__badge" }, () => `LV ${entry.levelState.val} / ${entry.maxLevel}`),
+        span({ class: "account-row__badge" }, () => `LV ${entry.levelState.val} / ${entry.maxLevel}`),
         div(
-            { class: "feature-row__controls" },
+            { class: "account-row__controls" },
             NumberInput({
                 mode: "int",
                 value: inputVal,
@@ -205,7 +206,7 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -221,7 +222,7 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
 // ── EquinoxTab ────────────────────────────────────────────────────────────────
 
 export const EquinoxTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Equinox" });
+    const { loading, error, run } = useAccountLoad({ label: "Equinox" });
 
     // Bar — top-level reactive states, always updated in-place
     const barFillState = van.state(0);
@@ -444,7 +445,7 @@ export const EquinoxTab = () => {
     );
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "EQUINOX",
             description: "Dream bar fill, active clouds, and upgrade levels.",
             actions: [
@@ -454,11 +455,11 @@ export const EquinoxTab = () => {
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
                             [
-                                "feature-btn",
-                                "feature-btn--apply",
-                                fillBarStatus.val === "loading" ? "feature-btn--loading" : "",
-                                fillBarStatus.val === "success" ? "feature-row--success" : "",
-                                fillBarStatus.val === "error" ? "feature-row--error" : "",
+                                "account-btn",
+                                "account-btn--apply",
+                                fillBarStatus.val === "loading" ? "account-btn--loading" : "",
+                                fillBarStatus.val === "success" ? "account-row--success" : "",
+                                fillBarStatus.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -470,10 +471,12 @@ export const EquinoxTab = () => {
                     },
                     () => (fillBarStatus.val === "success" ? "FILLED!" : "FILL BAR")
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                RefreshButton({ onRefresh: load }),
             ],
         }),
         persistentState: { loading, error },
         body: content,
     });
 };
+
+

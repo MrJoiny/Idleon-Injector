@@ -147,12 +147,13 @@
     flex: 1;
 }
 
-.arcade-card.feature-row--success {
+.arcade-card.account-row--success {
     border-color: var(--c-success);
     box-shadow: 0 0 0 1px var(--c-success);
 }
 
-.arcade-card.feature-row--error {
+.arcade-card.account-row--error {
     border-color: var(--c-danger);
     box-shadow: 0 0 0 1px var(--c-danger);
 }
+

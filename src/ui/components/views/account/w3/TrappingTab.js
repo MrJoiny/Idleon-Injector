@@ -27,11 +27,12 @@ import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     adjustFormattedIntInput,
-    AsyncFeatureBody,
+    AsyncAccountBody,
     cleanName,
     largeFormatter,
     largeParser,
@@ -40,7 +41,7 @@ import {
     unwrapH,
     useWriteStatus,
     writeVerified,
-} from "../featureShared.js";
+} from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -93,8 +94,8 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
 
     const statusClass = () => {
         if (applyStatus.status.val === "success" || finishStatus.status.val === "success")
-            return "feature-row--success";
-        if (applyStatus.status.val === "error" || finishStatus.status.val === "error") return "feature-row--error";
+            return "account-row--success";
+        if (applyStatus.status.val === "error" || finishStatus.status.val === "error") return "account-row--error";
         return "";
     };
 
@@ -137,23 +138,23 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
     };
 
     return div(
-        { class: () => `feature-row trap-row ${statusClass()}` },
+        { class: () => `account-row trap-row ${statusClass()}` },
         div(
-            { class: "feature-row__info trap-row__info" },
-            span({ class: "feature-row__index" }, `#${trap.trapIndex + 1}`),
+            { class: "account-row__info trap-row__info" },
+            span({ class: "account-row__index" }, `#${trap.trapIndex + 1}`),
             div(
                 { class: "trap-row__text" },
-                span({ class: "feature-row__name" }, trap.critterName),
+                span({ class: "account-row__name" }, trap.critterName),
                 span({ class: "trap-row__meta" }, () => progressLabel(elapsedValue.val, completionValue.val))
             )
         ),
         span(
-            { class: "feature-row__badge trap-row__badge" },
+            { class: "account-row__badge trap-row__badge" },
             () =>
                 `QTY ${formatNumber(toInt(qtyValue.val))} | EXP ${formatNumber(toInt(expValue.val))} | RARE ${formatNumber(toInt(rareValue.val))}`
         ),
         div(
-            { class: "feature-row__controls trap-row__controls" },
+            { class: "account-row__controls trap-row__controls" },
             div(
                 { class: "trap-row__input-group" },
                 span({ class: "trap-row__input-label" }, "Qty"),
@@ -195,11 +196,11 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                     type: "button",
                     class: () =>
                         [
-                            "feature-btn",
-                            "feature-btn--apply",
-                            isBusy() ? "feature-btn--loading" : "",
-                            applyStatus.status.val === "success" ? "feature-row--success" : "",
-                            applyStatus.status.val === "error" ? "feature-row--error" : "",
+                            "account-btn",
+                            "account-btn--apply",
+                            isBusy() ? "account-btn--loading" : "",
+                            applyStatus.status.val === "success" ? "account-row--success" : "",
+                            applyStatus.status.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -213,12 +214,12 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInpu
                     type: "button",
                     class: () =>
                         [
-                            "feature-btn",
-                            "feature-btn--apply",
+                            "account-btn",
+                            "account-btn--apply",
                             "trap-row__finish-btn",
-                            isBusy() ? "feature-btn--loading" : "",
-                            finishStatus.status.val === "success" ? "feature-row--success" : "",
-                            finishStatus.status.val === "error" ? "feature-row--error" : "",
+                            isBusy() ? "account-btn--loading" : "",
+                            finishStatus.status.val === "success" ? "account-row--success" : "",
+                            finishStatus.status.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -322,12 +323,12 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
                         type: "button",
                         class: () =>
                             [
-                                "feature-btn",
-                                "feature-btn--apply",
+                                "account-btn",
+                                "account-btn--apply",
                                 "trap-user-dropdown__finish-all",
-                                finishAllStatus.status.val === "loading" ? "feature-btn--loading" : "",
-                                finishAllStatus.status.val === "success" ? "feature-row--success" : "",
-                                finishAllStatus.status.val === "error" ? "feature-row--error" : "",
+                                finishAllStatus.status.val === "loading" ? "account-btn--loading" : "",
+                                finishAllStatus.status.val === "success" ? "account-row--success" : "",
+                                finishAllStatus.status.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -342,7 +343,7 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
 };
 
 export const TrappingTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Trapping" });
+    const { loading, error, run } = useAccountLoad({ label: "Trapping" });
     const data = van.state(null);
 
     const valueStates = new Map();
@@ -446,7 +447,7 @@ export const TrappingTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -481,12 +482,14 @@ export const TrappingTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "TRAPPING",
             description:
                 "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         body: renderBody,
     });
 };
+
+

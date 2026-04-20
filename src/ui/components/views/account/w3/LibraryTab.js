@@ -26,13 +26,13 @@ import { readComputed, readComputedMany, gga, ggaMany, readCList } from "../../.
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
+import { BulkActionBar } from "../BulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureRow } from "../components/FeatureRow.js";
+import { AccountRow } from "../components/AccountRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span, strong } = van.tags;
 
@@ -111,13 +111,13 @@ function getBlockedLibraryTalentIds(rawBlockedList) {
  */
 const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBookAvailable, bonus }) => {
     if (!isBookAvailable) {
-        return FeatureRow({
+        return AccountRow({
             rowClass: "talent-row talent-row--unavailable",
             info: [
-                span({ class: "feature-row__index" }, talentId),
+                span({ class: "account-row__index" }, talentId),
                 div(
                     { class: "talent-row__text" },
-                    span({ class: "feature-row__name" }, talentName),
+                    span({ class: "account-row__name" }, talentName),
                     div({ class: "talent-row__notice" }, "This is not a Library book and can't be set.")
                 )
             ],
@@ -144,8 +144,8 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
             });
         },
         renderInfo: () => [
-            span({ class: "feature-row__index" }, talentId),
-            div({ class: "talent-row__text" }, span({ class: "feature-row__name" }, talentName)),
+            span({ class: "account-row__index" }, talentId),
+            div({ class: "talent-row__text" }, span({ class: "account-row__name" }, talentName)),
         ],
         renderBadge: () =>
             bonus > 0
@@ -169,7 +169,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
 // ── LibraryTab ───────────────────────────────────────────────────────────────
 
 export const LibraryTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Library" });
+    const { loading, error, run } = useAccountLoad({ label: "Library" });
     const data = van.state(null);
     const maxBookLvHeader = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -329,11 +329,11 @@ export const LibraryTab = () => {
     load();
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "LIBRARY",
             description: "Set max talent levels for the active in-game character. Current levels are read-only.",
             wrapActions: false,
-            actions: FeatureBulkActionBar({
+            actions: BulkActionBar({
                 leading: div(
                     {
                         class: () =>
@@ -357,7 +357,7 @@ export const LibraryTab = () => {
                 },
             }),
         }),
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data,
@@ -391,7 +391,7 @@ export const LibraryTab = () => {
                 }),
             renderContent: (resolved) =>
                 div(
-                    { class: "feature-list" },
+                    { class: "account-list" },
                     div(
                         { class: "talents-info-banner" },
                         div(
@@ -426,3 +426,5 @@ export const LibraryTab = () => {
         }),
     });
 };
+
+

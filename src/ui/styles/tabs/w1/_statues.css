@@ -27,15 +27,15 @@
     color: var(--c-tier-zenith);
 }
 
-.feature-row.tier--gold {
+.account-row.tier--gold {
     border-color: var(--c-tier-gold-35);
 }
 
-.feature-row.tier--onyx {
+.account-row.tier--onyx {
     border-color: var(--c-tier-onyx-35);
 }
 
-.feature-row.tier--zenith {
+.account-row.tier--zenith {
     border-color: var(--c-tier-zenith-35);
 }
 
@@ -50,13 +50,13 @@
 
 /* ── Statue stacked controls ──────────────────────────────────────────── */
 
-.feature-row__controls--stack {
+.account-row__controls--stack {
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
 }
 
-.feature-row__controls--stack .number-input-wrapper {
+.account-row__controls--stack .number-input-wrapper {
     width: 180px;
 }
 
@@ -74,3 +74,4 @@
     width: 60px;
     text-align: right;
 }
+

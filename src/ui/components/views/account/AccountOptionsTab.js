@@ -14,9 +14,9 @@ import { NumberInput } from "../../NumberInput.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { gga } from "../../../services/api.js";
-import { useWriteStatus, writeVerified } from "./featureShared.js";
+import { useWriteStatus, writeVerified } from "./accountShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
-import { FeatureTabHeader } from "./components/FeatureTabHeader.js";
+import { AccountTabHeader } from "./components/AccountTabHeader.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
 
@@ -103,8 +103,8 @@ export const AccountOptionsTab = () => {
         }
 
         return AccountPageShell({
-            rootClass: "account-sub-tab-pane-inner feature-tab-frame",
-            header: FeatureTabHeader({
+            rootClass: "account-sub-tab-pane-inner account-tab-frame",
+            header: AccountTabHeader({
                 title: "ACCOUNT OPTIONS",
                 description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
             }),
@@ -193,8 +193,8 @@ const OptionItem = (index, rawVal, schema) => {
         {
             class: () =>
                 `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
-                    status.val === "success" ? "feature-row--success" : ""
-                } ${status.val === "error" ? "feature-row--error" : ""}`,
+                    status.val === "success" ? "account-row--success" : ""
+                } ${status.val === "error" ? "account-row--error" : ""}`,
             "data-index": index,
         },
         div(
@@ -233,8 +233,8 @@ const OptionItem = (index, rawVal, schema) => {
                         class: () =>
                             [
                                 "option-apply-button",
-                                status.val === "success" ? "feature-row--success" : "",
-                                status.val === "error" ? "feature-row--error" : "",
+                                status.val === "success" ? "account-row--success" : "",
+                                status.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -248,3 +248,5 @@ const OptionItem = (index, rawVal, schema) => {
         )
     );
 };
+
+

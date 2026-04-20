@@ -1,6 +1,6 @@
 /* ── Library Tab ─────────────────────────────────────────────────────────── */
 
-/* Max Book Level pill shown persistently in the feature-header */
+/* Max Book Level pill shown persistently in the account-header */
 .library-maxbooklv {
     display: flex;
     align-items: center;
@@ -130,3 +130,4 @@
     font-size: 0.78em;
     opacity: 0.85;
 }
+

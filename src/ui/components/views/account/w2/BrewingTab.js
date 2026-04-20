@@ -19,9 +19,10 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -118,8 +119,8 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
                     "bubble-card",
                     `bubble-card--${cauldron.id}`,
                     isPrisma.val ? "bubble-card--prisma" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -146,11 +147,11 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
                 {
                     class: () =>
                         [
-                            "feature-btn",
-                            "feature-btn--apply",
-                            status.val === "loading" ? "feature-btn--loading" : "",
-                            status.val === "success" ? "feature-row--success" : "",
-                            status.val === "error" ? "feature-row--error" : "",
+                            "account-btn",
+                            "account-btn--apply",
+                            status.val === "loading" ? "account-btn--loading" : "",
+                            status.val === "success" ? "account-row--success" : "",
+                            status.val === "error" ? "account-row--error" : "",
                         ]
                             .filter(Boolean)
                             .join(" "),
@@ -219,8 +220,8 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
                 class: () =>
                     [
                         "brewing-column__header",
-                        bulkStatus.val === "success" ? "feature-row--success" : "",
-                        bulkStatus.val === "error" ? "feature-row--error" : "",
+                        bulkStatus.val === "success" ? "account-row--success" : "",
+                        bulkStatus.val === "error" ? "account-row--error" : "",
                     ]
                         .filter(Boolean)
                         .join(" "),
@@ -229,7 +230,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply ${bulkStatus.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => bulkStatus.val === "loading",
                     onclick: doSetAll,
                     title: "Set all bubbles in this cauldron",
@@ -250,7 +251,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
 };
 
 export const BrewingTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Brewing" });
+    const { loading, error, run } = useAccountLoad({ label: "Brewing" });
     const data = van.state(null);
     const setAllInput = van.state("50000");
 
@@ -300,7 +301,7 @@ export const BrewingTab = () => {
         });
 
     load();
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -327,7 +328,7 @@ export const BrewingTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "ALCHEMY - BREWING",
             description: "Set bubble levels and toggle Prisma upgrades.",
             actions: [
@@ -345,9 +346,11 @@ export const BrewingTab = () => {
                         })
                     )
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                RefreshButton({ onRefresh: load }),
             ],
         }),
         body: renderBody,
     });
 };
+
+

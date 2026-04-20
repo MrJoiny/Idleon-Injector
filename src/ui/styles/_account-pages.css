@@ -8,22 +8,22 @@
  *   .tab-container      flex column fill — replaces .*-tab container blocks
  *   .scrollable-panel   flex-grow + overflow-y:auto + padding:14px
  *   .grid-4col          4-equal-column grid with 10px gap
- *   .feature-row--success  green success feedback (canonical)
- *   .feature-row--error    red error feedback (canonical)
+ *   .account-row--success  green success feedback (canonical)
+ *   .account-row--error    red error feedback (canonical)
  *   .select-base        shared select element base style
  *
  * ── Class anatomy ─────────────────────────────────────────────────────────
- *   .feature-header          top info + refresh bar
- *   .feature-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
- *   .feature-list            scrollable list container (incorporates .scrollable-panel)
- *   .feature-row             one data row  (grid: info | badge | controls)
- *   .feature-row__info       left: index badge + name
- *   .feature-row__badge      centre: read-only status (e.g. "LV 50 / 100")
- *   .feature-row__controls   right: inputs + action buttons
- *   .feature-btn             base action button
- *   .feature-btn--apply      SET / confirm (green hover)
- *   .feature-btn--danger     RELOCK / reset (red)
- *   .feature-btn--loading    spinner state
+ *   .account-header          top info + refresh bar
+ *   .account-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
+ *   .account-list            scrollable list container (incorporates .scrollable-panel)
+ *   .account-row             one data row  (grid: info | badge | controls)
+ *   .account-row__info       left: index badge + name
+ *   .account-row__badge      centre: read-only status (e.g. "LV 50 / 100")
+ *   .account-row__controls   right: inputs + action buttons
+ *   .account-btn             base action button
+ *   .account-btn--apply      SET / confirm (green hover)
+ *   .account-btn--danger     RELOCK / reset (red)
+ *   .account-btn--loading    spinner state
  */
 
 /* ── Layout containers ───────────────────────────────────────────────────── */
@@ -44,7 +44,7 @@
     overflow: hidden;
 }
 
-.feature-tab-frame {
+.account-tab-frame {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -53,7 +53,7 @@
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
-.feature-header {
+.account-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -63,32 +63,32 @@
     gap: 12px;
 }
 
-.feature-tab-header__main {
+.account-tab-header__main {
     min-width: 0;
     flex: 1;
 }
 
-.feature-tab-header__title {
+.account-tab-header__title {
     margin: 0;
 }
 
-.feature-tab-header__desc {
+.account-tab-header__desc {
     max-width: 80ch;
 }
 
-.feature-tab-header__actions {
+.account-tab-header__actions {
     flex-shrink: 0;
     justify-content: flex-end;
 }
 
-.feature-header h3 {
+.account-header h3 {
     margin: 0;
     font-size: 0.85rem;
     letter-spacing: 0.06em;
     color: var(--c-text-main);
 }
 
-.feature-header__desc {
+.account-header__desc {
     margin: 2px 0 0;
     font-size: 0.7rem;
     color: var(--c-text-muted);
@@ -97,14 +97,14 @@
 
 /* ── Secondary page nav (e.g. Combat / Skills / Misc) ────────────────────── */
 
-.feature-page-nav {
+.account-page-nav {
     gap: 4px;
     padding: 8px 16px 0;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-panel-dim);
 }
 
-.feature-page-btn {
+.account-page-btn {
     --tab-nav-padding: 6px 20px;
     --tab-nav-font-size: 0.8rem;
     --tab-nav-letter-spacing: 0.05em;
@@ -116,9 +116,9 @@
 
 /* ── Scrollable list ─────────────────────────────────────────────────────── */
 
-/* feature-list: used by W1 tabs. Incorporates .scrollable-panel behavior.
+/* account-list: used by W1 tabs. Incorporates .scrollable-panel behavior.
    New tabs should use .scrollable-panel directly on their scroll container. */
-.feature-list {
+.account-list {
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -146,14 +146,14 @@
     gap: 10px;
 }
 
-.feature-loader {
+.account-loader {
     display: flex;
     height: 160px;
     align-items: center;
     justify-content: center;
 }
 
-.feature-section {
+.account-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -162,7 +162,7 @@
     padding: 10px 12px;
 }
 
-.feature-section__header {
+.account-section__header {
     display: flex;
     align-items: baseline;
     gap: 10px;
@@ -171,26 +171,26 @@
     flex-wrap: wrap;
 }
 
-.feature-section__title {
+.account-section__title {
     color: var(--c-accent);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.08em;
 }
 
-.feature-section__note {
+.account-section__note {
     color: var(--c-text-dim);
     font-size: 0.68rem;
     font-style: italic;
 }
 
-.feature-section__meta {
+.account-section__meta {
     margin-left: auto;
 }
 
 /* ── Data row ────────────────────────────────────────────────────────────── */
 
-.feature-row {
+.account-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
@@ -201,32 +201,32 @@
     transition: border-color 0.2s;
 }
 
-.feature-row:hover {
+.account-row:hover {
     border-color: var(--c-border-strong);
 }
 
 /* ── Feedback state — shared by all card/row components ─────────────────────── */
-/* Canonical hooks: .feature-row--success / .feature-row--error              */
+/* Canonical hooks: .account-row--success / .account-row--error              */
 
-.feature-row--success {
+.account-row--success {
     border-color: var(--c-success) !important;
     background: var(--c-success-10) !important;
 }
 
-.feature-row--error {
+.account-row--error {
     border-color: var(--c-danger) !important;
     background: var(--c-danger-10) !important;
 }
 
 /* Info cell */
-.feature-row__info {
+.account-row__info {
     display: flex;
     align-items: center;
     gap: 8px;
     min-width: 0;
 }
 
-.feature-row__index {
+.account-row__index {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     color: var(--c-text-muted);
@@ -235,7 +235,7 @@
     flex-shrink: 0;
 }
 
-.feature-row__name {
+.account-row__name {
     font-size: 0.84rem;
     font-weight: 600;
     color: var(--c-text-main);
@@ -245,7 +245,7 @@
 }
 
 /* Status badge (centre cell) */
-.feature-row__badge {
+.account-row__badge {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--c-accent);
@@ -257,7 +257,7 @@
 }
 
 /* Controls cell */
-.feature-row__controls {
+.account-row__controls {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -265,13 +265,13 @@
 }
 
 /* Narrow the NumberInput inside feature rows — wide enough for 3 digits + ± buttons */
-.feature-row__controls .number-input-wrapper {
+.account-row__controls .number-input-wrapper {
     width: 110px;
 }
 
 /* ── Action buttons ──────────────────────────────────────────────────────── */
 
-.feature-btn {
+.account-btn {
     padding: 0 12px;
     height: 30px;
     font-size: 0.75rem;
@@ -287,7 +287,7 @@
         filter 0.15s;
 }
 
-.feature-btn--apply {
+.account-btn--apply {
     min-width: 54px;
     border: 1px solid var(--c-border);
     background: var(--c-control-border-strong);
@@ -296,23 +296,23 @@
     text-transform: uppercase;
 }
 
-.feature-btn--apply:hover:not(:disabled) {
+.account-btn--apply:hover:not(:disabled) {
     background: var(--c-success);
     color: var(--c-black);
 }
 
-.feature-btn--danger {
+.account-btn--danger {
     background: var(--c-danger-10);
     color: var(--c-danger-soft-text);
     border: 1px solid var(--c-danger);
 }
 
-.feature-btn--danger:hover:not(:disabled) {
+.account-btn--danger:hover:not(:disabled) {
     background: var(--c-danger);
     color: var(--c-white);
 }
 
-.feature-btn--max-reset {
+.account-btn--max-reset {
     min-width: 54px;
     background: var(--c-danger);
     color: var(--c-white);
@@ -321,16 +321,16 @@
     text-transform: uppercase;
 }
 
-.feature-btn--max-reset:hover:not(:disabled) {
+.account-btn--max-reset:hover:not(:disabled) {
     filter: brightness(1.08);
 }
 
-.feature-btn--loading {
+.account-btn--loading {
     opacity: 0.5;
     cursor: wait;
 }
 
-.feature-btn:disabled {
+.account-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
@@ -442,12 +442,12 @@
 }
 
 /* Anvil — info row (Points Remaining banner) */
-.feature-row--info {
+.account-row--info {
     border-color: var(--c-accent) !important;
     background: var(--c-accent-06);
 }
 
-.feature-row__badge--highlight {
+.account-row__badge--highlight {
     color: var(--c-accent);
     font-weight: 700;
 }
@@ -469,7 +469,7 @@
 }
 
 /* ── Feature header actions group ──────────────────────────────────────── */
-.feature-header__actions {
+.account-header__actions {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -539,3 +539,4 @@
     display: flex;
     flex-direction: column;
 }
+

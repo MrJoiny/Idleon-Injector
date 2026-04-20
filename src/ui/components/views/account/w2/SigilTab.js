@@ -19,9 +19,10 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -68,8 +69,8 @@ const SigilCard = ({ index, tierState, nameState }) => {
                 return [
                     "tier-card",
                     `sigil-card--${t.cls}`,
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" ");
@@ -102,7 +103,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
         button(
             {
                 class: () =>
-                    `feature-btn feature-btn--apply tier-card__set-btn ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    `account-btn account-btn--apply tier-card__set-btn ${status.val === "loading" ? "account-btn--loading" : ""}`,
                 disabled: () => status.val === "loading",
                 onclick: doSet,
             },
@@ -114,7 +115,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
 // ── SigilTab ───────────────────────────────────────────────────────────────
 
 export const SigilTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Sigils" });
+    const { loading, error, run } = useAccountLoad({ label: "Sigils" });
 
     // Per-sigil states — created once, updated in-place on every load.
     const sigilTier = Array.from({ length: 24 }, () => van.state(-1));
@@ -178,8 +179,8 @@ export const SigilTab = () => {
             class: () =>
                 [
                     "tier-setall-bar",
-                    setAllStatus.val === "success" ? "feature-row--success" : "",
-                    setAllStatus.val === "error" ? "feature-row--error" : "",
+                    setAllStatus.val === "success" ? "account-row--success" : "",
+                    setAllStatus.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -197,7 +198,7 @@ export const SigilTab = () => {
         button(
             {
                 class: () =>
-                    `feature-btn feature-btn--apply ${setAllStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                    `account-btn account-btn--apply ${setAllStatus.val === "loading" ? "account-btn--loading" : ""}`,
                 disabled: () => setAllStatus.val === "loading",
                 onclick: doSetAll,
             },
@@ -214,12 +215,14 @@ export const SigilTab = () => {
 
     const scroll = div({ class: "tier-scroll scrollable-panel" }, setAllBar, grid);
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "ALCHEMY - SIGILS",
             description: "Manage tier and unlock status for all 24 alchemy sigils.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
         body: scroll,
     });
 };
+
+

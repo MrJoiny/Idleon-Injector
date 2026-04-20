@@ -18,12 +18,13 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { writeVerified } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const PAGES = [
     {
@@ -57,7 +58,7 @@ const ForgeRow = ({ upgrade, levelState }) =>
             const path = `FurnaceLevels[${upgrade.index}]`;
             return writeVerified(path, nextLevel);
         },
-        renderInfo: () => span({ class: "feature-row__name" }, upgrade.label),
+        renderInfo: () => span({ class: "account-row__name" }, upgrade.label),
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${upgrade.max}`,
         adjustInput: (rawValue, delta, currentValue) => {
             const base = Number(rawValue);
@@ -73,7 +74,7 @@ const ForgeRow = ({ upgrade, levelState }) =>
 
 export const ForgeTab = () => {
     const activePage = van.state(0);
-    const { loading, error, run } = useAccountLoadState({ label: "Forge" });
+    const { loading, error, run } = useAccountLoad({ label: "Forge" });
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
 
     const load = async () =>
@@ -87,7 +88,7 @@ export const ForgeTab = () => {
 
     load();
 
-    const rowList = div({ class: "feature-list" }, () => {
+    const rowList = div({ class: "account-list" }, () => {
         const page = PAGES[activePage.val];
         return div(
             { class: "forge-upgrades-list" },
@@ -100,25 +101,27 @@ export const ForgeTab = () => {
         );
     });
     return AccountPageShell({
-        rootClass: "world-feature scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "FORGE",
             description: "Set forge upgrade levels — each upgrade has a hard maximum",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read forge levels from game memory"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read forge levels from game memory",
+            }),
         }),
         subNav: renderTabNav({
             tabs: PAGES,
             activeId: activePage,
-            navClass: "feature-page-nav",
-            buttonClass: "feature-page-btn",
+            navClass: "account-page-nav",
+            buttonClass: "account-page-btn",
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING FORGE",
         persistentErrorTitle: "FORGE READ FAILED",
-        persistentInitialWrapperClass: "feature-list",
+        persistentInitialWrapperClass: "account-list",
         body: rowList,
     });
 };
+
+

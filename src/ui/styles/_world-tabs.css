@@ -20,13 +20,13 @@
     z-index: 1001;
 }
 
-.feature-sub-nav {
+.account-sub-nav {
     display: flex;
     flex-wrap: wrap;
     flex-shrink: 0;
 }
 
-.feature-sub-tab-btn {
+.account-sub-tab-btn {
     background: transparent;
     border: 1px solid transparent;
     border-bottom: none;
@@ -43,19 +43,19 @@
     bottom: -1px;
 }
 
-.feature-sub-tab-btn:hover {
+.account-sub-tab-btn:hover {
     color: var(--tab-nav-hover-color, var(--c-text-main));
     background: var(--tab-nav-hover-bg, var(--c-white-03));
 }
 
-.feature-sub-tab-btn.active {
+.account-sub-tab-btn.active {
     color: var(--tab-nav-active-color, var(--c-text-main));
     border-color: var(--c-border);
     border-bottom-color: var(--tab-nav-active-bg, var(--c-panel-dim));
     background: var(--tab-nav-active-bg, var(--c-panel-dim));
 }
 
-.feature-sub-tab-btn.active::after {
+.account-sub-tab-btn.active::after {
     content: "";
     position: absolute;
     top: 0;
@@ -290,3 +290,4 @@
     letter-spacing: 0.08em;
     margin: 0;
 }
+

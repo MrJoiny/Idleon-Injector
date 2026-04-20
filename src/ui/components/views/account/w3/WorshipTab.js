@@ -24,13 +24,14 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureRow } from "../components/FeatureRow.js";
-import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountRow } from "../components/AccountRow.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toInt, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -75,12 +76,12 @@ const WorshipChargeRow = ({
         });
     };
 
-    return FeatureRow({
+    return AccountRow({
         rowClass: "killroy-row",
         status,
         info: [
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, playerName),
+            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__name" }, playerName),
         ],
         badge: () => {
             const current = chargeState.val ?? 0;
@@ -104,7 +105,7 @@ const WorshipChargeRow = ({
                 {
                     type: "button",
                     onmousedown: (e) => e.preventDefault(),
-                    class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                    class: () => `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: (e) => {
                         e.preventDefault();
@@ -123,8 +124,8 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
         normalize: (rawValue) => toInt(rawValue, { min: 0 }),
         write: async (nextWave) => writeWave(index, nextWave),
         renderInfo: () => [
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `BEST WAVE ${currentValue ?? 0}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -135,7 +136,7 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
     });
 
 export const WorshipTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Worship" });
+    const { loading, error, run } = useAccountLoad({ label: "Worship" });
     const data = van.state(null);
 
     const activeCharacterNameRef = van.state(null);
@@ -235,7 +236,7 @@ export const WorshipTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -249,7 +250,7 @@ export const WorshipTab = () => {
         renderContent: (resolved) =>
             div(
                 { class: "killroy-scroll scrollable-panel" },
-                FeatureSection({
+                AccountSection({
                     title: "WORSHIP CHARGE",
                     body: div(
                         { class: "killroy-rows" },
@@ -265,7 +266,7 @@ export const WorshipTab = () => {
                         )
                     ),
                 }),
-                FeatureSection({
+                AccountSection({
                     title: "TOWER DEFENSE",
                     body: div(
                         { class: "killroy-rows" },
@@ -283,11 +284,13 @@ export const WorshipTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "W3 - WORSHIP",
             description: "Edit worship charge and best worship waves.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         body: renderBody,
     });
 };
+
+

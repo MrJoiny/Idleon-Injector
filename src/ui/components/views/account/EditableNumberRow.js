@@ -1,7 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { NumberInput } from "../../NumberInput.js";
-import { FeatureActionButton } from "./components/FeatureActionButton.js";
-import { toNodes, useWriteStatus } from "./featureShared.js";
+import { ActionButton } from "./components/ActionButton.js";
+import { toNodes, useWriteStatus } from "./accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -68,7 +68,7 @@ export const EditableNumberRow = ({
         });
     };
 
-    const applyButton = FeatureActionButton({
+    const applyButton = ActionButton({
         label: () => (typeof applyLabel === "function" ? applyLabel() : applyLabel),
         status,
         onClick: (e) => {
@@ -82,7 +82,7 @@ export const EditableNumberRow = ({
 
         const actionValue = action.value ?? fallbackValue;
         const actionLabel = action.label ?? fallbackLabel;
-        const actionButton = FeatureActionButton({
+        const actionButton = ActionButton({
             label: typeof actionLabel === "function" ? actionLabel : actionLabel,
             status,
             variant: "max-reset",
@@ -114,19 +114,19 @@ export const EditableNumberRow = ({
         {
             class: () =>
                 [
-                    "feature-row",
+                    "account-row",
                     typeof rowClass === "function" ? rowClass() : rowClass,
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
         },
-        div({ class: "feature-row__info" }, ...toNodes(renderInfo())),
+        div({ class: "account-row__info" }, ...toNodes(renderInfo())),
         span(
             {
                 class: () =>
-                    ["feature-row__badge", typeof badgeClass === "function" ? badgeClass() : badgeClass]
+                    ["account-row__badge", typeof badgeClass === "function" ? badgeClass() : badgeClass]
                         .filter(Boolean)
                         .join(" "),
             },
@@ -135,7 +135,7 @@ export const EditableNumberRow = ({
         div(
             {
                 class: () =>
-                    ["feature-row__controls", typeof controlsClass === "function" ? controlsClass() : controlsClass]
+                    ["account-row__controls", typeof controlsClass === "function" ? controlsClass() : controlsClass]
                         .filter(Boolean)
                         .join(" "),
             },
@@ -168,3 +168,5 @@ export const EditableNumberRow = ({
         )
     );
 };
+
+

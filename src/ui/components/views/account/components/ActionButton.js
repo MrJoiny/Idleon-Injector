@@ -1,19 +1,19 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { joinClasses, resolveValue } from "../featureShared.js";
+import { joinClasses, resolveValue } from "../accountShared.js";
 
 const { button } = van.tags;
 
 const VARIANT_CLASS = {
-    apply: "feature-btn feature-btn--apply",
-    danger: "feature-btn feature-btn--danger",
-    "max-reset": "feature-btn feature-btn--max-reset",
+    apply: "account-btn account-btn--apply",
+    danger: "account-btn account-btn--danger",
+    "max-reset": "account-btn account-btn--max-reset",
 };
 
 /**
  * Shared action button for account feature tabs.
  */
-export const FeatureActionButton = ({
+export const ActionButton = ({
     label,
     loadingLabel = "...",
     status = null,
@@ -34,9 +34,9 @@ export const FeatureActionButton = ({
                 return joinClasses(
                     VARIANT_CLASS[variant] ?? variant,
                     typeof className === "function" ? className() : className,
-                    resolvedStatus === "loading" ? "feature-btn--loading" : "",
-                    resolvedStatus === "success" ? "feature-row--success" : "",
-                    resolvedStatus === "error" ? "feature-row--error" : ""
+                    resolvedStatus === "loading" ? "account-btn--loading" : "",
+                    resolvedStatus === "success" ? "account-row--success" : "",
+                    resolvedStatus === "error" ? "account-row--error" : ""
                 );
             },
             disabled: () => {
@@ -53,3 +53,5 @@ export const FeatureActionButton = ({
 
     return tooltip ? withTooltip(buttonNode, tooltip) : buttonNode;
 };
+
+

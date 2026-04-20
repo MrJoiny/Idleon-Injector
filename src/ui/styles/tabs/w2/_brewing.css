@@ -113,13 +113,13 @@
     background: var(--cauldron-dim, var(--c-accent-06));
 }
 
-/* Canonical feedback class: .feature-row--success / .feature-row--error */
+/* Canonical feedback class: .account-row--success / .account-row--error */
 /* Keep success/error visible even on prisma cards. */
-.bubble-card--prisma.feature-row--success {
+.bubble-card--prisma.account-row--success {
     background: var(--c-success-10);
 }
 
-.bubble-card--prisma.feature-row--error {
+.bubble-card--prisma.account-row--error {
     background: var(--c-danger-10);
 }
 
@@ -222,3 +222,4 @@
     pointer-events: none;
     visibility: hidden;
 }
+

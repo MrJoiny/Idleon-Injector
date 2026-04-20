@@ -1,4 +1,4 @@
-/* Sigils uses shared tier-* layout classes from _feature-pages.css.
+/* Sigils uses shared tier-* layout classes from _account-pages.css.
    This file keeps only sigil-specific color mapping. */
 
 /* Tier-based border + background tint */
@@ -52,3 +52,4 @@
 .sigil-tier-badge--eclectic {
     color: var(--c-ui-green);
 }
+

@@ -2,7 +2,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
-import { resolveValue } from "../featureShared.js";
+import { resolveValue } from "../accountShared.js";
 const { div } = van.tags;
 
 /**
@@ -15,7 +15,7 @@ export const AccountPageShell = ({
     topNotices = null,
     subNav = null,
     body = null,
-    rootClass = "tab-container feature-tab-frame",
+    rootClass = "tab-container account-tab-frame",
     persistentState = null,
     persistentLoadingText = null,
     persistentErrorTitle = "LOAD FAILED",
@@ -42,7 +42,7 @@ export const AccountPageShell = ({
 
                       const loader =
                           persistentLoadingText !== null ? Loader({ text: persistentLoadingText }) : Loader();
-                      return wrapPersistentInitial(div({ class: "feature-loader" }, loader));
+                      return wrapPersistentInitial(div({ class: "account-loader" }, loader));
                   },
                   () => {
                       const isLoading = Boolean(resolveValue(persistentState.loading));
@@ -76,3 +76,5 @@ export const AccountPageShell = ({
                 : body
         );
     })();
+
+

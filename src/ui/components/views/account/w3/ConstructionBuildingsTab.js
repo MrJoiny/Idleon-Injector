@@ -21,9 +21,10 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -49,8 +50,8 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
             });
         },
         renderInfo: () => [
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${maxLevel}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -68,7 +69,7 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
 // ── ConstructionBuildingsTab ───────────────────────────────────────────────
 
 export const ConstructionBuildingsTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Construction Buildings" });
+    const { loading, error, run } = useAccountLoad({ label: "Construction Buildings" });
     const data = van.state(null);
     const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
@@ -135,7 +136,7 @@ export const ConstructionBuildingsTab = () => {
     load();
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "CONSTRUCTION - BUILDINGS",
             description: "Set building levels. Each building has its own max.",
             actions: [
@@ -145,10 +146,10 @@ export const ConstructionBuildingsTab = () => {
                         onmousedown: (e) => e.preventDefault(),
                         class: () =>
                             [
-                                "feature-btn feature-btn--max-reset",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
+                                "account-btn account-btn--max-reset",
+                                bulkStatus.val === "loading" ? "account-btn--loading" : "",
+                                bulkStatus.val === "success" ? "account-row--success" : "",
+                                bulkStatus.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -160,10 +161,10 @@ export const ConstructionBuildingsTab = () => {
                     },
                     () => (bulkStatus.val === "loading" ? "MAXING..." : "MAX ALL")
                 ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+                RefreshButton({ onRefresh: load }),
             ],
         }),
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data,
@@ -172,7 +173,7 @@ export const ConstructionBuildingsTab = () => {
                 EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." }),
             renderContent: (resolved) =>
                 div(
-                    { class: "feature-list" },
+                    { class: "account-list" },
                     ...resolved.buildings.map((building, index) =>
                         BuildingRow({
                             index,
@@ -185,3 +186,5 @@ export const ConstructionBuildingsTab = () => {
         }),
     });
 };
+
+

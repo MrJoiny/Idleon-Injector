@@ -16,12 +16,12 @@ import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { FeatureBulkActionBar } from "../FeatureBulkActionBar.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
+import { BulkActionBar } from "../BulkActionBar.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -42,8 +42,8 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
             });
         },
         renderInfo: () => [
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name),
+            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevel}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -53,7 +53,7 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
     });
 
 export const SaltLickTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Salt Lick" });
+    const { loading, error, run } = useAccountLoad({ label: "Salt Lick" });
     const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
@@ -117,7 +117,7 @@ export const SaltLickTab = () => {
 
     load();
 
-    const renderBody = AsyncFeatureBody({
+    const renderBody = AsyncAccountBody({
         loading,
         error,
         data,
@@ -126,7 +126,7 @@ export const SaltLickTab = () => {
             EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." }),
         renderContent: (resolved) =>
             div(
-                { class: "feature-list" },
+                { class: "account-list" },
                 ...resolved.upgrades.map((u, i) =>
                     SaltLickRow({
                         index: i,
@@ -139,11 +139,11 @@ export const SaltLickTab = () => {
     });
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "SALT LICK",
             description: "Set Salt Lick upgrade levels.",
             wrapActions: false,
-            actions: FeatureBulkActionBar({
+            actions: BulkActionBar({
                 actions: [
                     {
                         label: "MAX ALL",
@@ -166,3 +166,5 @@ export const SaltLickTab = () => {
         body: renderBody,
     });
 };
+
+

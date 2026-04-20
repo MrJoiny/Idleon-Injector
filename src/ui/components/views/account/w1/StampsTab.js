@@ -28,9 +28,10 @@ import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { AsyncFeatureBody, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, button, span } = van.tags;
@@ -116,21 +117,21 @@ const StampRow = ({
     return div(
         {
             class: () =>
-                `feature-row stamp-row ${isExalted.val ? "stamp-row--exalted" : ""} ${
-                    status.val === "success" ? "feature-row--success" : ""
-                } ${status.val === "error" ? "feature-row--error" : ""}`,
+                `account-row stamp-row ${isExalted.val ? "stamp-row--exalted" : ""} ${
+                    status.val === "success" ? "account-row--success" : ""
+                } ${status.val === "error" ? "account-row--error" : ""}`,
         },
 
         div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, `[${order}]`),
-            span({ class: "feature-row__name" }, name)
+            { class: "account-row__info" },
+            span({ class: "account-row__index" }, `[${order}]`),
+            span({ class: "account-row__name" }, name)
         ),
 
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`),
+        span({ class: "account-row__badge" }, () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`),
 
         div(
-            { class: "feature-row__controls stamp-row__controls" },
+            { class: "account-row__controls stamp-row__controls" },
 
             NumberInput({
                 value: inputVal,
@@ -143,7 +144,7 @@ const StampRow = ({
                 button(
                     {
                         class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                         onclick: () => doSet(inputVal.val),
                         disabled: () => status.val === "loading",
                     },
@@ -156,8 +157,8 @@ const StampRow = ({
                 button(
                     {
                         class: () =>
-                            `feature-btn stamp-exalted-btn ${isExalted.val ? "stamp-exalted-btn--active" : ""} ${
-                                status.val === "loading" ? "feature-btn--loading" : ""
+                            `account-btn stamp-exalted-btn ${isExalted.val ? "stamp-exalted-btn--active" : ""} ${
+                                status.val === "loading" ? "account-btn--loading" : ""
                             }`,
                         onclick: doToggleExalted,
                         disabled: () => status.val === "loading" || exaltedBusy.val,
@@ -170,7 +171,7 @@ const StampRow = ({
             withTooltip(
                 button(
                     {
-                        class: "feature-btn feature-btn--danger",
+                        class: "account-btn account-btn--danger",
                         onclick: () => doSet(0),
                         disabled: () => status.val === "loading",
                     },
@@ -185,7 +186,7 @@ const StampRow = ({
 export const StampsTab = () => {
     const activePage = van.state(0);
     const gameData = van.state(null);
-    const { loading, error, run } = useAccountLoadState({ label: "Stamps" });
+    const { loading, error, run } = useAccountLoad({ label: "Stamps" });
     const exaltedCodes = van.state(new Set());
     const exaltedBusy = van.state(false);
 
@@ -279,22 +280,22 @@ export const StampsTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container feature-tab-frame",
-        header: FeatureTabHeader({
+        rootClass: "world-feature scroll-container account-tab-frame",
+        header: AccountTabHeader({
             title: "STAMPS",
             description: "Change stamp levels and toggle exalted stamps",
-            actions: withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read stamp data from game memory"
-            ),
+            actions: RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read stamp data from game memory",
+            }),
         }),
         subNav: renderTabNav({
             tabs: PAGES,
             activeId: activePage,
-            navClass: "feature-page-nav",
-            buttonClass: "feature-page-btn",
+            navClass: "account-page-nav",
+            buttonClass: "account-page-btn",
         }),
-        body: AsyncFeatureBody({
+        body: AsyncAccountBody({
             loading,
             error,
             data: gameData,
@@ -322,7 +323,7 @@ export const StampsTab = () => {
                 );
 
                 return div(
-                    { class: "feature-list" },
+                    { class: "account-list" },
                     ...Array.from({ length: count }, (_, order) =>
                         StampRow({
                             page,
@@ -341,3 +342,5 @@ export const StampsTab = () => {
         }),
     });
 };
+
+

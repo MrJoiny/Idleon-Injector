@@ -29,12 +29,13 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { FeatureRow } from "../components/FeatureRow.js";
-import { FeatureSection } from "../components/FeatureSection.js";
+import { AccountRow } from "../components/AccountRow.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, table, thead, tbody, tr, th, td, select, option } = van.tags;
@@ -88,9 +89,9 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
     const labelText = () => resolveValue(field?.label) ?? "";
 
     if (disableEdit) {
-        return FeatureRow({
+        return AccountRow({
             rowClass,
-            info: span({ class: "feature-row__name" }, labelText),
+            info: span({ class: "account-row__name" }, labelText),
             badge: () => {
                 if (typeof getBadgeText === "function") return getBadgeText(valueState.val);
                 return String(valueState.val);
@@ -104,7 +105,7 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
         normalize,
         write: async (nextValue) =>
             writeVerified(writePath, nextValue, { message: `Write mismatch at ${writePath}: expected ${nextValue}` }),
-        renderInfo: () => span({ class: "feature-row__name" }, labelText),
+        renderInfo: () => span({ class: "account-row__name" }, labelText),
         renderBadge: (currentValue) =>
             typeof getBadgeText === "function" ? getBadgeText(currentValue) : String(currentValue),
         adjustInput: (rawValue, delta, currentValue) => {
@@ -127,14 +128,14 @@ const KillroyAirhornRow = ({ valueState }) => {
         });
     };
 
-    return FeatureRow({
+    return AccountRow({
         rowClass: "killroy-row",
         status,
-        info: span({ class: "feature-row__name" }, "AIRHORN RESET"),
+        info: span({ class: "account-row__name" }, "AIRHORN RESET"),
         badge: () => (toNum(valueState.val, 0) === 0 ? "OFF" : "ON"),
         controls: button(
             {
-                class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                class: () => `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                 disabled: () => status.val === "loading",
                 onclick: doToggle,
             },
@@ -144,7 +145,7 @@ const KillroyAirhornRow = ({ valueState }) => {
 };
 
 export const KillroyTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Killroy" });
+    const { loading, error, run } = useAccountLoad({ label: "Killroy" });
     const sortBy = van.state("kills-desc");
     const allowedMobs = van.state([]);
     const addMobId = van.state("");
@@ -312,7 +313,7 @@ export const KillroyTab = () => {
     const scrollPane = div(
         { class: "killroy-scroll scrollable-panel" },
 
-        FeatureSection({
+        AccountSection({
             title: "CURRENCY / AVAILABILITY",
             note: "Most-used Killroy currencies and weekly reset flag",
             body: div(
@@ -328,7 +329,7 @@ export const KillroyTab = () => {
             ),
         }),
 
-        FeatureSection({
+        AccountSection({
             title: "SHOP UPGRADES",
             note: "Classic Killroy shop level tracks",
             body: div(
@@ -344,7 +345,7 @@ export const KillroyTab = () => {
             ),
         }),
 
-        FeatureSection({
+        AccountSection({
             title: "META BONUSES",
             note: "Account-wide Killroy bonus values",
             body: div(
@@ -360,7 +361,7 @@ export const KillroyTab = () => {
             ),
         }),
 
-        FeatureSection({
+        AccountSection({
             title: "RECORDS / TOME",
             note: "KRbest.h table (sortable) and PB summaries",
             body: [
@@ -399,8 +400,8 @@ export const KillroyTab = () => {
                         class: () =>
                             [
                                 "killroy-add-row",
-                                addStatus.val === "success" ? "feature-row--success" : "",
-                                addStatus.val === "error" ? "feature-row--error" : "",
+                                addStatus.val === "success" ? "account-row--success" : "",
+                                addStatus.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
@@ -429,7 +430,7 @@ export const KillroyTab = () => {
                     button(
                         {
                             class: () =>
-                                `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
+                                `account-btn account-btn--apply ${addStatus.val === "loading" ? "account-btn--loading" : ""}`,
                             disabled: () => addStatus.val === "loading" || !addMobId.val,
                             onclick: setBestEntry,
                         },
@@ -460,12 +461,14 @@ export const KillroyTab = () => {
         })
     );
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "KILLROY STATE LIBRARY",
             description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
         body: scrollPane,
     });
 };
+
+

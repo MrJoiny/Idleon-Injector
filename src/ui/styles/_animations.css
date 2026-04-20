@@ -107,12 +107,13 @@
 }
 
 /* Animation for saving success/error on inputs */
-.option-item.feature-row--success {
+.option-item.account-row--success {
     animation: flashGreen 1s ease-out;
     border-color: var(--c-success);
 }
 
-.option-item.feature-row--error {
+.option-item.account-row--error {
     animation: flashRed 1s ease-out;
     border-color: var(--c-danger);
 }
+

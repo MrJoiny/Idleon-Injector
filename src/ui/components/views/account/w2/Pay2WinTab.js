@@ -33,9 +33,10 @@ import { gga, readComputedMany } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { useAccountLoadState } from "../accountLoadPolicy.js";
-import { FeatureTabHeader } from "../components/FeatureTabHeader.js";
-import { useWriteStatus, writeVerified } from "../featureShared.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -102,8 +103,8 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
             class: () =>
                 [
                     "p2w-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
+                    status.val === "success" ? "account-row--success" : "",
+                    status.val === "error" ? "account-row--error" : "",
                 ]
                     .filter(Boolean)
                     .join(" "),
@@ -130,7 +131,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
             button(
                 {
                     class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
+                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
                     disabled: () => status.val === "loading",
                     onclick: () => doSet(inputVal.val),
                 },
@@ -143,7 +144,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
 // ── Pay2WinTab ─────────────────────────────────────────────────────────────
 
 export const Pay2WinTab = () => {
-    const { loading, error, run } = useAccountLoadState({ label: "Pay 2 Win" });
+    const { loading, error, run } = useAccountLoad({ label: "Pay 2 Win" });
 
     // ── Value & max states — created once, updated in-place ───────────────
 
@@ -366,12 +367,14 @@ export const Pay2WinTab = () => {
     );
 
     return AccountPageShell({
-        header: FeatureTabHeader({
+        header: AccountTabHeader({
             title: "ALCHEMY - PAY 2 WIN",
             description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
-            actions: button({ class: "btn-secondary", onclick: load }, "REFRESH"),
+            actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
         body: scroll,
     });
 };
+
+

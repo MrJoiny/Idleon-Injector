@@ -1,12 +1,12 @@
 import van from "../../../../vendor/van-1.6.0.js";
-import { joinClasses, resolveValue, toNodes } from "../featureShared.js";
+import { joinClasses, resolveValue, toNodes } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
 /**
  * Shared non-numeric row shell for account feature tabs.
  */
-export const FeatureRow = ({
+export const AccountRow = ({
     info,
     badge = null,
     controls = null,
@@ -20,20 +20,20 @@ export const FeatureRow = ({
             class: () => {
                 const resolvedStatus = resolveValue(status);
                 return joinClasses(
-                    "feature-row",
+                    "account-row",
                     typeof rowClass === "function" ? rowClass() : rowClass,
-                    resolvedStatus === "success" ? "feature-row--success" : "",
-                    resolvedStatus === "error" ? "feature-row--error" : ""
+                    resolvedStatus === "success" ? "account-row--success" : "",
+                    resolvedStatus === "error" ? "account-row--error" : ""
                 );
             },
         },
-        div({ class: "feature-row__info" }, ...toNodes(info)),
+        div({ class: "account-row__info" }, ...toNodes(info)),
         badge !== null
             ? span(
                   {
                       class: () =>
                           joinClasses(
-                              "feature-row__badge",
+                              "account-row__badge",
                               typeof badgeClass === "function" ? badgeClass() : badgeClass
                           ),
                   },
@@ -45,7 +45,7 @@ export const FeatureRow = ({
                   {
                       class: () =>
                           joinClasses(
-                              "feature-row__controls",
+                              "account-row__controls",
                               typeof controlsClass === "function" ? controlsClass() : controlsClass
                           ),
                   },
@@ -53,3 +53,5 @@ export const FeatureRow = ({
               )
             : null
     );
+
+
