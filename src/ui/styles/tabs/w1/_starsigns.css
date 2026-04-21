@@ -28,7 +28,7 @@
 }
 
 .starsign-card--unlocked {
-    border-color: var(--c-accent-40);
+    border-color: var(--c-accent);
 }
 
 .starsign-card-header {
@@ -190,7 +190,8 @@
 .starsign-drag-row:active,
 .starsign-drag-row.dragging {
     cursor: grabbing;
-    opacity: 0.5;
+    border-color: var(--c-accent);
+    background: var(--c-panel-hover);
 }
 
 .starsign-drag-row.drag-over {

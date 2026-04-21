@@ -80,7 +80,6 @@
     margin: 2px 0 0;
     font-size: 0.875rem;
     color: var(--c-text-muted);
-    font-style: italic;
     max-width: 80ch;
 }
 
@@ -215,28 +214,28 @@
 
 .feature-card.account-row--success {
     border-color: var(--c-success) !important;
-    background: var(--c-success-10) !important;
+    background: color-mix(in srgb, var(--c-success) 12%, var(--c-panel)) !important;
 }
 
 .feature-card.account-row--error {
     border-color: var(--c-danger) !important;
-    background: var(--c-danger-10) !important;
+    background: color-mix(in srgb, var(--c-danger) 12%, var(--c-panel)) !important;
 }
 
 .account-row--success {
     border-color: var(--c-success) !important;
-    background: var(--c-success-10) !important;
+    background: color-mix(in srgb, var(--c-success) 12%, var(--c-panel)) !important;
 }
 
 .account-row--error {
     border-color: var(--c-danger) !important;
-    background: var(--c-danger-10) !important;
+    background: color-mix(in srgb, var(--c-danger) 12%, var(--c-panel)) !important;
 }
 
 /* Warning state — overridden by success/error so write outcome always wins */
 .has-warning:not(.account-row--success):not(.account-row--error) {
     border-color: var(--c-warning) !important;
-    background: var(--c-accent-dim-solid);
+    background: color-mix(in srgb, var(--c-warning) 10%, var(--c-panel));
 }
 
 /* ── Inline write-status label ────────────────────────────────────────────── */
@@ -274,7 +273,7 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: var(--c-text-muted);
-    background: var(--c-black-40);
+    background: var(--c-panel-hover);
     padding: 1px 5px;
     flex-shrink: 0;
 }
@@ -303,8 +302,8 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: var(--c-accent);
-    background: var(--c-accent-06);
-    border: 1px solid var(--c-accent-20);
+    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
+    border: 1px solid var(--c-accent);
     padding: 2px 8px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -356,7 +355,7 @@
 }
 
 .account-btn--danger {
-    background: var(--c-danger-10);
+    background: color-mix(in srgb, var(--c-danger) 14%, var(--c-panel));
     color: var(--c-danger-soft-text);
     border: 1px solid var(--c-danger);
 }
@@ -380,12 +379,12 @@
 }
 
 .account-btn--loading {
-    opacity: 0.5;
+    filter: saturate(0.85) brightness(0.92);
     cursor: wait;
 }
 
 .account-btn:disabled {
-    opacity: 0.4;
+    filter: saturate(0.8) brightness(0.9);
     cursor: not-allowed;
 }
 
@@ -458,7 +457,7 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: var(--c-text-dim);
-    background: var(--c-black-40);
+    background: var(--c-panel-hover);
     padding: 1px 4px;
     flex-shrink: 0;
 }
@@ -498,7 +497,7 @@
 /* Anvil — info row (Points Remaining banner) */
 .account-row--info {
     border-color: var(--c-accent) !important;
-    background: var(--c-accent-06);
+    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
 }
 
 .account-row__badge--highlight {
@@ -573,7 +572,7 @@
 }
 
 .alchemy-sub-btn--stub {
-    opacity: 0.4;
+    color: var(--c-text-muted);
     cursor: default;
 }
 

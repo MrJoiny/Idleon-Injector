@@ -5,8 +5,9 @@
 }
 
 .refinery-row--placeholder {
-    opacity: 0.5;
+    background: color-mix(in srgb, var(--c-warning) 8%, var(--c-panel));
     border-left: 3px solid var(--c-warning);
+    color: var(--c-text-muted);
 }
 
 .refinery-row__name-group {
@@ -67,11 +68,11 @@
 }
 
 .refinery-notice--polymer {
-    background: var(--c-refinery-polymer-06);
+    background: color-mix(in srgb, var(--c-refinery-polymer) 8%, var(--c-panel));
 }
 
 .refinery-notice--placeholder {
-    background: var(--c-accent-06);
+    background: color-mix(in srgb, var(--c-accent) 8%, var(--c-panel));
 }
 
 .refinery-notice__icon {

@@ -103,7 +103,7 @@
 
 .bubble-card--prisma {
     border-color: var(--cauldron-color, var(--c-accent));
-    background: var(--cauldron-dim, var(--c-accent-06));
+    background: color-mix(in srgb, var(--cauldron-color, var(--c-accent)) 10%, var(--c-panel));
 }
 
 .bubble-card--prisma:hover {
@@ -113,11 +113,11 @@
 /* Canonical feedback class: .account-row--success / .account-row--error */
 /* Keep success/error visible even on prisma cards. */
 .bubble-card--prisma.account-row--success {
-    background: var(--c-success-10);
+    background: color-mix(in srgb, var(--c-success) 12%, var(--c-panel));
 }
 
 .bubble-card--prisma.account-row--error {
-    background: var(--c-danger-10);
+    background: color-mix(in srgb, var(--c-danger) 12%, var(--c-panel));
 }
 
 .bubble-card__top {
@@ -131,7 +131,7 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: var(--c-text-dim);
-    background: var(--c-black-40);
+    background: var(--c-panel-hover);
     padding: 1px 5px;
 }
 
@@ -186,7 +186,7 @@
     letter-spacing: 0.04em;
     padding: 3px 8px;
     border: 1px solid var(--c-border);
-    background: transparent;
+    background: var(--c-panel);
     color: var(--c-text-dim);
     cursor: pointer;
     transition:
@@ -205,7 +205,7 @@
 .bubble-card__prisma-btn--active {
     border-color: var(--cauldron-color, var(--c-accent));
     color: var(--cauldron-color, var(--c-accent));
-    background: var(--cauldron-dim, var(--c-accent-06));
+    background: color-mix(in srgb, var(--cauldron-color, var(--c-accent)) 10%, var(--c-panel));
     font-weight: 700;
 }
 

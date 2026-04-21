@@ -40,32 +40,24 @@ const LIQUIDS = [
         label: "Water Droplets",
         index: 0,
         upgradeIndex: 4,
-        color: "#5ba6d3",
-        dimColor: "rgba(91,166,211,0.10)",
     },
     {
         id: "liquid-nitrogen",
         label: "Liquid Nitrogen",
         index: 1,
         upgradeIndex: 5,
-        color: "#82d9f5",
-        dimColor: "rgba(130,217,245,0.10)",
     },
     {
         id: "trench-seawater",
         label: "Trench Seawater",
         index: 2,
         upgradeIndex: 6,
-        color: "#3a9e80",
-        dimColor: "rgba(58,158,128,0.10)",
     },
     {
         id: "toxic-mercury",
         label: "Toxic Mercury",
         index: 3,
         upgradeIndex: 7,
-        color: "#c084fc",
-        dimColor: "rgba(192,132,252,0.10)",
     },
 ];
 

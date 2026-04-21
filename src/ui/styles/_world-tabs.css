@@ -24,8 +24,8 @@
 }
 
 .account-sub-tab-btn {
-    background: transparent;
-    border: 1px solid transparent;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
     border-bottom: none;
     color: var(--tab-nav-color, var(--c-text-muted));
     padding: var(--tab-nav-padding, 6px 14px);
@@ -42,14 +42,14 @@
 
 .account-sub-tab-btn:hover {
     color: var(--tab-nav-hover-color, var(--c-text-main));
-    background: var(--tab-nav-hover-bg, var(--c-white-03));
+    background: var(--tab-nav-hover-bg, var(--c-panel-hover));
 }
 
 .account-sub-tab-btn.active {
     color: var(--tab-nav-active-color, var(--c-text-main));
     border-color: var(--c-border);
-    border-bottom-color: var(--tab-nav-active-bg, var(--c-panel-dim));
-    background: var(--tab-nav-active-bg, var(--c-panel-dim));
+    border-bottom-color: var(--tab-nav-active-bg, var(--c-panel));
+    background: var(--tab-nav-active-bg, var(--c-panel));
 }
 
 .account-sub-tab-btn.active::after {
@@ -166,10 +166,11 @@
 }
 
 .world-sub-tab-btn--stub {
-    opacity: 0.4;
+    color: var(--c-text-muted);
+    cursor: default;
 }
 .world-sub-tab-btn--stub:hover {
-    opacity: 0.6;
+    color: var(--c-text-muted);
 }
 
 /* ── World inner panes ───────────────────────────────────────────────────── */
@@ -206,7 +207,7 @@
 
 .world-empty-icon {
     font-size: 2.5rem;
-    opacity: 0.4;
+    color: var(--c-text-muted);
     line-height: 1;
 }
 .world-empty-label {
@@ -220,7 +221,7 @@
     margin: 0;
     text-align: center;
     max-width: 340px;
-    opacity: 0.6;
+    color: var(--c-text-muted);
 }
 
 /* Inline stub inside W1 for unimplemented sub-tabs */
@@ -236,7 +237,7 @@
 
 .world-sub-placeholder__icon {
     font-size: 2rem;
-    opacity: 0.35;
+    color: var(--c-text-muted);
 }
 .world-sub-placeholder__label {
     font-size: 0.875rem;

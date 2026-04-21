@@ -87,8 +87,8 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
     color: var(--c-accent);
-    background: var(--c-accent-06);
-    border: 1px solid var(--c-accent-20);
+    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
+    border: 1px solid var(--c-accent);
     padding: 1px 6px;
     white-space: nowrap;
     flex-shrink: 0;

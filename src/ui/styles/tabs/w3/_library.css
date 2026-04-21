@@ -6,7 +6,7 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    background: var(--c-accent-06);
+    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
     border: 1px solid var(--c-accent);
     font-size: 0.875rem;
 }
@@ -47,7 +47,7 @@
 }
 
 .talents-info-banner__item--accent {
-    background: var(--c-accent-06);
+    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
     border-left: 2px solid var(--c-accent);
 }
 
@@ -69,7 +69,7 @@
 }
 
 .talent-row--unavailable {
-    opacity: 0.96;
+    background: var(--c-panel-dim);
 }
 
 .talent-row__text {
@@ -81,7 +81,7 @@
 .talent-row__notice {
     font-size: 0.875rem;
     line-height: 1.3;
-    opacity: 0.8;
+    color: var(--c-text-muted);
 }
 
 /* Section header separating each class page */
@@ -128,5 +128,4 @@
 .talent-row__bonus {
     color: var(--c-accent);
     font-size: 0.78em;
-    opacity: 0.85;
 }

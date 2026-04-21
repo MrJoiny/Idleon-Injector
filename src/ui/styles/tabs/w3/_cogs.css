@@ -108,7 +108,7 @@
     position: fixed;
     inset: 0;
     z-index: 3000;
-    background: transparent;
+    background: var(--c-panel-dim);
 }
 
 .cogs-popup-overlay--hidden {
@@ -230,7 +230,7 @@
     width: fit-content;
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
-    background: var(--c-ui-blue-10);
+    background: color-mix(in srgb, var(--c-ui-blue) 10%, var(--c-panel));
     padding: 3px 8px;
     font-size: 0.875rem;
     letter-spacing: 0.04em;

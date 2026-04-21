@@ -37,7 +37,7 @@
     align-items: center;
     gap: 8px;
     border: none;
-    background: transparent;
+    background: var(--c-panel);
     color: var(--c-text);
     text-align: left;
     padding: 8px 12px;
@@ -46,7 +46,7 @@
 }
 
 .trap-user-header:hover {
-    background: var(--c-hover);
+    background: var(--c-panel-hover);
 }
 
 .trap-user-header__arrow {

@@ -11,25 +11,25 @@
 
 .liquid-col--water-droplets {
     --liquid-color: var(--c-liquid-water);
-    --liquid-dim: var(--c-liquid-water-10);
+    --liquid-dim: color-mix(in srgb, var(--c-liquid-water) 10%, var(--c-panel));
     --col-color: var(--c-liquid-water);
 }
 
 .liquid-col--liquid-nitrogen {
     --liquid-color: var(--c-liquid-nitrogen);
-    --liquid-dim: var(--c-liquid-nitrogen-10);
+    --liquid-dim: color-mix(in srgb, var(--c-liquid-nitrogen) 10%, var(--c-panel));
     --col-color: var(--c-liquid-nitrogen);
 }
 
 .liquid-col--trench-seawater {
     --liquid-color: var(--c-liquid-seawater);
-    --liquid-dim: var(--c-liquid-seawater-10);
+    --liquid-dim: color-mix(in srgb, var(--c-liquid-seawater) 10%, var(--c-panel));
     --col-color: var(--c-liquid-seawater);
 }
 
 .liquid-col--toxic-mercury {
     --liquid-color: var(--c-liquid-mercury);
-    --liquid-dim: var(--c-liquid-mercury-10);
+    --liquid-dim: color-mix(in srgb, var(--c-liquid-mercury) 10%, var(--c-panel));
     --col-color: var(--c-liquid-mercury);
 }
 

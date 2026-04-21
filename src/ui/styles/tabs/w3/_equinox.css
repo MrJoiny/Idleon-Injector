@@ -106,7 +106,6 @@
 
 .equinox-section-header__badge--empty {
     color: var(--c-text-muted);
-    opacity: 0.55;
 }
 
 /* Cloud info note — plain italic line */
@@ -124,7 +123,7 @@
     gap: 8px;
     padding: 7px 12px 8px;
     margin: 4px 0 6px;
-    background: var(--c-equinox-warning-10);
+    background: color-mix(in srgb, var(--c-equinox-warning) 8%, var(--c-panel));
     border-left: 3px solid var(--c-equinox-warning);
     color: var(--c-equinox-warning);
     font-size: 0.875rem;
@@ -136,24 +135,28 @@
     margin-top: 1px;
     width: 14px;
     height: 14px;
-    opacity: 0.9;
+    color: var(--c-equinox-warning);
 }
 
 /* Nightmare clouds (display index #36+, internal index >= 35) */
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) {
-    border-color: var(--c-ui-red-45);
-    background: linear-gradient(90deg, var(--c-ui-red-04), var(--c-danger-08));
+    border-color: var(--c-ui-red);
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--c-ui-red) 6%, var(--c-panel)),
+        color-mix(in srgb, var(--c-danger) 10%, var(--c-panel))
+    );
 }
 
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__index {
-    background: var(--c-danger-20);
+    background: color-mix(in srgb, var(--c-danger) 18%, var(--c-panel));
     color: var(--c-danger-soft-text);
 }
 
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__badge {
     color: var(--c-danger-soft-text);
-    background: var(--c-danger-08);
-    border-color: var(--c-ui-red-45);
+    background: color-mix(in srgb, var(--c-danger) 10%, var(--c-panel));
+    border-color: var(--c-ui-red);
 }
 
 /* Empty state within a section (no rows yet) */
@@ -161,6 +164,5 @@
     padding: 10px 14px;
     font-size: 0.875rem;
     color: var(--c-text-muted);
-    opacity: 0.6;
     font-style: italic;
 }
