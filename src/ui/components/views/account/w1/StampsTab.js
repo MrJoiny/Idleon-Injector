@@ -22,19 +22,20 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
+import { AsyncAccountBody, cleanName, writeVerified } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const PAGES = [
     { id: 0, label: "COMBAT" },
@@ -53,7 +54,7 @@ const normalizeExaltedCodes = (rawCodes) =>
         )
         .filter((code) => EXALTED_CODE_REGEX.test(code));
 
-const makeExaltedStampCode = (page, order) => `${(PAGE_LETTERS[page] ?? "A").toLowerCase()}${order + 1}`;
+const makeExaltedStampCode = (page, order) => `${PAGE_LETTERS[page].toLowerCase()}${order + 1}`;
 
 const sortStampCodes = (a, b) => {
     const letterDelta = a.charCodeAt(0) - b.charCodeAt(0);
@@ -72,115 +73,77 @@ const StampRow = ({
     writeExaltedCodes,
     exaltedBusy,
 }) => {
-    const inputVal = van.state(String(initialLevel ?? 0));
-    const { status, run } = useWriteStatus();
     const stampCode = makeExaltedStampCode(page, order);
-    const isExalted = van.derive(() => (exaltedCodes.val ?? new Set()).has(stampCode));
+    const isExalted = van.derive(() => exaltedCodes.val.has(stampCode));
+    const levelState = van.state(initialLevel);
+    const maxLevelDisplay = van.state(initialMaxLevel);
 
-    // Local display states, updated on SET without touching parent gameData.
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const maxLevelDisplay = van.state(initialMaxLevel ?? 0);
-
-    const doSet = async (targetLevel) => {
-        const lvl = Math.max(0, Number(targetLevel));
-        if (isNaN(lvl)) return;
-
-        // Max level unlocks in steps, round up to the next step boundary.
-        const maxLvl = step > 0 && lvl > 0 ? Math.ceil(lvl / step) * step : lvl;
-
-        await run(async () => {
+    return EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.max(0, Number(rawValue));
+            return Number.isNaN(lvl) ? null : lvl;
+        },
+        write: async (nextLevel) => {
+            const maxLevel = step > 0 && nextLevel > 0 ? Math.ceil(nextLevel / step) * step : nextLevel;
             const levelPath = `StampLevel[${page}][${order}]`;
             const maxPath = `StampLevelMAX[${page}][${order}]`;
-            await writeVerified(levelPath, lvl);
-            await writeVerified(maxPath, maxLvl);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-            maxLevelDisplay.val = maxLvl;
-        });
-    };
 
-    const doToggleExalted = async () => {
-        if (exaltedBusy.val) return;
-        await run(async () => {
-            exaltedBusy.val = true;
-            try {
-                const next = new Set(exaltedCodes.val ?? new Set());
-                next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
-                await writeExaltedCodes(next);
-                exaltedCodes.val = next;
-            } finally {
-                exaltedBusy.val = false;
-            }
-        });
-    };
+            await writeVerified(levelPath, nextLevel);
+            await writeVerified(maxPath, maxLevel);
+            maxLevelDisplay.val = maxLevel;
 
-    return div(
-        {
-            class: () =>
-                `account-row stamp-row ${isExalted.val ? "stamp-row--exalted" : ""} ${
-                    status.val === "success" ? "account-row--success" : ""
-                } ${status.val === "error" ? "account-row--error" : ""}`,
+            return nextLevel;
         },
-
-        div(
-            { class: "account-row__info" },
+        renderInfo: () => [
             span({ class: "account-row__index" }, `#${order}`),
-            span({ class: "account-row__name" }, name)
-        ),
+            span({ class: "account-row__name" }, name),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevelDisplay.val}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue);
+            return Math.max(0, next + delta);
+        },
+        rowClass: () => (isExalted.val ? "stamp-row--exalted" : ""),
+        wrapApplyButton: (applyButton) => withTooltip(applyButton, "Set StampLevel and StampLevelMAX in game memory"),
+        renderExtraActions: ({ status, run, applyValue }) => [
+            ActionButton({
+                label: () => (isExalted.val ? "EXALTED ON" : "EXALTED OFF"),
+                status,
+                variant: "account-btn",
+                className: () => `stamp-exalted-btn ${isExalted.val ? "stamp-exalted-btn--active" : ""}`.trim(),
+                tooltip: `Toggle exalted stamp (${stampCode}) in gga.Compass[4]`,
+                disabled: () => exaltedBusy.val,
+                onClick: async (e) => {
+                    e.preventDefault();
+                    if (exaltedBusy.val) return;
 
-        span({ class: "account-row__badge" }, () => `LV ${levelDisplay.val} / ${maxLevelDisplay.val}`),
-
-        div(
-            { class: "account-row__controls stamp-row__controls" },
-
-            NumberInput({
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
+                    await run(async () => {
+                        exaltedBusy.val = true;
+                        try {
+                            const next = new Set(exaltedCodes.val);
+                            next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
+                            await writeExaltedCodes(next);
+                            exaltedCodes.val = next;
+                        } finally {
+                            exaltedBusy.val = false;
+                        }
+                    });
+                },
             }),
-
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                "Set StampLevel and StampLevelMAX in game memory"
-            ),
-
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `account-btn stamp-exalted-btn ${isExalted.val ? "stamp-exalted-btn--active" : ""} ${
-                                status.val === "loading" ? "account-btn--loading" : ""
-                            }`,
-                        onclick: doToggleExalted,
-                        disabled: () => status.val === "loading" || exaltedBusy.val,
-                    },
-                    () => (isExalted.val ? "EXALTED ON" : "EXALTED OFF")
-                ),
-                `Toggle exalted stamp (${stampCode}) in gga.Compass[4]`
-            ),
-
-            withTooltip(
-                button(
-                    {
-                        class: "account-btn account-btn--danger",
-                        onclick: () => doSet(0),
-                        disabled: () => status.val === "loading",
-                    },
-                    "RELOCK"
-                ),
-                "Set both StampLevel and StampLevelMAX to 0"
-            )
-        )
-    );
+            ActionButton({
+                label: "RELOCK",
+                status,
+                variant: "danger",
+                tooltip: "Set both StampLevel and StampLevelMAX to 0",
+                onClick: (e) => {
+                    e.preventDefault();
+                    applyValue(0);
+                },
+            }),
+        ],
+    });
 };
 
 export const StampsTab = () => {
@@ -191,23 +154,8 @@ export const StampsTab = () => {
     const exaltedBusy = van.state(false);
 
     const writeExaltedCodes = async (codeSet) => {
-        const ordered = [...(codeSet ?? new Set())]
-            .map((code) =>
-                String(code ?? "")
-                    .trim()
-                    .toLowerCase()
-            )
-            .filter((code) => EXALTED_CODE_REGEX.test(code))
-            .sort(sortStampCodes);
-
-        const currentOrdered = [...(exaltedCodes.val ?? new Set())]
-            .map((code) =>
-                String(code ?? "")
-                    .trim()
-                    .toLowerCase()
-            )
-            .filter((code) => EXALTED_CODE_REGEX.test(code))
-            .sort(sortStampCodes);
+        const ordered = normalizeExaltedCodes(codeSet).sort(sortStampCodes);
+        const currentOrdered = normalizeExaltedCodes(exaltedCodes.val).sort(sortStampCodes);
         const writes = [];
 
         for (let i = 0; i < ordered.length; i++) {
@@ -254,17 +202,17 @@ export const StampsTab = () => {
 
             const names = pages.map((letter, page) => {
                 const result = [];
-                const count = pageCounts[page] ?? 0;
+                const count = pageCounts[page];
                 for (let i = 1; i <= count; i++) {
                     const entry = rawItemDefs?.[`Stamp${letter}${i}`];
-                    result.push((entry?.displayName ?? `Stamp ${letter}${i}`).replace(/_/g, " "));
+                    result.push(cleanName(entry?.displayName, `Stamp ${letter}${i}`));
                 }
                 return result;
             });
 
             const steps = pages.map((letter, page) => {
                 const result = [];
-                const count = pageCounts[page] ?? 0;
+                const count = pageCounts[page];
                 for (let i = 1; i <= count; i++) {
                     const entry = rawItemDefs?.[`Stamp${letter}${i}`];
                     const parts = (entry?.desc_line1 || "").split(",");

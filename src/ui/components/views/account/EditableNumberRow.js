@@ -104,6 +104,7 @@ export const EditableNumberRow = ({
             ? toNodes(
                   renderExtraActions({
                       status,
+                      run,
                       inputValue,
                       applyValue,
                   })

@@ -5,11 +5,6 @@
     background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
 }
 
-.stamp-row__controls {
-    justify-content: flex-end;
-    flex-wrap: wrap;
-}
-
 .stamp-exalted-btn {
     min-width: 104px;
     border: 1px solid var(--c-border);
