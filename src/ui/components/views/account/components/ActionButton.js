@@ -15,7 +15,7 @@ const VARIANT_CLASS = {
  */
 export const ActionButton = ({
     label,
-    loadingLabel = "...",
+    loadingLabel = null,
     status = null,
     variant = "apply",
     className = "",
@@ -46,7 +46,8 @@ export const ActionButton = ({
             onclick: onClick,
         },
         () => {
-            const nextLabel = resolveValue(status) === "loading" ? loadingLabel : label;
+            const isLoading = resolveValue(status) === "loading";
+            const nextLabel = isLoading && loadingLabel !== null ? loadingLabel : label;
             return typeof nextLabel === "function" ? nextLabel() : nextLabel;
         }
     );
