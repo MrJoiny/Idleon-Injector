@@ -30,15 +30,15 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { writeVerified } from "../accountShared.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 // ── Hardcoded column names (cannot be sourced at runtime) ──────────────────
 
@@ -79,66 +79,31 @@ const DRACONIC_LABELS = ["COUNT"];
 // ── P2WRow ─────────────────────────────────────────────────────────────────
 
 const P2WRow = ({ label, valueState, maxState, writePath }) => {
-    const inputVal = van.state(String(valueState.val));
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(valueState.val);
-    });
-
-    const doSet = async (raw) => {
-        const parsed = Math.max(0, Math.round(Number(raw)));
-        if (isNaN(parsed)) return;
-        const max = Number(maxState.val);
-        const val = max > 0 ? Math.min(max, parsed) : parsed;
-        await run(async () => {
-            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
-            valueState.val = val;
-            inputVal.val = String(val);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "p2w-row feature-card",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => {
+            const parsed = Math.max(0, Math.round(Number(rawValue)));
+            return Number.isNaN(parsed) ? null : parsed;
         },
-        span({ class: "p2w-row__label" }, label),
-        span({ class: "p2w-row__badge" }, () => {
-            const cur = valueState.val;
+        write: async (nextValue) =>
+            writeVerified(writePath, nextValue, {
+                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
+            }),
+        renderInfo: () => span({ class: "account-row__name" }, label),
+        renderBadge: (currentValue) => {
+            const cur = currentValue ?? 0;
             const max = maxState.val;
             return max > 0 ? `${cur} / ${max}` : String(cur);
-        }),
-        div(
-            { class: "p2w-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => {
-                    const max = Number(maxState.val);
-                    const next = Number(inputVal.val) + 1;
-                    inputVal.val = String(max > 0 ? Math.min(max, next) : next);
-                },
-            }),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "…" : "SET")
-            )
-        )
-    );
+        },
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            const max = Number(maxState.val);
+            const updated = Math.max(0, next + delta);
+            return max > 0 ? Math.min(max, updated) : updated;
+        },
+        inputMode: "int",
+    });
 };
 
 // ── Pay2WinTab ─────────────────────────────────────────────────────────────

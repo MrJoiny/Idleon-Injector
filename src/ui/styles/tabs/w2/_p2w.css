@@ -1,13 +1,5 @@
-/* ── Pay 2 Win tab ───────────────────────────────────────────────────────── */
-/* .p2w-tab container  → .tab-container                                       */
-/* .p2w-cauldron-grid  → .grid-4col                                           */
-/* .p2w-scroll         → .scrollable-panel + .content-stack                   */
-/* .p2w-section*       → .account-section / __header / __title / __note       */
-/* .p2w-col__header    → .col-header                                          */
-/* .p2w-col__name      → .col-header__name                                    */
-
-
-
+/* Pay 2 Win tab */
+/* Column containers use custom accent colors. Row styling now comes from the shared account-row classes. */
 
 .p2w-col {
     display: flex;
@@ -52,68 +44,14 @@
     --col-color: var(--c-liquid-mercury);
 }
 
-/* .p2w-col__header → .col-header; .p2w-col__name → .col-header__name (see _account-pages.css) */
-
 .p2w-col__rows {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-/* ── Upgrade row (used inside cauldron cols and simple sections) ── */
-
-.p2w-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-}
-
-/* Success/error state comes from .account-row--success / .account-row--error */
-
-.p2w-row__label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.p2w-row__badge {
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
-    color: var(--c-accent);
-    background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
-    border: 1px solid var(--c-accent);
-    padding: 1px 6px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.p2w-row__controls {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-}
-
-.p2w-row__controls .number-input-wrapper {
-    width: 100px;
-}
-
-/* ── Simple flat sections (vials upgrades, player boosts) ── */
-
 .p2w-simple-rows {
     display: flex;
     flex-direction: column;
     gap: 4px;
-}
-
-/* Simple rows are wider — override number-input width */
-.p2w-simple-rows .p2w-row__controls .number-input-wrapper {
-    width: 120px;
 }
