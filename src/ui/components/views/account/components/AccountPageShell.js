@@ -2,19 +2,24 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
-import { resolveValue } from "../accountShared.js";
+import { renderAccountError, renderAccountLoading, resolveValue } from "../accountShared.js";
 const { div } = van.tags;
 
 /**
- * Shared account page wrapper with standard async-state rendering.
- * `body` is a normal Van child and may itself be a reactive function child.
- * The shell must pass it through as-is rather than invoking it.
+ * Shared account page wrapper.
+ * - Persistent tabs pass `persistentState` + `body`.
+ * - Rebuild-style tabs pass `loadState` + `renderBody`.
+ * - `body` is a normal Van child and may itself be a reactive function child.
  */
 export const AccountPageShell = ({
     header,
     topNotices = null,
     subNav = null,
     body = null,
+    loadState = null,
+    renderBody = null,
+    renderLoading = renderAccountLoading,
+    renderError = renderAccountError,
     rootClass = "tab-container",
     persistentState = null,
     persistentLoadingText = null,
@@ -61,6 +66,21 @@ export const AccountPageShell = ({
             : null;
 
         const chromeNodes = subNav ? [subNav, header, topNotices] : [header, topNotices];
+        const resolvedBody =
+            persistentState || !loadState
+                ? body
+                : () => {
+                      const isLoading = Boolean(resolveValue(loadState.loading));
+                      if (isLoading) return renderLoading();
+
+                      const errorMessage = resolveValue(loadState.error);
+                      if (errorMessage) return renderError(errorMessage);
+
+                      const resolvedData = resolveValue(loadState.data);
+                      if (resolvedData === null || resolvedData === undefined) return null;
+
+                      return renderBody(resolvedData);
+                  };
 
         return div(
             { class: rootClass },
@@ -69,12 +89,11 @@ export const AccountPageShell = ({
             persistentState
                 ? div(
                       {
-                          class: () => (!hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""),
+                          class: () =>
+                              !hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : "",
                       },
                       body
                   )
-                : body
+                : resolvedBody
         );
     })();
-
-

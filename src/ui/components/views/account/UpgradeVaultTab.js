@@ -23,7 +23,7 @@ import { AccountPageShell } from "./components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { AsyncAccountBody, cleanName, toNum, writeVerified } from "./accountShared.js";
+import { cleanName, toNum, writeVerified } from "./accountShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
 const { div, span } = van.tags;
@@ -117,25 +117,20 @@ export const UpgradeVaultTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: (resolved) => resolved.upgrades.length === 0,
-        renderContent: (resolved) =>
-            div(
-                { class: "account-list" },
-                ...resolved.upgrades.map((upgrade) =>
-                    VaultRow({
-                        index: upgrade.index,
-                        name: upgrade.name,
-                        baseMax: upgrade.baseMax,
-                        realMax: upgrade.realMax,
-                        levelState: getLevelState(upgrade.index),
-                    })
-                )
-            ),
-    });
+    const renderBody = (resolved) => {
+        return div(
+            { class: "account-list" },
+            ...resolved.upgrades.map((upgrade) =>
+                VaultRow({
+                    index: upgrade.index,
+                    name: upgrade.name,
+                    baseMax: upgrade.baseMax,
+                    realMax: upgrade.realMax,
+                    levelState: getLevelState(upgrade.index),
+                })
+            )
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -151,6 +146,7 @@ export const UpgradeVaultTab = () => {
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
                 "SET accepts any value = 0 no hard upper limit enforced."
         ),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };

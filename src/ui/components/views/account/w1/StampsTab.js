@@ -22,8 +22,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readGgaEntries } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -32,7 +30,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, cleanName, writeVerified } from "../accountShared.js";
+import { cleanName, writeVerified } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
@@ -227,6 +225,34 @@ export const StampsTab = () => {
 
     load();
 
+    const renderBody = (resolved) => {
+        const page = activePage.val;
+        const names = resolved.names?.[page] ?? [];
+        const steps = resolved.steps?.[page] ?? [];
+        const count = Math.max(
+            names.length,
+            resolved.levels?.[page]?.length ?? 0,
+            resolved.maxLevels?.[page]?.length ?? 0
+        );
+
+        return div(
+            { class: "account-list" },
+            ...Array.from({ length: count }, (_, order) =>
+                StampRow({
+                    page,
+                    order,
+                    name: names[order] ?? ("Stamp " + PAGE_LETTERS[page] + (order + 1)),
+                    step: steps[order] ?? 0,
+                    initialLevel: resolved.levels?.[page]?.[order] ?? 0,
+                    initialMaxLevel: resolved.maxLevels?.[page]?.[order] ?? 0,
+                    exaltedCodes,
+                    writeExaltedCodes,
+                    exaltedBusy,
+                })
+            )
+        );
+    };
+
     return AccountPageShell({
         rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
@@ -243,51 +269,8 @@ export const StampsTab = () => {
             navClass: "account-page-nav",
             buttonClass: "account-page-btn",
         }),
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data: gameData,
-            isEmpty: (resolved) => {
-                const page = activePage.val;
-                const names = resolved.names?.[page] ?? [];
-                const levelCount = resolved.levels?.[page]?.length ?? 0;
-                const maxLevelCount = resolved.maxLevels?.[page]?.length ?? 0;
-                return Math.max(names.length, levelCount, maxLevelCount) === 0;
-            },
-            renderEmpty: () =>
-                EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO STAMP DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                }),
-            renderContent: (resolved) => {
-                const page = activePage.val;
-                const names = resolved.names?.[page] ?? [];
-                const steps = resolved.steps?.[page] ?? [];
-                const count = Math.max(
-                    names.length,
-                    resolved.levels?.[page]?.length ?? 0,
-                    resolved.maxLevels?.[page]?.length ?? 0
-                );
-
-                return div(
-                    { class: "account-list" },
-                    ...Array.from({ length: count }, (_, order) =>
-                        StampRow({
-                            page,
-                            order,
-                            name: names[order] ?? ("Stamp " + PAGE_LETTERS[page] + (order + 1)),
-                            step: steps[order] ?? 0,
-                            initialLevel: resolved.levels?.[page]?.[order] ?? 0,
-                            initialMaxLevel: resolved.maxLevels?.[page]?.[order] ?? 0,
-                            exaltedCodes,
-                            writeExaltedCodes,
-                            exaltedBusy,
-                        })
-                    )
-                );
-            },
-        }),
+        loadState: { loading, error, data: gameData },
+        renderBody,
     });
 };
 

@@ -19,7 +19,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -195,6 +195,20 @@ export const RefineryTab = () => {
 
     load();
 
+    const renderBody = (resolved) => {
+        return div(
+            { class: "account-list" },
+            ...Array.from({ length: REFINERY_COUNT }, (_, index) =>
+                RefineryRow({
+                    refIndex: index,
+                    name: resolved.names[index] ?? `Refinery ${index + 1}`,
+                    levelState: levelStates[index],
+                    chargeState: chargeStates[index],
+                })
+            )
+        );
+    };
+
     return AccountPageShell({
         header: AccountTabHeader({
             title: "W3 - REFINERY",
@@ -220,23 +234,8 @@ export const RefineryTab = () => {
                 )
             ),
         ],
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data,
-            renderContent: (resolved) =>
-                div(
-                    { class: "account-list" },
-                    ...Array.from({ length: REFINERY_COUNT }, (_, index) =>
-                        RefineryRow({
-                            refIndex: index,
-                            name: resolved.names[index] ?? `Refinery ${index + 1}`,
-                            levelState: levelStates[index],
-                            chargeState: chargeStates[index],
-                        })
-                    )
-                ),
-        }),
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

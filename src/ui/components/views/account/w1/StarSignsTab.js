@@ -27,7 +27,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -564,43 +564,40 @@ export const StarSignsTab = () => {
                 ),
             ],
         }),
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data: signs,
-            isEmpty: (resolved) => resolved.length === 0,
-            renderEmpty: () =>
-                EmptyState({
+        loadState: { loading, error, data: signs },
+        renderBody: (resolved) => {
+            if (resolved.length === 0) {
+                return EmptyState({
                     icon: Icons.SearchX(),
                     title: "NO STAR SIGN DATA",
                     subtitle: "Ensure the game is running, then hit REFRESH",
-                }),
-            renderContent: (resolved) => {
-                if (activeSign.val) {
-                    return div(
-                        { class: "account-list" },
-                        StarSignDetail({
-                            sign: activeSign.val,
-                            usernames: activeSign.val.usernames ?? [],
-                            onSave: handleSave,
-                            onBack: () => (activeSign.val = null),
-                        })
-                    );
-                }
+                });
+            }
 
+            if (activeSign.val) {
                 return div(
-                    { class: "starsign-grid" },
-                    ...resolved.map((sign) =>
-                        StarSignCard({
-                            sign,
-                            onClick: (selectedSign) => {
-                                activeSign.val = { ...selectedSign };
-                            },
-                        })
-                    )
+                    { class: "account-list" },
+                    StarSignDetail({
+                        sign: activeSign.val,
+                        usernames: activeSign.val.usernames ?? [],
+                        onSave: handleSave,
+                        onBack: () => (activeSign.val = null),
+                    })
                 );
-            },
-        }),
+            }
+
+            return div(
+                { class: "starsign-grid" },
+                ...resolved.map((sign) =>
+                    StarSignCard({
+                        sign,
+                        onClick: (selectedSign) => {
+                            activeSign.val = { ...selectedSign };
+                        },
+                    })
+                )
+            );
+        },
     });
 };
 

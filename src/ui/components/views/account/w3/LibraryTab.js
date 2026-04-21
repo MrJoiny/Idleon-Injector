@@ -32,7 +32,7 @@ import { AccountRow } from "../components/AccountRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span, strong } = van.tags;
 
@@ -357,73 +357,71 @@ export const LibraryTab = () => {
                 },
             }),
         }),
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data,
-            renderError: (message) => {
-                if (message === "select-char") {
-                    return EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO CHARACTER SELECTED",
-                        subtitle: "Select a character in-game before using this tab.",
-                    });
-                }
-                if (message === "No active character loaded.") {
-                    return EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO CHARACTER",
-                        subtitle: "No active character loaded.",
-                    });
-                }
+        loadState: { loading, error, data },
+        renderError: (message) => {
+            if (message === "select-char") {
                 return EmptyState({
                     icon: Icons.SearchX(),
-                    title: "LOAD FAILED",
-                    subtitle: message,
+                    title: "NO CHARACTER SELECTED",
+                    subtitle: "Select a character in-game before using this tab.",
                 });
-            },
-            isEmpty: (resolved) => !resolved.groups.length,
-            renderEmpty: () =>
-                EmptyState({
+            }
+            if (message === "No active character loaded.") {
+                return EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO CHARACTER",
+                    subtitle: "No active character loaded.",
+                });
+            }
+            return EmptyState({
+                icon: Icons.SearchX(),
+                title: "LOAD FAILED",
+                subtitle: message,
+            });
+        },
+        renderBody: (resolved) => {
+            if (!resolved.groups.length) {
+                return EmptyState({
                     icon: Icons.SearchX(),
                     title: "NO DATA",
                     subtitle: "No library data found for this character.",
-                }),
-            renderContent: (resolved) =>
+                });
+            }
+
+            return div(
+                { class: "account-list" },
                 div(
-                    { class: "account-list" },
+                    { class: "talents-info-banner" },
                     div(
-                        { class: "talents-info-banner" },
-                        div(
-                            { class: "talents-info-banner__item" },
-                            span({ class: "talents-info-banner__label" }, "Active Class"),
-                            strong({ class: "talents-info-banner__value" }, resolved.activeClassName)
+                        { class: "talents-info-banner__item" },
+                        span({ class: "talents-info-banner__label" }, "Active Class"),
+                        strong({ class: "talents-info-banner__value" }, resolved.activeClassName)
+                    )
+                ),
+                ...resolved.groups.flatMap((group) => [
+                    div(
+                        { class: "talents-group-header" },
+                        span({ class: "talents-group-header__name" }, group.className),
+                        span(
+                            { class: "talents-group-header__points" },
+                            group.availablePoints.toLocaleString(),
+                            span({ class: "talents-group-header__points-label" }, " pts")
                         )
                     ),
-                    ...resolved.groups.flatMap((group) => [
-                        div(
-                            { class: "talents-group-header" },
-                            span({ class: "talents-group-header__name" }, group.className),
-                            span(
-                                { class: "talents-group-header__points" },
-                                group.availablePoints.toLocaleString(),
-                                span({ class: "talents-group-header__points-label" }, " pts")
-                            )
-                        ),
-                        ...group.talents.map((t) =>
-                            TalentRow({
-                                talentId: t.talentId,
-                                talentName: t.talentName,
-                                curState: getCurState(t.talentId),
-                                maxState: getMaxState(t.talentId),
-                                maxBookLv: resolved.maxBookLv,
-                                isBookAvailable: t.isBookAvailable,
-                                bonus: t.bonus,
-                            })
-                        ),
-                    ])
-                ),
-        }),
+                    ...group.talents.map((t) =>
+                        TalentRow({
+                            talentId: t.talentId,
+                            talentName: t.talentName,
+                            curState: getCurState(t.talentId),
+                            maxState: getMaxState(t.talentId),
+                            maxBookLv: resolved.maxBookLv,
+                            isBookAvailable: t.isBookAvailable,
+                            bonus: t.bonus,
+                        })
+                    ),
+                ])
+            );
+        },
     });
 };
 

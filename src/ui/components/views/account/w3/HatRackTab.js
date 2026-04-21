@@ -15,7 +15,7 @@ import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, cleanName, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -276,13 +276,8 @@ export const HatRackTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        renderContent: () =>
-            (() => {
-                const root = div(
+    const renderBody = () => {
+        const root = div(
                     {
                         class: "scrollable-panel content-stack",
                     },
@@ -378,10 +373,9 @@ export const HatRackTab = () => {
                         )
                     )
                 );
-                scrollEl = root;
-                return root;
-            })(),
-    });
+        scrollEl = root;
+        return root;
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -399,7 +393,8 @@ export const HatRackTab = () => {
                 "REFRESH"
             ),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

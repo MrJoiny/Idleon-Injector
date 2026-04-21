@@ -18,7 +18,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
+import { unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, button, span, select, option } = van.tags;
@@ -357,20 +357,16 @@ export const SmithyTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: () => totalSetCount.val === 0,
-        renderEmpty: () =>
-            EmptyState({
+    const renderBody = () => {
+        if (totalSetCount.val === 0) {
+            return EmptyState({
                 icon: Icons.SearchX(),
                 title: "NO SMITHY SETS",
                 subtitle: "No armor set smithy definitions were found.",
-            }),
-        renderContent: () =>
-            (() => {
-                const root = div(
+            });
+        }
+
+        const root = div(
                     {
                         class: "scrollable-panel content-stack",
                     },
@@ -448,10 +444,9 @@ export const SmithyTab = () => {
                         ),
                     })
                 );
-                scrollEl = root;
-                return root;
-            })(),
-    });
+        scrollEl = root;
+        return root;
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -469,7 +464,8 @@ export const SmithyTab = () => {
                 "REFRESH"
             ),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

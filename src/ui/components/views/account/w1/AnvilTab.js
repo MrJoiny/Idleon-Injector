@@ -95,7 +95,7 @@ export const AnvilTab = () => {
 
     load();
 
-    const rowList = div(
+    const body = div(
         { class: "account-list" },
         div(
             { class: "account-row account-row--info" },
@@ -129,8 +129,6 @@ export const AnvilTab = () => {
         persistentLoadingText: "READING ANVIL",
         persistentErrorTitle: "ANVIL READ FAILED",
         persistentInitialWrapperClass: "account-list",
-        body: rowList,
+        body,
     });
 };
-
-

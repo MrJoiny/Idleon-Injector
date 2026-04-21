@@ -22,7 +22,7 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -120,16 +120,16 @@ export const VialTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data: vialDefs,
-        isEmpty: (vials) => vials.length === 0,
-        renderEmpty: () =>
-            EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." }),
-        renderContent: (vials) =>
-            div({ class: "account-list" }, ...vials.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))),
-    });
+    const renderBody = (resolved) => {
+        if (resolved.length === 0) {
+            return EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." });
+        }
+
+        return div(
+            { class: "account-list" },
+            ...resolved.map((v) => VialRow({ vial: v, levelState: getLevelState(v.index) }))
+        );
+    };
 
     return AccountPageShell({
         rootClass: "vials-tab tab-container",
@@ -174,7 +174,8 @@ export const VialTab = () => {
                 RefreshButton({ onRefresh: load }),
             ],
         }),
-        body: renderBody,
+        loadState: { loading, error, data: vialDefs },
+        renderBody,
     });
 };
 

@@ -32,7 +32,6 @@ import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     adjustFormattedIntInput,
-    AsyncAccountBody,
     cleanName,
     largeFormatter,
     largeParser,
@@ -447,39 +446,36 @@ export const TrappingTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: (resolved) => !resolved.players.length,
-        renderEmpty: () =>
-            EmptyState({
+    const renderBody = (resolved) => {
+        if (!resolved.players.length) {
+            return EmptyState({
                 icon: Icons.SearchX(),
                 title: "NO PLAYERS",
                 subtitle: "No character names were found in GetPlayersUsernames.",
-            }),
-        renderContent: (resolved) =>
+            });
+        }
+
+        return div(
+            { class: "trap-scroll scrollable-panel" },
             div(
-                { class: "trap-scroll scrollable-panel" },
-                div(
-                    { class: "trap-note" },
-                    "Rare chance note: values above 100 still behave as 100% rare chance and do not grant extra benefit."
-                ),
-                div(
-                    { class: "trap-user-list" },
-                    ...resolved.players.map((player) =>
-                        PlayerTrapPanel({
-                            player,
-                            currentPlayer: resolved.currentPlayer,
-                            getExpandedState,
-                            getValueState,
-                            getInputState,
-                            onWriteField,
-                        })
-                    )
-                )
+                { class: "trap-note" },
+                "Rare chance note: values above 100 still behave as 100% rare chance and do not grant extra benefit."
             ),
-    });
+            div(
+                { class: "trap-user-list" },
+                ...resolved.players.map((player) =>
+                    PlayerTrapPanel({
+                        player,
+                        currentPlayer: resolved.currentPlayer,
+                        getExpandedState,
+                        getValueState,
+                        getInputState,
+                        onWriteField,
+                    })
+                )
+            )
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -488,7 +484,8 @@ export const TrappingTab = () => {
                 "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
             actions: RefreshButton({ onRefresh: load }),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

@@ -22,7 +22,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -125,26 +125,23 @@ export const AtomColliderTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: (resolved) => !resolved.atoms.length,
-        renderEmpty: () =>
-            EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
-        renderContent: (resolved) =>
-            div(
-                { class: "account-list" },
-                ...resolved.atoms.map((a, i) =>
-                    AtomRow({
-                        index: i,
-                        name: a.name,
-                        maxLevel: a.maxLevel,
-                        levelState: getLevelState(i),
-                    })
-                )
-            ),
-    });
+    const renderBody = (resolved) => {
+        if (!resolved.atoms.length) {
+            return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." });
+        }
+
+        return div(
+            { class: "account-list" },
+            ...resolved.atoms.map((a, i) =>
+                AtomRow({
+                    index: i,
+                    name: a.name,
+                    maxLevel: a.maxLevel,
+                    levelState: getLevelState(i),
+                })
+            )
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -171,7 +168,8 @@ export const AtomColliderTab = () => {
                 },
             }),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

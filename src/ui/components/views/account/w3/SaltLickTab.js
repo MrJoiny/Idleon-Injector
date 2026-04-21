@@ -21,7 +21,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -117,26 +117,23 @@ export const SaltLickTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: (resolved) => !resolved.upgrades.length,
-        renderEmpty: () =>
-            EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." }),
-        renderContent: (resolved) =>
-            div(
-                { class: "account-list" },
-                ...resolved.upgrades.map((u, i) =>
-                    SaltLickRow({
-                        index: i,
-                        name: u.name,
-                        maxLevel: u.maxLevel,
-                        levelState: getLevelState(i),
-                    })
-                )
-            ),
-    });
+    const renderBody = (resolved) => {
+        if (!resolved.upgrades.length) {
+            return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." });
+        }
+
+        return div(
+            { class: "account-list" },
+            ...resolved.upgrades.map((u, i) =>
+                SaltLickRow({
+                    index: i,
+                    name: u.name,
+                    maxLevel: u.maxLevel,
+                    levelState: getLevelState(i),
+                })
+            )
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -163,7 +160,8 @@ export const SaltLickTab = () => {
                 },
             }),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

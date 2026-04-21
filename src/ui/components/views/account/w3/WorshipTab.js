@@ -31,7 +31,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toInt, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -236,52 +236,49 @@ export const WorshipTab = () => {
 
     load();
 
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: (resolved) => !resolved.players.length && !resolved.towerRows.length,
-        renderEmpty: () =>
-            EmptyState({
+    const renderBody = (resolved) => {
+        if (!resolved.players.length && !resolved.towerRows.length) {
+            return EmptyState({
                 icon: Icons.SearchX(),
                 title: "NO DATA",
                 subtitle: "No worship data found.",
+            });
+        }
+
+        return div(
+            { class: "killroy-scroll scrollable-panel" },
+            AccountSection({
+                title: "WORSHIP CHARGE",
+                body: div(
+                    { class: "killroy-rows" },
+                    ...resolved.players.map((player, index) =>
+                        WorshipChargeRow({
+                            index,
+                            playerName: player.playerName,
+                            chargeState: getChargeState(player.playerName),
+                            activeCharacterNameRef,
+                            activeMaxChargeRef,
+                            writeCharge,
+                        })
+                    )
+                ),
             }),
-        renderContent: (resolved) =>
-            div(
-                { class: "killroy-scroll scrollable-panel" },
-                AccountSection({
-                    title: "WORSHIP CHARGE",
-                    body: div(
-                        { class: "killroy-rows" },
-                        ...resolved.players.map((player, index) =>
-                            WorshipChargeRow({
-                                index,
-                                playerName: player.playerName,
-                                chargeState: getChargeState(player.playerName),
-                                activeCharacterNameRef,
-                                activeMaxChargeRef,
-                                writeCharge,
-                            })
-                        )
-                    ),
-                }),
-                AccountSection({
-                    title: "TOWER DEFENSE",
-                    body: div(
-                        { class: "killroy-rows" },
-                        ...resolved.towerRows.map((row) =>
-                            WorshipWaveRow({
-                                index: row.index,
-                                name: row.name,
-                                waveState: getWaveState(row.index),
-                                writeWave,
-                            })
-                        )
-                    ),
-                })
-            ),
-    });
+            AccountSection({
+                title: "TOWER DEFENSE",
+                body: div(
+                    { class: "killroy-rows" },
+                    ...resolved.towerRows.map((row) =>
+                        WorshipWaveRow({
+                            index: row.index,
+                            name: row.name,
+                            waveState: getWaveState(row.index),
+                            writeWave,
+                        })
+                    )
+                ),
+            })
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -289,7 +286,8 @@ export const WorshipTab = () => {
             description: "Edit worship charge and best worship waves.",
             actions: RefreshButton({ onRefresh: load }),
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

@@ -24,7 +24,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -164,26 +164,24 @@ export const ConstructionBuildingsTab = () => {
                 RefreshButton({ onRefresh: load }),
             ],
         }),
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data,
-            isEmpty: (resolved) => !resolved.buildings.length,
-            renderEmpty: () =>
-                EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." }),
-            renderContent: (resolved) =>
-                div(
-                    { class: "account-list" },
-                    ...resolved.buildings.map((building, index) =>
-                        BuildingRow({
-                            index,
-                            name: building.name,
-                            maxLevel: building.maxLevel,
-                            levelState: levelStates[index],
-                        })
-                    )
-                ),
-        }),
+        loadState: { loading, error, data },
+        renderBody: (resolved) => {
+            if (!resolved.buildings.length) {
+                return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
+            }
+
+            return div(
+                { class: "account-list" },
+                ...resolved.buildings.map((building, index) =>
+                    BuildingRow({
+                        index,
+                        name: building.name,
+                        maxLevel: building.maxLevel,
+                        levelState: levelStates[index],
+                    })
+                )
+            );
+        },
     });
 };
 

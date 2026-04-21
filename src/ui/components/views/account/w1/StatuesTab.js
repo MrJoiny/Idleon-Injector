@@ -18,7 +18,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, select, option } = van.tags;
 
@@ -179,6 +179,33 @@ export const StatuesTab = () => {
 
     load();
 
+    const renderBody = (resolved) => {
+        const statues = (resolved.info ?? [])
+            .map((entry, index) => ({ index, name: entry?.[0] }))
+            .filter((statue) => statue.name && statue.name.trim().length > 0);
+
+        if (!statues.length) {
+            return EmptyState({
+                icon: Icons.SearchX(),
+                title: "NO STATUE DATA",
+                subtitle: "Ensure the game is running, then hit REFRESH",
+            });
+        }
+
+        return div(
+            { class: "account-list" },
+            ...statues.map((statue) =>
+                StatueRow({
+                    index: statue.index,
+                    name: statue.name,
+                    initialLevel: resolved.levels?.[statue.index]?.[0] ?? 0,
+                    initialDeposited: resolved.levels?.[statue.index]?.[1] ?? 0,
+                    initialTier: resolved.tiers?.[statue.index] ?? 0,
+                })
+            )
+        );
+    };
+
     return AccountPageShell({
         rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
@@ -198,39 +225,8 @@ export const StatuesTab = () => {
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
             " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-        body: AsyncAccountBody({
-            loading,
-            error,
-            data,
-            isEmpty: (resolved) =>
-                !(resolved.info ?? [])
-                    .map((entry, index) => ({ index, name: entry?.[0] }))
-                    .filter((statue) => statue.name && statue.name.trim().length > 0).length,
-            renderEmpty: () =>
-                EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO STATUE DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                }),
-            renderContent: (resolved) => {
-                const statues = (resolved.info ?? [])
-                    .map((entry, index) => ({ index, name: entry?.[0] }))
-                    .filter((statue) => statue.name && statue.name.trim().length > 0);
-
-                return div(
-                    { class: "account-list" },
-                    ...statues.map((statue) =>
-                        StatueRow({
-                            index: statue.index,
-                            name: statue.name,
-                            initialLevel: resolved.levels?.[statue.index]?.[0] ?? 0,
-                            initialDeposited: resolved.levels?.[statue.index]?.[1] ?? 0,
-                            initialTier: resolved.tiers?.[statue.index] ?? 0,
-                        })
-                    )
-                );
-            },
-        }),
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 

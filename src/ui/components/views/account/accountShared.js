@@ -1,17 +1,17 @@
 /**
- * Shared hooks and components for account feature tabs.
+ * Shared hooks and helpers for account feature tabs.
  *
- * Pattern guide — choose one per tab:
+ * Pattern guide - choose one per tab:
  *
  *  A) Persistent-pane tabs (Anvil, Forge, Liquid, P2W, PostOffice, Sigil):
- *       The full DOM is built once before the first load. Reactive van.state
- *       objects update individual cells in-place, so refresh never causes a
- *       scroll-position jump or a full list rebuild.
- *       -> use runPersistentAccountLoad + useWriteStatus
+ *       Build the DOM once before the first load. Reactive van.state objects
+ *       update individual cells in place, so refresh does not rebuild the list
+ *       or reset scroll position.
+ *       -> use persistentState on AccountPageShell + useWriteStatus
  *
  *  B) Re-render-on-load tabs (Vials, AtomCollider, SaltLick):
- *       The list is cheap to rebuild and doesn't use persistent row state.
- *       → use runAccountLoad  +  AsyncAccountBody  +  useWriteStatus
+ *       The list is cheap to rebuild and does not keep persistent row DOM.
+ *       -> use useAccountLoad + inline renderBody + useWriteStatus
  */
 
 import van from "../../../vendor/van-1.6.0.js";
@@ -22,8 +22,6 @@ import { EmptyState } from "../../EmptyState.js";
 import { formatNumber, parseNumber } from "../../../utils/numberFormat.js";
 
 const { div } = van.tags;
-
-// ── Internal helper ────────────────────────────────────────────────────────
 
 /** Unwrap a plain value, van.state, or zero-arg function. */
 export const resolveValue = (valueOrState) => {
@@ -145,14 +143,11 @@ export const writeVerified = async (path, value, { write = gga, message = null }
     throw new Error(typeof message === "function" ? message(path, value) : (message ?? `Write mismatch at ${path}`));
 };
 
-// ── useWriteStatus ─────────────────────────────────────────────────────────
-
 /**
  * Hook that wraps an async write operation with loading / success / error
  * status tracking and automatic status-clear timers.
  *
  * Usage:
- *   const { status, run } = useWriteStatus();            // default 1 200 ms clear
  *   const { status, run } = useWriteStatus();
  *
  *   await run(async () => {
@@ -164,16 +159,9 @@ export const writeVerified = async (path, value, { write = gga, message = null }
  *   // Bind it to CSS classes or button labels as needed.
  *
  * run() accepts an optional second argument to override per-call:
- *   await run(task, { successMs: 1000 });   // shorter clear on this call only
+ *   await run(task, { successMs: 1000 });
  *   await run(task, { loadingState: "saving", successState: "saved" });
  *   await run(task, { onSuccess: (result) => ..., onError: (err) => ... });
- *
- * @param {{ successMs?: number, errorMs?: number }} [opts]
- * @returns {{
- *   status: import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   run: (task: () => Promise<any>, opts?: object) => Promise<{ok: boolean}>,
- *   clearStatus: () => void,
- * }}
  */
 export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
     const status = van.state(null);
@@ -228,61 +216,3 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
 
     return { status, run, clearStatus };
 };
-
-// ── AsyncAccountBody ───────────────────────────────────────────────────────
-
-/**
- * Declarative async-state renderer for tabs that re-render their full list
- * on every load (Pattern B above). Returns a reactive function node — pass it
- * directly as a child of the tab's root div.
- *
- * Usage:
- *   const renderBody = AsyncAccountBody({
- *       loading,
- *       error,
- *       data: myDefs,                             // van.state or plain value
- *       // default loading/error UI is provided when omitted
- *       isEmpty:       (d) => d.length === 0,     // optional empty-check
- *       renderEmpty:   () => EmptyState(...),     // shown when isEmpty is true
- *       renderContent: (d) => div(...d.map(...)), // shown on success
- *   });
- *
- *   return div({ class: "tab-container" }, header, renderBody);
- *
- * @param {{
- *   loading: import('../../../vendor/van-1.6.0.js').State<boolean>,
- *   error:   import('../../../vendor/van-1.6.0.js').State<string|null>,
- *   data?:   any,
- *   renderLoading?: () => Element | null,
- *   renderError?:   (message: string) => Element | null,
- *   isEmpty?:       (data: any) => boolean,
- *   renderEmpty?:   (data: any) => Element | null,
- *   renderContent:  (data: any) => Element | null,
- * }} props
- */
-export const AsyncAccountBody =
-    ({
-        loading,
-        error,
-        data = null,
-        renderLoading = renderAccountLoading,
-        renderError = renderAccountError,
-        isEmpty = null,
-        renderEmpty = null,
-        renderContent,
-    }) =>
-    () => {
-        if (loading?.val) return renderLoading ? renderLoading() : null;
-        if (error?.val) return renderError ? renderError(error.val) : null;
-
-        const resolvedData = resolveValue(data);
-        if (resolvedData === null || resolvedData === undefined) return null;
-
-        if (typeof isEmpty === "function" && isEmpty(resolvedData)) {
-            return renderEmpty ? renderEmpty(resolvedData) : null;
-        }
-
-        return renderContent ? renderContent(resolvedData) : null;
-    };
-
-

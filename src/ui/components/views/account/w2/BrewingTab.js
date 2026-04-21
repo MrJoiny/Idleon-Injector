@@ -22,7 +22,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span } = van.tags;
 
@@ -301,31 +301,28 @@ export const BrewingTab = () => {
         });
 
     load();
-    const renderBody = AsyncAccountBody({
-        loading,
-        error,
-        data,
-        isEmpty: () => CAULDRONS.every((cauldron) => (bubbleDefs.get(cauldron.id).val ?? []).length === 0),
-        renderEmpty: () =>
-            EmptyState({
+    const renderBody = (resolved) => {
+        if (CAULDRONS.every((cauldron) => (bubbleDefs.get(cauldron.id).val ?? []).length === 0)) {
+            return EmptyState({
                 icon: Icons.SearchX(),
                 title: "NO BUBBLES",
                 subtitle: "No brewing bubble definitions found.",
-            }),
-        renderContent: (cauldrons) =>
-            div(
-                { class: "brewing-columns grid-4col scrollable-panel" },
-                ...cauldrons.map((cauldron) =>
-                    CauldronColumn({
-                        cauldron,
-                        levels: cauldronLevels.get(cauldron.id),
-                        defs: bubbleDefs.get(cauldron.id),
-                        prismaSet,
-                        setAllInput,
-                    })
-                )
-            ),
-    });
+            });
+        }
+
+        return div(
+            { class: "brewing-columns grid-4col scrollable-panel" },
+            ...resolved.map((cauldron) =>
+                CauldronColumn({
+                    cauldron,
+                    levels: cauldronLevels.get(cauldron.id),
+                    defs: bubbleDefs.get(cauldron.id),
+                    prismaSet,
+                    setAllInput,
+                })
+            )
+        );
+    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -349,7 +346,8 @@ export const BrewingTab = () => {
                 RefreshButton({ onRefresh: load }),
             ],
         }),
-        body: renderBody,
+        loadState: { loading, error, data },
+        renderBody,
     });
 };
 
