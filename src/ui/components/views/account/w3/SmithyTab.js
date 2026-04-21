@@ -195,7 +195,7 @@ const SmithyRow = ({ row, onRemove }) => {
         rowClass: "smithy-row",
         status,
         info: [
-            span({ class: "account-row__index" }, row.index + 1),
+            span({ class: "account-row__index" }, `#${row.index + 1}`),
             div(
                 { class: "smithy-row__name-group" },
                 span({ class: "account-row__name" }, row.displayName || row.setKey),

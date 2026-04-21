@@ -99,7 +99,7 @@ const RackRow = ({ row, onRemove }) => {
         },
         div(
             { class: "account-row__info" },
-            span({ class: "account-row__index" }, row.index + 1),
+            span({ class: "account-row__index" }, `#${row.index + 1}`),
             div(
                 { class: "hat-rack-row__name-group" },
                 span({ class: "account-row__name" }, row.name || row.itemId),

@@ -42,7 +42,7 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
             });
         },
         renderInfo: () => [
-            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__index" }, `#${index + 1}`),
             span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevel}`,

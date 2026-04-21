@@ -80,7 +80,7 @@ const WorshipChargeRow = ({
         rowClass: "killroy-row",
         status,
         info: [
-            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__index" }, `#${index + 1}`),
             span({ class: "account-row__name" }, playerName),
         ],
         badge: () => {
@@ -124,7 +124,7 @@ const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
         normalize: (rawValue) => toInt(rawValue, { min: 0 }),
         write: async (nextWave) => writeWave(index, nextWave),
         renderInfo: () => [
-            span({ class: "account-row__index" }, index + 1),
+            span({ class: "account-row__index" }, `#${index + 1}`),
             span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `BEST WAVE ${currentValue ?? 0}`,

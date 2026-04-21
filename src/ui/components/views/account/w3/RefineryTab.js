@@ -78,7 +78,7 @@ const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
         // Left: index + name + badges
         div(
             { class: "account-row__info" },
-            span({ class: "account-row__index" }, refIndex + 1),
+            span({ class: "account-row__index" }, `#${refIndex + 1}`),
             div(
                 { class: "refinery-row__name-group" },
                 span({ class: "account-row__name" }, name),

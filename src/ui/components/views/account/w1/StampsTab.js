@@ -124,7 +124,7 @@ const StampRow = ({
 
         div(
             { class: "account-row__info" },
-            span({ class: "account-row__index" }, `[${order}]`),
+            span({ class: "account-row__index" }, `#${order}`),
             span({ class: "account-row__name" }, name)
         ),
 

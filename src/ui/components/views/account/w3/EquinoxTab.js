@@ -125,7 +125,7 @@ const CloudRow = ({ entry }) => {
         },
         div(
             { class: "account-row__info" },
-            span({ class: "account-row__index" }, entry.cloudIndex + 1),
+            span({ class: "account-row__index" }, `#${entry.cloudIndex + 1}`),
             span({ class: "account-row__name" }, entry.name)
         ),
         span({ class: "account-row__badge" }, () => `${fmtInt(entry.progressState.val)} / ${fmtInt(entry.required)}`),
@@ -187,7 +187,7 @@ const UpgradeRow = ({ entry, onAfterSet }) => {
         },
         div(
             { class: "account-row__info" },
-            span({ class: "account-row__index" }, entry.index + 1),
+            span({ class: "account-row__index" }, `#${entry.index + 1}`),
             span({ class: "account-row__name" }, entry.name)
         ),
         span({ class: "account-row__badge" }, () => `LV ${entry.levelState.val} / ${entry.maxLevel}`),

@@ -44,8 +44,8 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
             return writeVerified(path, nextLevel);
         },
         renderInfo: () => [
-            span({ class: "account-row__name" }, name),
             span({ class: "account-row__index" }, `#${index}`),
+            span({ class: "account-row__name" }, name),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${realMax}`,
         adjustInput: (rawValue, delta, currentValue) => {
@@ -89,12 +89,12 @@ export const UpgradeVaultTab = () => {
             const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
 
             const realMaxes = computedResults.map((item, i) => {
-                    if (!item?.ok) {
-                        throw new Error(`VaultUpgMaxLV failed for upgrade ${i}`);
-                    }
-                    const value = toNum(item.value);
-                    return value > 0 ? value : 0;
-                });
+                if (!item?.ok) {
+                    throw new Error(`VaultUpgMaxLV failed for upgrade ${i}`);
+                }
+                const value = toNum(item.value);
+                return value > 0 ? value : 0;
+            });
 
             const upgrades = info
                 .map((entry, i) => {
@@ -141,7 +141,7 @@ export const UpgradeVaultTab = () => {
         header: AccountTabHeader({
             title: "UPGRADE VAULT",
             description:
-                "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+                "Set levels for all vault upgrades real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
             actions: RefreshButton({
                 onRefresh: load,
                 tooltip: "Re-read vault levels from game memory",
@@ -149,10 +149,8 @@ export const UpgradeVaultTab = () => {
         }),
         topNotices: WarningBanner(
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
-                "SET accepts any value = 0 — no hard upper limit enforced."
+                "SET accepts any value = 0 no hard upper limit enforced."
         ),
         body: renderBody,
     });
 };
-
-

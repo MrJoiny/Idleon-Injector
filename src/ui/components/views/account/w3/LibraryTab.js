@@ -114,7 +114,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
         return AccountRow({
             rowClass: "talent-row talent-row--unavailable",
             info: [
-                span({ class: "account-row__index" }, talentId),
+                span({ class: "account-row__index" }, `#${talentId}`),
                 div(
                     { class: "talent-row__text" },
                     span({ class: "account-row__name" }, talentName),
@@ -144,7 +144,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLv, isBook
             });
         },
         renderInfo: () => [
-            span({ class: "account-row__index" }, talentId),
+            span({ class: "account-row__index" }, `#${talentId}`),
             div({ class: "talent-row__text" }, span({ class: "account-row__name" }, talentName)),
         ],
         renderBadge: () =>
