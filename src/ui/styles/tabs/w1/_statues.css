@@ -5,7 +5,6 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
-    border-radius: var(--radius-sm);
     margin-left: 6px;
     text-transform: uppercase;
     border: 1px solid currentColor;
@@ -41,7 +40,6 @@
 
 /* Base background/color/border/cursor handled by .select-base; unique properties only */
 .statue-tier-select {
-    border-radius: var(--radius-sm);
     padding: 0 6px;
     height: 32px;
     width: 180px;

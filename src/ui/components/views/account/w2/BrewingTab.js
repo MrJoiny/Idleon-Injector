@@ -116,7 +116,7 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         {
             class: () =>
                 [
-                    "bubble-card",
+                    "bubble-card feature-card",
                     `bubble-card--${cauldron.id}`,
                     isPrisma.val ? "bubble-card--prisma" : "",
                     status.val === "success" ? "account-row--success" : "",
@@ -219,7 +219,7 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
             {
                 class: () =>
                     [
-                        "brewing-column__header",
+                        "col-header brewing-column__header",
                         bulkStatus.val === "success" ? "account-row--success" : "",
                         bulkStatus.val === "error" ? "account-row--error" : "",
                     ]

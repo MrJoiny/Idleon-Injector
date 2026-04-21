@@ -496,7 +496,7 @@ export const StarSignsTab = () => {
     };
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container starsigns-scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container starsigns-scroll-container",
         header: AccountTabHeader({
             title: "STAR SIGNS",
             description: "Assign players (1-10) and drag to reorder completion order",

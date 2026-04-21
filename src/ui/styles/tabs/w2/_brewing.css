@@ -13,42 +13,44 @@
 .bubble-card--orange {
     --cauldron-color: var(--c-cauldron-orange);
     --cauldron-dim: var(--c-cauldron-orange-12);
+    --col-color: var(--c-cauldron-orange);
 }
 
 .brewing-column--green,
 .bubble-card--green {
     --cauldron-color: var(--c-cauldron-green);
     --cauldron-dim: var(--c-cauldron-green-12);
+    --col-color: var(--c-cauldron-green);
 }
 
 .brewing-column--purple,
 .bubble-card--purple {
     --cauldron-color: var(--c-cauldron-purple);
     --cauldron-dim: var(--c-cauldron-purple-12);
+    --col-color: var(--c-cauldron-purple);
 }
 
 .brewing-column--yellow,
 .bubble-card--yellow {
     --cauldron-color: var(--c-cauldron-yellow);
     --cauldron-dim: var(--c-cauldron-yellow-12);
+    --col-color: var(--c-cauldron-yellow);
 }
 
+/* .brewing-column__header → .col-header (see _account-pages.css)            */
+/* .brewing-column__label  → .col-header__name                               */
+/* Brewing uses flex-wrap justify-content:space-between for the SET ALL btn   */
 .brewing-column__header {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 8px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-left: 3px solid var(--cauldron-color, var(--c-accent));
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .brewing-column__label {
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: var(--cauldron-color, var(--c-text-main));
+    color: var(--col-color, var(--c-text-main));
 }
 
 .brewing-column__bubbles {
@@ -93,24 +95,19 @@
 /* ── Bubble card ─────────────────────────────────────────────────────────── */
 
 .bubble-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    transition:
-        border-color 0.2s,
-        background 0.2s;
-}
-
-.bubble-card:hover {
-    border-color: var(--c-border-strong);
 }
 
 .bubble-card--prisma {
     border-color: var(--cauldron-color, var(--c-accent));
     background: var(--cauldron-dim, var(--c-accent-06));
+}
+
+.bubble-card--prisma:hover {
+    border-color: var(--cauldron-color, var(--c-accent));
 }
 
 /* Canonical feedback class: .account-row--success / .account-row--error */
@@ -132,7 +129,7 @@
 
 .bubble-card__index {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     color: var(--c-text-dim);
     background: var(--c-black-40);
     padding: 1px 5px;

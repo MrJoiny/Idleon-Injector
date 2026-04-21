@@ -11,6 +11,9 @@
 /* ── Top account sub-nav ─────────────────────────────────────────────────── */
 
 .account-sub-nav {
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
     gap: 4px;
     padding: 10px 10px 0;
     border-bottom: 1px solid var(--c-border);
@@ -18,12 +21,6 @@
     position: sticky;
     top: 0;
     z-index: 1001;
-}
-
-.account-sub-nav {
-    display: flex;
-    flex-wrap: wrap;
-    flex-shrink: 0;
 }
 
 .account-sub-tab-btn {

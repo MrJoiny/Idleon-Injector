@@ -15,7 +15,6 @@
 .starsign-card {
     background: var(--c-panel);
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-md);
     padding: 10px 12px;
     cursor: pointer;
     transition:
@@ -44,7 +43,6 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 2px 8px;
-    border-radius: var(--radius-sm);
     border: 1px solid currentColor;
 }
 
@@ -58,7 +56,6 @@
 .starsign-card-bar {
     height: 4px;
     background: var(--c-border);
-    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
@@ -66,7 +63,6 @@
     height: 100%;
     width: var(--starsign-fill-width, 0%);
     background: var(--c-accent);
-    border-radius: var(--radius-sm);
     transition: width 0.3s;
 }
 
@@ -123,7 +119,6 @@
 .starsign-back-btn {
     background: none;
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
     padding: 4px 12px;
     cursor: pointer;
     color: var(--c-text);
@@ -160,7 +155,6 @@
     font-weight: 700;
     padding: 2px 8px;
     border: 1px solid var(--c-accent);
-    border-radius: var(--radius-sm);
     color: var(--c-accent);
     white-space: nowrap;
 }
@@ -188,7 +182,6 @@
     gap: 8px;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
     padding: 6px 10px;
     cursor: grab;
     user-select: none;
@@ -224,11 +217,10 @@
 
 .starsign-player-letter {
     font-size: 0.7rem;
-    font-family: monospace;
+    font-family: var(--font-mono);
     background: var(--c-border);
     padding: 1px 6px;
-    border-radius: var(--radius-sm);
-}
+    }
 
 .starsign-remove-btn {
     margin-left: auto;
@@ -250,7 +242,6 @@
     color: var(--c-text-dim);
     padding: 12px;
     border: 1px dashed var(--c-border);
-    border-radius: var(--radius-sm);
     text-align: center;
     margin-bottom: 12px;
 }
@@ -264,7 +255,6 @@
 }
 
 .starsign-player-select {
-    border-radius: var(--radius-sm);
     padding: 0 6px;
     height: 32px;
     width: 180px;
@@ -293,7 +283,6 @@
 .starsign-progress-bar {
     height: 6px;
     background: var(--c-border);
-    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
@@ -301,7 +290,6 @@
     height: 100%;
     width: var(--starsign-fill-width, 0%);
     background: var(--c-accent);
-    border-radius: var(--radius-sm);
     transition: width 0.3s;
 }
 

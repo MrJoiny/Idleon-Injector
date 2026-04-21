@@ -103,7 +103,7 @@ const RackRow = ({ row, onRemove }) => {
             div(
                 { class: "hat-rack-row__name-group" },
                 span({ class: "account-row__name" }, row.name || row.itemId),
-                span({ class: "hat-rack-row__item-id" }, row.itemId)
+                span({ class: "account-row__sub-label" }, row.itemId)
             )
         ),
         span({ class: "account-row__badge" }, "ON RACK"),
@@ -284,7 +284,7 @@ export const HatRackTab = () => {
             (() => {
                 const root = div(
                     {
-                        class: "hat-rack-scroll scrollable-panel",
+                        class: "scrollable-panel content-stack",
                     },
                     () =>
                         writeWarning.val
@@ -292,19 +292,19 @@ export const HatRackTab = () => {
                             : null,
 
                     div(
-                        { class: "hat-rack-section" },
+                        { class: "account-section" },
                         div(
-                            { class: "hat-rack-section__header" },
-                            span({ class: "hat-rack-section__title" }, "ON RACK"),
+                            { class: "account-section__header" },
+                            span({ class: "account-section__title" }, "ON RACK"),
                             span(
-                                { class: "hat-rack-section__note" },
+                                { class: "account-section__note" },
                                 () => `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`
                             )
                         ),
                         () => {
                             const rows = rackRows.val;
                             if (rows.length === 0)
-                                return div({ class: "hat-rack-empty" }, "No hats currently on rack.");
+                                return div({ class: "tab-empty" }, "No hats currently on rack.");
 
                             return div(
                                 { class: "hat-rack-rows" },
@@ -319,11 +319,11 @@ export const HatRackTab = () => {
                     ),
 
                     div(
-                        { class: "hat-rack-section" },
+                        { class: "account-section" },
                         div(
-                            { class: "hat-rack-section__header" },
-                            span({ class: "hat-rack-section__title" }, "ADD ELIGIBLE HAT"),
-                            span({ class: "hat-rack-section__note" }, () => `${missingCount.val} AVAILABLE TO ADD`)
+                            { class: "account-section__header" },
+                            span({ class: "account-section__title" }, "ADD ELIGIBLE HAT"),
+                            span({ class: "account-section__note" }, () => `${missingCount.val} AVAILABLE TO ADD`)
                         ),
                         div(
                             {
@@ -336,11 +336,11 @@ export const HatRackTab = () => {
                                         .filter(Boolean)
                                         .join(" "),
                             },
-                            span({ class: "hat-rack-add-row__label" }, "SELECT HAT"),
+                            span({ class: "tab-add-row__label" }, "SELECT HAT"),
                             () =>
                                 select(
                                     {
-                                        class: "select-base hat-rack-add-row__select",
+                                        class: "select-base tab-add-row__select",
                                         value: selectedAddItemId,
                                         onchange: (e) => (selectedAddItemId.val = e.target.value),
                                     },

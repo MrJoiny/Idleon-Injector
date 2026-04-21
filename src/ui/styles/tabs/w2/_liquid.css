@@ -12,41 +12,30 @@
 .liquid-col--water-droplets {
     --liquid-color: var(--c-liquid-water);
     --liquid-dim: var(--c-liquid-water-10);
+    --col-color: var(--c-liquid-water);
 }
 
 .liquid-col--liquid-nitrogen {
     --liquid-color: var(--c-liquid-nitrogen);
     --liquid-dim: var(--c-liquid-nitrogen-10);
+    --col-color: var(--c-liquid-nitrogen);
 }
 
 .liquid-col--trench-seawater {
     --liquid-color: var(--c-liquid-seawater);
     --liquid-dim: var(--c-liquid-seawater-10);
+    --col-color: var(--c-liquid-seawater);
 }
 
 .liquid-col--toxic-mercury {
     --liquid-color: var(--c-liquid-mercury);
     --liquid-dim: var(--c-liquid-mercury-10);
+    --col-color: var(--c-liquid-mercury);
 }
 
-.liquid-col__header {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-left: 3px solid var(--liquid-color, var(--c-accent));
-}
+/* .liquid-col__header → .col-header (see _account-pages.css) */
+/* .liquid-col__name   → .col-header__name                    */
 
-.liquid-col__name {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: var(--liquid-color, var(--c-text-main));
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
 /* One editable property (Amount / Cap / Rate) */
 .liquid-section {

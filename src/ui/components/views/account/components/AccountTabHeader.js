@@ -12,7 +12,7 @@ export const AccountTabHeader = ({ title, description = null, actions = null, wr
         div(
             { class: "account-tab-header__main" },
             h3({ class: "account-tab-header__title" }, title),
-            description ? p({ class: "account-header__desc account-tab-header__desc" }, description) : null
+            description ? p({ class: "account-tab-header__desc" }, description) : null
         ),
         actions
             ? wrapActions

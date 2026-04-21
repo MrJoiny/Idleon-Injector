@@ -1,10 +1,7 @@
-/* -- Construction: Cogs --------------------------------------------------- */
+/* ── Construction: Cogs ───────────────────────────────────────────────── */
+/* .cogs-scroll    → .scrollable-panel (.content-stack if needed)             */
+/* .cogs-write-status* → .write-status / --loading / --success / --error     */
 
-.cogs-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
 
 .cogs-board-shell {
     display: flex;
@@ -361,23 +358,8 @@
     flex-wrap: wrap;
 }
 
-.cogs-write-status {
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-}
+/* .write-status / --loading / --success / --error → _account-pages.css */
 
-.cogs-write-status--loading {
-    color: var(--c-text-dim);
-}
-
-.cogs-write-status--success {
-    color: var(--c-success);
-}
-
-.cogs-write-status--error {
-    color: var(--c-danger);
-}
 
 @media (max-width: 980px) {
     .cogs-board-shell {

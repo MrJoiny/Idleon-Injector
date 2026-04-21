@@ -106,16 +106,16 @@ export const OrionTab = () => {
     // but never removed — removal would let VanJS GC the reactive badge closures.
     const rowList = div(
         { class: () => `account-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
-        div({ class: "orion-section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
+        div({ class: "section-label" }, Icons.Warning(), " Permanent Bonuses — Edit with care"),
         ...PINNED.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "orion-section-label" }, "Upgrades & Stats"),
+        div({ class: "section-label" }, "Upgrades & Stats"),
         ...FIELDS.map((f) => OrionRow({ field: f, fieldState: fieldStates.get(f.index), onWrite }))
     );
 
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "ORION",
             description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",

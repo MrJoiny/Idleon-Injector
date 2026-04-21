@@ -311,7 +311,7 @@ export const KillroyTab = () => {
 
     load();
     const scrollPane = div(
-        { class: "killroy-scroll scrollable-panel" },
+        { class: "scrollable-panel content-stack" },
 
         AccountSection({
             title: "CURRENCY / AVAILABILITY",
@@ -399,18 +399,18 @@ export const KillroyTab = () => {
                     {
                         class: () =>
                             [
-                                "killroy-add-row",
+                                "tab-add-row killroy-add-row",
                                 addStatus.val === "success" ? "account-row--success" : "",
                                 addStatus.val === "error" ? "account-row--error" : "",
                             ]
                                 .filter(Boolean)
                                 .join(" "),
                     },
-                    span({ class: "killroy-add-row__label" }, "ADD / UPDATE ENTRY"),
+                    span({ class: "tab-add-row__label" }, "ADD / UPDATE ENTRY"),
                     () =>
                         select(
                             {
-                                class: "select-base killroy-add-row__select",
+                                class: "select-base tab-add-row__select",
                                 value: addMobId,
                                 onchange: (e) => (addMobId.val = e.target.value),
                             },

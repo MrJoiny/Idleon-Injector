@@ -199,7 +199,7 @@ const SmithyRow = ({ row, onRemove }) => {
             div(
                 { class: "smithy-row__name-group" },
                 span({ class: "account-row__name" }, row.displayName || row.setKey),
-                span({ class: "smithy-row__set-key" }, row.setKey)
+                span({ class: "account-row__sub-label" }, row.setKey)
             )
         ],
         badge: () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY"),
@@ -372,7 +372,7 @@ export const SmithyTab = () => {
             (() => {
                 const root = div(
                     {
-                        class: "smithy-scroll scrollable-panel",
+                        class: "scrollable-panel content-stack",
                     },
                     () =>
                         writeWarning.val
@@ -385,7 +385,7 @@ export const SmithyTab = () => {
                         body: () => {
                             const rows = smithyRows.val;
                             if (rows.length === 0) {
-                                return div({ class: "smithy-empty" }, "No equipment sets currently stored.");
+                                return div({ class: "tab-empty" }, "No equipment sets currently stored.");
                             }
 
                             return div(
@@ -407,18 +407,18 @@ export const SmithyTab = () => {
                             {
                                 class: () =>
                                     [
-                                        "smithy-add-row",
+                                        "tab-add-row",
                                         addStatus.val === "success" ? "account-row--success" : "",
                                         addStatus.val === "error" ? "account-row--error" : "",
                                     ]
                                         .filter(Boolean)
                                         .join(" "),
                             },
-                            span({ class: "smithy-add-row__label" }, "SELECT SET"),
+                            span({ class: "tab-add-row__label" }, "SELECT SET"),
                             () =>
                                 select(
                                     {
-                                        class: "select-base smithy-add-row__select",
+                                        class: "select-base tab-add-row__select",
                                         value: selectedAddSetKey,
                                         onchange: (e) => (selectedAddSetKey.val = e.target.value),
                                     },

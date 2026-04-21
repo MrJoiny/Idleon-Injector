@@ -280,7 +280,7 @@ export const StampsTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "STAMPS",
             description: "Change stamp levels and toggle exalted stamps",

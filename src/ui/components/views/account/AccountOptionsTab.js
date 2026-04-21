@@ -7,15 +7,14 @@
 import van from "../../../vendor/van-1.6.0.js";
 import vanX from "../../../vendor/van-x-0.6.3.js";
 import store from "../../../state/store.js";
-import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { SearchBar } from "../../SearchBar.js";
 import { NumberInput } from "../../NumberInput.js";
 import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
-import { gga } from "../../../services/api.js";
-import { useWriteStatus, writeVerified } from "./accountShared.js";
+import { renderAccountLoading, useWriteStatus, writeVerified } from "./accountShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
+import { WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 
 const { div, button, input, label, span, p, h3 } = van.tags;
@@ -87,78 +86,67 @@ export const AccountOptionsTab = () => {
         }
     });
 
-    return div({ class: "account-sub-tab-pane-inner" }, () => {
-        if (!ui.isUnlocked) {
-            return div(
-                { class: "modal-box options-account-modal" },
-                div({ class: "modal-header" }, h3(Icons.Warning(), " CRITICAL WARNING")),
-                div(
-                    { class: "modal-body" },
-                    p("You are entering the Options List Editor"),
-                    p("Modifying these indices directly bypasses game logic safety checks"),
-                    p("Proceed with caution")
-                ),
-                div({ class: "modal-footer" }, button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS"))
-            );
-        }
-
-        return AccountPageShell({
-            rootClass: "account-sub-tab-pane-inner account-tab-frame",
-            header: AccountTabHeader({
-                title: "ACCOUNT OPTIONS",
-                description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
-            }),
-            topNotices: div({ class: "danger-zone-header" }, "ACCESSING RAW GAME ATTRIBUTES"),
-            subNav: div(
-                { class: "control-bar sticky-header" },
-                withTooltip(
-                    button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
-                    "Reload from game memory"
-                ),
-                withTooltip(
-                    label(
-                        { class: "toggle-switch account-toggle" },
-                        input({
-                            type: "checkbox",
-                            checked: () => ui.hideAI,
-                            onchange: (e) => (ui.hideAI = e.target.checked),
-                        }),
-                        span({ class: "slider" }),
-                        span({ class: "label" }, "HIDE AI")
-                    ),
-                    "Hide AI-generated options"
-                ),
-                div(
-                    { class: "options-account-search" },
-                    SearchBar({
-                        placeholder: "FILTER_INDEX",
-                        onInput: (val) => (ui.filterText = val),
-                    })
-                )
+    if (!ui.isUnlocked) {
+        return div(
+            { class: "modal-box options-account-modal" },
+            div({ class: "modal-header" }, h3(Icons.Warning(), " CRITICAL WARNING")),
+            div(
+                { class: "modal-body" },
+                p("You are entering the Options List Editor"),
+                p("Modifying these indices directly bypass game logic safety checks"),
+                p("Proceed with caution")
             ),
-            body: () =>
-                ui.awaitingInitialLoad || store.app.isLoading
-                    ? div(
-                          { id: "options-account-content", class: "options-account-content" },
-                          div({ class: "options-account-loader" }, Loader({ text: "DECRYPTING" }))
-                      )
-                    : ui.displayList.length === 0
-                      ? div(
-                            { id: "options-account-content", class: "options-account-content" },
-                            EmptyState({
-                                icon: Icons.SearchX(),
-                                title: "NO OPTIONS MATCH",
-                                subtitle: "Adjust your filter or search term",
-                            })
-                        )
-                      : div(
-                            { id: "options-account-content", class: "options-account-content" },
-                            vanX.list(div({ class: "options-account-list" }), ui.displayList, (itemState) => {
-                                const { index, val, schema } = itemState.val;
-                                return OptionItem(index, val, schema);
-                            })
-                        ),
-        });
+            div({ class: "modal-footer" }, button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS"))
+        );
+    }
+
+    return AccountPageShell({
+        rootClass: "tab-container",
+        header: AccountTabHeader({
+            title: "ACCOUNT OPTIONS",
+            description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
+        }),
+        topNotices: WarningBanner("ACCESSING RAW GAME ATTRIBUTES"),
+        subNav: div(
+            { class: "control-bar sticky-header" },
+            withTooltip(
+                button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
+                "Reload from game memory"
+            ),
+            withTooltip(
+                label(
+                    { class: "toggle-switch account-toggle" },
+                    input({
+                        type: "checkbox",
+                        checked: () => ui.hideAI,
+                        onchange: (e) => (ui.hideAI = e.target.checked),
+                    }),
+                    span({ class: "slider" }),
+                    span({ class: "label" }, "HIDE AI")
+                ),
+                "Hide AI-generated options"
+            ),
+            SearchBar({
+                placeholder: "FILTER_INDEX",
+                onInput: (val) => (ui.filterText = val),
+            })
+        ),
+        body: () =>
+            ui.awaitingInitialLoad || store.app.isLoading
+                ? renderAccountLoading()
+                : ui.displayList.length === 0
+                  ? div(
+                        { class: "scrollable-panel" },
+                        EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "NO OPTIONS MATCH",
+                            subtitle: "Adjust your filter or search term",
+                        })
+                    )
+                  : div(
+                        { class: "scrollable-panel" },
+                        ...ui.displayList.map(({ index, val, schema }) => OptionItem(index, val, schema))
+                    ),
     });
 };
 
@@ -192,7 +180,7 @@ const OptionItem = (index, rawVal, schema) => {
     return div(
         {
             class: () =>
-                `option-item ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
+                `option-item feature-card ${isAI ? "is-ai-option" : ""} ${warning ? "has-warning" : ""} ${
                     status.val === "success" ? "account-row--success" : ""
                 } ${status.val === "error" ? "account-row--error" : ""}`,
             "data-index": index,

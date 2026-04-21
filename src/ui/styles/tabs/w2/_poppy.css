@@ -1,9 +1,6 @@
 /* Poppy tab */
-
-.account-row--warn:not(.account-row--success):not(.account-row--error) {
-    border-color: var(--c-warning) !important;
-    background: var(--c-accent-dim-solid);
-}
+/* .account-row--warn     → _account-pages.css */
+/* .section-label base    → _account-pages.css */
 
 .poppy-warn-badge {
     font-size: 0.65rem;
@@ -15,27 +12,14 @@
     gap: 4px;
 }
 
-.poppy-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--c-text-dim);
-    padding: 8px 4px 4px;
-    border-bottom: 1px solid var(--c-border);
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.poppy-section-label--spiral {
+/* Color overrides for the shared .section-label base */
+.section-label--spiral {
     color: var(--c-accent);
     border-bottom-color: var(--c-accent);
     margin-top: 8px;
 }
 
-.poppy-section-label--tar {
+.section-label--tar {
     color: var(--c-warning);
     border-bottom-color: var(--c-warning);
     margin-top: 8px;
@@ -49,4 +33,5 @@
     min-width: 10ch;
     font-size: 0.8rem;
 }
+
 

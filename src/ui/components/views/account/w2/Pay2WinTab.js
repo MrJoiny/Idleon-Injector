@@ -102,7 +102,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         {
             class: () =>
                 [
-                    "p2w-row",
+                    "p2w-row feature-card",
                     status.val === "success" ? "account-row--success" : "",
                     status.val === "error" ? "account-row--error" : "",
                 ]
@@ -270,15 +270,15 @@ export const Pay2WinTab = () => {
 
     const SectionHeader = (title, note) =>
         div(
-            { class: "p2w-section__header" },
-            span({ class: "p2w-section__title" }, title),
-            note ? span({ class: "p2w-section__note" }, note) : null
+            { class: "account-section__header" },
+            span({ class: "account-section__title" }, title),
+            note ? span({ class: "account-section__note" }, note) : null
         );
 
     // Cauldron 4-column grid
     const buildCauldronSection = (title, note, cols, rowLabels, valGrid, maxGrid, b, stride) =>
         div(
-            { class: "p2w-section" },
+            { class: "account-section" },
             SectionHeader(title, note),
             div(
                 { class: "grid-4col" },
@@ -287,7 +287,7 @@ export const Pay2WinTab = () => {
                         {
                             class: `p2w-col ${col.tone ? `p2w-col--${col.tone}` : ""}`,
                         },
-                        div({ class: "p2w-col__header" }, span({ class: "p2w-col__name" }, col.label)),
+                        div({ class: "col-header" }, span({ class: "col-header__name" }, col.label)),
                         div(
                             { class: "p2w-col__rows" },
                             ...rowLabels.map((label, f) =>
@@ -307,7 +307,7 @@ export const Pay2WinTab = () => {
     // Simple flat list
     const buildSimpleSection = (title, note, labels, vals, maxs, b) =>
         div(
-            { class: "p2w-section" },
+            { class: "account-section" },
             SectionHeader(title, note),
             div(
                 { class: "p2w-simple-rows" },
@@ -323,7 +323,7 @@ export const Pay2WinTab = () => {
         );
 
     const scroll = div(
-        { class: "p2w-scroll scrollable-panel" },
+        { class: "scrollable-panel content-stack" },
 
         buildCauldronSection(
             "BREWING CAULDRONS",
@@ -348,7 +348,7 @@ export const Pay2WinTab = () => {
         ),
 
         div(
-            { class: "p2w-section" },
+            { class: "account-section" },
             SectionHeader("DRACONIC CAULDRONS", "Number of draconic liquid cauldrons (0-4)"),
             div(
                 { class: "p2w-simple-rows" },

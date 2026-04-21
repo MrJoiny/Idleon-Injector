@@ -112,7 +112,7 @@ export const AnvilTab = () => {
     );
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "ANVIL",
             description: "Manage point allocation for Bonus Exp, Speed/hr, and Capacity",

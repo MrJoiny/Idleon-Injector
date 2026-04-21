@@ -1,54 +1,13 @@
 /* Hat Rack tab */
-
-.hat-rack-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.hat-rack-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    padding: 10px 12px;
-}
-
-.hat-rack-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    border-bottom: 1px solid var(--c-border);
-    padding-bottom: 6px;
-}
-
-.hat-rack-section__title {
-    color: var(--c-accent);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.hat-rack-section__note {
-    color: var(--c-text-dim);
-    font-size: 0.68rem;
-    font-style: italic;
-}
+/* .account-section / __header / __title / __note → _account-pages.css */
+/* .tab-empty                                      → _account-pages.css */
+/* .tab-add-row / __label / __select               → _account-pages.css */
+/* .content-stack                                  → _account-pages.css */
 
 .hat-rack-rows {
     display: flex;
     flex-direction: column;
     gap: 5px;
-}
-
-.hat-rack-empty {
-    border: 1px dashed var(--c-border);
-    background: var(--c-panel);
-    color: var(--c-text-muted);
-    font-size: 0.75rem;
-    text-align: center;
-    padding: 12px;
 }
 
 .hat-rack-row__name-group {
@@ -57,32 +16,12 @@
     min-width: 0;
 }
 
-.hat-rack-row__item-id {
-    font-family: var(--font-mono);
-    color: var(--c-text-muted);
-    font-size: 0.68rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+/* .hat-rack-row__item-id → .account-row__sub-label (_account-pages.css) */
 
+
+/* Hat Rack add-row has an extra button column; override the base template grid */
 .hat-rack-add-row {
-    display: grid;
-    grid-template-columns: auto minmax(220px, 1fr) auto;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--c-border);
-    background: var(--c-panel);
-    padding: 8px;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
 }
 
-.hat-rack-add-row__label {
-    color: var(--c-text-dim);
-    font-size: 0.68rem;
-    letter-spacing: 0.05em;
-}
-
-.hat-rack-add-row__select {
-    min-width: 240px;
-}
 

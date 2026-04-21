@@ -72,7 +72,7 @@ const PONumField = ({ label, valueState, writePath }) => {
         {
             class: () =>
                 [
-                    "po-field-row",
+                    "po-field-row feature-card",
                     status.val === "success" ? "account-row--success" : "",
                     status.val === "error" ? "account-row--error" : "",
                 ]
@@ -139,7 +139,7 @@ const ShipmentCard = ({ index, states }) => {
     const { itemId, orderQty, completed, streak, shield, streakBonus } = states;
 
     return div(
-        { class: () => `po-shipment-card${completed.val ? " po-shipment-card--completed" : ""}` },
+        { class: () => `po-shipment-card feature-card${completed.val ? " po-shipment-card--completed" : ""}` },
 
         // Header
         div(
@@ -218,7 +218,7 @@ const OfficeGroup = ({ label, shipmentStates, startIndex }) =>
 const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onAfterWrite = null }) => {
     if (readOnly) {
         return div(
-            { class: "po-currency-row po-currency-row--readonly" },
+            { class: "po-currency-row feature-card po-currency-row--readonly" },
             div(
                 { class: "po-currency-row__info" },
                 span({ class: "po-currency-row__label" }, label),
@@ -249,7 +249,7 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
         {
             class: () =>
                 [
-                    "po-currency-row",
+                    "po-currency-row feature-card",
                     status.val === "success" ? "account-row--success" : "",
                     status.val === "error" ? "account-row--error" : "",
                 ]
@@ -329,7 +329,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
         {
             class: () =>
                 [
-                    "po-box-row",
+                    "po-box-row feature-card",
                     status.val === "success" ? "account-row--success" : "",
                     status.val === "error" ? "account-row--error" : "",
                 ]

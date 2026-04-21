@@ -101,7 +101,7 @@ export const ForgeTab = () => {
         );
     });
     return AccountPageShell({
-        rootClass: "world-feature scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "FORGE",
             description: "Set forge upgrade levels — each upgrade has a hard maximum",

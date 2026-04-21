@@ -132,7 +132,7 @@ export const VialTab = () => {
     });
 
     return AccountPageShell({
-        rootClass: "vials-tab tab-container account-tab-frame",
+        rootClass: "vials-tab tab-container",
         header: AccountTabHeader({
             title: "ALCHEMY - VIALS",
             description: "Set vial levels (0-13) for all alchemy vials.",

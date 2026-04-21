@@ -304,7 +304,7 @@ export const ArcadeTab = () => {
     );
 
     return AccountPageShell({
-        rootClass: "arcade-tab tab-container account-tab-frame",
+        rootClass: "arcade-tab tab-container",
         header: AccountTabHeader({
             title: "ARCADE UPGRADES",
             description: "Manage Arcade balls and upgrade levels.",

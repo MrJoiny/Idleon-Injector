@@ -1,10 +1,7 @@
 /* Killroy tab */
+/* .content-stack               → _account-pages.css */
+/* .tab-add-row / __label / __select → _account-pages.css */
 
-.killroy-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
 
 .killroy-rows {
     display: flex;
@@ -53,24 +50,9 @@
     letter-spacing: 0.04em;
 }
 
+/* Killroy add-row has 4 cols (label | select | number | btn); override base grid */
 .killroy-add-row {
-    display: grid;
     grid-template-columns: auto minmax(220px, 1fr) auto auto;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--c-border);
-    background: var(--c-panel);
-    padding: 8px;
-}
-
-.killroy-add-row__label {
-    color: var(--c-text-dim);
-    font-size: 0.68rem;
-    letter-spacing: 0.05em;
-}
-
-.killroy-add-row__select {
-    min-width: 240px;
 }
 
 .killroy-add-row .number-input-wrapper {

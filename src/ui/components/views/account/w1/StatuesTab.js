@@ -180,7 +180,7 @@ export const StatuesTab = () => {
     load();
 
     return AccountPageShell({
-        rootClass: "world-feature scroll-container account-tab-frame",
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "STATUES",
             description: "Set statue levels, deposited amounts, and upgrade tiers",

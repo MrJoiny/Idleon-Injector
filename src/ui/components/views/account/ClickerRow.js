@@ -41,7 +41,7 @@ export const ClickerRow = ({
             if (currentValue === undefined) return emptyBadge;
             return isFormatted ? formatNumber(currentValue) : String(currentValue);
         },
-        rowClass: () => (field.warn ? "account-row--warn" : ""),
+        rowClass: () => (field.warn ? "has-warning" : ""),
         badgeClass: () => (field.live ? "account-row__badge--highlight" : ""),
         controlsClass,
         inputMode: isFloat ? "float" : "int",

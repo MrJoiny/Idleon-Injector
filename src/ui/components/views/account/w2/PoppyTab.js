@@ -100,20 +100,20 @@ export const PoppyTab = () => {
 
     const rowList = div(
         { class: "account-list poppy-list" },
-        div({ class: "poppy-section-label" }, Icons.Warning(), " Permanent / Sensitive"),
+        div({ class: "section-label" }, Icons.Warning(), " Permanent / Sensitive"),
         ...PINNED_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "poppy-section-label" }, "Main Poppy Progress"),
+        div({ class: "section-label" }, "Main Poppy Progress"),
         ...CORE_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "poppy-section-label poppy-section-label--spiral" }, "Spiral Upgrades"),
+        div({ class: "section-label section-label--spiral" }, "Spiral Upgrades"),
         ...SPIRAL_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "poppy-section-label poppy-section-label--tar" }, "Tar Pit"),
+        div({ class: "section-label section-label--tar" }, "Tar Pit"),
         ...TAR_PIT_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite }))
     );
 
     load();
 
     return AccountPageShell({
-        rootClass: "poppy-tab tab-container account-tab-frame",
+        rootClass: "poppy-tab tab-container",
         header: AccountTabHeader({
             title: "POPPY",
             description: "Poppy clicker values and Tar Pit progression controls",

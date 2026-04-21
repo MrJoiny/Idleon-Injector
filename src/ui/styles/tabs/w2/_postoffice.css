@@ -66,8 +66,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
     padding: 8px;
 }
 
@@ -151,25 +149,20 @@
 /* ── Shipment card ───────────────────────────────────────────────────────── */
 
 .po-shipment-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transition:
-        border-color 0.2s,
-        background 0.2s;
     min-width: 0;
-}
-
-.po-shipment-card:hover {
-    border-color: var(--c-border-strong);
 }
 
 .po-shipment-card--completed {
     border-color: var(--c-ui-green-35);
     background: var(--c-ui-green-03);
+}
+
+.po-shipment-card--completed:hover {
+    border-color: var(--c-ui-green-35);
 }
 
 .po-shipment-card__header {
@@ -213,12 +206,7 @@
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 5px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
     padding: 3px 6px;
-    transition:
-        border-color 0.2s,
-        background 0.2s;
 }
 
 /* Text field variant (item ID) — label + full-width text+btn */
@@ -235,6 +223,8 @@
     flex-shrink: 0;
 }
 
+/* Intentional account-row__badge variant: right-aligned, truncated, tighter padding.
+   Use .account-row__badge for standalone badge cells; use this within .po-field-row. */
 .po-field-row__value {
     font-family: var(--font-mono);
     font-size: 0.66rem;
@@ -332,16 +322,7 @@
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 8px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
     padding: 6px 8px;
-    transition:
-        border-color 0.2s,
-        background 0.2s;
-}
-
-.po-currency-row:hover {
-    border-color: var(--c-border-strong);
 }
 
 .po-currency-row--readonly {

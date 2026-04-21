@@ -747,7 +747,7 @@ export const CogsTab = () => {
                 () =>
                     lockStatus.val
                         ? span(
-                              { class: `cogs-write-status cogs-write-status--${lockStatus.val}` },
+                              { class: `write-status write-status--${lockStatus.val}` },
                               lockStatus.val === "loading"
                                   ? "SAVING..."
                                   : lockStatus.val === "success"
@@ -759,7 +759,7 @@ export const CogsTab = () => {
                     cogMapWriteStatus.val
                         ? span(
                               {
-                                  class: `cogs-write-status cogs-write-status--${cogMapWriteStatus.val}`,
+                                  class: `write-status write-status--${cogMapWriteStatus.val}`,
                               },
                               cogMapWriteStatus.val === "loading"
                                   ? "SAVING FIELD..."
@@ -772,7 +772,7 @@ export const CogsTab = () => {
                     tinyWriteStatus.val
                         ? span(
                               {
-                                  class: `cogs-write-status cogs-write-status--${tinyWriteStatus.val}`,
+                                  class: `write-status write-status--${tinyWriteStatus.val}`,
                               },
                               tinyWriteStatus.val === "loading"
                                   ? "SAVING TINY..."

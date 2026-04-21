@@ -146,7 +146,7 @@ const LiquidColumn = ({ liquid, states }) =>
         {
             class: `liquid-col liquid-col--${liquid.id}`,
         },
-        div({ class: "liquid-col__header" }, span({ class: "liquid-col__name" }, liquid.label)),
+        div({ class: "col-header" }, span({ class: "col-header__name" }, liquid.label)),
         LiquidControl({
             label: "AMOUNT",
             valueState: states.amount,
