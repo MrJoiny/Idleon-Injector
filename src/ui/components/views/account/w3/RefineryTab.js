@@ -16,7 +16,7 @@ import { gga, readGgaEntries } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
+import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AsyncAccountBody, useWriteStatus, writeVerified } from "../accountShared.js";
@@ -202,23 +202,20 @@ export const RefineryTab = () => {
             actions: RefreshButton({ onRefresh: load }),
         }),
         topNotices: [
-            div(
-                { class: "refinery-notice refinery-notice--polymer" },
-                span({ class: "refinery-notice__icon" }, Icons.Wrench()),
+            NoticeBanner(
+                { icon: Icons.Wrench(), variant: "polymer" },
                 span(
                     {},
                     "Refineries 7-9 require the ",
-                    span({ class: "refinery-notice__highlight" }, "Polymer Refinery"),
+                    span({ class: "warning-banner__highlight" }, "Polymer Refinery"),
                     " research to be unlocked in-game before they are available."
                 )
             ),
-            div(
-                { class: "refinery-notice refinery-notice--placeholder" },
-                span({ class: "refinery-notice__icon" }, Icons.Warning()),
+            WarningBanner(
                 span(
                     {},
                     "Refinery 9 is a ",
-                    span({ class: "refinery-notice__highlight" }, "placeholder"),
+                    span({ class: "warning-banner__highlight" }, "placeholder"),
                     " - it does not exist in the game yet and setting it has no effect."
                 )
             ),

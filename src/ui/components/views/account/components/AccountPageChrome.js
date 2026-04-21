@@ -23,13 +23,20 @@ export const RefreshButton = ({ onRefresh, tooltip = null, label = "REFRESH", di
 };
 
 /**
+ * Shared notice banner shell for top-of-page notices.
+ */
+export const NoticeBanner = ({ icon, variant = null } = {}, ...content) =>
+    div(
+        {
+            class: ["warning-banner", variant ? `warning-banner--${variant}` : ""].filter(Boolean).join(" "),
+        },
+        div({ class: "warning-banner__icon" }, icon),
+        div({ class: "warning-banner__content" }, ...content.flatMap((item) => toNodes(item)))
+    );
+
+/**
  * Shared warning banner shell for top-of-page notices.
  */
-export const WarningBanner = (...content) =>
-    div(
-        { class: "warning-banner" },
-        Icons.Warning(),
-        ...content.flatMap((item) => toNodes(item))
-    );
+export const WarningBanner = (...content) => NoticeBanner({ icon: Icons.Warning() }, ...content);
 
 

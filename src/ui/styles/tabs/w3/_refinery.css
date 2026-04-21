@@ -54,33 +54,3 @@
     width: 52px;
     text-align: right;
 }
-
-/* Notices at top of refinery tab */
-.refinery-notice {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    font-size: 0.875rem;
-    color: var(--c-text-muted);
-    border-bottom: 1px solid var(--c-border);
-    flex-shrink: 0;
-}
-
-.refinery-notice--polymer {
-    background: color-mix(in srgb, var(--c-refinery-polymer) 8%, var(--c-panel));
-}
-
-.refinery-notice--placeholder {
-    background: color-mix(in srgb, var(--c-accent) 8%, var(--c-panel));
-}
-
-.refinery-notice__icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.refinery-notice__highlight {
-    font-weight: 700;
-    color: var(--c-accent);
-}
