@@ -1,6 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
-import { joinClasses } from "./accountShared.js";
+import { joinClasses, toNodes } from "./accountShared.js";
 
 const { div, button, span, p } = van.tags;
 
@@ -67,6 +67,24 @@ export const renderLazyPanes = ({
         return pane;
     });
 
+export const renderPersistentPagePanes = ({
+    tabs,
+    activeId,
+    paneClass = "account-page-pane",
+    hiddenClass = "account-page-pane--hidden",
+    dataAttr = "data-tab",
+    renderContent = null,
+}) =>
+    tabs.map((tab, index) =>
+        div(
+            {
+                class: () => joinClasses(paneClass, activeId.val !== tab.id && hiddenClass),
+                [dataAttr]: tab.id,
+            },
+            ...toNodes(typeof renderContent === "function" ? renderContent(tab, index) : null)
+        )
+    );
+
 export const createWorldComingSoonTab =
     ({ worldClass, worldKey }) =>
     () => {
@@ -97,5 +115,3 @@ export const createWorldComingSoonTab =
             )
         );
     };
-
-

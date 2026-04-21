@@ -22,7 +22,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { writeVerified } from "../accountShared.js";
-import { renderTabNav } from "../tabShared.js";
+import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
 
@@ -88,18 +88,22 @@ export const ForgeTab = () => {
 
     load();
 
-    const rowList = div({ class: "account-list" }, () => {
-        const page = PAGES[activePage.val];
-        return div(
-            { class: "forge-upgrades-list" },
-            ...page.upgrades.map((upgrade) =>
-                ForgeRow({
-                    upgrade,
-                    levelState: levelStates[upgrade.index],
-                })
-            )
-        );
+    const pageContainers = renderPersistentPagePanes({
+        tabs: PAGES,
+        activeId: activePage,
+        renderContent: (page) =>
+            div(
+                { class: "forge-upgrades-list" },
+                ...page.upgrades.map((upgrade) =>
+                    ForgeRow({
+                        upgrade,
+                        levelState: levelStates[upgrade.index],
+                    })
+                )
+            ),
     });
+
+    const body = div({ class: "account-list" }, ...pageContainers);
     return AccountPageShell({
         rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
@@ -120,8 +124,6 @@ export const ForgeTab = () => {
         persistentLoadingText: "READING FORGE",
         persistentErrorTitle: "FORGE READ FAILED",
         persistentInitialWrapperClass: "account-list",
-        body: rowList,
+        body,
     });
 };
-
-

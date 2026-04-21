@@ -108,6 +108,14 @@
     --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
 }
 
+.account-page-pane {
+    display: contents;
+}
+
+.account-page-pane--hidden {
+    display: none;
+}
+
 /* ── Scrollable list ─────────────────────────────────────────────────────── */
 
 /* account-list: used by W1 tabs. Incorporates .scrollable-panel behavior.

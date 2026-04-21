@@ -31,7 +31,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, writeVerified } from "../accountShared.js";
-import { renderTabNav } from "../tabShared.js";
+import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
 
@@ -147,9 +147,10 @@ export const StampsTab = () => {
         await writeVerified("Compass[4]", ordered);
     };
 
-    const pageContainers = PAGE_LETTERS.map((_, pageIndex) =>
-        div({ class: () => (activePage.val === pageIndex ? "stamp-page" : "stamp-page stamp-page--hidden") })
-    );
+    const pageContainers = renderPersistentPagePanes({
+        tabs: PAGES,
+        activeId: activePage,
+    });
 
     const load = async () =>
         run(async () => {
