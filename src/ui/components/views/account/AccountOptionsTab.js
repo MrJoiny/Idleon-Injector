@@ -1,7 +1,7 @@
 /**
  * Account Options Tab
  * Raw game attribute editor (OptionsListAccount).
- * Requires explicit user confirmation before data loads.
+ * Loads immediately and matches the other account tabs.
  */
 
 import van from "../../../vendor/van-1.6.0.js";
@@ -14,10 +14,9 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { renderAccountLoading, useWriteStatus, writeVerified } from "./accountShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
-import { WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 
-const { div, button, input, label, span, p, h3 } = van.tags;
+const { div, button, input, label, span } = van.tags;
 
 const valueToDisplay = (type, value) => {
     if (type === "object" && value !== null) return JSON.stringify(value);
@@ -35,7 +34,6 @@ const isSameDisplayList = (a, b) => {
 
 export const AccountOptionsTab = () => {
     const ui = vanX.reactive({
-        isUnlocked: false,
         awaitingInitialLoad: false,
         filterText: "",
         hideAI: false,
@@ -43,15 +41,16 @@ export const AccountOptionsTab = () => {
     });
     let lastOptionsRef = null;
 
-    const handleLoad = () => {
-        ui.isUnlocked = true;
-        if (!store.data.accountOptions.length) {
-            ui.awaitingInitialLoad = true;
-            store.loadAccountOptions().finally(() => {
-                ui.awaitingInitialLoad = false;
-            });
-        }
+    const loadAccountOptions = () => {
+        if (ui.awaitingInitialLoad) return;
+
+        ui.awaitingInitialLoad = true;
+        store.loadAccountOptions().finally(() => {
+            ui.awaitingInitialLoad = false;
+        });
     };
+
+    loadAccountOptions();
 
     van.derive(() => {
         const data = store.data.accountOptions;
@@ -86,31 +85,16 @@ export const AccountOptionsTab = () => {
         }
     });
 
-    if (!ui.isUnlocked) {
-        return div(
-            { class: "modal-box options-account-modal" },
-            div({ class: "modal-header" }, h3(Icons.Warning(), " CRITICAL WARNING")),
-            div(
-                { class: "modal-body" },
-                p("You are entering the Options List Editor"),
-                p("Modifying these indices directly bypass game logic safety checks"),
-                p("Proceed with caution")
-            ),
-            div({ class: "modal-footer" }, button({ class: "btn-danger", onclick: handleLoad }, "CONFIRM ACCESS"))
-        );
-    }
-
     return AccountPageShell({
         rootClass: "tab-container",
         header: AccountTabHeader({
             title: "ACCOUNT OPTIONS",
             description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
         }),
-        topNotices: WarningBanner("ACCESSING RAW GAME ATTRIBUTES"),
         subNav: div(
             { class: "control-bar sticky-header" },
             withTooltip(
-                button({ class: "btn-secondary", onclick: () => store.loadAccountOptions() }, "REFRESH"),
+                button({ class: "btn-secondary", onclick: loadAccountOptions }, "REFRESH"),
                 "Reload from game memory"
             ),
             withTooltip(

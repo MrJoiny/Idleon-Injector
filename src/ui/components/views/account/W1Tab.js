@@ -9,7 +9,7 @@ import { ForgeTab } from "./w1/ForgeTab.js";
 import { StatuesTab } from "./w1/StatuesTab.js";
 import { OrionTab } from "./w1/OrionTab.js";
 import { StarSignsTab } from "./w1/StarSignsTab.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
+import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
@@ -27,14 +27,6 @@ export const W1Tab = () => {
 
     return div(
         { class: "world-tab w1-world-tab" },
-        renderWorldHeader({
-            badge: "W1",
-            title: () => {
-                const cur = W1_SUBTABS.find((tab) => tab.id === activeSubTab.val);
-                return `W1 — ${cur?.label ?? ""}`;
-            },
-            subtitle: "Blunder Hills — Stamps, Statues, and other oddities",
-        }),
         renderTabNav({
             tabs: W1_SUBTABS,
             activeId: activeSubTab,

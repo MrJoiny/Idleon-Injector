@@ -2,7 +2,7 @@
  * World Tabs — Shared Chrome
  *
  * Covers: top account sub-nav (Account Options / W1…W7),
- * world tab shells (header, inner sub-nav, panes).
+ * world tab shells (inner sub-nav, panes).
  *
  * Per-world colours are driven by a single --world-color custom property
  * set on each .wN-world-tab root element — no per-world rule duplication.
@@ -149,49 +149,6 @@
     height: 100%;
     overflow: hidden;
     min-height: 0;
-}
-
-.world-tab-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px 12px;
-    border-bottom: 1px solid var(--c-border);
-    border-left: 3px solid var(--world-color, var(--c-border));
-    flex-shrink: 0;
-    background: linear-gradient(135deg, var(--c-panel-dim) 0%, var(--c-panel) 100%);
-}
-
-.world-tab-badge {
-    font-size: 1.3rem;
-    font-weight: 900;
-    font-family: var(--font-mono);
-    color: var(--world-color, var(--c-text-muted));
-    border: 1px solid var(--world-color, var(--c-border));
-    background: var(--c-black-40);
-    padding: 5px 10px;
-    flex-shrink: 0;
-}
-
-.world-tab-title-group {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.world-tab-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--c-text-main);
-    margin: 0;
-    letter-spacing: 0.06em;
-}
-
-.world-tab-subtitle {
-    font-size: 0.75rem;
-    color: var(--c-text-muted);
-    margin: 0;
-    font-style: italic;
 }
 
 /* ── World inner sub-nav ─────────────────────────────────────────────────── */

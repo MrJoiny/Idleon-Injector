@@ -2,7 +2,7 @@ import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
 import { joinClasses } from "./accountShared.js";
 
-const { div, button, span, h2, p } = van.tags;
+const { div, button, span, p } = van.tags;
 
 export const createComingSoonPlaceholder = (label) =>
     div(
@@ -67,26 +67,14 @@ export const renderLazyPanes = ({
         return pane;
     });
 
-export const renderWorldHeader = ({ badge, title, subtitle }) =>
-    div(
-        { class: "world-tab-header" },
-        span({ class: "world-tab-badge" }, badge),
-        div(
-            { class: "world-tab-title-group" },
-            h2({ class: "world-tab-title" }, title),
-            p({ class: "world-tab-subtitle" }, subtitle)
-        )
-    );
-
 export const createWorldComingSoonTab =
-    ({ worldClass, badge, title, subtitle, worldKey }) =>
+    ({ worldClass, worldKey }) =>
     () => {
         const tabs = [{ id: "coming-soon", label: "COMING SOON" }];
         const activeSubTab = van.state(tabs[0].id);
 
         return div(
             { class: joinClasses("world-tab", worldClass) },
-            renderWorldHeader({ badge, title, subtitle }),
             renderTabNav({
                 tabs,
                 activeId: activeSubTab,

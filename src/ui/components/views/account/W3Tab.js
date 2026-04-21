@@ -15,7 +15,7 @@ import { DeathNoteTab } from "./w3/DeathNoteTab.js";
 import { LibraryTab } from "./w3/LibraryTab.js";
 import { EquinoxTab } from "./w3/EquinoxTab.js";
 import { TrappingTab } from "./w3/TrappingTab.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
+import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
@@ -70,14 +70,6 @@ export const W3Tab = () => {
 
     return div(
         { class: "world-tab w3-world-tab" },
-        renderWorldHeader({
-            badge: "W3",
-            title: () => {
-                const cur = W3_SUBTABS.find((tab) => tab.id === activeSubTab.val);
-                return `W3 — ${cur?.label ?? ""}`;
-            },
-            subtitle: "Frostbite Tundra — Construction, Refinery, Salt Lick, Atom Collider & more",
-        }),
         renderTabNav({
             tabs: W3_SUBTABS,
             activeId: activeSubTab,
