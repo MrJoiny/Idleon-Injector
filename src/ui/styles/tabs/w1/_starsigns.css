@@ -39,7 +39,7 @@
 }
 
 .starsign-label-badge {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 2px 8px;
@@ -47,7 +47,7 @@
 }
 
 .starsign-card-desc {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     margin: 0 0 8px;
     line-height: 1.4;
@@ -67,7 +67,7 @@
 }
 
 .starsign-status {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
@@ -122,7 +122,7 @@
     padding: 4px 12px;
     cursor: pointer;
     color: var(--c-text);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     margin-bottom: 0;
 }
 
@@ -145,13 +145,13 @@
 }
 
 .starsign-detail-desc {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     margin: 0;
 }
 
 .starsign-needed-badge {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
     padding: 2px 8px;
     border: 1px solid var(--c-accent);
@@ -160,7 +160,7 @@
 }
 
 .starsign-section-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -211,12 +211,12 @@
 }
 
 .starsign-player-num {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
 .starsign-player-letter {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     background: var(--c-border);
     padding: 1px 6px;
@@ -228,7 +228,7 @@
     border: none;
     color: var(--c-danger);
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     padding: 0 4px;
 }
 
@@ -238,7 +238,7 @@
 
 /* Empty state */
 .starsign-empty-players {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     padding: 12px;
     border: 1px dashed var(--c-border);
@@ -258,7 +258,7 @@
     padding: 0 6px;
     height: 32px;
     width: 180px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 /* Progress */
@@ -267,7 +267,7 @@
 }
 
 .starsign-progress-label {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     margin-bottom: 6px;
 }
 
@@ -299,4 +299,3 @@
     align-items: center;
     gap: 10px;
 }
-

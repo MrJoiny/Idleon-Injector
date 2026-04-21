@@ -23,5 +23,3 @@
 .hat-rack-add-row {
     grid-template-columns: auto minmax(220px, 1fr) auto auto;
 }
-
-

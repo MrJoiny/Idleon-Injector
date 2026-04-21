@@ -29,7 +29,7 @@
     border-bottom: none;
     color: var(--tab-nav-color, var(--c-text-muted));
     padding: var(--tab-nav-padding, 6px 14px);
-    font-size: var(--tab-nav-font-size, 0.78rem);
+    font-size: var(--tab-nav-font-size, 0.875rem);
     font-family: var(--tab-nav-font-family, var(--font-display));
     letter-spacing: var(--tab-nav-letter-spacing, 0.04em);
     cursor: pointer;
@@ -66,7 +66,7 @@
 .account-sub-tab-button {
     --tab-nav-color: var(--c-text-dim);
     --tab-nav-padding: 8px 14px;
-    --tab-nav-font-size: 0.8rem;
+    --tab-nav-font-size: 0.875rem;
     --tab-nav-active-bg: var(--c-panel);
     --tab-nav-active-glow: 0 0 6px var(--c-accent-glow);
     display: flex;
@@ -78,7 +78,7 @@
 
 .account-options-btn {
     min-width: 130px;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
 }
 .world-tab-btn {
     min-width: 64px;
@@ -210,13 +210,13 @@
     line-height: 1;
 }
 .world-empty-label {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     margin: 0;
 }
 .world-empty-desc {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     margin: 0;
     text-align: center;
     max-width: 340px;
@@ -239,9 +239,8 @@
     opacity: 0.35;
 }
 .world-sub-placeholder__label {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     margin: 0;
 }
-

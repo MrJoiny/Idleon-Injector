@@ -71,7 +71,7 @@
 
 .dn-mob-header__name {
     flex: 1;
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     color: var(--c-text);
@@ -83,7 +83,7 @@
 
 .dn-mob-header__total {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     font-weight: 700;
     flex-shrink: 0;
@@ -122,7 +122,7 @@
 
 .dn-player-row__name {
     flex: 1;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     min-width: 0;
     overflow: hidden;
@@ -148,6 +148,5 @@
 
 .dn-player-row__controls .number-input-wrapper input {
     min-width: 10ch;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
-

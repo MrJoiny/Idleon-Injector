@@ -10,7 +10,7 @@
     border: 1px solid var(--c-border);
     background: var(--c-panel);
     color: var(--c-text-muted);
-    font-size: 0.74rem;
+    font-size: 0.875rem;
     line-height: 1.4;
     padding: 8px 10px;
 }
@@ -71,7 +71,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
@@ -82,7 +82,7 @@
 
 .trap-user-header__count {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     white-space: nowrap;
 }
@@ -112,7 +112,7 @@
 
 .trap-user-dropdown__empty {
     padding: 10px 12px;
-    font-size: 0.74rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
 }
 
@@ -139,7 +139,7 @@
 }
 
 .trap-row__meta {
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--c-text-muted);
     letter-spacing: 0.02em;
@@ -149,7 +149,7 @@
 }
 
 .trap-row__badge {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
 }
 
 .trap-row__controls {
@@ -167,7 +167,7 @@
 }
 
 .trap-row__input-label {
-    font-size: 0.66rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--c-text-muted);
@@ -206,4 +206,3 @@
         width: 100%;
     }
 }
-

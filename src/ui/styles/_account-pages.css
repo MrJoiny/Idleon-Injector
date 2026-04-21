@@ -71,14 +71,14 @@
 
 .account-tab-header__title {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     letter-spacing: 0.06em;
     color: var(--c-text-main);
 }
 
 .account-tab-header__desc {
     margin: 2px 0 0;
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     font-style: italic;
     max-width: 80ch;
@@ -101,7 +101,7 @@
 
 .account-page-btn {
     --tab-nav-padding: 6px 20px;
-    --tab-nav-font-size: 0.8rem;
+    --tab-nav-font-size: 0.875rem;
     --tab-nav-letter-spacing: 0.05em;
     --tab-nav-active-color: var(--c-accent);
     --tab-nav-active-bg: var(--c-panel-dim);
@@ -168,14 +168,14 @@
 
 .account-section__title {
     color: var(--c-accent);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
 }
 
 .account-section__note {
     color: var(--c-text-dim);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     font-style: italic;
 }
 
@@ -244,7 +244,7 @@
 /* rather than a full-row border flash. Pair with: --loading, --success, --error. */
 
 .write-status {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     letter-spacing: 0.04em;
 }
@@ -272,7 +272,7 @@
 
 .account-row__index {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     background: var(--c-black-40);
     padding: 1px 5px;
@@ -280,7 +280,7 @@
 }
 
 .account-row__name {
-    font-size: 0.84rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--c-text-main);
     white-space: nowrap;
@@ -292,7 +292,7 @@
 .account-row__sub-label {
     font-family: var(--font-mono);
     color: var(--c-text-muted);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -301,7 +301,7 @@
 /* Status badge (centre cell) */
 .account-row__badge {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     background: var(--c-accent-06);
     border: 1px solid var(--c-accent-20);
@@ -328,7 +328,7 @@
 .account-btn {
     padding: 0 12px;
     height: 30px;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
     letter-spacing: 0.04em;
     border: none;
@@ -407,7 +407,7 @@
 }
 
 .tier-setall-bar__label {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--c-text-dim);
@@ -417,7 +417,7 @@
 .tier-setall-bar__select {
     padding: 0 8px;
     height: 30px;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
 }
 
@@ -456,7 +456,7 @@
 
 .tier-card__index {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     background: var(--c-black-40);
     padding: 1px 4px;
@@ -464,7 +464,7 @@
 }
 
 .tier-card__name {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     color: var(--c-text-main);
@@ -474,7 +474,7 @@
 }
 
 .tier-card__badge {
-    font-size: 0.58rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 5px;
@@ -487,7 +487,7 @@
     padding: 0 6px;
     height: 28px;
     width: 100%;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
 }
 
@@ -563,7 +563,7 @@
 
 .alchemy-sub-btn {
     --tab-nav-padding: 5px 16px;
-    --tab-nav-font-size: 0.72rem;
+    --tab-nav-font-size: 0.875rem;
     --tab-nav-font-family: var(--font-display);
     --tab-nav-letter-spacing: 0.05em;
     --tab-nav-active-color: var(--c-accent);
@@ -602,7 +602,7 @@
     border: 1px dashed var(--c-border);
     background: var(--c-panel);
     color: var(--c-text-muted);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     text-align: center;
     padding: 12px;
 }
@@ -620,7 +620,7 @@
 
 .tab-add-row__label {
     color: var(--c-text-dim);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     letter-spacing: 0.05em;
 }
 
@@ -641,7 +641,7 @@
 }
 
 .col-header__name {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.07em;
     color: var(--col-color, var(--c-text-main));
@@ -654,7 +654,7 @@
 /* Thin uppercase divider between logical groups within a tab scroll area.   */
 
 .section-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;

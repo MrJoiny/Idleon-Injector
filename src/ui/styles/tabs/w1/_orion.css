@@ -3,7 +3,7 @@
 /* .section-label base → _account-pages.css */
 
 .orion-warn-badge {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     color: var(--c-warning);
     margin-left: 8px;
     font-style: italic;
@@ -15,7 +15,5 @@
 
 .account-row__controls--xl .number-input-wrapper input {
     min-width: 10ch;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
-
-

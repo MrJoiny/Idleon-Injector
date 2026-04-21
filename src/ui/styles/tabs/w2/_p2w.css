@@ -73,7 +73,7 @@
 /* Success/error state comes from .account-row--success / .account-row--error */
 
 .p2w-row__label {
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--c-text-dim);
@@ -85,7 +85,7 @@
 
 .p2w-row__badge {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     background: var(--c-accent-06);
     border: 1px solid var(--c-accent-20);
@@ -117,4 +117,3 @@
 .p2w-simple-rows .p2w-row__controls .number-input-wrapper {
     width: 120px;
 }
-

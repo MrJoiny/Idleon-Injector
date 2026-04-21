@@ -31,7 +31,7 @@
 }
 
 .arcade-ball-label {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--c-text-dim);
 }
@@ -85,7 +85,7 @@
 }
 
 .arcade-card__index {
-    font-size: 0.6875rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     color: var(--c-text-dim);
     background: var(--c-panel-dim);
@@ -93,7 +93,7 @@
 }
 
 .arcade-card__cosmic-badge {
-    font-size: 0.625rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--c-ui-blue);
     text-transform: uppercase;
@@ -101,7 +101,7 @@
 }
 
 .arcade-card__name {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--c-text-main);
     line-height: 1.3;
@@ -119,7 +119,7 @@
 }
 
 .arcade-card__level-label {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--c-text-dim);
 }
@@ -154,4 +154,3 @@
     border-color: var(--c-danger);
     box-shadow: 0 0 0 1px var(--c-danger);
 }
-

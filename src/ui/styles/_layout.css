@@ -43,25 +43,7 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
-}
-
-.viewport-header {
-    height: 70px;
-    padding: 0 30px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--c-header-bg);
-    border-bottom: 1px solid var(--c-border);
-    backdrop-filter: blur(5px);
-}
-
-.viewport-header h2 {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    padding-top: 16px;
 }
 
 #tab-content {

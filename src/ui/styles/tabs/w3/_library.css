@@ -8,7 +8,7 @@
     padding: 4px 10px;
     background: var(--c-accent-06);
     border: 1px solid var(--c-accent);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
 }
 
 .library-maxbooklv--hidden {
@@ -19,7 +19,7 @@
     color: var(--c-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-size: 0.65rem;
+    font-size: 0.875rem;
 }
 
 .library-maxbooklv__value {
@@ -52,7 +52,7 @@
 }
 
 .talents-info-banner__label {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--c-text-muted);
@@ -79,7 +79,7 @@
 }
 
 .talent-row__notice {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     line-height: 1.3;
     opacity: 0.8;
 }
@@ -91,7 +91,7 @@
     justify-content: space-between;
     padding: 4px 12px;
     margin-top: 10px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
     font-weight: 700;
     text-transform: uppercase;
@@ -105,14 +105,14 @@
 }
 
 .talents-group-header__points {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--c-accent);
     letter-spacing: 0.04em;
 }
 
 .talents-group-header__points-label {
-    font-size: 0.6rem;
+    font-size: 0.875rem;
     font-weight: 400;
     color: var(--c-text-muted);
     text-transform: uppercase;
@@ -130,4 +130,3 @@
     font-size: 0.78em;
     opacity: 0.85;
 }
-

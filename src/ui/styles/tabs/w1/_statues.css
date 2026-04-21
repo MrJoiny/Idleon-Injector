@@ -1,7 +1,7 @@
 /* ── Statue tiers ─────────────────────────────────────────────────────── */
 
 .statue-tier-badge {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
@@ -43,7 +43,7 @@
     padding: 0 6px;
     height: 32px;
     width: 180px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 /* ── Statue stacked controls ──────────────────────────────────────────── */
@@ -65,11 +65,10 @@
 }
 
 .statue-control-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     width: 60px;
     text-align: right;
 }
-

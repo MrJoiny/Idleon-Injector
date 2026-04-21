@@ -22,7 +22,7 @@
 }
 
 .refinery-badge {
-    font-size: 0.6rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
@@ -46,7 +46,7 @@
 }
 
 .refinery-control-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -60,7 +60,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 18px;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     border-bottom: 1px solid var(--c-border);
     flex-shrink: 0;
@@ -83,4 +83,3 @@
     font-weight: 700;
     color: var(--c-accent);
 }
-

@@ -47,7 +47,7 @@
 }
 
 .brewing-column__label {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: var(--col-color, var(--c-text-main));
@@ -62,7 +62,7 @@
 }
 
 .brewing-column__empty {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     text-align: center;
     padding: 20px 8px;
@@ -76,7 +76,7 @@
 }
 
 .brewing-setall-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--c-text-muted);
@@ -129,21 +129,21 @@
 
 .bubble-card__index {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     background: var(--c-black-40);
     padding: 1px 5px;
 }
 
 .bubble-card__prisma-badge {
-    font-size: 0.6rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--cauldron-color, var(--c-accent));
 }
 
 .bubble-card__name {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--c-text-main);
     white-space: nowrap;
@@ -158,7 +158,7 @@
 }
 
 .bubble-card__level-label {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--c-text-dim);
     letter-spacing: 0.05em;
@@ -166,7 +166,7 @@
 
 .bubble-card__level-val {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
 }
 
@@ -181,7 +181,7 @@
 }
 
 .bubble-card__prisma-btn {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     letter-spacing: 0.04em;
     padding: 3px 8px;
@@ -214,9 +214,8 @@
    is pixel-perfect regardless of font scaling. */
 .bubble-card__prisma-spacer {
     padding: 3px 8px;
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     border: 1px solid transparent;
     pointer-events: none;
     visibility: hidden;
 }
-

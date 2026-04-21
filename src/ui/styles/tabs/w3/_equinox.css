@@ -38,7 +38,7 @@
 }
 
 .equinox-overview__label {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
     font-weight: 700;
     text-transform: uppercase;
@@ -54,7 +54,7 @@
 }
 
 .equinox-overview__rate {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     margin-left: auto;
     flex-shrink: 0;
@@ -89,7 +89,7 @@
     padding: 4px 12px;
     margin-top: 10px;
     margin-bottom: 2px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     font-family: var(--font-display);
     font-weight: 700;
     text-transform: uppercase;
@@ -99,7 +99,7 @@
 }
 
 .equinox-section-header__badge {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     color: var(--c-accent);
     letter-spacing: 0.04em;
 }
@@ -112,7 +112,7 @@
 /* Cloud info note — plain italic line */
 .equinox-clouds-note {
     padding: 5px 12px 4px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     font-style: italic;
 }
@@ -127,7 +127,7 @@
     background: var(--c-equinox-warning-10);
     border-left: 3px solid var(--c-equinox-warning);
     color: var(--c-equinox-warning);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     line-height: 1.45;
 }
 
@@ -159,9 +159,8 @@
 /* Empty state within a section (no rows yet) */
 .equinox-empty-section {
     padding: 10px 14px;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     color: var(--c-text-muted);
     opacity: 0.6;
     font-style: italic;
 }
-

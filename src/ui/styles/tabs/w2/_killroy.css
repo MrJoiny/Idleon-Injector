@@ -20,7 +20,7 @@
 
 .killroy-row__locked {
     color: var(--c-text-muted);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -34,7 +34,7 @@
 
 .killroy-best-toolbar__label {
     color: var(--c-text-dim);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     letter-spacing: 0.06em;
 }
 
@@ -46,7 +46,7 @@
 .killroy-best-toolbar__count {
     margin-left: auto;
     color: var(--c-text-muted);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     letter-spacing: 0.04em;
 }
 
@@ -73,7 +73,7 @@
 .killroy-best-table td {
     border-bottom: 1px solid var(--c-border);
     padding: 6px 8px;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
 }
 
 .killroy-best-table th {
@@ -97,4 +97,3 @@
     text-align: center;
     padding: 14px;
 }
-
