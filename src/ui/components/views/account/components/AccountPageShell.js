@@ -60,12 +60,12 @@ export const AccountPageShell = ({
               ]
             : null;
 
+        const chromeNodes = subNav ? [subNav, header, topNotices] : [header, topNotices];
+
         return div(
             { class: rootClass },
-            header,
-            topNotices,
-            subNav,
-            initialState,
+            ...chromeNodes,
+            ...(initialState ?? []),
             persistentState
                 ? div(
                       {
