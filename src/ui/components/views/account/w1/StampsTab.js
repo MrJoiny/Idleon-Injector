@@ -30,7 +30,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, writeVerified } from "../accountShared.js";
+import { cleanName, sortPrefixedNumericCodes, writeVerified } from "../accountShared.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
@@ -58,12 +58,6 @@ const normalizeExaltedCodes = (rawCodes) =>
         .filter((code) => EXALTED_CODE_REGEX.test(code));
 
 const makeExaltedStampCode = (page, order) => `${PAGE_LETTERS[page].toLowerCase()}${order + 1}`;
-
-const sortStampCodes = (a, b) => {
-    const letterDelta = a.charCodeAt(0) - b.charCodeAt(0);
-    if (letterDelta !== 0) return letterDelta;
-    return Number(a.slice(1)) - Number(b.slice(1));
-};
 
 const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedCodes, writeExaltedCodes }) => {
     const stampCode = makeExaltedStampCode(page, order);
@@ -143,7 +137,7 @@ export const StampsTab = () => {
     };
 
     const writeExaltedCodes = async (codeSet) => {
-        const ordered = normalizeExaltedCodes(codeSet).sort(sortStampCodes);
+        const ordered = normalizeExaltedCodes(codeSet).sort(sortPrefixedNumericCodes);
         await writeVerified("Compass[4]", ordered);
     };
 

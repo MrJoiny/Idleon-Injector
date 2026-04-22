@@ -18,13 +18,16 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const CAULDRONS = [
     { id: "orange", label: "ORANGE", index: 0, prismaKey: "_" },
@@ -55,21 +58,16 @@ function prismaCode(key, idx) {
 
 function encodePrisma(set) {
     if (set.size === 0) return "0,";
-    return [...set].join(",") + ",";
+    return [...set].sort(sortPrefixedNumericCodes).join(",") + ",";
 }
 
-const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
-    const inputVal = van.state("0");
-    const levelDisplay = van.state(0);
-    const { status, run } = useWriteStatus();
-
+const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
+    const levelState = van.state(Number(levels.val?.[bubble.index] ?? 0));
     const prismaBlocked = bubble.isBigBubble === true;
-
     const isPrisma = van.derive(() => (prismaSet.val ?? new Set()).has(prismaCode(cauldron.prismaKey, bubble.index)));
 
     van.derive(() => {
-        inputVal.val = String(levels.val?.[bubble.index] ?? 0);
-        levelDisplay.val = levels.val?.[bubble.index] ?? 0;
+        levelState.val = Number(levels.val?.[bubble.index] ?? 0);
     });
 
     const setLocalLevel = (level) => {
@@ -78,107 +76,61 @@ const BubbleCard = ({ bubble, cauldron, levels, prismaSet }) => {
         levels.val = nextLevels;
     };
 
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Number(raw));
-        if (isNaN(lvl)) return;
-
-        await run(
-            async () => {
-                const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
-                return writeVerified(path, lvl, { message: `Write mismatch at ${path}: expected ${lvl}` });
-            },
-            {
-                onSuccess: (verified) => {
-                    setLocalLevel(verified);
-                    inputVal.val = String(verified);
-                    levelDisplay.val = verified;
-                },
-            }
-        );
-    };
-
-    const doTogglePrisma = async () => {
-        if (prismaBlocked) return;
-
-        await run(async () => {
-            const code = prismaCode(cauldron.prismaKey, bubble.index);
-            const next = new Set(prismaSet.val ?? new Set());
-            next.has(code) ? next.delete(code) : next.add(code);
-            const encoded = encodePrisma(next);
-            await writeVerified("OptionsListAccount[384]", encoded, {
-                message: `Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`,
-            });
-            prismaSet.val = next;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "bubble-card feature-card",
-                    `bubble-card--${cauldron.id}`,
-                    isPrisma.val ? "bubble-card--prisma" : "",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState: levelState,
+        normalize: (rawValue) => {
+            const lvl = Math.max(0, Number(rawValue));
+            return Number.isNaN(lvl) ? null : lvl;
         },
-        div({ class: "bubble-card__top" }, span({ class: "bubble-card__index" }, `#${bubble.index}`), () =>
-            isPrisma.val ? span({ class: "bubble-card__prisma-badge" }, "PRISMA") : null
-        ),
-        div({ class: "bubble-card__name" }, bubble.name),
-        div(
-            { class: "bubble-card__level-row" },
-            span({ class: "bubble-card__level-label" }, "LV"),
-            span({ class: "bubble-card__level-val" }, () => levelDisplay.val)
-        ),
-        div(
-            { class: "bubble-card__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            button(
-                {
-                    class: () =>
-                        [
-                            "account-btn",
-                            "account-btn--apply",
-                            status.val === "loading" ? "account-btn--loading" : "",
-                            status.val === "success" ? "account-row--success" : "",
-                            status.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        ),
-        prismaBlocked
-            ? div({ class: "bubble-card__prisma-spacer" }, "\u00A0")
-            : button(
-                  {
-                      class: () =>
-                          ["bubble-card__prisma-btn", isPrisma.val ? "bubble-card__prisma-btn--active" : ""]
-                              .filter(Boolean)
-                              .join(" "),
-                      disabled: () => status.val === "loading",
-                      onclick: doTogglePrisma,
-                      title: () => (isPrisma.val ? "Remove Prisma" : "Set Prisma"),
-                  },
-                  () => (isPrisma.val ? "Prisma On" : "Prisma Off")
-              )
-    );
+        write: async (nextLevel) => {
+            const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
+            await writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
+            setLocalLevel(nextLevel);
+            return nextLevel;
+        },
+        renderInfo: () =>
+            [
+                span({ class: "account-row__index" }, `#${bubble.index}`),
+                span({ class: "account-row__name" }, bubble.name),
+                prismaBlocked ? span({ class: "account-row__sub-label" }, "BIG BUBBLE") : null,
+                () => (isPrisma.val ? span({ class: "brewing-prisma-badge" }, "PRISMA") : null),
+            ],
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, next + delta);
+        },
+        rowClass: () => `brewing-row${isPrisma.val ? " brewing-row--prisma" : ""}`,
+        badgeClass: "brewing-row__badge",
+        controlsClass: "brewing-row__controls account-row__controls--xl",
+        renderExtraActions: ({ status, run }) =>
+            prismaBlocked
+                ? null
+                : ActionButton({
+                      label: () => (isPrisma.val ? "PRISMA ON" : "PRISMA OFF"),
+                      status,
+                      variant: "apply",
+                      className: () => `brewing-prisma-btn${isPrisma.val ? " brewing-prisma-btn--active" : ""}`,
+                      tooltip: () => (isPrisma.val ? "Remove Prisma" : "Set Prisma"),
+                      onClick: async (e) => {
+                          e.preventDefault();
+                          await run(async () => {
+                              const code = prismaCode(cauldron.prismaKey, bubble.index);
+                              const next = new Set(prismaSet.val ?? new Set());
+                              next.has(code) ? next.delete(code) : next.add(code);
+                              const encoded = encodePrisma(next);
+                              await writeVerified("OptionsListAccount[384]", encoded, {
+                                  message: `Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`,
+                              });
+                              prismaSet.val = next;
+                          });
+                      },
+                  }),
+    });
 };
 
-const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
+const CauldronSectionBlock = ({ cauldron, levels, defs, sectionBody, setAllInput }) => {
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
 
     const doSetAll = async () => {
@@ -211,53 +163,93 @@ const CauldronColumn = ({ cauldron, levels, defs, prismaSet, setAllInput }) => {
         });
     };
 
-    return div(
-        {
-            class: `brewing-column brewing-column--${cauldron.id}`,
-        },
-        div(
-            {
-                class: () =>
-                    [
-                        "col-header brewing-column__header",
-                        bulkStatus.val === "success" ? "account-row--success" : "",
-                        bulkStatus.val === "error" ? "account-row--error" : "",
-                    ]
-                        .filter(Boolean)
-                        .join(" "),
+    return AccountSection({
+        title: cauldron.label,
+        rootClass: `brewing-section brewing-section--${cauldron.id}`,
+        meta: ActionButton({
+            label: "SET ALL",
+            status: bulkStatus,
+            tooltip: "Set all bubbles in this cauldron",
+            onClick: async (e) => {
+                e.preventDefault();
+                await doSetAll();
             },
-            span({ class: "brewing-column__label" }, cauldron.label),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply ${bulkStatus.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => bulkStatus.val === "loading",
-                    onclick: doSetAll,
-                    title: "Set all bubbles in this cauldron",
-                },
-                () => (bulkStatus.val === "loading" ? "..." : "SET ALL")
-            )
-        ),
-        () => {
-            const bubbles = defs.val ?? [];
-            if (bubbles.length === 0) return div({ class: "brewing-column__empty" }, "No bubbles");
-
-            return div(
-                { class: "brewing-column__bubbles" },
-                ...bubbles.map((bubble) => BubbleCard({ bubble, cauldron, levels, prismaSet }))
-            );
-        }
-    );
+        }),
+        body: sectionBody,
+    });
 };
 
 export const BrewingTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Brewing" });
-    const data = van.state(null);
     const setAllInput = van.state("50000");
 
     const cauldronLevels = new Map(CAULDRONS.map((c) => [c.id, van.state([])]));
     const bubbleDefs = new Map(CAULDRONS.map((c) => [c.id, van.state([])]));
     const prismaSet = van.state(new Set());
+    const sectionsGrid = div({ class: "brewing-sections-grid grid-4col" });
+    const contentNode = div({ class: "scrollable-panel" }, sectionsGrid);
+    const sectionBodyNodes = new Map();
+    const sectionDefinitionSignatures = new Map();
+    const sectionNodes = [];
+
+    CAULDRONS.forEach((cauldron) => {
+        const sectionBody = div({ class: "brewing-section__rows" });
+        sectionBodyNodes.set(cauldron.id, sectionBody);
+        sectionNodes.push(
+            CauldronSectionBlock({
+                cauldron,
+                levels: cauldronLevels.get(cauldron.id),
+                defs: bubbleDefs.get(cauldron.id),
+                sectionBody,
+                setAllInput,
+            })
+        );
+    });
+
+    const reconcileCauldronRows = (cauldron) => {
+        const defs = bubbleDefs.get(cauldron.id).val ?? [];
+        const signature = defs.map((bubble) => `${bubble.index}:${bubble.name}:${bubble.isBigBubble ? 1 : 0}`).join("|");
+        if (sectionDefinitionSignatures.get(cauldron.id) === signature) return;
+
+        const sectionBody = sectionBodyNodes.get(cauldron.id);
+        if (!sectionBody) return;
+
+        sectionDefinitionSignatures.set(cauldron.id, signature);
+
+        if (defs.length === 0) {
+            sectionBody.replaceChildren(div({ class: "tab-empty" }, "No bubbles"));
+            return;
+        }
+
+        sectionBody.replaceChildren(
+            ...defs.map((bubble) =>
+                BubbleRow({
+                    bubble,
+                    cauldron,
+                    levels: cauldronLevels.get(cauldron.id),
+                    prismaSet,
+                })
+            )
+        );
+    };
+
+    const reconcileBody = () => {
+        CAULDRONS.forEach(reconcileCauldronRows);
+
+        if (CAULDRONS.every((cauldron) => (bubbleDefs.get(cauldron.id).val ?? []).length === 0)) {
+            contentNode.replaceChildren(
+                EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO BUBBLES",
+                    subtitle: "No brewing bubble definitions found.",
+                })
+            );
+            return;
+        }
+
+        sectionsGrid.replaceChildren(...sectionNodes);
+        contentNode.replaceChildren(sectionsGrid);
+    };
 
     const load = async () =>
         run(async () => {
@@ -267,62 +259,38 @@ export const BrewingTab = () => {
                 readCList("AlchemyDescription"),
             ]);
 
-                const nextPrismaSet = parsePrisma(rawPrismaStr);
-                const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
-                const descArr = toIndexedArray(rawAlchemyDesc ?? []);
-                const nextLevelsById = new Map();
-                const nextDefsById = new Map();
+            const nextPrismaSet = parsePrisma(rawPrismaStr);
+            const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
+            const descArr = toIndexedArray(rawAlchemyDesc ?? []);
+            const nextLevelsById = new Map();
+            const nextDefsById = new Map();
 
-                CAULDRONS.forEach((c) => {
-                    nextLevelsById.set(c.id, toIndexedArray(levelsArr[c.index] ?? []));
+            CAULDRONS.forEach((c) => {
+                nextLevelsById.set(c.id, toIndexedArray(levelsArr[c.index] ?? []));
 
-                    const cauldronDesc = toIndexedArray(descArr[c.index] ?? []);
-                    nextDefsById.set(
-                        c.id,
-                        cauldronDesc
-                            .map((entry, idx) => {
-                                const entryArr = toIndexedArray(entry ?? []);
-                                const name = String(entryArr[0] ?? "BUBBLE")
-                                    .replace(/_/g, " ")
-                                    .trim();
-                                const isBigBubble = Number(entryArr[10] ?? 0) === 1;
-                                return { name, index: idx, isBigBubble };
-                            })
-                            .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== "")
-                    );
-                });
+                const cauldronDesc = toIndexedArray(descArr[c.index] ?? []);
+                nextDefsById.set(
+                    c.id,
+                    cauldronDesc
+                    .map((entry, idx) => {
+                        const entryArr = toIndexedArray(entry ?? []);
+                        const name = cleanName(entryArr[0], "BUBBLE");
+                        const isBigBubble = Number(entryArr[10] ?? 0) === 1;
+                        return { name, index: idx, isBigBubble };
+                    })
+                        .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== "")
+                );
+            });
 
-                prismaSet.val = nextPrismaSet;
-                CAULDRONS.forEach((c) => {
-                    cauldronLevels.get(c.id).val = nextLevelsById.get(c.id);
-                    bubbleDefs.get(c.id).val = nextDefsById.get(c.id);
-                });
-            data.val = CAULDRONS;
+            prismaSet.val = nextPrismaSet;
+            CAULDRONS.forEach((c) => {
+                cauldronLevels.get(c.id).val = nextLevelsById.get(c.id);
+                bubbleDefs.get(c.id).val = nextDefsById.get(c.id);
+            });
+            reconcileBody();
         });
 
     load();
-    const renderBody = (resolved) => {
-        if (CAULDRONS.every((cauldron) => (bubbleDefs.get(cauldron.id).val ?? []).length === 0)) {
-            return EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO BUBBLES",
-                subtitle: "No brewing bubble definitions found.",
-            });
-        }
-
-        return div(
-            { class: "brewing-columns grid-4col scrollable-panel" },
-            ...resolved.map((cauldron) =>
-                CauldronColumn({
-                    cauldron,
-                    levels: cauldronLevels.get(cauldron.id),
-                    defs: bubbleDefs.get(cauldron.id),
-                    prismaSet,
-                    setAllInput,
-                })
-            )
-        );
-    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -346,9 +314,10 @@ export const BrewingTab = () => {
                 RefreshButton({ onRefresh: load }),
             ],
         }),
-        loadState: { loading, error, data },
-        renderBody,
+        persistentState: { loading, error },
+        persistentLoadingText: "READING BREWING",
+        persistentErrorTitle: "BREWING READ FAILED",
+        persistentInitialWrapperClass: "scrollable-panel",
+        body: contentNode,
     });
 };
-
-

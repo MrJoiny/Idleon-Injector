@@ -9,11 +9,3 @@
     font-style: italic;
 }
 
-.account-row__controls--xl .number-input-wrapper {
-    width: 180px;
-}
-
-.account-row__controls--xl .number-input-wrapper input {
-    min-width: 10ch;
-    font-size: 0.875rem;
-}

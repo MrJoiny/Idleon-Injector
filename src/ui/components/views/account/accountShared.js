@@ -134,6 +134,12 @@ export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
     return normalized.replace(/_/g, " ").trim();
 };
 
+export const sortPrefixedNumericCodes = (a, b) => {
+    const keyDelta = a.charCodeAt(0) - b.charCodeAt(0);
+    if (keyDelta !== 0) return keyDelta;
+    return Number(a.slice(1)) - Number(b.slice(1));
+};
+
 export const renderAccountLoading = () => div({ class: "account-loader" }, Loader());
 
 export const renderAccountError = (message) =>
