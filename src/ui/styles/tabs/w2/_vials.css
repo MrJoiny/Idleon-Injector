@@ -1,0 +1,23 @@
+/* Vials tab */
+
+.vials-setall-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vials-setall-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+.vials-setall-input-wrap .number-input-wrapper {
+    width: 150px;
+}
+
+.vials-setall-input-wrap .number-input-btn {
+    height: 38px;
+}

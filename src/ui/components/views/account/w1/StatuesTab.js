@@ -137,7 +137,6 @@ const StatueRow = ({ index, nameState, levelState, depositedState, tierState }) 
                     )
                 )
             ),
-        loadingLabel: "...",
         applyTooltip: "Write level, deposited, and tier to game",
     });
 

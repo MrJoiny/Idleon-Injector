@@ -252,7 +252,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             { class: "starsign-detail-actions" },
             ActionButton({
                 label: () => (status.val === "success" ? "✓ SAVED" : "SAVE"),
-                loadingLabel: "...",
                 status,
                 tooltip: "Write star sign progress to game memory",
                 onClick: doSave,
@@ -295,10 +294,7 @@ const StarSignCard = ({ sign, onClick }) => {
 };
 
 const getClaimedRewardTotal = (list) =>
-    list.reduce(
-        (total, sign) => total + (toInt(sign.claimed, 0) ? toNum(sign.rewardPoints, 0) : 0),
-        0
-    );
+    list.reduce((total, sign) => total + (toInt(sign.claimed, 0) ? toNum(sign.rewardPoints, 0) : 0), 0);
 
 const syncActiveSign = (activeSign, nextSigns) => {
     if (!activeSign.val) return;
@@ -469,7 +465,6 @@ export const StarSignsTab = () => {
             actions: [
                 ActionButton({
                     label: "UNLOCK ALL",
-                    loadingLabel: "...",
                     status: unlockStatus,
                     disabled: isAnyLoading,
                     tooltip: "Unlock all signs using players in order: _abcdefghi",
@@ -477,7 +472,6 @@ export const StarSignsTab = () => {
                 }),
                 ActionButton({
                     label: "RANDOMIZE ALL",
-                    loadingLabel: "...",
                     status: randomStatus,
                     disabled: isAnyLoading,
                     tooltip: "Unlock all signs with a random player order per sign",
@@ -485,7 +479,6 @@ export const StarSignsTab = () => {
                 }),
                 ActionButton({
                     label: "RESET ALL",
-                    loadingLabel: "...",
                     status: resetStatus,
                     variant: "max-reset",
                     disabled: isAnyLoading,
