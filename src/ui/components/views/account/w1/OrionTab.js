@@ -31,20 +31,25 @@ import { AccountTabHeader } from "../components/AccountTabHeader.js";
 
 const { div, span } = van.tags;
 
+const PINNED = [
+    { index: 255, label: "Bonuses of Orion" },
+    { index: 258, label: "Feather Restart" },
+    { index: 262, label: "The Great Mega Reset" },
+];
+
 const FIELDS = [
     { index: 253, label: "Feathers", live: true, formatted: true },
     { index: 254, label: "Feather Generation" },
-    { index: 255, label: "Bonuses of Orion" },
     { index: 256, label: "Feather Multiplier" },
     { index: 257, label: "Feather Cheapener" },
-    { index: 258, label: "Feather Restart" },
     { index: 259, label: "Super Feather Production" },
     { index: 260, label: "Shiny Feathers" },
     { index: 261, label: "Super Feather Cheapener" },
-    { index: 262, label: "The Great Mega Reset" },
     { index: 263, label: "Filler Bar", float: true },
     { index: 264, label: "Shiny Feathers (count)" },
 ];
+
+const ALL_FIELDS = [...PINNED, ...FIELDS];
 
 const OrionRow = ({ field, fieldState, onWrite }) =>
     ClickerRow({
@@ -57,13 +62,13 @@ const OrionRow = ({ field, fieldState, onWrite }) =>
 export const OrionTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Orion" });
 
-    const fieldStates = new Map(FIELDS.map((field) => [field.index, van.state(undefined)]));
+    const fieldStates = new Map(ALL_FIELDS.map((field) => [field.index, van.state(undefined)]));
 
     const load = async () =>
         run(async () => {
-            const keys = FIELDS.map((field) => String(field.index));
+            const keys = ALL_FIELDS.map((field) => String(field.index));
             const results = await readGgaEntries("OptionsListAccount", keys);
-            for (const field of FIELDS) {
+            for (const field of ALL_FIELDS) {
                 fieldStates.get(field.index).val = results[String(field.index)] ?? 0;
             }
         });
@@ -74,6 +79,9 @@ export const OrionTab = () => {
 
     const rowList = div(
         { class: () => `account-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
+        div({ class: "section-label" }, Icons.Warning(), " Permanent Bonuses - Edit with care"),
+        ...PINNED.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite })),
+        div({ class: "section-label" }, "Upgrades & Stats"),
         ...FIELDS.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite }))
     );
 
