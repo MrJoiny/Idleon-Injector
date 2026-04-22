@@ -2,7 +2,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { Loader } from "../../../Loader.js";
 import { EmptyState } from "../../../EmptyState.js";
-import { renderAccountError, renderAccountLoading, resolveValue } from "../accountShared.js";
+import { joinClasses, renderAccountError, renderAccountLoading, resolveValue } from "../accountShared.js";
 const { div } = van.tags;
 
 /**
@@ -90,7 +90,10 @@ export const AccountPageShell = ({
                 ? div(
                       {
                           class: () =>
-                              !hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : "",
+                              joinClasses(
+                                  "account-page-shell__body",
+                                  !hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""
+                              ),
                       },
                       body
                   )

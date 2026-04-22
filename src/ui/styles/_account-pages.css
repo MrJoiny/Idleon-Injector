@@ -88,7 +88,6 @@
     justify-content: flex-end;
 }
 
-
 /* ── Secondary page nav (e.g. Combat / Skills / Misc) ────────────────────── */
 
 .account-page-nav {
@@ -139,6 +138,12 @@
 /* Shared hidden-until-ready state used by persistent panes */
 .is-hidden-until-ready {
     display: none !important;
+}
+
+.account-page-shell__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
 }
 
 /* 4-equal-column grid used by cauldron / liquid layouts */
@@ -267,7 +272,6 @@
 .write-status--error {
     color: var(--c-danger);
 }
-
 
 /* Info cell */
 .account-row__info {

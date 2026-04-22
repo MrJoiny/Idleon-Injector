@@ -19,7 +19,7 @@ import { gga } from "../../../services/api.js";
 import { Icons } from "../../../assets/icons.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
-import { formatNumber, parseNumber } from "../../../utils/numberFormat.js";
+import { formatNumber, formattedStep, parseNumber } from "../../../utils/numberFormat.js";
 
 const { div } = van.tags;
 
@@ -38,6 +38,12 @@ export const toNodes = (content) => {
 
 /** Join nullable class-name parts into a single class string. */
 export const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
+
+/** Reuse a keyed van.state instance across refreshes. */
+export const getOrCreateState = (map, key, initial = 0) => {
+    if (!map.has(key)) map.set(key, van.state(initial));
+    return map.get(key);
+};
 
 /**
  * Safely coerce a value to a finite number.
@@ -105,10 +111,11 @@ export const resolveFormattedIntInput = (raw, fallback = null, { min = 0, max = 
         fallback,
     });
 
-/** Increment or decrement formatted integer input text while preserving a non-negative floor. */
+/** Increment or decrement formatted integer input text by the least significant displayed digit. */
 export const adjustFormattedIntInput = (raw, delta, fallback = 0, { min = 0, max = Infinity } = {}) => {
     const base = resolveFormattedIntInput(raw, fallback, { min, max });
-    return Math.max(min, Math.min(max, (base ?? fallback ?? min) + delta));
+    const current = base ?? fallback ?? min;
+    return Math.max(min, Math.min(max, current + delta * formattedStep(current)));
 };
 
 export const largeFormatter = (raw) => {
