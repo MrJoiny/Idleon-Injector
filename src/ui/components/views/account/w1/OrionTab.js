@@ -20,8 +20,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
@@ -78,7 +76,7 @@ export const OrionTab = () => {
     };
 
     const rowList = div(
-        { class: () => `account-list${loading.val || error.val ? " is-hidden-until-ready" : ""}` },
+        { class: "account-list" },
         div({ class: "section-label" }, Icons.Warning(), " Permanent Bonuses - Edit with care"),
         ...PINNED.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite })),
         div({ class: "section-label" }, "Upgrades & Stats"),
@@ -106,22 +104,10 @@ export const OrionTab = () => {
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent - keep between 30-40."
         ),
-        body: div(
-            () =>
-                loading.val
-                    ? div(
-                          { class: "account-list" },
-                          div({ class: "account-loader" }, Loader({ text: "READING ORION" }))
-                      )
-                    : null,
-            () =>
-                error.val
-                    ? div(
-                          { class: "account-list" },
-                          EmptyState({ icon: Icons.SearchX(), title: "ORION READ FAILED", subtitle: error.val })
-                      )
-                    : null,
-            rowList
-        ),
+        persistentState: { loading, error },
+        persistentLoadingText: "READING ORION",
+        persistentErrorTitle: "ORION READ FAILED",
+        persistentInitialWrapperClass: "account-list",
+        body: rowList,
     });
 };
