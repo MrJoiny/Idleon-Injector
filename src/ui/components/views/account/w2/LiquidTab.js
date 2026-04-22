@@ -1,7 +1,7 @@
 /**
- * W2 — Liquid Tab (Alchemy Liquids)
+ * W2 - Liquid Tab (Alchemy Liquids)
  *
- * Liquid names are hardcoded — they couldn't be easily sourced from game data
+ * Liquid names are hardcoded - they couldn't be easily sourced from game data
  * at runtime and were taken from the IdleOn wiki / in-game descriptions:
  *   Liquid 1 (unlocked Alchemy Lv  1): Water Droplets
  *   Liquid 2 (unlocked Alchemy Lv 20): Liquid Nitrogen
@@ -9,30 +9,22 @@
  *   Liquid 4 (unlocked Alchemy Lv 80): Toxic Mercury
  *
  * Data paths (all within CauldronInfo):
- *   [6][i]         → current liquid amount   (i = 0..3)
- *   [8][4+i][2][1] → cap upgrade level        (i = 0..3)
- *   [8][4+i][3][1] → rate upgrade level       (i = 0..3)
- *
- * Re-render strategy:
- *   Per-liquid van.state objects are created ONCE and updated in-place on
- *   every load/refresh. The grid DOM is never torn down after first mount —
- *   only individual reactive bindings inside each LiquidControl update.
+ *   [6][i]         -> current liquid amount   (i = 0..3)
+ *   [8][4+i][2][1] -> cap upgrade level       (i = 0..3)
+ *   [8][4+i][3][1] -> rate upgrade level      (i = 0..3)
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
-
-// ── Liquid definitions ────────────────────────────────────────────────────
-// Names hardcoded — see file header comment.
+const { div, span } = van.tags;
 
 const LIQUIDS = [
     {
@@ -61,77 +53,31 @@ const LIQUIDS = [
     },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-const roundTo2 = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
-};
-
-// ── LiquidControl ─────────────────────────────────────────────────────────
-// Takes a reactive `valueState` (van.state) so refresh updates the display
-// in-place without recreating this element.
-
-const LiquidControl = ({ label, valueState, writePath, mode = "int" }) => {
-    const inputVal = van.state(String(valueState.val));
-    const { status, run } = useWriteStatus();
-
-    // Keep inputVal synced when the parent refreshes the backing state.
-    van.derive(() => {
-        inputVal.val = String(valueState.val);
-    });
-
-    const doSet = async (raw) => {
-        const val = mode === "float" ? Math.max(0, roundTo2(raw)) : Math.max(0, Math.round(Number(raw)));
-        if (isNaN(val)) return;
-        await run(async () => {
-            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
-            valueState.val = val;
-            inputVal.val = String(val);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "liquid-section",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+const LiquidControl = ({ label, valueState, writePath, mode = "int" }) =>
+    EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => {
+            const next = Math.max(0, Math.round(Number(rawValue)));
+            return Number.isNaN(next) ? null : next;
         },
-        div(
-            { class: "liquid-section__top" },
-            span({ class: "liquid-section__label" }, label),
-            span({ class: "liquid-section__display" }, () =>
-                mode === "float" ? roundTo2(valueState.val).toFixed(2) : String(valueState.val)
-            )
-        ),
-        div(
-            { class: "liquid-section__controls" },
-            NumberInput({
-                mode,
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply liquid-section__set-btn ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "…" : "SET")
-            )
-        )
-    );
-};
-
-// ── LiquidColumn ──────────────────────────────────────────────────────────
+        write: async (nextValue) => {
+            await writeVerified(writePath, nextValue, {
+                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
+            });
+            return nextValue;
+        },
+        renderInfo: () => span({ class: "account-row__name liquid-row__label" }, label),
+        renderBadge: (currentValue) => String(currentValue ?? 0),
+        rowClass: "liquid-row",
+        badgeClass: "liquid-row__badge",
+        controlsClass: "liquid-row__controls",
+        inputMode: mode,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, next + delta);
+        },
+    });
 
 const LiquidColumn = ({ liquid, states }) =>
     div(
@@ -143,7 +89,7 @@ const LiquidColumn = ({ liquid, states }) =>
             label: "AMOUNT",
             valueState: states.amount,
             writePath: `CauldronInfo[6][${liquid.index}]`,
-            mode: "float",
+            mode: "int",
         }),
         LiquidControl({
             label: "CAP UPGRADE",
@@ -159,13 +105,9 @@ const LiquidColumn = ({ liquid, states }) =>
         })
     );
 
-// ── LiquidTab ─────────────────────────────────────────────────────────────
-
 export const LiquidTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Liquid" });
 
-    // Per-liquid reactive states — created once, updated in-place on refresh.
-    // Columns are never rebuilt; only their internal bindings react.
     const liquidStates = LIQUIDS.map(() => ({
         amount: van.state(0),
         cap: van.state(0),
@@ -178,11 +120,11 @@ export const LiquidTab = () => {
             const amounts = toIndexedArray(raw?.[6] ?? []);
             const upgradesRaw = toIndexedArray(raw?.[8] ?? []);
 
-            LIQUIDS.forEach((liq, i) => {
-                const upgRow = toIndexedArray(upgradesRaw[liq.upgradeIndex] ?? []);
+            LIQUIDS.forEach((liquid, i) => {
+                const upgRow = toIndexedArray(upgradesRaw[liquid.upgradeIndex] ?? []);
                 const capRow = toIndexedArray(upgRow[2] ?? []);
                 const rateRow = toIndexedArray(upgRow[3] ?? []);
-                liquidStates[i].amount.val = roundTo2(amounts[liq.index] ?? 0);
+                liquidStates[i].amount.val = Math.max(0, Math.round(Number(amounts[liquid.index] ?? 0)));
                 liquidStates[i].cap.val = Number(capRow[1] ?? 0);
                 liquidStates[i].rate.val = Number(rateRow[1] ?? 0);
             });
@@ -190,21 +132,18 @@ export const LiquidTab = () => {
 
     load();
 
-    // Grid is built once here and permanently lives in the DOM.
-    // Concealed via CSS class until the first load completes.
     const grid = div(
-        { class: "liquid-grid grid-4col scrollable-panel" },
-        ...LIQUIDS.map((liq, i) => LiquidColumn({ liquid: liq, states: liquidStates[i] }))
+        { class: "liquid-grid grid-4col" },
+        ...LIQUIDS.map((liquid, i) => LiquidColumn({ liquid, states: liquidStates[i] }))
     );
+
     return AccountPageShell({
         header: AccountTabHeader({
-            title: "ALCHEMY — LIQUID",
+            title: "ALCHEMY - LIQUID",
             description: "Edit current liquid amounts and cap / rate upgrade levels.",
             actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
-        body: grid,
+        body: div({ class: "scrollable-panel" }, grid),
     });
 };
-
-
