@@ -21,6 +21,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -87,16 +88,16 @@ export const ForgeTab = () => {
     const body = div(
         { class: "account-list" },
         ...SECTIONS.map((section) =>
-            div(
-                { class: "forge-upgrades-list" },
-                div({ class: "section-label" }, section.label),
-                ...section.upgrades.map((upgrade) =>
+            AccountSection({
+                title: section.label,
+                rootClass: "forge-upgrades-list",
+                body: section.upgrades.map((upgrade) =>
                     ForgeRow({
                         upgrade,
                         levelState: levelStates[upgrade.index],
                     })
-                )
-            )
+                ),
+            })
         )
     );
     return AccountPageShell({

@@ -20,12 +20,12 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { Icons } from "../../../../assets/icons.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AccountSection } from "../components/AccountSection.js";
 
 const { div, span } = van.tags;
 
@@ -77,10 +77,15 @@ export const OrionTab = () => {
 
     const rowList = div(
         { class: "account-list" },
-        div({ class: "section-label" }, Icons.Warning(), " Permanent Bonuses - Edit with care"),
-        ...PINNED.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite })),
-        div({ class: "section-label" }, "Upgrades & Stats"),
-        ...FIELDS.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite }))
+        AccountSection({
+            title: "PERMANENT BONUSES",
+            note: "Edit with care",
+            body: PINNED.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite })),
+        }),
+        AccountSection({
+            title: "UPGRADES & STATS",
+            body: FIELDS.map((field) => OrionRow({ field, fieldState: fieldStates.get(field.index), onWrite })),
+        })
     );
 
     load();
