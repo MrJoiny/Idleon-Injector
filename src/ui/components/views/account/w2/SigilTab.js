@@ -174,7 +174,6 @@ export const SigilTab = () => {
         ),
         ActionButton({
             label: "SET ALL",
-            loadingLabel: "...",
             status: setAllStatus,
             onClick: async (e) => {
                 e.preventDefault();

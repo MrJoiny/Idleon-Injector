@@ -22,98 +22,86 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    adjustFormattedIntInput,
+    cleanNameEffect,
+    largeFormatter,
+    largeParser,
+    resolveFormattedIntInput,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 const ARCADE_LEVEL_MAX = 101;
+const BALL_FIELDS = [
+    { id: "normal", label: "Normal Balls", optionIndex: 74 },
+    { id: "golden", label: "Golden Balls", optionIndex: 75 },
+    { id: "cosmic", label: "Cosmic Balls", optionIndex: 324 },
+];
 
-const sanitizeArcadeName = (raw) =>
-    String(raw ?? "")
-        .replace(/^\+\{\s*/, "")
-        .replace(/_/g, " ")
-        .trim();
+const ArcadeRow = ({ entry }) => {
+    const isCosmic = van.derive(() => Number(entry.levelState.val ?? 0) >= ARCADE_LEVEL_MAX);
 
-const ArcadeCard = ({ entry }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    const isCosmic = van.derive(() => Number(entry.levelState.val ?? 0) >= 101);
-
-    van.derive(() => {
-        inputVal.val = String(entry.levelState.val ?? 0);
-    });
-
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(ARCADE_LEVEL_MAX, Number(raw)));
-        if (isNaN(lvl)) return;
-
-        await run(async () => {
-            const path = `ArcadeUpg[${entry.index}]`;
-            await writeVerified(path, lvl, { message: `Write mismatch at ${path}: expected ${lvl}` });
-            entry.levelState.val = lvl;
-            inputVal.val = String(lvl);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "arcade-card",
-                    isCosmic.val ? "arcade-card--cosmic" : "",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState: entry.levelState,
+        normalize: (rawValue) => {
+            const nextLevel = Math.max(0, Math.min(ARCADE_LEVEL_MAX, Number(rawValue)));
+            return Number.isNaN(nextLevel) ? null : nextLevel;
         },
-        div({ class: "arcade-card__top" }, span({ class: "arcade-card__index" }, `#${entry.index}`), () =>
-            isCosmic.val ? span({ class: "arcade-card__cosmic-badge" }, "COSMIC") : null
-        ),
-        div({ class: "arcade-card__name" }, entry.name),
-        div(
-            { class: "arcade-card__level-row" },
-            span({ class: "arcade-card__level-label" }, "LV"),
-            span({ class: "arcade-card__level-val" }, () => entry.levelState.val ?? 0)
-        ),
-        div(
-            { class: "arcade-card__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(ARCADE_LEVEL_MAX, Number(inputVal.val) + 1))),
-            }),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
+        write: async (nextLevel) => {
+            const path = `ArcadeUpg[${entry.index}]`;
+            await writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
+            return nextLevel;
+        },
+        renderInfo: () => [
+            span({ class: "account-row__index" }, `#${entry.index}`),
+            span({ class: "account-row__name" }, entry.name),
+            () => (isCosmic.val ? span({ class: "arcade-row__cosmic-badge" }, "COSMIC") : null),
+        ],
+        renderBadge: (currentValue) => (isCosmic.val ? "COSMIC" : `LV ${currentValue ?? 0}`),
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, Math.min(ARCADE_LEVEL_MAX, next + delta));
+        },
+        rowClass: () => (isCosmic.val ? "arcade-row arcade-row--cosmic" : "arcade-row"),
+        badgeClass: () => (isCosmic.val ? "arcade-row__badge arcade-row__badge--cosmic" : "arcade-row__badge"),
+    });
 };
+
+const ArcadeBallRow = ({ field, valueState }) =>
+    EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, { min: 0 }),
+        write: async (nextValue) => {
+            const path = `OptionsListAccount[${field.optionIndex}]`;
+            await writeVerified(path, nextValue, { message: `Write mismatch at ${path}: expected ${nextValue}` });
+            return nextValue;
+        },
+        renderInfo: () => span({ class: "account-row__name" }, field.label),
+        renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
+        adjustInput: (rawValue, delta, currentValue) =>
+            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
+        controlsClass: "account-row__controls--xl",
+        inputProps: {
+            formatter: largeFormatter,
+            parser: largeParser,
+        },
+    });
 
 export const ArcadeTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Arcade" });
     const { status: bulkStatus, run: runBulkSetAll } = useWriteStatus();
 
-    const normalBalls = van.state("0");
-    const goldenBalls = van.state("0");
-    const cosmicBalls = van.state("0");
-    const normalBallWrite = useWriteStatus();
-    const goldenBallWrite = useWriteStatus();
-    const cosmicBallWrite = useWriteStatus();
+    const ballStates = new Map(BALL_FIELDS.map((field) => [field.id, van.state(0)]));
 
     // Entries are created once from the first load and then updated in place.
     const upgradeEntries = van.state([]);
@@ -126,9 +114,9 @@ export const ArcadeTab = () => {
                 gga("ArcadeUpg"),
             ]);
 
-                normalBalls.val = String(rawOptions?.["74"] ?? 0);
-                goldenBalls.val = String(rawOptions?.["75"] ?? 0);
-                cosmicBalls.val = String(rawOptions?.["324"] ?? 0);
+                BALL_FIELDS.forEach((field) => {
+                    ballStates.get(field.id).val = Number(rawOptions?.[String(field.optionIndex)] ?? 0);
+                });
 
                 const shopInfo = toIndexedArray(rawArcadeShopInfo ?? []);
                 const upgLevels = toIndexedArray(rawArcadeUpg ?? []);
@@ -141,7 +129,7 @@ export const ArcadeTab = () => {
 
                     parsed.push({
                         index: i,
-                        name: sanitizeArcadeName(rawName),
+                        name: cleanNameEffect(rawName),
                         level: Number(upgLevels[i] ?? 0),
                     });
                 }
@@ -164,36 +152,6 @@ export const ArcadeTab = () => {
                 existing[i].levelState.val = item.level;
             });
         });
-
-    const doSetBall = async (ballType, valueState) => {
-        const configByType = {
-            normal: { index: 74, writer: normalBallWrite },
-            golden: { index: 75, writer: goldenBallWrite },
-            cosmic: { index: 324, writer: cosmicBallWrite },
-        };
-
-        const config = configByType[ballType];
-        if (!config) return;
-        if (config.writer.status.val === "loading") return;
-
-        const numVal = Math.max(0, Number(valueState.val));
-        if (isNaN(numVal)) return;
-
-        await config.writer.run(
-            async () => {
-                const path = `OptionsListAccount[${config.index}]`;
-                return writeVerified(path, numVal, { message: `Write mismatch at ${path}: expected ${numVal}` });
-            },
-            {
-                onSuccess: (verified) => {
-                    valueState.val = String(verified);
-                },
-                onError: (err) => {
-                    console.error(err);
-                },
-            }
-        );
-    };
 
     const doSetAll = async (targetLevel) => {
         const entries = upgradeEntries.val;
@@ -221,86 +179,22 @@ export const ArcadeTab = () => {
 
     load();
 
-    const topBallsFlashClass = () => {
-        const states = [normalBallWrite.status.val, goldenBallWrite.status.val, cosmicBallWrite.status.val];
-        if (states.includes("error")) return "account-row--error";
-        if (states.includes("success")) return "account-row--success";
-        return "";
-    };
-
     const content = div(
-        { class: "arcade-content" },
-        div(
-            {
-                class: () => ["arcade-balls-summary", topBallsFlashClass()].filter(Boolean).join(" "),
+        { class: "arcade-content scrollable-panel content-stack" },
+        AccountSection({
+            title: "BALL COUNTS",
+            note: "Normal, golden, and cosmic arcade balls",
+            body: div({ class: "account-list" }, ...BALL_FIELDS.map((field) => ArcadeBallRow({ field, valueState: ballStates.get(field.id) }))),
+        }),
+        AccountSection({
+            title: "BONUS UPGRADES",
+            note: "Arcade bonus levels (101 = cosmic)",
+            body: () => {
+                const entries = upgradeEntries.val;
+                if (!entries.length) return div({ class: "empty-state" }, "No upgrades found.");
+                return div({ class: "account-list" }, ...entries.map((entry) => ArcadeRow({ entry })));
             },
-            div(
-                { class: "arcade-ball-item" },
-                span({ class: "arcade-ball-label" }, "Normal:"),
-                NumberInput({
-                    mode: "int",
-                    value: normalBalls,
-                    oninput: (e) => (normalBalls.val = e.target.value),
-                    onDecrement: () => (normalBalls.val = String(Math.max(0, Number(normalBalls.val) - 1))),
-                    onIncrement: () => (normalBalls.val = String(Number(normalBalls.val) + 1)),
-                }),
-                button(
-                    {
-                        class: () =>
-                            `account-btn account-btn--apply ${normalBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => normalBallWrite.status.val === "loading",
-                        onclick: () => doSetBall("normal", normalBalls),
-                    },
-                    () => (normalBallWrite.status.val === "loading" ? "..." : "SET")
-                )
-            ),
-            div(
-                { class: "arcade-ball-item" },
-                span({ class: "arcade-ball-label" }, "Golden:"),
-                NumberInput({
-                    mode: "int",
-                    value: goldenBalls,
-                    oninput: (e) => (goldenBalls.val = e.target.value),
-                    onDecrement: () => (goldenBalls.val = String(Math.max(0, Number(goldenBalls.val) - 1))),
-                    onIncrement: () => (goldenBalls.val = String(Number(goldenBalls.val) + 1)),
-                }),
-                button(
-                    {
-                        class: () =>
-                            `account-btn account-btn--apply ${goldenBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => goldenBallWrite.status.val === "loading",
-                        onclick: () => doSetBall("golden", goldenBalls),
-                    },
-                    () => (goldenBallWrite.status.val === "loading" ? "..." : "SET")
-                )
-            ),
-            div(
-                { class: "arcade-ball-item" },
-                span({ class: "arcade-ball-label" }, "Cosmic:"),
-                NumberInput({
-                    mode: "int",
-                    value: cosmicBalls,
-                    oninput: (e) => (cosmicBalls.val = e.target.value),
-                    onDecrement: () => (cosmicBalls.val = String(Math.max(0, Number(cosmicBalls.val) - 1))),
-                    onIncrement: () => (cosmicBalls.val = String(Number(cosmicBalls.val) + 1)),
-                }),
-                button(
-                    {
-                        class: () =>
-                            `account-btn account-btn--apply ${cosmicBallWrite.status.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => cosmicBallWrite.status.val === "loading",
-                        onclick: () => doSetBall("cosmic", cosmicBalls),
-                    },
-                    () => (cosmicBallWrite.status.val === "loading" ? "..." : "SET")
-                )
-            )
-        ),
-        () => {
-            const entries = upgradeEntries.val;
-            if (!entries.length) return div({ class: "empty-state" }, "No upgrades found.");
-
-            return div({ class: "arcade-grid scrollable-panel" }, ...entries.map((entry) => ArcadeCard({ entry })));
-        }
+        })
     );
 
     return AccountPageShell({

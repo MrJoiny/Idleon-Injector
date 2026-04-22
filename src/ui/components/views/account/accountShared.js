@@ -134,6 +134,9 @@ export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
     return normalized.replace(/_/g, " ").trim();
 };
 
+export const cleanNameEffect = (raw, fallback = "") =>
+    cleanName(String(raw ?? fallback).replace(/^\+\{[%\s]*/, ""), fallback);
+
 export const sortPrefixedNumericCodes = (a, b) => {
     const keyDelta = a.charCodeAt(0) - b.charCodeAt(0);
     if (keyDelta !== 0) return keyDelta;
