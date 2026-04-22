@@ -1,31 +1,14 @@
 /**
- * W2 — Pay 2 Win Tab (Alchemy P2W)
+ * W2 - Pay 2 Win Tab (Alchemy P2W)
  *
- * Data paths (all within CauldronP2W):
- *   [0][f + 3*e]   → Brewing cauldrons  (e = cauldron 0..3, f = upgrade 0..2)
- *   [1][f + 2*e]   → Liquid cauldrons   (e = liquid 0..3,   f = upgrade 0..1)
- *   [2][e]         → Vials upgrades     (e = 0..1)
- *   [3][e]         → Player boosts      (e = 0..1)
+ * Data paths:
+ *   CauldronP2W[0][f + 3*e] -> Brewing cauldrons
+ *   CauldronP2W[1][f + 2*e] -> Liquid cauldrons
+ *   CauldronP2W[2][e]       -> Vial upgrades
+ *   CauldronP2W[3][e]       -> Player boosts
+ *   OptionsListAccount[123] -> Draconic cauldron count
  *
- * Sigils (CauldronP2W[4]) are managed in SigilTab.
- * CauldronP2W[5] is intentionally omitted (not a valid P2W category).
- *
- * Max levels via readComputedMany("alchemy", "CauldronLvMAX", [[b, e, ""+f], ...]).
- *
- * Row labels — hardcoded (no accessible runtime source for these strings):
- *   Brewing:        Speed / New Bubble / Boost Req  (f = 0 / 1 / 2)
- *   Liquid:         Regen / Capacity                (f = 0 / 1)
- *   Vials upgrades: Attempts / RNG                  (e = 0 / 1)
- *   Player boosts:  Alch Spd / Extra EXP            (e = 0 / 1)
- *
- * Hardcoded column names (cannot be sourced at runtime):
- *   Brewing cauldron names — user-specified.
- *   Liquid column names    — same constraint as LiquidTab.js.
- *
- * Re-render strategy:
- *   All states created once; load() updates them in-place.
- *   DOM built once, hidden via CSS until first load.
- *   Individual SET operations never trigger a re-render.
+ * Max levels are read via readComputedMany("alchemy", "CauldronLvMAX", ...).
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -35,51 +18,95 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { writeVerified } from "../accountShared.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 
 const { div, span } = van.tags;
 
-// ── Hardcoded column names (cannot be sourced at runtime) ──────────────────
+const makeStateList = (count, initialValue = 0) => Array.from({ length: count }, () => van.state(initialValue));
+const makeStateGrid = (columns, rows, initialValue = 0) =>
+    Array.from({ length: columns }, () => makeStateList(rows, initialValue));
 
-// Brewing cauldron column headers — user-specified; match in-game names.
-const BREW_CAULDRONS = [
-    { label: "POWER CAULDRON", tone: "brew-power" },
-    { label: "QUICC CAULDRON", tone: "brew-quicc" },
-    { label: "HIGH-IQ CAULDRON", tone: "brew-high-iq" },
-    { label: "KAZAM CAULDRON", tone: "brew-kazam" },
+const P2W_SECTION_DEFS = [
+    {
+        kind: "grid",
+        title: "BREWING CAULDRONS",
+        note: "P2W upgrade levels per cauldron",
+        bucket: 0,
+        stride: 3,
+        columns: [
+            { label: "POWER CAULDRON", tone: "brew-power" },
+            { label: "QUICC CAULDRON", tone: "brew-quicc" },
+            { label: "HIGH-IQ CAULDRON", tone: "brew-high-iq" },
+            { label: "KAZAM CAULDRON", tone: "brew-kazam" },
+        ],
+        rowLabels: ["SPEED", "NEW BUBBLE", "BOOST REQ"],
+    },
+    {
+        kind: "grid",
+        title: "LIQUID CAULDRONS",
+        note: "P2W upgrade levels per liquid",
+        bucket: 1,
+        stride: 2,
+        columns: [
+            { label: "WATER DROPLETS", tone: "liquid-water-droplets" },
+            { label: "LIQUID NITROGEN", tone: "liquid-nitrogen" },
+            { label: "TRENCH SEAWATER", tone: "liquid-trench-seawater" },
+            { label: "TOXIC MERCURY", tone: "liquid-toxic-mercury" },
+        ],
+        rowLabels: ["REGEN", "CAPACITY"],
+    },
+    {
+        kind: "single",
+        title: "DRACONIC CAULDRONS",
+        note: "Number of draconic liquid cauldrons (0-4)",
+        rowLabels: ["COUNT"],
+        max: 4,
+        writePath: "OptionsListAccount[123]",
+    },
+    {
+        kind: "list",
+        title: "VIALS UPGRADES",
+        note: "P2W vial upgrade levels",
+        bucket: 2,
+        rowLabels: ["ATTEMPTS", "RNG"],
+    },
+    {
+        kind: "list",
+        title: "PLAYER BOOSTS",
+        note: "P2W player alchemy boosts",
+        bucket: 3,
+        rowLabels: ["ALCH SPD", "EXTRA EXP"],
+    },
 ];
 
-// Liquid column headers — identical constraint to LiquidTab.js.
-const LIQUID_COLS = [
-    { label: "WATER DROPLETS", tone: "liquid-water-droplets" },
-    { label: "LIQUID NITROGEN", tone: "liquid-nitrogen" },
-    { label: "TRENCH SEAWATER", tone: "liquid-trench-seawater" },
-    { label: "TOXIC MERCURY", tone: "liquid-toxic-mercury" },
-];
+const createSectionState = (section) => {
+    if (section.kind === "grid") {
+        return {
+            ...section,
+            valueStates: makeStateGrid(section.columns.length, section.rowLabels.length),
+            maxStates: makeStateGrid(section.columns.length, section.rowLabels.length),
+        };
+    }
 
-// ── Hardcoded row labels ────────────────────────────────────────────────────
-// No accessible runtime path for these strings; values confirmed in-game.
+    if (section.kind === "single") {
+        return {
+            ...section,
+            valueStates: makeStateList(section.rowLabels.length),
+            maxStates: makeStateList(section.rowLabels.length, section.max ?? 0),
+        };
+    }
 
-// Brewing: f = 0 → Speed,  f = 1 → New Bubble,  f = 2 → Boost Req
-const BREW_ROW_LABELS = ["SPEED", "NEW BUBBLE", "BOOST REQ"];
+    return {
+        ...section,
+        valueStates: makeStateList(section.rowLabels.length),
+        maxStates: makeStateList(section.rowLabels.length),
+    };
+};
 
-// Liquid: f = 0 → Regen,  f = 1 → Capacity
-const LIQ_ROW_LABELS = ["REGEN", "CAPACITY"];
-
-// Vials P2W: e = 0 → Attempts,  e = 1 → RNG
-const VIALS_UPG_LABELS = ["ATTEMPTS", "RNG"];
-
-// Player boosts: e = 0 → Alch Spd,  e = 1 → Extra EXP
-const PLAYER_LABELS = ["ALCH SPD", "EXTRA EXP"];
-const DRACONIC_LABELS = ["COUNT"];
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-// ── P2WRow ─────────────────────────────────────────────────────────────────
-
-const P2WRow = ({ label, valueState, maxState, writePath }) => {
-    return EditableNumberRow({
+const P2WRow = ({ label, valueState, maxState, writePath }) =>
+    EditableNumberRow({
         valueState,
         normalize: (rawValue) => {
             const parsed = Math.max(0, Math.round(Number(rawValue)));
@@ -104,95 +131,92 @@ const P2WRow = ({ label, valueState, maxState, writePath }) => {
         },
         inputMode: "int",
     });
-};
 
-// ── Pay2WinTab ─────────────────────────────────────────────────────────────
+const renderSection = (section) => {
+    if (section.kind === "grid") {
+        return AccountSection({
+            title: section.title,
+            note: section.note,
+            body: div(
+                { class: "grid-4col" },
+                ...section.columns.map((column, columnIndex) =>
+                    div(
+                        { class: `p2w-col ${column.tone ? `p2w-col--${column.tone}` : ""}` },
+                        div({ class: "col-header" }, span({ class: "col-header__name" }, column.label)),
+                        ...section.rowLabels.map((label, rowIndex) =>
+                            P2WRow({
+                                label,
+                                valueState: section.valueStates[columnIndex][rowIndex],
+                                maxState: section.maxStates[columnIndex][rowIndex],
+                                writePath: `CauldronP2W[${section.bucket}][${rowIndex + section.stride * columnIndex}]`,
+                            })
+                        )
+                    )
+                )
+            ),
+        });
+    }
+
+    return AccountSection({
+        title: section.title,
+        note: section.note,
+        body: section.rowLabels.map((label, index) =>
+            P2WRow({
+                label,
+                valueState: section.valueStates[index],
+                maxState: section.maxStates[index],
+                writePath: section.kind === "single" ? section.writePath : `CauldronP2W[${section.bucket}][${index}]`,
+            })
+        ),
+    });
+};
 
 export const Pay2WinTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Pay 2 Win" });
-
-    // ── Value & max states — created once, updated in-place ───────────────
-
-    // Brewing: 4 cauldrons × 3 upgrades
-    const brewVal = Array.from({ length: 4 }, () => Array.from({ length: 3 }, () => van.state(0)));
-    const brewMax = Array.from({ length: 4 }, () => Array.from({ length: 3 }, () => van.state(0)));
-
-    // Liquid: 4 liquids × 2 upgrades
-    const liqVal = Array.from({ length: 4 }, () => Array.from({ length: 2 }, () => van.state(0)));
-    const liqMax = Array.from({ length: 4 }, () => Array.from({ length: 2 }, () => van.state(0)));
-
-    // Vials upgrades: 2 rows
-    const vialsUpgVal = Array.from({ length: 2 }, () => van.state(0));
-    const vialsUpgMax = Array.from({ length: 2 }, () => van.state(0));
-
-    // Draconic cauldrons (OptionsListAccount[123]): fixed range 0..4
-    const draconicVal = van.state(0);
-    const draconicMax = van.state(4);
-
-    // Player boosts: 2 rows
-    const playerVal = Array.from({ length: 2 }, () => van.state(0));
-    const playerMax = Array.from({ length: 2 }, () => van.state(0));
-
-    // ── Load ───────────────────────────────────────────────────────────────
+    const sections = P2W_SECTION_DEFS.map(createSectionState);
 
     const load = async () =>
         run(async () => {
             const [rawP2W, rawDraconic] = await Promise.all([gga("CauldronP2W"), gga("OptionsListAccount[123]")]);
             const p2w = toIndexedArray(rawP2W ?? []);
-            const brew0 = toIndexedArray(p2w[0] ?? []);
-            const liq1 = toIndexedArray(p2w[1] ?? []);
-            const via2 = toIndexedArray(p2w[2] ?? []);
-            const plr3 = toIndexedArray(p2w[3] ?? []);
-            const draconicRaw = Number(rawDraconic ?? 0);
-            const draconic = Number.isFinite(draconicRaw) ? Math.min(4, Math.max(0, draconicRaw)) : 0;
-            const nextBrewVal = Array.from({ length: 4 }, (_, e) =>
-                Array.from({ length: 3 }, (_, f) => Number(brew0[f + 3 * e] ?? 0))
-            );
-            const nextLiqVal = Array.from({ length: 4 }, (_, e) =>
-                Array.from({ length: 2 }, (_, f) => Number(liq1[f + 2 * e] ?? 0))
-            );
-            const nextVialsUpgVal = Array.from({ length: 2 }, (_, e) => Number(via2[e] ?? 0));
-            const nextPlayerVal = Array.from({ length: 2 }, (_, e) => Number(plr3[e] ?? 0));
-
-            const nextBrewMax = Array.from({ length: 4 }, () => Array.from({ length: 3 }, () => 0));
-            const nextLiqMax = Array.from({ length: 4 }, () => Array.from({ length: 2 }, () => 0));
-            const nextVialsUpgMax = Array.from({ length: 2 }, () => 0);
-            const nextPlayerMax = Array.from({ length: 2 }, () => 0);
             const maxTargets = [];
 
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 3; f++) {
+            for (const section of sections) {
+                if (section.kind === "single") {
+                    const rawValue = Number(rawDraconic ?? 0);
+                    section.valueStates[0].val = Number.isFinite(rawValue)
+                        ? Math.min(section.max, Math.max(0, rawValue))
+                        : 0;
+                    continue;
+                }
+
+                const bucketValues = toIndexedArray(p2w[section.bucket] ?? []);
+
+                if (section.kind === "grid") {
+                    for (let columnIndex = 0; columnIndex < section.columns.length; columnIndex++) {
+                        for (let rowIndex = 0; rowIndex < section.rowLabels.length; rowIndex++) {
+                            const flatIndex = rowIndex + section.stride * columnIndex;
+                            section.valueStates[columnIndex][rowIndex].val = Number(bucketValues[flatIndex] ?? 0);
+                            maxTargets.push({
+                                args: [section.bucket, columnIndex, String(rowIndex)],
+                                apply: (value) => {
+                                    section.maxStates[columnIndex][rowIndex].val = Number(value ?? 0);
+                                },
+                            });
+                        }
+                    }
+                    continue;
+                }
+
+                for (let index = 0; index < section.rowLabels.length; index++) {
+                    section.valueStates[index].val = Number(bucketValues[index] ?? 0);
                     maxTargets.push({
-                        args: [0, e, String(f)],
+                        args: [section.bucket, index, "0"],
                         apply: (value) => {
-                            nextBrewMax[e][f] = Number(value ?? 0);
+                            section.maxStates[index].val = Number(value ?? 0);
                         },
                     });
                 }
-            }
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 2; f++) {
-                    maxTargets.push({
-                        args: [1, e, String(f)],
-                        apply: (value) => {
-                            nextLiqMax[e][f] = Number(value ?? 0);
-                        },
-                    });
-                }
-            }
-            for (let e = 0; e < 2; e++) {
-                maxTargets.push({
-                    args: [2, e, "0"],
-                    apply: (value) => {
-                        nextVialsUpgMax[e] = Number(value ?? 0);
-                    },
-                });
-                maxTargets.push({
-                    args: [3, e, "0"],
-                    apply: (value) => {
-                        nextPlayerMax[e] = Number(value ?? 0);
-                    },
-                });
             }
 
             const maxResults = await readComputedMany(
@@ -201,135 +225,15 @@ export const Pay2WinTab = () => {
                 maxTargets.map((entry) => entry.args)
             );
 
-            maxTargets.forEach((entry, i) => {
-                if (!maxResults[i]?.ok) {
-                    throw new Error(`CauldronLvMAX failed for target ${i}`);
+            maxTargets.forEach((entry, index) => {
+                if (!maxResults[index]?.ok) {
+                    throw new Error(`CauldronLvMAX failed for target ${index}`);
                 }
-                entry.apply(maxResults[i].value);
+                entry.apply(maxResults[index].value);
             });
-
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 3; f++) {
-                    brewVal[e][f].val = nextBrewVal[e][f];
-                    brewMax[e][f].val = nextBrewMax[e][f];
-                }
-            }
-            for (let e = 0; e < 4; e++) {
-                for (let f = 0; f < 2; f++) {
-                    liqVal[e][f].val = nextLiqVal[e][f];
-                    liqMax[e][f].val = nextLiqMax[e][f];
-                }
-            }
-            for (let e = 0; e < 2; e++) {
-                vialsUpgVal[e].val = nextVialsUpgVal[e];
-                vialsUpgMax[e].val = nextVialsUpgMax[e];
-                playerVal[e].val = nextPlayerVal[e];
-                playerMax[e].val = nextPlayerMax[e];
-            }
-            draconicVal.val = draconic;
         });
 
     load();
-
-    // ── Build DOM (once) ───────────────────────────────────────────────────
-
-    const SectionHeader = (title, note) =>
-        div(
-            { class: "account-section__header" },
-            span({ class: "account-section__title" }, title),
-            note ? span({ class: "account-section__note" }, note) : null
-        );
-
-    // Cauldron 4-column grid
-    const buildCauldronSection = (title, note, cols, rowLabels, valGrid, maxGrid, b, stride) =>
-        div(
-            { class: "account-section" },
-            SectionHeader(title, note),
-            div(
-                { class: "grid-4col" },
-                ...cols.map((col, e) =>
-                    div(
-                        {
-                            class: `p2w-col ${col.tone ? `p2w-col--${col.tone}` : ""}`,
-                        },
-                        div({ class: "col-header" }, span({ class: "col-header__name" }, col.label)),
-                        div(
-                            { class: "p2w-col__rows" },
-                            ...rowLabels.map((label, f) =>
-                                P2WRow({
-                                    label,
-                                    valueState: valGrid[e][f],
-                                    maxState: maxGrid[e][f],
-                                    writePath: `CauldronP2W[${b}][${f + stride * e}]`,
-                                })
-                            )
-                        )
-                    )
-                )
-            )
-        );
-
-    // Simple flat list
-    const buildSimpleSection = (title, note, labels, vals, maxs, b) =>
-        div(
-            { class: "account-section" },
-            SectionHeader(title, note),
-            div(
-                { class: "p2w-simple-rows" },
-                ...labels.map((label, e) =>
-                    P2WRow({
-                        label,
-                        valueState: vals[e],
-                        maxState: maxs[e],
-                        writePath: `CauldronP2W[${b}][${e}]`,
-                    })
-                )
-            )
-        );
-
-    const scroll = div(
-        { class: "scrollable-panel content-stack" },
-
-        buildCauldronSection(
-            "BREWING CAULDRONS",
-            "P2W upgrade levels per cauldron",
-            BREW_CAULDRONS,
-            BREW_ROW_LABELS,
-            brewVal,
-            brewMax,
-            0,
-            3
-        ),
-
-        buildCauldronSection(
-            "LIQUID CAULDRONS",
-            "P2W upgrade levels per liquid",
-            LIQUID_COLS,
-            LIQ_ROW_LABELS,
-            liqVal,
-            liqMax,
-            1,
-            2
-        ),
-
-        div(
-            { class: "account-section" },
-            SectionHeader("DRACONIC CAULDRONS", "Number of draconic liquid cauldrons (0-4)"),
-            div(
-                { class: "p2w-simple-rows" },
-                P2WRow({
-                    label: DRACONIC_LABELS[0],
-                    valueState: draconicVal,
-                    maxState: draconicMax,
-                    writePath: "OptionsListAccount[123]",
-                })
-            )
-        ),
-
-        buildSimpleSection("VIALS UPGRADES", "P2W vial upgrade levels", VIALS_UPG_LABELS, vialsUpgVal, vialsUpgMax, 2),
-
-        buildSimpleSection("PLAYER BOOSTS", "P2W player alchemy boosts", PLAYER_LABELS, playerVal, playerMax, 3)
-    );
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -338,8 +242,6 @@ export const Pay2WinTab = () => {
             actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
-        body: scroll,
+        body: div({ class: "scrollable-panel content-stack" }, ...sections.map(renderSection)),
     });
 };
-
-

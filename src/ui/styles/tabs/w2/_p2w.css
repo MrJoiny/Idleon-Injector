@@ -4,7 +4,7 @@
 .p2w-col {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     min-width: 0;
 }
 
@@ -42,16 +42,4 @@
 
 .p2w-col--liquid-toxic-mercury {
     --col-color: var(--c-liquid-mercury);
-}
-
-.p2w-col__rows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.p2w-simple-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
