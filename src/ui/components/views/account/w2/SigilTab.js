@@ -1,32 +1,24 @@
 /**
- * W2 — Sigils Tab (Alchemy)
+ * W2 - Sigils Tab (Alchemy)
  *
  * Data paths (within CauldronP2W[4]):
- *   [4][2*i + 1]  → tier for sigil i   (−1=Locked … 4=Eclectic)
- *   [4][2*i]      → EXP  for sigil i   (not displayed; tier-only UI)
+ *   [4][2*i + 1] -> tier for sigil i (-1=Locked .. 4=Eclectic)
+ *   [4][2*i]     -> EXP for sigil i (not displayed; tier-only UI)
  *
- * Sigil names: cList.SigilDesc[i][0]  e.g. "BIG_MUSCLE"
- *   → underscores replaced with spaces, displayed uppercased.
- *   Defaults to "#N" if data is unavailable.
- *
- * Re-render strategy:
- *   All states created once; load() updates them in-place.
- *   DOM built once, hidden via CSS until first load.
- *   Individual SET and SET ALL never trigger a re-render.
+ * Sigil names come from cList.SigilDesc[i][0].
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, useWriteStatus, writeVerified } from "../accountShared.js";
 
-const { div, button, span, select, option } = van.tags;
-
-// ── Sigil tier definitions ──────────────────────────────────────────────────
+const { div, span, select, option } = van.tags;
 
 const SIGIL_TIERS = [
     { value: -1, label: "LOCKED", cls: "locked" },
@@ -37,24 +29,26 @@ const SIGIL_TIERS = [
     { value: 4, label: "ECLECTIC", cls: "eclectic" },
 ];
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+const SIGIL_COUNT = 24;
 
-const getTierInfo = (v) => SIGIL_TIERS.find((t) => t.value === Number(v)) ?? SIGIL_TIERS[0];
-
-// ── SigilCard ──────────────────────────────────────────────────────────────
+const getTierInfo = (value) => SIGIL_TIERS.find((tier) => tier.value === Number(value)) ?? SIGIL_TIERS[0];
 
 const SigilCard = ({ index, tierState, nameState }) => {
     const tierInput = van.state(String(tierState.val));
+    const isFocused = van.state(false);
     const { status, run } = useWriteStatus();
 
-    // Keep tierInput in sync when parent refreshes the backing state.
     van.derive(() => {
-        tierInput.val = String(tierState.val);
+        const nextValue = String(tierState.val);
+        if (!isFocused.val && tierInput.val !== nextValue) {
+            tierInput.val = nextValue;
+        }
     });
 
     const doSet = async () => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(tierInput.val))));
-        if (isNaN(tier)) return;
+        if (Number.isNaN(tier)) return;
+
         await run(async () => {
             const path = `CauldronP2W[4][${2 * index + 1}]`;
             await writeVerified(path, tier, { message: `Write mismatch at ${path}: expected ${tier}` });
@@ -65,10 +59,10 @@ const SigilCard = ({ index, tierState, nameState }) => {
     return div(
         {
             class: () => {
-                const t = getTierInfo(tierState.val);
+                const tier = getTierInfo(tierState.val);
                 return [
                     "tier-card",
-                    `sigil-card--${t.cls}`,
+                    `sigil-card--${tier.cls}`,
                     status.val === "success" ? "account-row--success" : "",
                     status.val === "error" ? "account-row--error" : "",
                 ]
@@ -76,7 +70,6 @@ const SigilCard = ({ index, tierState, nameState }) => {
                     .join(" ");
             },
         },
-        // Header: index + name | tier badge
         div(
             { class: "tier-card__header" },
             div(
@@ -89,76 +82,68 @@ const SigilCard = ({ index, tierState, nameState }) => {
                 () => getTierInfo(tierState.val).label
             )
         ),
-        // Tier select
         select(
             {
                 class: "tier-card__select select-base",
+                onfocus: () => {
+                    isFocused.val = true;
+                },
+                onblur: () => {
+                    isFocused.val = false;
+                    tierInput.val = String(tierState.val);
+                },
                 onchange: (e) => (tierInput.val = e.target.value),
             },
-            ...SIGIL_TIERS.map((t) =>
-                option({ value: t.value, selected: () => Number(tierInput.val) === t.value }, t.label)
+            ...SIGIL_TIERS.map((tier) =>
+                option({ value: tier.value, selected: () => Number(tierInput.val) === tier.value }, tier.label)
             )
         ),
-        // SET button
-        button(
-            {
-                class: () =>
-                    `account-btn account-btn--apply tier-card__set-btn ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                disabled: () => status.val === "loading",
-                onclick: doSet,
+        ActionButton({
+            label: "SET",
+            loadingLabel: "...",
+            status,
+            className: "tier-card__set-btn",
+            onClick: async (e) => {
+                e.preventDefault();
+                await doSet();
             },
-            () => (status.val === "loading" ? "…" : "SET")
-        )
+        })
     );
 };
 
-// ── SigilTab ───────────────────────────────────────────────────────────────
-
 export const SigilTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Sigils" });
-
-    // Per-sigil states — created once, updated in-place on every load.
-    const sigilTier = Array.from({ length: 24 }, () => van.state(-1));
-    const sigilName = Array.from({ length: 24 }, (_, i) => van.state(`#${i}`));
-
-    // SET ALL state
+    const sigilTier = Array.from({ length: SIGIL_COUNT }, () => van.state(-1));
+    const sigilName = Array.from({ length: SIGIL_COUNT }, (_, index) => van.state(`#${index}`));
     const setAllTier = van.state("-1");
     const { status: setAllStatus, run: runSetAll } = useWriteStatus();
-
-    // ── Load ───────────────────────────────────────────────────────────────
 
     const load = async () =>
         run(async () => {
             const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);
-
-            // Fill tier values from CauldronP2W[4][2*i + 1]
-            const sig4 = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);
-            for (let i = 0; i < 24; i++) {
-                sigilTier[i].val = Number(sig4[2 * i + 1] ?? -1);
-            }
-
-            // Fill sigil names from SigilDesc[i][0]; e.g. "BIG_MUSCLE" → "BIG MUSCLE"
+            const sigilData = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);
             const descArr = toIndexedArray(rawSigilDesc ?? []);
-            for (let i = 0; i < 24; i++) {
-                const entry = toIndexedArray(descArr[i] ?? []);
-                const raw = String(entry[0] ?? "").trim();
-                sigilName[i].val = raw ? raw.replace(/_/g, " ").toUpperCase() : `#${i}`;
+
+            for (let index = 0; index < SIGIL_COUNT; index++) {
+                sigilTier[index].val = Number(sigilData[2 * index + 1] ?? -1);
+
+                const entry = toIndexedArray(descArr[index] ?? []);
+                sigilName[index].val = cleanName(entry[0], `#${index}`).toUpperCase();
             }
         });
 
-    load();
-
-    // ── SET ALL ────────────────────────────────────────────────────────────
-
     const doSetAll = async () => {
         const tier = Math.min(4, Math.max(-1, Math.round(Number(setAllTier.val))));
-        if (isNaN(tier)) return;
+        if (Number.isNaN(tier)) return;
+
         await runSetAll(async () => {
             const writes = [];
-            for (let i = 0; i < sigilTier.length; i++) {
-                if (Number(sigilTier[i].val) === tier) continue;
-                writes.push({ path: `CauldronP2W[4][${2 * i + 1}]`, value: tier });
+
+            for (let index = 0; index < sigilTier.length; index++) {
+                if (Number(sigilTier[index].val) === tier) continue;
+                writes.push({ path: `CauldronP2W[4][${2 * index + 1}]`, value: tier });
             }
+
             if (writes.length > 0) {
                 const result = await ggaMany(writes);
                 const failed = result.results.filter((entry) => !entry.ok);
@@ -166,54 +151,45 @@ export const SigilTab = () => {
                     throw new Error(`Write mismatch at ${failed[0].path}: expected ${tier}`);
                 }
             }
-            for (let i = 0; i < sigilTier.length; i++) {
-                sigilTier[i].val = tier;
+
+            for (let index = 0; index < sigilTier.length; index++) {
+                sigilTier[index].val = tier;
             }
         });
     };
 
-    // ── Build DOM (once) ───────────────────────────────────────────────────
+    load();
 
     const setAllBar = div(
-        {
-            class: () =>
-                [
-                    "tier-setall-bar",
-                    setAllStatus.val === "success" ? "account-row--success" : "",
-                    setAllStatus.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
+        { class: "tier-setall-bar" },
         span({ class: "tier-setall-bar__label" }, "SET ALL TIERS TO"),
         select(
             {
                 class: "tier-setall-bar__select select-base",
                 onchange: (e) => (setAllTier.val = e.target.value),
             },
-            ...SIGIL_TIERS.map((t) =>
-                option({ value: t.value, selected: () => Number(setAllTier.val) === t.value }, t.label)
+            ...SIGIL_TIERS.map((tier) =>
+                option({ value: tier.value, selected: () => Number(setAllTier.val) === tier.value }, tier.label)
             )
         ),
-        button(
-            {
-                class: () =>
-                    `account-btn account-btn--apply ${setAllStatus.val === "loading" ? "account-btn--loading" : ""}`,
-                disabled: () => setAllStatus.val === "loading",
-                onclick: doSetAll,
+        ActionButton({
+            label: "SET ALL",
+            loadingLabel: "...",
+            status: setAllStatus,
+            onClick: async (e) => {
+                e.preventDefault();
+                await doSetAll();
             },
-            () => (setAllStatus.val === "loading" ? "…" : "SET ALL")
-        )
+        })
     );
 
     const grid = div(
-        { class: "tier-grid" },
-        ...Array.from({ length: 24 }, (_, i) =>
-            SigilCard({ index: i, tierState: sigilTier[i], nameState: sigilName[i] })
+        { class: "tier-grid sigils-grid" },
+        ...Array.from({ length: SIGIL_COUNT }, (_, index) =>
+            SigilCard({ index, tierState: sigilTier[index], nameState: sigilName[index] })
         )
     );
 
-    const scroll = div({ class: "tier-scroll scrollable-panel" }, setAllBar, grid);
     return AccountPageShell({
         header: AccountTabHeader({
             title: "ALCHEMY - SIGILS",
@@ -221,8 +197,6 @@ export const SigilTab = () => {
             actions: RefreshButton({ onRefresh: load }),
         }),
         persistentState: { loading, error },
-        body: scroll,
+        body: div({ class: "tier-scroll scrollable-panel" }, setAllBar, grid),
     });
 };
-
-
