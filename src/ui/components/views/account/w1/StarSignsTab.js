@@ -22,11 +22,12 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
@@ -249,23 +250,13 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         // Save button
         div(
             { class: "starsign-detail-actions" },
-            button(
-                {
-                    class: () =>
-                        [
-                            "account-btn",
-                            "account-btn--apply",
-                            status.val === "loading" ? "account-btn--loading" : "",
-                            status.val === "success" ? "account-row--success" : "",
-                            status.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                    onclick: doSave,
-                    disabled: () => status.val === "loading",
-                },
-                () => (status.val === "loading" ? "..." : status.val === "success" ? "✓ SAVED" : "SAVE")
-            ),
+            ActionButton({
+                label: () => (status.val === "success" ? "✓ SAVED" : "SAVE"),
+                loadingLabel: "...",
+                status,
+                tooltip: "Write star sign progress to game memory",
+                onClick: doSave,
+            }),
             () =>
                 status.val === "error"
                     ? span({ class: "starsign-account-row--error" }, "Save failed — check game is running")
@@ -335,12 +326,6 @@ export const StarSignsTab = () => {
     const isAnyLoading = () =>
         unlockStatus.val === "loading" || randomStatus.val === "loading" || resetStatus.val === "loading";
 
-    const writeAndVerifyOptions40 = async (total) => {
-        const expected = toNum(total, 0);
-        const path = "OptionsListAccount[40]";
-        await writeVerified(path, expected);
-    };
-
     const load = async () =>
         run(async () => {
             const [rawQuests, rawProg, rawUsernames] = await Promise.all([
@@ -378,34 +363,15 @@ export const StarSignsTab = () => {
     // After saving from detail, update local state without full reload
     const handleSave = async ({ index, progress }) => {
         if (!signs.val) return;
-        const prevSign = signs.val.find((s) => s.index === index);
         const nextSigns = signs.val.map((s) => {
             if (s.index !== index) return s;
             const players = parseProgress(progress);
-            return { ...s, players, unlocked: isUnlockedByProgress(players, s.playersNeeded) };
+            return {
+                ...s,
+                players,
+                unlocked: isUnlockedByProgress(players, s.playersNeeded),
+            };
         });
-        const updatedSign = nextSigns.find((s) => s.index === index);
-        if (updatedSign && prevSign) {
-            const wasUnlocked = Boolean(prevSign.unlocked);
-            const isUnlocked = Boolean(updatedSign.unlocked);
-            if (!wasUnlocked && isUnlocked) {
-                const claimedPath = `StarSignProg[${index}][1]`;
-                await writeVerified(claimedPath, 1);
-                await writeAndVerifyOptions40(
-                    getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 1 } : sign)))
-                );
-                updatedSign.claimed = 1;
-            } else if (wasUnlocked && !isUnlocked) {
-                const claimedPath = `StarSignProg[${index}][1]`;
-                await writeVerified(claimedPath, 0);
-                await writeAndVerifyOptions40(
-                    getClaimedRewardTotal(nextSigns.map((sign) => (sign.index === index ? { ...sign, claimed: 0 } : sign)))
-                );
-                updatedSign.claimed = 0;
-            } else {
-                updatedSign.claimed = toInt(prevSign.claimed, 0);
-            }
-        }
         signs.val = nextSigns;
         syncActiveSign(activeSign, nextSigns);
     };
@@ -501,67 +467,35 @@ export const StarSignsTab = () => {
             title: "STAR SIGNS",
             description: "Assign players (1-10) and drag to reorder completion order",
             actions: [
-                withTooltip(
-                    button(
-                        {
-                            class: () =>
-                                [
-                                    "account-btn account-btn--apply",
-                                    unlockStatus.val === "loading" ? "account-btn--loading" : "",
-                                    unlockStatus.val === "success" ? "account-row--success" : "",
-                                    unlockStatus.val === "error" ? "account-row--error" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" "),
-                            disabled: isAnyLoading,
-                            onclick: () => unlockAll(false),
-                        },
-                        () => (unlockStatus.val === "loading" ? "..." : "UNLOCK ALL")
-                    ),
-                    "Unlock all signs using players in order: _abcdefghi"
-                ),
-                withTooltip(
-                    button(
-                        {
-                            class: () =>
-                                [
-                                    "account-btn account-btn--apply",
-                                    randomStatus.val === "loading" ? "account-btn--loading" : "",
-                                    randomStatus.val === "success" ? "account-row--success" : "",
-                                    randomStatus.val === "error" ? "account-row--error" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" "),
-                            disabled: isAnyLoading,
-                            onclick: () => unlockAll(true),
-                        },
-                        () => (randomStatus.val === "loading" ? "..." : "RANDOMIZE ALL")
-                    ),
-                    "Unlock all signs with a random player order per sign"
-                ),
-                withTooltip(
-                    button(
-                        {
-                            class: () =>
-                                [
-                                    "account-btn account-btn--max-reset",
-                                    resetStatus.val === "loading" ? "account-btn--loading" : "",
-                                    resetStatus.val === "success" ? "account-row--success" : "",
-                                    resetStatus.val === "error" ? "account-row--error" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" "),
-                            disabled: isAnyLoading,
-                            onclick: resetAll,
-                        },
-                        () => (resetStatus.val === "loading" ? "..." : "RESET ALL")
-                    ),
-                    "Clear all star sign progress and lock everything"
-                ),
-                withTooltip(
-                    button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                    "Re-read star sign data from game"
-                ),
+                ActionButton({
+                    label: "UNLOCK ALL",
+                    loadingLabel: "...",
+                    status: unlockStatus,
+                    disabled: isAnyLoading,
+                    tooltip: "Unlock all signs using players in order: _abcdefghi",
+                    onClick: () => unlockAll(false),
+                }),
+                ActionButton({
+                    label: "RANDOMIZE ALL",
+                    loadingLabel: "...",
+                    status: randomStatus,
+                    disabled: isAnyLoading,
+                    tooltip: "Unlock all signs with a random player order per sign",
+                    onClick: () => unlockAll(true),
+                }),
+                ActionButton({
+                    label: "RESET ALL",
+                    loadingLabel: "...",
+                    status: resetStatus,
+                    variant: "max-reset",
+                    disabled: isAnyLoading,
+                    tooltip: "Clear all star sign progress and lock everything",
+                    onClick: resetAll,
+                }),
+                RefreshButton({
+                    onRefresh: load,
+                    tooltip: "Re-read star sign data from game",
+                }),
             ],
         }),
         loadState: { loading, error, data: signs },
@@ -600,5 +534,3 @@ export const StarSignsTab = () => {
         },
     });
 };
-
-
