@@ -22,14 +22,12 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { writeVerified } from "../accountShared.js";
-import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
 
-const PAGES = [
+const SECTIONS = [
     {
-        id: 0,
-        label: "PAGE 1",
+        label: "Page 1",
         upgrades: [
             { label: "New Forge Slot", index: 0, max: 16 },
             { label: "Ore Capacity Boost", index: 1, max: 50 },
@@ -37,8 +35,7 @@ const PAGES = [
         ],
     },
     {
-        id: 1,
-        label: "PAGE 2",
+        label: "Page 2",
         upgrades: [
             { label: "Forge EXP Gain", index: 3, max: 85 },
             { label: "Bar Bonanza", index: 4, max: 75 },
@@ -73,7 +70,6 @@ const ForgeRow = ({ upgrade, levelState }) =>
     });
 
 export const ForgeTab = () => {
-    const activePage = van.state(0);
     const { loading, error, run } = useAccountLoad({ label: "Forge" });
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
 
@@ -88,22 +84,21 @@ export const ForgeTab = () => {
 
     load();
 
-    const pageContainers = renderPersistentPagePanes({
-        tabs: PAGES,
-        activeId: activePage,
-        renderContent: (page) =>
+    const body = div(
+        { class: "account-list" },
+        ...SECTIONS.map((section) =>
             div(
                 { class: "forge-upgrades-list" },
-                ...page.upgrades.map((upgrade) =>
+                div({ class: "section-label" }, section.label),
+                ...section.upgrades.map((upgrade) =>
                     ForgeRow({
                         upgrade,
                         levelState: levelStates[upgrade.index],
                     })
                 )
-            ),
-    });
-
-    const body = div({ class: "account-list" }, ...pageContainers);
+            )
+        )
+    );
     return AccountPageShell({
         rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
@@ -113,12 +108,6 @@ export const ForgeTab = () => {
                 onRefresh: load,
                 tooltip: "Re-read forge levels from game memory",
             }),
-        }),
-        subNav: renderTabNav({
-            tabs: PAGES,
-            activeId: activePage,
-            navClass: "account-page-nav",
-            buttonClass: "account-page-btn",
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING FORGE",
