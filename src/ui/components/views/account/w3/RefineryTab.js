@@ -1,213 +1,141 @@
 /**
- * W3 — Refinery Tab
+ * W3 - Refinery Tab
  *
  * Data sources:
- *   gga.Refinery[3..11][0]  — current charge (salt stored)
- *   gga.Refinery[3..11][1]  — level
- *   gga.ItemDefinitionsGET.h.Refinery1..9.h.displayName — refinery names
+ *   gga.Refinery[3..11][0]                    - current charge (salt stored)
+ *   gga.Refinery[3..11][1]                    - level
+ *   gga.ItemDefinitionsGET.h.Refinery1..9.h.displayName - refinery names
  *
  * Notes:
- *   - Refineries 7–9 require the "Polymer Refinery" research to be unlocked in-game.
- *   - Refinery 9 (gga.Refinery[11]) is a placeholder — not yet implemented in the game.
+ *   - Refineries 7-9 require the "Polymer Refinery" research to be unlocked in-game.
+ *   - Refinery 9 (gga.Refinery[11]) is a placeholder and has no in-game effect yet.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { Icons } from "../../../../assets/icons.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const REFINERY_COUNT = 9;
-const REFINERY_OFFSET = 3; // gga.Refinery[3] = first refinery
-
-// Indices 6–8 (game indices 9–11) require Polymer Refinery research
+const REFINERY_OFFSET = 3;
 const POLYMER_LOCK_FROM = 6;
-// Index 8 is a placeholder not yet in-game
 const PLACEHOLDER_INDEX = 8;
 
-// ── RefineryRow ────────────────────────────────────────────────────────────
+const RefineryValueRow = ({ label, badgePrefix, fieldIndex, gameIndex, valueState }) =>
+    EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => {
+            const nextValue = Math.max(0, Math.round(Number(rawValue)));
+            return Number.isNaN(nextValue) ? null : nextValue;
+        },
+        write: async (nextValue) => {
+            const path = `Refinery[${gameIndex}][${fieldIndex}]`;
+            await writeVerified(path, nextValue, {
+                message: `Write mismatch at ${path}: expected ${nextValue}, got failed verification`,
+            });
+            return nextValue;
+        },
+        renderInfo: () => span({ class: "account-row__name" }, label),
+        renderBadge: (currentValue) => `${badgePrefix} ${currentValue ?? 0}`,
+        controlsClass: "account-row__controls--xl",
+    });
 
-const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
+const RefinerySection = ({ refIndex, name, levelState, chargeState }) => {
     const gameIndex = refIndex + REFINERY_OFFSET;
     const isPolymer = refIndex >= POLYMER_LOCK_FROM;
     const isPlaceholder = refIndex === PLACEHOLDER_INDEX;
+    const badges = [
+        isPolymer ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER") : null,
+        isPlaceholder
+            ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME")
+            : null,
+    ].filter(Boolean);
 
-    const levelInput = van.state("0");
-    const chargeInput = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        levelInput.val = String(levelState.val ?? 0);
-        chargeInput.val = String(chargeState.val ?? 0);
+    return AccountSection({
+        title: typeof name === "function" ? () => `#${refIndex + 1} ${name()}` : `#${refIndex + 1} ${name}`,
+        meta: badges.length ? div({ class: "refinery-section__badges" }, ...badges) : null,
+        rootClass: [
+            "refinery-section",
+            isPolymer ? "refinery-section--polymer" : "",
+            isPlaceholder ? "refinery-section--placeholder" : "",
+        ]
+            .filter(Boolean)
+            .join(" "),
+        body: [
+            RefineryValueRow({
+                label: "LEVEL",
+                badgePrefix: "LV",
+                fieldIndex: 1,
+                gameIndex,
+                valueState: levelState,
+            }),
+            RefineryValueRow({
+                label: "CHARGE",
+                badgePrefix: "CHARGE",
+                fieldIndex: 0,
+                gameIndex,
+                valueState: chargeState,
+            }),
+        ],
     });
-
-    const doSet = async (field, val) => {
-        const n = Math.max(0, Math.round(Number(val)));
-        if (isNaN(n)) return;
-        await run(async () => {
-            const path = `Refinery[${gameIndex}][${field}]`;
-            await writeVerified(path, n, { message: `Write mismatch at ${path}: expected ${n}, got failed verification` });
-            if (field === 1) {
-                levelState.val = n;
-            } else {
-                chargeState.val = n;
-            }
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "account-row refinery-row",
-                    isPolymer ? "refinery-row--polymer" : "",
-                    isPlaceholder ? "refinery-row--placeholder" : "",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-
-        // Left: index + name + badges
-        div(
-            { class: "account-row__info" },
-            span({ class: "account-row__index" }, `#${refIndex + 1}`),
-            div(
-                { class: "refinery-row__name-group" },
-                span({ class: "account-row__name" }, name),
-                div(
-                    { class: "refinery-row__badges" },
-                    isPolymer
-                        ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER")
-                        : null,
-                    isPlaceholder
-                        ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME")
-                        : null
-                )
-            )
-        ),
-
-        // Centre: current level
-        span({ class: "account-row__badge" }, () => `LV ${levelState.val ?? 0}`),
-
-        // Right: level + charge controls
-        div(
-            { class: "account-row__controls account-row__controls--stack" },
-
-            div(
-                { class: "refinery-control-row" },
-                span({ class: "refinery-control-label" }, "Level"),
-                NumberInput({
-                    mode: "int",
-                    value: levelInput,
-                    oninput: (e) => (levelInput.val = e.target.value),
-                    onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
-                    onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
-                }),
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSet(1, levelInput.val);
-                        },
-                    },
-                    () => (status.val === "loading" ? "…" : "SET")
-                )
-            ),
-
-            div(
-                { class: "refinery-control-row" },
-                span({ class: "refinery-control-label" }, "Charge"),
-                NumberInput({
-                    mode: "int",
-                    value: chargeInput,
-                    oninput: (e) => (chargeInput.val = e.target.value),
-                    onDecrement: () => (chargeInput.val = String(Math.max(0, Number(chargeInput.val) - 1))),
-                    onIncrement: () => (chargeInput.val = String(Number(chargeInput.val) + 1)),
-                }),
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSet(0, chargeInput.val);
-                        },
-                    },
-                    () => (status.val === "loading" ? "…" : "SET")
-                )
-            )
-        )
-    );
 };
-
-// ── RefineryTab ────────────────────────────────────────────────────────────
 
 export const RefineryTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Refinery" });
-    const data = van.state(null);
+    const nameStates = Array.from({ length: REFINERY_COUNT }, (_, i) => van.state(`Refinery ${i + 1}`));
     const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
     const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
+    const sectionsPerColumn = Math.ceil(REFINERY_COUNT / 3);
+    const grid = div(
+        { class: "refinery-grid grid-3col" },
+        ...Array.from({ length: 3 }, (_, columnIndex) =>
+            div(
+                { class: "refinery-col" },
+                ...Array.from({ length: sectionsPerColumn }, (_, offset) => {
+                    const index = columnIndex * sectionsPerColumn + offset;
+                    if (index >= REFINERY_COUNT) return null;
+                    return RefinerySection({
+                        refIndex: index,
+                        name: () => nameStates[index].val,
+                        levelState: levelStates[index],
+                        chargeState: chargeStates[index],
+                    });
+                }).filter(Boolean)
+            )
+        )
+    );
+    const body = div({ class: "scrollable-panel" }, grid);
 
     const load = async () =>
         run(async () => {
-                const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
-                const [raw, nameEntries] = await Promise.all([
-                    gga("Refinery"),
-                    readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
-                ]);
+            const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
+            const [raw, nameEntries] = await Promise.all([
+                gga("Refinery"),
+                readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
+            ]);
 
-                const names = refineryKeys.map((k, i) => {
-                    const entry = nameEntries[k];
-                    return entry?.displayName ?? `Refinery ${i + 1}`;
-                });
+            const names = refineryKeys.map((key, i) => {
+                const entry = nameEntries[key];
+                return cleanName(entry?.displayName, `Refinery ${i + 1}`);
+            });
 
-                const levels = [];
-                const charges = [];
-                for (let i = 0; i < REFINERY_COUNT; i++) {
-                    const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
-                    charges.push(entry[0] ?? 0);
-                    levels.push(entry[1] ?? 0);
-                }
-
-                for (let i = 0; i < REFINERY_COUNT; i++) {
-                    chargeStates[i].val = Number(charges[i] ?? 0);
-                    levelStates[i].val = Number(levels[i] ?? 0);
-                }
-
-                data.val = { names };
+            for (let i = 0; i < REFINERY_COUNT; i++) {
+                nameStates[i].val = names[i];
+                const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
+                chargeStates[i].val = Number(entry[0] ?? 0);
+                levelStates[i].val = Number(entry[1] ?? 0);
+            }
         });
 
     load();
-
-    const renderBody = (resolved) => {
-        return div(
-            { class: "account-list" },
-            ...Array.from({ length: REFINERY_COUNT }, (_, index) =>
-                RefineryRow({
-                    refIndex: index,
-                    name: resolved.names[index] ?? `Refinery ${index + 1}`,
-                    levelState: levelStates[index],
-                    chargeState: chargeStates[index],
-                })
-            )
-        );
-    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -234,9 +162,10 @@ export const RefineryTab = () => {
                 )
             ),
         ],
-        loadState: { loading, error, data },
-        renderBody,
+        persistentState: { loading, error },
+        persistentLoadingText: "READING REFINERY",
+        persistentErrorTitle: "REFINERY READ FAILED",
+        persistentInitialWrapperClass: "scrollable-panel",
+        body,
     });
 };
-
-
