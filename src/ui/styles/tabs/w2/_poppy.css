@@ -1,35 +1,8 @@
 /* Poppy tab */
-/* .account-row--warn     → _account-pages.css */
-/* .section-label base    → _account-pages.css */
-
-.poppy-warn-badge {
-    font-size: 0.875rem;
-    color: var(--c-warning);
-    margin-left: 8px;
-    font-style: italic;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Color overrides for the shared .section-label base */
-.section-label--spiral {
+.poppy-section--spiral .account-section__title {
     color: var(--c-accent);
-    border-bottom-color: var(--c-accent);
-    margin-top: 8px;
 }
 
-.section-label--tar {
+.poppy-section--tar .account-section__title {
     color: var(--c-warning);
-    border-bottom-color: var(--c-warning);
-    margin-top: 8px;
-}
-
-.poppy-row__controls--xl .number-input-wrapper {
-    width: 180px;
-}
-
-.poppy-row__controls--xl .number-input-wrapper input {
-    min-width: 10ch;
-    font-size: 0.875rem;
 }

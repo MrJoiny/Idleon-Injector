@@ -10,9 +10,9 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { Icons } from "../../../../assets/icons.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
@@ -20,9 +20,9 @@ import { AccountTabHeader } from "../components/AccountTabHeader.js";
 const { div, span } = van.tags;
 
 const PINNED_FIELDS = [
-    { index: 271, label: "Poppy Permanent Bonus Level", warn: "Permanent bonus - keep between 70-90" },
-    { index: 274, label: "Fisheroo Reset Level", warn: "Keep reasonable, around 30-40" },
-    { index: 279, label: "Greatest Catch / Megafish Progression", warn: "Permanent progression - edit carefully" },
+    { index: 271, label: "Poppy Permanent Bonus Level" },
+    { index: 274, label: "Fisheroo Reset Level" },
+    { index: 279, label: "Greatest Catch / Megafish Progression" },
 ];
 
 const CORE_FIELDS = [
@@ -74,8 +74,7 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
         field,
         fieldState,
         onWrite,
-        warnBadgeClass: "poppy-warn-badge",
-        controlsClass: "poppy-row__controls--xl",
+        controlsClass: "account-row__controls--xl",
         emptyBadge: "-",
         getWriteMismatchMessage: (index, nextValue) =>
             `Write mismatch at OptionsListAccount[${index}]: expected ${nextValue}`,
@@ -100,14 +99,25 @@ export const PoppyTab = () => {
 
     const rowList = div(
         { class: "account-list poppy-list" },
-        div({ class: "section-label" }, Icons.Warning(), " Permanent / Sensitive"),
-        ...PINNED_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "section-label" }, "Main Poppy Progress"),
-        ...CORE_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "section-label section-label--spiral" }, "Spiral Upgrades"),
-        ...SPIRAL_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
-        div({ class: "section-label section-label--tar" }, "Tar Pit"),
-        ...TAR_PIT_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite }))
+        AccountSection({
+            title: "PERMANENT / SENSITIVE",
+            note: "Edit with care",
+            body: PINNED_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
+        }),
+        AccountSection({
+            title: "MAIN POPPY PROGRESS",
+            body: CORE_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
+        }),
+        AccountSection({
+            title: "SPIRAL UPGRADES",
+            rootClass: "poppy-section poppy-section--spiral",
+            body: SPIRAL_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
+        }),
+        AccountSection({
+            title: "TAR PIT",
+            rootClass: "poppy-section poppy-section--tar",
+            body: TAR_PIT_FIELDS.map((f) => PoppyRow({ field: f, fieldState: fieldStates.get(f.index), onWrite })),
+        })
     );
 
     load();
@@ -137,5 +147,3 @@ export const PoppyTab = () => {
         body: rowList,
     });
 };
-
-
