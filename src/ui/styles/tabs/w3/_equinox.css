@@ -1,25 +1,12 @@
-/* ── Equinox Tab ──────────────────────────────────────────────────────────── */
+/* Equinox Tab */
 
-/* Persistent content pane — single scroll container for the whole tab.
-   flex:1 + overflow-y:auto fills the pane and lets everything scroll together.
-   Individual children manage their own horizontal padding. */
 .equinox-content {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    padding-bottom: 14px;
-}
-
-/* Row group — plain flex-column with gap; NOT a scroll container.
-   Replaces .account-list for cloud/upgrade rows so they flow into the
-   single .equinox-content scroll rather than creating isolated scroll areas. */
-.equinox-row-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 0 14px;
-    margin-top: 4px;
+    gap: 12px;
+    padding: 14px;
 }
 
 /* Overview section wrapping the bar and stats */
@@ -27,7 +14,6 @@
     padding: 10px 14px 12px;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
-    margin-bottom: 6px;
 }
 
 .equinox-overview__row {
@@ -81,88 +67,29 @@
     background: var(--c-success);
 }
 
-/* Shared section header (CLOUDS / UPGRADES) */
-.equinox-section-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 4px 12px;
-    margin-top: 10px;
-    margin-bottom: 2px;
-    font-size: 0.875rem;
-    font-family: var(--font-display);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--c-text-muted);
-    border-bottom: 1px solid var(--c-border);
-}
-
-.equinox-section-header__badge {
+.equinox-section-count {
     font-size: 0.875rem;
     color: var(--c-accent);
     letter-spacing: 0.04em;
 }
 
-.equinox-section-header__badge--empty {
+.equinox-section-count--empty {
     color: var(--c-text-muted);
-}
-
-/* Cloud info note — plain italic line */
-.equinox-clouds-note {
-    padding: 5px 12px 4px;
-    font-size: 0.875rem;
-    color: var(--c-text-muted);
-    font-style: italic;
-}
-
-/* Cloud warning — orange/amber block with left accent border */
-.equinox-clouds-warning {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 7px 12px 8px;
-    margin: 4px 0 6px;
-    background: color-mix(in srgb, var(--c-equinox-warning) 8%, var(--c-panel));
-    border-left: 3px solid var(--c-equinox-warning);
-    color: var(--c-equinox-warning);
-    font-size: 0.875rem;
-    line-height: 1.45;
-}
-
-.equinox-clouds-warning svg {
-    flex-shrink: 0;
-    margin-top: 1px;
-    width: 14px;
-    height: 14px;
-    color: var(--c-equinox-warning);
 }
 
 /* Nightmare clouds (display index #36+, internal index >= 35) */
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) {
-    border-color: var(--c-ui-red);
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--c-ui-red) 6%, var(--c-panel)),
-        color-mix(in srgb, var(--c-danger) 10%, var(--c-panel))
-    );
+    border-color: color-mix(in srgb, var(--c-equinox-warning) 55%, var(--c-border));
+    background: color-mix(in srgb, var(--c-equinox-warning) 7%, var(--c-panel));
 }
 
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__index {
-    background: color-mix(in srgb, var(--c-danger) 18%, var(--c-panel));
-    color: var(--c-danger-soft-text);
+    background: color-mix(in srgb, var(--c-equinox-warning) 14%, var(--c-panel));
+    color: var(--c-warning);
 }
 
 .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__badge {
-    color: var(--c-danger-soft-text);
-    background: color-mix(in srgb, var(--c-danger) 10%, var(--c-panel));
-    border-color: var(--c-ui-red);
-}
-
-/* Empty state within a section (no rows yet) */
-.equinox-empty-section {
-    padding: 10px 14px;
-    font-size: 0.875rem;
-    color: var(--c-text-muted);
-    font-style: italic;
+    color: var(--c-warning);
+    background: color-mix(in srgb, var(--c-equinox-warning) 10%, var(--c-panel));
+    border-color: color-mix(in srgb, var(--c-equinox-warning) 65%, var(--c-border));
 }

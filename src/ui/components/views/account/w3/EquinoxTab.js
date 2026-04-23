@@ -1,5 +1,5 @@
 /**
- * W3 - Equinox Tab (Pattern A — persistent pane, in-place state updates)
+ * W3 - Equinox Tab
  *
  * Data sources:
  *   gga.Dream[0]                           - current bar fill value
@@ -15,50 +15,37 @@
  *   readComputed("dream", "BarFillRate", [0])  - fill rate
  *   readComputed("dream", "UpgUnlocked", [0])  - number of unlocked upgrades
  *   readComputed("dream", "UpgMaxLV", [i])     - max level for upgrade i
- *
- * Refresh behaviour:
- *   - On REFRESH: only state values are updated in-place — no DOM teardown.
- *   - On upgrade SET: BarFillReq and cloud visibility are also refreshed
- *     because Dream[2] (the first upgrade) controls the visible cloud count.
- *   - cloudEntries / upgradeEntries only rebuild their DOM when the entry
- *     count / shape actually changes (same-shape check, same pattern as Arcade).
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { AccountRow } from "../components/AccountRow.js";
+import { ActionButton } from "../components/ActionButton.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, getOrCreateState, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
-// All displayed numbers are plain integers — no decimals, no thousands commas
-const fmtInt = (v) => String(toInt(v, { mode: "floor" }));
+const fmtInt = (value) => String(toInt(value, { mode: "floor" }));
 
-const fmtCloudName = (raw) =>
-    String(raw ?? "")
-        .replace(/_/g, " ")
-        .trim() || "Unknown";
-
-// Mirrors in-game visibility: visible count = clamp(Dream[2], 0, 5),
-// then include cloud i when WeeklyBoss.h["d_i"] !== -1, up to that count.
-function getVisibleCloudIndexes(firstUpgLevel, dreamChallengeArr, weeklyBossMap) {
+const getVisibleCloudIndexes = (firstUpgLevel, dreamChallengeArr, weeklyBossMap) => {
     const visibleCount = Math.max(0, Math.min(5, toInt(firstUpgLevel, { mode: "floor" })));
     const out = [];
+
     for (let i = 0; i < dreamChallengeArr.length && out.length < visibleCount; i++) {
-        if (toNum(weeklyBossMap["d_" + i]) !== -1) out.push(i);
+        if (toNum(weeklyBossMap[`d_${i}`]) !== -1) out.push(i);
     }
+
     return out;
-}
+};
 
-// ── Overview bar ──────────────────────────────────────────────────────────────
-
-const EquinoxBar = ({ barFillState, barFillReqState, barFillRateState }) => {
+const EquinoxBar = ({ barFillState, barFillReqState, barFillRateState, fillBarStatus, doFillBar }) => {
     const barFill = div({
         class: () => {
             const full = barFillReqState.val > 0 && barFillState.val >= barFillReqState.val;
@@ -80,23 +67,29 @@ const EquinoxBar = ({ barFillState, barFillReqState, barFillRateState }) => {
                 { class: "equinox-overview__value" },
                 () => `${fmtInt(barFillState.val)} / ${fmtInt(barFillReqState.val)}`
             ),
-            span({ class: "equinox-overview__rate" }, () => `+${fmtInt(barFillRateState.val)} / hr`)
+            span({ class: "equinox-overview__rate" }, () => `+${fmtInt(barFillRateState.val)} / hr`),
+            ActionButton({
+                label: () => (fillBarStatus.val === "success" ? "FILLED!" : "FILL BAR"),
+                loadingLabel: "...",
+                status: fillBarStatus,
+                tooltip: "Fill the Dream Bar to the current requirement",
+                onClick: (e) => {
+                    e.preventDefault();
+                    doFillBar();
+                },
+            })
         ),
         div({ class: "equinox-bar" }, barFill)
     );
 };
 
-// ── Section header with reactive entry count badge ────────────────────────────
-
-const SectionHeader = ({ label, entriesState, activeSuffix = "ACTIVE", emptySuffix = "NONE VISIBLE" }) =>
-    div({ class: "equinox-section-header" }, span({}, label), () => {
-        const count = entriesState.val.length;
-        return count > 0
-            ? span({ class: "equinox-section-header__badge" }, `${count} ${activeSuffix}`)
-            : span({ class: "equinox-section-header__badge equinox-section-header__badge--empty" }, emptySuffix);
-    });
-
-// ── Cloud row ─────────────────────────────────────────────────────────────────
+const SectionCount = ({ countState, activeSuffix, emptySuffix }) =>
+    span(
+        {
+            class: () => `equinox-section-count${countState.val > 0 ? "" : " equinox-section-count--empty"}`,
+        },
+        () => (countState.val > 0 ? `${countState.val} ${activeSuffix}` : emptySuffix)
+    );
 
 const CloudRow = ({ entry }) => {
     const { status, run } = useWriteStatus();
@@ -104,186 +97,159 @@ const CloudRow = ({ entry }) => {
     const doComplete = async () => {
         await run(async () => {
             const path = `WeeklyBoss.h.d_${entry.cloudIndex}`;
-            await writeVerified(path, entry.required, {
-                message: `Write mismatch at ${path}: expected ${entry.required}, got failed verification`,
+            const required = toInt(entry.requiredState.val, { mode: "floor" });
+            await writeVerified(path, required, {
+                message: `Write mismatch at ${path}: expected ${required}, got failed verification`,
             });
-            entry.progressState.val = entry.required;
+            entry.progressState.val = required;
         });
     };
 
-    return div(
-        {
-            class: () =>
-                [
-                    "account-row",
-                    entry.cloudIndex >= 35 ? "cloud-row--nightmare" : "",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "account-row__info" },
+    return AccountRow({
+        rowClass: entry.cloudIndex >= 35 ? "cloud-row--nightmare" : "",
+        info: [
             span({ class: "account-row__index" }, `#${entry.cloudIndex + 1}`),
-            span({ class: "account-row__name" }, entry.name)
-        ),
-        span({ class: "account-row__badge" }, () => `${fmtInt(entry.progressState.val)} / ${fmtInt(entry.required)}`),
-        div(
-            { class: "account-row__controls" },
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doComplete();
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "COMPLETE")
-            )
-        )
-    );
+            span({ class: "account-row__name" }, entry.name),
+        ],
+        badge: () => `${fmtInt(entry.progressState.val)} / ${fmtInt(entry.requiredState.val)}`,
+        controls: ActionButton({
+            label: "COMPLETE",
+            status,
+            tooltip: "Set cloud progress to required value",
+            onClick: (e) => {
+                e.preventDefault();
+                doComplete();
+            },
+        }),
+    });
 };
 
-// ── Upgrade row ───────────────────────────────────────────────────────────────
-
-const UpgradeRow = ({ entry, onAfterSet }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(entry.levelState.val ?? 0);
+const UpgradeRow = ({ entry, onAfterSet }) =>
+    EditableNumberRow({
+        valueState: entry.levelState,
+        normalize: (rawValue) =>
+            Math.max(
+                0,
+                Math.min(toInt(entry.maxLevelState.val, { mode: "floor" }), toInt(rawValue, { mode: "floor" }))
+            ),
+        write: async (nextLevel) => {
+            const path = `Dream[${entry.index + 2}]`;
+            const verified = await writeVerified(path, nextLevel, {
+                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
+            });
+            await onAfterSet();
+            return verified;
+        },
+        renderInfo: () => [
+            span({ class: "account-row__index" }, `#${entry.index + 1}`),
+            span({ class: "account-row__name" }, entry.name),
+        ],
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${entry.maxLevelState.val}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = toInt(rawValue, { mode: "floor", fallback: currentValue ?? 0 });
+            return Math.max(0, Math.min(toInt(entry.maxLevelState.val, { mode: "floor" }), base + delta));
+        },
     });
 
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(entry.maxLevel, toInt(raw, { mode: "floor" })));
-        await run(async () => {
-            // Dream[0] and Dream[1] are reserved; upgrades start at Dream[2]
-            const path = `Dream[${entry.index + 2}]`;
-            await writeVerified(path, lvl, {
-                message: `Write mismatch at ${path}: expected ${lvl}, got failed verification`,
-            });
-            entry.levelState.val = lvl;
-            inputVal.val = String(lvl);
-            // BarFillReq and cloud visibility depend on upgrade levels
-            await onAfterSet();
-        });
+const buildStaticMeta = async () => {
+    const [rawDreamUpg, rawDreamChallenge] = await Promise.all([readCList("DreamUpg"), readCList("DreamChallenge")]);
+
+    return {
+        dreamUpgArr: toIndexedArray(rawDreamUpg ?? []),
+        dreamChallengeArr: toIndexedArray(rawDreamChallenge ?? []),
     };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "account-row",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "account-row__info" },
-            span({ class: "account-row__index" }, `#${entry.index + 1}`),
-            span({ class: "account-row__name" }, entry.name)
-        ),
-        span({ class: "account-row__badge" }, () => `LV ${entry.levelState.val} / ${entry.maxLevel}`),
-        div(
-            { class: "account-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { mode: "floor" }) - 1))),
-                onIncrement: () =>
-                    (inputVal.val = String(Math.min(entry.maxLevel, toInt(inputVal.val, { mode: "floor" }) + 1))),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `account-btn account-btn--apply ${status.val === "loading" ? "account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
 };
-
-// ── EquinoxTab ────────────────────────────────────────────────────────────────
 
 export const EquinoxTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Equinox" });
+    const { status: fillBarStatus, run: fillBarRun } = useWriteStatus();
 
-    // Bar — top-level reactive states, always updated in-place
     const barFillState = van.state(0);
     const barFillReqState = van.state(0);
     const barFillRateState = van.state(0);
+    const cloudCountState = van.state(0);
+    const upgradeCountState = van.state(0);
 
-    // Entry lists — only the .val array reference changes when shape differs
-    const cloudEntries = van.state([]);
-    const upgradeEntries = van.state([]);
+    const cloudProgressStates = new Map();
+    const cloudRequiredStates = new Map();
+    const upgradeLevelStates = new Map();
+    const upgradeMaxLevelStates = new Map();
 
-    // Cached after first load so refreshAfterUpgrade doesn't need to re-fetch it
-    let cachedDreamChallengeArr = [];
+    const cloudRowsNode = div({ class: "content-stack" });
+    const upgradeRowsNode = div({ class: "content-stack" });
 
-    // Fill Bar
-    const { status: fillBarStatus, run: fillBarRun } = useWriteStatus();
-    const doFillBar = () =>
-        fillBarRun(async () => {
-            const req = barFillReqState.val;
-            if (!req) return;
-            await writeVerified("Dream[0]", req, {
-                message: `Write mismatch at Dream[0]: expected ${req}, got failed verification`,
-            });
-            barFillState.val = req;
-        });
+    let staticMeta = null;
+    let cloudSignature = null;
+    let upgradeSignature = null;
 
-    // ── Cloud entry helpers ───────────────────────────────────────────────────
+    const getCloudProgressState = (index) => getOrCreateState(cloudProgressStates, index);
+    const getCloudRequiredState = (index) => getOrCreateState(cloudRequiredStates, index);
+    const getUpgradeLevelState = (index) => getOrCreateState(upgradeLevelStates, index);
+    const getUpgradeMaxLevelState = (index) => getOrCreateState(upgradeMaxLevelStates, index);
 
-    const updateCloudEntries = (visibleIndexes, weeklyBossMap, dreamChallengeArr) => {
-        const newClouds = visibleIndexes.map((i) => {
-            const arr = toIndexedArray(dreamChallengeArr[i] ?? []);
+    const updateCloudRows = (visibleIndexes, weeklyBossMap, dreamChallengeArr) => {
+        const clouds = visibleIndexes.map((index) => {
+            const row = toIndexedArray(dreamChallengeArr[index] ?? []);
             return {
-                cloudIndex: i,
-                name: fmtCloudName(arr[0]),
-                required: toInt(arr[1], { mode: "floor" }),
-                progress: toInt(weeklyBossMap["d_" + i] ?? 0, { mode: "floor" }),
+                cloudIndex: index,
+                name: cleanName(row[0], "Unknown"),
+                required: toInt(row[1], { mode: "floor" }),
+                progress: toInt(weeklyBossMap[`d_${index}`] ?? 0, { mode: "floor" }),
             };
         });
+        const nextSignature = clouds.map((cloud) => `${cloud.cloudIndex}:${cloud.name}`).join("|");
 
-        const existing = cloudEntries.val;
-        const sameShape =
-            existing.length === newClouds.length && existing.every((e, j) => e.cloudIndex === newClouds[j].cloudIndex);
+        cloudCountState.val = clouds.length;
 
-        if (!sameShape) {
-            // Shape changed (different clouds visible) — rebuild entry objects
-            cloudEntries.val = newClouds.map((c) => ({
-                cloudIndex: c.cloudIndex,
-                name: c.name,
-                required: c.required,
-                progressState: van.state(c.progress),
-            }));
-        } else {
-            // Same shape — only update progress in-place, no DOM rebuild
-            newClouds.forEach((c, j) => {
-                existing[j].progressState.val = c.progress;
-            });
+        for (const cloud of clouds) {
+            getCloudProgressState(cloud.cloudIndex).val = cloud.progress;
+            getCloudRequiredState(cloud.cloudIndex).val = cloud.required;
         }
+
+        if (nextSignature === cloudSignature) return;
+        cloudSignature = nextSignature;
+
+        cloudRowsNode.replaceChildren(
+            ...clouds.map((cloud) =>
+                CloudRow({
+                    entry: {
+                        cloudIndex: cloud.cloudIndex,
+                        name: cloud.name,
+                        progressState: getCloudProgressState(cloud.cloudIndex),
+                        requiredState: getCloudRequiredState(cloud.cloudIndex),
+                    },
+                })
+            )
+        );
     };
 
-    // ── After-upgrade refresh (lighter than full reload) ──────────────────────
-    // Re-fetches bar req and cloud visibility without showing a spinner or
-    // rebuilding the upgrade list — upgrade levelState already updated in-place.
+    const updateUpgradeRows = (upgrades) => {
+        const nextSignature = upgrades.map((upgrade) => `${upgrade.index}:${upgrade.name}`).join("|");
+
+        upgradeCountState.val = upgrades.length;
+
+        for (const upgrade of upgrades) {
+            getUpgradeLevelState(upgrade.index).val = upgrade.level;
+            getUpgradeMaxLevelState(upgrade.index).val = upgrade.maxLevel;
+        }
+
+        if (nextSignature === upgradeSignature) return;
+        upgradeSignature = nextSignature;
+
+        upgradeRowsNode.replaceChildren(
+            ...upgrades.map((upgrade) =>
+                UpgradeRow({
+                    entry: {
+                        index: upgrade.index,
+                        name: upgrade.name,
+                        levelState: getUpgradeLevelState(upgrade.index),
+                        maxLevelState: getUpgradeMaxLevelState(upgrade.index),
+                    },
+                    onAfterSet: refreshAfterUpgrade,
+                })
+            )
+        );
+    };
 
     const refreshAfterUpgrade = async () => {
         try {
@@ -293,190 +259,122 @@ export const EquinoxTab = () => {
                 readComputed("dream", "BarFillReq", [0]).catch(() => barFillReqState.val),
             ]);
 
-            barFillReqState.val = toInt(newBarFillReq, { mode: "floor" });
-
             const dreamArr = toIndexedArray(rawDream ?? []);
             const weeklyBossMap = rawWeeklyBoss ?? {};
+            barFillReqState.val = toInt(newBarFillReq, { mode: "floor" });
+
             const visibleIndexes = getVisibleCloudIndexes(
                 toInt(dreamArr[2], { mode: "floor" }),
-                cachedDreamChallengeArr,
+                staticMeta?.dreamChallengeArr ?? [],
                 weeklyBossMap
             );
-            updateCloudEntries(visibleIndexes, weeklyBossMap, cachedDreamChallengeArr);
+            updateCloudRows(visibleIndexes, weeklyBossMap, staticMeta?.dreamChallengeArr ?? []);
         } catch {
-            // Silent — upgrade write already succeeded; bar/cloud are best-effort
+            // The upgrade write already succeeded; dependent display refresh is best-effort.
         }
     };
 
-    // ── Full load ─────────────────────────────────────────────────────────────
+    const doFillBar = () =>
+        fillBarRun(async () => {
+            const req = barFillReqState.val;
+            if (!req) return;
+
+            await writeVerified("Dream[0]", req, {
+                message: `Write mismatch at Dream[0]: expected ${req}, got failed verification`,
+            });
+            barFillState.val = req;
+        });
 
     const load = async () =>
         run(async () => {
-            const [rawDream, rawDreamUpg, rawDreamChallenge, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] =
-                await Promise.all([
-                    gga("Dream"),
-                    readCList("DreamUpg"),
-                    readCList("DreamChallenge"),
-                    gga("WeeklyBoss.h"),
-                    readComputed("dream", "BarFillReq", [0]),
-                    readComputed("dream", "BarFillRate", [0]),
-                    readComputed("dream", "UpgUnlocked", [0]),
-                ]);
+            if (!staticMeta) staticMeta = await buildStaticMeta();
+
+            const [rawDream, rawWeeklyBoss, barFillReq, barFillRate, upgUnlocked] = await Promise.all([
+                gga("Dream"),
+                gga("WeeklyBoss.h"),
+                readComputed("dream", "BarFillReq", [0]),
+                readComputed("dream", "BarFillRate", [0]),
+                readComputed("dream", "UpgUnlocked", [0]),
+            ]);
 
             const dreamArr = toIndexedArray(rawDream ?? []);
             const weeklyBossMap = rawWeeklyBoss ?? {};
-            const nextDreamChallengeArr = toIndexedArray(rawDreamChallenge ?? []);
-
-            // ── Bar ───────────────────────────────────────────────────────────
-            const nextBarFill = toInt(dreamArr[0], { mode: "floor" });
-            const nextBarFillReq = toInt(barFillReq, { mode: "floor" });
-            const nextBarFillRate = toInt(barFillRate, { mode: "floor" });
-
-            // ── Upgrades ──────────────────────────────────────────────────────
-            const count = toInt(upgUnlocked, { mode: "floor" });
-
+            const upgradeCount = toInt(upgUnlocked, { mode: "floor" });
             const computedResults = await readComputedMany(
                 "dream",
                 "UpgMaxLV",
-                Array.from({ length: count }, (_, i) => [i])
+                Array.from({ length: upgradeCount }, (_, index) => [index])
             );
 
-            const maxLevels = Array.from({ length: count }, (_, i) => {
-                const item = computedResults[i];
-                if (!item?.ok) throw new Error(`UpgMaxLV failed for upgrade ${i}`);
-                return toInt(item.value, { mode: "floor" });
+            const upgrades = Array.from({ length: upgradeCount }, (_, index) => {
+                const item = computedResults[index];
+                if (!item?.ok) throw new Error(`UpgMaxLV failed for upgrade ${index}`);
+
+                return {
+                    index,
+                    name: cleanName(toIndexedArray(staticMeta.dreamUpgArr[index] ?? [])[0], `Upgrade ${index + 1}`),
+                    maxLevel: toInt(item.value, { mode: "floor" }),
+                    level: toInt(dreamArr[index + 2], { mode: "floor" }),
+                };
             });
-
-            const dreamUpgArr = toIndexedArray(rawDreamUpg ?? []);
-            const newUpgrades = Array.from({ length: count }, (_, i) => ({
-                index: i,
-                name: String(toIndexedArray(dreamUpgArr[i] ?? [])[0] ?? `Upgrade ${i + 1}`),
-                maxLevel: maxLevels[i] ?? 0,
-                level: toInt(dreamArr[i + 2], { mode: "floor" }),
-            }));
-
-            const existingUpg = upgradeEntries.val;
-
-            // ── Clouds ────────────────────────────────────────────────────────
             const visibleIndexes = getVisibleCloudIndexes(
                 toInt(dreamArr[2], { mode: "floor" }),
-                nextDreamChallengeArr,
+                staticMeta.dreamChallengeArr,
                 weeklyBossMap
             );
 
-            barFillState.val = nextBarFill;
-            barFillReqState.val = nextBarFillReq;
-            barFillRateState.val = nextBarFillRate;
-            cachedDreamChallengeArr = nextDreamChallengeArr;
-
-            if (existingUpg.length !== newUpgrades.length) {
-                // Count changed - rebuild
-                upgradeEntries.val = newUpgrades.map((u) => ({
-                    index: u.index,
-                    name: u.name,
-                    maxLevel: u.maxLevel,
-                    levelState: van.state(u.level),
-                }));
-            } else {
-                // Same count - update values in-place without rebuilding rows
-                newUpgrades.forEach((u, i) => {
-                    existingUpg[i].name = u.name;
-                    existingUpg[i].maxLevel = u.maxLevel;
-                    existingUpg[i].levelState.val = u.level;
-                });
-            }
-
-            updateCloudEntries(visibleIndexes, weeklyBossMap, nextDreamChallengeArr);
+            barFillState.val = toInt(dreamArr[0], { mode: "floor" });
+            barFillReqState.val = toInt(barFillReq, { mode: "floor" });
+            barFillRateState.val = toInt(barFillRate, { mode: "floor" });
+            updateUpgradeRows(upgrades);
+            updateCloudRows(visibleIndexes, weeklyBossMap, staticMeta.dreamChallengeArr);
         });
 
     load();
 
-    // ── Persistent content (built once, updated via states) ───────────────────
-
     const content = div(
         { class: "equinox-content" },
-
-        // ── Bar overview ──────────────────────────────────────────────────────
-        EquinoxBar({ barFillState, barFillReqState, barFillRateState }),
-
-        // ── Clouds ────────────────────────────────────────────────────────────
-        SectionHeader({
-            label: "CLOUDS",
-            entriesState: cloudEntries,
-            activeSuffix: "ACTIVE",
-            emptySuffix: "NONE VISIBLE",
+        EquinoxBar({ barFillState, barFillReqState, barFillRateState, fillBarStatus, doFillBar }),
+        AccountSection({
+            title: "CLOUDS",
+            note: "You will have to claim rewards in-game. You can only set progress here.",
+            meta: SectionCount({
+                countState: cloudCountState,
+                activeSuffix: "ACTIVE",
+                emptySuffix: "NONE VISIBLE",
+            }),
+            body: [
+                WarningBanner(
+                    "Setting progress only edits the tracker value. It does not perform the actual in-game action."
+                ),
+                cloudRowsNode,
+            ],
         }),
-        div(
-            { class: "equinox-clouds-note" },
-            "You will have to claim rewards in-game. You can only set progress here."
-        ),
-        div(
-            { class: "equinox-clouds-warning" },
-            Icons.Warning(),
-            span(
-                {},
-                "Setting progress only edits the tracker value — it does not perform the actual in-game action. " +
-                    "For example, a challenge requiring 400 kills in a single Killroy run will not be completed by " +
-                    "this; the counter will show as done but the real condition was never met."
-            )
-        ),
-        () => {
-            const entries = cloudEntries.val;
-            if (!entries.length) return div({ class: "equinox-empty-section" }, "No clouds are visible yet.");
-            // equinox-row-group: flex-col + gap, no overflow — scrolls with the page
-            return div({ class: "equinox-row-group" }, ...entries.map((e) => CloudRow({ entry: e })));
-        },
-
-        // ── Upgrades ──────────────────────────────────────────────────────────
-        SectionHeader({
-            label: "UPGRADES",
-            entriesState: upgradeEntries,
-            activeSuffix: "UNLOCKED",
-            emptySuffix: "NONE UNLOCKED",
-        }),
-        () => {
-            const entries = upgradeEntries.val;
-            if (!entries.length) return div({ class: "equinox-empty-section" }, "No upgrades unlocked yet.");
-            return div(
-                { class: "equinox-row-group" },
-                ...entries.map((e) => UpgradeRow({ entry: e, onAfterSet: refreshAfterUpgrade }))
-            );
-        }
+        AccountSection({
+            title: "UPGRADES",
+            meta: SectionCount({
+                countState: upgradeCountState,
+                activeSuffix: "UNLOCKED",
+                emptySuffix: "NONE UNLOCKED",
+            }),
+            body: upgradeRowsNode,
+        })
     );
 
     return AccountPageShell({
+        rootClass: "tab-container scroll-container",
         header: AccountTabHeader({
             title: "EQUINOX",
             description: "Dream bar fill, active clouds, and upgrade levels.",
-            actions: [
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "account-btn",
-                                "account-btn--apply",
-                                fillBarStatus.val === "loading" ? "account-btn--loading" : "",
-                                fillBarStatus.val === "success" ? "account-row--success" : "",
-                                fillBarStatus.val === "error" ? "account-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => fillBarStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doFillBar();
-                        },
-                    },
-                    () => (fillBarStatus.val === "success" ? "FILLED!" : "FILL BAR")
-                ),
-                RefreshButton({ onRefresh: load }),
-            ],
+            actions: RefreshButton({
+                onRefresh: load,
+                disabled: () => loading.val,
+                tooltip: "Re-read Equinox values from game memory",
+            }),
         }),
         persistentState: { loading, error },
+        persistentLoadingText: "READING EQUINOX",
+        persistentErrorTitle: "EQUINOX READ FAILED",
         body: content,
     });
 };
-
-
