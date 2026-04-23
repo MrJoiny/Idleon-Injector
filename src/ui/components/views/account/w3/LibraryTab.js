@@ -18,11 +18,10 @@
  *
  * Computed:
  *   p._customBlock_WorkbenchStuff("maxBookLv", 0, 0)             — global max book level cap
- *   x._customBlock_RunCodeOfTypeXforThingY("AllTalentLV", id)    — bonus invested levels per talent (read-only)
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
+import { readComputed, gga, ggaMany, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -68,15 +67,9 @@ const getBlockedLibraryTalentIds = (rawBlockedList) => {
     return out;
 };
 
-const TalentBadge = ({ curState, maxState, bonusState }) =>
-    span(
-        {},
-        () => curState.val,
-        () => (toNum(bonusState.val) > 0 ? span({ class: "talent-row__bonus" }, ` +${bonusState.val}`) : null),
-        () => ` / ${maxState.val}`
-    );
+const TalentBadge = ({ curState, maxState }) => span({}, () => `${curState.val} / ${maxState.val}`);
 
-const TalentRow = ({ talentId, talentName, curState, maxState, bonusState, maxBookLvState, isBookAvailable }) => {
+const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, isBookAvailable }) => {
     if (!isBookAvailable) {
         return AccountRow({
             rowClass: "talent-row talent-row--unavailable",
@@ -88,8 +81,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, bonusState, maxBo
                     div({ class: "talent-row__notice" }, "This is not a Library book and can't be set.")
                 ),
             ],
-            badgeClass: () => (toNum(bonusState.val) > 0 ? "talent-row__badge--with-bonus" : ""),
-            badge: TalentBadge({ curState, maxState, bonusState }),
+            badge: TalentBadge({ curState, maxState }),
         });
     }
 
@@ -106,8 +98,7 @@ const TalentRow = ({ talentId, talentName, curState, maxState, bonusState, maxBo
             span({ class: "account-row__index" }, `#${talentId}`),
             div({ class: "talent-row__text" }, span({ class: "account-row__name" }, talentName)),
         ],
-        renderBadge: () => TalentBadge({ curState, maxState, bonusState }),
-        badgeClass: () => (toNum(bonusState.val) > 0 ? "talent-row__badge--with-bonus" : ""),
+        renderBadge: () => TalentBadge({ curState, maxState }),
         rowClass: "talent-row",
         controlsClass: "account-row__controls--xl",
         applyLabel: "SET MAX",
@@ -141,7 +132,6 @@ export const LibraryTab = () => {
     const maxBookLvState = van.state(null);
     const curStates = new Map();
     const maxStates = new Map();
-    const bonusStates = new Map();
     const availablePointsStates = new Map();
     const listNode = div({ class: "account-list" });
 
@@ -151,7 +141,6 @@ export const LibraryTab = () => {
 
     const getCurState = (talentId) => getOrCreateState(curStates, talentId);
     const getMaxState = (talentId) => getOrCreateState(maxStates, talentId);
-    const getBonusState = (talentId) => getOrCreateState(bonusStates, talentId);
     const getAvailablePointsState = (classId) => getOrCreateState(availablePointsStates, classId);
 
     const doMaxAll = async () => {
@@ -217,7 +206,6 @@ export const LibraryTab = () => {
                                 talentName: talent.talentName,
                                 curState: getCurState(talent.talentId),
                                 maxState: getMaxState(talent.talentId),
-                                bonusState: getBonusState(talent.talentId),
                                 maxBookLvState,
                                 isBookAvailable: talent.isBookAvailable,
                             })
@@ -258,28 +246,6 @@ export const LibraryTab = () => {
             const classIds = getLibraryClassPageIds(classId);
             const activeClassName = staticMeta.classNames[classId] || `Class ${classId}`;
             const getTalentName = (talentId) => staticMeta.talentIconNames?.[talentId] || `Talent ${talentId}`;
-            const allTalentIds = Array.from(
-                new Set(
-                    classIds.flatMap((cId) =>
-                        Array.from({ length: 15 }, (_, slot) => staticMeta.talentOrder[15 * (cId - 1) + slot])
-                            .filter((talentId) => talentId !== null && talentId !== undefined)
-                            .map((talentId) => Number(talentId))
-                    )
-                )
-            );
-
-            const bonusResults = await readComputedMany(
-                "runCode",
-                "AllTalentLV",
-                allTalentIds.map((talentId) => [String(talentId)])
-            );
-            const bonusMap = new Map();
-            allTalentIds.forEach((talentId, i) => {
-                const item = bonusResults?.[i];
-                if (!item?.ok) throw new Error(item?.error || `Failed to read AllTalentLV for talent ${talentId}`);
-                bonusMap.set(talentId, toNum(item.value));
-            });
-
             const availableTalentIds = [];
             const groups = classIds
                 .map((cId, groupIndex) => {
@@ -295,7 +261,6 @@ export const LibraryTab = () => {
                         const isBookAvailable = !staticMeta.blockedLibraryTalentIds.has(talentId);
                         getCurState(talentId).val = toNum(skillLevels[talentId]);
                         getMaxState(talentId).val = toNum(skillLevelsMAX[talentId]);
-                        getBonusState(talentId).val = bonusMap.get(talentId) ?? 0;
                         if (isBookAvailable) availableTalentIds.push(talentId);
 
                         talents.push({

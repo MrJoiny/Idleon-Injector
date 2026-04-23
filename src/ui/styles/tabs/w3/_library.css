@@ -57,9 +57,3 @@
     line-height: 1.3;
     color: var(--c-text-muted);
 }
-
-/* Bonus invested levels shown in badge (read-only, comes from RunCodeOfTypeXforThingY) */
-.talent-row__bonus {
-    color: var(--c-accent);
-    font-size: 0.78em;
-}
