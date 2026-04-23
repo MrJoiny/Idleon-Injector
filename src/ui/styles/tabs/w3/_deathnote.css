@@ -7,19 +7,20 @@
     min-height: 0;
 }
 
+.dn-sub-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 /* ── Mob list ─────────────────────────────────────────────────────────────── */
 
 .dn-mob-list {
     display: flex;
     flex-direction: column;
     gap: 0;
-}
-
-.dn-world-panel {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
 }
 
 /* ── Individual mob row ───────────────────────────────────────────────────── */
@@ -108,9 +109,6 @@
 /* ── Per-player row ───────────────────────────────────────────────────────── */
 
 .dn-player-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     padding: 6px 12px 6px 32px;
     border-bottom: 1px solid var(--c-border-faint);
     transition: background 0.12s;
@@ -120,33 +118,9 @@
     border-bottom: none;
 }
 
-.dn-player-row__name {
-    flex: 1;
-    font-size: 0.875rem;
-    color: var(--c-text-dim);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .dn-player-row__current-tag {
     color: var(--c-accent);
-    font-style: italic;
-}
-
-.dn-player-row__controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.dn-player-row__controls .number-input-wrapper {
-    width: 180px;
-}
-
-.dn-player-row__controls .number-input-wrapper input {
-    min-width: 10ch;
     font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
