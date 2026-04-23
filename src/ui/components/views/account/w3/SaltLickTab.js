@@ -13,15 +13,13 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanNameEffect, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -54,9 +52,11 @@ const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
 
 export const SaltLickTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Salt Lick" });
-    const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
+    const rowList = div({ class: "account-list" });
+    let rowSignature = "";
+    let upgradesMeta = [];
 
     const getLevelState = (i) => {
         if (!levelStates[i]) levelStates[i] = van.state(0);
@@ -64,14 +64,13 @@ export const SaltLickTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
-        if (!data.val || data.val.upgrades.length === 0) return;
+        if (!upgradesMeta.length) return;
         await runBulk(async () => {
-            const upgrades = data.val.upgrades;
-            const expectedLevels = upgrades.map((u) =>
+            const expectedLevels = upgradesMeta.map((u) =>
                 toLevelInt(targetLevel === null ? u.maxLevel : targetLevel, u.maxLevel)
             );
             const writes = [];
-            for (let i = 0; i < upgrades.length; i++) {
+            for (let i = 0; i < upgradesMeta.length; i++) {
                 if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
                 writes.push({ path: `SaltLick[${i}]`, value: expectedLevels[i] });
             }
@@ -85,7 +84,7 @@ export const SaltLickTab = () => {
                     );
                 }
             }
-            for (let i = 0; i < upgrades.length; i++) {
+            for (let i = 0; i < upgradesMeta.length; i++) {
                 getLevelState(i).val = expectedLevels[i];
             }
         });
@@ -98,42 +97,37 @@ export const SaltLickTab = () => {
                 const defs = toIndexedArray(rawDefs ?? []);
                 const upgrades = defs.map((entry, i) => {
                     const entryArr = toIndexedArray(entry ?? []);
-                    const name = String(entryArr[1] ?? `Salt Lick ${i + 1}`)
-                        .replace(/\+\{/g, "")
-                        .replace(/_/g, " ")
-                        .trim();
+                    const name = cleanNameEffect(entryArr[1], `Salt Lick ${i + 1}`);
                     const maxLevel = Math.max(0, Math.trunc(toNum(entryArr[4])));
                     return { name, maxLevel };
                 });
 
                 const rawArr = toIndexedArray(rawLevels ?? []);
                 const nextLevels = upgrades.map((u, i) => toLevelInt(rawArr[i], u.maxLevel));
+
+                const nextSignature = upgrades.map((u) => `${u.name}:${u.maxLevel}`).join("|");
+                if (nextSignature !== rowSignature) {
+                    rowList.replaceChildren(
+                        ...upgrades.map((u, i) =>
+                            SaltLickRow({
+                                index: i,
+                                name: u.name,
+                                maxLevel: u.maxLevel,
+                                levelState: getLevelState(i),
+                            })
+                        )
+                    );
+                    rowSignature = nextSignature;
+                }
+
                 nextLevels.forEach((level, i) => {
                     getLevelState(i).val = level;
                 });
 
-                data.val = { upgrades };
+                upgradesMeta = upgrades;
         });
 
     load();
-
-    const renderBody = (resolved) => {
-        if (!resolved.upgrades.length) {
-            return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Salt Lick data found." });
-        }
-
-        return div(
-            { class: "account-list" },
-            ...resolved.upgrades.map((u, i) =>
-                SaltLickRow({
-                    index: i,
-                    name: u.name,
-                    maxLevel: u.maxLevel,
-                    levelState: getLevelState(i),
-                })
-            )
-        );
-    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -160,8 +154,11 @@ export const SaltLickTab = () => {
                 },
             }),
         }),
-        loadState: { loading, error, data },
-        renderBody,
+        persistentState: { loading, error },
+        persistentLoadingText: "READING SALT LICK",
+        persistentErrorTitle: "SALT LICK READ FAILED",
+        persistentInitialWrapperClass: "account-list",
+        body: rowList,
     });
 };
 
