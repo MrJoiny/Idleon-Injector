@@ -656,6 +656,10 @@
     padding: 8px;
 }
 
+.tab-add-row--dual-action {
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
+}
+
 .tab-add-row__label {
     color: var(--c-text-dim);
     font-size: 0.875rem;

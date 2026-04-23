@@ -18,8 +18,3 @@
 
 /* .hat-rack-row__item-id → .account-row__sub-label (_account-pages.css) */
 
-
-/* Hat Rack add-row has an extra button column; override the base template grid */
-.hat-rack-add-row {
-    grid-template-columns: auto minmax(220px, 1fr) auto auto;
-}

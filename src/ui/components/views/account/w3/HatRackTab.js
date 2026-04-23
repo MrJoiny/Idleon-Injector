@@ -16,12 +16,13 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
-import { ActionButton } from "../components/ActionButton.js";
 import { AccountSection } from "../components/AccountSection.js";
+import { AddFromListSection } from "../components/AddFromListSection.js";
+import { RemovableStoredRow } from "../components/RemovableStoredRow.js";
 import { cleanName, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, span, select, option } = van.tags;
+const { div } = van.tags;
 
 const RACK_PATH = "Spelunk[46]";
 const SLAB_HISTORY_PATH = "Cards[1]";
@@ -74,37 +75,17 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
 };
 
 const RackRow = ({ row, onRemove }) => {
-    const { status, run } = useWriteStatus();
-
-    const removeRow = async () => {
-        await run(async () => {
-            await onRemove(row.index);
-        });
-    };
-
-    return div(
-        { class: "account-row hat-rack-row" },
-        div(
-            { class: "account-row__info" },
-            span({ class: "account-row__index" }, `#${row.index + 1}`),
-            div(
-                { class: "hat-rack-row__name-group" },
-                span({ class: "account-row__name" }, row.name || row.itemId),
-                span({ class: "account-row__sub-label" }, row.itemId)
-            )
-        ),
-        span({ class: "account-row__badge" }, "ON RACK"),
-        div(
-            { class: "account-row__controls" },
-            ActionButton({
-                label: "REMOVE",
-                status,
-                variant: "danger",
-                disabled: () => onRemove.isBusy(),
-                onClick: removeRow,
-            })
-        )
-    );
+    return RemovableStoredRow({
+        index: row.index,
+        primaryLabel: row.name,
+        fallbackLabel: row.itemId,
+        secondaryLabel: row.itemId,
+        badge: "ON RACK",
+        rowClass: "hat-rack-row",
+        nameGroupClass: "hat-rack-row__name-group",
+        onRemove,
+        isBusy: onRemove.isBusy,
+    });
 };
 
 export const HatRackTab = () => {
@@ -149,17 +130,17 @@ export const HatRackTab = () => {
 
     const load = async () => {
         return run(async () => {
-                let nextItemDefs = itemDefsCache;
-                if (!nextItemDefs) {
-                    const defs = await gga(ITEM_DEFS_PATH);
-                    nextItemDefs = defs && typeof defs === "object" ? defs : {};
-                }
+            let nextItemDefs = itemDefsCache;
+            if (!nextItemDefs) {
+                const defs = await gga(ITEM_DEFS_PATH);
+                nextItemDefs = defs && typeof defs === "object" ? defs : {};
+            }
 
-                const [rawRack, rawSlabHistory] = await Promise.all([gga(RACK_PATH), gga(SLAB_HISTORY_PATH)]);
+            const [rawRack, rawSlabHistory] = await Promise.all([gga(RACK_PATH), gga(SLAB_HISTORY_PATH)]);
 
-                itemDefsCache = nextItemDefs;
-                applyRackState(rawRack);
-                slabHistoryIds.val = [...normalizeRackIds(rawSlabHistory)];
+            itemDefsCache = nextItemDefs;
+            applyRackState(rawRack);
+            slabHistoryIds.val = [...normalizeRackIds(rawSlabHistory)];
         });
     };
 
@@ -282,39 +263,22 @@ export const HatRackTab = () => {
             class: "scrollable-panel content-stack",
         },
 
-        AccountSection({
+        AddFromListSection({
             title: "ADD ELIGIBLE HAT",
             note: () => `${missingCount.val} AVAILABLE TO ADD`,
-            body: div(
-                { class: "tab-add-row hat-rack-add-row" },
-                span({ class: "tab-add-row__label" }, "SELECT HAT"),
-                () =>
-                    select(
-                        {
-                            class: "select-base tab-add-row__select",
-                            value: selectedAddItemId,
-                            onchange: (e) => (selectedAddItemId.val = e.target.value),
-                        },
-                        ...(missingOptions.val.length === 0
-                            ? [option({ value: "" }, "No eligible hats left to add")]
-                            : missingOptions.val.map((item) => option({ value: item.itemId }, `${item.name} (${item.itemId})`)))
-                    ),
-                ActionButton({
-                    label: "ADD",
-                    status: addStatus,
-                    disabled: () => mutating.val || !selectedAddItemId.val || missingOptions.val.length === 0,
-                    onClick: addSelected,
-                }),
-                ActionButton({
-                    label: "ADD ALL",
-                    status: addStatus,
-                    variant: "danger",
-                    disabled: () => mutating.val || missingOptions.val.length === 0,
-                    onClick: addAllAvailable,
-                })
-            ),
-        })
-        ,
+            selectLabel: "SELECT HAT",
+            selectedValue: selectedAddItemId,
+            options: missingOptions,
+            emptyOptionLabel: "No eligible hats left to add",
+            getOptionValue: (item) => item.itemId,
+            getOptionLabel: (item) => `${item.name} (${item.itemId})`,
+            addStatus,
+            addDisabled: () => mutating.val || !selectedAddItemId.val || missingOptions.val.length === 0,
+            addAllDisabled: () => mutating.val || missingOptions.val.length === 0,
+            onAdd: addSelected,
+            onAddAll: addAllAvailable,
+            rowClass: "tab-add-row tab-add-row--dual-action",
+        }),
 
         AccountSection({
             title: "ON RACK",
@@ -341,7 +305,7 @@ export const HatRackTab = () => {
         header: AccountTabHeader({
             title: "HAT RACK",
             description:
-                "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets. Rack changes also sync Slab history (Cards[1]).",
+                "Manage Hat rack entries. Remove any rack hat, or add eligible premium helmets. Rack changes also sync Slab history (Cards[1]).",
             actions: RefreshButton({
                 onRefresh: () => {
                     if (mutating.val) return;
@@ -357,5 +321,3 @@ export const HatRackTab = () => {
         body,
     });
 };
-
-
