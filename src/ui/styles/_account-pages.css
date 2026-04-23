@@ -146,11 +146,30 @@
     min-height: 0;
 }
 
+/* 3-equal-column grid used by multi-column account layouts */
+.grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
 /* 4-equal-column grid used by cauldron / liquid layouts */
 .grid-4col {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+}
+
+@media (max-width: 1100px) {
+    .grid-3col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .grid-3col {
+        grid-template-columns: 1fr;
+    }
 }
 
 .account-loader {

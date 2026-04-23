@@ -1,0 +1,12 @@
+/* Construction Buildings tab */
+
+.construction-buildings-grid {
+    align-items: start;
+}
+
+.construction-buildings-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}

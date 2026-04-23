@@ -15,18 +15,17 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const BUILDING_COUNT = 27;
 
@@ -70,9 +69,11 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
 
 export const ConstructionBuildingsTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Construction Buildings" });
-    const data = van.state(null);
     const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
+    const rowList = div({ class: "account-list construction-buildings-list" });
+    let rowSignature = "";
+    let buildingMeta = [];
 
     const load = async () =>
         run(async () => {
@@ -87,7 +88,7 @@ export const ConstructionBuildingsTab = () => {
 
                 const buildings = buildingInfo.map((entry, i) => {
                     const entryArr = toIndexedArray(entry ?? []);
-                    const name = String(entryArr[0] ?? "").replace(/_/g, " ");
+                    const name = cleanName(entryArr[0], `Building ${i + 1}`);
                     const baseMax = toNum(entryArr[8]);
                     if (!computedResults[i]?.ok) {
                         throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
@@ -97,21 +98,45 @@ export const ConstructionBuildingsTab = () => {
                     return { name, baseMax, extraMax, maxLevel };
                 });
 
+                const nextSignature = buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|");
+                if (nextSignature !== rowSignature) {
+                    const rowsPerColumn = Math.ceil(buildings.length / 3);
+                    const columns = Array.from({ length: 3 }, (_, columnIndex) =>
+                        div(
+                            { class: "construction-buildings-col" },
+                            ...buildings
+                                .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+                                .map((building, offset) => {
+                                    const index = columnIndex * rowsPerColumn + offset;
+                                    return BuildingRow({
+                                        index,
+                                        name: building.name,
+                                        maxLevel: building.maxLevel,
+                                        levelState: levelStates[index],
+                                    });
+                                })
+                        )
+                    );
+                    rowList.replaceChildren(
+                        div({ class: "construction-buildings-grid grid-3col" }, ...columns)
+                    );
+                    rowSignature = nextSignature;
+                }
+
                 const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
                 for (let i = 0; i < BUILDING_COUNT; i++) {
                     levelStates[i].val = toNum(nextLevels[i]);
                 }
 
-                data.val = { buildings };
+                buildingMeta = buildings;
         });
 
     const doMaxAll = async () => {
-        if (!data.val) return;
+        if (!buildingMeta.length) return;
         await runMaxAll(async () => {
-            const buildings = data.val.buildings;
             const writes = [];
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                const maxLv = buildings[i]?.maxLevel ?? 0;
+                const maxLv = buildingMeta[i]?.maxLevel ?? 0;
                 if (toNum(levelStates[i].val) !== maxLv) {
                     writes.push({ path: `TowerInfo[${i}]`, value: maxLv });
                 }
@@ -128,7 +153,7 @@ export const ConstructionBuildingsTab = () => {
                 }
             }
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                levelStates[i].val = buildings[i]?.maxLevel ?? 0;
+                levelStates[i].val = buildingMeta[i]?.maxLevel ?? 0;
             }
         });
     };
@@ -140,48 +165,24 @@ export const ConstructionBuildingsTab = () => {
             title: "CONSTRUCTION - BUILDINGS",
             description: "Set building levels. Each building has its own max.",
             actions: [
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "account-btn account-btn--max-reset",
-                                bulkStatus.val === "loading" ? "account-btn--loading" : "",
-                                bulkStatus.val === "success" ? "account-row--success" : "",
-                                bulkStatus.val === "error" ? "account-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading" || loading.val,
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doMaxAll();
-                        },
+                ActionButton({
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    variant: "max-reset",
+                    disabled: () => loading.val,
+                    onClick: (e) => {
+                        e.preventDefault();
+                        doMaxAll();
                     },
-                    () => (bulkStatus.val === "loading" ? "MAXING..." : "MAX ALL")
-                ),
+                }),
                 RefreshButton({ onRefresh: load }),
             ],
         }),
-        loadState: { loading, error, data },
-        renderBody: (resolved) => {
-            if (!resolved.buildings.length) {
-                return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No building data found." });
-            }
-
-            return div(
-                { class: "account-list" },
-                ...resolved.buildings.map((building, index) =>
-                    BuildingRow({
-                        index,
-                        name: building.name,
-                        maxLevel: building.maxLevel,
-                        levelState: levelStates[index],
-                    })
-                )
-            );
-        },
+        persistentState: { loading, error },
+        persistentLoadingText: "READING CONSTRUCTION BUILDINGS",
+        persistentErrorTitle: "CONSTRUCTION BUILDINGS READ FAILED",
+        persistentInitialWrapperClass: "account-list",
+        body: rowList,
     });
 };
 
