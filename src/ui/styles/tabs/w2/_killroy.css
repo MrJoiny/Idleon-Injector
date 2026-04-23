@@ -25,75 +25,10 @@
     text-transform: uppercase;
 }
 
-.killroy-best-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.killroy-best-toolbar__label {
-    color: var(--c-text-dim);
-    font-size: 0.875rem;
-    letter-spacing: 0.06em;
-}
-
-.killroy-best-toolbar__select {
-    min-width: 220px;
-    max-width: 320px;
-}
-
-.killroy-best-toolbar__count {
-    margin-left: auto;
-    color: var(--c-text-muted);
-    font-size: 0.875rem;
-    letter-spacing: 0.04em;
-}
-
-/* Killroy add-row has 4 cols (label | select | number | btn); override base grid */
-.killroy-add-row {
-    grid-template-columns: auto minmax(220px, 1fr) auto auto;
-}
-
-.killroy-add-row .number-input-wrapper {
-    width: 120px;
-}
-
-.killroy-best-table-wrap {
+.killroy-best-empty {
+    padding: 10px 12px;
     border: 1px solid var(--c-border);
-    overflow: auto;
-}
-
-.killroy-best-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.killroy-best-table th,
-.killroy-best-table td {
-    border-bottom: 1px solid var(--c-border);
-    padding: 6px 8px;
-    font-size: 0.875rem;
-}
-
-.killroy-best-table th {
-    background: var(--c-panel);
-    color: var(--c-text-dim);
-    text-align: left;
-    letter-spacing: 0.06em;
-}
-
-.killroy-best-table__mob {
-    color: var(--c-text-main);
-}
-
-.killroy-best-table__kills {
-    color: var(--c-accent);
-    font-family: var(--font-mono);
-}
-
-.killroy-best-table__empty {
+    background: var(--c-panel-dim);
     color: var(--c-text-muted);
-    text-align: center;
-    padding: 14px;
+    font-size: 0.875rem;
 }
