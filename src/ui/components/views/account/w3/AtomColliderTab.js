@@ -14,15 +14,13 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanNameEffect, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -52,9 +50,11 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
 
 export const AtomColliderTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Atom Collider" });
-    const data = van.state(null);
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const levelStates = [];
+    const rowList = div({ class: "account-list" });
+    let rowSignature = "";
+    let atomsMeta = [];
 
     const getLevelState = (i) => {
         if (!levelStates[i]) levelStates[i] = van.state(0);
@@ -62,12 +62,11 @@ export const AtomColliderTab = () => {
     };
 
     const doSetAll = async (targetLevel) => {
-        if (!data.val || data.val.atoms.length === 0) return;
+        if (!atomsMeta.length) return;
         await runBulk(async () => {
-            const atoms = data.val.atoms;
-            const expectedLevels = atoms.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
+            const expectedLevels = atomsMeta.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
             const writes = [];
-            for (let i = 0; i < atoms.length; i++) {
+            for (let i = 0; i < atomsMeta.length; i++) {
                 if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
                 writes.push({ path: `Atoms[${i}]`, value: expectedLevels[i] });
             }
@@ -81,7 +80,7 @@ export const AtomColliderTab = () => {
                     );
                 }
             }
-            for (let i = 0; i < atoms.length; i++) {
+            for (let i = 0; i < atomsMeta.length; i++) {
                 getLevelState(i).val = expectedLevels[i];
             }
         });
@@ -107,41 +106,36 @@ export const AtomColliderTab = () => {
 
                 const atoms = atomInfoArr.map((entry, i) => {
                     const entryArr = toIndexedArray(entry ?? []);
-                    const name = String(entryArr[0] ?? `Atom ${i + 1}`)
-                        .replace(/\+\{/g, "")
-                        .replace(/_/g, " ")
-                        .trim();
+                    const name = cleanNameEffect(entryArr[0], `Atom ${i + 1}`);
                     return { name, maxLevel: maxLevels[i] ?? 0 };
                 });
 
                 const rawArr = toIndexedArray(rawLevels ?? []);
                 const nextLevels = atoms.map((_, i) => toNum(rawArr[i]));
+
+                const nextSignature = atoms.map((a) => `${a.name}:${a.maxLevel}`).join("|");
+                if (nextSignature !== rowSignature) {
+                    rowList.replaceChildren(
+                        ...atoms.map((a, i) =>
+                            AtomRow({
+                                index: i,
+                                name: a.name,
+                                maxLevel: a.maxLevel,
+                                levelState: getLevelState(i),
+                            })
+                        )
+                    );
+                    rowSignature = nextSignature;
+                }
+
                 nextLevels.forEach((level, i) => {
                     getLevelState(i).val = level;
                 });
 
-                data.val = { atoms };
+                atomsMeta = atoms;
         });
 
     load();
-
-    const renderBody = (resolved) => {
-        if (!resolved.atoms.length) {
-            return EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." });
-        }
-
-        return div(
-            { class: "account-list" },
-            ...resolved.atoms.map((a, i) =>
-                AtomRow({
-                    index: i,
-                    name: a.name,
-                    maxLevel: a.maxLevel,
-                    levelState: getLevelState(i),
-                })
-            )
-        );
-    };
 
     return AccountPageShell({
         header: AccountTabHeader({
@@ -168,8 +162,11 @@ export const AtomColliderTab = () => {
                 },
             }),
         }),
-        loadState: { loading, error, data },
-        renderBody,
+        persistentState: { loading, error },
+        persistentLoadingText: "READING ATOM COLLIDER",
+        persistentErrorTitle: "ATOM COLLIDER READ FAILED",
+        persistentInitialWrapperClass: "account-list",
+        body: rowList,
     });
 };
 
