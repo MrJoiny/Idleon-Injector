@@ -27,6 +27,7 @@ import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
@@ -34,22 +35,6 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, h3, input } = van.tags;
-const { svg, path, line: svgLine } = van.tags("http://www.w3.org/2000/svg");
-
-const FlagIcon = (props = {}) =>
-    svg(
-        {
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": "2",
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-            ...props,
-        },
-        path({ d: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" }),
-        svgLine({ x1: "4", y1: "22", x2: "4", y2: "15" })
-    );
 
 const MAIN_COLS = 12;
 const MAIN_ROWS = 8;
@@ -116,13 +101,11 @@ const getTinyTypeCode = (cogId) => {
     return id.startsWith("CogSm") ? id.charAt(5) || null : null;
 };
 
+const clampTinyTier = (value) => Math.max(0, Math.min(9, toNum(value)));
+
 const cloneCogMapStats = (entry) => {
     if (!entry || typeof entry !== "object" || !entry.h || typeof entry.h !== "object") return {};
-    const out = {};
-    for (const key of Object.keys(entry.h)) {
-        out[key] = entry.h[key];
-    }
-    return out;
+    return { ...entry.h };
 };
 
 const getSlotState = (rawValue) => {
@@ -177,10 +160,44 @@ const stateLabel = (state) => {
     return "UNLOCKING";
 };
 
+const isPlayerCog = (cogId) => String(cogId ?? "").startsWith("Player_");
+const isReadOnlyCog = (cogId) => isPlayerCog(cogId) || PREMIUM_COG_IDS.has(String(cogId ?? ""));
+
+const renderWriteStatus = (statusState, labels) => () => {
+    const status = statusState.val;
+    if (!status) return null;
+    return span({ class: `write-status write-status--${status}` }, labels[status] ?? "");
+};
+
+const cogsUiStore = {
+    popupHost: null,
+};
+
+const ensureCogsPopupHost = () => {
+    if (!cogsUiStore.popupHost) {
+        const host = document.createElement("div");
+        host.className = "cogs-popup-host";
+        document.body.appendChild(host);
+        cogsUiStore.popupHost = host;
+    }
+    return cogsUiStore.popupHost;
+};
+
+const CogsEditorRow = ({ code, name, meaning, inputNode, actionButton }) =>
+    div(
+        { class: "cogs-cog-stat-row" },
+        div({ class: "cogs-cog-stat-row__code" }, code),
+        div(
+            { class: "cogs-cog-stat-row__text" },
+            div({ class: "cogs-cog-stat-row__name" }, name),
+            div({ class: "cogs-cog-stat-row__meaning" }, meaning)
+        ),
+        div({ class: "cogs-cog-stat-row__edit" }, inputNode, actionButton)
+    );
+
 export const CogsTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Cogs" });
 
-    const selectedSlot = van.state(0);
     const activeSlot = van.state(null);
     const popupPos = van.state({ left: 24, top: 24, maxHeight: POPOVER_HEIGHT });
     const slotValues = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state(0));
@@ -198,26 +215,28 @@ export const CogsTab = () => {
     let activeCogNameRequestId = 0;
     const tinyTypeInput = van.state("_");
     const tinyTierInput = van.state("0");
+    const activeCogMapField = van.state(null);
+    const activeTinyField = van.state(null);
 
     const { status: lockStatus, run: runLockWrite, clearStatus: clearLockStatus } = useWriteStatus();
 
     const { status: cogMapWriteStatus, run: runCogMapWrite } = useWriteStatus();
     const { status: tinyWriteStatus, run: runTinyWrite, clearStatus: clearTinyWriteStatus } = useWriteStatus();
-    const getActiveIndex = () => (activeSlot.val === null ? selectedSlot.val : activeSlot.val);
+    const getActiveIndex = () => activeSlot.val ?? 0;
+    const getSlotCogId = (index) => String(cogOrders[index].val ?? "Blank");
 
     const syncTinyInputsFromSlot = (index) => {
         if (!isSideSlot(index)) return;
-        const cogId = String(cogOrders[index].val ?? "Blank");
+        const cogId = getSlotCogId(index);
         const typeCode = getTinyTypeCode(cogId);
-        const tier = getTinyTier(cogId);
         tinyTypeInput.val = TINY_COG_TYPES.has(typeCode) ? typeCode : "_";
-        tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(tier) ? tier : 0)));
+        tinyTierInput.val = String(clampTinyTier(getTinyTier(cogId)));
     };
 
     const resolveCogName = async (cogId) => {
         const id = String(cogId ?? "Blank");
         if (!id || id === "Blank") return "Blank";
-        if (id.startsWith("Player_")) return id.substring("Player_".length) || id;
+        if (isPlayerCog(id)) return id.substring("Player_".length) || id;
         if (cogNameCache.has(id)) return cogNameCache.get(id);
         const computedName = await readComputed("runCodeType", id, []);
         const parsedName = computedName ? String(computedName).replaceAll("_", " ") : id;
@@ -227,7 +246,7 @@ export const CogsTab = () => {
 
     const refreshActiveCogName = async (index) => {
         const reqId = ++activeCogNameRequestId;
-        const cogId = String(cogOrders[index].val ?? "Blank");
+        const cogId = getSlotCogId(index);
         activeCogName.val = cogId;
         activeCogNameStatus.val = "loading";
         try {
@@ -317,6 +336,7 @@ export const CogsTab = () => {
         // parseNumber handles formatted strings like "50K" -> 50000
         const numVal = parseNumber(rawValue);
         const writeVal = numVal !== null ? numVal : rawValue;
+        activeCogMapField.val = field;
         await runCogMapWrite(async () => {
             const writePath = `CogMap[${cogIdx}].h.${field}`;
             await writeVerified(writePath, writeVal, {
@@ -330,25 +350,25 @@ export const CogsTab = () => {
         const index = getActiveIndex();
         if (!isSideSlot(index)) return;
 
-        const slot = getCogOrderIndex(index);
+        const cogOrderIndex = getCogOrderIndex(index);
 
         await runTinyWrite(async () => {
             const normalizedType = String(tinyTypeInput.val ?? "")
                 .trim()
                 .slice(0, 1);
-            const normalizedTier = Math.max(0, Math.min(9, Number(tinyTierInput.val) || 0));
+            const normalizedTier = clampTinyTier(tinyTierInput.val);
             if (!TINY_COG_TYPES.has(normalizedType)) {
                 throw new Error('Tiny cog type must be "_", "a", or "b".');
             }
             const newId = `CogSm${normalizedType}${normalizedTier}`;
 
-            const cogOrderPath = `CogOrder[${slot}]`;
+            const cogOrderPath = `CogOrder[${cogOrderIndex}]`;
             await writeVerified(cogOrderPath, newId, {
                 message: `Write mismatch at ${cogOrderPath}: expected ${newId}`,
             });
             cogOrders[index].val = newId;
-            tinyTypeInput.val = TINY_COG_TYPES.has(normalizedType) ? normalizedType : "_";
-            tinyTierInput.val = String(Math.max(0, Math.min(9, Number.isFinite(normalizedTier) ? normalizedTier : 0)));
+            tinyTypeInput.val = normalizedType;
+            tinyTierInput.val = String(normalizedTier);
             void refreshActiveCogName(index);
         });
     };
@@ -359,90 +379,56 @@ export const CogsTab = () => {
 
         return div(
             { class: "cogs-tiny-editor" },
-            div(
-                {
-                    class: () =>
-                        [
-                            "cogs-cog-stat-row",
-                            tinyWriteStatus.val === "success" ? "account-row--success" : "",
-                            tinyWriteStatus.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                },
-                div({ class: "cogs-cog-stat-row__code" }, "t"),
-                div(
-                    { class: "cogs-cog-stat-row__text" },
-                    div({ class: "cogs-cog-stat-row__name" }, "Tiny Type"),
-                    div({ class: "cogs-cog-stat-row__meaning" }, "Allowed values: _, a, b")
-                ),
-                div(
-                    { class: "cogs-cog-stat-row__edit" },
-                    input({
-                        type: "text",
-                        class: "cogs-cog-stat-input",
-                        maxLength: 1,
-                        value: () => tinyTypeInput.val,
-                        oninput: (e) => {
-                            tinyTypeInput.val = String(e.target.value ?? "")
-                                .trim()
-                                .slice(0, 1);
-                        },
-                    }),
-                    button(
-                        {
-                            type: "button",
-                            class: () =>
-                                `cogs-cog-stat-set-btn account-btn account-btn--apply${tinyWriteStatus.val === "loading" ? " account-btn--loading" : ""}`,
-                            disabled: () => tinyWriteStatus.val === "loading",
-                            onclick: () => setTinyCog(),
-                        },
-                        "SET"
-                    )
-                )
-            ),
-            div(
-                {
-                    class: () =>
-                        [
-                            "cogs-cog-stat-row",
-                            tinyWriteStatus.val === "success" ? "account-row--success" : "",
-                            tinyWriteStatus.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                },
-                div({ class: "cogs-cog-stat-row__code" }, "lvl"),
-                div(
-                    { class: "cogs-cog-stat-row__text" },
-                    div({ class: "cogs-cog-stat-row__name" }, "Tiny Tier"),
-                    div({ class: "cogs-cog-stat-row__meaning" }, "Range: 0 to 9")
-                ),
-                div(
-                    { class: "cogs-cog-stat-row__edit" },
-                    input({
-                        type: "number",
-                        class: "cogs-cog-stat-input",
-                        min: "0",
-                        max: "9",
-                        step: "1",
-                        value: () => tinyTierInput.val,
-                        oninput: (e) => {
-                            tinyTierInput.val = String(e.target.value ?? "");
-                        },
-                    }),
-                    button(
-                        {
-                            type: "button",
-                            class: () =>
-                                `cogs-cog-stat-set-btn account-btn account-btn--apply${tinyWriteStatus.val === "loading" ? " account-btn--loading" : ""}`,
-                            disabled: () => tinyWriteStatus.val === "loading",
-                            onclick: () => setTinyCog(),
-                        },
-                        "SET"
-                    )
-                )
-            )
+            CogsEditorRow({
+                code: "t",
+                name: "Tiny Type",
+                meaning: "Allowed values: _, a, b",
+                inputNode: input({
+                    type: "text",
+                    class: "cogs-cog-stat-input",
+                    maxLength: 1,
+                    value: () => tinyTypeInput.val,
+                    oninput: (e) => {
+                        tinyTypeInput.val = String(e.target.value ?? "")
+                            .trim()
+                            .slice(0, 1);
+                    },
+                }),
+                actionButton: ActionButton({
+                    label: "SET",
+                    status: () => (activeTinyField.val === "type" ? tinyWriteStatus.val : null),
+                    className: "cogs-cog-stat-set-btn",
+                    onClick: () => {
+                        activeTinyField.val = "type";
+                        return setTinyCog();
+                    },
+                }),
+            }),
+            CogsEditorRow({
+                code: "lvl",
+                name: "Tiny Tier",
+                meaning: "Range: 0 to 9",
+                inputNode: input({
+                    type: "number",
+                    class: "cogs-cog-stat-input",
+                    min: "0",
+                    max: "9",
+                    step: "1",
+                    value: () => tinyTierInput.val,
+                    oninput: (e) => {
+                        tinyTierInput.val = String(e.target.value ?? "");
+                    },
+                }),
+                actionButton: ActionButton({
+                    label: "SET",
+                    status: () => (activeTinyField.val === "tier" ? tinyWriteStatus.val : null),
+                    className: "cogs-cog-stat-set-btn",
+                    onClick: () => {
+                        activeTinyField.val = "tier";
+                        return setTinyCog();
+                    },
+                }),
+            })
         );
     };
 
@@ -473,10 +459,11 @@ export const CogsTab = () => {
     const openSlotPopup = (index, event) => {
         const mouseX = event?.clientX ?? 0;
         const mouseY = event?.clientY ?? 0;
-        selectedSlot.val = index;
         popupPos.val = computePopupPos(mouseX, mouseY);
         activeSlot.val = index;
         clearLockStatus();
+        activeCogMapField.val = null;
+        activeTinyField.val = null;
         clearTinyWriteStatus();
         syncTinyInputsFromSlot(index);
         void refreshActiveCogName(index);
@@ -485,27 +472,25 @@ export const CogsTab = () => {
     const closeSlotPopup = () => {
         activeSlot.val = null;
         clearLockStatus();
+        activeCogMapField.val = null;
+        activeTinyField.val = null;
         clearTinyWriteStatus();
     };
 
     const renderCogOverlay = (index) => {
-        const order = cogOrders[index].val;
-        if (!order || order === "Blank") return new Text("");
-        if (order.startsWith("Player_")) {
-            return renderCogSvg("headBIG", "cogs-slot-cog");
-        }
-        return renderCogSvg(order, "cogs-slot-cog");
+        const cogId = getSlotCogId(index);
+        if (cogId === "Blank") return new Text("");
+        return renderCogSvg(isPlayerCog(cogId) ? "headBIG" : cogId, "cogs-slot-cog");
     };
 
     const renderSlotBackground = (index) => {
         const state = getSlotState(slotValues[index].val);
-        const id = isMainSlot(index)
-            ? state === "unlocked"
-                ? "CogSq1"
-                : "CogSq0"
-            : state === "unlocked"
-              ? "CogSq_S1"
-              : "CogSq_S0";
+        let id = "CogSq0";
+        if (isMainSlot(index)) {
+            id = state === "unlocked" ? "CogSq1" : "CogSq0";
+        } else {
+            id = state === "unlocked" ? "CogSq_S1" : "CogSq_S0";
+        }
         return renderCogSvg(id, "cogs-slot-bg");
     };
 
@@ -596,8 +581,8 @@ export const CogsTab = () => {
             const showMainMode = isMainSlot(index);
             const isUnlocked = slotState === "unlocked";
             const stats = cogMapStats[index].val ?? {};
-            const cogId = String(cogOrders[index].val ?? "Blank");
-            const readOnly = cogId.startsWith("Player_") || PREMIUM_COG_IDS.has(cogId);
+            const cogId = getSlotCogId(index);
+            const readOnly = isReadOnlyCog(cogId);
             const presentKeys = COG_MAP_FIELD_ORDER.filter((key) => Object.prototype.hasOwnProperty.call(stats, key));
 
             const statsNode = !presentKeys.length
@@ -613,42 +598,19 @@ export const CogsTab = () => {
                               value: displayVal,
                               disabled: readOnly,
                           });
-                          return div(
-                              {
-                                  class: () =>
-                                      [
-                                          "cogs-cog-stat-row",
-                                          cogMapWriteStatus.val === "success" ? "account-row--success" : "",
-                                          cogMapWriteStatus.val === "error" ? "account-row--error" : "",
-                                      ]
-                                          .filter(Boolean)
-                                          .join(" "),
-                              },
-                              div({ class: "cogs-cog-stat-row__code" }, key),
-                              div(
-                                  { class: "cogs-cog-stat-row__text" },
-                                  div({ class: "cogs-cog-stat-row__name" }, COG_MAP_FIELD_META[key]?.keyName ?? key),
-                                  div(
-                                      { class: "cogs-cog-stat-row__meaning" },
-                                      COG_MAP_FIELD_META[key]?.meaning ?? "Unknown field"
-                                  )
-                              ),
-                              div(
-                                  { class: "cogs-cog-stat-row__edit" },
-                                  inputEl,
-                                  button(
-                                      {
-                                          type: "button",
-                                          class: () =>
-                                              "cogs-cog-stat-set-btn account-btn account-btn--apply" +
-                                              (cogMapWriteStatus.val === "loading" ? " account-btn--loading" : ""),
-                                          disabled: () => readOnly || cogMapWriteStatus.val === "loading",
-                                          onclick: () => setCogMapField(key, inputEl.value),
-                                      },
-                                      "SET"
-                                  )
-                              )
-                          );
+                          return CogsEditorRow({
+                              code: key,
+                              name: COG_MAP_FIELD_META[key]?.keyName ?? key,
+                              meaning: COG_MAP_FIELD_META[key]?.meaning ?? "Unknown field",
+                              inputNode: inputEl,
+                              actionButton: ActionButton({
+                                  label: "SET",
+                                  status: () => (activeCogMapField.val === key ? cogMapWriteStatus.val : null),
+                                  className: "cogs-cog-stat-set-btn",
+                                  disabled: () => readOnly,
+                                  onClick: () => setCogMapField(key, inputEl.value),
+                              }),
+                          });
                       })
                   );
 
@@ -669,7 +631,7 @@ export const CogsTab = () => {
                 flaggedSlots.val.has(index)
                     ? div(
                           { class: "cogs-flag-indicator" },
-                          FlagIcon({ class: "cogs-flag-indicator__icon", width: "14", height: "14" }),
+                          Cogs.FlagIcon({ class: "cogs-flag-indicator__icon", width: "14", height: "14" }),
                           span("FLAG PLACED")
                       )
                     : null,
@@ -695,92 +657,44 @@ export const CogsTab = () => {
         div(
             { class: "cogs-modal-footer" },
             div(
-                {
-                    class: () =>
-                        [
-                            "cogs-selection-actions",
-                            lockStatus.val === "success" ? "account-row--success" : "",
-                            lockStatus.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                },
-                button(
-                    {
-                        type: "button",
-                        class: () =>
-                            `account-btn account-btn--danger ${lockStatus.val === "loading" ? "account-btn--loading" : ""}`,
-                        // Block lock if: already locked, or a cog/player occupies the slot
-                        disabled: () => {
-                            const index = getActiveIndex();
-                            const cogId = String(cogOrders[index].val ?? "Blank");
-                            return (
-                                lockStatus.val === "loading" ||
-                                getSlotState(slotValues[index].val) === "locked" ||
-                                cogId !== "Blank"
-                            );
-                        },
-                        onclick: () => setSlotLockState(getActiveIndex(), false),
+                { class: "cogs-selection-actions" },
+                ActionButton({
+                    label: "LOCK",
+                    status: lockStatus,
+                    variant: "danger",
+                    disabled: () => {
+                        const index = getActiveIndex();
+                        return getSlotState(slotValues[index].val) === "locked" || getSlotCogId(index) !== "Blank";
                     },
-                    "LOCK"
-                ),
-                button(
-                    {
-                        type: "button",
-                        class: () =>
-                            `account-btn account-btn--apply ${lockStatus.val === "loading" ? "account-btn--loading" : ""}`,
-                        disabled: () => {
-                            const index = getActiveIndex();
-                            return (
-                                lockStatus.val === "loading" ||
-                                getSlotState(slotValues[index].val) === "unlocked" ||
-                                PREMIUM_COG_IDS.has(String(cogOrders[index].val ?? ""))
-                            );
-                        },
-                        onclick: () => setSlotLockState(getActiveIndex(), true),
+                    onClick: () => setSlotLockState(getActiveIndex(), false),
+                }),
+                ActionButton({
+                    label: "UNLOCK",
+                    status: lockStatus,
+                    disabled: () => {
+                        const index = getActiveIndex();
+                        return getSlotState(slotValues[index].val) === "unlocked" || PREMIUM_COG_IDS.has(getSlotCogId(index));
                     },
-                    "UNLOCK"
-                )
+                    onClick: () => setSlotLockState(getActiveIndex(), true),
+                })
             ),
             div(
                 { class: "cogs-modal-footer-right" },
-                () =>
-                    lockStatus.val
-                        ? span(
-                              { class: `write-status write-status--${lockStatus.val}` },
-                              lockStatus.val === "loading"
-                                  ? "SAVING..."
-                                  : lockStatus.val === "success"
-                                    ? "SAVED"
-                                    : "WRITE FAILED"
-                          )
-                        : null,
-                () =>
-                    cogMapWriteStatus.val
-                        ? span(
-                              {
-                                  class: `write-status write-status--${cogMapWriteStatus.val}`,
-                              },
-                              cogMapWriteStatus.val === "loading"
-                                  ? "SAVING FIELD..."
-                                  : cogMapWriteStatus.val === "success"
-                                    ? "FIELD SAVED"
-                                    : "FIELD WRITE FAILED"
-                          )
-                        : null,
-                () =>
-                    tinyWriteStatus.val
-                        ? span(
-                              {
-                                  class: `write-status write-status--${tinyWriteStatus.val}`,
-                              },
-                              tinyWriteStatus.val === "loading"
-                                  ? "SAVING TINY..."
-                                  : tinyWriteStatus.val === "success"
-                                    ? "TINY SAVED"
-                                    : "TINY WRITE FAILED"
-                          )
-                        : null,
+                renderWriteStatus(lockStatus, {
+                    loading: "SAVING...",
+                    success: "SAVED",
+                    error: "WRITE FAILED",
+                }),
+                renderWriteStatus(cogMapWriteStatus, {
+                    loading: "SAVING FIELD...",
+                    success: "FIELD SAVED",
+                    error: "FIELD WRITE FAILED",
+                }),
+                renderWriteStatus(tinyWriteStatus, {
+                    loading: "SAVING TINY...",
+                    success: "TINY SAVED",
+                    error: "TINY WRITE FAILED",
+                }),
                 button({ type: "button", class: "btn-secondary", onclick: closeSlotPopup }, "CLOSE")
             )
         )
@@ -804,11 +718,11 @@ export const CogsTab = () => {
 
     load();
 
-    // Mount the popup overlay directly on document.body so that position:fixed
-    // is always relative to the true viewport, regardless of any CSS transforms
-    // (transform/filter/perspective) that may exist on ancestor elements in the
-    // injected UI hierarchy.
-    van.add(document.body, popup);
+    // Mount the popup overlay into a single body-level host so remounts replace
+    // the previous popup instead of stacking orphan overlays in document.body.
+    const popupHost = ensureCogsPopupHost();
+    popupHost.replaceChildren();
+    van.add(popupHost, popup);
 
     return AccountPageShell({
         header: AccountTabHeader({
