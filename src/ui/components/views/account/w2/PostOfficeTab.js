@@ -1,35 +1,12 @@
 /**
- * W2 — Post Office Tab
+ * W2 - Post Office Tab
  *
- * Shipments (s = 0..5):
- *   PostOfficeInfo[0][s] → [ itemId, orderQty, completedFlag ]
- *   PostOfficeInfo[1][s] → [ orderCount, streak, shield ]
- *   PostOfficeInfo[2][s][0] → streak bonus payout for shipment s
- *   PostOfficeInfo[3][i][0] → points spent in upgrade i (read-only, summed)
- *
- * Shipment grouping:
- *   Office 1: s = 0..2
- *   Office 2: s = 3..5
- *
- * Currency / point paths:
- *   CurrenciesOwned.h.DeliveryBoxComplete  → completion points
- *   CurrenciesOwned.h.DeliveryBoxStreak    → streak points accumulated
- *   CurrenciesOwned.h.DeliveryBoxMisc      → derived: AlchVials.BoxPoints + OptionsListAccount[131]
- *   OptionsListAccount[347]                → extra point bonus source
- *   OptionsListAccount[131]                → feeds into DeliveryBoxMisc
- *   DNSM.h.AlchVials.h.BoxPoints           → feeds into DeliveryBoxMisc
- *
- * Available points = Complete + Streak + Opt[347] + Misc − Spent
- *
- * Re-render strategy:
- *   All states created once; load() updates them in-place.
- *   DOM built once, hidden via CSS until first load.
- *   Individual SET and bulk operations never trigger a full re-render.
+ * Box upgrades:
+ *   PostOfficeInfo[3][i][0] -> points spent in upgrade i
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ActionButton } from "../components/ActionButton.js";
@@ -37,183 +14,10 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
-import { renderTabNav } from "../tabShared.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { cleanName, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
-
-const SHIPMENT_COUNT = 6;
-const POST_OFFICE_SUBTABS = [
-    { id: "deliveries", label: "DELIVERIES" },
-    { id: "boxes", label: "BOXES" },
-];
-
-// ── PONumField ──────────────────────────────────────────────────────────────
-// Compact numeric edit row used inside shipment cards.
-
-const PONumField = ({ label, valueState, writePath }) => {
-    const inputVal = van.state(String(valueState.val));
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(valueState.val);
-    });
-
-    const doSet = async () => {
-        const val = Math.max(0, Math.round(Number(inputVal.val)));
-        if (isNaN(val)) return;
-        await run(async () => {
-            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
-            valueState.val = val;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "po-field-row feature-card",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        span({ class: "po-field-row__label" }, label),
-        span({ class: "po-field-row__value po-field-row__value--short" }, () => String(valueState.val)),
-        div(
-            { class: "po-field-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply po-field-row__set-btn${status.val === "loading" ? " account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: doSet,
-                },
-                () => (status.val === "loading" ? "…" : "SET")
-            )
-        )
-    );
-};
-
-const POToggleField = ({ valueState, writePath }) => {
-    const { status, run } = useWriteStatus();
-
-    const doToggle = async () => {
-        const next = valueState.val ? 0 : 1;
-        await run(async () => {
-            await writeVerified(writePath, next, { message: `Write mismatch at ${writePath}: expected ${next}` });
-            valueState.val = next;
-        });
-    };
-
-    return button(
-        {
-            class: () =>
-                [
-                    "po-toggle-btn",
-                    valueState.val ? "po-toggle-btn--done" : "",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                    status.val === "loading" ? "account-btn--loading" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-            disabled: () => status.val === "loading",
-            onclick: doToggle,
-        },
-        () => (status.val === "loading" ? "…" : valueState.val ? "✓  COMPLETED — click to undo" : "○  MARK COMPLETE")
-    );
-};
-
-// ── ShipmentCard ─────────────────────────────────────────────────────────────
-
-const ShipmentCard = ({ index, states }) => {
-    const { itemId, orderQty, completed, streak, shield, streakBonus } = states;
-
-    return div(
-        { class: () => `po-shipment-card feature-card${completed.val ? " po-shipment-card--completed" : ""}` },
-
-        // Header
-        div(
-            { class: "po-shipment-card__header" },
-            span({ class: "po-shipment-card__index" }, `SHIPMENT #${index}`),
-            span(
-                { class: () => `po-shipment-card__badge${completed.val ? " po-shipment-card__badge--done" : ""}` },
-                () => (completed.val ? "DONE" : "PENDING")
-            )
-        ),
-
-        // Item ID Display (Read-Only)
-        div(
-            { class: "po-field-row po-field-row--readonly po-field-row--text" },
-            span({ class: "po-field-row__label" }, "ITEM"),
-            span({ class: "po-field-row__value po-field-row__value--short" }, () => String(itemId.val))
-        ),
-
-        // Order qty
-        PONumField({
-            label: "ORDER QTY",
-            valueState: orderQty,
-            writePath: `PostOfficeInfo[0][${index}][1]`,
-        }),
-
-        // Streak
-        PONumField({
-            label: "STREAK",
-            valueState: streak,
-            writePath: `PostOfficeInfo[1][${index}][1]`,
-        }),
-
-        // Shield
-        PONumField({
-            label: "SHIELD",
-            valueState: shield,
-            writePath: `PostOfficeInfo[1][${index}][2]`,
-        }),
-
-        // Streak bonus payout (Read-Only)
-        div(
-            { class: "po-field-row po-field-row--readonly po-field-row--text" },
-            span({ class: "po-field-row__label" }, "STREAK BONUS"),
-            span({ class: "po-field-row__value po-field-row__value--short" }, () => String(streakBonus.val))
-        ),
-
-        // Completed toggle
-        POToggleField({
-            valueState: completed,
-            writePath: `PostOfficeInfo[0][${index}][2]`,
-        })
-    );
-};
-
-// ── OfficeGroup ───────────────────────────────────────────────────────────────
-
-const OfficeGroup = ({ label, shipmentStates, startIndex }) =>
-    div(
-        { class: "po-office-group" },
-        div(
-            { class: "po-office-group__header" },
-            span({ class: "po-office-group__label" }, label),
-            span({ class: "po-office-group__range" }, `Shipments ${startIndex}–${startIndex + 2}`)
-        ),
-        div(
-            { class: "po-office-group__cards" },
-            ...Array.from({ length: 3 }, (_, i) =>
-                ShipmentCard({ index: startIndex + i, states: shipmentStates[startIndex + i] })
-            )
-        )
-    );
-
-// ── CurrencyRow ───────────────────────────────────────────────────────────────
-// Editable row for currency / option values in the Point Sources section.
+const { div, span } = van.tags;
 
 const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onAfterWrite = null }) => {
     if (readOnly) {
@@ -228,165 +32,80 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
         );
     }
 
-    const inputVal = van.state(String(valueState.val));
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(valueState.val);
-    });
-
-    const doSet = async () => {
-        const val = Math.max(0, Math.round(Number(inputVal.val)));
-        if (isNaN(val)) return;
-        await run(async () => {
-            await writeVerified(writePath, val, { message: `Write mismatch at ${writePath}: expected ${val}` });
-            valueState.val = val;
-            if (typeof onAfterWrite === "function") onAfterWrite();
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "po-currency-row feature-card",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => {
+            const nextValue = Math.max(0, Math.round(Number(rawValue)));
+            return Number.isNaN(nextValue) ? null : nextValue;
         },
-        div(
-            { class: "po-currency-row__info" },
+        write: async (nextValue) => {
+            await writeVerified(writePath, nextValue, {
+                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
+            });
+            if (typeof onAfterWrite === "function") onAfterWrite();
+            return nextValue;
+        },
+        renderInfo: () => [
             span({ class: "po-currency-row__label" }, label),
-            note ? span({ class: "po-currency-row__note" }, note) : null
-        ),
-        span({ class: "po-currency-row__value" }, () => String(valueState.val)),
-        div(
-            { class: "po-currency-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            button(
-                {
-                    class: () =>
-                        [
-                            "account-btn",
-                            "account-btn--apply",
-                            status.val === "loading" ? "account-btn--loading" : "",
-                            status.val === "success" ? "account-row--success" : "",
-                            status.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                    disabled: () => status.val === "loading",
-                    onclick: doSet,
-                },
-                () => (status.val === "loading" ? "…" : "SET")
-            )
-        )
-    );
+            note ? span({ class: "po-currency-row__note" }, note) : null,
+        ],
+        renderBadge: (currentValue) => String(currentValue ?? 0),
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, next + delta);
+        },
+        rowClass: "feature-card",
+        badgeClass: "po-currency-row__value",
+        controlsClass: "po-currency-row__controls account-row__controls--xl",
+        inputMode: "int",
+    });
 };
 
-// PostOfficeTab ─────────────────────────────────────────────────────────────
-
 const POBoxRow = ({ box, onAfterWrite = null }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(box.current.val);
-    });
-
-    const clampToCap = (raw) => {
-        const n = Math.round(Number(raw));
-        if (isNaN(n)) return null;
-        return Math.min(box.cap.val, Math.max(0, n));
+    const clampToCap = (rawValue) => {
+        const nextValue = Math.round(Number(rawValue));
+        if (Number.isNaN(nextValue)) return null;
+        return Math.min(box.cap.val, Math.max(0, nextValue));
     };
 
-    const doSet = async () => {
-        const val = clampToCap(inputVal.val);
-        if (val === null) return;
-        await run(
-            async () => {
-                const path = `PostOfficeInfo[3][${box.index}][0]`;
-                return writeVerified(path, val, { message: `Write mismatch at ${path}: expected ${val}` });
-            },
-            {
-                onSuccess: (verified) => {
-                    box.current.val = verified;
-                    if (typeof onAfterWrite === "function") onAfterWrite();
-                },
-            }
-        );
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "po-box-row feature-card",
-                    status.val === "success" ? "account-row--success" : "",
-                    status.val === "error" ? "account-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
+    return EditableNumberRow({
+        valueState: box.current,
+        normalize: clampToCap,
+        write: async (nextValue) => {
+            const path = `PostOfficeInfo[3][${box.index}][0]`;
+            await writeVerified(path, nextValue, { message: `Write mismatch at ${path}: expected ${nextValue}` });
+            if (typeof onAfterWrite === "function") onAfterWrite();
+            return nextValue;
         },
-        div(
-            { class: "po-box-row__info" },
-            span({ class: "po-box-row__name" }, () => box.name.val),
-            span({ class: "po-box-row__level" }, () => `LV ${box.current.val} / ${box.cap.val}`)
-        ),
-        div(
-            { class: "po-box-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(clampToCap(Number(inputVal.val) - 1) ?? 0)),
-                onIncrement: () => (inputVal.val = String(clampToCap(Number(inputVal.val) + 1) ?? box.cap.val)),
-            }),
-            button(
-                {
-                    class: () =>
-                        `account-btn account-btn--apply${status.val === "loading" ? " account-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: doSet,
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
+        renderInfo: () => span({ class: "po-box-row__name" }, () => box.name.val),
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${box.cap.val}`,
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return clampToCap(next + delta) ?? 0;
+        },
+        rowClass: "feature-card",
+        badgeClass: "po-box-row__level",
+        controlsClass: "po-box-row__controls account-row__controls--xl",
+        inputMode: "int",
+    });
 };
 
 export const PostOfficeTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Post Office" });
-    const activeSubTab = van.state(POST_OFFICE_SUBTABS[0].id);
-
-    // ── Per-shipment states (created once, updated in-place) ───────────────
-    const shipmentStates = Array.from({ length: SHIPMENT_COUNT }, () => ({
-        itemId: van.state(""),
-        orderQty: van.state(0),
-        completed: van.state(0),
-        streak: van.state(0),
-        shield: van.state(0),
-        streakBonus: van.state(0),
-    }));
-
-    // ── Currency / option states ───────────────────────────────────────────
-    const boxComplete = van.state(0); // CurrenciesOwned.h.DeliveryBoxComplete
-    const boxStreak = van.state(0); // CurrenciesOwned.h.DeliveryBoxStreak
-    const boxMisc = van.state(0); // CurrenciesOwned.h.DeliveryBoxMisc (read-only, derived)
-    const opt347 = van.state(0); // OptionsListAccount[347]
-    const opt131 = van.state(0); // OptionsListAccount[131]  (feeds into DeliveryBoxMisc)
-    const boxPoints = van.state(0); // DNSM.h.AlchVials.h.BoxPoints (feeds into DeliveryBoxMisc)
-    const spentPoints = van.state(0); // sum(PostOfficeInfo[3][i][0])
+    const boxComplete = van.state(0);
+    const boxStreak = van.state(0);
+    const boxMisc = van.state(0);
+    const opt347 = van.state(0);
+    const opt131 = van.state(0);
+    const boxPoints = van.state(0);
+    const spentPoints = van.state(0);
     const boxCount = van.state(0);
     const boxStates = [];
+    let boxDefsLoaded = false;
+    let boxRowCount = -1;
+
     const ensureBoxStateCount = (count) => {
         while (boxStates.length < count) {
             boxStates.push({
@@ -400,167 +119,116 @@ export const PostOfficeTab = () => {
 
     const recomputeSummary = () => {
         let nextSpent = 0;
-        for (let i = 0; i < boxCount.val; i++) {
-            nextSpent += Number(boxStates[i]?.current.val ?? 0);
+        for (let index = 0; index < boxCount.val; index++) {
+            nextSpent += Number(boxStates[index]?.current.val ?? 0);
         }
-        spentPoints.val = nextSpent;
-        // DeliveryBoxMisc is derived from AlchVials.BoxPoints + OptionsListAccount[131].
-        boxMisc.val = Number(boxPoints.val ?? 0) + Number(opt131.val ?? 0);
+        spentPoints.val = toInt(nextSpent, { min: 0 });
+        boxMisc.val = toInt(Number(boxPoints.val ?? 0) + Number(opt131.val ?? 0), { min: 0 });
     };
 
-    // Computed — updates automatically when any dependency changes
-    const totalEarned = van.derive(() => boxComplete.val + boxStreak.val + opt347.val + boxMisc.val);
-    const availablePoints = van.derive(() => totalEarned.val - spentPoints.val);
-
-    // Box bulk state
+    const totalEarned = van.derive(() => toInt(boxComplete.val + boxStreak.val + opt347.val + boxMisc.val, { min: 0 }));
+    const availablePoints = van.derive(() => toInt(totalEarned.val - spentPoints.val));
     const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
+    const boxesListNode = div({ class: "po-boxes-list" });
 
-    // ── Load ───────────────────────────────────────────────────────────────
     const load = async () =>
         run(async () => {
-                const [rawPO, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs] = await Promise.all([
-                    gga("PostOfficeInfo"),
-                    gga("CurrenciesOwned"),
-                    readGgaEntries("OptionsListAccount", ["131", "347"]),
-                    gga("DNSM.h.AlchVials.h.BoxPoints"),
-                    readCList("PostOffUpgradeInfo"),
-                ]);
+            const reads = [
+                gga("PostOfficeInfo[3]"),
+                gga("CurrenciesOwned"),
+                readGgaEntries("OptionsListAccount", ["131", "347"]),
+                gga("DNSM.h.AlchVials.h.BoxPoints"),
+            ];
 
-                const po = toIndexedArray(rawPO ?? []);
-                const orders = toIndexedArray(po[0] ?? []);
-                const perShipment = toIndexedArray(po[1] ?? []);
-                const bonuses = toIndexedArray(po[2] ?? []);
-                const upgrades = toIndexedArray(po[3] ?? []);
-                const nextShipments = [];
+            if (!boxDefsLoaded) {
+                reads.push(readCList("PostOffUpgradeInfo"));
+            }
 
-                for (let s = 0; s < SHIPMENT_COUNT; s++) {
-                    const order = toIndexedArray(orders[s] ?? []);
-                    const ship = toIndexedArray(perShipment[s] ?? []);
-                    const bonus = toIndexedArray(bonuses[s] ?? []);
+            const [rawUpgrades, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs = null] = await Promise.all(reads);
 
-                    nextShipments.push({
-                        itemId: String(order[0] ?? ""),
-                        orderQty: Number(order[1] ?? 0),
-                        completed: Number(order[2] ?? 0),
-                        streak: Number(ship[1] ?? 0),
-                        shield: Number(ship[2] ?? 0),
-                        streakBonus: Number(bonus[0] ?? 0),
-                    });
-                }
-
+            if (!boxDefsLoaded) {
                 const boxDefs = toIndexedArray(rawBoxDefs ?? []);
-                const nextBoxes = [];
-                for (let i = 0; i < boxDefs.length; i++) {
-                    const defRow = toIndexedArray(boxDefs[i] ?? []);
-                    const upgRow = toIndexedArray(upgrades[i] ?? []);
-                    const capRaw = defRow[15];
-                    const cap = Math.floor(Number(capRaw));
-                    nextBoxes.push({
-                        name: String(defRow[0] ?? `BOX ${i + 1}`)
-                            .replace(/_/g, " ")
-                            .trim(),
-                        cap: Number.isFinite(cap) ? Math.max(0, cap) : 0,
-                        current: Number(upgRow[0] ?? 0),
-                    });
+                ensureBoxStateCount(boxDefs.length);
+                boxCount.val = boxDefs.length;
+
+                for (let index = 0; index < boxDefs.length; index++) {
+                    const defRow = toIndexedArray(boxDefs[index] ?? []);
+                    const cap = Math.floor(Number(defRow[15]));
+                    const box = boxStates[index];
+
+                    box.name.val = cleanName(defRow[0], `BOX ${index + 1}`);
+                    box.cap.val = Number.isFinite(cap) ? Math.max(0, cap) : 0;
                 }
 
-                const curr = rawCurrencies?.h ?? rawCurrencies ?? {};
-                const nextBoxComplete = Number(curr.DeliveryBoxComplete ?? 0);
-                const nextBoxStreak = Number(curr.DeliveryBoxStreak ?? 0);
-                const nextOpt347 = Number(rawOpts?.["347"] ?? 0);
-                const nextOpt131 = Number(rawOpts?.["131"] ?? 0);
-                const nextBoxPoints = Number(rawBoxPts ?? 0);
+                boxDefsLoaded = true;
+            }
 
-                for (let s = 0; s < SHIPMENT_COUNT; s++) {
-                    const nextShipment = nextShipments[s];
-                    const st = shipmentStates[s];
-
-                    st.itemId.val = nextShipment.itemId;
-                    st.orderQty.val = nextShipment.orderQty;
-                    st.completed.val = nextShipment.completed;
-                    st.streak.val = nextShipment.streak;
-                    st.shield.val = nextShipment.shield;
-                    st.streakBonus.val = nextShipment.streakBonus;
+            if (boxRowCount !== boxCount.val) {
+                if (boxCount.val <= 0) {
+                    boxesListNode.replaceChildren(div({ class: "po-boxes-empty" }, "No Post Office box upgrades found."));
+                } else {
+                    const rows = Array.from({ length: boxCount.val }, (_, index) =>
+                        POBoxRow({ box: boxStates[index], onAfterWrite: recomputeSummary })
+                    );
+                    boxesListNode.replaceChildren(div({ class: "po-boxes-grid" }, ...rows));
                 }
+                boxRowCount = boxCount.val;
+            }
 
-                ensureBoxStateCount(nextBoxes.length);
-                boxCount.val = nextBoxes.length;
+            const upgrades = toIndexedArray(rawUpgrades ?? []);
+            for (let index = 0; index < boxCount.val; index++) {
+                const upgRow = toIndexedArray(upgrades[index] ?? []);
+                boxStates[index].current.val = Number(upgRow[0] ?? 0);
+            }
 
-                for (let i = 0; i < nextBoxes.length; i++) {
-                    const nextBox = nextBoxes[i];
-                    const box = boxStates[i];
-                    box.name.val = nextBox.name;
-                    box.cap.val = nextBox.cap;
-                    box.current.val = nextBox.current;
-                }
-
-                boxComplete.val = nextBoxComplete;
-                boxStreak.val = nextBoxStreak;
-                opt347.val = nextOpt347;
-                opt131.val = nextOpt131;
-                boxPoints.val = nextBoxPoints;
-                recomputeSummary();
+            const currencies = rawCurrencies?.h ?? rawCurrencies ?? {};
+            boxComplete.val = toInt(currencies.DeliveryBoxComplete ?? 0, { min: 0 });
+            boxStreak.val = toInt(currencies.DeliveryBoxStreak ?? 0, { min: 0 });
+            opt347.val = toInt(rawOpts?.["347"] ?? 0, { min: 0 });
+            opt131.val = toInt(rawOpts?.["131"] ?? 0, { min: 0 });
+            boxPoints.val = toInt(rawBoxPts ?? 0, { min: 0 });
+            recomputeSummary();
         });
 
-    load();
-
-    // Bulk box actions
-    const doMaxAllBoxes = async () => {
+    const runBulkBoxWrite = async (getNextValue) => {
         if (boxCount.val <= 0) return;
+
         await runBoxBulkWrite(async () => {
-            const count = boxCount.val;
-            const nextVals = Array.from({ length: count }, (_, i) => boxStates[i].cap.val);
             const writes = [];
-            for (let i = 0; i < count; i++) {
-                if (Number(boxStates[i].current.val ?? 0) === nextVals[i]) continue;
-                writes.push({ path: `PostOfficeInfo[3][${i}][0]`, value: nextVals[i] });
+            const nextValues = [];
+
+            for (let index = 0; index < boxCount.val; index++) {
+                const nextValue = getNextValue(boxStates[index], index);
+                nextValues[index] = nextValue;
+                if (Number(boxStates[index].current.val ?? 0) === nextValue) continue;
+                writes.push({ path: `PostOfficeInfo[3][${index}][0]`, value: nextValue });
             }
+
             if (writes.length > 0) {
                 const result = await ggaMany(writes);
                 const failed = result.results.filter((entry) => !entry.ok);
                 if (failed.length > 0) {
                     const failedWrite = writes.find((entry) => entry.path === failed[0].path);
-                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}`);
+                    throw new Error(
+                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}`
+                    );
                 }
             }
-            for (let i = 0; i < count; i++) {
-                boxStates[i].current.val = nextVals[i];
+
+            for (let index = 0; index < boxCount.val; index++) {
+                boxStates[index].current.val = nextValues[index];
             }
+
             recomputeSummary();
         });
     };
 
-    const doResetBoxes = async () => {
-        if (boxCount.val <= 0) return;
-        await runBoxBulkWrite(async () => {
-            const count = boxCount.val;
-            const writes = [];
-            for (let i = 0; i < count; i++) {
-                if (Number(boxStates[i].current.val ?? 0) === 0) continue;
-                writes.push({ path: `PostOfficeInfo[3][${i}][0]`, value: 0 });
-            }
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    throw new Error(`Write mismatch at ${failed[0].path}: expected 0`);
-                }
-            }
-            for (let i = 0; i < count; i++) {
-                boxStates[i].current.val = 0;
-            }
-            recomputeSummary();
-        });
-    };
+    const doMaxAllBoxes = async () => runBulkBoxWrite((box) => box.cap.val);
 
-    // DOM: Shipment cards
-    const shipmentsSection = div(
-        { class: "po-shipments-section" },
-        OfficeGroup({ label: "OFFICE 1", shipmentStates, startIndex: 0 }),
-        OfficeGroup({ label: "OFFICE 2", shipmentStates, startIndex: 3 })
-    );
+    const doResetBoxes = async () => runBulkBoxWrite(() => 0);
 
-    // ── DOM: Point Sources section ─────────────────────────────────────────
+    load();
+
     const pointsSection = AccountSection({
         title: "POINT SOURCES & CURRENCY",
         note: "Values that contribute to your available upgrade points",
@@ -569,21 +237,18 @@ export const PostOfficeTab = () => {
                 { class: "po-section__rows" },
                 CurrencyRow({
                     label: "DELIVERY COMPLETE",
-                    note: null,
                     valueState: boxComplete,
                     writePath: "CurrenciesOwned.h.DeliveryBoxComplete",
                     onAfterWrite: recomputeSummary,
                 }),
                 CurrencyRow({
                     label: "DELIVERY STREAK",
-                    note: null,
                     valueState: boxStreak,
                     writePath: "CurrenciesOwned.h.DeliveryBoxStreak",
                     onAfterWrite: recomputeSummary,
                 }),
                 CurrencyRow({
                     label: "BONUS POINTS",
-                    note: null,
                     valueState: opt347,
                     writePath: "OptionsListAccount[347]",
                     onAfterWrite: recomputeSummary,
@@ -591,20 +256,17 @@ export const PostOfficeTab = () => {
                 div({ class: "po-section__divider" }, "MISC SOURCES (contribute to DeliveryBoxMisc)"),
                 CurrencyRow({
                     label: "MISC OPTION",
-                    note: null,
                     valueState: opt131,
                     writePath: "OptionsListAccount[131]",
                     onAfterWrite: recomputeSummary,
                 }),
                 CurrencyRow({
                     label: "VIAL BOX POINTS",
-                    note: null,
                     valueState: boxPoints,
                     readOnly: true,
                 }),
                 CurrencyRow({
                     label: "DELIVERY MISC",
-                    note: null,
                     valueState: boxMisc,
                     readOnly: true,
                 })
@@ -621,7 +283,7 @@ export const PostOfficeTab = () => {
                 div(
                     { class: "po-points-summary__row" },
                     span({ class: "po-points-summary__label" }, "SPENT ON UPGRADES"),
-                    span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `−${spentPoints.val}`)
+                    span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `-${spentPoints.val}`)
                 ),
                 div(
                     { class: "po-points-summary__row po-points-summary__row--highlight" },
@@ -634,22 +296,11 @@ export const PostOfficeTab = () => {
         ],
     });
 
-    // ── DOM: Scrollable content ────────────────────────────────────────────
-    const scroll = div({ class: "po-scroll scrollable-panel" }, shipmentsSection, pointsSection);
-
-    const boxesScroll = div(
-        { class: "po-scroll scrollable-panel" },
-        div(
-            {
-                class: () =>
-                    [
-                        "po-bulk-bar",
-                        boxBulkStatus.val === "success" ? "account-row--success" : "",
-                        boxBulkStatus.val === "error" ? "account-row--error" : "",
-                    ]
-                        .filter(Boolean)
-                        .join(" "),
-            },
+    const boxesSection = AccountSection({
+        title: "BOX UPGRADES",
+        note: "Spend available delivery points on Post Office box bonuses",
+        meta: div(
+            { class: "po-bulk-bar" },
             ActionButton({
                 label: "MAX ALL",
                 status: boxBulkStatus,
@@ -663,21 +314,13 @@ export const PostOfficeTab = () => {
                 onClick: doResetBoxes,
             })
         ),
-        div({ class: "po-boxes-list" }, () =>
-            boxCount.val <= 0
-                ? div({ class: "po-boxes-empty" }, "No Post Office box upgrades found.")
-                : div(
-                      { class: "po-boxes-grid" },
-                      ...Array.from({ length: boxCount.val }, (_, i) =>
-                          POBoxRow({ box: boxStates[i], onAfterWrite: recomputeSummary })
-                      )
-                  )
-        )
-    );
+        body: boxesListNode,
+    });
+
     return AccountPageShell({
         header: AccountTabHeader({
             title: "POST OFFICE",
-            description: "Manage shipment streaks, shields, order completions and delivery point currencies.",
+            description: "Manage delivery point currencies and Post Office box upgrades.",
             actions: RefreshButton({ onRefresh: load }),
         }),
         topNotices: WarningBanner(
@@ -685,19 +328,7 @@ export const PostOfficeTab = () => {
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
         ),
-        subNav: renderTabNav({
-            tabs: POST_OFFICE_SUBTABS,
-            activeId: activeSubTab,
-            navClass: "alchemy-sub-nav",
-            buttonClass: "alchemy-sub-btn",
-        }),
         persistentState: { loading, error },
-        body: div(
-            { class: "po-sub-content" },
-            div({ class: () => "po-pane " + (activeSubTab.val === "deliveries" ? "po-pane--active" : "") }, scroll),
-            div({ class: () => "po-pane " + (activeSubTab.val === "boxes" ? "po-pane--active" : "") }, boxesScroll)
-        ),
+        body: div({ class: "po-scroll scrollable-panel" }, pointsSection, boxesSection),
     });
 };
-
-
