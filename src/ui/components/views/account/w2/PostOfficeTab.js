@@ -16,7 +16,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { cleanName, toInt, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanName, runBulkSet, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -183,21 +183,12 @@ export const PostOfficeTab = () => {
         if (boxCount.val <= 0) return;
 
         await runBoxBulkWrite(async () => {
-            const writes = [];
-            const nextValues = [];
-
-            for (let index = 0; index < boxCount.val; index++) {
-                const nextValue = getNextValue(boxStates[index], index);
-                nextValues[index] = nextValue;
-                if (Number(boxStates[index].current.val ?? 0) === nextValue) continue;
-                writes.push({ path: `PostOfficeInfo[3][${index}][0]`, value: nextValue });
-            }
-
-            await writeManyVerified(writes);
-
-            for (let index = 0; index < boxCount.val; index++) {
-                boxStates[index].current.val = nextValues[index];
-            }
+            await runBulkSet({
+                entries: boxStates.slice(0, boxCount.val),
+                getTargetValue: getNextValue,
+                getValueState: (box) => box.current,
+                getPath: (_, index) => `PostOfficeInfo[3][${index}][0]`,
+            });
 
             recomputeSummary();
         });

@@ -20,7 +20,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
+import { cleanNameEffect, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -49,16 +49,12 @@ export const AtomColliderTab = () => {
     const doSetAll = async (targetLevel) => {
         if (!atomsMeta.length) return;
         await runBulk(async () => {
-            const expectedLevels = atomsMeta.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
-            const writes = [];
-            for (let i = 0; i < atomsMeta.length; i++) {
-                if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
-                writes.push({ path: `Atoms[${i}]`, value: expectedLevels[i] });
-            }
-            await writeManyVerified(writes);
-            for (let i = 0; i < atomsMeta.length; i++) {
-                getLevelState(i).val = expectedLevels[i];
-            }
+            await runBulkSet({
+                entries: atomsMeta,
+                getTargetValue: (atom) => (targetLevel === null ? atom.maxLevel : targetLevel),
+                getValueState: (_, index) => getLevelState(index),
+                getPath: (_, index) => `Atoms[${index}]`,
+            });
         });
     };
 

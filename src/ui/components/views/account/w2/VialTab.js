@@ -21,7 +21,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, useWriteStatus, writeManyVerified } from "../accountShared.js";
+import { cleanName, runBulkSet, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -95,15 +95,12 @@ export const VialTab = () => {
         if (vials.length === 0) return;
 
         await runBulk(async () => {
-            const writes = vials
-                .filter((vial) => Number(getLevelState(vial.index).val ?? 0) !== lvl)
-                .map((vial) => ({ path: `CauldronInfo[4][${vial.index}]`, value: lvl }));
-
-            await writeManyVerified(writes);
-
-            for (const vial of vials) {
-                getLevelState(vial.index).val = lvl;
-            }
+            await runBulkSet({
+                entries: vials,
+                getTargetValue: () => lvl,
+                getValueState: (vial) => getLevelState(vial.index),
+                getPath: (vial) => `CauldronInfo[4][${vial.index}]`,
+            });
         });
     };
 

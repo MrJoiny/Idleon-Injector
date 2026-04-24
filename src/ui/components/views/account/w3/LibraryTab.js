@@ -30,7 +30,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { getOrCreateState, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
+import { getOrCreateState, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -139,15 +139,13 @@ export const LibraryTab = () => {
         if (!currentAvailableTalentIds.length || cap <= 0) return;
 
         await runBulk(async () => {
-            const writes = currentAvailableTalentIds
-                .filter((talentId) => toNum(getMaxState(talentId).val) !== cap)
-                .map((talentId) => ({ path: `SkillLevelsMAX[${talentId}]`, value: cap }));
-
-            await writeManyVerified(writes);
-
-            for (const talentId of currentAvailableTalentIds) {
-                getMaxState(talentId).val = cap;
-            }
+            await runBulkSet({
+                entries: currentAvailableTalentIds,
+                getTargetValue: () => cap,
+                getValueState: (talentId) => getMaxState(talentId),
+                getPath: (talentId) => `SkillLevelsMAX[${talentId}]`,
+                shouldWrite: ({ currentValue, targetValue }) => toNum(currentValue) !== targetValue,
+            });
         });
     };
 

@@ -25,7 +25,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, sortPrefixedNumericCodes, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanName, runBulkSet, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -137,16 +137,16 @@ const CauldronSectionBlock = ({ cauldron, levels, defs, sectionBody, setAllInput
         if (bubblesToSet.length === 0) return;
 
         await runBulk(async () => {
-            await writeManyVerified(
-                bubblesToSet.map((bubble) => ({
-                    path: `CauldronInfo[${cauldron.index}][${bubble.index}]`,
-                    value: lvl,
-                }))
-            );
             const nextLevels = [...toIndexedArray(levels.val ?? [])];
-            for (const bubble of bubblesToSet) {
-                nextLevels[bubble.index] = lvl;
-            }
+            await runBulkSet({
+                entries: bubblesToSet,
+                getTargetValue: () => lvl,
+                getValueState: (bubble) => ({ val: currentLevels[bubble.index] ?? 0 }),
+                getPath: (bubble) => `CauldronInfo[${cauldron.index}][${bubble.index}]`,
+                applyLocal: (bubble) => {
+                    nextLevels[bubble.index] = lvl;
+                },
+            });
             levels.val = nextLevels;
         });
     };

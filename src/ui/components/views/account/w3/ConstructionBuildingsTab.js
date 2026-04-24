@@ -23,7 +23,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanName, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -120,18 +120,15 @@ export const ConstructionBuildingsTab = () => {
     const doMaxAll = async () => {
         if (!buildingMeta.length) return;
         await runMaxAll(async () => {
-            const writes = [];
-            for (let i = 0; i < BUILDING_COUNT; i++) {
-                const maxLv = buildingMeta[i]?.maxLevel ?? 0;
-                if (toNum(levelStates[i].val) !== maxLv) {
-                    writes.push({ path: `TowerInfo[${i}]`, value: maxLv });
-                }
-                writes.push({ path: `TowerInfo[${i + BUILDING_COUNT}]`, value: maxLv });
-            }
-            await writeManyVerified(writes);
-            for (let i = 0; i < BUILDING_COUNT; i++) {
-                levelStates[i].val = buildingMeta[i]?.maxLevel ?? 0;
-            }
+            await runBulkSet({
+                entries: buildingMeta,
+                getTargetValue: (building) => building?.maxLevel ?? 0,
+                getValueState: (_, index) => levelStates[index],
+                getWrites: ({ index, currentValue, targetValue }) => [
+                    toNum(currentValue) !== targetValue ? { path: `TowerInfo[${index}]`, value: targetValue } : null,
+                    { path: `TowerInfo[${index + BUILDING_COUNT}]`, value: targetValue },
+                ],
+            });
         });
     };
 

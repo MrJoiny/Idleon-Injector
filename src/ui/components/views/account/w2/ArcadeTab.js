@@ -36,8 +36,8 @@ import {
     largeFormatter,
     largeParser,
     resolveFormattedIntInput,
+    runBulkSet,
     useWriteStatus,
-    writeManyVerified,
     writeVerified,
 } from "../accountShared.js";
 
@@ -151,13 +151,12 @@ export const ArcadeTab = () => {
         if (isNaN(lvl)) return;
 
         await runBulkSetAll(async () => {
-            const writes = entries
-                .filter((entry) => Number(entry.levelState.val ?? 0) !== lvl)
-                .map((entry) => ({ path: `ArcadeUpg[${entry.index}]`, value: lvl }));
-            await writeManyVerified(writes);
-            for (const entry of entries) {
-                entry.levelState.val = lvl;
-            }
+            await runBulkSet({
+                entries,
+                getTargetValue: () => lvl,
+                getValueState: (entry) => entry.levelState,
+                getPath: (entry) => `ArcadeUpg[${entry.index}]`,
+            });
         });
     };
 

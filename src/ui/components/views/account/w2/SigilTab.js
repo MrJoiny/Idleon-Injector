@@ -16,7 +16,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanName, runBulkSet, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span, select, option } = van.tags;
 
@@ -136,18 +136,12 @@ export const SigilTab = () => {
         if (Number.isNaN(tier)) return;
 
         await runSetAll(async () => {
-            const writes = [];
-
-            for (let index = 0; index < sigilTier.length; index++) {
-                if (Number(sigilTier[index].val) === tier) continue;
-                writes.push({ path: `CauldronP2W[4][${2 * index + 1}]`, value: tier });
-            }
-
-            await writeManyVerified(writes);
-
-            for (let index = 0; index < sigilTier.length; index++) {
-                sigilTier[index].val = tier;
-            }
+            await runBulkSet({
+                entries: sigilTier,
+                getTargetValue: () => tier,
+                getValueState: (tierState) => tierState,
+                getPath: (_, index) => `CauldronP2W[4][${2 * index + 1}]`,
+            });
         });
     };
 

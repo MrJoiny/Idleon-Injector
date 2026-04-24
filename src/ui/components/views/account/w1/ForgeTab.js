@@ -23,7 +23,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { useWriteStatus, writeManyVerified } from "../accountShared.js";
+import { runBulkSet, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -73,15 +73,12 @@ export const ForgeTab = () => {
 
     const doMaxAll = async () => {
         await runMaxAll(async () => {
-            const writes = FORGE_UPGRADES.filter(
-                (upgrade) => Number(levelStates[upgrade.index].val ?? 0) !== upgrade.max
-            ).map((upgrade) => ({ path: `FurnaceLevels[${upgrade.index}]`, value: upgrade.max }));
-
-            await writeManyVerified(writes);
-
-            for (const upgrade of FORGE_UPGRADES) {
-                levelStates[upgrade.index].val = upgrade.max;
-            }
+            await runBulkSet({
+                entries: FORGE_UPGRADES,
+                getTargetValue: (upgrade) => upgrade.max,
+                getValueState: (upgrade) => levelStates[upgrade.index],
+                getPath: (upgrade) => `FurnaceLevels[${upgrade.index}]`,
+            });
         });
     };
 

@@ -186,6 +186,65 @@ export const writeManyVerified = async (writes, { message = null } = {}) => {
     throw new Error(message ?? `Write mismatch at ${failedPath}: expected ${expected}`);
 };
 
+const toWriteEntries = (writeOrWrites) => {
+    if (writeOrWrites === null || writeOrWrites === undefined) return [];
+    return Array.isArray(writeOrWrites) ? writeOrWrites.filter(Boolean) : [writeOrWrites];
+};
+
+/**
+ * Shared bulk setter for account rows that write target values then update local state.
+ *
+ * @param {object} opts
+ * @param {Array|function} opts.entries
+ * @param {function} opts.getTargetValue
+ * @param {function} opts.getValueState
+ * @param {function} [opts.getPath]
+ * @param {function} [opts.getWrites]
+ * @param {function} [opts.shouldWrite]
+ * @param {function} [opts.applyLocal]
+ * @returns {Promise<void>}
+ */
+export const runBulkSet = async ({
+    entries,
+    getTargetValue,
+    getValueState,
+    getPath = null,
+    getWrites = null,
+    shouldWrite = ({ currentValue, targetValue }) => Number(currentValue ?? 0) !== targetValue,
+    applyLocal = null,
+}) => {
+    const resolvedEntries = typeof entries === "function" ? entries() : (entries ?? []);
+    const targets = [];
+    const writes = [];
+
+    resolvedEntries.forEach((entry, index) => {
+        const targetValue = getTargetValue(entry, index);
+        const valueState = getValueState(entry, index);
+        const currentValue = resolveValue(valueState);
+        targets[index] = targetValue;
+
+        if (typeof getWrites === "function") {
+            writes.push(...toWriteEntries(getWrites({ entry, index, currentValue, targetValue, valueState })));
+            return;
+        }
+
+        if (!shouldWrite({ entry, index, currentValue, targetValue, valueState })) return;
+        writes.push({ path: getPath(entry, index, targetValue), value: targetValue });
+    });
+
+    await writeManyVerified(writes);
+
+    resolvedEntries.forEach((entry, index) => {
+        const targetValue = targets[index];
+        if (typeof applyLocal === "function") {
+            applyLocal(entry, index, targetValue);
+            return;
+        }
+
+        getValueState(entry, index).val = targetValue;
+    });
+};
+
 /**
  * Hook that wraps an async write operation with loading / success / error
  * status tracking and automatic status-clear timers.

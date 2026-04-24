@@ -19,7 +19,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
+import { cleanNameEffect, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -55,18 +55,12 @@ export const SaltLickTab = () => {
     const doSetAll = async (targetLevel) => {
         if (!upgradesMeta.length) return;
         await runBulk(async () => {
-            const expectedLevels = upgradesMeta.map((u) =>
-                toLevelInt(targetLevel === null ? u.maxLevel : targetLevel, u.maxLevel)
-            );
-            const writes = [];
-            for (let i = 0; i < upgradesMeta.length; i++) {
-                if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
-                writes.push({ path: `SaltLick[${i}]`, value: expectedLevels[i] });
-            }
-            await writeManyVerified(writes);
-            for (let i = 0; i < upgradesMeta.length; i++) {
-                getLevelState(i).val = expectedLevels[i];
-            }
+            await runBulkSet({
+                entries: upgradesMeta,
+                getTargetValue: (upgrade) => toLevelInt(targetLevel === null ? upgrade.maxLevel : targetLevel, upgrade.maxLevel),
+                getValueState: (_, index) => getLevelState(index),
+                getPath: (_, index) => `SaltLick[${index}]`,
+            });
         });
     };
 
