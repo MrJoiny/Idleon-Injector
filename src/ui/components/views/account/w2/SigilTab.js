@@ -9,13 +9,11 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { BulkActionBar, SetAllSelectControl } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, runBulkSet, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, readLevelDefinitions, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span, select, option } = van.tags;
 
@@ -118,15 +116,19 @@ export const SigilTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawP2W, rawSigilDesc] = await Promise.all([gga("CauldronP2W"), readCList("SigilDesc")]);
-            const sigilData = toIndexedArray(toIndexedArray(rawP2W ?? [])[4] ?? []);
-            const descArr = toIndexedArray(rawSigilDesc ?? []);
+            const sigils = await readLevelDefinitions({
+                levelsPath: "CauldronP2W",
+                definitionsPath: "SigilDesc",
+                selectLevels: (_, levels) => levels[4],
+                mapEntry: ({ definition, levels, index }) => ({
+                    tier: toNum(levels[2 * index + 1], -1),
+                    name: cleanName(definition[0], `#${index}`).toUpperCase(),
+                }),
+            });
 
             for (let index = 0; index < SIGIL_COUNT; index++) {
-                sigilTier[index].val = Number(sigilData[2 * index + 1] ?? -1);
-
-                const entry = toIndexedArray(descArr[index] ?? []);
-                sigilName[index].val = cleanName(entry[0], `#${index}`).toUpperCase();
+                sigilTier[index].val = sigils[index]?.tier ?? -1;
+                sigilName[index].val = sigils[index]?.name ?? `#${index}`;
             }
         });
 

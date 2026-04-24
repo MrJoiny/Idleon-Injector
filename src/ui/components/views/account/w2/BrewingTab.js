@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -23,7 +23,14 @@ import { ActionButton } from "../components/ActionButton.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, runBulkSet, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    cleanName,
+    readLevelDefinitions,
+    runBulkSet,
+    sortPrefixedNumericCodes,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -239,33 +246,37 @@ export const BrewingTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawCauldronLevels, rawPrismaStr, rawAlchemyDesc] = await Promise.all([
-                gga("CauldronInfo"),
+            const [rawPrismaStr, cauldronRows] = await Promise.all([
                 gga("OptionsListAccount[384]"),
-                readCList("AlchemyDescription"),
+                readLevelDefinitions({
+                    levelsPath: "CauldronInfo",
+                    definitionsPath: "AlchemyDescription",
+                    mapEntry: ({ definition, rawLevel, index }) => {
+                        const cauldron = CAULDRONS.find((entry) => entry.index === index);
+                        if (!cauldron) return null;
+                        return {
+                            id: cauldron.id,
+                            levels: toIndexedArray(rawLevel ?? []),
+                            defs: definition
+                                .map((entry, idx) => {
+                                    const entryArr = toIndexedArray(entry ?? []);
+                                    const name = cleanName(entryArr[0], "BUBBLE");
+                                    const isBigBubble = Number(entryArr[10] ?? 0) === 1;
+                                    return { name, index: idx, isBigBubble };
+                                })
+                                .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== ""),
+                        };
+                    },
+                }),
             ]);
 
             const nextPrismaSet = parsePrisma(rawPrismaStr);
-            const levelsArr = toIndexedArray(rawCauldronLevels ?? []);
-            const descArr = toIndexedArray(rawAlchemyDesc ?? []);
             const nextLevelsById = new Map();
             const nextDefsById = new Map();
 
-            CAULDRONS.forEach((c) => {
-                nextLevelsById.set(c.id, toIndexedArray(levelsArr[c.index] ?? []));
-
-                const cauldronDesc = toIndexedArray(descArr[c.index] ?? []);
-                nextDefsById.set(
-                    c.id,
-                    cauldronDesc
-                    .map((entry, idx) => {
-                        const entryArr = toIndexedArray(entry ?? []);
-                        const name = cleanName(entryArr[0], "BUBBLE");
-                        const isBigBubble = Number(entryArr[10] ?? 0) === 1;
-                        return { name, index: idx, isBigBubble };
-                    })
-                        .filter((b) => b.name.toUpperCase() !== "BUBBLE" && b.name.trim() !== "")
-                );
+            cauldronRows.forEach((cauldron) => {
+                nextLevelsById.set(cauldron.id, cauldron.levels);
+                nextDefsById.set(cauldron.id, cauldron.defs);
             });
 
             prismaSet.val = nextPrismaSet;

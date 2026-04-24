@@ -12,13 +12,19 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import {
+    cleanNameEffect,
+    createIndexedStateGetter,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -60,37 +66,37 @@ export const SaltLickTab = () => {
 
     const load = async () =>
         run(async () => {
-                const [rawLevels, rawDefs] = await Promise.all([gga("SaltLick"), readCList("SaltLicks")]);
+            const upgrades = await readLevelDefinitions({
+                levelsPath: "SaltLick",
+                definitionsPath: "SaltLicks",
+                mapEntry: ({ definition, rawLevel, index }) => {
+                    const maxLevel = Math.max(0, Math.trunc(toNum(definition[4])));
+                    return {
+                        name: cleanNameEffect(definition[1], `Salt Lick ${index + 1}`),
+                        level: toLevelInt(rawLevel, maxLevel),
+                        maxLevel,
+                    };
+                },
+            });
 
-                const defs = toIndexedArray(rawDefs ?? []);
-                const upgrades = defs.map((entry, i) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const name = cleanNameEffect(entryArr[1], `Salt Lick ${i + 1}`);
-                    const maxLevel = Math.max(0, Math.trunc(toNum(entryArr[4])));
-                    return { name, maxLevel };
-                });
+            reconcileRows(
+                upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"),
+                () =>
+                    upgrades.map((upgrade, index) =>
+                        SaltLickRow({
+                            index,
+                            name: upgrade.name,
+                            maxLevel: upgrade.maxLevel,
+                            levelState: getLevelState(index),
+                        })
+                    )
+            );
 
-                const rawArr = toIndexedArray(rawLevels ?? []);
-                const nextLevels = upgrades.map((u, i) => toLevelInt(rawArr[i], u.maxLevel));
+            upgrades.forEach((upgrade, i) => {
+                getLevelState(i).val = upgrade.level;
+            });
 
-                reconcileRows(
-                    upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"),
-                    () =>
-                        upgrades.map((upgrade, index) =>
-                            SaltLickRow({
-                                index,
-                                name: upgrade.name,
-                                maxLevel: upgrade.maxLevel,
-                                levelState: getLevelState(index),
-                            })
-                        )
-                );
-
-                nextLevels.forEach((level, i) => {
-                    getLevelState(i).val = level;
-                });
-
-                upgradesMeta = upgrades;
+            upgradesMeta = upgrades;
         });
 
     load();

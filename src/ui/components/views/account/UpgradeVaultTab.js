@@ -16,15 +16,14 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga, readComputedMany, readCList } from "../../../services/api.js";
+import { gga, readComputedMany } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
 import { ClampedLevelRow } from "./ClampedLevelRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { cleanName, createIndexedStateGetter, toNum } from "./accountShared.js";
-import { toIndexedArray } from "../../../utils/index.js";
+import { cleanName, createIndexedStateGetter, readLevelDefinitions, toNum } from "./accountShared.js";
 
 const { div } = van.tags;
 
@@ -57,41 +56,43 @@ export const UpgradeVaultTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawInfo, rawLevels, rawBonU] = await Promise.all([
-                readCList("UpgradeVault"),
-                gga("UpgVault"),
+            const [upgradeRows, rawBonU] = await Promise.all([
+                readLevelDefinitions({
+                    levelsPath: "UpgVault",
+                    definitionsPath: "UpgradeVault",
+                    mapEntry: ({ definition, rawLevel, index }) => {
+                        const name = cleanName(definition[0], "", { stripMarker: true });
+                        const baseMax = toNum(definition[4]);
+                        if (!name || baseMax <= 0) return null;
+                        return { index, name, baseMax, level: toNum(rawLevel) };
+                    },
+                }),
                 gga("BundlesReceived.h.bon_u"),
             ]);
             const bonU = Number(rawBonU);
             const bundleBonus = bonU === 1 ? 10 : 0;
 
-            const info = toIndexedArray(rawInfo ?? []);
-            const levels = toIndexedArray(rawLevels ?? []);
-            const argSets = info.map((_, i) => [i, 0]);
+            const argSets = upgradeRows.map((upgrade) => [upgrade.index, 0]);
             const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
 
             const realMaxes = computedResults.map((item, i) => {
                 if (!item?.ok) {
-                    throw new Error(`VaultUpgMaxLV failed for upgrade ${i}`);
+                    throw new Error(`VaultUpgMaxLV failed for upgrade ${upgradeRows[i].index}`);
                 }
                 const value = toNum(item.value);
                 return value > 0 ? value : 0;
             });
 
-            const upgrades = info
-                .map((entry, i) => {
-                    const name = cleanName(entry?.[0], "", { stripMarker: true });
-                    if (!name) return null;
-                    const baseMax = toNum(entry?.[4]);
-                    if (baseMax <= 0) return null;
-                    const computedMax = realMaxes[i];
-                    const realMax = computedMax + bundleBonus;
-                    return { index: i, name, baseMax, realMax };
-                })
-                .filter(Boolean);
+            const upgrades = upgradeRows.map((upgrade, i) => ({
+                index: upgrade.index,
+                name: upgrade.name,
+                baseMax: upgrade.baseMax,
+                level: upgrade.level,
+                realMax: realMaxes[i] + bundleBonus,
+            }));
 
             upgrades.forEach((upgrade) => {
-                getLevelState(upgrade.index).val = toNum(levels?.[upgrade.index]);
+                getLevelState(upgrade.index).val = upgrade.level;
             });
 
             data.val = { upgrades };

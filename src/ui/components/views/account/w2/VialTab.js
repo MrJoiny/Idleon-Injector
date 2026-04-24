@@ -12,13 +12,19 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, useWriteStatus } from "../accountShared.js";
+import {
+    cleanName,
+    createIndexedStateGetter,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -45,27 +51,17 @@ export const VialTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
-                gga("CauldronInfo"),
-                readCList("AlchemyDescription"),
-            ]);
-
-            const descArr = toIndexedArray(rawAlchemyDesc ?? []);
-            const vialDesc = toIndexedArray(descArr[4] ?? []);
-            const rawLevels = toIndexedArray(rawCauldronInfo?.[4] ?? []);
-
-            const nextVialDefs = vialDesc
-                .map((entry, idx) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const name = cleanName(entryArr[0], "VIAL");
-                    const level = Number(rawLevels[idx] ?? 0);
-                    return {
-                        name,
-                        index: idx,
-                        level: Number.isFinite(level) ? level : 0,
-                    };
-                })
-                .filter((vial) => vial.name.toUpperCase() !== "VIAL" && vial.name.trim() !== "");
+            const nextVialDefs = await readLevelDefinitions({
+                levelsPath: "CauldronInfo",
+                definitionsPath: "AlchemyDescription",
+                selectLevels: (_, levels) => levels[4],
+                selectDefinitions: (_, definitions) => definitions[4],
+                mapEntry: ({ definition, rawLevel, index }) => {
+                    const name = cleanName(definition[0], "VIAL");
+                    if (name.toUpperCase() === "VIAL" || name.trim() === "") return null;
+                    return { name, index, level: toNum(rawLevel) };
+                },
+            });
 
             nextVialDefs.forEach((vial) => {
                 getLevelState(vial.index).val = vial.level;

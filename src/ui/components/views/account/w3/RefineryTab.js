@@ -12,14 +12,14 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readGgaEntries } from "../../../../services/api.js";
+import { readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, writeVerified } from "../accountShared.js";
+import { cleanName, readLevelDefinitions, toNum, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -116,21 +116,22 @@ export const RefineryTab = () => {
     const load = async () =>
         run(async () => {
             const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
-            const [raw, nameEntries] = await Promise.all([
-                gga("Refinery"),
-                readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
-            ]);
-
-            const names = refineryKeys.map((key, i) => {
-                const entry = nameEntries[key];
-                return cleanName(entry?.displayName, `Refinery ${i + 1}`);
+            const refineries = await readLevelDefinitions({
+                levelsPath: "Refinery",
+                readDefinitions: () => readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
+                selectLevels: (_, levels) => levels.slice(REFINERY_OFFSET, REFINERY_OFFSET + REFINERY_COUNT),
+                selectDefinitions: (nameEntries) => refineryKeys.map((key) => nameEntries[key]),
+                mapEntry: ({ rawDefinition, rawLevel, index }) => ({
+                    name: cleanName(rawDefinition?.displayName, `Refinery ${index + 1}`),
+                    charge: toNum(rawLevel?.[0]),
+                    level: toNum(rawLevel?.[1]),
+                }),
             });
 
             for (let i = 0; i < REFINERY_COUNT; i++) {
-                nameStates[i].val = names[i];
-                const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
-                chargeStates[i].val = Number(entry[0] ?? 0);
-                levelStates[i].val = Number(entry[1] ?? 0);
+                nameStates[i].val = refineries[i].name;
+                chargeStates[i].val = refineries[i].charge;
+                levelStates[i].val = refineries[i].level;
             }
         });
 

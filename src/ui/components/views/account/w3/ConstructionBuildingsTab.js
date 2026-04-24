@@ -14,14 +14,21 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, readCList } from "../../../../services/api.js";
+import { readComputedMany } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    cleanName,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -61,25 +68,29 @@ export const ConstructionBuildingsTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
-
-            const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
-            const argSets = buildingInfo.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                return [toNum(entryArr[8]), i];
+            const buildingRows = await readLevelDefinitions({
+                levelsPath: "TowerInfo",
+                definitionsPath: "TowerInfo",
+                selectDefinitions: (_, definitions) => definitions.slice(0, BUILDING_COUNT),
+                mapEntry: ({ definition, rawLevel, index }) => ({
+                    name: cleanName(definition[0], `Building ${index + 1}`),
+                    baseMax: toNum(definition[8]),
+                    level: toNum(rawLevel),
+                }),
             });
-            const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
+            const computedResults = await readComputedMany(
+                "workbench",
+                "ExtraMaxLvAtom",
+                buildingRows.map((building, i) => [building.baseMax, i])
+            );
 
-            const buildings = buildingInfo.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                const name = cleanName(entryArr[0], `Building ${i + 1}`);
-                const baseMax = toNum(entryArr[8]);
+            const buildings = buildingRows.map((building, i) => {
                 if (!computedResults[i]?.ok) {
                     throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
                 }
                 const extraMax = toNum(computedResults[i].value);
-                const maxLevel = baseMax + extraMax;
-                return { name, baseMax, extraMax, maxLevel };
+                const maxLevel = building.baseMax + extraMax;
+                return { ...building, extraMax, maxLevel };
             });
 
             reconcileRows(
@@ -107,9 +118,8 @@ export const ConstructionBuildingsTab = () => {
                 }
             );
 
-            const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
             for (let i = 0; i < BUILDING_COUNT; i++) {
-                levelStates[i].val = toNum(nextLevels[i]);
+                levelStates[i].val = toNum(buildings[i]?.level);
             }
 
             buildingMeta = buildings;

@@ -21,9 +21,8 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
+import { readGgaEntries } from "../../../../services/api.js";
 import { BulkActionBar } from "../BulkActionBar.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -35,6 +34,7 @@ import {
     cleanNameEffect,
     largeFormatter,
     largeParser,
+    readLevelDefinitions,
     resolveFormattedIntInput,
     runBulkSet,
     useWriteStatus,
@@ -98,45 +98,40 @@ export const ArcadeTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawOptions, rawArcadeShopInfo, rawArcadeUpg] = await Promise.all([
+            const [rawOptions, parsed] = await Promise.all([
                 readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
-                readCList("ArcadeShopInfo"),
-                gga("ArcadeUpg"),
+                readLevelDefinitions({
+                    levelsPath: "ArcadeUpg",
+                    definitionsPath: "ArcadeShopInfo",
+                    mapEntry: ({ definition, rawLevel, index }) => {
+                        const rawName = String(definition[0] ?? "").trim();
+                        if (!rawName || rawName.toUpperCase() === "BLANK") return null;
+                        return {
+                            index,
+                            name: cleanNameEffect(rawName),
+                            level: Number(rawLevel ?? 0),
+                        };
+                    },
+                }),
             ]);
 
-                BALL_FIELDS.forEach((field) => {
-                    ballStates.get(field.id).val = Number(rawOptions?.[String(field.optionIndex)] ?? 0);
-                });
+            BALL_FIELDS.forEach((field) => {
+                ballStates.get(field.id).val = Number(rawOptions?.[String(field.optionIndex)] ?? 0);
+            });
 
-                const shopInfo = toIndexedArray(rawArcadeShopInfo ?? []);
-                const upgLevels = toIndexedArray(rawArcadeUpg ?? []);
-                const parsed = [];
+            const existing = upgradeEntries.val;
+            const sameShape =
+                existing.length === parsed.length &&
+                existing.every((entry, i) => entry.index === parsed[i].index && entry.name === parsed[i].name);
 
-                for (let i = 0; i < shopInfo.length; i++) {
-                    const infoRow = toIndexedArray(shopInfo[i] ?? []);
-                    const rawName = String(infoRow[0] ?? "").trim();
-                    if (!rawName || rawName.toUpperCase() === "BLANK") continue;
-
-                    parsed.push({
-                        index: i,
-                        name: cleanNameEffect(rawName),
-                        level: Number(upgLevels[i] ?? 0),
-                    });
-                }
-
-                const existing = upgradeEntries.val;
-                const sameShape =
-                    existing.length === parsed.length &&
-                    existing.every((entry, i) => entry.index === parsed[i].index && entry.name === parsed[i].name);
-
-                if (!sameShape) {
-                    upgradeEntries.val = parsed.map((item) => ({
-                        index: item.index,
-                        name: item.name,
-                        levelState: van.state(item.level),
-                    }));
-                    return;
-                }
+            if (!sameShape) {
+                upgradeEntries.val = parsed.map((item) => ({
+                    index: item.index,
+                    name: item.name,
+                    levelState: van.state(item.level),
+                }));
+                return;
+            }
 
             parsed.forEach((item, i) => {
                 existing[i].levelState.val = item.level;

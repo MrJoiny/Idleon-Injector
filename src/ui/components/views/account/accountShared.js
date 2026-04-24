@@ -15,11 +15,12 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga, ggaMany } from "../../../services/api.js";
+import { gga, ggaMany, readCList } from "../../../services/api.js";
 import { Icons } from "../../../assets/icons.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { formatNumber, formattedStep, parseNumber } from "../../../utils/numberFormat.js";
+import { toIndexedArray } from "../../../utils/index.js";
 
 const { div } = van.tags;
 
@@ -158,6 +159,38 @@ export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
 
 export const cleanNameEffect = (raw, fallback = "") =>
     cleanName(String(raw ?? fallback).replace(/^\+\{[%\s]*/, ""), fallback);
+
+/**
+ * Read GGA levels plus a definition table and map both by index.
+ *
+ * @param {{levelsPath: string, definitionsPath?: string, readDefinitions?: function, selectLevels?: function, selectDefinitions?: function, mapEntry: function}} opts
+ * @returns {Promise<Array>}
+ */
+export const readLevelDefinitions = async ({
+    levelsPath,
+    definitionsPath = null,
+    readDefinitions = () => readCList(definitionsPath),
+    selectLevels = (_, levels) => levels,
+    selectDefinitions = (_, definitions) => definitions,
+    mapEntry,
+}) => {
+    const [rawLevels, rawDefinitions] = await Promise.all([gga(levelsPath), readDefinitions()]);
+    const indexedRawLevels = toIndexedArray(rawLevels ?? []);
+    const indexedRawDefinitions = toIndexedArray(rawDefinitions ?? []);
+    const levels = toIndexedArray(selectLevels(rawLevels, indexedRawLevels) ?? []);
+
+    return toIndexedArray(selectDefinitions(rawDefinitions, indexedRawDefinitions) ?? [])
+        .map((rawDefinition, index) =>
+            mapEntry({
+                index,
+                rawDefinition,
+                definition: toIndexedArray(rawDefinition ?? []),
+                rawLevel: levels[index],
+                levels,
+            })
+        )
+        .filter(Boolean);
+};
 
 export const sortPrefixedNumericCodes = (a, b) => {
     const keyDelta = a.charCodeAt(0) - b.charCodeAt(0);

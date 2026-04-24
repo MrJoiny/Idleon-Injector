@@ -13,13 +13,20 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, readCList } from "../../../../services/api.js";
-import { toIndexedArray } from "../../../../utils/index.js";
+import { readComputedMany } from "../../../../services/api.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import {
+    cleanNameEffect,
+    createIndexedStateGetter,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -54,49 +61,46 @@ export const AtomColliderTab = () => {
 
     const load = async () =>
         run(async () => {
-                const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
-                const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
-                const computedResults = await readComputedMany(
-                    "atomCollider",
-                    "AtomMaxLv",
-                    atomInfoArr.map((_, i) => [i, 0])
-                );
+            const atomRows = await readLevelDefinitions({
+                levelsPath: "Atoms",
+                definitionsPath: "AtomInfo",
+                mapEntry: ({ definition, rawLevel, index }) => ({
+                    name: cleanNameEffect(definition[0], `Atom ${index + 1}`),
+                    level: toNum(rawLevel),
+                }),
+            });
+            const computedResults = await readComputedMany(
+                "atomCollider",
+                "AtomMaxLv",
+                atomRows.map((_, i) => [i, 0])
+            );
 
-                const maxLevels = atomInfoArr.map((_, i) => {
-                    const item = computedResults?.[i];
-                    if (!item?.ok) {
-                        throw new Error(item?.error || `Failed to read AtomMaxLv for atom index ${i}`);
-                    }
-                    return toNum(item.value);
-                });
+            const atoms = atomRows.map((atom, i) => {
+                const item = computedResults?.[i];
+                if (!item?.ok) {
+                    throw new Error(item?.error || `Failed to read AtomMaxLv for atom index ${i}`);
+                }
+                return { name: atom.name, level: atom.level, maxLevel: toNum(item.value) };
+            });
 
-                const atoms = atomInfoArr.map((entry, i) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const name = cleanNameEffect(entryArr[0], `Atom ${i + 1}`);
-                    return { name, maxLevel: maxLevels[i] ?? 0 };
-                });
+            reconcileRows(
+                atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"),
+                () =>
+                    atoms.map((atom, index) =>
+                        AtomRow({
+                            index,
+                            name: atom.name,
+                            maxLevel: atom.maxLevel,
+                            levelState: getLevelState(index),
+                        })
+                    )
+            );
 
-                const rawArr = toIndexedArray(rawLevels ?? []);
-                const nextLevels = atoms.map((_, i) => toNum(rawArr[i]));
+            atoms.forEach((atom, i) => {
+                getLevelState(i).val = atom.level;
+            });
 
-                reconcileRows(
-                    atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"),
-                    () =>
-                        atoms.map((atom, index) =>
-                            AtomRow({
-                                index,
-                                name: atom.name,
-                                maxLevel: atom.maxLevel,
-                                levelState: getLevelState(index),
-                            })
-                        )
-                );
-
-                nextLevels.forEach((level, i) => {
-                    getLevelState(i).val = level;
-                });
-
-                atomsMeta = atoms;
+            atomsMeta = atoms;
         });
 
     load();
