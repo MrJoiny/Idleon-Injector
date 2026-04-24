@@ -19,7 +19,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -28,7 +28,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { toInt, toNum, useWriteStatus } from "../accountShared.js";
+import { toInt, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
@@ -312,14 +312,6 @@ const syncActiveSign = (activeSign, nextSigns) => {
     else activeSign.val = null;
 };
 
-const ensureBatchWriteSuccess = (result) => {
-    const failed = result?.results?.filter((entry) => !entry.ok) ?? [];
-    if (!failed.length) return;
-
-    const failedPaths = failed.map((entry) => entry.path || "<unknown path>");
-    throw new Error(`Batch write failed: ${failedPaths.join(", ")}`);
-};
-
 // ── StarSignsTab ──────────────────────────────────────────────────────────
 
 export const StarSignsTab = () => {
@@ -403,10 +395,7 @@ export const StarSignsTab = () => {
                 writes.push({ path: "OptionsListAccount[40]", value: nextTotal });
             }
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                ensureBatchWriteSuccess(result);
-            }
+            await writeManyVerified(writes);
 
             signs.val = nextSigns;
             syncActiveSign(activeSign, nextSigns);
@@ -441,8 +430,7 @@ export const StarSignsTab = () => {
 
                 writes.push({ path: "StarSignsUnlocked.h", value: { ...DEFAULT_UNLOCKED_STAR_SIGNS } });
 
-                const result = await ggaMany(writes);
-                ensureBatchWriteSuccess(result);
+                await writeManyVerified(writes);
 
                 signs.val = nextSigns;
                 syncActiveSign(activeSign, nextSigns);
@@ -487,10 +475,7 @@ export const StarSignsTab = () => {
                     writes.push({ path: "OptionsListAccount[40]", value: nextTotal });
                 }
 
-                if (writes.length > 0) {
-                    const result = await ggaMany(writes);
-                    ensureBatchWriteSuccess(result);
-                }
+                await writeManyVerified(writes);
 
                 signs.val = nextSigns;
                 syncActiveSign(activeSign, nextSigns);

@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany } from "../../../../services/api.js";
+import { gga } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -23,7 +23,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -92,16 +92,7 @@ export const ForgeTab = () => {
                 (upgrade) => Number(levelStates[upgrade.index].val ?? 0) !== upgrade.max
             ).map((upgrade) => ({ path: `FurnaceLevels[${upgrade.index}]`, value: upgrade.max }));
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.find((entry) => !entry.ok);
-                if (failed) {
-                    const failedWrite = writes.find(
-                        (entry) => entry.path === failed.path || `gga.${entry.path}` === failed.path
-                    );
-                    throw new Error(`Write mismatch at ${failed.path}: expected ${failedWrite?.value ?? "unknown"}`);
-                }
-            }
+            await writeManyVerified(writes);
 
             for (const upgrade of FORGE_UPGRADES) {
                 levelStates[upgrade.index].val = upgrade.max;

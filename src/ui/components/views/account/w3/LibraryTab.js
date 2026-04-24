@@ -21,7 +21,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, ggaMany, readCList } from "../../../../services/api.js";
+import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -30,7 +30,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { getOrCreateState, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { getOrCreateState, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -152,13 +152,7 @@ export const LibraryTab = () => {
                 .filter((talentId) => toNum(getMaxState(talentId).val) !== cap)
                 .map((talentId) => ({ path: `SkillLevelsMAX[${talentId}]`, value: cap }));
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${cap}, got failed verification`);
-                }
-            }
+            await writeManyVerified(writes);
 
             for (const talentId of currentAvailableTalentIds) {
                 getMaxState(talentId).val = cap;

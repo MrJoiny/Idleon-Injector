@@ -6,7 +6,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany, readCList, readGgaEntries } from "../../../../services/api.js";
+import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ActionButton } from "../components/ActionButton.js";
@@ -15,7 +15,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { cleanName, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, toInt, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -204,16 +204,7 @@ export const PostOfficeTab = () => {
                 writes.push({ path: `PostOfficeInfo[3][${index}][0]`, value: nextValue });
             }
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
-                    throw new Error(
-                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}`
-                    );
-                }
-            }
+            await writeManyVerified(writes);
 
             for (let index = 0; index < boxCount.val; index++) {
                 boxStates[index].current.val = nextValues[index];

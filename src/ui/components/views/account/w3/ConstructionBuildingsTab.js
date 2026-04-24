@@ -14,7 +14,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -23,7 +23,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -142,16 +142,7 @@ export const ConstructionBuildingsTab = () => {
                 }
                 writes.push({ path: `TowerInfo[${i + BUILDING_COUNT}]`, value: maxLv });
             }
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
-                    throw new Error(
-                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}, got failed verification`
-                    );
-                }
-            }
+            await writeManyVerified(writes);
             for (let i = 0; i < BUILDING_COUNT; i++) {
                 levelStates[i].val = buildingMeta[i]?.maxLevel ?? 0;
             }

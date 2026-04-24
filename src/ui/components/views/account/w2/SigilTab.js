@@ -9,14 +9,14 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span, select, option } = van.tags;
 
@@ -143,13 +143,7 @@ export const SigilTab = () => {
                 writes.push({ path: `CauldronP2W[4][${2 * index + 1}]`, value: tier });
             }
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${tier}`);
-                }
-            }
+            await writeManyVerified(writes);
 
             for (let index = 0; index < sigilTier.length; index++) {
                 sigilTier[index].val = tier;

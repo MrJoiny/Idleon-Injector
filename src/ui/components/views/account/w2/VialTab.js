@@ -12,7 +12,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
@@ -21,7 +21,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -112,13 +112,7 @@ export const VialTab = () => {
                 .filter((vial) => Number(getLevelState(vial.index).val ?? 0) !== lvl)
                 .map((vial) => ({ path: `CauldronInfo[4][${vial.index}]`, value: lvl }));
 
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    throw new Error(`Write mismatch at ${failed[0].path}: expected ${lvl}`);
-                }
-            }
+            await writeManyVerified(writes);
 
             for (const vial of vials) {
                 getLevelState(vial.index).val = lvl;

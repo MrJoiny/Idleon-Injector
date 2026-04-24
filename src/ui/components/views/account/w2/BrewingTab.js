@@ -13,7 +13,7 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, ggaMany, readCList } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -25,7 +25,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, sortPrefixedNumericCodes, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -145,16 +145,12 @@ const CauldronSectionBlock = ({ cauldron, levels, defs, sectionBody, setAllInput
         if (bubblesToSet.length === 0) return;
 
         await runBulk(async () => {
-            const result = await ggaMany(
+            await writeManyVerified(
                 bubblesToSet.map((bubble) => ({
                     path: `CauldronInfo[${cauldron.index}][${bubble.index}]`,
                     value: lvl,
                 }))
             );
-            const failed = result.results.filter((entry) => !entry.ok);
-            if (failed.length > 0) {
-                throw new Error(`Write mismatch at ${failed[0].path}: expected ${lvl}`);
-            }
             const nextLevels = [...toIndexedArray(levels.val ?? [])];
             for (const bubble of bubblesToSet) {
                 nextLevels[bubble.index] = lvl;

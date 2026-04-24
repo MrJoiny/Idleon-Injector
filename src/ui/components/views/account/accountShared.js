@@ -15,7 +15,7 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga } from "../../../services/api.js";
+import { gga, ggaMany } from "../../../services/api.js";
 import { Icons } from "../../../assets/icons.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
@@ -157,6 +157,33 @@ export const writeVerified = async (path, value, { write = gga, message = null }
     if (ok) return value;
 
     throw new Error(typeof message === "function" ? message(path, value) : (message ?? `Write mismatch at ${path}`));
+};
+
+const normalizeGgaPath = (path) => String(path ?? "").replace(/^gga\./, "");
+
+/**
+ * Write many GGA paths and throw a consistent error for the first failed write.
+ *
+ * @param {Array<{ path: string, value: any }>} writes
+ * @param {{ message?: string|function }} [opts]
+ * @returns {Promise<any>}
+ */
+export const writeManyVerified = async (writes, { message = null } = {}) => {
+    if (!writes.length) return { ok: true, results: [] };
+
+    const result = await ggaMany(writes);
+    const failed = result.results.find((entry) => !entry.ok);
+    if (!failed) return result;
+
+    const failedPath = normalizeGgaPath(failed.path);
+    const failedWrite = writes.find((entry) => normalizeGgaPath(entry.path) === failedPath);
+    const expected = failedWrite?.value ?? "unknown";
+
+    if (typeof message === "function") {
+        throw new Error(message({ failed, failedPath, failedWrite, expected }));
+    }
+
+    throw new Error(message ?? `Write mismatch at ${failedPath}: expected ${expected}`);
 };
 
 /**

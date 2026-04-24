@@ -13,14 +13,14 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputedMany, gga, ggaMany, readCList } from "../../../../services/api.js";
+import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanNameEffect, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -70,16 +70,7 @@ export const AtomColliderTab = () => {
                 if (Number(getLevelState(i).val ?? 0) === expectedLevels[i]) continue;
                 writes.push({ path: `Atoms[${i}]`, value: expectedLevels[i] });
             }
-            if (writes.length > 0) {
-                const result = await ggaMany(writes);
-                const failed = result.results.filter((entry) => !entry.ok);
-                if (failed.length > 0) {
-                    const failedWrite = writes.find((entry) => entry.path === failed[0].path);
-                    throw new Error(
-                        `Write mismatch at ${failed[0].path}: expected ${failedWrite?.value ?? "unknown"}, got failed verification`
-                    );
-                }
-            }
+            await writeManyVerified(writes);
             for (let i = 0; i < atomsMeta.length; i++) {
                 getLevelState(i).val = expectedLevels[i];
             }
