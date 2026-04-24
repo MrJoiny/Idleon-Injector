@@ -114,7 +114,7 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
         controlsClass: "account-row__controls--xl",
         renderInfo: () => [
             span({ class: "account-row__name" }, playerName),
-            isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, "YOU") : null,
+            isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, "(selected)") : null,
         ],
         write: async (nextKills) => {
             if (!Number.isInteger(mob.mapIndex) || mob.mapIndex < 0 || mob.required <= 0) {
