@@ -20,7 +20,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import { cleanNameEffect, createIndexedStateGetter, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -36,15 +36,10 @@ const AtomRow = ({ index, name, maxLevel, levelState }) =>
 export const AtomColliderTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Atom Collider" });
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
-    const levelStates = [];
+    const getLevelState = createIndexedStateGetter();
     const rowList = div({ class: "account-list" });
     let rowSignature = "";
     let atomsMeta = [];
-
-    const getLevelState = (i) => {
-        if (!levelStates[i]) levelStates[i] = van.state(0);
-        return levelStates[i];
-    };
 
     const doSetAll = async (targetLevel) => {
         if (!atomsMeta.length) return;

@@ -23,7 +23,7 @@ import { AccountPageShell } from "./components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { cleanName, toNum, writeVerified } from "./accountShared.js";
+import { cleanName, createIndexedStateGetter, toNum, writeVerified } from "./accountShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
 const { div, span } = van.tags;
@@ -66,12 +66,7 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
 export const UpgradeVaultTab = () => {
     const data = van.state(null); // { upgrades: [{ index, name, baseMax, realMax }] }
     const { loading, error, run } = useAccountLoad({ label: "Upgrade Vault" });
-    const levelStates = [];
-
-    const getLevelState = (index) => {
-        if (!levelStates[index]) levelStates[index] = van.state(0);
-        return levelStates[index];
-    };
+    const getLevelState = createIndexedStateGetter();
 
     const load = async () =>
         run(async () => {

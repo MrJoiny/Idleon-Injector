@@ -45,6 +45,15 @@ export const getOrCreateState = (map, key, initial = 0) => {
     return map.get(key);
 };
 
+/** Create a lazy indexed van.state getter for sparse numeric/list indexes. */
+export const createIndexedStateGetter = (initial = 0) => {
+    const states = [];
+    return (index) => {
+        if (!states[index]) states[index] = van.state(typeof initial === "function" ? initial(index) : initial);
+        return states[index];
+    };
+};
+
 /**
  * Safely coerce a value to a finite number.
  * Returns `fallback` when coercion yields NaN/Infinity.

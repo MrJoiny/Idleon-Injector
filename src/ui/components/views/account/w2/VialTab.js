@@ -21,7 +21,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, runBulkSet, useWriteStatus } from "../accountShared.js";
+import { cleanName, createIndexedStateGetter, runBulkSet, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -42,14 +42,9 @@ export const VialTab = () => {
     const setAllInput = van.state("13");
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const vialDefs = van.state([]);
-    const levelStates = [];
+    const getLevelState = createIndexedStateGetter();
     const listNode = div({ class: "account-list" });
     let rowsBuilt = false;
-
-    const getLevelState = (index) => {
-        if (!levelStates[index]) levelStates[index] = van.state(0);
-        return levelStates[index];
-    };
 
     const buildRows = (defs) => {
         listNode.replaceChildren(...defs.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) })));
