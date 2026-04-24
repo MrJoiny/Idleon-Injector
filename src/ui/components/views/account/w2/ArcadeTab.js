@@ -26,9 +26,8 @@ import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import {
     adjustFormattedIntInput,
     cleanNameEffect,
@@ -175,39 +174,37 @@ export const ArcadeTab = () => {
         })
     );
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "arcade-tab tab-container",
-        header: AccountTabHeader({
-            title: "ARCADE UPGRADES",
-            description: "Manage Arcade balls and upgrade levels.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: bulkStatus,
-                        tooltip: "Set every Arcade upgrade to 100",
-                        onClick: () => doSetAll(100),
-                    },
-                    {
-                        label: "MAX ALL COSMIC",
-                        status: bulkStatus,
-                        tooltip: "Set every Arcade upgrade to 101",
-                        onClick: () => doSetAll(101),
-                    },
-                    {
-                        label: "RESET ALL",
-                        status: bulkStatus,
-                        tooltip: "Reset every Arcade upgrade to 0",
-                        onClick: () => doSetAll(0),
-                    },
-                ],
-                refresh: {
-                    onClick: load,
+        title: "ARCADE UPGRADES",
+        description: "Manage Arcade balls and upgrade levels.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    tooltip: "Set every Arcade upgrade to 100",
+                    onClick: () => doSetAll(100),
                 },
-            }),
+                {
+                    label: "MAX ALL COSMIC",
+                    status: bulkStatus,
+                    tooltip: "Set every Arcade upgrade to 101",
+                    onClick: () => doSetAll(101),
+                },
+                {
+                    label: "RESET ALL",
+                    status: bulkStatus,
+                    tooltip: "Reset every Arcade upgrade to 0",
+                    onClick: () => doSetAll(0),
+                },
+            ],
+            refresh: {
+                onClick: load,
+            },
         }),
-        persistentState: { loading, error },
+        state: { loading, error },
         body: content,
     });
 };

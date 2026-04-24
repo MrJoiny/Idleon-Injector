@@ -14,10 +14,9 @@ import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableFieldsRow } from "../EditableFieldsRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import {
     adjustFormattedIntInput,
     createStaticRowReconciler,
@@ -206,15 +205,13 @@ export const StatuesTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "STATUES",
-            description: "Set statue levels, deposited amounts, and upgrade tiers",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read statue data from game memory",
-            }),
+        title: "STATUES",
+        description: "Set statue levels, deposited amounts, and upgrade tiers",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read statue data from game memory",
         }),
         topNotices: WarningBanner(
             " Tier upgrades require specific tools: ",
@@ -225,10 +222,10 @@ export const StatuesTab = () => {
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
             " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING STATUES",
-        persistentErrorTitle: "STATUES READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING STATUES",
+        errorTitle: "STATUES READ FAILED",
+        initialWrapperClass: "account-list",
         body: listNode,
     });
 };

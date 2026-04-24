@@ -30,10 +30,9 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, createStaticRowReconciler, joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
@@ -327,15 +326,12 @@ export const KillroyTab = () => {
             body: bestMobRowsNode,
         })
     );
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "KILLROY STATE LIBRARY",
-            description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
-        persistentState: { loading, error },
+    return PersistentAccountListPage({
+        title: "KILLROY STATE LIBRARY",
+        description: "Currencies, upgrades, meta bonuses, and records for W2 Killroy.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
         body: scrollPane,
     });
 };
-
 

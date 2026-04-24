@@ -15,8 +15,7 @@ import { ActionButton } from "./components/ActionButton.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
 import { createStaticRowReconciler, joinClasses, useWriteStatus, writeVerified } from "./accountShared.js";
-import { AccountPageShell } from "./components/AccountPageShell.js";
-import { AccountTabHeader } from "./components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 
 const { div, input, label, span } = van.tags;
 
@@ -218,15 +217,13 @@ export const AccountOptionsTab = () => {
     van.derive(reconcileVisibleRows);
     loadAccountOptions();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container",
-        header: AccountTabHeader({
-            title: "ACCOUNT OPTIONS",
-            description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
-            actions: RefreshButton({
-                onRefresh: loadAccountOptions,
-                tooltip: "Reload from game memory",
-            }),
+        title: "ACCOUNT OPTIONS",
+        description: "Raw OptionsListAccount editor. Writes bypass normal in-game safety checks.",
+        actions: RefreshButton({
+            onRefresh: loadAccountOptions,
+            tooltip: "Reload from game memory",
         }),
         subNav: div(
             { class: "control-bar sticky-header" },
@@ -248,9 +245,9 @@ export const AccountOptionsTab = () => {
                 onInput: (val) => (ui.filterText = val),
             })
         ),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING ACCOUNT OPTIONS",
-        persistentErrorTitle: "ACCOUNT OPTIONS READ FAILED",
+        state: { loading, error },
+        loadingText: "READING ACCOUNT OPTIONS",
+        errorTitle: "ACCOUNT OPTIONS READ FAILED",
         body: optionsListNode,
     });
 };

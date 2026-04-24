@@ -38,9 +38,8 @@ import {
     unwrapH,
     writeVerified,
 } from "../accountShared.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div, span } = van.tags;
@@ -393,21 +392,19 @@ export const DeathNoteTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "DEATH NOTE",
-            description: "View kill counts per character for each mob in the Death Note.",
-            actions: RefreshButton({
-                onRefresh: load,
-                disabled: () => loading.val,
-                tooltip: "Re-read Death Note kill counts from game memory",
-            }),
+        title: "DEATH NOTE",
+        description: "View kill counts per character for each mob in the Death Note.",
+        actions: RefreshButton({
+            onRefresh: load,
+            disabled: () => loading.val,
+            tooltip: "Re-read Death Note kill counts from game memory",
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING DEATH NOTE",
-        persistentErrorTitle: "DEATH NOTE READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING DEATH NOTE",
+        errorTitle: "DEATH NOTE READ FAILED",
+        initialWrapperClass: "account-list",
         body,
     });
 };

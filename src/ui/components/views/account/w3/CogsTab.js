@@ -28,9 +28,8 @@ import { Cogs } from "../../../../assets/cogs.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../utils/numberFormat.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
@@ -724,15 +723,12 @@ export const CogsTab = () => {
     popupHost.replaceChildren();
     van.add(popupHost, popup);
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "CONSTRUCTION - COGS",
-            description: "Click a slot to view details and edit CogMap fields.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
-        persistentState: { loading, error },
+    return PersistentAccountListPage({
+        title: "CONSTRUCTION - COGS",
+        description: "Click a slot to view details and edit CogMap fields.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
         body: boardPane,
     });
 };
-
 

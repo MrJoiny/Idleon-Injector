@@ -19,9 +19,8 @@ import van from "../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
 import { ClampedLevelRow } from "./ClampedLevelRow.js";
-import { AccountPageShell } from "./components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
-import { AccountTabHeader } from "./components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
 import { cleanName, createIndexedStateGetter, readLevelDefinitions, toNum } from "./accountShared.js";
 
@@ -115,21 +114,18 @@ export const UpgradeVaultTab = () => {
         );
     };
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "UPGRADE VAULT",
-            description:
-                "Set levels for all vault upgrades real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read vault levels from game memory",
-            }),
+    return PersistentAccountListPage({
+        title: "UPGRADE VAULT",
+        description: "Set levels for all vault upgrades real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read vault levels from game memory",
         }),
         topNotices: WarningBanner(
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
                 "SET accepts any value = 0 no hard upper limit enforced."
         ),
-        loadState: { loading, error, data },
-        renderBody,
+        state: { loading, error },
+        body: () => (data.val ? renderBody(data.val) : null),
     });
 };

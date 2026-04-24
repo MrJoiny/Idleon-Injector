@@ -27,9 +27,8 @@ import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { createStaticRowReconciler, getOrCreateState, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -259,43 +258,40 @@ export const LibraryTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "LIBRARY",
-            description: "Set max talent levels for the active in-game character. Current levels are read-only.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                leading: div(
-                    {
-                        class: () =>
-                            `library-maxbooklv${maxBookLvState.val === null ? " library-maxbooklv--hidden" : ""}`,
-                    },
-                    span({ class: "library-maxbooklv__label" }, "Max Library Book:"),
-                    span({ class: "library-maxbooklv__value" }, () =>
-                        maxBookLvState.val !== null ? String(maxBookLvState.val) : "-"
-                    )
-                ),
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: bulkStatus,
-                        disabled: () => loading.val || !currentAvailableTalentIds.length,
-                        tooltip: "Set all available Library books to the current max book level",
-                        onClick: doMaxAll,
-                    },
-                ],
-                refresh: {
-                    onClick: load,
-                    disabled: () => loading.val,
-                    tooltip: "Re-read Library values from game memory",
+        title: "LIBRARY",
+        description: "Set max talent levels for the active in-game character. Current levels are read-only.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: div(
+                {
+                    class: () => `library-maxbooklv${maxBookLvState.val === null ? " library-maxbooklv--hidden" : ""}`,
                 },
-            }),
+                span({ class: "library-maxbooklv__label" }, "Max Library Book:"),
+                span({ class: "library-maxbooklv__value" }, () =>
+                    maxBookLvState.val !== null ? String(maxBookLvState.val) : "-"
+                )
+            ),
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    disabled: () => loading.val || !currentAvailableTalentIds.length,
+                    tooltip: "Set all available Library books to the current max book level",
+                    onClick: doMaxAll,
+                },
+            ],
+            refresh: {
+                onClick: load,
+                disabled: () => loading.val,
+                tooltip: "Re-read Library values from game memory",
+            },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING LIBRARY",
-        persistentErrorTitle: "LIBRARY READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING LIBRARY",
+        errorTitle: "LIBRARY READ FAILED",
+        initialWrapperClass: "account-list",
         body: listNode,
     });
 };

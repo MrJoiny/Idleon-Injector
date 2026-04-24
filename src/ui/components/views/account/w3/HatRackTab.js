@@ -12,10 +12,9 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { AddFromListSection } from "../components/AddFromListSection.js";
 import { RemovableStoredRow } from "../components/RemovableStoredRow.js";
@@ -301,23 +300,21 @@ export const HatRackTab = () => {
     );
     scrollEl = body;
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "HAT RACK",
-            description:
-                "Manage Hat rack entries. Remove any rack hat, or add eligible premium helmets. Rack changes also sync Slab history (Cards[1]).",
-            actions: RefreshButton({
-                onRefresh: () => {
-                    if (mutating.val) return;
-                    load();
-                },
-                disabled: () => loading.val || mutating.val,
-            }),
+    return PersistentAccountListPage({
+        title: "HAT RACK",
+        description:
+            "Manage Hat rack entries. Remove any rack hat, or add eligible premium helmets. Rack changes also sync Slab history (Cards[1]).",
+        actions: RefreshButton({
+            onRefresh: () => {
+                if (mutating.val) return;
+                load();
+            },
+            disabled: () => loading.val || mutating.val,
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING HAT RACK",
-        persistentErrorTitle: "HAT RACK READ FAILED",
-        persistentInitialWrapperClass: "scrollable-panel",
+        state: { loading, error },
+        loadingText: "READING HAT RACK",
+        errorTitle: "HAT RACK READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body,
     });
 };

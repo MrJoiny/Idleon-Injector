@@ -12,9 +12,8 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { cleanName, runBulkSet, toInt, useWriteStatus, writeVerified } from "../accountShared.js";
 
@@ -288,18 +287,16 @@ export const PostOfficeTab = () => {
         body: boxesListNode,
     });
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "POST OFFICE",
-            description: "Manage delivery point currencies and Post Office box upgrades.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
+    return PersistentAccountListPage({
+        title: "POST OFFICE",
+        description: "Manage delivery point currencies and Post Office box upgrades.",
+        actions: RefreshButton({ onRefresh: load }),
         topNotices: WarningBanner(
             " ",
             span({ class: "warning-highlight-accent" }, "Warning: "),
             " Points will only calculate well with Post Office tab open in-game."
         ),
-        persistentState: { loading, error },
+        state: { loading, error },
         body: div({ class: "po-scroll scrollable-panel" }, pointsSection, boxesSection),
     });
 };

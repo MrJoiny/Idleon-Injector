@@ -25,9 +25,8 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { EditableFieldsRow } from "../EditableFieldsRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountExpandableGroup } from "../components/AccountExpandableGroup.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
@@ -374,32 +373,29 @@ export const TrappingTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "TRAPPING",
-            description:
-                "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
-            actions: [
-                ActionButton({
-                    label: "FINISH ALL",
-                    status: finishAllStatus.status,
-                    disabled: () => loading.val || !trapCountState.val,
-                    tooltip: "Finish every loaded trap",
-                    onClick: (e) => {
-                        e.preventDefault();
-                        finishAllTraps();
-                    },
-                }),
-                RefreshButton({ onRefresh: load }),
-            ],
-        }),
+    return PersistentAccountListPage({
+        title: "TRAPPING",
+        description: "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
+        actions: [
+            ActionButton({
+                label: "FINISH ALL",
+                status: finishAllStatus.status,
+                disabled: () => loading.val || !trapCountState.val,
+                tooltip: "Finish every loaded trap",
+                onClick: (e) => {
+                    e.preventDefault();
+                    finishAllTraps();
+                },
+            }),
+            RefreshButton({ onRefresh: load }),
+        ],
         topNotices: WarningBanner(
             "Rare chance values above 100 still behave as 100% rare chance and do not grant extra benefit."
         ),
         body: div({ class: "trap-scroll scrollable-panel" }, playersNode),
         rootClass: "tab-container scroll-container",
-        persistentState: { loading, error },
-        persistentLoadingText: "Loading Trapping...",
-        persistentErrorTitle: "TRAPPING LOAD FAILED",
+        state: { loading, error },
+        loadingText: "Loading Trapping...",
+        errorTitle: "TRAPPING LOAD FAILED",
     });
 };

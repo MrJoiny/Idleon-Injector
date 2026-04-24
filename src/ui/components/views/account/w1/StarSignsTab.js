@@ -23,10 +23,9 @@ import { gga, readCList } from "../../../../services/api.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { toInt, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
 
@@ -486,73 +485,76 @@ export const StarSignsTab = () => {
         });
     };
 
-    return AccountPageShell({
-        rootClass: "tab-container scroll-container starsigns-scroll-container",
-        header: AccountTabHeader({
-            title: "STAR SIGNS",
-            description: "Assign players (1-10) and drag to reorder completion order",
-            actions: [
-                ActionButton({
-                    label: "UNLOCK ALL",
-                    status: unlockStatus,
-                    disabled: isAnyLoading,
-                    tooltip: "Unlock all signs using players in order: _abcdefghi",
-                    onClick: () => unlockAll(false),
-                }),
-                ActionButton({
-                    label: "RANDOMIZE ALL",
-                    status: randomStatus,
-                    disabled: isAnyLoading,
-                    tooltip: "Unlock all signs with a random player order per sign",
-                    onClick: () => unlockAll(true),
-                }),
-                ActionButton({
-                    label: "RESET ALL",
-                    status: resetStatus,
-                    variant: "max-reset",
-                    disabled: isAnyLoading,
-                    tooltip: "Clear all star sign progress and lock everything",
-                    onClick: resetAll,
-                }),
-                RefreshButton({
-                    onRefresh: load,
-                    tooltip: "Re-read star sign data from game",
-                }),
-            ],
-        }),
-        loadState: { loading, error, data: signs },
-        renderBody: (resolved) => {
-            if (resolved.length === 0) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO STAR SIGN DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                });
-            }
+    const renderBody = () => {
+        const resolved = signs.val;
+        if (!resolved) return null;
 
-            if (activeSign.val) {
-                return div(
-                    { class: "account-list" },
-                    StarSignDetail({
-                        sign: activeSign.val,
-                        usernames: activeSign.val.usernames ?? [],
-                        onSave: handleSave,
-                        onBack: () => (activeSign.val = null),
-                    })
-                );
-            }
+        if (resolved.length === 0) {
+            return EmptyState({
+                icon: Icons.SearchX(),
+                title: "NO STAR SIGN DATA",
+                subtitle: "Ensure the game is running, then hit REFRESH",
+            });
+        }
 
+        if (activeSign.val) {
             return div(
-                { class: "starsign-grid" },
-                ...resolved.map((sign) =>
-                    StarSignCard({
-                        sign,
-                        onClick: (selectedSign) => {
-                            activeSign.val = { ...selectedSign };
-                        },
-                    })
-                )
+                { class: "account-list" },
+                StarSignDetail({
+                    sign: activeSign.val,
+                    usernames: activeSign.val.usernames ?? [],
+                    onSave: handleSave,
+                    onBack: () => (activeSign.val = null),
+                })
             );
-        },
+        }
+
+        return div(
+            { class: "starsign-grid" },
+            ...resolved.map((sign) =>
+                StarSignCard({
+                    sign,
+                    onClick: (selectedSign) => {
+                        activeSign.val = { ...selectedSign };
+                    },
+                })
+            )
+        );
+    };
+
+    return PersistentAccountListPage({
+        rootClass: "tab-container scroll-container starsigns-scroll-container",
+        title: "STAR SIGNS",
+        description: "Assign players (1-10) and drag to reorder completion order",
+        actions: [
+            ActionButton({
+                label: "UNLOCK ALL",
+                status: unlockStatus,
+                disabled: isAnyLoading,
+                tooltip: "Unlock all signs using players in order: _abcdefghi",
+                onClick: () => unlockAll(false),
+            }),
+            ActionButton({
+                label: "RANDOMIZE ALL",
+                status: randomStatus,
+                disabled: isAnyLoading,
+                tooltip: "Unlock all signs with a random player order per sign",
+                onClick: () => unlockAll(true),
+            }),
+            ActionButton({
+                label: "RESET ALL",
+                status: resetStatus,
+                variant: "max-reset",
+                disabled: isAnyLoading,
+                tooltip: "Clear all star sign progress and lock everything",
+                onClick: resetAll,
+            }),
+            RefreshButton({
+                onRefresh: load,
+                tooltip: "Re-read star sign data from game",
+            }),
+        ],
+        state: { loading, error },
+        body: renderBody,
     });
 };
