@@ -100,7 +100,6 @@ const SigilCard = ({ index, tierState, nameState }) => {
         ),
         ActionButton({
             label: "SET",
-            loadingLabel: "...",
             status,
             className: "tier-card__set-btn",
             onClick: async (e) => {

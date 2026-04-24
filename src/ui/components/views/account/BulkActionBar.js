@@ -15,7 +15,6 @@ export const BulkActionBar = ({ leading = null, actions = [], refresh = null }) 
         ...actions.filter(Boolean).map((action) =>
             ActionButton({
                 label: action.label,
-                loadingLabel: action.loadingLabel ?? null,
                 status: action.status,
                 variant: action.variant ?? "max-reset",
                 className: action.extraClass ?? "",

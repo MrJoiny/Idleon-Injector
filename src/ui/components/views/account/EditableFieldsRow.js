@@ -22,7 +22,6 @@ export const EditableFieldsRow = ({
     renderControls,
     renderExtraActions = null,
     applyLabel = "SET",
-    loadingLabel = null,
     applyTooltip = null,
     applyVariant = "apply",
     applyClassName = "",
@@ -75,7 +74,6 @@ export const EditableFieldsRow = ({
 
     const applyButton = ActionButton({
         label: applyLabel,
-        loadingLabel,
         status,
         variant: applyVariant,
         className: applyClassName,

@@ -70,7 +70,6 @@ const EquinoxBar = ({ barFillState, barFillReqState, barFillRateState, fillBarSt
             span({ class: "equinox-overview__rate" }, () => `+${fmtInt(barFillRateState.val)} / hr`),
             ActionButton({
                 label: () => (fillBarStatus.val === "success" ? "FILLED!" : "FILL BAR"),
-                loadingLabel: "...",
                 status: fillBarStatus,
                 tooltip: "Fill the Dream Bar to the current requirement",
                 onClick: (e) => {

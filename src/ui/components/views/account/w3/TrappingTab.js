@@ -200,7 +200,6 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, onWrite
         renderExtraActions: ({ status }) =>
             ActionButton({
                 label: "FINISH",
-                loadingLabel: "...",
                 status: finishStatus.status,
                 className: "trap-row__finish-btn",
                 disabled: () => status.val === "loading",
@@ -232,10 +231,7 @@ const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueStat
 
     return AccountExpandableGroup({
         expanded,
-        title: [
-            player.playerName,
-            isCurrentPlayer ? span({ class: "trap-user-current" }, "(selected)") : null,
-        ],
+        title: [player.playerName, isCurrentPlayer ? span({ class: "trap-user-current" }, "(selected)") : null],
         meta: () => `${player.traps.length} traps`,
         body: div({ class: "trap-user-dropdown__rows" }, ...rows),
     });
@@ -387,7 +383,6 @@ export const TrappingTab = () => {
             actions: [
                 ActionButton({
                     label: "FINISH ALL",
-                    loadingLabel: "...",
                     status: finishAllStatus.status,
                     disabled: () => loading.val || !trapCountState.val,
                     tooltip: "Finish every loaded trap",
