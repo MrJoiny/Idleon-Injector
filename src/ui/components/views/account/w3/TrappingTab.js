@@ -34,6 +34,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     adjustFormattedIntInput,
     cleanName,
+    createStaticRowReconciler,
     getOrCreateState,
     largeFormatter,
     largeParser,
@@ -246,7 +247,7 @@ export const TrappingTab = () => {
     const critterNameById = new Map();
     const playersNode = div({ class: "trap-user-list" });
     let latestSnapshot = { currentPlayer: "", players: [] };
-    let playerSignature = null;
+    const reconcilePlayerPanels = createStaticRowReconciler(playersNode);
 
     const getExpandedState = (playerName) => getOrCreateState(expandedStates, playerName, false);
     const getValueState = (playerName, trapIndex, field, initialValue = 0) =>
@@ -269,20 +270,18 @@ export const TrappingTab = () => {
         trapCountState.val = snapshot.players.reduce((sum, player) => sum + player.traps.length, 0);
         setTrapStatesFromSnapshot(snapshot);
 
-        const nextSignature = trapShapeSignature(snapshot);
-        if (nextSignature === playerSignature) return;
-
-        playerSignature = nextSignature;
-        playersNode.replaceChildren(
-            ...snapshot.players.map((player) =>
-                PlayerTrapPanel({
-                    player,
-                    currentPlayer: snapshot.currentPlayer,
-                    getExpandedState,
-                    getValueState,
-                    onWriteField,
-                })
-            )
+        reconcilePlayerPanels(
+            trapShapeSignature(snapshot),
+            () =>
+                snapshot.players.map((player) =>
+                    PlayerTrapPanel({
+                        player,
+                        currentPlayer: snapshot.currentPlayer,
+                        getExpandedState,
+                        getValueState,
+                        onWriteField,
+                    })
+                )
         );
     };
 

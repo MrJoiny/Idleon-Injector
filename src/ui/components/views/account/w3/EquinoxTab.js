@@ -28,7 +28,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, getOrCreateState, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -178,13 +178,14 @@ export const EquinoxTab = () => {
     const upgradeRowsNode = div({ class: "content-stack" });
 
     let staticMeta = null;
-    let cloudSignature = null;
-    let upgradeSignature = null;
 
     const getCloudProgressState = (index) => getOrCreateState(cloudProgressStates, index);
     const getCloudRequiredState = (index) => getOrCreateState(cloudRequiredStates, index);
     const getUpgradeLevelState = (index) => getOrCreateState(upgradeLevelStates, index);
     const getUpgradeMaxLevelState = (index) => getOrCreateState(upgradeMaxLevelStates, index);
+
+    const reconcileCloudRows = createStaticRowReconciler(cloudRowsNode);
+    const reconcileUpgradeRows = createStaticRowReconciler(upgradeRowsNode);
 
     const updateCloudRows = (visibleIndexes, weeklyBossMap, dreamChallengeArr) => {
         const clouds = visibleIndexes.map((index) => {
@@ -196,7 +197,6 @@ export const EquinoxTab = () => {
                 progress: toInt(weeklyBossMap[`d_${index}`] ?? 0, { mode: "floor" }),
             };
         });
-        const nextSignature = clouds.map((cloud) => `${cloud.cloudIndex}:${cloud.name}`).join("|");
 
         cloudCountState.val = clouds.length;
 
@@ -205,26 +205,23 @@ export const EquinoxTab = () => {
             getCloudRequiredState(cloud.cloudIndex).val = cloud.required;
         }
 
-        if (nextSignature === cloudSignature) return;
-        cloudSignature = nextSignature;
-
-        cloudRowsNode.replaceChildren(
-            ...clouds.map((cloud) =>
-                CloudRow({
-                    entry: {
-                        cloudIndex: cloud.cloudIndex,
-                        name: cloud.name,
-                        progressState: getCloudProgressState(cloud.cloudIndex),
-                        requiredState: getCloudRequiredState(cloud.cloudIndex),
-                    },
-                })
-            )
+        reconcileCloudRows(
+            clouds.map((cloud) => `${cloud.cloudIndex}:${cloud.name}`).join("|"),
+            () =>
+                clouds.map((cloud) =>
+                    CloudRow({
+                        entry: {
+                            cloudIndex: cloud.cloudIndex,
+                            name: cloud.name,
+                            progressState: getCloudProgressState(cloud.cloudIndex),
+                            requiredState: getCloudRequiredState(cloud.cloudIndex),
+                        },
+                    })
+                )
         );
     };
 
     const updateUpgradeRows = (upgrades) => {
-        const nextSignature = upgrades.map((upgrade) => `${upgrade.index}:${upgrade.name}`).join("|");
-
         upgradeCountState.val = upgrades.length;
 
         for (const upgrade of upgrades) {
@@ -232,21 +229,20 @@ export const EquinoxTab = () => {
             getUpgradeMaxLevelState(upgrade.index).val = upgrade.maxLevel;
         }
 
-        if (nextSignature === upgradeSignature) return;
-        upgradeSignature = nextSignature;
-
-        upgradeRowsNode.replaceChildren(
-            ...upgrades.map((upgrade) =>
-                UpgradeRow({
-                    entry: {
-                        index: upgrade.index,
-                        name: upgrade.name,
-                        levelState: getUpgradeLevelState(upgrade.index),
-                        maxLevelState: getUpgradeMaxLevelState(upgrade.index),
-                    },
-                    onAfterSet: refreshAfterUpgrade,
-                })
-            )
+        reconcileUpgradeRows(
+            upgrades.map((upgrade) => `${upgrade.index}:${upgrade.name}`).join("|"),
+            () =>
+                upgrades.map((upgrade) =>
+                    UpgradeRow({
+                        entry: {
+                            index: upgrade.index,
+                            name: upgrade.name,
+                            levelState: getUpgradeLevelState(upgrade.index),
+                            maxLevelState: getUpgradeMaxLevelState(upgrade.index),
+                        },
+                        onAfterSet: refreshAfterUpgrade,
+                    })
+                )
         );
     };
 

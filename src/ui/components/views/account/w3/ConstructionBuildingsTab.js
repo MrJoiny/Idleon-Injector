@@ -23,7 +23,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -58,8 +58,8 @@ export const ConstructionBuildingsTab = () => {
     const { status: bulkStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: BUILDING_COUNT }, () => van.state(0));
     const rowList = div({ class: "account-list construction-buildings-list" });
-    let rowSignature = "";
     let buildingMeta = [];
+    const reconcileRows = createStaticRowReconciler(rowList);
 
     const load = async () =>
         run(async () => {
@@ -84,30 +84,30 @@ export const ConstructionBuildingsTab = () => {
                     return { name, baseMax, extraMax, maxLevel };
                 });
 
-                const nextSignature = buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|");
-                if (nextSignature !== rowSignature) {
-                    const rowsPerColumn = Math.ceil(buildings.length / 3);
-                    const columns = Array.from({ length: 3 }, (_, columnIndex) =>
-                        div(
-                            { class: "construction-buildings-col" },
-                            ...buildings
-                                .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
-                                .map((building, offset) => {
-                                    const index = columnIndex * rowsPerColumn + offset;
-                                    return BuildingRow({
-                                        index,
-                                        name: building.name,
-                                        maxLevel: building.maxLevel,
-                                        levelState: levelStates[index],
-                                    });
-                                })
-                        )
-                    );
-                    rowList.replaceChildren(
-                        div({ class: "construction-buildings-grid grid-3col" }, ...columns)
-                    );
-                    rowSignature = nextSignature;
-                }
+                reconcileRows(
+                    buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|"),
+                    () => {
+                        const rowsPerColumn = Math.ceil(buildings.length / 3);
+                        const columns = Array.from({ length: 3 }, (_, columnIndex) =>
+                            div(
+                                { class: "construction-buildings-col" },
+                                ...buildings
+                                    .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+                                    .map((building, offset) => {
+                                        const index = columnIndex * rowsPerColumn + offset;
+                                        return BuildingRow({
+                                            index,
+                                            name: building.name,
+                                            maxLevel: building.maxLevel,
+                                            levelState: levelStates[index],
+                                        });
+                                    })
+                            )
+                        );
+
+                        return div({ class: "construction-buildings-grid grid-3col" }, ...columns);
+                    }
+                );
 
                 const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
                 for (let i = 0; i < BUILDING_COUNT; i++) {

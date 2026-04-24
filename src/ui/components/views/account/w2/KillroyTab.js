@@ -34,7 +34,7 @@ import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, span } = van.tags;
@@ -145,7 +145,7 @@ export const KillroyTab = () => {
     const pbScoreStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(0)]));
     const pbLabelStates = new Map(PB_TOME_FIELDS.map((f) => [f.key, van.state(f.label)]));
     const bestMobStates = new Map();
-    let bestMobSignature = "";
+    const reconcileBestMobRows = createStaticRowReconciler(bestMobRowsNode);
 
     const getState = (index) => valueStates.get(index);
     const getPbState = (key) => pbScoreStates.get(key);
@@ -229,23 +229,22 @@ export const KillroyTab = () => {
                 getBestMobState(mob.mobId).val = rawBestByMobMap.get(mob.mobId) ?? 0;
             }
 
-            const nextSignature = nextAllowedMobs.map((mob) => `${mob.mobId}:${mob.mobName}`).join("|");
-            if (nextSignature !== bestMobSignature) {
-                if (nextAllowedMobs.length === 0) {
-                    bestMobRowsNode.replaceChildren(div({ class: "killroy-best-empty" }, "No Killroy mobs found."));
-                } else {
-                    bestMobRowsNode.replaceChildren(
-                        ...nextAllowedMobs.map((mob) =>
-                            KillroyNumRow({
-                                field: { label: `${mob.mobName} (${mob.mobId})` },
-                                valueState: getBestMobState(mob.mobId),
-                                writePath: `KRbest.h[${mob.mobId}]`,
-                            })
-                        )
+            reconcileBestMobRows(
+                nextAllowedMobs.map((mob) => `${mob.mobId}:${mob.mobName}`).join("|"),
+                () => {
+                    if (nextAllowedMobs.length === 0) {
+                        return div({ class: "killroy-best-empty" }, "No Killroy mobs found.");
+                    }
+
+                    return nextAllowedMobs.map((mob) =>
+                        KillroyNumRow({
+                            field: { label: `${mob.mobName} (${mob.mobId})` },
+                            valueState: getBestMobState(mob.mobId),
+                            writePath: `KRbest.h[${mob.mobId}]`,
+                        })
                     );
                 }
-                bestMobSignature = nextSignature;
-            }
+            );
         });
 
     load();

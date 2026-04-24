@@ -14,7 +14,7 @@ import { withTooltip } from "../../Tooltip.js";
 import { ActionButton } from "./components/ActionButton.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { joinClasses, useWriteStatus, writeVerified } from "./accountShared.js";
+import { createStaticRowReconciler, joinClasses, useWriteStatus, writeVerified } from "./accountShared.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 
@@ -164,7 +164,7 @@ export const AccountOptionsTab = () => {
     });
     const rowCache = new Map();
     const optionsListNode = div({ class: "scrollable-panel" });
-    let displaySignature = null;
+    const reconcileOptionRows = createStaticRowReconciler(optionsListNode);
 
     const getOptionRow = (index, rawValue, schema) => {
         if (!rowCache.has(index)) rowCache.set(index, createOptionRow(index, rawValue, schema));
@@ -194,12 +194,9 @@ export const AccountOptionsTab = () => {
             visibleIndexes.push(index);
         }
 
-        const nextSignature = visibleIndexes.join("|");
-        if (nextSignature === displaySignature) return;
-
-        displaySignature = nextSignature;
-        optionsListNode.replaceChildren(
-            ...(visibleRows.length
+        reconcileOptionRows(
+            visibleIndexes.join("|"),
+            visibleRows.length
                 ? visibleRows
                 : [
                       EmptyState({
@@ -207,7 +204,7 @@ export const AccountOptionsTab = () => {
                           title: "NO OPTIONS MATCH",
                           subtitle: "Adjust your filter or search term",
                       }),
-                  ])
+                  ]
         );
     };
 

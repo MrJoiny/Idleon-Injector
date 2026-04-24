@@ -27,7 +27,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { getOrCreateState, toInt, writeVerified } from "../accountShared.js";
+import { createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -124,26 +124,23 @@ export const WorshipTab = () => {
     };
 
     const chargeRowsNode = div({ class: "content-stack" });
-    let playerSignature = "";
+    const reconcilePlayerRows = createStaticRowReconciler(chargeRowsNode);
 
-    const reconcilePlayerRows = (players) => {
-        const nextSignature = players.map((player) => player.playerName).join("|");
-        if (nextSignature === playerSignature) return;
-
-        chargeRowsNode.replaceChildren(
-            ...players.map((player, index) =>
-                WorshipChargeRow({
-                    index,
-                    playerName: player.playerName,
-                    chargeState: getChargeState(player.playerName),
-                    activeCharacterNameRef,
-                    activeMaxChargeRef,
-                    writeCharge,
-                })
-            )
+    const reconcileChargeRows = (players) =>
+        reconcilePlayerRows(
+            players.map((player) => player.playerName).join("|"),
+            () =>
+                players.map((player, index) =>
+                    WorshipChargeRow({
+                        index,
+                        playerName: player.playerName,
+                        chargeState: getChargeState(player.playerName),
+                        activeCharacterNameRef,
+                        activeMaxChargeRef,
+                        writeCharge,
+                    })
+                )
         );
-        playerSignature = nextSignature;
-    };
 
     const waveRowsNode = div(
         { class: "content-stack" },
@@ -182,7 +179,7 @@ export const WorshipTab = () => {
 
             activeCharacterNameRef.val = nextActiveCharacterName;
             activeMaxChargeRef.val = nextActiveMaxCharge;
-            reconcilePlayerRows(players);
+            reconcileChargeRows(players);
 
             for (const playerName of playerNames) {
                 const playerStuff = toIndexedArray(playerEntries?.[playerName]?.PlayerStuff ?? []);

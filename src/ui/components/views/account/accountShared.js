@@ -54,6 +54,19 @@ export const createIndexedStateGetter = (initial = 0) => {
     };
 };
 
+/** Rebuild a static row container only when the caller-provided signature changes. */
+export const createStaticRowReconciler = (container) => {
+    let currentSignature = null;
+
+    return (signature, rows) => {
+        if (signature === currentSignature) return false;
+
+        currentSignature = signature;
+        container.replaceChildren(...toNodes(typeof rows === "function" ? rows() : rows));
+        return true;
+    };
+};
+
 /**
  * Safely coerce a value to a finite number.
  * Returns `fallback` when coercion yields NaN/Infinity.

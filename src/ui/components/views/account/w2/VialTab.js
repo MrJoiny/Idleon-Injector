@@ -21,7 +21,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, createIndexedStateGetter, runBulkSet, useWriteStatus } from "../accountShared.js";
+import { cleanName, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -44,12 +44,7 @@ export const VialTab = () => {
     const vialDefs = van.state([]);
     const getLevelState = createIndexedStateGetter();
     const listNode = div({ class: "account-list" });
-    let rowsBuilt = false;
-
-    const buildRows = (defs) => {
-        listNode.replaceChildren(...defs.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) })));
-        rowsBuilt = true;
-    };
+    const reconcileRows = createStaticRowReconciler(listNode);
 
     const load = async () =>
         run(async () => {
@@ -80,7 +75,10 @@ export const VialTab = () => {
             });
 
             vialDefs.val = nextVialDefs.map(({ name, index }) => ({ name, index }));
-            if (!rowsBuilt) buildRows(vialDefs.val);
+            reconcileRows(
+                vialDefs.val.map((vial) => `${vial.index}:${vial.name}`).join("|"),
+                () => vialDefs.val.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) }))
+            );
         });
 
     const doSetAll = async () => {

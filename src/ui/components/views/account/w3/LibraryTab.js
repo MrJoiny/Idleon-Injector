@@ -30,7 +30,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { getOrCreateState, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import { createStaticRowReconciler, getOrCreateState, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -127,12 +127,13 @@ export const LibraryTab = () => {
     const listNode = div({ class: "account-list" });
 
     let staticMeta = null;
-    let rowSignature = null;
     let currentAvailableTalentIds = [];
 
     const getCurState = (talentId) => getOrCreateState(curStates, talentId);
     const getMaxState = (talentId) => getOrCreateState(maxStates, talentId);
     const getAvailablePointsState = (classId) => getOrCreateState(availablePointsStates, classId);
+
+    const rowReconciler = createStaticRowReconciler(listNode);
 
     const doMaxAll = async () => {
         const cap = toNum(maxBookLvState.val, 0);
@@ -150,55 +151,51 @@ export const LibraryTab = () => {
     };
 
     const reconcileRows = ({ activeClassName, maxBookLv, groups, availableTalentIds }) => {
-        const nextSignature = groups
-            .map((group) =>
-                [
-                    group.classId,
-                    group.className,
-                    ...group.talents.map((talent) => `${talent.talentId}:${talent.isBookAvailable ? 1 : 0}`),
-                ].join("|")
-            )
-            .join("||");
-
         currentAvailableTalentIds = availableTalentIds;
         activeClassNameState.val = activeClassName;
         maxBookLvState.val = maxBookLv;
 
-        if (nextSignature === rowSignature) return;
-        rowSignature = nextSignature;
-
-        const rows = [
-            AccountRow({
-                rowClass: "account-row--info",
-                info: span({ class: "account-row__name" }, "Active Class"),
-                badge: () => activeClassNameState.val || "-",
-            }),
-            ...groups.map((group) =>
-                AccountSection({
-                    title: group.className,
-                    meta: span(
-                        { class: "library-section-points" },
-                        () => getAvailablePointsState(group.classId).val.toLocaleString(),
-                        span({ class: "library-section-points__label" }, " pts")
-                    ),
-                    body: div(
-                        { class: "content-stack" },
-                        ...group.talents.map((talent) =>
-                            TalentRow({
-                                talentId: talent.talentId,
-                                talentName: talent.talentName,
-                                curState: getCurState(talent.talentId),
-                                maxState: getMaxState(talent.talentId),
-                                maxBookLvState,
-                                isBookAvailable: talent.isBookAvailable,
-                            })
-                        )
-                    ),
-                })
-            ),
-        ];
-
-        listNode.replaceChildren(...rows);
+        rowReconciler(
+            groups
+                .map((group) =>
+                    [
+                        group.classId,
+                        group.className,
+                        ...group.talents.map((talent) => `${talent.talentId}:${talent.isBookAvailable ? 1 : 0}`),
+                    ].join("|")
+                )
+                .join("||"),
+            () => [
+                AccountRow({
+                    rowClass: "account-row--info",
+                    info: span({ class: "account-row__name" }, "Active Class"),
+                    badge: () => activeClassNameState.val || "-",
+                }),
+                ...groups.map((group) =>
+                    AccountSection({
+                        title: group.className,
+                        meta: span(
+                            { class: "library-section-points" },
+                            () => getAvailablePointsState(group.classId).val.toLocaleString(),
+                            span({ class: "library-section-points__label" }, " pts")
+                        ),
+                        body: div(
+                            { class: "content-stack" },
+                            ...group.talents.map((talent) =>
+                                TalentRow({
+                                    talentId: talent.talentId,
+                                    talentName: talent.talentName,
+                                    curState: getCurState(talent.talentId),
+                                    maxState: getMaxState(talent.talentId),
+                                    maxBookLvState,
+                                    isBookAvailable: talent.isBookAvailable,
+                                })
+                            )
+                        ),
+                    })
+                ),
+            ]
+        );
     };
 
     const load = async () =>

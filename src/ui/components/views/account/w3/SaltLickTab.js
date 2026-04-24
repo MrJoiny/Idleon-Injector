@@ -19,7 +19,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, createIndexedStateGetter, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -44,8 +44,8 @@ export const SaltLickTab = () => {
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const getLevelState = createIndexedStateGetter();
     const rowList = div({ class: "account-list" });
-    let rowSignature = "";
     let upgradesMeta = [];
+    const reconcileRows = createStaticRowReconciler(rowList);
 
     const doSetAll = async (targetLevel) => {
         if (!upgradesMeta.length) return;
@@ -74,20 +74,18 @@ export const SaltLickTab = () => {
                 const rawArr = toIndexedArray(rawLevels ?? []);
                 const nextLevels = upgrades.map((u, i) => toLevelInt(rawArr[i], u.maxLevel));
 
-                const nextSignature = upgrades.map((u) => `${u.name}:${u.maxLevel}`).join("|");
-                if (nextSignature !== rowSignature) {
-                    rowList.replaceChildren(
-                        ...upgrades.map((u, i) =>
+                reconcileRows(
+                    upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"),
+                    () =>
+                        upgrades.map((upgrade, index) =>
                             SaltLickRow({
-                                index: i,
-                                name: u.name,
-                                maxLevel: u.maxLevel,
-                                levelState: getLevelState(i),
+                                index,
+                                name: upgrade.name,
+                                maxLevel: upgrade.maxLevel,
+                                levelState: getLevelState(index),
                             })
                         )
-                    );
-                    rowSignature = nextSignature;
-                }
+                );
 
                 nextLevels.forEach((level, i) => {
                     getLevelState(i).val = level;

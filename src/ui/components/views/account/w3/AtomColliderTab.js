@@ -20,7 +20,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, createIndexedStateGetter, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
+import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
 
@@ -38,8 +38,8 @@ export const AtomColliderTab = () => {
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
     const getLevelState = createIndexedStateGetter();
     const rowList = div({ class: "account-list" });
-    let rowSignature = "";
     let atomsMeta = [];
+    const reconcileRows = createStaticRowReconciler(rowList);
 
     const doSetAll = async (targetLevel) => {
         if (!atomsMeta.length) return;
@@ -80,20 +80,18 @@ export const AtomColliderTab = () => {
                 const rawArr = toIndexedArray(rawLevels ?? []);
                 const nextLevels = atoms.map((_, i) => toNum(rawArr[i]));
 
-                const nextSignature = atoms.map((a) => `${a.name}:${a.maxLevel}`).join("|");
-                if (nextSignature !== rowSignature) {
-                    rowList.replaceChildren(
-                        ...atoms.map((a, i) =>
+                reconcileRows(
+                    atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"),
+                    () =>
+                        atoms.map((atom, index) =>
                             AtomRow({
-                                index: i,
-                                name: a.name,
-                                maxLevel: a.maxLevel,
-                                levelState: getLevelState(i),
+                                index,
+                                name: atom.name,
+                                maxLevel: atom.maxLevel,
+                                levelState: getLevelState(index),
                             })
                         )
-                    );
-                    rowSignature = nextSignature;
-                }
+                );
 
                 nextLevels.forEach((level, i) => {
                     getLevelState(i).val = level;

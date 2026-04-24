@@ -20,6 +20,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import {
     adjustFormattedIntInput,
+    createStaticRowReconciler,
     getOrCreateState,
     largeFormatter,
     largeParser,
@@ -149,38 +150,35 @@ export const StatuesTab = () => {
     const tierStates = new Map();
 
     const listNode = div({ class: "account-list" });
-    let builtSignature = null;
+    const reconcileStatueRows = createStaticRowReconciler(listNode);
 
     const reconcileRows = (info) => {
         const statues = (info ?? [])
             .map((entry, index) => ({ index, name: entry?.[0] }))
             .filter((statue) => statue.name && statue.name.trim().length > 0);
 
-        const signature = statues.map((statue) => statue.index).join(",");
-        if (signature === builtSignature) return;
-        builtSignature = signature;
+        reconcileStatueRows(
+            statues.map((statue) => statue.index).join(","),
+            () => {
+                if (!statues.length) {
+                    return EmptyState({
+                        icon: Icons.SearchX(),
+                        title: "NO STATUE DATA",
+                        subtitle: "Ensure the game is running, then hit REFRESH",
+                    });
+                }
 
-        if (!statues.length) {
-            listNode.replaceChildren(
-                EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO STATUE DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                })
-            );
-            return;
-        }
-
-        const rows = statues.map((statue) =>
-            StatueRow({
-                index: statue.index,
-                nameState: getOrCreateState(nameStates, statue.index, statue.name),
-                levelState: getOrCreateState(levelStates, statue.index),
-                depositedState: getOrCreateState(depositedStates, statue.index),
-                tierState: getOrCreateState(tierStates, statue.index),
-            })
+                return statues.map((statue) =>
+                    StatueRow({
+                        index: statue.index,
+                        nameState: getOrCreateState(nameStates, statue.index, statue.name),
+                        levelState: getOrCreateState(levelStates, statue.index),
+                        depositedState: getOrCreateState(depositedStates, statue.index),
+                        tierState: getOrCreateState(tierStates, statue.index),
+                    })
+                );
+            }
         );
-        listNode.replaceChildren(...rows);
     };
 
     const load = async () =>
