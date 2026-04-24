@@ -165,10 +165,9 @@ const normalizeGgaPath = (path) => String(path ?? "").replace(/^gga\./, "");
  * Write many GGA paths and throw a consistent error for the first failed write.
  *
  * @param {Array<{ path: string, value: any }>} writes
- * @param {{ message?: string|function }} [opts]
  * @returns {Promise<any>}
  */
-export const writeManyVerified = async (writes, { message = null } = {}) => {
+export const writeManyVerified = async (writes) => {
     if (!writes.length) return { ok: true, results: [] };
 
     const result = await ggaMany(writes);
@@ -179,11 +178,7 @@ export const writeManyVerified = async (writes, { message = null } = {}) => {
     const failedWrite = writes.find((entry) => normalizeGgaPath(entry.path) === failedPath);
     const expected = failedWrite?.value ?? "unknown";
 
-    if (typeof message === "function") {
-        throw new Error(message({ failed, failedPath, failedWrite, expected }));
-    }
-
-    throw new Error(message ?? `Write mismatch at ${failedPath}: expected ${expected}`);
+    throw new Error(`Write mismatch at ${failedPath}: expected ${expected}`);
 };
 
 const toWriteEntries = (writeOrWrites) => {
