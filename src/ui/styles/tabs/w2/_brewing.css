@@ -87,25 +87,3 @@
     background: color-mix(in srgb, var(--col-color, var(--c-accent)) 10%, var(--c-panel)) !important;
     font-weight: 700;
 }
-
-.brewing-setall-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.brewing-setall-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-muted);
-    white-space: nowrap;
-}
-
-.brewing-setall-input-wrap .number-input-wrapper {
-    width: 150px;
-}
-
-.brewing-setall-input-wrap .number-input-btn {
-    height: 38px;
-}

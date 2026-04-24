@@ -16,10 +16,9 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AccountSection } from "../components/AccountSection.js";
@@ -104,22 +103,21 @@ export const ForgeTab = () => {
         header: AccountTabHeader({
             title: "FORGE",
             description: "Set forge upgrade levels — each upgrade has a hard maximum",
-            actions: [
-                ActionButton({
-                    label: "MAX ALL",
-                    status: maxAllStatus,
-                    variant: "max-reset",
-                    tooltip: "Set all forge upgrades to their max levels",
-                    onClick: (e) => {
-                        e.preventDefault();
-                        doMaxAll();
+            wrapActions: false,
+            actions: BulkActionBar({
+                actions: [
+                    {
+                        label: "MAX ALL",
+                        status: maxAllStatus,
+                        tooltip: "Set all forge upgrades to their max levels",
+                        onClick: doMaxAll,
                     },
-                }),
-                RefreshButton({
-                    onRefresh: load,
+                ],
+                refresh: {
+                    onClick: load,
                     tooltip: "Re-read forge levels from game memory",
-                }),
-            ],
+                },
+            }),
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING FORGE",

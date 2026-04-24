@@ -14,15 +14,14 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, runBulkSet, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
@@ -284,23 +283,14 @@ export const BrewingTab = () => {
         header: AccountTabHeader({
             title: "ALCHEMY - BREWING",
             description: "Set bubble levels and toggle Prisma upgrades.",
-            actions: [
-                div(
-                    { class: "brewing-setall-row" },
-                    span({ class: "brewing-setall-label" }, "SET ALL LEVEL:"),
-                    div(
-                        { class: "brewing-setall-input-wrap" },
-                        NumberInput({
-                            mode: "int",
-                            value: setAllInput,
-                            oninput: (e) => (setAllInput.val = e.target.value),
-                            onDecrement: () => (setAllInput.val = String(Math.max(0, Number(setAllInput.val) - 1))),
-                            onIncrement: () => (setAllInput.val = String(Number(setAllInput.val) + 1)),
-                        })
-                    )
-                ),
-                RefreshButton({ onRefresh: load }),
-            ],
+            wrapActions: false,
+            actions: BulkActionBar({
+                leading: SetAllNumberControl({
+                    label: "SET ALL LEVEL:",
+                    value: setAllInput,
+                }),
+                refresh: { onClick: load },
+            }),
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING BREWING",

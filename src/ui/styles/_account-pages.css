@@ -434,31 +434,6 @@
     gap: 12px;
 }
 
-.tier-setall-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--c-panel-dim);
-    border: 1px solid var(--c-border);
-    flex-shrink: 0;
-}
-
-.tier-setall-bar__label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-text-dim);
-    white-space: nowrap;
-}
-
-.tier-setall-bar__select {
-    padding: 0 8px;
-    height: 30px;
-    font-size: 0.875rem;
-    font-family: var(--font-display);
-}
-
 .tier-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -566,6 +541,35 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.account-setall-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-setall-row__label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+.account-setall-row__input .number-input-wrapper {
+    width: 150px;
+}
+
+.account-setall-row__input .number-input-btn {
+    height: 38px;
+}
+
+.account-setall-row__select {
+    padding: 0 8px;
+    height: 30px;
+    font-size: 0.875rem;
+    font-family: var(--font-display);
 }
 
 /* ── Warning banner highlight helpers ───────────────────────────────────── */

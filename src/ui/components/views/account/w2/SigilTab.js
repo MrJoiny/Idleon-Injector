@@ -13,7 +13,7 @@ import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
+import { BulkActionBar, SetAllSelectControl } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, runBulkSet, useWriteStatus, writeVerified } from "../accountShared.js";
@@ -147,28 +147,6 @@ export const SigilTab = () => {
 
     load();
 
-    const setAllBar = div(
-        { class: "tier-setall-bar" },
-        span({ class: "tier-setall-bar__label" }, "SET ALL TIERS TO"),
-        select(
-            {
-                class: "tier-setall-bar__select select-base",
-                onchange: (e) => (setAllTier.val = e.target.value),
-            },
-            ...SIGIL_TIERS.map((tier) =>
-                option({ value: tier.value, selected: () => Number(setAllTier.val) === tier.value }, tier.label)
-            )
-        ),
-        ActionButton({
-            label: "SET ALL",
-            status: setAllStatus,
-            onClick: async (e) => {
-                e.preventDefault();
-                await doSetAll();
-            },
-        })
-    );
-
     const grid = div(
         { class: "tier-grid sigils-grid" },
         ...Array.from({ length: SIGIL_COUNT }, (_, index) =>
@@ -180,9 +158,19 @@ export const SigilTab = () => {
         header: AccountTabHeader({
             title: "ALCHEMY - SIGILS",
             description: "Manage tier and unlock status for all 24 alchemy sigils.",
-            actions: RefreshButton({ onRefresh: load }),
+            wrapActions: false,
+            actions: BulkActionBar({
+                leading: SetAllSelectControl({
+                    label: "SET ALL TIERS TO",
+                    value: setAllTier,
+                    options: SIGIL_TIERS,
+                    status: setAllStatus,
+                    onApply: doSetAll,
+                }),
+                refresh: { onClick: load },
+            }),
         }),
         persistentState: { loading, error },
-        body: div({ class: "tier-scroll scrollable-panel" }, setAllBar, grid),
+        body: div({ class: "tier-scroll scrollable-panel" }, grid),
     });
 };

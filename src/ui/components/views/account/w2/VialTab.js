@@ -13,17 +13,15 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
+import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, useWriteStatus } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const MAX_VIAL_LEVEL = 13;
 
@@ -104,32 +102,17 @@ export const VialTab = () => {
         header: AccountTabHeader({
             title: "ALCHEMY - VIALS",
             description: "Set vial levels (0-13) for all alchemy vials.",
-            actions: [
-                div(
-                    { class: "vials-setall-row" },
-                    span({ class: "vials-setall-label" }, "SET ALL:"),
-                    div(
-                        { class: "vials-setall-input-wrap" },
-                        NumberInput({
-                            mode: "int",
-                            value: setAllInput,
-                            oninput: (e) => (setAllInput.val = e.target.value),
-                            onDecrement: () => (setAllInput.val = String(Math.max(0, Number(setAllInput.val) - 1))),
-                            onIncrement: () =>
-                                (setAllInput.val = String(Math.min(MAX_VIAL_LEVEL, Number(setAllInput.val) + 1))),
-                        })
-                    ),
-                    ActionButton({
-                        label: "SET ALL",
-                        status: bulkStatus,
-                        onClick: async (e) => {
-                            e.preventDefault();
-                            await doSetAll();
-                        },
-                    })
-                ),
-                RefreshButton({ onRefresh: load }),
-            ],
+            wrapActions: false,
+            actions: BulkActionBar({
+                leading: SetAllNumberControl({
+                    label: "SET ALL:",
+                    value: setAllInput,
+                    status: bulkStatus,
+                    onApply: doSetAll,
+                    max: MAX_VIAL_LEVEL,
+                }),
+                refresh: { onClick: load },
+            }),
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING VIALS",

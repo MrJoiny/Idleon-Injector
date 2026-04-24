@@ -17,10 +17,9 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
+import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
@@ -63,58 +62,58 @@ export const ConstructionBuildingsTab = () => {
 
     const load = async () =>
         run(async () => {
-                const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
+            const [levels, rawBuildingInfo] = await Promise.all([gga("TowerInfo"), readCList("TowerInfo")]);
 
-                const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
-                const argSets = buildingInfo.map((entry, i) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    return [toNum(entryArr[8]), i];
-                });
-                const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
+            const buildingInfo = toIndexedArray(rawBuildingInfo ?? []).slice(0, BUILDING_COUNT);
+            const argSets = buildingInfo.map((entry, i) => {
+                const entryArr = toIndexedArray(entry ?? []);
+                return [toNum(entryArr[8]), i];
+            });
+            const computedResults = await readComputedMany("workbench", "ExtraMaxLvAtom", argSets);
 
-                const buildings = buildingInfo.map((entry, i) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const name = cleanName(entryArr[0], `Building ${i + 1}`);
-                    const baseMax = toNum(entryArr[8]);
-                    if (!computedResults[i]?.ok) {
-                        throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
-                    }
-                    const extraMax = toNum(computedResults[i].value);
-                    const maxLevel = baseMax + extraMax;
-                    return { name, baseMax, extraMax, maxLevel };
-                });
-
-                reconcileRows(
-                    buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|"),
-                    () => {
-                        const rowsPerColumn = Math.ceil(buildings.length / 3);
-                        const columns = Array.from({ length: 3 }, (_, columnIndex) =>
-                            div(
-                                { class: "construction-buildings-col" },
-                                ...buildings
-                                    .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
-                                    .map((building, offset) => {
-                                        const index = columnIndex * rowsPerColumn + offset;
-                                        return BuildingRow({
-                                            index,
-                                            name: building.name,
-                                            maxLevel: building.maxLevel,
-                                            levelState: levelStates[index],
-                                        });
-                                    })
-                            )
-                        );
-
-                        return div({ class: "construction-buildings-grid grid-3col" }, ...columns);
-                    }
-                );
-
-                const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
-                for (let i = 0; i < BUILDING_COUNT; i++) {
-                    levelStates[i].val = toNum(nextLevels[i]);
+            const buildings = buildingInfo.map((entry, i) => {
+                const entryArr = toIndexedArray(entry ?? []);
+                const name = cleanName(entryArr[0], `Building ${i + 1}`);
+                const baseMax = toNum(entryArr[8]);
+                if (!computedResults[i]?.ok) {
+                    throw new Error(`ExtraMaxLvAtom failed for building ${i}`);
                 }
+                const extraMax = toNum(computedResults[i].value);
+                const maxLevel = baseMax + extraMax;
+                return { name, baseMax, extraMax, maxLevel };
+            });
 
-                buildingMeta = buildings;
+            reconcileRows(
+                buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|"),
+                () => {
+                    const rowsPerColumn = Math.ceil(buildings.length / 3);
+                    const columns = Array.from({ length: 3 }, (_, columnIndex) =>
+                        div(
+                            { class: "construction-buildings-col" },
+                            ...buildings
+                                .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+                                .map((building, offset) => {
+                                    const index = columnIndex * rowsPerColumn + offset;
+                                    return BuildingRow({
+                                        index,
+                                        name: building.name,
+                                        maxLevel: building.maxLevel,
+                                        levelState: levelStates[index],
+                                    });
+                                })
+                        )
+                    );
+
+                    return div({ class: "construction-buildings-grid grid-3col" }, ...columns);
+                }
+            );
+
+            const nextLevels = (levels ?? []).slice(0, BUILDING_COUNT);
+            for (let i = 0; i < BUILDING_COUNT; i++) {
+                levelStates[i].val = toNum(nextLevels[i]);
+            }
+
+            buildingMeta = buildings;
         });
 
     const doMaxAll = async () => {
@@ -138,19 +137,18 @@ export const ConstructionBuildingsTab = () => {
         header: AccountTabHeader({
             title: "CONSTRUCTION - BUILDINGS",
             description: "Set building levels. Each building has its own max.",
-            actions: [
-                ActionButton({
-                    label: "MAX ALL",
-                    status: bulkStatus,
-                    variant: "max-reset",
-                    disabled: () => loading.val,
-                    onClick: (e) => {
-                        e.preventDefault();
-                        doMaxAll();
+            wrapActions: false,
+            actions: BulkActionBar({
+                actions: [
+                    {
+                        label: "MAX ALL",
+                        status: bulkStatus,
+                        disabled: () => loading.val,
+                        onClick: doMaxAll,
                     },
-                }),
-                RefreshButton({ onRefresh: load }),
-            ],
+                ],
+                refresh: { onClick: load },
+            }),
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING CONSTRUCTION BUILDINGS",
