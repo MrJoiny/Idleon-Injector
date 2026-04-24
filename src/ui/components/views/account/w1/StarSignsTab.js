@@ -28,12 +28,13 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import { toInt, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
 // Player 1..10 → letter
 const PLAYER_LETTERS = ["_", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
+const PLAYER_NUMBERS = PLAYER_LETTERS.map((_, index) => index + 1);
 const letterToPlayer = (l) => PLAYER_LETTERS.indexOf(l) + 1; // 0 if not found
 const playerToLetter = (n) => PLAYER_LETTERS[n - 1] ?? null;
 
@@ -41,7 +42,7 @@ const playerToLetter = (n) => PLAYER_LETTERS[n - 1] ?? null;
 function computeLabels(quests) {
     const counters = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
     return quests.map((q) => {
-        const mapId = parseInt(q[0]);
+        const mapId = parseInt(q[0], 10);
         const g =
             mapId < 50 ? "A" : mapId < 100 ? "B" : mapId < 150 ? "C" : mapId < 200 ? "D" : mapId < 250 ? "E" : "F";
         counters[g]++;
@@ -68,7 +69,19 @@ const encodeProgress = (players) => players.map(playerToLetter).filter(Boolean).
 const isUnlockedByProgress = (players, playersNeeded) => players.length >= playersNeeded;
 
 // Get display name for a player slot (1-based)
-const playerName = (num, usernames) => usernames[num - 1] ?? `Player ${num}`;
+const playerName = (num, usernames) => {
+    const name = usernames[num - 1];
+    return typeof name === "string" && name.trim() && !name.startsWith("__") ? name : `Player ${num}`;
+};
+
+const normalizeUsernames = (rawUsernames) => {
+    const source = rawUsernames?.h ?? rawUsernames;
+    return PLAYER_NUMBERS.map((num) => {
+        const index = num - 1;
+        if (Array.isArray(source)) return source[index];
+        return source?.[index] ?? source?.[String(index)];
+    });
+};
 
 const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
     The_Buff_Guy: 1,
@@ -83,43 +96,41 @@ const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
 const DragList = ({ items, renderItem, onChange }) => {
     let dragIdx = null;
 
-    const container = div({ class: "starsign-drag-list" });
-
-    const rebuild = (list) => {
-        while (container.firstChild) container.removeChild(container.firstChild);
-        list.forEach((item, i) => {
-            const row = div({ class: "starsign-drag-row", draggable: true });
-            row.appendChild(div({ class: "starsign-drag-handle" }, "⠿"));
-            row.appendChild(renderItem(item, i));
-            row.addEventListener("dragstart", () => {
-                dragIdx = i;
-                row.classList.add("dragging");
-            });
-            row.addEventListener("dragend", () => {
-                dragIdx = null;
-                row.classList.remove("dragging");
-            });
-            row.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                row.classList.add("drag-over");
-            });
-            row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
-            row.addEventListener("drop", (e) => {
-                e.preventDefault();
-                row.classList.remove("drag-over");
-                if (dragIdx === null || dragIdx === i) return;
-                const next = [...list];
-                const [moved] = next.splice(dragIdx, 1);
-                next.splice(i, 0, moved);
-                onChange(next);
-                rebuild(next);
-            });
-            container.appendChild(row);
-        });
-    };
-
-    rebuild(items);
-    return container;
+    return div(
+        { class: "starsign-drag-list" },
+        ...items.map((item, i) =>
+            div(
+                {
+                    class: "starsign-drag-row",
+                    draggable: true,
+                    ondragstart: (e) => {
+                        dragIdx = i;
+                        e.currentTarget.classList.add("dragging");
+                    },
+                    ondragend: (e) => {
+                        dragIdx = null;
+                        e.currentTarget.classList.remove("dragging");
+                    },
+                    ondragover: (e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add("drag-over");
+                    },
+                    ondragleave: (e) => e.currentTarget.classList.remove("drag-over"),
+                    ondrop: (e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("drag-over");
+                        if (dragIdx === null || dragIdx === i) return;
+                        const next = [...items];
+                        const [moved] = next.splice(dragIdx, 1);
+                        next.splice(i, 0, moved);
+                        onChange(next);
+                    },
+                },
+                div({ class: "starsign-drag-handle" }, "⠿"),
+                renderItem(item, i)
+            )
+        )
+    );
 };
 
 // ── Detail panel ──────────────────────────────────────────────────────────
@@ -146,8 +157,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const doSave = async () => {
         await run(async () => {
             const str = encodeProgress(players.val);
-            const path = `StarSignProg[${sign.index}][0]`;
-            await writeVerified(path, str);
             await onSave?.({ index: sign.index, progress: str });
         });
     };
@@ -212,14 +221,14 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
                     class: "starsign-player-select select-base",
                 },
                 option({ value: "", disabled: true, selected: true }, "Add player…"),
-                ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => option({ value: n }, playerName(n, usernames)))
+                ...PLAYER_NUMBERS.map((n) => option({ value: n }, playerName(n, usernames)))
             ),
             button(
                 {
                     class: "account-btn account-btn--apply",
                     onclick: () => {
                         const sel = document.getElementById(`add-player-select-${sign.index}`);
-                        const val = parseInt(sel?.value);
+                        const val = parseInt(sel?.value, 10);
                         if (val && !players.val.includes(val)) {
                             addPlayer(val);
                             sel.value = "";
@@ -258,7 +267,7 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             }),
             () =>
                 status.val === "error"
-                    ? span({ class: "starsign-account-row--error" }, "Save failed — check game is running")
+                    ? span({ class: "write-status write-status--error" }, "Save failed — check game is running")
                     : null
         )
     );
@@ -300,6 +309,7 @@ const syncActiveSign = (activeSign, nextSigns) => {
     if (!activeSign.val) return;
     const updated = nextSigns.find((sign) => sign.index === activeSign.val.index);
     if (updated) activeSign.val = { ...updated };
+    else activeSign.val = null;
 };
 
 const ensureBatchWriteSuccess = (result) => {
@@ -333,13 +343,11 @@ export const StarSignsTab = () => {
             const quests = toIndexedArray(rawQuests ?? []);
             const prog = toIndexedArray(rawProg ?? []);
             const labels = computeLabels(quests);
-            const usernames = toIndexedArray(rawUsernames ?? []).filter(
-                (u) => typeof u === "string" && !u.startsWith("__")
-            );
+            const usernames = normalizeUsernames(rawUsernames);
 
-            signs.val = quests
+            const nextSigns = quests
                 .map((q, i) => {
-                    const playersNeeded = parseInt(q[5]) || 1;
+                    const playersNeeded = parseInt(q[5], 10) || 1;
                     const players = parseProgress(prog[i]?.[0]);
                     return {
                         index: i,
@@ -354,22 +362,58 @@ export const StarSignsTab = () => {
                     };
                 })
                 .filter((s) => s.desc.length > 0);
+
+            signs.val = nextSigns;
+            syncActiveSign(activeSign, nextSigns);
         });
 
-    // After saving from detail, update local state without full reload
     const handleSave = async ({ index, progress }) => {
         if (!signs.val) return;
-        const nextSigns = signs.val.map((s) => {
-            if (s.index !== index) return s;
+
+        try {
+            const list = signs.val;
+            const sign = list.find((entry) => entry.index === index);
+            if (!sign) return;
+
             const players = parseProgress(progress);
-            return {
-                ...s,
-                players,
-                unlocked: isUnlockedByProgress(players, s.playersNeeded),
-            };
-        });
-        signs.val = nextSigns;
-        syncActiveSign(activeSign, nextSigns);
+            const unlocked = isUnlockedByProgress(players, sign.playersNeeded);
+            const claimed = unlocked ? 1 : 0;
+            const nextSigns = list.map((entry) =>
+                entry.index === index
+                    ? {
+                          ...entry,
+                          players,
+                          unlocked,
+                          claimed,
+                      }
+                    : entry
+            );
+
+            const writes = [];
+            if (progress !== encodeProgress(sign.players)) {
+                writes.push({ path: `StarSignProg[${sign.index}][0]`, value: progress });
+            }
+            if (toInt(sign.claimed, 0) !== claimed) {
+                writes.push({ path: `StarSignProg[${sign.index}][1]`, value: claimed });
+            }
+
+            const currentTotal = getClaimedRewardTotal(list);
+            const nextTotal = getClaimedRewardTotal(nextSigns);
+            if (nextTotal !== currentTotal) {
+                writes.push({ path: "OptionsListAccount[40]", value: nextTotal });
+            }
+
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                ensureBatchWriteSuccess(result);
+            }
+
+            signs.val = nextSigns;
+            syncActiveSign(activeSign, nextSigns);
+        } catch (error) {
+            await load();
+            throw error;
+        }
     };
 
     load();
@@ -417,7 +461,7 @@ export const StarSignsTab = () => {
                 const list = signs.val;
                 const writes = [];
                 const nextSigns = list.map((sign) => {
-                    const pool = [...Array(10).keys()].map((n) => n + 1);
+                    const pool = [...PLAYER_NUMBERS];
                     if (randomize) {
                         for (let i = pool.length - 1; i > 0; i--) {
                             const j = Math.floor(Math.random() * (i + 1));
