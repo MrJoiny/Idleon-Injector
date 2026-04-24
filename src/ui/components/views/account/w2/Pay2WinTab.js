@@ -14,10 +14,9 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { writeVerified } from "../accountShared.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
@@ -235,13 +234,11 @@ export const Pay2WinTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "ALCHEMY - PAY 2 WIN",
-            description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
-        persistentState: { loading, error },
+    return PersistentAccountListPage({
+        title: "ALCHEMY - PAY 2 WIN",
+        description: "Edit P2W upgrades for cauldrons, liquids, draconic count, vials and player boosts.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
         body: div({ class: "scrollable-panel content-stack" }, ...sections.map(renderSection)),
     });
 };

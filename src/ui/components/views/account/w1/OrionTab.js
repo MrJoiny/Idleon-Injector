@@ -22,9 +22,8 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountSection } from "../components/AccountSection.js";
 
 const { div, span } = van.tags;
@@ -90,15 +89,13 @@ export const OrionTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "ORION",
-            description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read Orion data from game",
-            }),
+        title: "ORION",
+        description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read Orion data from game",
         }),
         topNotices: WarningBanner(
             " ",
@@ -109,10 +106,10 @@ export const OrionTab = () => {
             span({ class: "warning-highlight-accent" }, "Feather Restart"),
             " is permanent - keep between 30-40."
         ),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING ORION",
-        persistentErrorTitle: "ORION READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING ORION",
+        errorTitle: "ORION READ FAILED",
+        initialWrapperClass: "account-list",
         body: rowList,
     });
 };

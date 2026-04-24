@@ -18,8 +18,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
@@ -102,35 +101,33 @@ export const AtomColliderTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "ATOM COLLIDER",
-            description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: bulkStatus,
-                        tooltip: "Set every atom to its computed max level",
-                        onClick: () => doSetAll(null),
-                    },
-                    {
-                        label: "RESET ALL",
-                        status: bulkStatus,
-                        tooltip: "Reset every atom to 0",
-                        onClick: () => doSetAll(0),
-                    },
-                ],
-                refresh: {
-                    onClick: load,
+    return PersistentAccountListPage({
+        title: "ATOM COLLIDER",
+        description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    tooltip: "Set every atom to its computed max level",
+                    onClick: () => doSetAll(null),
                 },
-            }),
+                {
+                    label: "RESET ALL",
+                    status: bulkStatus,
+                    tooltip: "Reset every atom to 0",
+                    onClick: () => doSetAll(0),
+                },
+            ],
+            refresh: {
+                onClick: load,
+            },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING ATOM COLLIDER",
-        persistentErrorTitle: "ATOM COLLIDER READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING ATOM COLLIDER",
+        errorTitle: "ATOM COLLIDER READ FAILED",
+        initialWrapperClass: "account-list",
         body: rowList,
     });
 };

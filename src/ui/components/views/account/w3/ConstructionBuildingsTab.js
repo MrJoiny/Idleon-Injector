@@ -19,9 +19,8 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div } = van.tags;
@@ -133,27 +132,25 @@ export const ConstructionBuildingsTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "CONSTRUCTION - BUILDINGS",
-            description: "Set building levels. Each building has its own max.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: bulkStatus,
-                        disabled: () => loading.val,
-                        onClick: doMaxAll,
-                    },
-                ],
-                refresh: { onClick: load },
-            }),
+    return PersistentAccountListPage({
+        title: "CONSTRUCTION - BUILDINGS",
+        description: "Set building levels. Each building has its own max.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    disabled: () => loading.val,
+                    onClick: doMaxAll,
+                },
+            ],
+            refresh: { onClick: load },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING CONSTRUCTION BUILDINGS",
-        persistentErrorTitle: "CONSTRUCTION BUILDINGS READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING CONSTRUCTION BUILDINGS",
+        errorTitle: "CONSTRUCTION BUILDINGS READ FAILED",
+        initialWrapperClass: "account-list",
         body: rowList,
     });
 };

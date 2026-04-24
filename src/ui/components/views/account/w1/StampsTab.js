@@ -26,10 +26,9 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, sortPrefixedNumericCodes, writeVerified } from "../accountShared.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
@@ -209,15 +208,13 @@ export const StampsTab = () => {
 
     const body = div({ class: "account-list" }, ...pageContainers);
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "STAMPS",
-            description: "Change stamp levels and toggle exalted stamps",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read stamp data from game memory",
-            }),
+        title: "STAMPS",
+        description: "Change stamp levels and toggle exalted stamps",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read stamp data from game memory",
         }),
         subNav: renderTabNav({
             tabs: PAGES,
@@ -225,10 +222,10 @@ export const StampsTab = () => {
             navClass: "account-page-nav",
             buttonClass: "account-page-btn",
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING STAMPS",
-        persistentErrorTitle: "STAMP READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING STAMPS",
+        errorTitle: "STAMP READ FAILED",
+        initialWrapperClass: "account-list",
         body,
     });
 };

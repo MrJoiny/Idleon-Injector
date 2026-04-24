@@ -11,11 +11,10 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { BulkActionBar, SetAllSelectControl } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, runBulkSet, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span, select, option } = van.tags;
@@ -154,23 +153,21 @@ export const SigilTab = () => {
         )
     );
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "ALCHEMY - SIGILS",
-            description: "Manage tier and unlock status for all 24 alchemy sigils.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                leading: SetAllSelectControl({
-                    label: "SET ALL TIERS TO",
-                    value: setAllTier,
-                    options: SIGIL_TIERS,
-                    status: setAllStatus,
-                    onApply: doSetAll,
-                }),
-                refresh: { onClick: load },
+    return PersistentAccountListPage({
+        title: "ALCHEMY - SIGILS",
+        description: "Manage tier and unlock status for all 24 alchemy sigils.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: SetAllSelectControl({
+                label: "SET ALL TIERS TO",
+                value: setAllTier,
+                options: SIGIL_TIERS,
+                status: setAllStatus,
+                onApply: doSetAll,
             }),
+            refresh: { onClick: load },
         }),
-        persistentState: { loading, error },
+        state: { loading, error },
         body: div({ class: "tier-scroll scrollable-panel" }, grid),
     });
 };

@@ -15,11 +15,10 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -137,12 +136,10 @@ export const RefineryTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "W3 - REFINERY",
-            description: "Set refinery levels and salt charges.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
+    return PersistentAccountListPage({
+        title: "W3 - REFINERY",
+        description: "Set refinery levels and salt charges.",
+        actions: RefreshButton({ onRefresh: load }),
         topNotices: [
             NoticeBanner(
                 { icon: Icons.Wrench(), variant: "polymer" },
@@ -162,10 +159,10 @@ export const RefineryTab = () => {
                 )
             ),
         ],
-        persistentState: { loading, error },
-        persistentLoadingText: "READING REFINERY",
-        persistentErrorTitle: "REFINERY READ FAILED",
-        persistentInitialWrapperClass: "scrollable-panel",
+        state: { loading, error },
+        loadingText: "READING REFINERY",
+        errorTitle: "REFINERY READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body,
     });
 };

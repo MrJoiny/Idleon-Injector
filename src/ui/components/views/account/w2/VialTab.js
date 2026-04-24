@@ -17,8 +17,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
@@ -97,27 +96,25 @@ export const VialTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "vials-tab tab-container",
-        header: AccountTabHeader({
-            title: "ALCHEMY - VIALS",
-            description: "Set vial levels (0-13) for all alchemy vials.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                leading: SetAllNumberControl({
-                    label: "SET ALL:",
-                    value: setAllInput,
-                    status: bulkStatus,
-                    onApply: doSetAll,
-                    max: MAX_VIAL_LEVEL,
-                }),
-                refresh: { onClick: load },
+        title: "ALCHEMY - VIALS",
+        description: "Set vial levels (0-13) for all alchemy vials.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: SetAllNumberControl({
+                label: "SET ALL:",
+                value: setAllInput,
+                status: bulkStatus,
+                onApply: doSetAll,
+                max: MAX_VIAL_LEVEL,
             }),
+            refresh: { onClick: load },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING VIALS",
-        persistentErrorTitle: "VIAL READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING VIALS",
+        errorTitle: "VIAL READ FAILED",
+        initialWrapperClass: "account-list",
         body: listNode,
     });
 };

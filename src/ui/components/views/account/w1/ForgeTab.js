@@ -18,9 +18,8 @@ import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { runBulkSet, useWriteStatus } from "../accountShared.js";
 
@@ -98,10 +97,9 @@ export const ForgeTab = () => {
             })
         )
     );
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "FORGE",
+        title: "FORGE",
             description: "Set forge upgrade levels — each upgrade has a hard maximum",
             wrapActions: false,
             actions: BulkActionBar({
@@ -118,11 +116,10 @@ export const ForgeTab = () => {
                     tooltip: "Re-read forge levels from game memory",
                 },
             }),
-        }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING FORGE",
-        persistentErrorTitle: "FORGE READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING FORGE",
+        errorTitle: "FORGE READ FAILED",
+        initialWrapperClass: "account-list",
         body,
     });
 };

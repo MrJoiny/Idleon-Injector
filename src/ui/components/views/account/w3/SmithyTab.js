@@ -13,10 +13,9 @@ import { gga } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { AddFromListSection } from "../components/AddFromListSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { RemovableStoredRow } from "../components/RemovableStoredRow.js";
 import { unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
@@ -373,22 +372,20 @@ export const SmithyTab = () => {
     );
     scrollEl = body;
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "SMITHY",
-            description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",
-            actions: RefreshButton({
-                onRefresh: () => {
-                    if (mutating.val) return;
-                    load();
-                },
-                disabled: () => loading.val || mutating.val,
-            }),
+    return PersistentAccountListPage({
+        title: "SMITHY",
+        description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",
+        actions: RefreshButton({
+            onRefresh: () => {
+                if (mutating.val) return;
+                load();
+            },
+            disabled: () => loading.val || mutating.val,
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING SMITHY",
-        persistentErrorTitle: "SMITHY READ FAILED",
-        persistentInitialWrapperClass: "scrollable-panel",
+        state: { loading, error },
+        loadingText: "READING SMITHY",
+        errorTitle: "SMITHY READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body,
     });
 };

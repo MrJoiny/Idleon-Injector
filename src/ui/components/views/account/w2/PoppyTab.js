@@ -13,9 +13,8 @@ import { gga, readGgaEntries } from "../../../../services/api.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 
 const { div, span } = van.tags;
 
@@ -122,15 +121,13 @@ export const PoppyTab = () => {
 
     load();
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "poppy-tab tab-container",
-        header: AccountTabHeader({
-            title: "POPPY",
-            description: "Poppy clicker values and Tar Pit progression controls",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read Poppy data from game",
-            }),
+        title: "POPPY",
+        description: "Poppy clicker values and Tar Pit progression controls",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read Poppy data from game",
         }),
         topNotices: WarningBanner(
             " ",
@@ -141,9 +138,9 @@ export const PoppyTab = () => {
             span({ class: "warning-highlight-accent" }, "Greatest Catch / Megafish"),
             " is also permanent progression."
         ),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING POPPY",
-        persistentErrorTitle: "POPPY READ FAILED",
+        state: { loading, error },
+        loadingText: "READING POPPY",
+        errorTitle: "POPPY READ FAILED",
         body: rowList,
     });
 };

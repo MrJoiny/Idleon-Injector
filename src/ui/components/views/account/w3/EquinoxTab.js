@@ -24,10 +24,9 @@ import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, createStaticRowReconciler, getOrCreateState, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -347,20 +346,18 @@ export const EquinoxTab = () => {
         })
     );
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "EQUINOX",
-            description: "Dream bar fill, active clouds, and upgrade levels.",
-            actions: RefreshButton({
-                onRefresh: load,
-                disabled: () => loading.val,
-                tooltip: "Re-read Equinox values from game memory",
-            }),
+        title: "EQUINOX",
+        description: "Dream bar fill, active clouds, and upgrade levels.",
+        actions: RefreshButton({
+            onRefresh: load,
+            disabled: () => loading.val,
+            tooltip: "Re-read Equinox values from game memory",
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING EQUINOX",
-        persistentErrorTitle: "EQUINOX READ FAILED",
+        state: { loading, error },
+        loadingText: "READING EQUINOX",
+        errorTitle: "EQUINOX READ FAILED",
         body: content,
     });
 };

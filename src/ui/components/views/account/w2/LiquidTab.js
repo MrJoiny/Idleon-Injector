@@ -18,10 +18,9 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -137,13 +136,11 @@ export const LiquidTab = () => {
         ...LIQUIDS.map((liquid, i) => LiquidColumn({ liquid, states: liquidStates[i] }))
     );
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "ALCHEMY - LIQUID",
-            description: "Edit current liquid amounts and cap / rate upgrade levels.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
-        persistentState: { loading, error },
+    return PersistentAccountListPage({
+        title: "ALCHEMY - LIQUID",
+        description: "Edit current liquid amounts and cap / rate upgrade levels.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
         body: div({ class: "scrollable-panel" }, grid),
     });
 };

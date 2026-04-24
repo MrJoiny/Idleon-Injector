@@ -24,9 +24,8 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
 
 const { div } = van.tags;
@@ -206,17 +205,15 @@ export const WorshipTab = () => {
         })
     );
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "W3 - WORSHIP",
-            description: "Edit worship charge and best worship waves.",
-            actions: RefreshButton({ onRefresh: load }),
-        }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING WORSHIP",
-        persistentErrorTitle: "WORSHIP READ FAILED",
-        persistentInitialWrapperClass: "scrollable-panel",
+        title: "W3 - WORSHIP",
+        description: "Edit worship charge and best worship waves.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
+        loadingText: "READING WORSHIP",
+        errorTitle: "WORSHIP READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body,
     });
 };

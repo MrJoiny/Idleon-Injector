@@ -17,8 +17,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanNameEffect, createIndexedStateGetter, createStaticRowReconciler, runBulkSet, toNum, useWriteStatus } from "../accountShared.js";
 
 const { div } = van.tags;
@@ -96,35 +95,33 @@ export const SaltLickTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "SALT LICK",
-            description: "Set Salt Lick upgrade levels.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: bulkStatus,
-                        tooltip: "Set every Salt Lick upgrade to its max level",
-                        onClick: () => doSetAll(null),
-                    },
-                    {
-                        label: "RESET ALL",
-                        status: bulkStatus,
-                        tooltip: "Reset every Salt Lick upgrade to 0",
-                        onClick: () => doSetAll(0),
-                    },
-                ],
-                refresh: {
-                    onClick: load,
+    return PersistentAccountListPage({
+        title: "SALT LICK",
+        description: "Set Salt Lick upgrade levels.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    tooltip: "Set every Salt Lick upgrade to its max level",
+                    onClick: () => doSetAll(null),
                 },
-            }),
+                {
+                    label: "RESET ALL",
+                    status: bulkStatus,
+                    tooltip: "Reset every Salt Lick upgrade to 0",
+                    onClick: () => doSetAll(0),
+                },
+            ],
+            refresh: {
+                onClick: load,
+            },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING SALT LICK",
-        persistentErrorTitle: "SALT LICK READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING SALT LICK",
+        errorTitle: "SALT LICK READ FAILED",
+        initialWrapperClass: "account-list",
         body: rowList,
     });
 };

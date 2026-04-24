@@ -20,10 +20,9 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, runBulkSet, sortPrefixedNumericCodes, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -279,23 +278,21 @@ export const BrewingTab = () => {
 
     load();
 
-    return AccountPageShell({
-        header: AccountTabHeader({
-            title: "ALCHEMY - BREWING",
-            description: "Set bubble levels and toggle Prisma upgrades.",
-            wrapActions: false,
-            actions: BulkActionBar({
-                leading: SetAllNumberControl({
-                    label: "SET ALL LEVEL:",
-                    value: setAllInput,
-                }),
-                refresh: { onClick: load },
+    return PersistentAccountListPage({
+        title: "ALCHEMY - BREWING",
+        description: "Set bubble levels and toggle Prisma upgrades.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: SetAllNumberControl({
+                label: "SET ALL LEVEL:",
+                value: setAllInput,
             }),
+            refresh: { onClick: load },
         }),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING BREWING",
-        persistentErrorTitle: "BREWING READ FAILED",
-        persistentInitialWrapperClass: "scrollable-panel",
+        state: { loading, error },
+        loadingText: "READING BREWING",
+        errorTitle: "BREWING READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body: contentNode,
     });
 };

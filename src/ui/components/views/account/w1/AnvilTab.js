@@ -15,10 +15,9 @@ import { gga } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
-import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
@@ -111,24 +110,22 @@ export const AnvilTab = () => {
         )
     );
 
-    return AccountPageShell({
+    return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
-        header: AccountTabHeader({
-            title: "ANVIL",
-            description: "Manage point allocation for Bonus Exp, Speed/hr, and Capacity",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read anvil stats from game memory",
-            }),
+        title: "ANVIL",
+        description: "Manage point allocation for Bonus Exp, Speed/hr, and Capacity",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read anvil stats from game memory",
         }),
         topNotices: WarningBanner(
             " You must have a character selected in-game for point changes to take effect. ",
             "Open the Anvil in-game or points won't update properly."
         ),
-        persistentState: { loading, error },
-        persistentLoadingText: "READING ANVIL",
-        persistentErrorTitle: "ANVIL READ FAILED",
-        persistentInitialWrapperClass: "account-list",
+        state: { loading, error },
+        loadingText: "READING ANVIL",
+        errorTitle: "ANVIL READ FAILED",
+        initialWrapperClass: "account-list",
         body,
     });
 };
