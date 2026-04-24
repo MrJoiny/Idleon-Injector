@@ -13,16 +13,17 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
+import { gga, ggaMany } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -44,6 +45,7 @@ const SECTIONS = [
         ],
     },
 ];
+const FORGE_UPGRADES = SECTIONS.flatMap((section) => section.upgrades);
 
 const ForgeRow = ({ upgrade, levelState }) =>
     EditableNumberRow({
@@ -72,6 +74,7 @@ const ForgeRow = ({ upgrade, levelState }) =>
 
 export const ForgeTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Forge" });
+    const { status: maxAllStatus, run: runMaxAll } = useWriteStatus();
     const levelStates = Array.from({ length: 6 }, () => van.state(0));
 
     const load = async () =>
@@ -82,6 +85,29 @@ export const ForgeTab = () => {
                 levelStates[i].val = Number(levels[i] ?? 0);
             }
         });
+
+    const doMaxAll = async () => {
+        await runMaxAll(async () => {
+            const writes = FORGE_UPGRADES.filter(
+                (upgrade) => Number(levelStates[upgrade.index].val ?? 0) !== upgrade.max
+            ).map((upgrade) => ({ path: `FurnaceLevels[${upgrade.index}]`, value: upgrade.max }));
+
+            if (writes.length > 0) {
+                const result = await ggaMany(writes);
+                const failed = result.results.find((entry) => !entry.ok);
+                if (failed) {
+                    const failedWrite = writes.find(
+                        (entry) => entry.path === failed.path || `gga.${entry.path}` === failed.path
+                    );
+                    throw new Error(`Write mismatch at ${failed.path}: expected ${failedWrite?.value ?? "unknown"}`);
+                }
+            }
+
+            for (const upgrade of FORGE_UPGRADES) {
+                levelStates[upgrade.index].val = upgrade.max;
+            }
+        });
+    };
 
     load();
 
@@ -105,10 +131,22 @@ export const ForgeTab = () => {
         header: AccountTabHeader({
             title: "FORGE",
             description: "Set forge upgrade levels — each upgrade has a hard maximum",
-            actions: RefreshButton({
-                onRefresh: load,
-                tooltip: "Re-read forge levels from game memory",
-            }),
+            actions: [
+                ActionButton({
+                    label: "MAX ALL",
+                    status: maxAllStatus,
+                    variant: "max-reset",
+                    tooltip: "Set all forge upgrades to their max levels",
+                    onClick: (e) => {
+                        e.preventDefault();
+                        doMaxAll();
+                    },
+                }),
+                RefreshButton({
+                    onRefresh: load,
+                    tooltip: "Re-read forge levels from game memory",
+                }),
+            ],
         }),
         persistentState: { loading, error },
         persistentLoadingText: "READING FORGE",
