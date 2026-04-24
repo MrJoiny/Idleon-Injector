@@ -24,7 +24,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
@@ -33,7 +33,7 @@ import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, sortPrefixedNumericCodes, writeVerified } from "../accountShared.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const PAGES = [
     { id: 0, label: "COMBAT" },
@@ -64,12 +64,9 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
     const stampCode = makeExaltedStampCode(page, order);
     const isExalted = van.derive(() => exaltedCodes.val.has(stampCode));
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.max(0, Number(rawValue));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
+        max: Infinity,
         write: async (nextLevel) => {
             const maxLevel = step > 0 && nextLevel > 0 ? Math.ceil(nextLevel / step) * step : nextLevel;
             const levelPath = `StampLevel[${page}][${order}]`;
@@ -81,16 +78,9 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
 
             return nextLevel;
         },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${order}`),
-            span({ class: "account-row__name" }, name),
-        ],
+        indexLabel: `#${order}`,
+        name,
         renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevelState.val}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue);
-            return Math.max(0, next + delta);
-        },
         rowClass: () => (isExalted.val ? "stamp-row--exalted" : ""),
         wrapApplyButton: (applyButton) => withTooltip(applyButton, "Set StampLevel and StampLevelMAX in game memory"),
         renderExtraActions: ({ status, run, applyValue }) => [

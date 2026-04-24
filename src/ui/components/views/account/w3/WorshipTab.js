@@ -22,14 +22,14 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const WORSHIP_TOTEM_NAMES = [
     "Goblin Gorefest",
@@ -55,14 +55,14 @@ const WorshipChargeRow = ({
         activeCharacterNameRef.val.length > 0 &&
         activeCharacterNameRef.val === playerName;
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: chargeState,
-        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
+        max: Infinity,
+        integerMode: "round",
+        invalidFallback: 0,
         write: async (nextCharge) => writeCharge(playerName, nextCharge),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${index + 1}`),
-            span({ class: "account-row__name" }, playerName),
-        ],
+        indexLabel: `#${index + 1}`,
+        name: playerName,
         renderBadge: (currentValue) => {
             const active = isActiveCharacter();
             const maxLabel =
@@ -72,28 +72,20 @@ const WorshipChargeRow = ({
 
             return active ? `CHARGE ${currentValue ?? 0} / ${maxLabel} - ACTIVE` : `CHARGE ${currentValue ?? 0}`;
         },
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = toInt(rawValue, { min: 0, fallback: currentValue ?? 0 });
-            return Math.max(0, base + delta);
-        },
         controlsClass: "account-row__controls--xl",
     });
 };
 
 const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: waveState,
-        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
+        max: Infinity,
+        integerMode: "round",
+        invalidFallback: 0,
         write: async (nextWave) => writeWave(index, nextWave),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${index + 1}`),
-            span({ class: "account-row__name" }, name),
-        ],
+        indexLabel: `#${index + 1}`,
+        name,
         renderBadge: (currentValue) => `BEST WAVE ${currentValue ?? 0}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = toInt(rawValue, { min: 0, fallback: currentValue ?? 0 });
-            return Math.max(0, base + delta);
-        },
     });
 
 export const WorshipTab = () => {

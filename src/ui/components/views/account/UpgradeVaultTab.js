@@ -18,41 +18,28 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, readComputedMany, readCList } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
-import { EditableNumberRow } from "./EditableNumberRow.js";
+import { ClampedLevelRow } from "./ClampedLevelRow.js";
 import { AccountPageShell } from "./components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
 import { AccountTabHeader } from "./components/AccountTabHeader.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { cleanName, createIndexedStateGetter, toNum, writeVerified } from "./accountShared.js";
+import { cleanName, createIndexedStateGetter, toNum } from "./accountShared.js";
 import { toIndexedArray } from "../../../utils/index.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 // -- VaultRow --------------------------------------------------------------
 
 const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.max(0, Number(rawValue));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
-        write: async (nextLevel) => {
-            const path = `UpgVault[${index}]`;
-            return writeVerified(path, nextLevel);
-        },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${index}`),
-            span({ class: "account-row__name" }, name),
-        ],
+        writePath: `UpgVault[${index}]`,
+        max: Infinity,
+        indexLabel: `#${index}`,
+        name,
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${realMax}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.max(0, next + delta);
-        },
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level for ${name} (max: ${maxLabel})`),
         maxAction: {
             value: realMax,

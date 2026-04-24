@@ -20,7 +20,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountSection } from "../components/AccountSection.js";
@@ -124,13 +124,10 @@ const CloudRow = ({ entry }) => {
 };
 
 const UpgradeRow = ({ entry, onAfterSet }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: entry.levelState,
-        normalize: (rawValue) =>
-            Math.max(
-                0,
-                Math.min(toInt(entry.maxLevelState.val, { mode: "floor" }), toInt(rawValue, { mode: "floor" }))
-            ),
+        max: entry.maxLevelState,
+        integerMode: "floor",
         write: async (nextLevel) => {
             const path = `Dream[${entry.index + 2}]`;
             const verified = await writeVerified(path, nextLevel, {
@@ -139,15 +136,9 @@ const UpgradeRow = ({ entry, onAfterSet }) =>
             await onAfterSet();
             return verified;
         },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index + 1}`),
-            span({ class: "account-row__name" }, entry.name),
-        ],
+        indexLabel: `#${entry.index + 1}`,
+        name: entry.name,
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${entry.maxLevelState.val}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = toInt(rawValue, { mode: "floor", fallback: currentValue ?? 0 });
-            return Math.max(0, Math.min(toInt(entry.maxLevelState.val, { mode: "floor" }), base + delta));
-        },
     });
 
 const buildStaticMeta = async () => {

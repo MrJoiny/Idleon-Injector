@@ -5,6 +5,7 @@ import { resolveValue, toNum, writeVerified } from "./accountShared.js";
 const { span } = van.tags;
 
 const applyIntegerMode = (value, integerMode) => {
+    if (integerMode === "floor") return Math.floor(value);
     if (integerMode === "round") return Math.round(value);
     if (integerMode === "trunc") return Math.trunc(value);
     return value;
@@ -25,6 +26,7 @@ export const ClampedLevelRow = ({
     max,
     min = 0,
     integerMode = null,
+    invalidFallback = null,
     renderInfo,
     indexLabel = null,
     name = null,
@@ -64,7 +66,7 @@ export const ClampedLevelRow = ({
     return EditableNumberRow({
         valueState,
         normalize: (rawValue) => {
-            const nextValue = clamp(rawValue);
+            const nextValue = clamp(rawValue, invalidFallback);
             return Number.isNaN(nextValue) ? null : nextValue;
         },
         write: async (nextLevel) => {
