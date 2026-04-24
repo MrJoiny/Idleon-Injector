@@ -1,4 +1,5 @@
 import van from "../../../vendor/van-1.6.0.js";
+import { getNumberInputLiveRaw } from "../../NumberInput.js";
 import { toNodes, useWriteStatus } from "./accountShared.js";
 import { AccountRow } from "./components/AccountRow.js";
 import { ActionButton } from "./components/ActionButton.js";
@@ -50,7 +51,8 @@ export const EditableFieldsRow = ({
         });
     });
 
-    const getDraftValues = () => Object.fromEntries(fields.map((field) => [field.key, draftStates[field.key].val]));
+    const getDraftValue = (key) => getNumberInputLiveRaw(draftStates[key]) ?? draftStates[key].val;
+    const getDraftValues = () => Object.fromEntries(fields.map((field) => [field.key, getDraftValue(field.key)]));
 
     const applyValue = async (rawValues = getDraftValues()) => {
         const nextValues = normalize(rawValues);
@@ -88,6 +90,7 @@ export const EditableFieldsRow = ({
         status,
         applyValue,
         draftStates,
+        getDraftValue,
         resetDraft,
         setFieldFocused: (key, isFocused) => focusByKey.set(key, isFocused),
     };

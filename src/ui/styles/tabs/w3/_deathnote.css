@@ -1,4 +1,4 @@
-/* ── Death Note tab ───────────────────────────────────────────────────────── */
+/* Death Note tab */
 
 .dn-panels {
     display: flex;
@@ -15,98 +15,17 @@
     overflow: hidden;
 }
 
-/* ── Mob list ─────────────────────────────────────────────────────────────── */
-
 .dn-mob-list {
     display: flex;
     flex-direction: column;
     gap: 0;
 }
 
-/* ── Individual mob row ───────────────────────────────────────────────────── */
-
-.dn-mob-row {
-    border-bottom: 1px solid var(--c-border);
-}
-
-.dn-mob-row:last-child {
-    border-bottom: none;
-}
-
-/* ── Mob header (clickable toggle) ───────────────────────────────────────── */
-
-.dn-mob-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    color: var(--c-text);
-    transition: background 0.1s;
-}
-
-.dn-mob-header:hover {
-    background: var(--c-hover);
-}
-
-.dn-mob-header__arrow {
-    display: flex;
-    align-items: center;
-    color: var(--c-text-dim);
-    flex-shrink: 0;
-    transition: transform 0.15s ease;
-}
-
-.dn-mob-header__arrow svg {
-    width: 14px;
-    height: 14px;
-}
-
-.dn-mob-header__arrow--open {
-    transform: rotate(90deg);
-}
-
-.dn-mob-header__name {
-    flex: 1;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    color: var(--c-text);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.dn-mob-header__total {
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
-    color: var(--c-accent);
+.dn-mob-row .account-expandable-group__meta {
     font-weight: 700;
-    flex-shrink: 0;
     min-width: 64px;
     text-align: right;
 }
-
-/* ── Expandable player list ───────────────────────────────────────────────── */
-
-.dn-mob-dropdown {
-    display: none;
-    flex-direction: column;
-    gap: 0;
-    border-top: 1px solid var(--c-border);
-    background: var(--c-panel-dim);
-}
-
-.dn-mob-dropdown--open {
-    display: flex;
-}
-
-/* ── Per-player row ───────────────────────────────────────────────────────── */
 
 .dn-player-row {
     padding: 6px 12px 6px 32px;

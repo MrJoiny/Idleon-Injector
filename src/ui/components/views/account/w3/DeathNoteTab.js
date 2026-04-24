@@ -21,12 +21,12 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
+import { AccountExpandableGroup } from "../components/AccountExpandableGroup.js";
 import {
     adjustFormattedIntInput,
     cleanName,
@@ -43,7 +43,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const MINIBOSS_WORLD_KEY = "Miniboss";
 const WORLD_LABELS = ["W1", "W2", "W3", "W4", "W5", "W6", "W7"];
@@ -160,25 +160,13 @@ const MobRow = ({ mob, getKillState, getExpandState, currentPlayer }) => {
         })
     );
 
-    return div(
-        { class: "dn-mob-row" },
-        button(
-            {
-                type: "button",
-                class: "dn-mob-header",
-                onclick: () => {
-                    expanded.val = !expanded.val;
-                },
-            },
-            span(
-                { class: () => `dn-mob-header__arrow${expanded.val ? " dn-mob-header__arrow--open" : ""}` },
-                Icons.ChevronRight()
-            ),
-            span({ class: "dn-mob-header__name" }, mob.mobName),
-            span({ class: "dn-mob-header__total" }, () => formatNumber(totalKills()))
-        ),
-        div({ class: () => `dn-mob-dropdown${expanded.val ? " dn-mob-dropdown--open" : ""}` }, ...playerRows)
-    );
+    return AccountExpandableGroup({
+        expanded,
+        title: mob.mobName,
+        meta: () => formatNumber(totalKills()),
+        body: playerRows,
+        rootClass: "dn-mob-row",
+    });
 };
 
 const MinibossRow = ({ mob, killState }) =>

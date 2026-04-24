@@ -20,19 +20,21 @@
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
-import { NumberInput, getNumberInputLiveRaw } from "../../../NumberInput.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
+import { NumberInput } from "../../../NumberInput.js";
+import { EditableFieldsRow } from "../EditableFieldsRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
+import { AccountExpandableGroup } from "../components/AccountExpandableGroup.js";
+import { ActionButton } from "../components/ActionButton.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     adjustFormattedIntInput,
     cleanName,
+    getOrCreateState,
     largeFormatter,
     largeParser,
     resolveFormattedIntInput,
@@ -42,15 +44,25 @@ import {
     writeVerified,
 } from "../accountShared.js";
 
-const { div, button, span } = van.tags;
+const { div, span } = van.tags;
 
 const trapStateKey = (playerName, trapIndex, field) => `${playerName}:${trapIndex}:${field}`;
 const trapBasePath = (playerName, trapIndex) => `PlayerDATABASE.h[${playerName}].h.PldTraps[${trapIndex}]`;
+const trapShapeSignature = (snapshot) =>
+    `${snapshot.currentPlayer}::${snapshot.players
+        .map(
+            (player) =>
+                `${player.playerName}:${player.traps
+                    .map((trap) => `${trap.trapIndex}:${trap.critterId}:${trap.map}`)
+                    .join(",")}`
+        )
+        .join("|")}`;
+
 const progressLabel = (elapsed, completion) => {
     const done = toInt(elapsed, 0);
     const total = Math.max(0, toInt(completion, 0));
     const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((done / total) * 100))) : 0;
-    return `Progress: ${done} / ${total} (${pct}%)`;
+    return `Progress: ${formatNumber(done)} / ${formatNumber(total)} (${pct}%)`;
 };
 
 const resolveCritterName = (critterId, itemDefs, monsterDefs) => {
@@ -58,313 +70,191 @@ const resolveCritterName = (critterId, itemDefs, monsterDefs) => {
     const key = String(raw);
     if (!key) return "Unknown Critter";
 
-    const itemDef = unwrapH(itemDefs?.[key] ?? itemDefs?.[raw]);
+    const itemDef = unwrapH(itemDefs[key] ?? itemDefs[raw]);
     const itemName = itemDef?.Name ?? itemDef?.displayName ?? itemDef?.name;
     if (itemName) return cleanName(itemName, key);
 
-    const mobDef = unwrapH(monsterDefs?.[key] ?? monsterDefs?.[raw]);
+    const mobDef = unwrapH(monsterDefs[key] ?? monsterDefs[raw]);
     const mobName = mobDef?.Name ?? mobDef?.displayName ?? mobDef?.name;
     if (mobName) return cleanName(mobName, key);
 
     return cleanName(raw, key) || key;
 };
 
-const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, getInputState, onWriteField }) => {
+const parseTrapRows = (rawTraps) =>
+    toIndexedArray(rawTraps ?? [])
+        .map((rawTrap, trapIndex) => {
+            const t = toIndexedArray(rawTrap ?? []);
+            const mapValue = toInt(t[0], -1);
+            if (mapValue === -1) return null;
+
+            return {
+                trapIndex,
+                map: mapValue,
+                xPos: toInt(t[1], 0),
+                elapsed: toInt(t[2], 0),
+                critterId: t[3],
+                qty: toInt(t[4], 0),
+                trapType: toInt(t[5], 0),
+                completionTime: toInt(t[6], 0),
+                exp: toInt(t[7], 0),
+                rareChance: toInt(t[8], 0),
+            };
+        })
+        .filter(Boolean);
+
+const TrapInput = ({ label, fieldKey, valueState, draftStates, getDraftValue, setFieldFocused, resetDraft }) =>
+    div(
+        { class: "trap-row__input-group" },
+        span({ class: "trap-row__input-label" }, label),
+        NumberInput({
+            mode: "int",
+            value: draftStates[fieldKey],
+            formatter: largeFormatter,
+            parser: largeParser,
+            onfocus: () => setFieldFocused(fieldKey, true),
+            onblur: () => {
+                setFieldFocused(fieldKey, false);
+                resetDraft(fieldKey);
+            },
+            onDecrement: () =>
+                (draftStates[fieldKey].val = String(
+                    adjustFormattedIntInput(getDraftValue(fieldKey), -1, valueState.val, { min: 0 })
+                )),
+            onIncrement: () =>
+                (draftStates[fieldKey].val = String(
+                    adjustFormattedIntInput(getDraftValue(fieldKey), 1, valueState.val, { min: 0 })
+                )),
+        })
+    );
+
+const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, onWriteField }) => {
     const qtyValue = getValueState(playerName, trap.trapIndex, "qty", toInt(trap.qty));
     const expValue = getValueState(playerName, trap.trapIndex, "exp", toInt(trap.exp));
     const rareValue = getValueState(playerName, trap.trapIndex, "rare", toInt(trap.rareChance));
     const elapsedValue = getValueState(playerName, trap.trapIndex, "elapsed", toInt(trap.elapsed));
     const completionValue = getValueState(playerName, trap.trapIndex, "completion", toInt(trap.completionTime));
-
-    const qtyInput = getInputState(playerName, trap.trapIndex, "qty", "0");
-    const expInput = getInputState(playerName, trap.trapIndex, "exp", "0");
-    const rareInput = getInputState(playerName, trap.trapIndex, "rare", "0");
-
-    const applyStatus = useWriteStatus();
     const finishStatus = useWriteStatus();
 
-    const resolveInputInt = (raw, fallback = 0) => {
-        return resolveFormattedIntInput(raw, Math.max(0, toInt(fallback, 0)));
-    };
-    const latestRaw = (inputState) => {
-        const liveRaw = getNumberInputLiveRaw(inputState);
-        return liveRaw !== undefined ? liveRaw : inputState.val;
-    };
-
-    const statusClass = () => {
-        if (applyStatus.status.val === "success" || finishStatus.status.val === "success")
-            return "account-row--success";
-        if (applyStatus.status.val === "error" || finishStatus.status.val === "error") return "account-row--error";
-        return "";
-    };
-
-    const isBusy = () => applyStatus.status.val === "loading" || finishStatus.status.val === "loading";
-
-    const doApply = async () => {
-        const nextQty = resolveInputInt(latestRaw(qtyInput), qtyValue.val);
-        const nextExp = resolveInputInt(latestRaw(expInput), expValue.val);
-        const nextRare = resolveInputInt(latestRaw(rareInput), rareValue.val);
-
-        await applyStatus.run(
-            async () => {
-                const verifiedQty = await onWriteField(playerName, trap.trapIndex, 4, nextQty, isCurrentPlayer);
-                const verifiedExp = await onWriteField(playerName, trap.trapIndex, 7, nextExp, isCurrentPlayer);
-                const verifiedRare = await onWriteField(playerName, trap.trapIndex, 8, nextRare, isCurrentPlayer);
-                return { verifiedQty, verifiedExp, verifiedRare };
-            },
-            {
-                onSuccess: (result) => {
-                    if (!result) return;
-                    qtyValue.val = result.verifiedQty;
-                    expValue.val = result.verifiedExp;
-                    rareValue.val = result.verifiedRare;
-                    qtyInput.val = String(result.verifiedQty);
-                    expInput.val = String(result.verifiedExp);
-                    rareInput.val = String(result.verifiedRare);
-                },
-            }
-        );
-    };
-
-    const doFinish = async () => {
-        const finishAt = toInt(completionValue.val, toInt(trap.completionTime));
-        await finishStatus.run(async () => onWriteField(playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer), {
-            onSuccess: (verifiedElapsed) => {
-                if (typeof verifiedElapsed !== "number") return;
-                elapsedValue.val = verifiedElapsed;
-            },
-        });
-    };
-
-    return div(
-        { class: () => `account-row trap-row ${statusClass()}` },
-        div(
-            { class: "account-row__info trap-row__info" },
+    return EditableFieldsRow({
+        fields: [
+            { key: "qty", valueState: qtyValue },
+            { key: "exp", valueState: expValue },
+            { key: "rare", valueState: rareValue },
+        ],
+        normalize: ({ qty, exp, rare }) => {
+            const nextQty = resolveFormattedIntInput(qty, null, { min: 0 });
+            const nextExp = resolveFormattedIntInput(exp, null, { min: 0 });
+            const nextRare = resolveFormattedIntInput(rare, null, { min: 0 });
+            if (nextQty === null || nextExp === null || nextRare === null) return null;
+            return { qty: nextQty, exp: nextExp, rare: nextRare };
+        },
+        write: async ({ qty, exp, rare }) => {
+            const verifiedQty = await onWriteField(playerName, trap.trapIndex, 4, qty, isCurrentPlayer);
+            const verifiedExp = await onWriteField(playerName, trap.trapIndex, 7, exp, isCurrentPlayer);
+            const verifiedRare = await onWriteField(playerName, trap.trapIndex, 8, rare, isCurrentPlayer);
+            return { qty: verifiedQty, exp: verifiedExp, rare: verifiedRare };
+        },
+        info: [
             span({ class: "account-row__index" }, `#${trap.trapIndex + 1}`),
             div(
                 { class: "trap-row__text" },
                 span({ class: "account-row__name" }, trap.critterName),
                 span({ class: "trap-row__meta" }, () => progressLabel(elapsedValue.val, completionValue.val))
-            )
-        ),
-        span(
-            { class: "account-row__badge trap-row__badge" },
-            () =>
-                `QTY ${formatNumber(toInt(qtyValue.val))} | EXP ${formatNumber(toInt(expValue.val))} | RARE ${formatNumber(toInt(rareValue.val))}`
-        ),
-        div(
-            { class: "account-row__controls trap-row__controls" },
-            div(
-                { class: "trap-row__input-group" },
-                span({ class: "trap-row__input-label" }, "Qty"),
-                NumberInput({
-                    mode: "int",
-                    value: qtyInput,
-                    formatter: largeFormatter,
-                    parser: largeParser,
-                    onDecrement: () => (qtyInput.val = String(adjustFormattedIntInput(latestRaw(qtyInput), -1))),
-                    onIncrement: () => (qtyInput.val = String(adjustFormattedIntInput(latestRaw(qtyInput), 1))),
-                })
             ),
-            div(
-                { class: "trap-row__input-group" },
-                span({ class: "trap-row__input-label" }, "EXP"),
-                NumberInput({
-                    mode: "int",
-                    value: expInput,
-                    formatter: largeFormatter,
-                    parser: largeParser,
-                    onDecrement: () => (expInput.val = String(adjustFormattedIntInput(latestRaw(expInput), -1))),
-                    onIncrement: () => (expInput.val = String(adjustFormattedIntInput(latestRaw(expInput), 1))),
-                })
-            ),
-            div(
-                { class: "trap-row__input-group" },
-                span({ class: "trap-row__input-label" }, "Rare"),
-                NumberInput({
-                    mode: "int",
-                    value: rareInput,
-                    formatter: largeFormatter,
-                    parser: largeParser,
-                    onDecrement: () => (rareInput.val = String(adjustFormattedIntInput(latestRaw(rareInput), -1))),
-                    onIncrement: () => (rareInput.val = String(adjustFormattedIntInput(latestRaw(rareInput), 1))),
-                })
-            ),
-            button(
-                {
-                    type: "button",
-                    class: () =>
-                        [
-                            "account-btn",
-                            "account-btn--apply",
-                            isBusy() ? "account-btn--loading" : "",
-                            applyStatus.status.val === "success" ? "account-row--success" : "",
-                            applyStatus.status.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                    disabled: isBusy,
-                    onclick: doApply,
+        ],
+        badge: () =>
+            `QTY ${formatNumber(toInt(qtyValue.val))} | EXP ${formatNumber(toInt(expValue.val))} | RARE ${formatNumber(toInt(rareValue.val))}`,
+        rowClass: "trap-row",
+        badgeClass: "trap-row__badge",
+        controlsClass: "trap-row__controls",
+        renderControls: ({ draftStates, getDraftValue, setFieldFocused, resetDraft }) => [
+            TrapInput({
+                label: "Qty",
+                fieldKey: "qty",
+                valueState: qtyValue,
+                draftStates,
+                getDraftValue,
+                setFieldFocused,
+                resetDraft,
+            }),
+            TrapInput({
+                label: "EXP",
+                fieldKey: "exp",
+                valueState: expValue,
+                draftStates,
+                getDraftValue,
+                setFieldFocused,
+                resetDraft,
+            }),
+            TrapInput({
+                label: "Rare",
+                fieldKey: "rare",
+                valueState: rareValue,
+                draftStates,
+                getDraftValue,
+                setFieldFocused,
+                resetDraft,
+            }),
+        ],
+        renderExtraActions: ({ status }) =>
+            ActionButton({
+                label: "FINISH",
+                loadingLabel: "...",
+                status: finishStatus.status,
+                className: "trap-row__finish-btn",
+                disabled: () => status.val === "loading",
+                tooltip: "Finish this trap",
+                onClick: async (e) => {
+                    e.preventDefault();
+                    const finishAt = toInt(completionValue.val, toInt(trap.completionTime));
+                    const { ok, result } = await finishStatus.run(async () =>
+                        onWriteField(playerName, trap.trapIndex, 2, finishAt, isCurrentPlayer)
+                    );
+                    if (ok) elapsedValue.val = result;
                 },
-                () => (applyStatus.status.val === "loading" ? "..." : "SET")
-            ),
-            button(
-                {
-                    type: "button",
-                    class: () =>
-                        [
-                            "account-btn",
-                            "account-btn--apply",
-                            "trap-row__finish-btn",
-                            isBusy() ? "account-btn--loading" : "",
-                            finishStatus.status.val === "success" ? "account-row--success" : "",
-                            finishStatus.status.val === "error" ? "account-row--error" : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" "),
-                    disabled: isBusy,
-                    onclick: doFinish,
-                },
-                () => (finishStatus.status.val === "loading" ? "..." : "FINISH")
-            )
-        )
-    );
+            }),
+    });
 };
 
-const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueState, getInputState, onWriteField }) => {
+const PlayerTrapPanel = ({ player, currentPlayer, getExpandedState, getValueState, onWriteField }) => {
     const expanded = getExpandedState(player.playerName);
-    const finishAllStatus = useWriteStatus();
     const isCurrentPlayer = currentPlayer === player.playerName;
-
-    const doFinishAll = async () => {
-        if (!player.traps.length) return;
-        await finishAllStatus.run(
-            async () => {
-                const verifiedElapsedByTrap = new Map();
-                for (const trap of player.traps) {
-                    const completionState = getValueState(
-                        player.playerName,
-                        trap.trapIndex,
-                        "completion",
-                        trap.completionTime
-                    );
-                    const finishAt = toInt(completionState.val, toInt(trap.completionTime));
-                    const verifiedElapsed = await onWriteField(
-                        player.playerName,
-                        trap.trapIndex,
-                        2,
-                        finishAt,
-                        isCurrentPlayer
-                    );
-                    verifiedElapsedByTrap.set(trap.trapIndex, verifiedElapsed);
-                }
-                return verifiedElapsedByTrap;
-            },
-            {
-                onSuccess: (verifiedElapsedByTrap) => {
-                    if (!(verifiedElapsedByTrap instanceof Map)) return;
-                    for (const trap of player.traps) {
-                        const elapsedState = getValueState(player.playerName, trap.trapIndex, "elapsed", trap.elapsed);
-                        if (verifiedElapsedByTrap.has(trap.trapIndex)) {
-                            elapsedState.val = verifiedElapsedByTrap.get(trap.trapIndex);
-                        }
-                    }
-                },
-            }
-        );
-    };
-
-    return div(
-        { class: "trap-user-row" },
-        button(
-            {
-                type: "button",
-                class: "trap-user-header",
-                onclick: () => {
-                    expanded.val = !expanded.val;
-                },
-            },
-            span(
-                { class: () => `trap-user-header__arrow${expanded.val ? " trap-user-header__arrow--open" : ""}` },
-                Icons.ChevronRight()
-            ),
-            span(
-                { class: "trap-user-header__name" },
-                player.playerName,
-                isCurrentPlayer ? span({ class: "trap-user-header__current" }, " (selected)") : null
-            ),
-            span({ class: "trap-user-header__count" }, `${player.traps.length} traps`)
-        ),
-        div(
-            { class: () => `trap-user-dropdown${expanded.val ? " trap-user-dropdown--open" : ""}` },
-            player.traps.length
-                ? div(
-                      { class: "trap-user-dropdown__rows" },
-                      ...player.traps.map((trap) =>
-                          TrappingRow({
-                              playerName: player.playerName,
-                              trap,
-                              isCurrentPlayer,
-                              getValueState,
-                              getInputState,
-                              onWriteField,
-                          })
-                      )
-                  )
-                : div(
-                      { class: "trap-user-dropdown__empty" },
-                      "No valid traps for this character (all map slots are -1)."
-                  ),
-            div(
-                { class: "trap-user-dropdown__footer" },
-                button(
-                    {
-                        type: "button",
-                        class: () =>
-                            [
-                                "account-btn",
-                                "account-btn--apply",
-                                "trap-user-dropdown__finish-all",
-                                finishAllStatus.status.val === "loading" ? "account-btn--loading" : "",
-                                finishAllStatus.status.val === "success" ? "account-row--success" : "",
-                                finishAllStatus.status.val === "error" ? "account-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => finishAllStatus.status.val === "loading" || !player.traps.length,
-                        onclick: doFinishAll,
-                    },
-                    () => (finishAllStatus.status.val === "loading" ? "..." : "FINISH ALL")
-                )
-            )
-        )
+    const rows = player.traps.map((trap) =>
+        TrappingRow({
+            playerName: player.playerName,
+            trap,
+            isCurrentPlayer,
+            getValueState,
+            onWriteField,
+        })
     );
+
+    return AccountExpandableGroup({
+        expanded,
+        title: [
+            player.playerName,
+            isCurrentPlayer ? span({ class: "trap-user-current" }, "(selected)") : null,
+        ],
+        meta: () => `${player.traps.length} traps`,
+        body: div({ class: "trap-user-dropdown__rows" }, ...rows),
+    });
 };
 
 export const TrappingTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Trapping" });
-    const data = van.state(null);
-
+    const finishAllStatus = useWriteStatus();
+    const trapCountState = van.state(0);
     const valueStates = new Map();
-    const inputStates = new Map();
     const expandedStates = new Map();
+    const critterNameById = new Map();
+    const playersNode = div({ class: "trap-user-list" });
+    let latestSnapshot = { currentPlayer: "", players: [] };
+    let playerSignature = null;
 
-    const getExpandedState = (playerName) => {
-        if (!expandedStates.has(playerName)) expandedStates.set(playerName, van.state(false));
-        return expandedStates.get(playerName);
-    };
-
-    const getValueState = (playerName, trapIndex, field, initialValue = 0) => {
-        const key = trapStateKey(playerName, trapIndex, field);
-        if (!valueStates.has(key)) valueStates.set(key, van.state(initialValue));
-        return valueStates.get(key);
-    };
-
-    const getInputState = (playerName, trapIndex, field, initialValue = "0") => {
-        const key = trapStateKey(playerName, trapIndex, field);
-        if (!inputStates.has(key)) inputStates.set(key, van.state(String(initialValue)));
-        return inputStates.get(key);
-    };
+    const getExpandedState = (playerName) => getOrCreateState(expandedStates, playerName, false);
+    const getValueState = (playerName, trapIndex, field, initialValue = 0) =>
+        getOrCreateState(valueStates, trapStateKey(playerName, trapIndex, field), initialValue);
 
     const setTrapStatesFromSnapshot = (snapshot) => {
         for (const player of snapshot.players) {
@@ -374,12 +264,30 @@ export const TrappingTab = () => {
                 getValueState(player.playerName, trap.trapIndex, "rare", 0).val = toInt(trap.rareChance);
                 getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = toInt(trap.elapsed);
                 getValueState(player.playerName, trap.trapIndex, "completion", 0).val = toInt(trap.completionTime);
-
-                getInputState(player.playerName, trap.trapIndex, "qty", "0").val = String(toInt(trap.qty));
-                getInputState(player.playerName, trap.trapIndex, "exp", "0").val = String(toInt(trap.exp));
-                getInputState(player.playerName, trap.trapIndex, "rare", "0").val = String(toInt(trap.rareChance));
             }
         }
+    };
+
+    const reconcilePlayers = (snapshot) => {
+        latestSnapshot = snapshot;
+        trapCountState.val = snapshot.players.reduce((sum, player) => sum + player.traps.length, 0);
+        setTrapStatesFromSnapshot(snapshot);
+
+        const nextSignature = trapShapeSignature(snapshot);
+        if (nextSignature === playerSignature) return;
+
+        playerSignature = nextSignature;
+        playersNode.replaceChildren(
+            ...snapshot.players.map((player) =>
+                PlayerTrapPanel({
+                    player,
+                    currentPlayer: snapshot.currentPlayer,
+                    getExpandedState,
+                    getValueState,
+                    onWriteField,
+                })
+            )
+        );
     };
 
     const onWriteField = async (playerName, trapIndex, fieldIndex, value, isCurrentPlayer) => {
@@ -388,105 +296,116 @@ export const TrappingTab = () => {
                 message: `Write mismatch at PlacedTraps[${trapIndex}][${fieldIndex}]: expected ${value}`,
             });
         }
+
         const dbPath = `${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`;
         return writeVerified(dbPath, value, { message: `Write mismatch at ${dbPath}: expected ${value}` });
     };
 
+    const finishAllTraps = async () => {
+        if (!trapCountState.val) return;
+
+        await finishAllStatus.run(async () => {
+            for (const player of latestSnapshot.players) {
+                const isCurrentPlayer = player.playerName === latestSnapshot.currentPlayer;
+
+                for (const trap of player.traps) {
+                    const completionState = getValueState(player.playerName, trap.trapIndex, "completion", 0);
+                    const finishAt = toInt(completionState.val, toInt(trap.completionTime));
+                    const verifiedElapsed = await onWriteField(
+                        player.playerName,
+                        trap.trapIndex,
+                        2,
+                        finishAt,
+                        isCurrentPlayer
+                    );
+                    getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = verifiedElapsed;
+                }
+            }
+        });
+    };
+
+    const loadCritterNames = async (critterIds) => {
+        const missingCritterIds = critterIds.filter((critterId) => !critterNameById.has(critterId));
+        if (!missingCritterIds.length) return;
+
+        const [itemDefs, monsterDefs] = await Promise.all([
+            readGgaEntries("ItemDefinitionsGET.h", missingCritterIds, ["Name", "displayName", "name"]),
+            readGgaEntries("MonsterDefinitionsGET.h", missingCritterIds, ["Name", "displayName", "name"]),
+        ]);
+
+        for (const critterId of missingCritterIds) {
+            critterNameById.set(critterId, resolveCritterName(critterId, itemDefs, monsterDefs));
+        }
+    };
+
     const load = async () =>
         run(async () => {
-            const [rawNames, rawCurrentPlayer, rawPlayerDb, rawItemDefs, rawMonsterDefs] = await Promise.all([
-                gga("GetPlayersUsernames"),
-                gga("UserInfo[0]"),
-                gga("PlayerDATABASE.h"),
-                gga("ItemDefinitionsGET.h"),
-                gga("MonsterDefinitionsGET.h"),
-            ]);
-
+            const [rawNames, rawCurrentPlayer] = await Promise.all([gga("GetPlayersUsernames"), gga("UserInfo[0]")]);
             const playerNames = toIndexedArray(rawNames ?? []).filter(
                 (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
             );
-
-            const playerDb = unwrapH(rawPlayerDb) || {};
-            const itemDefs = unwrapH(rawItemDefs) || {};
-            const monsterDefs = unwrapH(rawMonsterDefs) || {};
             const currentPlayer = typeof rawCurrentPlayer === "string" ? rawCurrentPlayer : "";
 
-            const players = playerNames.map((playerName) => {
-                const playerNode = unwrapH(playerDb[playerName]) || {};
-                const rawTraps = toIndexedArray(playerNode.PldTraps ?? []);
-                const traps = rawTraps
-                    .map((rawTrap, trapIndex) => {
-                        const t = toIndexedArray(rawTrap ?? []);
-                        const mapValue = toInt(t[0], -1);
-                        if (mapValue === -1) return null;
+            const [playerEntries, liveTraps] = await Promise.all([
+                playerNames.length ? readGgaEntries("PlayerDATABASE.h", playerNames, ["PldTraps"]) : {},
+                currentPlayer ? gga("PlacedTraps") : [],
+            ]);
 
-                        return {
-                            trapIndex,
-                            map: mapValue,
-                            xPos: toInt(t[1], 0),
-                            elapsed: toInt(t[2], 0),
-                            critterId: t[3],
-                            critterName: resolveCritterName(t[3], itemDefs, monsterDefs),
-                            qty: toInt(t[4], 0),
-                            trapType: toInt(t[5], 0),
-                            completionTime: toInt(t[6], 0),
-                            exp: toInt(t[7], 0),
-                            rareChance: toInt(t[8], 0),
-                        };
-                    })
-                    .filter(Boolean);
-
-                return { playerName, traps };
+            const playersWithRawTraps = playerNames.map((playerName) => {
+                const playerNode = unwrapH(playerEntries[playerName]) || {};
+                const rawTraps = playerName === currentPlayer ? liveTraps : playerNode.PldTraps;
+                return { playerName, traps: parseTrapRows(rawTraps) };
             });
+            const critterIds = [
+                ...new Set(
+                    playersWithRawTraps
+                        .flatMap((player) => player.traps.map((trap) => String(trap.critterId ?? "")))
+                        .filter(Boolean)
+                ),
+            ];
+            await loadCritterNames(critterIds);
 
-            const snapshot = { currentPlayer, players };
-            setTrapStatesFromSnapshot(snapshot);
-            data.val = snapshot;
+            reconcilePlayers({
+                currentPlayer,
+                players: playersWithRawTraps.map((player) => ({
+                    playerName: player.playerName,
+                    traps: player.traps.map((trap) => ({
+                        ...trap,
+                        critterName: critterNameById.get(String(trap.critterId ?? "")) ?? "Unknown Critter",
+                    })),
+                })),
+            });
         });
 
     load();
-
-    const renderBody = (resolved) => {
-        if (!resolved.players.length) {
-            return EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO PLAYERS",
-                subtitle: "No character names were found in GetPlayersUsernames.",
-            });
-        }
-
-        return div(
-            { class: "trap-scroll scrollable-panel" },
-            div(
-                { class: "trap-note" },
-                "Rare chance note: values above 100 still behave as 100% rare chance and do not grant extra benefit."
-            ),
-            div(
-                { class: "trap-user-list" },
-                ...resolved.players.map((player) =>
-                    PlayerTrapPanel({
-                        player,
-                        currentPlayer: resolved.currentPlayer,
-                        getExpandedState,
-                        getValueState,
-                        getInputState,
-                        onWriteField,
-                    })
-                )
-            )
-        );
-    };
 
     return AccountPageShell({
         header: AccountTabHeader({
             title: "TRAPPING",
             description:
                 "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
-            actions: RefreshButton({ onRefresh: load }),
+            actions: [
+                ActionButton({
+                    label: "FINISH ALL",
+                    loadingLabel: "...",
+                    status: finishAllStatus.status,
+                    disabled: () => loading.val || !trapCountState.val,
+                    tooltip: "Finish every loaded trap",
+                    onClick: (e) => {
+                        e.preventDefault();
+                        finishAllTraps();
+                    },
+                }),
+                RefreshButton({ onRefresh: load }),
+            ],
         }),
-        loadState: { loading, error, data },
-        renderBody,
+        topNotices: WarningBanner(
+            "Rare chance values above 100 still behave as 100% rare chance and do not grant extra benefit."
+        ),
+        body: div({ class: "trap-scroll scrollable-panel" }, playersNode),
+        rootClass: "tab-container scroll-container",
+        persistentState: { loading, error },
+        persistentLoadingText: "Loading Trapping...",
+        persistentErrorTitle: "TRAPPING LOAD FAILED",
     });
 };
-
-
