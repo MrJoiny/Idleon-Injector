@@ -18,7 +18,7 @@ import { NumberInput } from "../../../NumberInput.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
@@ -76,12 +76,9 @@ const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
         levels.val = nextLevels;
     };
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.max(0, Number(rawValue));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
+        max: Infinity,
         write: async (nextLevel) => {
             const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
             await writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
@@ -96,11 +93,6 @@ const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
                 () => (isPrisma.val ? span({ class: "brewing-prisma-badge" }, "PRISMA") : null),
             ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.max(0, next + delta);
-        },
         rowClass: () => `brewing-row${isPrisma.val ? " brewing-row--prisma" : ""}`,
         badgeClass: "brewing-row__badge",
         controlsClass: "brewing-row__controls account-row__controls--xl",

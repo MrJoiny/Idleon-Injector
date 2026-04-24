@@ -10,6 +10,7 @@ import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ActionButton } from "../components/ActionButton.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
@@ -63,15 +64,10 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
 };
 
 const POBoxRow = ({ box, onAfterWrite = null }) => {
-    const clampToCap = (rawValue) => {
-        const nextValue = Math.round(Number(rawValue));
-        if (Number.isNaN(nextValue)) return null;
-        return Math.min(box.cap.val, Math.max(0, nextValue));
-    };
-
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: box.current,
-        normalize: clampToCap,
+        max: () => box.cap.val,
+        integerMode: "round",
         write: async (nextValue) => {
             const path = `PostOfficeInfo[3][${box.index}][0]`;
             await writeVerified(path, nextValue, { message: `Write mismatch at ${path}: expected ${nextValue}` });
@@ -79,16 +75,9 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
             return nextValue;
         },
         renderInfo: () => span({ class: "po-box-row__name" }, () => box.name.val),
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${box.cap.val}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return clampToCap(next + delta) ?? 0;
-        },
         rowClass: "feature-card",
         badgeClass: "po-box-row__level",
         controlsClass: "po-box-row__controls account-row__controls--xl",
-        inputMode: "int",
     });
 };
 

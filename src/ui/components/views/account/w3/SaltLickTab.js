@@ -16,12 +16,12 @@ import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanNameEffect, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanNameEffect, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const toLevelInt = (value, maxLevel) => {
     const n = Math.trunc(toNum(value));
@@ -30,24 +30,13 @@ const toLevelInt = (value, maxLevel) => {
 };
 
 const SaltLickRow = ({ index, name, maxLevel, levelState }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => toLevelInt(rawValue, maxLevel),
-        write: async (nextLevel) => {
-            const path = `SaltLick[${index}]`;
-            return writeVerified(path, nextLevel, {
-                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
-            });
-        },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${index + 1}`),
-            span({ class: "account-row__name" }, name),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevel}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = toNum(rawValue, toNum(currentValue, 0));
-            return Math.max(0, Math.min(maxLevel, base + delta));
-        },
+        writePath: `SaltLick[${index}]`,
+        max: maxLevel,
+        integerMode: "trunc",
+        indexLabel: `#${index + 1}`,
+        name,
     });
 
 export const SaltLickTab = () => {

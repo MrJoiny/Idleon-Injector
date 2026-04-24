@@ -17,7 +17,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { readComputedMany, gga, readCList } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
@@ -25,19 +25,16 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { cleanName, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const BUILDING_COUNT = 27;
 
 // ── BuildingRow ────────────────────────────────────────────────────────────
 
 const BuildingRow = ({ index, name, maxLevel, levelState }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.max(0, Math.min(maxLevel, Number(rawValue)));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
+        max: maxLevel,
         write: async (nextLevel) => {
             const path = `TowerInfo[${index}]`;
             const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
@@ -48,21 +45,10 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
                 message: `Write mismatch at ${pathPending}: expected ${nextLevel}, got failed verification`,
             });
         },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${index + 1}`),
-            span({ class: "account-row__name" }, name),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${maxLevel}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.max(0, Math.min(maxLevel, next + delta));
-        },
+        indexLabel: `#${index + 1}`,
+        name,
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level (max ${maxLevel})`),
-        maxAction: {
-            value: maxLevel,
-            tooltip: `Set to max level (${maxLevel})`,
-        },
+        maxAction: true,
     });
 
 // ── ConstructionBuildingsTab ───────────────────────────────────────────────

@@ -16,38 +16,25 @@ import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { cleanName, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { cleanName, useWriteStatus, writeManyVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
 const MAX_VIAL_LEVEL = 13;
 
 const VialRow = ({ vial, levelState }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(rawValue))));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
-        write: async (nextLevel) => {
-            const path = `CauldronInfo[4][${vial.index}]`;
-            return writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
-        },
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${vial.index}`),
-            span({ class: "account-row__name" }, vial.name),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${MAX_VIAL_LEVEL}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.min(MAX_VIAL_LEVEL, Math.max(0, next + delta));
-        },
+        writePath: `CauldronInfo[4][${vial.index}]`,
+        max: MAX_VIAL_LEVEL,
+        integerMode: "round",
+        indexLabel: `#${vial.index}`,
+        name: vial.name,
     });
 
 export const VialTab = () => {

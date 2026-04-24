@@ -24,13 +24,13 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
-import { getOrCreateState, toNum, useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { getOrCreateState, toNum, useWriteStatus, writeManyVerified } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -85,15 +85,10 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, i
         });
     }
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: maxState,
-        normalize: (rawValue) => Math.max(0, Math.min(toNum(maxBookLvState.val, 1), toNum(rawValue))),
-        write: async (nextLevel) => {
-            const path = `SkillLevelsMAX[${talentId}]`;
-            return writeVerified(path, nextLevel, {
-                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
-            });
-        },
+        writePath: `SkillLevelsMAX[${talentId}]`,
+        max: () => maxBookLvState.val,
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${talentId}`),
             div({ class: "talent-row__text" }, span({ class: "account-row__name" }, talentName)),
@@ -102,10 +97,6 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, i
         rowClass: "talent-row",
         controlsClass: "account-row__controls--xl",
         applyLabel: "SET MAX",
-        adjustInput: (rawValue, delta, currentValue) => {
-            const next = toNum(rawValue, toNum(currentValue, 0)) + delta;
-            return Math.max(0, Math.min(toNum(maxBookLvState.val, 1), next));
-        },
     });
 };
 

@@ -16,16 +16,16 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { AccountTabHeader } from "../components/AccountTabHeader.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { useWriteStatus, writeManyVerified, writeVerified } from "../accountShared.js";
+import { useWriteStatus, writeManyVerified } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const SECTIONS = [
     {
@@ -48,28 +48,13 @@ const SECTIONS = [
 const FORGE_UPGRADES = SECTIONS.flatMap((section) => section.upgrades);
 
 const ForgeRow = ({ upgrade, levelState }) =>
-    EditableNumberRow({
+    ClampedLevelRow({
         valueState: levelState,
-        normalize: (rawValue) => {
-            const lvl = Math.min(upgrade.max, Math.max(0, Number(rawValue)));
-            return Number.isNaN(lvl) ? null : lvl;
-        },
-        write: async (nextLevel) => {
-            const path = `FurnaceLevels[${upgrade.index}]`;
-            return writeVerified(path, nextLevel);
-        },
-        renderInfo: () => span({ class: "account-row__name" }, upgrade.label),
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${upgrade.max}`,
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.min(upgrade.max, Math.max(0, next + delta));
-        },
+        writePath: `FurnaceLevels[${upgrade.index}]`,
+        max: upgrade.max,
+        name: upgrade.label,
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level (max ${upgrade.max})`),
-        maxAction: {
-            value: upgrade.max,
-            tooltip: `Set to max level (${upgrade.max})`,
-        },
+        maxAction: true,
     });
 
 export const ForgeTab = () => {

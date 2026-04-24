@@ -25,6 +25,7 @@ import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { EditableNumberRow } from "../EditableNumberRow.js";
 import { AccountPageShell } from "../components/AccountPageShell.js";
 import { AccountSection } from "../components/AccountSection.js";
@@ -51,28 +52,16 @@ const BALL_FIELDS = [
 const ArcadeRow = ({ entry }) => {
     const isCosmic = van.derive(() => Number(entry.levelState.val ?? 0) >= ARCADE_LEVEL_MAX);
 
-    return EditableNumberRow({
+    return ClampedLevelRow({
         valueState: entry.levelState,
-        normalize: (rawValue) => {
-            const nextLevel = Math.max(0, Math.min(ARCADE_LEVEL_MAX, Number(rawValue)));
-            return Number.isNaN(nextLevel) ? null : nextLevel;
-        },
-        write: async (nextLevel) => {
-            const path = `ArcadeUpg[${entry.index}]`;
-            await writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
-            return nextLevel;
-        },
+        writePath: `ArcadeUpg[${entry.index}]`,
+        max: ARCADE_LEVEL_MAX,
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
             span({ class: "account-row__name" }, entry.name),
             () => (isCosmic.val ? span({ class: "arcade-row__cosmic-badge" }, "COSMIC") : null),
         ],
         renderBadge: (currentValue) => (isCosmic.val ? "COSMIC" : `LV ${currentValue ?? 0}`),
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.max(0, Math.min(ARCADE_LEVEL_MAX, next + delta));
-        },
         rowClass: () => (isCosmic.val ? "arcade-row arcade-row--cosmic" : "arcade-row"),
         badgeClass: () => (isCosmic.val ? "arcade-row__badge arcade-row__badge--cosmic" : "arcade-row__badge"),
     });
@@ -228,4 +217,3 @@ export const ArcadeTab = () => {
         body: content,
     });
 };
-
