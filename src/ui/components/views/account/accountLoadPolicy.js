@@ -9,23 +9,6 @@ import van from "../../../vendor/van-1.6.0.js";
  * - this module only standardizes load-state transitions and page-level logging
  */
 
-const getErrorMessage = (error, fallback = "Load failed") => {
-    if (error && typeof error === "object" && typeof error.message === "string" && error.message.trim()) {
-        return error.message;
-    }
-    if (typeof error === "string" && error.trim()) return error;
-    return fallback;
-};
-
-const logLoadFailure = (label, phase, error) => {
-    console.error(`[account-load] ${label} ${phase} failed:`, error);
-};
-
-const getFallbackMessage = (label, fallbackMessage) => {
-    if (fallbackMessage) return fallbackMessage;
-    return `Failed to load ${String(label ?? "account page").trim().toLowerCase()} data`;
-};
-
 /**
  * Hook that owns account-page load state and runs a load task with standard
  * loading/error transitions and page-level logging.
@@ -48,8 +31,22 @@ export const useAccountLoad = ({ label = "Account page", fallbackMessage } = {})
         try {
             return await task();
         } catch (caughtError) {
-            logLoadFailure(label, "load", caughtError);
-            error.val = getErrorMessage(caughtError, getFallbackMessage(label, fallbackMessage));
+            console.error(`[account-load] ${label} load failed:`, caughtError);
+
+            const fallback =
+                fallbackMessage || `Failed to load ${String(label ?? "account page").trim().toLowerCase()} data`;
+            if (
+                caughtError &&
+                typeof caughtError === "object" &&
+                typeof caughtError.message === "string" &&
+                caughtError.message.trim()
+            ) {
+                error.val = caughtError.message;
+            } else if (typeof caughtError === "string" && caughtError.trim()) {
+                error.val = caughtError;
+            } else {
+                error.val = fallback;
+            }
             return undefined;
         } finally {
             loading.val = false;

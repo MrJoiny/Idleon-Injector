@@ -19,7 +19,6 @@
  *   .tab-add-row__select    select cell in .tab-add-row
  *   .col-header         colored left-border column header (Brewing/Liquid/P2W)
  *   .col-header__name   accent-colored label inside .col-header
- *   .section-label      thin uppercase section divider label
  *
  * ── Class anatomy ─────────────────────────────────────────────────────────
  *   .account-header          top info + refresh bar
@@ -694,23 +693,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* ── Section label divider ───────────────────────────────────────────────── */
-/* Thin uppercase divider between logical groups within a tab scroll area.   */
-
-.section-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--c-text-dim);
-    padding: 8px 4px 4px;
-    border-bottom: 1px solid var(--c-border);
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 /* Shared expandable player/entity group */

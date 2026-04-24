@@ -4,13 +4,6 @@ import { resolveValue, toNum, writeVerified } from "./accountShared.js";
 
 const { span } = van.tags;
 
-const applyIntegerMode = (value, integerMode) => {
-    if (integerMode === "floor") return Math.floor(value);
-    if (integerMode === "round") return Math.round(value);
-    if (integerMode === "trunc") return Math.trunc(value);
-    return value;
-};
-
 const toBound = (value, fallback) => {
     const n = Number(value);
     return Number.isNaN(n) ? fallback : n;
@@ -46,7 +39,10 @@ export const ClampedLevelRow = ({
         const rawValue = Number(value);
         if (!Number.isFinite(rawValue)) return fallback;
 
-        const nextValue = applyIntegerMode(rawValue, integerMode);
+        let nextValue = rawValue;
+        if (integerMode === "floor") nextValue = Math.floor(rawValue);
+        if (integerMode === "round") nextValue = Math.round(rawValue);
+        if (integerMode === "trunc") nextValue = Math.trunc(rawValue);
         return Math.max(minValue, Math.min(maxValue, nextValue));
     };
 
