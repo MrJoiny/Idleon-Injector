@@ -66,6 +66,7 @@ export const AccountPageShell = ({
             : null;
 
         const chromeNodes = subNav ? [subNav, header, topNotices] : [header, topNotices];
+        const resolvedPersistentBody = typeof body === "function" ? () => body() ?? div() : body;
         const resolvedBody =
             persistentState || !loadState
                 ? body
@@ -95,7 +96,7 @@ export const AccountPageShell = ({
                                   !hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""
                               ),
                       },
-                      body
+                      resolvedPersistentBody
                   )
                 : resolvedBody
         );

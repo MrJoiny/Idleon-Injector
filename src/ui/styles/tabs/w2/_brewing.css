@@ -31,15 +31,25 @@
 }
 
 .brewing-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-        "info info"
-        "badge controls";
+        "info"
+        "badge"
+        "controls";
     align-items: start;
+    gap: 7px;
 }
 
 .brewing-row .account-row__info {
     grid-area: info;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.brewing-row .account-row__name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .brewing-row--prisma {
@@ -50,11 +60,21 @@
 .brewing-row__badge {
     grid-area: badge;
     justify-self: start;
+    white-space: normal;
 }
 
 .brewing-row__controls {
     grid-area: controls;
-    justify-self: end;
+    justify-self: stretch;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.brewing-row__controls .number-input-wrapper {
+    flex: 1 1 150px;
+    width: auto;
+    min-width: 130px;
 }
 
 .brewing-section .account-section__title {
@@ -69,7 +89,7 @@
 }
 
 .brewing-prisma-btn {
-    width: 112px;
+    flex: 0 0 112px;
     border: 1px solid var(--c-border);
     background: var(--c-panel);
     color: var(--c-text-dim);

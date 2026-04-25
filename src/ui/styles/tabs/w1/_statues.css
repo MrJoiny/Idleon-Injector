@@ -61,7 +61,7 @@
 .statue-control-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .statue-control-label {
@@ -69,6 +69,6 @@
     color: var(--c-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    width: 60px;
+    width: 78px;
     text-align: right;
 }

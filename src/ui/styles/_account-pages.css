@@ -238,8 +238,10 @@
 .account-row__info {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     min-width: 0;
+    container: account-row-info / inline-size;
 }
 
 .account-row__index {
@@ -267,6 +269,15 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+@container account-row-info (max-width: 320px) {
+    .account-row__name {
+        flex-basis: 100%;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
 }
 
 .account-row__badge {
