@@ -34,8 +34,6 @@ const { div } = van.tags;
 
 const BUILDING_COUNT = 27;
 
-// ── BuildingRow ────────────────────────────────────────────────────────────
-
 const BuildingRow = ({ index, name, maxLevel, levelState }) =>
     ClampedLevelRow({
         valueState: levelState,
@@ -55,8 +53,6 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level (max ${maxLevel})`),
         maxAction: true,
     });
-
-// ── ConstructionBuildingsTab ───────────────────────────────────────────────
 
 export const ConstructionBuildingsTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Construction Buildings" });

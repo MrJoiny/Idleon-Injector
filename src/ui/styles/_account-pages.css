@@ -1,41 +1,3 @@
-/**
- * Feature Pages — Shared Component Styles
- *
- * Shared by every world sub-tab feature (Stamps, Forge, Alchemy, etc.).
- * Component-specific CSS lives in tabs/wX/ folders and is @imported by style.css.
- *
- * ── Utility classes (use these in new components) ─────────────────────────
- *   .tab-container      flex column fill for any feature tab root
- *   .scrollable-panel   flex-grow + overflow-y:auto + padding:14px
- *   .content-stack      flex column + gap:12px — inner scroll content wrapper
- *   .grid-4col          4-equal-column grid with 10px gap
- *   .account-row--success  green success feedback (canonical)
- *   .account-row--error    red error feedback (canonical)
- *   .has-warning        warning border (non-destructive, overrides)
- *   .select-base        shared select element base style
- *   .tab-empty          dashed empty-state banner inside a tab section
- *   .tab-add-row        add-item toolbar row (label | select | btn)
- *   .tab-add-row__label     label cell in .tab-add-row
- *   .tab-add-row__select    select cell in .tab-add-row
- *   .col-header         colored left-border column header (Brewing/Liquid/P2W)
- *   .col-header__name   accent-colored label inside .col-header
- *
- * ── Class anatomy ─────────────────────────────────────────────────────────
- *   .account-header          top info + refresh bar
- *   .account-page-nav        secondary sub-nav (e.g. Combat / Skills / Misc)
- *   .account-list            scrollable list container (incorporates .scrollable-panel)
- *   .account-row             one data row  (grid: info | badge | controls)
- *   .account-row__info       left: index badge + name
- *   .account-row__badge      centre: read-only status (e.g. "LV 50 / 100")
- *   .account-row__controls   right: inputs + action buttons
- *   .account-btn             base action button
- *   .account-btn--apply      SET / confirm (green hover)
- *   .account-btn--danger     RELOCK / reset (red)
- *   .account-btn--loading    spinner state
- */
-
-/* ── Layout containers ───────────────────────────────────────────────────── */
-
 .tab-container {
     display: flex;
     flex-direction: column;
@@ -43,15 +5,12 @@
     overflow: hidden;
 }
 
-/* Inner scroll content wrapper — use inside .scrollable-panel when content
-   needs its own flex column + gap (replaces X-scroll, X-rows wrappers). */
 .content-stack {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
 
 .account-header {
     display: flex;
@@ -87,7 +46,6 @@
     justify-content: flex-end;
 }
 
-/* ── Secondary page nav (e.g. Combat / Skills / Misc) ────────────────────── */
 
 .account-page-nav {
     gap: 4px;
@@ -114,10 +72,7 @@
     display: none;
 }
 
-/* ── Scrollable list ─────────────────────────────────────────────────────── */
 
-/* account-list: used by W1 tabs. Incorporates .scrollable-panel behavior.
-   New tabs should use .scrollable-panel directly on their scroll container. */
 .account-list {
     display: flex;
     flex-direction: column;
@@ -127,14 +82,12 @@
     overflow-y: auto;
 }
 
-/* Flex-grow scrollable content area — use on new scroll containers */
 .scrollable-panel {
     flex: 1;
     overflow-y: auto;
     padding: 14px;
 }
 
-/* Shared hidden-until-ready state used by persistent panes */
 .is-hidden-until-ready {
     display: none !important;
 }
@@ -145,14 +98,12 @@
     min-height: 0;
 }
 
-/* 3-equal-column grid used by multi-column account layouts */
 .grid-3col {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
 
-/* 4-equal-column grid used by cauldron / liquid layouts */
 .grid-4col {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -213,7 +164,6 @@
     margin-left: auto;
 }
 
-/* ── Data row ────────────────────────────────────────────────────────────── */
 
 .account-row {
     display: grid;
@@ -240,8 +190,6 @@
     border-color: var(--c-border-strong);
 }
 
-/* ── Feedback state — shared by all card/row components ─────────────────────── */
-/* Canonical hooks: .account-row--success / .account-row--error / .has-warning */
 
 .feature-card.account-row--success {
     border-color: var(--c-success) !important;
@@ -263,15 +211,11 @@
     background: color-mix(in srgb, var(--c-danger) 12%, var(--c-panel)) !important;
 }
 
-/* Warning state — overridden by success/error so write outcome always wins */
 .has-warning:not(.account-row--success):not(.account-row--error) {
     border-color: var(--c-warning) !important;
     background: color-mix(in srgb, var(--c-warning) 10%, var(--c-panel));
 }
 
-/* ── Inline write-status label ────────────────────────────────────────────── */
-/* Used in toolbar/footer strips where a text label communicates save state,  */
-/* rather than a full-row border flash. Pair with: --loading, --success, --error. */
 
 .write-status {
     font-size: 0.875rem;
@@ -291,7 +235,6 @@
     color: var(--c-danger);
 }
 
-/* Info cell */
 .account-row__info {
     display: flex;
     align-items: center;
@@ -317,7 +260,6 @@
     text-overflow: ellipsis;
 }
 
-/* Secondary dim sub-label under __name (e.g. item ID, set key) */
 .account-row__sub-label {
     font-family: var(--font-mono);
     color: var(--c-text-muted);
@@ -327,7 +269,6 @@
     text-overflow: ellipsis;
 }
 
-/* Status badge (centre cell) */
 .account-row__badge {
     font-family: var(--font-mono);
     font-size: 0.875rem;
@@ -339,7 +280,6 @@
     flex-shrink: 0;
 }
 
-/* Controls cell */
 .account-row__controls {
     display: flex;
     align-items: center;
@@ -347,7 +287,6 @@
     flex-shrink: 0;
 }
 
-/* Narrow the NumberInput inside feature rows — wide enough for 3 digits + ± buttons */
 .account-row__controls .number-input-wrapper {
     width: 110px;
 }
@@ -360,7 +299,6 @@
     font-size: 0.875rem;
 }
 
-/* ── Action buttons ──────────────────────────────────────────────────────── */
 
 .account-btn {
     padding: 0 12px;
@@ -426,7 +364,6 @@
     cursor: not-allowed;
 }
 
-/* Shared compact card/grid controls used by Sigils and Sailing Artifacts */
 .tier-scroll {
     display: flex;
     flex-direction: column;
@@ -507,7 +444,6 @@
     width: 100%;
 }
 
-/* Anvil — info row (Points Remaining banner) */
 .account-row--info {
     border-color: var(--c-accent) !important;
     background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
@@ -518,9 +454,6 @@
     font-weight: 700;
 }
 
-/* ── Select base — shared dropdown style ─────────────────────────────────── */
-/* Add .select-base to any select element; keep only unique props in the      */
-/* component class (height, width, font-size, font-family, padding).          */
 
 .select-base {
     background: var(--c-panel);
@@ -534,7 +467,6 @@
     border-color: var(--c-accent);
 }
 
-/* ── Feature header actions group ──────────────────────────────────────── */
 .account-header__actions {
     display: flex;
     align-items: center;
@@ -571,7 +503,6 @@
     font-family: var(--font-display);
 }
 
-/* ── Warning banner highlight helpers ───────────────────────────────────── */
 .warning-highlight-accent {
     color: var(--c-accent);
     font-weight: 700;
@@ -587,13 +518,7 @@
     font-weight: 700;
 }
 
-/* ── Vials tab ───────────────────────────────────────────────────────────── */
-/* Container properties handled by .tab-container                             */
 
-/* ── Alchemy / Construction inner sub-tab panel ──────────────────────────── */
-/* Re-used by W2 Alchemy (Brewing, Liquid, Vials, Pay2Win, Sigils)
-   and W3 Construction (Buildings, Cogs).
-   Container properties handled by .tab-container                             */
 
 .alchemy-sub-nav {
     gap: 2px;
@@ -635,10 +560,7 @@
     flex-direction: column;
 }
 
-/* ── Shared tab primitives ───────────────────────────────────────────────── */
-/* Used by Hat Rack, Smithy, Killroy (add row), Hat Rack, Smithy (empty state). */
 
-/* Dashed empty-state banner inside a tab section */
 .tab-empty {
     border: 1px dashed var(--c-border);
     background: var(--c-panel);
@@ -648,7 +570,6 @@
     padding: 12px;
 }
 
-/* Add-item toolbar: label | select | button(s) */
 .tab-add-row {
     display: grid;
     grid-template-columns: auto minmax(220px, 1fr) auto;
@@ -673,8 +594,6 @@
     min-width: 240px;
 }
 
-/* ── Colored-column header (Brewing / Liquid / P2W) ─────────────────────── */
-/* Set --col-color on the parent column element.                              */
 
 .col-header {
     display: flex;
@@ -695,7 +614,6 @@
     text-overflow: ellipsis;
 }
 
-/* Shared expandable player/entity group */
 
 .account-expandable-group {
     border-bottom: 1px solid var(--c-border);

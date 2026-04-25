@@ -255,7 +255,7 @@ export const EquinoxTab = () => {
             );
             updateCloudRows(visibleIndexes, weeklyBossMap, staticMeta?.dreamChallengeArr ?? []);
         } catch {
-            // The upgrade write already succeeded; dependent display refresh is best-effort.
+            return;
         }
     };
 

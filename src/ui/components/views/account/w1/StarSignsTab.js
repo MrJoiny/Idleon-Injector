@@ -31,13 +31,11 @@ import { toInt, toNum, useWriteStatus, writeManyVerified } from "../accountShare
 
 const { div, button, span, h4, p, select, option } = van.tags;
 
-// Player 1..10 → letter
 const PLAYER_LETTERS = ["_", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
 const PLAYER_NUMBERS = PLAYER_LETTERS.map((_, index) => index + 1);
-const letterToPlayer = (l) => PLAYER_LETTERS.indexOf(l) + 1; // 0 if not found
+const letterToPlayer = (l) => PLAYER_LETTERS.indexOf(l) + 1;
 const playerToLetter = (n) => PLAYER_LETTERS[n - 1] ?? null;
 
-// Compute label (A-1, B-3, etc.) for each sign based on its mapId
 function computeLabels(quests) {
     const counters = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
     return quests.map((q) => {
@@ -49,25 +47,21 @@ function computeLabels(quests) {
     });
 }
 
-// Clean description: remove trailing AFK/progress text, replace underscores
 const cleanDesc = (s) =>
     (s ?? "")
         .replace(/_@_Progress.*$/, "")
         .replace(/_/g, " ")
         .trim();
 
-// Parse progress string → ordered array of player numbers
 const parseProgress = (str) =>
     (str ?? "")
         .split("")
         .map(letterToPlayer)
         .filter((n) => n > 0);
 
-// Encode player list back to string
 const encodeProgress = (players) => players.map(playerToLetter).filter(Boolean).join("");
 const isUnlockedByProgress = (players, playersNeeded) => players.length >= playersNeeded;
 
-// Get display name for a player slot (1-based)
 const playerName = (num, usernames) => {
     const name = usernames[num - 1];
     return typeof name === "string" && name.trim() && !name.startsWith("__") ? name : `Player ${num}`;
@@ -88,9 +82,6 @@ const DEFAULT_UNLOCKED_STAR_SIGNS = Object.freeze({
     The_Book_Worm: 1,
     The_Fuzzy_Dice: 1,
 });
-
-// ── DragList: simple drag-reorder list ────────────────────────────────────
-// Returns a DOM element with draggable items. onChange(newOrder) fires on drop.
 
 const DragList = ({ items, renderItem, onChange }) => {
     let dragIdx = null;
@@ -132,8 +123,6 @@ const DragList = ({ items, renderItem, onChange }) => {
     );
 };
 
-// ── Detail panel ──────────────────────────────────────────────────────────
-
 const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
     const players = van.state([...sign.players]);
     const { status, run } = useWriteStatus();
@@ -162,8 +151,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
 
     return div(
         { class: "starsign-detail" },
-
-        // Header
         div(
             { class: "starsign-detail-header" },
             button({ class: "starsign-back-btn", onclick: onBack }, "← Back"),
@@ -181,7 +168,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             )
         ),
 
-        // Player order list (drag to reorder)
         div({ class: "starsign-section-label" }, "Players who completed this sign (drag to reorder)"),
 
         () => {
@@ -211,7 +197,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             });
         },
 
-        // Add player row
         div(
             { class: "starsign-add-row" },
             select(
@@ -238,7 +223,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             )
         ),
 
-        // Progress indicator
         div({ class: "starsign-progress-bar-wrap" }, () => {
             const cur = players.val.length;
             const need = sign.playersNeeded;
@@ -255,7 +239,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
             );
         }),
 
-        // Save button
         div(
             { class: "starsign-detail-actions" },
             ActionButton({
@@ -271,8 +254,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
         )
     );
 };
-
-// ── Main list card ────────────────────────────────────────────────────────
 
 const StarSignCard = ({ sign, onClick }) => {
     const isUnlocked = sign.unlocked;
@@ -311,12 +292,10 @@ const syncActiveSign = (activeSign, nextSigns) => {
     else activeSign.val = null;
 };
 
-// ── StarSignsTab ──────────────────────────────────────────────────────────
-
 export const StarSignsTab = () => {
-    const signs = van.state(null); // array of sign objects
+    const signs = van.state(null);
     const { loading, error, run } = useAccountLoad({ label: "Star Signs" });
-    const activeSign = van.state(null); // sign object being edited
+    const activeSign = van.state(null);
     const { status: unlockStatus, run: runUnlock } = useWriteStatus();
     const { status: randomStatus, run: runRandom } = useWriteStatus();
     const { status: resetStatus, run: runReset } = useWriteStatus();

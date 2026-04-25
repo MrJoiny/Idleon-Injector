@@ -92,7 +92,6 @@ export const ArcadeTab = () => {
 
     const ballStates = new Map(BALL_FIELDS.map((field) => [field.id, van.state(0)]));
 
-    // Entries are created once from the first load and then updated in place.
     const upgradeEntries = van.state([]);
 
     const load = async () =>

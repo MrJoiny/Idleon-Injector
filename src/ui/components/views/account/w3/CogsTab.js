@@ -14,6 +14,10 @@
  *   gga.CogMap[0..251].h            - stat fields per slot (a-k); each key is a named bonus
  *
  * Side-rail UI slots (96-119) map to CogOrder[228-251] (tiny cog range).
+ * FlagReq formula for main slots: 25 * cList.FlagReqs[index].
+ * FlagReq formula for side slots:
+ *   5e6 * (1 + min(9, 9*(b-96)) + max(0, 10*(b-97))) * 4^(b-96)
+ *   Source: p._customBlock_WorkbenchStuff("FlagReq", b, e) - game line 12134
  *
  * When locking/unlocking a slot that has a flag, the corresponding FlagsPlaced
  * entry must also be cleared (set to -1) to prevent the flag-charge system from
@@ -80,11 +84,6 @@ const renderCogSvg = (id, className) => {
     });
 };
 
-/**
- * Map a UI slot index to its CogOrder game-array index.
- * Main board (UI 0-95) -> CogOrder[0-95]
- * Side rails (UI 96-119) -> CogOrder[228-251]
- */
 const getCogOrderIndex = (uiIndex) =>
     uiIndex < MAIN_SLOT_COUNT ? uiIndex : COGORDER_SIDE_START + (uiIndex - MAIN_SLOT_COUNT);
 
@@ -118,7 +117,7 @@ const getSlotName = (index) => {
     if (isMainSlot(index)) {
         const row = Math.floor(index / MAIN_COLS) + 1;
         const col = index % MAIN_COLS;
-        const letter = String.fromCharCode(65 + col); // A..L
+        const letter = String.fromCharCode(65 + col);
         return `${letter}-${row}`;
     }
 
@@ -129,10 +128,6 @@ const getSlotName = (index) => {
     return `SLOT-${index}`;
 };
 
-// FlagReq formula for main slots: 25 * cList.FlagReqs[index]
-// FlagReq formula for side slots (index >= 96):
-//   5e6 * (1 + min(9, 9*(b-96)) + max(0, 10*(b-97))) * 4^(b-96)
-// Source: p._customBlock_WorkbenchStuff("FlagReq", b, e) - game line 12134
 const getSideSlotCap = (index) => {
     const r0 = Math.round(index - 96);
     const r1 = Math.round(index - 97);
@@ -202,11 +197,8 @@ export const CogsTab = () => {
     const slotValues = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state(0));
     const slotCaps = Array.from({ length: MAIN_SLOT_COUNT }, () => van.state(0));
     const flaggedSlots = van.state(new Set());
-    // Raw FlagsPlaced array - each entry is a slot UI index (or -1 for an empty entry).
     const flagsRaw = van.state([]);
-    // CogOrder name per UI slot (e.g. "Cog0A00", "Player_name", "Blank")
     const cogOrders = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state("Blank"));
-    // CogMap[slot].h stats per UI slot
     const cogMapStats = Array.from({ length: TOTAL_SLOT_COUNT }, () => van.state({}));
     const activeCogName = van.state("Blank");
     const activeCogNameStatus = van.state("idle");
@@ -310,8 +302,6 @@ export const CogsTab = () => {
             await writeVerified(unlockPath, next, { message: `Write mismatch at ${unlockPath}: expected ${next}` });
             slotValues[index].val = next;
 
-            // If a flag is placed on this slot, clear its FlagsPlaced entry to prevent
-            // the flag-charge system from overwriting the -11 sentinel and re-locking the slot.
             if (flaggedSlots.val.has(index)) {
                 const arr = flagsRaw.val;
                 const pos = arr.findIndex((v) => toNum(v) === index);
@@ -332,7 +322,6 @@ export const CogsTab = () => {
     const setCogMapField = async (field, rawValue) => {
         const index = getActiveIndex();
         const cogIdx = getCogOrderIndex(index);
-        // parseNumber handles formatted strings like "50K" -> 50000
         const numVal = parseNumber(rawValue);
         const writeVal = numVal !== null ? numVal : rawValue;
         activeCogMapField.val = field;
@@ -435,16 +424,11 @@ export const CogsTab = () => {
         const vw = window.innerWidth || 1280;
         const vh = window.innerHeight || 720;
 
-        // Horizontal: right of cursor, flip left only if it would overflow.
         let left = mouseX + POPOVER_GAP;
         if (left + POPOVER_WIDTH > vw) {
             left = Math.max(0, mouseX - POPOVER_WIDTH - POPOVER_GAP);
         }
 
-        // Vertical: always open BELOW the cursor and stay as close as possible.
-        // Shift the top upward only as far as needed to keep MIN_VISIBLE pixels
-        // on screen - never jump all the way to the top of the viewport.
-        // The popup body has overflow-y:auto so content beyond maxHeight scrolls.
         const MIN_VISIBLE = 200;
         let top = mouseY + POPOVER_GAP;
         const maxAllowedTop = Math.max(0, vh - MIN_VISIBLE);
@@ -547,7 +531,6 @@ export const CogsTab = () => {
             class: "cogs-popup",
             onclick: (e) => e.stopPropagation(),
         },
-        // ---- Header: slot coords + cog name + state badge -----------------
         div(
             { class: "cogs-modal-header" },
             div(
@@ -573,7 +556,6 @@ export const CogsTab = () => {
                 () => stateLabel(getSlotState(slotValues[getActiveIndex()].val))
             )
         ),
-        // ---- Body ----------------------------------------------------------
         div({ class: "cogs-modal-body" }, () => {
             const index = getActiveIndex();
             const slotState = getSlotState(slotValues[index].val);
@@ -652,7 +634,6 @@ export const CogsTab = () => {
                     : null
             );
         }),
-        // ---- Footer --------------------------------------------------------
         div(
             { class: "cogs-modal-footer" },
             div(
@@ -672,7 +653,10 @@ export const CogsTab = () => {
                     status: lockStatus,
                     disabled: () => {
                         const index = getActiveIndex();
-                        return getSlotState(slotValues[index].val) === "unlocked" || PREMIUM_COG_IDS.has(getSlotCogId(index));
+                        return (
+                            getSlotState(slotValues[index].val) === "unlocked" ||
+                            PREMIUM_COG_IDS.has(getSlotCogId(index))
+                        );
                     },
                     onClick: () => setSlotLockState(getActiveIndex(), true),
                 })
@@ -717,8 +701,6 @@ export const CogsTab = () => {
 
     load();
 
-    // Mount the popup overlay into a single body-level host so remounts replace
-    // the previous popup instead of stacking orphan overlays in document.body.
     const popupHost = ensureCogsPopupHost();
     popupHost.replaceChildren();
     van.add(popupHost, popup);
@@ -731,4 +713,3 @@ export const CogsTab = () => {
         body: boardPane,
     });
 };
-

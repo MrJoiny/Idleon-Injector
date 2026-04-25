@@ -82,13 +82,12 @@ export const AnvilTab = () => {
         });
 
     const refreshRemainingPoints = async () => {
-        // Keep "Points Remaining" fresh without forcing a list rebuild.
         try {
             const remainingRaw = await gga("AnvilPAstats[0]");
             const remaining = Number(remainingRaw);
             if (Number.isFinite(remaining)) statStates[0].val = remaining;
         } catch {
-            // Best-effort refresh only; keep optimistic state if read fails.
+            return;
         }
     };
 

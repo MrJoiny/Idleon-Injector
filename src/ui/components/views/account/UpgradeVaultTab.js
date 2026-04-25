@@ -26,8 +26,6 @@ import { cleanName, createIndexedStateGetter, readLevelDefinitions, toNum } from
 
 const { div } = van.tags;
 
-// -- VaultRow --------------------------------------------------------------
-
 const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
 
@@ -46,10 +44,8 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     });
 };
 
-// -- UpgradeVaultTab -------------------------------------------------------
-
 export const UpgradeVaultTab = () => {
-    const data = van.state(null); // { upgrades: [{ index, name, baseMax, realMax }] }
+    const data = van.state(null);
     const { loading, error, run } = useAccountLoad({ label: "Upgrade Vault" });
     const getLevelState = createIndexedStateGetter();
 
