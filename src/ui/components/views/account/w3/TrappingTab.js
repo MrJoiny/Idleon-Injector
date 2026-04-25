@@ -269,18 +269,16 @@ export const TrappingTab = () => {
         trapCountState.val = snapshot.players.reduce((sum, player) => sum + player.traps.length, 0);
         setTrapStatesFromSnapshot(snapshot);
 
-        reconcilePlayerPanels(
-            trapShapeSignature(snapshot),
-            () =>
-                snapshot.players.map((player) =>
-                    PlayerTrapPanel({
-                        player,
-                        currentPlayer: snapshot.currentPlayer,
-                        getExpandedState,
-                        getValueState,
-                        onWriteField,
-                    })
-                )
+        reconcilePlayerPanels(trapShapeSignature(snapshot), () =>
+            snapshot.players.map((player) =>
+                PlayerTrapPanel({
+                    player,
+                    currentPlayer: snapshot.currentPlayer,
+                    getExpandedState,
+                    getValueState,
+                    onWriteField,
+                })
+            )
         );
     };
 
@@ -375,7 +373,8 @@ export const TrappingTab = () => {
 
     return PersistentAccountListPage({
         title: "TRAPPING",
-        description: "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
+        description:
+            "Edit trap quantity, EXP, and rare chance for each player. Finish individual traps or all traps per player.",
         actions: [
             ActionButton({
                 label: "FINISH ALL",

@@ -34,7 +34,10 @@ export const useAccountLoad = ({ label = "Account page", fallbackMessage } = {})
             console.error(`[account-load] ${label} load failed:`, caughtError);
 
             const fallback =
-                fallbackMessage || `Failed to load ${String(label ?? "account page").trim().toLowerCase()} data`;
+                fallbackMessage ||
+                `Failed to load ${String(label ?? "account page")
+                    .trim()
+                    .toLowerCase()} data`;
             if (
                 caughtError &&
                 typeof caughtError === "object" &&
@@ -55,5 +58,3 @@ export const useAccountLoad = ({ label = "Account page", fallbackMessage } = {})
 
     return { loading, error, run };
 };
-
-

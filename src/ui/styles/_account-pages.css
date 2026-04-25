@@ -11,7 +11,6 @@
     gap: 12px;
 }
 
-
 .account-header {
     display: flex;
     align-items: center;
@@ -46,7 +45,6 @@
     justify-content: flex-end;
 }
 
-
 .account-page-nav {
     gap: 4px;
     padding: 8px 16px 0;
@@ -71,7 +69,6 @@
 .account-page-pane--hidden {
     display: none;
 }
-
 
 .account-list {
     display: flex;
@@ -164,7 +161,6 @@
     margin-left: auto;
 }
 
-
 .account-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -190,7 +186,6 @@
     border-color: var(--c-border-strong);
 }
 
-
 .feature-card.account-row--success {
     border-color: var(--c-success) !important;
     background: color-mix(in srgb, var(--c-success) 12%, var(--c-panel)) !important;
@@ -215,7 +210,6 @@
     border-color: var(--c-warning) !important;
     background: color-mix(in srgb, var(--c-warning) 10%, var(--c-panel));
 }
-
 
 .write-status {
     font-size: 0.875rem;
@@ -309,7 +303,6 @@
     min-width: 10ch;
     font-size: 0.875rem;
 }
-
 
 .account-btn {
     padding: 0 12px;
@@ -465,7 +458,6 @@
     font-weight: 700;
 }
 
-
 .select-base {
     background: var(--c-panel);
     color: var(--c-text);
@@ -529,8 +521,6 @@
     font-weight: 700;
 }
 
-
-
 .alchemy-sub-nav {
     gap: 2px;
     padding: 6px 14px 0;
@@ -571,7 +561,6 @@
     flex-direction: column;
 }
 
-
 .tab-empty {
     border: 1px dashed var(--c-border);
     background: var(--c-panel);
@@ -605,7 +594,6 @@
     min-width: 240px;
 }
 
-
 .col-header {
     display: flex;
     align-items: center;
@@ -624,7 +612,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
 
 .account-expandable-group {
     border-bottom: 1px solid var(--c-border);

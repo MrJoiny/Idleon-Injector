@@ -20,5 +20,3 @@ export const AccountTabHeader = ({ title, description = null, actions = null, wr
                 : actions
             : null
     );
-
-

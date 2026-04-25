@@ -33,7 +33,15 @@ import { AccountSection } from "../components/AccountSection.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, createStaticRowReconciler, joinClasses, resolveValue, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    cleanName,
+    createStaticRowReconciler,
+    joinClasses,
+    resolveValue,
+    toNum,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div, span } = van.tags;
@@ -178,9 +186,7 @@ export const KillroyTab = () => {
                     const arr = Array.isArray(row) ? row : Object.values(row ?? {});
                     const labelRaw = arr.find((x) => typeof x === "string" && x.trim().length > 0);
                     const label =
-                        typeof labelRaw === "string" && labelRaw.trim().length > 0
-                            ? cleanName(labelRaw)
-                            : f.label;
+                        typeof labelRaw === "string" && labelRaw.trim().length > 0 ? cleanName(labelRaw) : f.label;
                     return [f.key, label];
                 })
             );
@@ -204,14 +210,13 @@ export const KillroyTab = () => {
                 allowedMobIds.length > 0
                     ? await readGgaEntries("MonsterDefinitionsGET.h", allowedMobIds, ["Name"])
                     : {};
-            const nextAllowedMobs = allowedMobIds
-                .map((mobId) => {
-                    const rawName = allowedMobDefs?.[mobId]?.Name;
-                    return {
-                        mobId,
-                        mobName: typeof rawName === "string" && rawName.length > 0 ? cleanName(rawName) : mobId,
-                    };
-                });
+            const nextAllowedMobs = allowedMobIds.map((mobId) => {
+                const rawName = allowedMobDefs?.[mobId]?.Name;
+                return {
+                    mobId,
+                    mobName: typeof rawName === "string" && rawName.length > 0 ? cleanName(rawName) : mobId,
+                };
+            });
 
             for (const idx of FIELD_INDEXES) {
                 const st = getState(idx);
@@ -228,22 +233,19 @@ export const KillroyTab = () => {
                 getBestMobState(mob.mobId).val = rawBestByMobMap.get(mob.mobId) ?? 0;
             }
 
-            reconcileBestMobRows(
-                nextAllowedMobs.map((mob) => `${mob.mobId}:${mob.mobName}`).join("|"),
-                () => {
-                    if (nextAllowedMobs.length === 0) {
-                        return div({ class: "killroy-best-empty" }, "No Killroy mobs found.");
-                    }
-
-                    return nextAllowedMobs.map((mob) =>
-                        KillroyNumRow({
-                            field: { label: `${mob.mobName} (${mob.mobId})` },
-                            valueState: getBestMobState(mob.mobId),
-                            writePath: `KRbest.h[${mob.mobId}]`,
-                        })
-                    );
+            reconcileBestMobRows(nextAllowedMobs.map((mob) => `${mob.mobId}:${mob.mobName}`).join("|"), () => {
+                if (nextAllowedMobs.length === 0) {
+                    return div({ class: "killroy-best-empty" }, "No Killroy mobs found.");
                 }
-            );
+
+                return nextAllowedMobs.map((mob) =>
+                    KillroyNumRow({
+                        field: { label: `${mob.mobName} (${mob.mobId})` },
+                        valueState: getBestMobState(mob.mobId),
+                        writePath: `KRbest.h[${mob.mobId}]`,
+                    })
+                );
+            });
         });
 
     load();
@@ -334,4 +336,3 @@ export const KillroyTab = () => {
         body: scrollPane,
     });
 };
-

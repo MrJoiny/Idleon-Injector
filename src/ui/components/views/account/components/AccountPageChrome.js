@@ -38,5 +38,3 @@ export const NoticeBanner = ({ icon, variant = null } = {}, ...content) =>
  * Shared warning banner shell for top-of-page notices.
  */
 export const WarningBanner = (...content) => NoticeBanner({ icon: Icons.Warning() }, ...content);
-
-

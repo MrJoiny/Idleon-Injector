@@ -51,5 +51,3 @@ export const ActionButton = ({
 
     return tooltip ? withTooltip(buttonNode, tooltip) : buttonNode;
 };
-
-

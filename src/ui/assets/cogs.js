@@ -1,7 +1,20 @@
 import van from "../vendor/van-1.6.0.js";
 
-const { svg, path, line: svgLine, circle, g, defs, mask, rect, clipPath, polygon, use, radialGradient, stop } =
-    van.tags("http://www.w3.org/2000/svg");
+const {
+    svg,
+    path,
+    line: svgLine,
+    circle,
+    g,
+    defs,
+    mask,
+    rect,
+    clipPath,
+    polygon,
+    use,
+    radialGradient,
+    stop,
+} = van.tags("http://www.w3.org/2000/svg");
 
 const SvgBase = (content, props = {}) => {
     const { class: className, ...rest } = props;

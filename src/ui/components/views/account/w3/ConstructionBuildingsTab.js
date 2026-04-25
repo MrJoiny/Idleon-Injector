@@ -89,30 +89,27 @@ export const ConstructionBuildingsTab = () => {
                 return { ...building, extraMax, maxLevel };
             });
 
-            reconcileRows(
-                buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|"),
-                () => {
-                    const rowsPerColumn = Math.ceil(buildings.length / 3);
-                    const columns = Array.from({ length: 3 }, (_, columnIndex) =>
-                        div(
-                            { class: "construction-buildings-col" },
-                            ...buildings
-                                .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
-                                .map((building, offset) => {
-                                    const index = columnIndex * rowsPerColumn + offset;
-                                    return BuildingRow({
-                                        index,
-                                        name: building.name,
-                                        maxLevel: building.maxLevel,
-                                        levelState: levelStates[index],
-                                    });
-                                })
-                        )
-                    );
+            reconcileRows(buildings.map((building) => `${building.name}:${building.maxLevel}`).join("|"), () => {
+                const rowsPerColumn = Math.ceil(buildings.length / 3);
+                const columns = Array.from({ length: 3 }, (_, columnIndex) =>
+                    div(
+                        { class: "construction-buildings-col" },
+                        ...buildings
+                            .slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+                            .map((building, offset) => {
+                                const index = columnIndex * rowsPerColumn + offset;
+                                return BuildingRow({
+                                    index,
+                                    name: building.name,
+                                    maxLevel: building.maxLevel,
+                                    levelState: levelStates[index],
+                                });
+                            })
+                    )
+                );
 
-                    return div({ class: "construction-buildings-grid grid-3col" }, ...columns);
-                }
-            );
+                return div({ class: "construction-buildings-grid grid-3col" }, ...columns);
+            });
 
             for (let i = 0; i < BUILDING_COUNT; i++) {
                 levelStates[i].val = toNum(buildings[i]?.level);
@@ -160,5 +157,3 @@ export const ConstructionBuildingsTab = () => {
         body: rowList,
     });
 };
-
-

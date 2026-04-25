@@ -47,5 +47,3 @@ export const W1Tab = () => {
         )
     );
 };
-
-

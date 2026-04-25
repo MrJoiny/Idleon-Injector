@@ -27,7 +27,15 @@ import { AccountSection } from "../components/AccountSection.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, createStaticRowReconciler, getOrCreateState, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    cleanName,
+    createStaticRowReconciler,
+    getOrCreateState,
+    toInt,
+    toNum,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -195,19 +203,17 @@ export const EquinoxTab = () => {
             getCloudRequiredState(cloud.cloudIndex).val = cloud.required;
         }
 
-        reconcileCloudRows(
-            clouds.map((cloud) => `${cloud.cloudIndex}:${cloud.name}`).join("|"),
-            () =>
-                clouds.map((cloud) =>
-                    CloudRow({
-                        entry: {
-                            cloudIndex: cloud.cloudIndex,
-                            name: cloud.name,
-                            progressState: getCloudProgressState(cloud.cloudIndex),
-                            requiredState: getCloudRequiredState(cloud.cloudIndex),
-                        },
-                    })
-                )
+        reconcileCloudRows(clouds.map((cloud) => `${cloud.cloudIndex}:${cloud.name}`).join("|"), () =>
+            clouds.map((cloud) =>
+                CloudRow({
+                    entry: {
+                        cloudIndex: cloud.cloudIndex,
+                        name: cloud.name,
+                        progressState: getCloudProgressState(cloud.cloudIndex),
+                        requiredState: getCloudRequiredState(cloud.cloudIndex),
+                    },
+                })
+            )
         );
     };
 
@@ -219,20 +225,18 @@ export const EquinoxTab = () => {
             getUpgradeMaxLevelState(upgrade.index).val = upgrade.maxLevel;
         }
 
-        reconcileUpgradeRows(
-            upgrades.map((upgrade) => `${upgrade.index}:${upgrade.name}`).join("|"),
-            () =>
-                upgrades.map((upgrade) =>
-                    UpgradeRow({
-                        entry: {
-                            index: upgrade.index,
-                            name: upgrade.name,
-                            levelState: getUpgradeLevelState(upgrade.index),
-                            maxLevelState: getUpgradeMaxLevelState(upgrade.index),
-                        },
-                        onAfterSet: refreshAfterUpgrade,
-                    })
-                )
+        reconcileUpgradeRows(upgrades.map((upgrade) => `${upgrade.index}:${upgrade.name}`).join("|"), () =>
+            upgrades.map((upgrade) =>
+                UpgradeRow({
+                    entry: {
+                        index: upgrade.index,
+                        name: upgrade.name,
+                        levelState: getUpgradeLevelState(upgrade.index),
+                        maxLevelState: getUpgradeMaxLevelState(upgrade.index),
+                    },
+                    onAfterSet: refreshAfterUpgrade,
+                })
+            )
         );
     };
 

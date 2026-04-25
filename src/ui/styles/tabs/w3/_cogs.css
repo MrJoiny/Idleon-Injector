@@ -2,7 +2,6 @@
 /* .cogs-scroll    → .scrollable-panel (.content-stack if needed)             */
 /* .cogs-write-status* → .write-status / --loading / --success / --error     */
 
-
 .cogs-board-shell {
     display: flex;
     flex-direction: column;
@@ -359,7 +358,6 @@
 }
 
 /* .write-status / --loading / --success / --error → _account-pages.css */
-
 
 @media (max-width: 980px) {
     .cogs-board-shell {

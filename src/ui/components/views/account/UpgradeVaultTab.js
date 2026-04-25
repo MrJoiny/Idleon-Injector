@@ -112,7 +112,8 @@ export const UpgradeVaultTab = () => {
 
     return PersistentAccountListPage({
         title: "UPGRADE VAULT",
-        description: "Set levels for all vault upgrades real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
+        description:
+            "Set levels for all vault upgrades real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus",
         actions: RefreshButton({
             onRefresh: load,
             tooltip: "Re-read vault levels from game memory",

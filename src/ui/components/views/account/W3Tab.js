@@ -90,5 +90,3 @@ export const W3Tab = () => {
         )
     );
 };
-
-

@@ -106,7 +106,9 @@ export const WorshipTab = () => {
 
         const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        return writeVerified(writePath, nextCharge, { message: `Write mismatch at ${writePath}: expected ${nextCharge}` });
+        return writeVerified(writePath, nextCharge, {
+            message: `Write mismatch at ${writePath}: expected ${nextCharge}`,
+        });
     };
 
     const writeWave = async (waveIndex, nextWave) => {
@@ -118,19 +120,17 @@ export const WorshipTab = () => {
     const reconcilePlayerRows = createStaticRowReconciler(chargeRowsNode);
 
     const reconcileChargeRows = (players) =>
-        reconcilePlayerRows(
-            players.map((player) => player.playerName).join("|"),
-            () =>
-                players.map((player, index) =>
-                    WorshipChargeRow({
-                        index,
-                        playerName: player.playerName,
-                        chargeState: getChargeState(player.playerName),
-                        activeCharacterNameRef,
-                        activeMaxChargeRef,
-                        writeCharge,
-                    })
-                )
+        reconcilePlayerRows(players.map((player) => player.playerName).join("|"), () =>
+            players.map((player, index) =>
+                WorshipChargeRow({
+                    index,
+                    playerName: player.playerName,
+                    chargeState: getChargeState(player.playerName),
+                    activeCharacterNameRef,
+                    activeMaxChargeRef,
+                    writeCharge,
+                })
+            )
         );
 
     const waveRowsNode = div(
@@ -217,5 +217,3 @@ export const WorshipTab = () => {
         body,
     });
 };
-
-

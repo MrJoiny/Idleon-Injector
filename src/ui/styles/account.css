@@ -9,8 +9,6 @@
     letter-spacing: 0.05em;
 }
 
-
-
 .toggle-switch {
     display: inline-flex;
     align-items: center;
@@ -64,7 +62,6 @@
     color: var(--c-text-dim);
     font-weight: 600;
 }
-
 
 .option-item {
     position: relative;

@@ -17,5 +17,3 @@ export const AccountSection = ({ title, note = null, meta = null, rootClass = ""
         ),
         ...toNodes(body)
     );
-
-

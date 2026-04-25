@@ -71,14 +71,7 @@ export const SetAllNumberControl = ({
         SetAllApplyButton({ label: applyLabel, status, onApply })
     );
 
-export const SetAllSelectControl = ({
-    label,
-    value,
-    options,
-    status = null,
-    applyLabel = "SET ALL",
-    onApply,
-}) =>
+export const SetAllSelectControl = ({ label, value, options, status = null, applyLabel = "SET ALL", onApply }) =>
     div(
         { class: "account-setall-row" },
         span({ class: "account-setall-row__label" }, label),

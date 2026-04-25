@@ -47,11 +47,9 @@ export const ClickerRow = ({
         inputProps: isFormatted ? { formatter: largeFormatter, parser: largeParser } : {},
         adjustInput: (rawValue, delta) => {
             const cur = parseInputValue(rawValue) ?? 0;
-            const step = field.formatted ? formattedStep(cur) : (isFloat ? 0.1 : 1);
+            const step = field.formatted ? formattedStep(cur) : isFloat ? 0.1 : 1;
             return Math.max(0, cur + step * delta);
         },
         wrapApplyButton: (applyButton) => withTooltip(applyButton, `Write value to OptionsListAccount[${field.index}]`),
     });
 };
-
-

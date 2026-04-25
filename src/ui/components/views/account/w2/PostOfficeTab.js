@@ -153,7 +153,9 @@ export const PostOfficeTab = () => {
 
             if (boxRowCount !== boxCount.val) {
                 if (boxCount.val <= 0) {
-                    boxesListNode.replaceChildren(div({ class: "po-boxes-empty" }, "No Post Office box upgrades found."));
+                    boxesListNode.replaceChildren(
+                        div({ class: "po-boxes-empty" }, "No Post Office box upgrades found.")
+                    );
                 } else {
                     const rows = Array.from({ length: boxCount.val }, (_, index) =>
                         POBoxRow({ box: boxStates[index], onAfterWrite: recomputeSummary })
@@ -253,7 +255,10 @@ export const PostOfficeTab = () => {
                 div(
                     { class: "po-points-summary__row" },
                     span({ class: "po-points-summary__label" }, "SPENT ON UPGRADES"),
-                    span({ class: "po-points-summary__value po-points-summary__value--spent" }, () => `-${spentPoints.val}`)
+                    span(
+                        { class: "po-points-summary__value po-points-summary__value--spent" },
+                        () => `-${spentPoints.val}`
+                    )
                 ),
                 div(
                     { class: "po-points-summary__row po-points-summary__row--highlight" },

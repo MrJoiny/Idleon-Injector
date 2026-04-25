@@ -233,22 +233,21 @@ export const SmithyTab = () => {
 
     const load = async () => {
         return run(async () => {
-                const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] =
-                    await Promise.all([
-                        readWithFallback(EQUIP_SETS_PATHS),
-                        readWithFallback(SET_ORDER_PATHS),
-                        gga(STORED_SETS_PATH),
-                        gga(EQUIPPED_MAIN_PATH),
-                        gga(EQUIPPED_EXTRA_PATH),
-                    ]);
+            const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] = await Promise.all([
+                readWithFallback(EQUIP_SETS_PATHS),
+                readWithFallback(SET_ORDER_PATHS),
+                gga(STORED_SETS_PATH),
+                gga(EQUIPPED_MAIN_PATH),
+                gga(EQUIPPED_EXTRA_PATH),
+            ]);
 
-                applySmithyState({
-                    rawEquipSets,
-                    rawSetOrder,
-                    rawStoredSets,
-                    rawEquippedMain,
-                    rawEquippedExtra,
-                });
+            applySmithyState({
+                rawEquipSets,
+                rawSetOrder,
+                rawStoredSets,
+                rawEquippedMain,
+                rawEquippedExtra,
+            });
         });
     };
 
@@ -389,5 +388,3 @@ export const SmithyTab = () => {
         body,
     });
 };
-
-

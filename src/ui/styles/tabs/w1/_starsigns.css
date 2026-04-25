@@ -224,7 +224,7 @@
     font-family: var(--font-mono);
     background: var(--c-border);
     padding: 1px 6px;
-    }
+}
 
 .starsign-remove-btn {
     margin-left: auto;

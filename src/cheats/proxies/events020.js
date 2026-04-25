@@ -35,10 +35,10 @@ export function setupEvents020Proxies() {
         };
 
         const base = Reflect.apply(originalInit, this, args);
-        
+
         this._PlayerSize = targetSize;
         actor.growTo = originalGrowTo;
-        
+
         return base;
     };
 }

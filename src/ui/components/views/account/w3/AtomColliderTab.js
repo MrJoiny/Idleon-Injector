@@ -83,17 +83,15 @@ export const AtomColliderTab = () => {
                 return { name: atom.name, level: atom.level, maxLevel: toNum(item.value) };
             });
 
-            reconcileRows(
-                atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"),
-                () =>
-                    atoms.map((atom, index) =>
-                        AtomRow({
-                            index,
-                            name: atom.name,
-                            maxLevel: atom.maxLevel,
-                            levelState: getLevelState(index),
-                        })
-                    )
+            reconcileRows(atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"), () =>
+                atoms.map((atom, index) =>
+                    AtomRow({
+                        index,
+                        name: atom.name,
+                        maxLevel: atom.maxLevel,
+                        levelState: getLevelState(index),
+                    })
+                )
             );
 
             atoms.forEach((atom, i) => {
@@ -135,5 +133,3 @@ export const AtomColliderTab = () => {
         body: rowList,
     });
 };
-
-

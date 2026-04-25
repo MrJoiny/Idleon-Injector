@@ -90,13 +90,12 @@ const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
             setLocalLevel(nextLevel);
             return nextLevel;
         },
-        renderInfo: () =>
-            [
-                span({ class: "account-row__index" }, `#${bubble.index}`),
-                span({ class: "account-row__name" }, bubble.name),
-                prismaBlocked ? span({ class: "account-row__sub-label" }, "BIG BUBBLE") : null,
-                () => (isPrisma.val ? span({ class: "brewing-prisma-badge" }, "PRISMA") : null),
-            ],
+        renderInfo: () => [
+            span({ class: "account-row__index" }, `#${bubble.index}`),
+            span({ class: "account-row__name" }, bubble.name),
+            prismaBlocked ? span({ class: "account-row__sub-label" }, "BIG BUBBLE") : null,
+            () => (isPrisma.val ? span({ class: "brewing-prisma-badge" }, "PRISMA") : null),
+        ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
         rowClass: () => `brewing-row${isPrisma.val ? " brewing-row--prisma" : ""}`,
         badgeClass: "brewing-row__badge",
@@ -201,7 +200,9 @@ export const BrewingTab = () => {
 
     const reconcileCauldronRows = (cauldron) => {
         const defs = bubbleDefs.get(cauldron.id).val ?? [];
-        const signature = defs.map((bubble) => `${bubble.index}:${bubble.name}:${bubble.isBigBubble ? 1 : 0}`).join("|");
+        const signature = defs
+            .map((bubble) => `${bubble.index}:${bubble.name}:${bubble.isBigBubble ? 1 : 0}`)
+            .join("|");
         if (sectionDefinitionSignatures.get(cauldron.id) === signature) return;
 
         const sectionBody = sectionBodyNodes.get(cauldron.id);

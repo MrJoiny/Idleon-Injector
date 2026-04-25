@@ -57,7 +57,8 @@ export const SaltLickTab = () => {
         await runBulk(async () => {
             await runBulkSet({
                 entries: upgradesMeta,
-                getTargetValue: (upgrade) => toLevelInt(targetLevel === null ? upgrade.maxLevel : targetLevel, upgrade.maxLevel),
+                getTargetValue: (upgrade) =>
+                    toLevelInt(targetLevel === null ? upgrade.maxLevel : targetLevel, upgrade.maxLevel),
                 getValueState: (_, index) => getLevelState(index),
                 getPath: (_, index) => `SaltLick[${index}]`,
             });
@@ -79,17 +80,15 @@ export const SaltLickTab = () => {
                 },
             });
 
-            reconcileRows(
-                upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"),
-                () =>
-                    upgrades.map((upgrade, index) =>
-                        SaltLickRow({
-                            index,
-                            name: upgrade.name,
-                            maxLevel: upgrade.maxLevel,
-                            levelState: getLevelState(index),
-                        })
-                    )
+            reconcileRows(upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"), () =>
+                upgrades.map((upgrade, index) =>
+                    SaltLickRow({
+                        index,
+                        name: upgrade.name,
+                        maxLevel: upgrade.maxLevel,
+                        levelState: getLevelState(index),
+                    })
+                )
             );
 
             upgrades.forEach((upgrade, i) => {
@@ -131,5 +130,3 @@ export const SaltLickTab = () => {
         body: rowList,
     });
 };
-
-

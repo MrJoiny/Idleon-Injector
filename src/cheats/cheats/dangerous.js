@@ -212,7 +212,7 @@ function wipeFunction(params) {
  * @returns {string} Result message
  */
 function alchFn(params) {
-    const setlvl = params[1] || 1000;
+    const setlvl = params[1] ?? 1;
     if (!(params[0] in alchemyTypes)) {
         return `Wrong sub-command, use one of these:\n${Object.keys(alchemyTypes).join(", ")}`;
     }
@@ -225,8 +225,16 @@ function alchFn(params) {
             }
         }
         return `All cauldron rate and cap set to lvl ${setlvl}`;
+    } else if (params[0] === "vials") {
+        // There are currently more vials in source code than there are available in game
+        // so we need to use different way of deciding how many iterations we need rather than using Object.keys.
+        // Currently I'm gonna do logic "if vial require item then it's available to unlock" but this might change in future.
+        for (let i = 0; i < cList.AlchemyVialItems.length; i++) tochange[i] = setlvl;
+        return `All vials have changed to lvl ${setlvl}.`;
     }
+
     for (const index of Object.keys(tochange)) tochange[index] = setlvl;
+
     return `All ${params[0]} levels have changed to ${setlvl}.`;
 }
 

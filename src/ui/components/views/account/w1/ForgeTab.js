@@ -100,22 +100,22 @@ export const ForgeTab = () => {
     return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
         title: "FORGE",
-            description: "Set forge upgrade levels — each upgrade has a hard maximum",
-            wrapActions: false,
-            actions: BulkActionBar({
-                actions: [
-                    {
-                        label: "MAX ALL",
-                        status: maxAllStatus,
-                        tooltip: "Set all forge upgrades to their max levels",
-                        onClick: doMaxAll,
-                    },
-                ],
-                refresh: {
-                    onClick: load,
-                    tooltip: "Re-read forge levels from game memory",
+        description: "Set forge upgrade levels — each upgrade has a hard maximum",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: maxAllStatus,
+                    tooltip: "Set all forge upgrades to their max levels",
+                    onClick: doMaxAll,
                 },
-            }),
+            ],
+            refresh: {
+                onClick: load,
+                tooltip: "Re-read forge levels from game memory",
+            },
+        }),
         state: { loading, error },
         loadingText: "READING FORGE",
         errorTitle: "FORGE READ FAILED",

@@ -156,28 +156,25 @@ export const StatuesTab = () => {
             .map((entry, index) => ({ index, name: entry?.[0] }))
             .filter((statue) => statue.name && statue.name.trim().length > 0);
 
-        reconcileStatueRows(
-            statues.map((statue) => statue.index).join(","),
-            () => {
-                if (!statues.length) {
-                    return EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO STATUE DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    });
-                }
-
-                return statues.map((statue) =>
-                    StatueRow({
-                        index: statue.index,
-                        nameState: getOrCreateState(nameStates, statue.index, statue.name),
-                        levelState: getOrCreateState(levelStates, statue.index),
-                        depositedState: getOrCreateState(depositedStates, statue.index),
-                        tierState: getOrCreateState(tierStates, statue.index),
-                    })
-                );
+        reconcileStatueRows(statues.map((statue) => statue.index).join(","), () => {
+            if (!statues.length) {
+                return EmptyState({
+                    icon: Icons.SearchX(),
+                    title: "NO STATUE DATA",
+                    subtitle: "Ensure the game is running, then hit REFRESH",
+                });
             }
-        );
+
+            return statues.map((statue) =>
+                StatueRow({
+                    index: statue.index,
+                    nameState: getOrCreateState(nameStates, statue.index, statue.name),
+                    levelState: getOrCreateState(levelStates, statue.index),
+                    depositedState: getOrCreateState(depositedStates, statue.index),
+                    tierState: getOrCreateState(tierStates, statue.index),
+                })
+            );
+        });
     };
 
     const load = async () =>

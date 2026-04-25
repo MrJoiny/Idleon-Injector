@@ -68,9 +68,8 @@ export const VialTab = () => {
             });
 
             vialDefs.val = nextVialDefs.map(({ name, index }) => ({ name, index }));
-            reconcileRows(
-                vialDefs.val.map((vial) => `${vial.index}:${vial.name}`).join("|"),
-                () => vialDefs.val.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) }))
+            reconcileRows(vialDefs.val.map((vial) => `${vial.index}:${vial.name}`).join("|"), () =>
+                vialDefs.val.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) }))
             );
         });
 

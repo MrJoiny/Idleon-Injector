@@ -93,13 +93,19 @@ const LiquidColumn = ({ liquid, states }) =>
         LiquidControl({
             label: "CAP UPGRADE",
             valueState: states.cap,
-            writePath: `CauldronInfo[8][${liquid.upgradeIndex}][2][1]`,
+            writePaths: [
+                `CauldronInfo[8][${liquid.upgradeIndex}][2][1]`,
+                `OptionsListAccount[${371 + 2 * liquid.index}]`,
+            ],
             mode: "int",
         }),
         LiquidControl({
             label: "RATE UPGRADE",
             valueState: states.rate,
-            writePath: `CauldronInfo[8][${liquid.upgradeIndex}][3][1]`,
+            writePaths: [
+                `CauldronInfo[8][${liquid.upgradeIndex}][3][1]`,
+                `OptionsListAccount[${372 + 2 * liquid.index}]`,
+            ],
             mode: "int",
         })
     );

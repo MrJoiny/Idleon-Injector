@@ -160,7 +160,10 @@ export const ArcadeTab = () => {
         AccountSection({
             title: "BALL COUNTS",
             note: "Normal, golden, and cosmic arcade balls",
-            body: div({ class: "account-list" }, ...BALL_FIELDS.map((field) => ArcadeBallRow({ field, valueState: ballStates.get(field.id) }))),
+            body: div(
+                { class: "account-list" },
+                ...BALL_FIELDS.map((field) => ArcadeBallRow({ field, valueState: ballStates.get(field.id) }))
+            ),
         }),
         AccountSection({
             title: "BONUS UPGRADES",
