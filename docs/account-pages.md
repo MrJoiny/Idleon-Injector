@@ -1,433 +1,265 @@
-# Account Pages Playbook
+# Account pages playbook
 
-Decision-ready guide for building and maintaining Account tabs.
+Guide for building and maintaining Account feature tabs.
 
-This document is Account-specific and reflects the current standardized behavior in the repo.
+This document covers the refactored Account tab system in `src/ui/components/views/account/`. It is for new top-level Account tabs, world tabs, nested world panels, and world sub-tabs. It does not cover raw `OptionsListAccount` schema/editor changes.
 
-## 1) Architecture (Source of Truth)
+## 1) Source of truth
 
-Use these files as the primary references before adding or changing a tab:
+Read these files before adding or changing an Account feature tab:
 
 - `src/ui/components/views/Account.js`
-  Top-level Account tab shell and lazy pane mounting.
-- `src/ui/components/views/account/featureShared.js`
-  Shared write/load hooks and async body helpers.
+  Top-level Account shell, `ACCOUNT_TABS`, and lazy top-level pane mounting.
+- `src/ui/components/views/account/W1Tab.js` ... `W7Tab.js`
+  World tab shells and sub-tab registries.
 - `src/ui/components/views/account/tabShared.js`
-  Shared world/sub-tab navigation and lazy-pane helpers.
+  Shared tab navigation, lazy panes, persistent panes, and coming-soon placeholders.
+- `src/ui/components/views/account/accountLoadPolicy.js`
+  `useAccountLoad()` for standardized load state and load failure logging.
+- `src/ui/components/views/account/accountShared.js`
+  Shared value helpers, Haxe unwrapping, verified writes, bulk writes, stable state helpers, and write status.
+- `src/ui/components/views/account/components/`
+  Shared chrome, rows, sections, page shells, and collection helpers.
 
-### Current world structure
+Current structure:
 
-- Top-level Account tabs include Account Options, Upgrade Vault, and world tabs.
-- World tabs are split by world files (`W1Tab.js`, `W2Tab.js`, `W3Tab.js`, `W5Tab.js`, etc.).
-- Some worlds include nested sub-nav panels:
-    - W2: Alchemy panel (`Brewing`, `Liquid`, `Vials`, `Pay2Win`, `Sigils`)
-    - W3: Construction panel (`Buildings`, `Cogs`)
-    - W5: Sailing panel (`Artifacts`, `Islands`, placeholders)
+- Top-level Account tabs include Account Options, Upgrade Vault, and W1-W7.
+- W1-W3 contain implemented feature tabs.
+- W4-W7 currently use `createWorldComingSoonTab(...)`.
+- W2 has a nested Alchemy panel: Brewing, Liquid, Vials, Pay 2 Win, Sigils.
+- W3 has a nested Construction panel: Buildings, Cogs.
 
-## 2) Standards (Non-Negotiable)
+## 2) Shared contracts
 
-### Feedback contract
+### Page chrome
 
-- Success class in markup: `feature-row--success`
-- Error class in markup: `feature-row--error`
-- Do not emit legacy feedback classes from new Account pages.
+- Prefer `PersistentAccountListPage(...)` for most editable Account features.
+- Use `AccountPageShell(...)` directly only when the wrapper needs behavior not exposed by `PersistentAccountListPage`.
+- Use `AccountTabHeader`, `RefreshButton`, `WarningBanner`, `NoticeBanner`, `AccountSection`, and `AccountRow` before adding tab-local chrome.
+- Keep tab-specific selectors out of shared CSS unless they define a reusable primitive.
 
-### Write-status contract
+### Loading
 
-- Use `useWriteStatus()` for all write actions (row-level and bulk).
-- Default clear timing is canonical: success/error auto-clear at `1200ms`.
-- Prefer hook-managed status lifecycle over manual `setTimeout` status resets.
+- Use `useAccountLoad({ label })` for account-page reads.
+- Keep reads inline in the tab. The shared hook owns state transitions and logging.
+- Call `load()` once when the component is constructed. Because Account panes lazy-mount, this loads the tab only when first opened.
+- Use `Promise.all` for independent reads.
+- Normalize indexed game payloads with `toIndexedArray(raw)` from `src/ui/utils/index.js`.
+- Use `readLevelDefinitions(...)` when pairing a GGA levels array with a `cList` definition table.
 
-### Shared helper contract
+### Writes
 
-- Normalize array-like payloads with `toIndexedArray(raw)` from `src/ui/utils/index.js`.
-- Use `usePersistentPaneReady()` + `RefreshErrorBanner({ error })` for persistent panes.
-- Use `AsyncFeatureBody(...)` for re-render-on-load tabs.
+- Use `useWriteStatus()` for row-level and bulk write actions.
+- Use `writeVerified(path, value)` when one GGA write must be confirmed.
+- Use `writeManyVerified(writes)` for custom batches.
+- Use `runBulkSet(...)` when many rows share a target-value and local-state update flow.
+- Use shared row/action components so loading, success, and error states render consistently.
+- Do not hand-roll status timers. `useWriteStatus()` owns the success/error clear timing.
 
-### Behavior boundary
+### Feedback classes
 
-- Keep existing write verification semantics for the target tab.
-- This playbook standardizes UI/state patterns and feedback semantics, not game logic redesign.
+- Current shared Account rows emit `account-row--success` and `account-row--error`.
+- Action buttons use the shared button/status classes from `ActionButton`.
+- Do not introduce old `feature-row--success`, `feature-row--error`, or tab-local feedback class contracts.
 
-## 3) Pattern Selection
+## 3) Pattern selection
 
 Pick one rendering pattern per tab and stay consistent within that tab.
 
-### Pattern A: Persistent pane (dense row editors)
+### Pattern A: Persistent list page
 
-Use when row identity, input focus, and scroll stability matter.
+Use this for editable row tabs, dense lists, bulk actions, and any UI where input focus, row status, or scroll position needs to survive writes.
 
-Typical fit:
+Typical examples:
 
-- Many editable rows
-- Frequent writes
-- Data refreshed in place without tearing down DOM
+- `w1/AnvilTab.js`
+- `w2/VialTab.js`
+- `UpgradeVaultTab.js`
 
-### Pattern B: AsyncFeatureBody (simple full-body rendering)
-
-Use when full body re-render is cheap and state density is low.
-
-Typical fit:
-
-- Smaller lists
-- Mostly read + occasional writes
-- Simpler loading/error/empty flow
-
-### Pattern C: Cached card/grid (modern card-heavy tabs)
-
-Use for grid/card UIs where cards should remain stable across refresh/write updates.
-
-Typical fit:
-
-- Card grids (`tier-card`, artifact/island-like views)
-- Per-card writes + optional set-all controls
-- Cached card elements with reactive state updates
-
-## 4) Reactivity Safety (Required)
-
-The most common flash regression is accidental remounting of rows/cards after a value change.
-
-### Core rule
-
-Do not read mutable `*.val` while constructing row/card components inside reactive list renderers.
-
-Why:
-
-- Constructor-time reads can subscribe parent render closures to row values.
-- On changed writes (`2 -> 3`), parent re-renders/remounts the row/card.
-- Row-local `useWriteStatus()` state is replaced, so success/error flash disappears.
-
-### Bad
+Shape:
 
 ```js
-const MyRow = ({ levelState }) => {
-    const inputVal = van.state(String(levelState.val ?? 0)); // constructor-time read of mutable state
-    const { status } = useWriteStatus();
-    // ...
-};
-```
+export const MyFeatureTab = () => {
+    const { loading, error, run } = useAccountLoad({ label: "My Feature" });
+    const listNode = div({ class: "account-list" });
 
-### Good
-
-```js
-const MyRow = ({ levelState }) => {
-    const inputVal = van.state("0"); // neutral seed
-    const { status } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(levelState.val ?? 0); // sync after construction
-    });
-    // ...
-};
-```
-
-### Stability rules
-
-- Build persistent rows/cards once where possible and update backing `van.state` values in place.
-- For cached grids, keep a stable card array and only replace children from cached nodes.
-- Avoid mapping fresh component instances from reactive closures unless the shape truly changed.
-
-## 5) Templates
-
-## Pattern A Template: Persistent Pane
-
-```js
-import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { toIndexedArray } from "../../../../utils/index.js";
-import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
-
-const { div, button } = van.tags;
-
-const Row = ({ valueState, index }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(valueState.val ?? 0);
-    });
-
-    const doSet = async () => {
-        const next = Math.max(0, Math.round(Number(inputVal.val)));
-        if (!Number.isFinite(next)) return;
-        await run(async () => {
-            const path = `SomePath[${index}]`;
-            const ok = await gga(path, next);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${next}`);
-            valueState.val = next;
+    const load = async () =>
+        run(async () => {
+            // Read game data, normalize it, then update existing state.
         });
-    };
-
-    return div(
-        {
-            class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
-                }`,
-        },
-        button(
-            {
-                class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                onclick: doSet,
-            },
-            "SET"
-        )
-    );
-};
-
-export const MyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const refreshError = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
-    const rows = Array.from({ length: 10 }, () => van.state(0));
-
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
-            const arr = toIndexedArray(await gga("SomePath"));
-            rows.forEach((st, i) => {
-                st.val = Number(arr[i] ?? 0);
-            });
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
-    };
 
     load();
 
-    return div(
-        { class: "tab-container" },
-        button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-        RefreshErrorBanner({ error: refreshError }),
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ title: "LOAD FAILED", subtitle: error.val })
-                : null,
-        div({ class: () => paneClass("feature-list") }, ...rows.map((st, i) => Row({ valueState: st, index: i })))
-    );
+    return PersistentAccountListPage({
+        title: "MY FEATURE",
+        description: "Short operational description.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
+        loadingText: "READING MY FEATURE",
+        errorTitle: "MY FEATURE READ FAILED",
+        initialWrapperClass: "account-list",
+        body: listNode,
+    });
 };
 ```
 
-## Pattern B Template: AsyncFeatureBody
+### Pattern B: Simple rebuild body
+
+Use when the tab is small, mostly read-only, and remounting content after load is acceptable.
+
+Use `AccountPageShell` with `loadState` and `renderBody`, or pass a small reactive `body` to `PersistentAccountListPage` when the surrounding page should still use persistent Account chrome.
+
+### Pattern C: Cached collection or card UI
+
+Use when the data shape can change but existing rows or cards should survive writes and refreshes.
+
+Typical techniques:
+
+- `createIndexedStateGetter()` for sparse numeric/list index state.
+- `getOrCreateState(map, key, initial)` for keyed row/card state.
+- `createStaticRowReconciler(container)` when rows should rebuild only after a signature changes.
+- Stable arrays of row/card nodes when refreshing values should not rebuild UI identity.
+
+## 4) Shared UI primitives
+
+Use these before creating new one-off helpers:
+
+- `EditableNumberRow`
+  Focus-safe numeric row. Keeps committed value state separate from draft input text.
+- `ClampedLevelRow`
+  Thin adapter for single-path level fields with min/max clamping.
+- `BulkActionBar`, `SetAllNumberControl`, `SetAllSelectControl`
+  Header action strip and set-all controls.
+- `AddFromListSection`
+  Add-from-dropdown collection section.
+- `RemovableStoredRow`
+  Removable collection row with row-local write status.
+- `AccountRow`
+  Non-numeric row shell with status-aware classes.
+- `AccountSection`
+  Standard grouped section header/body.
+
+Do not extract tiny one-off helpers when the logic is only a couple of lines and used once. Inline the logic unless a helper materially improves reuse or readability.
+
+## 5) Reactivity safety
+
+The most common regression is remounting rows or cards after a value changes. That can lose focus or hide success/error feedback.
+
+Rules:
+
+- Keep VanJS reactive function scope as small as possible.
+- Do not return arrays directly from reactive children; return one node or wrap multiple nodes in a container.
+- Do not wrap an input in a reactive block that depends on that input's value.
+- Do not read mutable `state.val` while constructing row or card components inside a reactive list renderer if that subscribes the parent renderer.
+- Build persistent rows or cards once where possible, then update backing `van.state` values in place.
+- For dynamic lists, rebuild only when the list shape changes, not when an individual row value changes.
+
+Bad:
 
 ```js
-import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { AsyncFeatureBody } from "../featureShared.js";
-
-const { div, button } = van.tags;
-
-export const MyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
-
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
-            const raw = await gga("SomePath");
-            data.val = { items: raw ?? [] };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
-        }
-    };
-
-    load();
-
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ title: "LOAD FAILED", subtitle: message }),
-        isEmpty: (resolved) => !resolved.items.length,
-        renderEmpty: () => EmptyState({ title: "NO DATA", subtitle: "No entries found." }),
-        renderContent: () => div({ class: "feature-list" }, "content"),
-    });
-
-    return div({ class: "tab-container" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"), renderBody);
+const Row = ({ valueState }) => {
+    const inputValue = van.state(String(valueState.val ?? 0));
+    return input({ value: inputValue });
 };
 ```
 
-## Pattern C Template: Cached Card/Grid
+Good:
 
 ```js
-import van from "../../../../vendor/van-1.6.0.js";
-import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { toIndexedArray } from "../../../../utils/index.js";
-import { RefreshErrorBanner, usePersistentPaneReady, useWriteStatus } from "../featureShared.js";
-
-const { div, button } = van.tags;
-
-const Card = ({ index, valueState, nameState }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
+const Row = ({ valueState }) => {
+    const inputValue = van.state("0");
 
     van.derive(() => {
-        inputVal.val = String(valueState.val ?? 0);
+        inputValue.val = String(valueState.val ?? 0);
     });
 
-    const doSet = async () => {
-        const next = Math.max(0, Math.round(Number(inputVal.val)));
-        if (!Number.isFinite(next)) return;
-        await run(async () => {
-            const path = `SomeGridPath[${index}]`;
-            const ok = await gga(path, next);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${next}`);
-            valueState.val = next;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "tier-card",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        nameState,
-        button(
-            {
-                class: () => `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                onclick: doSet,
-            },
-            "SET"
-        )
-    );
-};
-
-export const MyGridTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const refreshError = van.state(null);
-    const { initialized, markReady, paneClass } = usePersistentPaneReady();
-
-    const count = van.state(0);
-    const names = [];
-    const values = [];
-    const cards = [];
-
-    const ensureCount = (n) => {
-        while (cards.length < n) {
-            const i = cards.length;
-            names.push(van.state(`Item ${i}`));
-            values.push(van.state(0));
-            cards.push(Card({ index: i, valueState: values[i], nameState: names[i] }));
-        }
-    };
-
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        refreshError.val = null;
-        try {
-            const arr = toIndexedArray(await gga("SomeGridPath"));
-            count.val = arr.length;
-            ensureCount(count.val);
-            for (let i = 0; i < count.val; i++) {
-                values[i].val = Number(arr[i] ?? 0);
-            }
-            markReady();
-        } catch (e) {
-            const message = e?.message ?? "Failed to load";
-            if (!initialized.val) error.val = message;
-            else refreshError.val = message;
-        } finally {
-            loading.val = false;
-        }
-    };
-
-    load();
-
-    const grid = div({ class: "tier-grid" });
-    van.derive(() => {
-        grid.replaceChildren();
-        if (count.val <= 0) {
-            van.add(grid, div({}, "No entries"));
-            return;
-        }
-        van.add(grid, ...cards.slice(0, count.val));
-    });
-
-    return div(
-        { class: "tab-container" },
-        button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-        RefreshErrorBanner({ error: refreshError }),
-        () => (loading.val && !initialized.val ? div({ class: "feature-loader" }, Loader()) : null),
-        () =>
-            !loading.val && error.val && !initialized.val
-                ? EmptyState({ title: "LOAD FAILED", subtitle: error.val })
-                : null,
-        div({ class: () => paneClass("tier-scroll scrollable-panel") }, grid)
-    );
+    return input({ value: inputValue });
 };
 ```
 
-## 6) Wiring New Tabs
+Prefer `EditableNumberRow` when this pattern fits; it already handles draft text and focus-safe syncing.
 
-### Add a new feature tab under an existing world
+## 6) Wiring new tabs
 
-1. Create the component at `src/ui/components/views/account/wN/MyFeatureTab.js`.
-2. Register it in the world sub-tab list (`W1Tab.js`, `W2Tab.js`, `W3Tab.js`, `W5Tab.js`).
-3. If the world uses a nested panel (Alchemy/Construction/Sailing), add it to that nested array and pane renderer.
-4. Add tab CSS at `src/ui/styles/tabs/wN/_myfeature.css`.
-5. Import that CSS in `src/ui/styles/tabs/wN/_index.css`.
+### Add a feature tab under an existing world
+
+1. Create `src/ui/components/views/account/wN/MyFeatureTab.js`.
+2. Import it in `src/ui/components/views/account/WNTab.js`.
+3. Add a `WN_SUBTABS` entry with a stable kebab-case `id`, uppercase `label`, and `component`.
+4. If the world has a nested panel, add the tab to that nested registry instead of the outer world registry.
+5. Add feature CSS at `src/ui/styles/tabs/wN/_my-feature.css` if needed.
+6. Import that CSS from `src/ui/styles/tabs/wN/_index.css`.
+
+### Add a nested panel tab
+
+1. Find the nested registry, such as `ALCHEMY_SUBTABS` in `W2Tab.js` or `CONSTRUCTION_SUBTABS` in `W3Tab.js`.
+2. Add the new tab to that nested array.
+3. Reuse the existing `renderTabNav(...)` and `renderLazyPanes(...)` panel structure.
+4. Keep panel-specific CSS near the world's existing tab CSS.
+
+### Add a top-level Account tab
+
+1. Create `src/ui/components/views/account/MyTopLevelTab.js`.
+2. Import it in `src/ui/components/views/Account.js`.
+3. Add an `ACCOUNT_TABS` entry with `isWorld: false`.
+4. Add styles only if the shared Account primitives are insufficient.
 
 ### Add a new world tab
 
 1. Create `src/ui/components/views/account/WNTab.js`.
-2. Register it in `src/ui/components/views/Account.js` top-level `ACCOUNT_TABS`.
-3. Add world tab styles and world tab-specific style imports.
+2. Register it in `src/ui/components/views/Account.js` with `isWorld: true` and `worldNum`.
+3. Add world-specific styles and imports.
+4. If the world is not implemented yet, prefer `createWorldComingSoonTab(...)`.
 
 ### Placeholder behavior
 
-- For not-yet-implemented sub-tabs, set `component: null` and rely on `createComingSoonPlaceholder(...)`.
-- Do not attach write-status behavior to placeholders.
+- For unimplemented sub-tabs, use `component: null` and `createComingSoonPlaceholder(...)`.
+- Do not attach write behavior or load behavior to placeholders.
 
-## 7) Anti-Patterns
+## 7) CSS rules
 
-- Manual status state/timers instead of `useWriteStatus()`.
-- Emitting legacy flash classes in new markup.
-- Constructor-time reads of mutable `*.val` in row/card builders.
-- Full row/card teardown on every write in persistent/cached tabs.
-- Tab-specific selectors added to shared CSS when they belong in tab CSS.
+- Shared Account primitives live in `src/ui/styles/_account-pages.css`.
+- Top account/world navigation lives in `src/ui/styles/_world-tabs.css`.
+- Feature-specific CSS belongs in `src/ui/styles/tabs/wN/_feature-name.css`.
+- Import feature CSS from the matching `src/ui/styles/tabs/wN/_index.css`.
+- Use existing classes first: `tab-container`, `scroll-container`, `account-list`, `account-row`, `account-section`, `account-header__actions`, `account-setall-row`, `warning-banner`, `tab-add-row`.
+- Keep dimensions stable for row controls, cards, grids, status labels, and action buttons so writes do not shift layout.
 
-## 8) Validation Checklist
+## 8) Validation checklist
 
-- Tab appears in correct world/nav and lazy mounts correctly.
-- Initial load:
-    - loader visible before first success
-    - visible error state on first-load failure
-- Post-initial refresh failure keeps stale data visible and shows `RefreshErrorBanner`.
-- For each write action:
-    - loading class appears while writing
-    - success path emits `feature-row--success` on the action host container
-    - error path emits `feature-row--error` on the action host container
-- Flash behavior checks:
-    - changed value (`2 -> 3`) shows success feedback
-    - unchanged value (`3 -> 3`) still shows success feedback
-    - no remount-induced status loss
-- Bulk actions use `useWriteStatus()` and same canonical feedback classes.
-- Placeholder tabs remain unchanged and do not gain write semantics.
+Run the full validation when code changes:
+
+```powershell
+npm run validate
+```
+
+If the change is narrow and full validation is too expensive, run the tightest checks that cover changed files:
+
+```powershell
+node --check src/ui/components/views/account/wN/MyFeatureTab.js
+npx eslint src/ui/components/views/account/ src/ui/styles/
+```
+
+Manual checks:
+
+- The tab appears at the correct nav level.
+- Lazy mounting loads the tab only when first opened.
+- Initial loading and initial failure states use the shared page chrome.
+- Refresh reloads data without destroying stable rows unnecessarily.
+- Write actions show loading, success, and error feedback on the correct row/action.
+- Changed and unchanged verified writes both show success feedback.
+- Inputs keep focus while typing and do not reset on each keystroke.
+- Bulk actions use `useWriteStatus()` and verified writes.
+- Placeholder tabs remain passive.
+- CSS is imported and scoped to the feature/world.
+
+## 9) Anti-patterns
+
+- Importing or referencing removed `featureShared.js` helpers.
+- Manual load-state boilerplate when `useAccountLoad()` fits.
+- Manual status timers instead of `useWriteStatus()`.
+- Rebuilding rows/cards on every value write.
+- Constructor-time reads of mutable `*.val` in row/card builders when they cause parent remounts.
+- Returning arrays from reactive VanJS children.
+- Putting feature-specific selectors in shared Account CSS.
+- Adding a new helper for logic that is short, local, and used once.
