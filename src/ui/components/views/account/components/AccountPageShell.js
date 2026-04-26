@@ -27,8 +27,8 @@ export const AccountPageShell = ({
     persistentInitialWrapperClass = null,
 }) =>
     (() => {
-        const wrapPersistentInitial = (node) =>
-            persistentInitialWrapperClass ? div({ class: persistentInitialWrapperClass }, node) : node;
+        const initialClass = (isVisible) =>
+            joinClasses(persistentInitialWrapperClass, !isVisible ? "is-hidden-until-ready" : "");
         const hasLoaded = persistentState ? van.state(false) : null;
 
         if (persistentState) {
@@ -41,27 +41,32 @@ export const AccountPageShell = ({
 
         const initialState = persistentState
             ? [
-                  () => {
-                      const isLoading = Boolean(resolveValue(persistentState.loading));
-                      if (!isLoading || hasLoaded.val) return null;
-
-                      const loader =
-                          persistentLoadingText !== null ? Loader({ text: persistentLoadingText }) : Loader();
-                      return wrapPersistentInitial(div({ class: "account-loader" }, loader));
-                  },
-                  () => {
-                      const isLoading = Boolean(resolveValue(persistentState.loading));
-                      const errorMessage = resolveValue(persistentState.error);
-                      if (isLoading || !errorMessage) return null;
-
-                      return wrapPersistentInitial(
-                          EmptyState({
-                              icon: Icons.SearchX(),
-                              title: persistentErrorTitle,
-                              subtitle: String(errorMessage),
-                          })
-                      );
-                  },
+                  div(
+                      {
+                          class: () => {
+                              const isLoading = Boolean(resolveValue(persistentState.loading));
+                              return initialClass(isLoading && !hasLoaded.val);
+                          },
+                      },
+                      div(
+                          { class: "account-loader" },
+                          persistentLoadingText !== null ? Loader({ text: persistentLoadingText }) : Loader()
+                      )
+                  ),
+                  div(
+                      {
+                          class: () => {
+                              const isLoading = Boolean(resolveValue(persistentState.loading));
+                              const errorMessage = resolveValue(persistentState.error);
+                              return initialClass(!isLoading && Boolean(errorMessage));
+                          },
+                      },
+                      EmptyState({
+                          icon: Icons.SearchX(),
+                          title: persistentErrorTitle,
+                          subtitle: () => String(resolveValue(persistentState.error) || ""),
+                      })
+                  ),
               ]
             : null;
 
@@ -91,10 +96,7 @@ export const AccountPageShell = ({
                 ? div(
                       {
                           class: () =>
-                              joinClasses(
-                                  "account-page-shell__body",
-                                  !hasLoaded.val || resolveValue(persistentState.error) ? "is-hidden-until-ready" : ""
-                              ),
+                              joinClasses("account-page-shell__body", !hasLoaded.val ? "is-hidden-until-ready" : ""),
                       },
                       resolvedPersistentBody
                   )
