@@ -52,17 +52,19 @@ const LIQUIDS = [
     },
 ];
 
-const LiquidControl = ({ label, valueState, writePath, mode = "int" }) =>
-    EditableNumberRow({
+const LiquidControl = ({ label, valueState, writePath, writePaths = null, mode = "int" }) => {
+    const paths = Array.isArray(writePaths) && writePaths.length > 0 ? writePaths : [writePath];
+
+    return EditableNumberRow({
         valueState,
         normalize: (rawValue) => {
             const next = Math.max(0, Math.round(Number(rawValue)));
             return Number.isNaN(next) ? null : next;
         },
         write: async (nextValue) => {
-            await writeVerified(writePath, nextValue, {
-                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
-            });
+            for (const path of paths) {
+                await writeVerified(path, nextValue);
+            }
             return nextValue;
         },
         renderInfo: () => span({ class: "account-row__name liquid-row__label" }, label),
@@ -77,6 +79,7 @@ const LiquidControl = ({ label, valueState, writePath, mode = "int" }) =>
             return Math.max(0, next + delta);
         },
     });
+};
 
 const LiquidColumn = ({ liquid, states }) =>
     div(

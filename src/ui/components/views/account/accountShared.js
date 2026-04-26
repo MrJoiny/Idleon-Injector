@@ -1,18 +1,4 @@
-/**
- * Shared hooks and helpers for account feature tabs.
- *
- * Pattern guide - choose one per tab:
- *
- *  A) Persistent-pane tabs (Anvil, Forge, Liquid, P2W, PostOffice, Sigil):
- *       Build the DOM once before the first load. Reactive van.state objects
- *       update individual cells in place, so refresh does not rebuild the list
- *       or reset scroll position.
- *       -> use persistentState on AccountPageShell + useWriteStatus
- *
- *  B) Re-render-on-load tabs (Vials, AtomCollider, SaltLick):
- *       The list is cheap to rebuild and does not keep persistent row DOM.
- *       -> use useAccountLoad + inline renderBody + useWriteStatus
- */
+/** Shared hooks and helpers for account feature tabs. */
 
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../services/api.js";
@@ -37,7 +23,6 @@ export const toNodes = (content) => {
     return Array.isArray(content) ? content : [content];
 };
 
-/** Join nullable class-name parts into a single class string. */
 export const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
 
 /** Reuse a keyed van.state instance across refreshes. */
@@ -68,10 +53,7 @@ export const createStaticRowReconciler = (container) => {
     };
 };
 
-/**
- * Safely coerce a value to a finite number.
- * Returns `fallback` when coercion yields NaN/Infinity.
- */
+/** Coerce a value to a finite number, or return `fallback` for NaN/Infinity. */
 export const toNum = (value, fallback = 0) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
@@ -109,6 +91,8 @@ export const resolveNumberInput = (
     raw,
     { formatted = false, float = false, min = -Infinity, max = Infinity, fallback = null } = {}
 ) => {
+    if (typeof raw === "string" && raw.trim() === "") return fallback;
+
     let next = null;
 
     if (formatted) {
@@ -125,7 +109,6 @@ export const resolveNumberInput = (
     return Math.max(min, Math.min(max, normalized));
 };
 
-/** Normalize formatted NumberInput text into a clamped integer value. */
 export const resolveFormattedIntInput = (raw, fallback = null, { min = 0, max = Infinity } = {}) =>
     resolveNumberInput(raw, {
         formatted: true,
@@ -207,17 +190,18 @@ export const renderAccountError = (message) =>
  * Write a value through gga (or a compatible writer) and fail if verification
  * reports a mismatch.
  */
-export const writeVerified = async (path, value, { write = gga, message = null } = {}) => {
+export const writeVerified = async (path, value, { write = gga } = {}) => {
     const ok = await write(path, value);
     if (ok) return value;
 
-    throw new Error(typeof message === "function" ? message(path, value) : (message ?? `Write mismatch at ${path}`));
+    throw new Error(`Write mismatch at ${path}`);
 };
 
 const normalizeGgaPath = (path) => String(path ?? "").replace(/^gga\./, "");
 
 /**
  * Write many GGA paths and throw a consistent error for the first failed write.
+ * Failed writes expose the original batch response on `error.results`.
  *
  * @param {Array<{ path: string, value: any }>} writes
  * @returns {Promise<any>}
@@ -233,7 +217,9 @@ export const writeManyVerified = async (writes) => {
     const failedWrite = writes.find((entry) => normalizeGgaPath(entry.path) === failedPath);
     const expected = failedWrite?.value ?? "unknown";
 
-    throw new Error(`Write mismatch at ${failedPath}: expected ${expected}`);
+    const error = new Error(`Write mismatch at ${failedPath}: expected ${expected}`);
+    error.results = result.results;
+    throw error;
 };
 
 const toWriteEntries = (writeOrWrites) => {
@@ -296,24 +282,12 @@ export const runBulkSet = async ({
 };
 
 /**
- * Hook that wraps an async write operation with loading / success / error
- * status tracking and automatic status-clear timers.
+ * Hook that wraps an async write operation with status tracking and automatic
+ * status-clear timers.
  *
- * Usage:
- *   const { status, run } = useWriteStatus();
- *
- *   await run(async () => {
- *       await gga("SomeKey", value);
- *       localState.val = value;
- *   });
- *
- *   // status.val is one of: null | "loading" | "success" | "error"
- *   // Bind it to CSS classes or button labels as needed.
- *
- * run() accepts an optional second argument to override per-call:
- *   await run(task, { successMs: 1000 });
- *   await run(task, { loadingState: "saving", successState: "saved" });
- *   await run(task, { onSuccess: (result) => ..., onError: (err) => ... });
+ * `run()` accepts per-call status labels and success/error callbacks.
+ * `clearStatus()` cancels pending auto-clear timers for teardown paths that keep
+ * long-lived row state outside the active pane.
  */
 export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
     const status = van.state(null);

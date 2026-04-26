@@ -111,10 +111,7 @@ const P2WRow = ({ label, valueState, maxState, writePath }) =>
             const parsed = Math.max(0, Math.round(Number(rawValue)));
             return Number.isNaN(parsed) ? null : parsed;
         },
-        write: async (nextValue) =>
-            writeVerified(writePath, nextValue, {
-                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
-            }),
+        write: async (nextValue) => writeVerified(writePath, nextValue),
         renderInfo: () => span({ class: "account-row__name" }, label),
         renderBadge: (currentValue) => {
             const cur = currentValue ?? 0;
@@ -226,7 +223,9 @@ export const Pay2WinTab = () => {
 
             maxTargets.forEach((entry, index) => {
                 if (!maxResults[index]?.ok) {
-                    throw new Error(`CauldronLvMAX failed for target ${index}`);
+                    throw new Error(
+                        `CauldronLvMAX failed for target ${index} (args=${JSON.stringify(entry.args)}): ${maxResults[index]?.error ?? "unknown"}`
+                    );
                 }
                 entry.apply(maxResults[index].value);
             });

@@ -80,15 +80,17 @@ export const SaltLickTab = () => {
                 },
             });
 
-            reconcileRows(upgrades.map((upgrade) => `${upgrade.name}:${upgrade.maxLevel}`).join("|"), () =>
-                upgrades.map((upgrade, index) =>
-                    SaltLickRow({
-                        index,
-                        name: upgrade.name,
-                        maxLevel: upgrade.maxLevel,
-                        levelState: getLevelState(index),
-                    })
-                )
+            reconcileRows(
+                upgrades.map((upgrade, index) => `${index}:${upgrade.name}:${upgrade.maxLevel}`).join("|"),
+                () =>
+                    upgrades.map((upgrade, index) =>
+                        SaltLickRow({
+                            index,
+                            name: upgrade.name,
+                            maxLevel: upgrade.maxLevel,
+                            levelState: getLevelState(index),
+                        })
+                    )
             );
 
             upgrades.forEach((upgrade, i) => {

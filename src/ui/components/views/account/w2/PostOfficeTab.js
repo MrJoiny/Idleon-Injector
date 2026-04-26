@@ -39,9 +39,7 @@ const CurrencyRow = ({ label, note, valueState, writePath, readOnly = false, onA
             return Number.isNaN(nextValue) ? null : nextValue;
         },
         write: async (nextValue) => {
-            await writeVerified(writePath, nextValue, {
-                message: `Write mismatch at ${writePath}: expected ${nextValue}`,
-            });
+            await writeVerified(writePath, nextValue);
             if (typeof onAfterWrite === "function") onAfterWrite();
             return nextValue;
         },
@@ -69,7 +67,7 @@ const POBoxRow = ({ box, onAfterWrite = null }) => {
         integerMode: "round",
         write: async (nextValue) => {
             const path = `PostOfficeInfo[3][${box.index}][0]`;
-            await writeVerified(path, nextValue, { message: `Write mismatch at ${path}: expected ${nextValue}` });
+            await writeVerified(path, nextValue);
             if (typeof onAfterWrite === "function") onAfterWrite();
             return nextValue;
         },
@@ -119,7 +117,7 @@ export const PostOfficeTab = () => {
     const { status: boxBulkStatus, run: runBoxBulkWrite } = useWriteStatus();
     const boxesListNode = div({ class: "po-boxes-list" });
 
-    const load = async () =>
+    const load = async ({ forceDefinitions = false } = {}) =>
         run(async () => {
             const reads = [
                 gga("PostOfficeInfo[3]"),
@@ -128,13 +126,13 @@ export const PostOfficeTab = () => {
                 gga("DNSM.h.AlchVials.h.BoxPoints"),
             ];
 
-            if (!boxDefsLoaded) {
+            if (!boxDefsLoaded || forceDefinitions) {
                 reads.push(readCList("PostOffUpgradeInfo"));
             }
 
             const [rawUpgrades, rawCurrencies, rawOpts, rawBoxPts, rawBoxDefs = null] = await Promise.all(reads);
 
-            if (!boxDefsLoaded) {
+            if (!boxDefsLoaded || forceDefinitions) {
                 const boxDefs = toIndexedArray(rawBoxDefs ?? []);
                 ensureBoxStateCount(boxDefs.length);
                 boxCount.val = boxDefs.length;
@@ -153,9 +151,7 @@ export const PostOfficeTab = () => {
 
             if (boxRowCount !== boxCount.val) {
                 if (boxCount.val <= 0) {
-                    boxesListNode.replaceChildren(
-                        div({ class: "po-boxes-empty" }, "No Post Office box upgrades found.")
-                    );
+                    boxesListNode.replaceChildren();
                 } else {
                     const rows = Array.from({ length: boxCount.val }, (_, index) =>
                         POBoxRow({ box: boxStates[index], onAfterWrite: recomputeSummary })
@@ -295,7 +291,7 @@ export const PostOfficeTab = () => {
     return PersistentAccountListPage({
         title: "POST OFFICE",
         description: "Manage delivery point currencies and Post Office box upgrades.",
-        actions: RefreshButton({ onRefresh: load }),
+        actions: RefreshButton({ onRefresh: () => load({ forceDefinitions: true }) }),
         topNotices: WarningBanner(
             " ",
             span({ class: "warning-highlight-accent" }, "Warning: "),

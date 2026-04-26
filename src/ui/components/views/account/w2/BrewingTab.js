@@ -14,8 +14,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
@@ -86,7 +84,7 @@ const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
         max: Infinity,
         write: async (nextLevel) => {
             const path = `CauldronInfo[${cauldron.index}][${bubble.index}]`;
-            await writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
+            await writeVerified(path, nextLevel);
             setLocalLevel(nextLevel);
             return nextLevel;
         },
@@ -114,11 +112,11 @@ const BubbleRow = ({ bubble, cauldron, levels, prismaSet }) => {
                           await run(async () => {
                               const code = prismaCode(cauldron.prismaKey, bubble.index);
                               const next = new Set(prismaSet.val ?? new Set());
-                              next.has(code) ? next.delete(code) : next.add(code);
+                              const turningOn = !next.has(code);
+                              if (turningOn) next.add(code);
+                              else next.delete(code);
                               const encoded = encodePrisma(next);
-                              await writeVerified("OptionsListAccount[384]", encoded, {
-                                  message: `Prisma toggle mismatch for ${code}: expected ${next.has(code) ? "on" : "off"}`,
-                              });
+                              await writeVerified("OptionsListAccount[384]", encoded);
                               prismaSet.val = next;
                           });
                       },
@@ -210,11 +208,6 @@ export const BrewingTab = () => {
 
         sectionDefinitionSignatures.set(cauldron.id, signature);
 
-        if (defs.length === 0) {
-            sectionBody.replaceChildren(div({ class: "tab-empty" }, "No bubbles"));
-            return;
-        }
-
         sectionBody.replaceChildren(
             ...defs.map((bubble) =>
                 BubbleRow({
@@ -229,17 +222,6 @@ export const BrewingTab = () => {
 
     const reconcileBody = () => {
         CAULDRONS.forEach(reconcileCauldronRows);
-
-        if (CAULDRONS.every((cauldron) => (bubbleDefs.get(cauldron.id).val ?? []).length === 0)) {
-            contentNode.replaceChildren(
-                EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO BUBBLES",
-                    subtitle: "No brewing bubble definitions found.",
-                })
-            );
-            return;
-        }
 
         sectionsGrid.replaceChildren(...sectionNodes);
         contentNode.replaceChildren(sectionsGrid);
@@ -282,8 +264,8 @@ export const BrewingTab = () => {
 
             prismaSet.val = nextPrismaSet;
             CAULDRONS.forEach((c) => {
-                cauldronLevels.get(c.id).val = nextLevelsById.get(c.id);
-                bubbleDefs.get(c.id).val = nextDefsById.get(c.id);
+                cauldronLevels.get(c.id).val = nextLevelsById.get(c.id) ?? [];
+                bubbleDefs.get(c.id).val = nextDefsById.get(c.id) ?? [];
             });
             reconcileBody();
         });

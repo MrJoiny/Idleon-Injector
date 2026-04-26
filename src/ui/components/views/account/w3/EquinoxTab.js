@@ -104,9 +104,7 @@ const CloudRow = ({ entry }) => {
         await run(async () => {
             const path = `WeeklyBoss.h.d_${entry.cloudIndex}`;
             const required = toInt(entry.requiredState.val, { mode: "floor" });
-            await writeVerified(path, required, {
-                message: `Write mismatch at ${path}: expected ${required}, got failed verification`,
-            });
+            await writeVerified(path, required);
             entry.progressState.val = required;
         });
     };
@@ -137,9 +135,7 @@ const UpgradeRow = ({ entry, onAfterSet }) =>
         integerMode: "floor",
         write: async (nextLevel) => {
             const path = `Dream[${entry.index + 2}]`;
-            const verified = await writeVerified(path, nextLevel, {
-                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
-            });
+            const verified = await writeVerified(path, nextLevel);
             await onAfterSet();
             return verified;
         },
@@ -258,8 +254,8 @@ export const EquinoxTab = () => {
                 weeklyBossMap
             );
             updateCloudRows(visibleIndexes, weeklyBossMap, staticMeta?.dreamChallengeArr ?? []);
-        } catch {
-            return;
+        } catch (err) {
+            console.warn("[EquinoxTab] refreshAfterUpgrade failed", err);
         }
     };
 
@@ -268,9 +264,7 @@ export const EquinoxTab = () => {
             const req = barFillReqState.val;
             if (!req) return;
 
-            await writeVerified("Dream[0]", req, {
-                message: `Write mismatch at Dream[0]: expected ${req}, got failed verification`,
-            });
+            await writeVerified("Dream[0]", req);
             barFillState.val = req;
         });
 

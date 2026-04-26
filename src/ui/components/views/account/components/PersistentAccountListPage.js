@@ -11,6 +11,12 @@ import { AccountTabHeader } from "./AccountTabHeader.js";
  * @param {boolean} [opts.wrapActions]
  * @param {{loading: *, error: *}} opts.state
  * @param {*} opts.body
+ * @param {string} [opts.rootClass]
+ * @param {*} [opts.topNotices]
+ * @param {*} [opts.subNav]
+ * @param {string|null} [opts.loadingText]
+ * @param {string} [opts.errorTitle]
+ * @param {string|null} [opts.initialWrapperClass]
  * @returns {HTMLElement}
  */
 export const PersistentAccountListPage = ({

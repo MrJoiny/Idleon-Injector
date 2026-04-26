@@ -50,7 +50,7 @@ export const Account = () => {
             activeId: activeTab,
             navClass: "account-sub-nav",
             buttonClass: (tab) =>
-                `account-sub-tab-button ${tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"}`,
+                `account-top-tab-btn ${tab.isWorld ? `world-tab-btn w${tab.worldNum}-world-tab` : "account-options-btn"}`,
             renderLabel: (tab) => (tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label),
             getButtonProps: (tab) => ({ title: tab.label }),
         }),

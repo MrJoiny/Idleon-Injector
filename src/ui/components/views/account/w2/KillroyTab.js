@@ -83,7 +83,9 @@ const FIELD_INDEXES = Array.from(new Set(ALL_FIELD_DEFS.map((f) => f.index)));
 
 const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disableEdit = false }) => {
     const normalize = (raw) => {
-        const parsed = Math.round(Number(raw));
+        const trimmed = typeof raw === "string" ? raw.trim() : raw;
+        if (trimmed === "" || trimmed === null || trimmed === undefined) return null;
+        const parsed = Math.round(Number(trimmed));
         if (!Number.isFinite(parsed)) return null;
         if (field.allowNegative) return parsed;
         return Math.max(0, parsed);
@@ -106,8 +108,7 @@ const KillroyNumRow = ({ field, valueState, writePath, getBadgeText = null, disa
     return EditableNumberRow({
         valueState,
         normalize,
-        write: async (nextValue) =>
-            writeVerified(writePath, nextValue, { message: `Write mismatch at ${writePath}: expected ${nextValue}` }),
+        write: async (nextValue) => writeVerified(writePath, nextValue),
         renderInfo: () => span({ class: "account-row__name" }, labelText),
         renderBadge: (currentValue) =>
             typeof getBadgeText === "function" ? getBadgeText(currentValue) : String(currentValue),
@@ -126,7 +127,7 @@ const KillroyAirhornRow = ({ valueState }) => {
         const next = toNum(valueState.val, 0) === 0 ? 1 : 0;
         await run(async () => {
             const path = `OptionsListAccount[${AIRHORN_INDEX}]`;
-            await writeVerified(path, next, { message: `Airhorn toggle mismatch: expected ${next}` });
+            await writeVerified(path, next);
             valueState.val = next;
         });
     };
@@ -198,11 +199,14 @@ export const KillroyTab = () => {
             );
 
             const rawDeathNoteMobs = await readCList("DeathNoteMobs");
+            const seenMobIds = new Set();
             const allowedMobIds = [];
             for (const mobGroup of toIndexedArray(rawDeathNoteMobs)) {
                 for (const mobId of toIndexedArray(mobGroup)) {
                     if (typeof mobId !== "string" || mobId.trim().length === 0) continue;
-                    if (!allowedMobIds.includes(mobId)) allowedMobIds.push(mobId);
+                    if (seenMobIds.has(mobId)) continue;
+                    seenMobIds.add(mobId);
+                    allowedMobIds.push(mobId);
                 }
             }
 
@@ -234,10 +238,6 @@ export const KillroyTab = () => {
             }
 
             reconcileBestMobRows(nextAllowedMobs.map((mob) => `${mob.mobId}:${mob.mobName}`).join("|"), () => {
-                if (nextAllowedMobs.length === 0) {
-                    return div({ class: "killroy-best-empty" }, "No Killroy mobs found.");
-                }
-
                 return nextAllowedMobs.map((mob) =>
                     KillroyNumRow({
                         field: { label: `${mob.mobName} (${mob.mobId})` },
@@ -314,7 +314,7 @@ export const KillroyTab = () => {
                 ),
                 ...PB_TOME_FIELDS.map((field) =>
                     KillroyNumRow({
-                        field: { ...field, label: getPbLabelState(field.key) ?? field.label },
+                        field: { ...field, label: getPbLabelState(field.key) },
                         valueState: getPbState(field.key),
                         writePath: `OptionsListAccount[${field.scoreIndex}]`,
                     })

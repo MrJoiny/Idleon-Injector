@@ -42,9 +42,9 @@ const AnvilRow = ({ category, valueState, onWriteApplied }) =>
         },
         write: async (nextValue) => {
             const path = `AnvilPAstats[${category.index}]`;
-            await writeVerified(path, nextValue);
+            const verified = await writeVerified(path, nextValue);
             await onWriteApplied();
-            return nextValue;
+            return verified;
         },
         renderInfo: () => [
             span({ class: "account-row__name" }, category.label),
@@ -86,8 +86,8 @@ export const AnvilTab = () => {
             const remainingRaw = await gga("AnvilPAstats[0]");
             const remaining = Number(remainingRaw);
             if (Number.isFinite(remaining)) statStates[0].val = remaining;
-        } catch {
-            return;
+        } catch (err) {
+            console.warn("[AnvilTab] refreshRemainingPoints failed", err);
         }
     };
 

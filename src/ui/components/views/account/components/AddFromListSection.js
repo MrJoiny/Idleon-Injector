@@ -22,8 +22,15 @@ export const AddFromListSection = ({
     onAdd,
     onAddAll,
     rowClass = "tab-add-row tab-add-row--dual-action",
-}) =>
-    AccountSection({
+}) => {
+    van.derive(() => {
+        const optionValues = options.val.map((entry) => getOptionValue(entry));
+        const nextValue =
+            optionValues.find((value) => String(value) === String(selectedValue.val)) ?? optionValues[0] ?? "";
+        if (String(selectedValue.val) !== String(nextValue)) selectedValue.val = nextValue;
+    });
+
+    return AccountSection({
         title,
         note,
         body: div(
@@ -55,3 +62,4 @@ export const AddFromListSection = ({
             })
         ),
     });
+};

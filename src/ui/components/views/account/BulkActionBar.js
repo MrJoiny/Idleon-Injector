@@ -25,18 +25,20 @@ export const BulkActionBar = ({ leading = null, actions = [], refresh = null }) 
     div(
         { class: "account-header__actions" },
         ...toNodes(leading),
-        ...actions.filter(Boolean).map((action) =>
-            ActionButton({
-                label: action.label,
-                status: action.status,
-                variant: action.variant ?? "max-reset",
-                className: action.extraClass ?? "",
-                disabled: action.disabled ?? false,
-                tooltip: action.tooltip ?? null,
-                onClick: (e) => action.onClick(e),
-                preventMouseDown: action.preventMouseDown !== false,
-            })
-        ),
+        ...actions
+            .filter((action) => action && typeof action.onClick === "function")
+            .map((action) =>
+                ActionButton({
+                    label: action.label,
+                    status: action.status,
+                    variant: action.variant ?? "max-reset",
+                    className: action.extraClass ?? "",
+                    disabled: action.disabled ?? false,
+                    tooltip: action.tooltip ?? null,
+                    onClick: (e) => action.onClick(e),
+                    preventMouseDown: action.preventMouseDown !== false,
+                })
+            ),
         refresh
             ? RefreshButton({
                   onRefresh: refresh.onClick,
@@ -64,8 +66,16 @@ export const SetAllNumberControl = ({
                 mode: "int",
                 value,
                 oninput: (e) => (value.val = e.target.value),
-                onDecrement: () => (value.val = String(Math.max(min, Number(value.val) - 1))),
-                onIncrement: () => (value.val = String(Math.min(max, Number(value.val) + 1))),
+                onDecrement: () => {
+                    const n = Number(value.val);
+                    const base = Number.isFinite(n) ? n : min;
+                    value.val = String(Math.max(min, base - 1));
+                },
+                onIncrement: () => {
+                    const n = Number(value.val);
+                    const base = Number.isFinite(n) ? n : min;
+                    value.val = String(Math.min(max, base + 1));
+                },
             })
         ),
         SetAllApplyButton({ label: applyLabel, status, onApply })

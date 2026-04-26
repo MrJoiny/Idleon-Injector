@@ -32,21 +32,18 @@ export const ActionButton = ({
                 const resolvedStatus = resolveValue(status);
                 return joinClasses(
                     VARIANT_CLASS[variant] ?? variant,
-                    typeof className === "function" ? className() : className,
+                    resolveValue(className),
                     resolvedStatus === "loading" ? "account-btn--loading" : "",
-                    resolvedStatus === "success" ? "account-row--success" : "",
-                    resolvedStatus === "error" ? "account-row--error" : ""
+                    resolvedStatus === "success" ? "account-btn--success" : "",
+                    resolvedStatus === "error" ? "account-btn--error" : ""
                 );
             },
             disabled: () => {
-                const resolvedDisabled = typeof disabled === "function" ? disabled() : disabled;
-                return Boolean(resolvedDisabled) || resolveValue(status) === "loading";
+                return Boolean(resolveValue(disabled)) || resolveValue(status) === "loading";
             },
             onclick: onClick,
         },
-        () => {
-            return typeof label === "function" ? label() : label;
-        }
+        () => resolveValue(label)
     );
 
     return tooltip ? withTooltip(buttonNode, tooltip) : buttonNode;

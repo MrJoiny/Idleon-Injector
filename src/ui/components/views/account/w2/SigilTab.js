@@ -48,7 +48,7 @@ const SigilCard = ({ index, tierState, nameState }) => {
 
         await run(async () => {
             const path = `CauldronP2W[4][${2 * index + 1}]`;
-            await writeVerified(path, tier, { message: `Write mismatch at ${path}: expected ${tier}` });
+            await writeVerified(path, tier);
             tierState.val = tier;
         });
     };

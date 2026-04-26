@@ -101,9 +101,10 @@
     color: var(--col-color, var(--c-accent));
 }
 
-.brewing-prisma-btn--active {
-    border-color: var(--col-color, var(--c-accent)) !important;
-    color: var(--col-color, var(--c-accent)) !important;
-    background: color-mix(in srgb, var(--col-color, var(--c-accent)) 10%, var(--c-panel)) !important;
+.brewing-prisma-btn.brewing-prisma-btn--active,
+.brewing-prisma-btn.brewing-prisma-btn--active:hover:not(:disabled) {
+    border-color: var(--col-color, var(--c-accent));
+    color: var(--col-color, var(--c-accent));
+    background: color-mix(in srgb, var(--col-color, var(--c-accent)) 10%, var(--c-panel));
     font-weight: 700;
 }

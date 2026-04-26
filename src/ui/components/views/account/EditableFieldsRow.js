@@ -9,6 +9,12 @@ const defaultToDraft = (value) => String(value ?? 0);
 /**
  * Shared editable row primitive for rows that stage multiple draft fields
  * before applying them in one write.
+ *
+ * `renderControls` must wire each NumberInput to `draftStates[field.key]`.
+ * Formatted NumberInput controls must call `setFieldFocused(key, true)` on
+ * focus and `setFieldFocused(key, false)` on blur so draft text is not reset
+ * while the user is typing. Consumers may call `resetDraft(key)` on blur when
+ * they want unsaved edits to snap back to the committed value.
  */
 export const EditableFieldsRow = ({
     fields,
@@ -80,7 +86,7 @@ export const EditableFieldsRow = ({
         tooltip: applyTooltip,
         onClick: (e) => {
             e.preventDefault();
-            applyValue();
+            void applyValue();
         },
     });
 

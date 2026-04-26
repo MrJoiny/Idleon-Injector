@@ -20,8 +20,6 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
@@ -172,8 +170,6 @@ const StarSignDetail = ({ sign, usernames = [], onSave, onBack }) => {
 
         () => {
             const list = players.val;
-            if (!list.length) return div({ class: "starsign-empty-players" }, "No players added yet");
-
             return DragList({
                 items: list,
                 renderItem: (playerNum) => {
@@ -378,7 +374,11 @@ export const StarSignsTab = () => {
             signs.val = nextSigns;
             syncActiveSign(activeSign, nextSigns);
         } catch (error) {
-            await load();
+            try {
+                await load();
+            } catch (reloadError) {
+                console.error("[StarSigns] reload after write failure also failed", reloadError);
+            }
             throw error;
         }
     };
@@ -413,7 +413,11 @@ export const StarSignsTab = () => {
                 signs.val = nextSigns;
                 syncActiveSign(activeSign, nextSigns);
             } catch (error) {
-                await load();
+                try {
+                    await load();
+                } catch (reloadError) {
+                    console.error("[StarSigns] reload after write failure also failed", reloadError);
+                }
                 throw error;
             }
         });
@@ -458,7 +462,11 @@ export const StarSignsTab = () => {
                 signs.val = nextSigns;
                 syncActiveSign(activeSign, nextSigns);
             } catch (error) {
-                await load();
+                try {
+                    await load();
+                } catch (reloadError) {
+                    console.error("[StarSigns] reload after write failure also failed", reloadError);
+                }
                 throw error;
             }
         });
@@ -467,14 +475,6 @@ export const StarSignsTab = () => {
     const renderBody = () => {
         const resolved = signs.val;
         if (!resolved) return null;
-
-        if (resolved.length === 0) {
-            return EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO STAR SIGN DATA",
-                subtitle: "Ensure the game is running, then hit REFRESH",
-            });
-        }
 
         if (activeSign.val) {
             return div(

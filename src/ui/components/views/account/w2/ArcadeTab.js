@@ -72,7 +72,7 @@ const ArcadeBallRow = ({ field, valueState }) =>
         normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, { min: 0 }),
         write: async (nextValue) => {
             const path = `OptionsListAccount[${field.optionIndex}]`;
-            await writeVerified(path, nextValue, { message: `Write mismatch at ${path}: expected ${nextValue}` });
+            await writeVerified(path, nextValue);
             return nextValue;
         },
         renderInfo: () => span({ class: "account-row__name" }, field.label),
@@ -169,9 +169,7 @@ export const ArcadeTab = () => {
             title: "BONUS UPGRADES",
             note: "Arcade bonus levels (101 = cosmic)",
             body: () => {
-                const entries = upgradeEntries.val;
-                if (!entries.length) return div({ class: "empty-state" }, "No upgrades found.");
-                return div({ class: "account-list" }, ...entries.map((entry) => ArcadeRow({ entry })));
+                return div({ class: "account-list" }, ...upgradeEntries.val.map((entry) => ArcadeRow({ entry })));
             },
         })
     );

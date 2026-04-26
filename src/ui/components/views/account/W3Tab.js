@@ -47,8 +47,8 @@ function ConstructionPanel() {
             tabs: CONSTRUCTION_SUBTABS,
             activeId: active,
             navClass: "alchemy-sub-nav",
-            buttonClass: "alchemy-sub-btn",
-            stubClass: "alchemy-sub-btn--stub",
+            buttonClass: "account-nested-sub-tab-btn",
+            stubClass: "account-nested-sub-tab-btn--stub",
             isStub: (tab) => !tab.component,
         }),
         div(
@@ -74,8 +74,8 @@ export const W3Tab = () => {
             tabs: W3_SUBTABS,
             activeId: activeSubTab,
             navClass: "world-sub-nav",
-            buttonClass: "world-sub-tab-btn",
-            stubClass: "world-sub-tab-btn--stub",
+            buttonClass: "account-world-sub-tab-btn",
+            stubClass: "account-world-sub-tab-btn--stub",
             isStub: (tab) => !tab.component,
         }),
         div(

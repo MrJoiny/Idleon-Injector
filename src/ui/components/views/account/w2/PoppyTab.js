@@ -75,8 +75,6 @@ const PoppyRow = ({ field, fieldState, onWrite }) =>
         onWrite,
         controlsClass: "account-row__controls--xl",
         emptyBadge: "-",
-        getWriteMismatchMessage: (index, nextValue) =>
-            `Write mismatch at OptionsListAccount[${index}]: expected ${nextValue}`,
     });
 
 export const PoppyTab = () => {

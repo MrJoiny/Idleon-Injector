@@ -28,6 +28,7 @@ export const renderTabNav = ({
             button(
                 {
                     ...(typeof getButtonProps === "function" ? getButtonProps(tab) : {}),
+                    // class and onclick are owned by renderTabNav so active-state wiring stays consistent.
                     class: () =>
                         joinClasses(
                             "account-sub-tab-btn",
@@ -67,6 +68,10 @@ export const renderLazyPanes = ({
         return pane;
     });
 
+/**
+ * Render all pane bodies immediately and keep them mounted.
+ * `renderContent` is called eagerly for every tab when the parent mounts.
+ */
 export const renderPersistentPagePanes = ({
     tabs,
     activeId,
@@ -97,8 +102,8 @@ export const createWorldComingSoonTab =
                 tabs,
                 activeId: activeSubTab,
                 navClass: "world-sub-nav",
-                buttonClass: "world-sub-tab-btn",
-                stubClass: "world-sub-tab-btn--stub",
+                buttonClass: "account-world-sub-tab-btn",
+                stubClass: "account-world-sub-tab-btn--stub",
                 isStub: () => true,
             }),
             div(

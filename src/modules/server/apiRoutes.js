@@ -527,6 +527,9 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Computed read returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Read computed: ${namespace}.${name}`);
@@ -570,6 +573,9 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Computed batch read returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Read computed batch: ${namespace}.${name} (${argSets.length} items)`);
@@ -607,6 +613,9 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Write returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Write path: ${path} = ${serialized}`);
@@ -633,6 +642,9 @@ exports.injectorConfig = ${new_injectorConfig};
             if (!Object.prototype.hasOwnProperty.call(entry, "value")) {
                 return res.status(400).json({ error: `Missing value at index ${index}` });
             }
+            if (entry.value === undefined) {
+                return res.status(400).json({ error: `value must not be undefined at index ${index}` });
+            }
         }
 
         const serialized = JSON.stringify(writes);
@@ -652,6 +664,9 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Batch write returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Batch write: ${writes.length} paths`);

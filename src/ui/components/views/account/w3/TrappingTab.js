@@ -284,13 +284,11 @@ export const TrappingTab = () => {
 
     const onWriteField = async (playerName, trapIndex, fieldIndex, value, isCurrentPlayer) => {
         if (isCurrentPlayer) {
-            await writeVerified(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value, {
-                message: `Write mismatch at PlacedTraps[${trapIndex}][${fieldIndex}]: expected ${value}`,
-            });
+            await writeVerified(`PlacedTraps[${trapIndex}][${fieldIndex}]`, value);
         }
 
         const dbPath = `${trapBasePath(playerName, trapIndex)}[${fieldIndex}]`;
-        return writeVerified(dbPath, value, { message: `Write mismatch at ${dbPath}: expected ${value}` });
+        return writeVerified(dbPath, value);
     };
 
     const finishAllTraps = async () => {
@@ -303,14 +301,20 @@ export const TrappingTab = () => {
                 for (const trap of player.traps) {
                     const completionState = getValueState(player.playerName, trap.trapIndex, "completion", 0);
                     const finishAt = toInt(completionState.val, toInt(trap.completionTime));
-                    const verifiedElapsed = await onWriteField(
-                        player.playerName,
-                        trap.trapIndex,
-                        2,
-                        finishAt,
-                        isCurrentPlayer
-                    );
-                    getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = verifiedElapsed;
+                    try {
+                        const verifiedElapsed = await onWriteField(
+                            player.playerName,
+                            trap.trapIndex,
+                            2,
+                            finishAt,
+                            isCurrentPlayer
+                        );
+                        getValueState(player.playerName, trap.trapIndex, "elapsed", 0).val = verifiedElapsed;
+                    } catch (error) {
+                        throw new Error(
+                            `Finish all failed for ${player.playerName} trap ${trap.trapIndex}: ${error?.message ?? String(error)}`
+                        );
+                    }
                 }
             }
         });

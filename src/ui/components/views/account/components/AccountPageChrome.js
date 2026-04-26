@@ -1,7 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
-import { toNodes } from "../accountShared.js";
+import { resolveValue, toNodes } from "../accountShared.js";
 
 const { div, button } = van.tags;
 
@@ -14,7 +14,7 @@ export const RefreshButton = ({ onRefresh, tooltip = null, label = "REFRESH", di
             type: "button",
             class: "btn-secondary",
             onclick: onRefresh,
-            disabled,
+            disabled: () => Boolean(resolveValue(disabled)),
         },
         label
     );

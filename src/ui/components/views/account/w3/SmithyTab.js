@@ -255,9 +255,7 @@ export const SmithyTab = () => {
         writeWarning.val = null;
         const expectedSetKeys = normalizeStoredSetKeys(setKeys);
         try {
-            await writeVerified(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys), {
-                message: "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.",
-            });
+            await writeVerified(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
         } catch (e) {
             const msg = "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
@@ -353,10 +351,6 @@ export const SmithyTab = () => {
             note: () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`,
             body: () => {
                 const rows = smithyRows.val;
-                if (rows.length === 0) {
-                    return div({ class: "tab-empty" }, "No equipment sets currently stored.");
-                }
-
                 return div(
                     { class: "smithy-rows" },
                     ...rows.map((row) =>

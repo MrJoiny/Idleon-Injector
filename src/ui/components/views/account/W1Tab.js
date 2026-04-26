@@ -31,8 +31,8 @@ export const W1Tab = () => {
             tabs: W1_SUBTABS,
             activeId: activeSubTab,
             navClass: "world-sub-nav",
-            buttonClass: "world-sub-tab-btn",
-            stubClass: "world-sub-tab-btn--stub",
+            buttonClass: "account-world-sub-tab-btn",
+            stubClass: "account-world-sub-tab-btn--stub",
             isStub: (tab) => !tab.component,
         }),
         div(

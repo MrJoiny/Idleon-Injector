@@ -169,6 +169,7 @@ const cogsUiStore = {
 
 const ensureCogsPopupHost = () => {
     if (!cogsUiStore.popupHost) {
+        // One fixed popup host is reused across Cogs mounts to preserve popover positioning.
         const host = document.createElement("div");
         host.className = "cogs-popup-host";
         document.body.appendChild(host);
@@ -299,7 +300,7 @@ export const CogsTab = () => {
         const next = unlock ? UNLOCKED_SENTINEL : 0;
         await runLockWrite(async () => {
             const unlockPath = `FlagUnlock[${index}]`;
-            await writeVerified(unlockPath, next, { message: `Write mismatch at ${unlockPath}: expected ${next}` });
+            await writeVerified(unlockPath, next);
             slotValues[index].val = next;
 
             if (flaggedSlots.val.has(index)) {
@@ -307,7 +308,7 @@ export const CogsTab = () => {
                 const pos = arr.findIndex((v) => toNum(v) === index);
                 if (pos >= 0) {
                     const flagPath = `FlagsPlaced[${pos}]`;
-                    await writeVerified(flagPath, -1, { message: `Write mismatch at ${flagPath}: expected -1` });
+                    await writeVerified(flagPath, -1);
                     const newRaw = [...arr];
                     newRaw[pos] = -1;
                     flagsRaw.val = newRaw;
@@ -327,9 +328,7 @@ export const CogsTab = () => {
         activeCogMapField.val = field;
         await runCogMapWrite(async () => {
             const writePath = `CogMap[${cogIdx}].h.${field}`;
-            await writeVerified(writePath, writeVal, {
-                message: `Write mismatch at ${writePath}: expected ${writeVal}`,
-            });
+            await writeVerified(writePath, writeVal);
             cogMapStats[index].val = { ...cogMapStats[index].val, [field]: writeVal };
         });
     };
@@ -351,9 +350,7 @@ export const CogsTab = () => {
             const newId = `CogSm${normalizedType}${normalizedTier}`;
 
             const cogOrderPath = `CogOrder[${cogOrderIndex}]`;
-            await writeVerified(cogOrderPath, newId, {
-                message: `Write mismatch at ${cogOrderPath}: expected ${newId}`,
-            });
+            await writeVerified(cogOrderPath, newId);
             cogOrders[index].val = newId;
             tinyTypeInput.val = normalizedType;
             tinyTierInput.val = String(normalizedTier);
@@ -566,34 +563,32 @@ export const CogsTab = () => {
             const readOnly = isReadOnlyCog(cogId);
             const presentKeys = COG_MAP_FIELD_ORDER.filter((key) => Object.prototype.hasOwnProperty.call(stats, key));
 
-            const statsNode = !presentKeys.length
-                ? div({ class: "cogs-cog-stats__empty" }, "No CogMap.h values on this slot.")
-                : div(
-                      { class: "cogs-cog-stats__list" },
-                      ...presentKeys.map((key) => {
-                          const rawVal = stats[key];
-                          const displayVal = rawVal !== null && rawVal !== undefined ? formatNumber(rawVal) : "";
-                          const inputEl = input({
-                              type: "text",
-                              class: "cogs-cog-stat-input",
-                              value: displayVal,
-                              disabled: readOnly,
-                          });
-                          return CogsEditorRow({
-                              code: key,
-                              name: COG_MAP_FIELD_META[key]?.keyName ?? key,
-                              meaning: COG_MAP_FIELD_META[key]?.meaning ?? "Unknown field",
-                              inputNode: inputEl,
-                              actionButton: ActionButton({
-                                  label: "SET",
-                                  status: () => (activeCogMapField.val === key ? cogMapWriteStatus.val : null),
-                                  className: "cogs-cog-stat-set-btn",
-                                  disabled: () => readOnly,
-                                  onClick: () => setCogMapField(key, inputEl.value),
-                              }),
-                          });
-                      })
-                  );
+            const statsNode = div(
+                { class: "cogs-cog-stats__list" },
+                ...presentKeys.map((key) => {
+                    const rawVal = stats[key];
+                    const displayVal = rawVal !== null && rawVal !== undefined ? formatNumber(rawVal) : "";
+                    const inputEl = input({
+                        type: "text",
+                        class: "cogs-cog-stat-input",
+                        value: displayVal,
+                        disabled: readOnly,
+                    });
+                    return CogsEditorRow({
+                        code: key,
+                        name: COG_MAP_FIELD_META[key]?.keyName ?? key,
+                        meaning: COG_MAP_FIELD_META[key]?.meaning ?? "Unknown field",
+                        inputNode: inputEl,
+                        actionButton: ActionButton({
+                            label: "SET",
+                            status: () => (activeCogMapField.val === key ? cogMapWriteStatus.val : null),
+                            className: "cogs-cog-stat-set-btn",
+                            disabled: () => readOnly,
+                            onClick: () => setCogMapField(key, inputEl.value),
+                        }),
+                    });
+                })
+            );
 
             return div(
                 {},

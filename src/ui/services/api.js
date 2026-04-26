@@ -266,10 +266,13 @@ export async function gga(path, value) {
  */
 export async function ggaMany(writes) {
     const normalizedWrites = Array.isArray(writes)
-        ? writes.map((entry) => ({
-              path: entry.path.startsWith("gga.") ? entry.path : `gga.${entry.path}`,
-              value: entry.value,
-          }))
+        ? writes.map((entry) => {
+              const rawPath = typeof entry?.path === "string" ? entry.path : "";
+              return {
+                  path: rawPath.startsWith("gga.") ? rawPath : rawPath ? `gga.${rawPath}` : "",
+                  value: entry?.value,
+              };
+          })
         : [];
 
     const writeResult = await _request("/game/gga/write-many", {
@@ -278,9 +281,12 @@ export async function ggaMany(writes) {
         body: JSON.stringify({ writes: normalizedWrites }),
     });
 
+    const writeByPath = new Map(
+        Array.isArray(writeResult?.results) ? writeResult.results.map((entry) => [entry?.path, entry]) : []
+    );
     const results = await Promise.all(
         normalizedWrites.map(async (entry, index) => {
-            const writeEntry = writeResult?.results?.[index];
+            const writeEntry = writeByPath.get(entry.path) ?? writeResult?.results?.[index];
             if (!writeEntry?.ok) {
                 return {
                     path: writeEntry?.path ?? entry.path,

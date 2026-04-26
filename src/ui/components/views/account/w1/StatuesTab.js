@@ -10,8 +10,6 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { EditableFieldsRow } from "../EditableFieldsRow.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
@@ -157,14 +155,6 @@ export const StatuesTab = () => {
             .filter((statue) => statue.name && statue.name.trim().length > 0);
 
         reconcileStatueRows(statues.map((statue) => statue.index).join(","), () => {
-            if (!statues.length) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO STATUE DATA",
-                    subtitle: "Ensure the game is running, then hit REFRESH",
-                });
-            }
-
             return statues.map((statue) =>
                 StatueRow({
                     index: statue.index,

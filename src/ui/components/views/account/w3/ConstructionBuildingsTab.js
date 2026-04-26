@@ -41,12 +41,8 @@ const BuildingRow = ({ index, name, maxLevel, levelState }) =>
         write: async (nextLevel) => {
             const path = `TowerInfo[${index}]`;
             const pathPending = `TowerInfo[${index + BUILDING_COUNT}]`;
-            await writeVerified(path, nextLevel, {
-                message: `Write mismatch at ${path}: expected ${nextLevel}, got failed verification`,
-            });
-            return writeVerified(pathPending, nextLevel, {
-                message: `Write mismatch at ${pathPending}: expected ${nextLevel}, got failed verification`,
-            });
+            await writeVerified(path, nextLevel);
+            return writeVerified(pathPending, nextLevel);
         },
         indexLabel: `#${index + 1}`,
         name,
@@ -119,8 +115,10 @@ export const ConstructionBuildingsTab = () => {
         });
 
     const doMaxAll = async () => {
-        if (!buildingMeta.length) return;
         await runMaxAll(async () => {
+            if (!buildingMeta.length) {
+                throw new Error("No buildings loaded yet. Refresh first.");
+            }
             await runBulkSet({
                 entries: buildingMeta,
                 getTargetValue: (building) => building?.maxLevel ?? 0,
@@ -144,7 +142,7 @@ export const ConstructionBuildingsTab = () => {
                 {
                     label: "MAX ALL",
                     status: bulkStatus,
-                    disabled: () => loading.val,
+                    disabled: () => loading.val || !buildingMeta.length,
                     onClick: doMaxAll,
                 },
             ],

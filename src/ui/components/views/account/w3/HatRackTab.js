@@ -146,17 +146,13 @@ export const HatRackTab = () => {
     const appendToRack = async (currentRack, items) => {
         const baseRack = normalizeRackIds(currentRack);
         for (let i = 0; i < items.length; i++) {
-            await writeVerified(`${RACK_PATH}[${baseRack.length + i}]`, items[i], {
-                message: `Failed writing rack item at index ${baseRack.length + i}.`,
-            });
+            await writeVerified(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
         }
-        await writeVerified(`${RACK_PATH}.length`, baseRack.length + items.length, {
-            message: "Failed updating rack length.",
-        });
+        await writeVerified(`${RACK_PATH}.length`, baseRack.length + items.length);
     };
 
-    const writeSlabHistory = async (nextHistory, failMessage) => {
-        await writeVerified(SLAB_HISTORY_PATH, nextHistory, { message: failMessage });
+    const writeSlabHistory = async (nextHistory) => {
+        await writeVerified(SLAB_HISTORY_PATH, nextHistory);
     };
 
     const removeAtIndex = async (index) => {
@@ -170,10 +166,10 @@ export const HatRackTab = () => {
             const removedItemId = nextRack[index];
             nextRack.splice(index, 1);
             const nextSlabHistory = slabHistoryIds.val.filter((itemId) => itemId !== removedItemId);
-            await writeVerified(RACK_PATH, nextRack, { message: "Failed updating rack after removal." });
+            await writeVerified(RACK_PATH, nextRack);
             try {
                 if (nextSlabHistory.length !== slabHistoryIds.val.length) {
-                    await writeSlabHistory(nextSlabHistory, "Failed updating slab history after rack removal.");
+                    await writeSlabHistory(nextSlabHistory);
                 }
                 withPreservedScroll(() => {
                     applyRackState(nextRack);
@@ -205,7 +201,7 @@ export const HatRackTab = () => {
                     : [...slabHistoryIds.val, itemId];
                 try {
                     if (nextSlabHistory.length !== slabHistoryIds.val.length) {
-                        await writeSlabHistory(nextSlabHistory, "Failed updating slab history after rack add.");
+                        await writeSlabHistory(nextSlabHistory);
                     }
                     withPreservedScroll(() => {
                         applyRackState(nextRack);
@@ -239,7 +235,7 @@ export const HatRackTab = () => {
                 }
                 try {
                     if (nextSlabHistory.length !== slabHistoryIds.val.length) {
-                        await writeSlabHistory(nextSlabHistory, "Failed updating slab history after rack add.");
+                        await writeSlabHistory(nextSlabHistory);
                     }
                     withPreservedScroll(() => {
                         applyRackState(nextRack);
@@ -284,8 +280,6 @@ export const HatRackTab = () => {
             note: () => `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`,
             body: () => {
                 const rows = rackRows.val;
-                if (rows.length === 0) return div({ class: "tab-empty" }, "No hats currently on rack.");
-
                 return div(
                     { class: "hat-rack-rows" },
                     ...rows.map((row) =>

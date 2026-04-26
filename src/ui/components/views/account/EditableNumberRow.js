@@ -36,19 +36,22 @@ export const EditableNumberRow = ({
     applyLabel = "SET",
     inputProps = {},
 }) => {
-    const inputValue = van.state(String(valueState.val ?? 0));
-    const { status, run } = useWriteStatus();
-    let isInputFocused = false;
     const {
         onfocus: userOnfocus,
         onblur: userOnblur,
         onDecrement: userOnDecrement,
         onIncrement: userOnIncrement,
+        formatter,
         ...restInputProps
     } = inputProps;
+    const formatCommittedValue = (value) =>
+        typeof formatter === "function" ? formatter(value ?? 0) : String(value ?? 0);
+    const inputValue = van.state(formatCommittedValue(valueState.val));
+    const { status, run } = useWriteStatus();
+    let isInputFocused = false;
 
     const syncInputToCommitted = () => {
-        inputValue.val = String(valueState.val ?? 0);
+        inputValue.val = formatCommittedValue(valueState.val);
     };
 
     van.derive(() => {
@@ -63,7 +66,7 @@ export const EditableNumberRow = ({
         await run(async () => {
             const verified = await write(next);
             valueState.val = verified;
-            inputValue.val = String(verified);
+            inputValue.val = formatCommittedValue(verified);
             return verified;
         });
     };
@@ -73,7 +76,7 @@ export const EditableNumberRow = ({
         status,
         onClick: (e) => {
             e.preventDefault();
-            applyValue();
+            void applyValue();
         },
     });
 
@@ -83,13 +86,13 @@ export const EditableNumberRow = ({
         const actionValue = action.value ?? fallbackValue;
         const actionLabel = action.label ?? fallbackLabel;
         const actionButton = ActionButton({
-            label: typeof actionLabel === "function" ? actionLabel : actionLabel,
+            label: () => (typeof actionLabel === "function" ? actionLabel() : actionLabel),
             status,
             variant: "max-reset",
             tooltip: action.tooltip ?? null,
             onClick: (e) => {
                 e.preventDefault();
-                applyValue(actionValue);
+                void applyValue(actionValue);
             },
         });
 
@@ -131,7 +134,7 @@ export const EditableNumberRow = ({
                         .filter(Boolean)
                         .join(" "),
             },
-            () => renderBadge(valueState.val ?? 0)
+            () => renderBadge(valueState.val)
         ),
         div(
             {
@@ -143,6 +146,7 @@ export const EditableNumberRow = ({
             NumberInput({
                 mode: inputMode,
                 value: inputValue,
+                formatter,
                 ...restInputProps,
                 onfocus: () => {
                     isInputFocused = true;

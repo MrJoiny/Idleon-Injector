@@ -363,6 +363,16 @@
     cursor: wait;
 }
 
+.account-btn--success {
+    border-color: var(--c-success) !important;
+    background: color-mix(in srgb, var(--c-success) 18%, var(--c-panel)) !important;
+}
+
+.account-btn--error {
+    border-color: var(--c-danger) !important;
+    background: color-mix(in srgb, var(--c-danger) 18%, var(--c-panel)) !important;
+}
+
 .account-btn:disabled {
     filter: saturate(0.8) brightness(0.9);
     cursor: not-allowed;
@@ -528,7 +538,7 @@
     background: var(--c-panel-dim);
 }
 
-.alchemy-sub-btn {
+.account-nested-sub-tab-btn {
     --tab-nav-padding: 5px 16px;
     --tab-nav-font-size: 0.875rem;
     --tab-nav-font-family: var(--font-display);
@@ -539,7 +549,7 @@
     --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
 }
 
-.alchemy-sub-btn--stub {
+.account-nested-sub-tab-btn--stub {
     color: var(--c-text-muted);
     cursor: default;
 }

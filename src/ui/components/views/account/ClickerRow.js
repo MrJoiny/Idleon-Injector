@@ -17,7 +17,6 @@ export const ClickerRow = ({
     warnBadgeClass,
     controlsClass,
     emptyBadge = "—",
-    getWriteMismatchMessage = (index) => `Write mismatch at OptionsListAccount[${index}]`,
 }) => {
     const isFormatted = field.formatted || field.float;
     const isFloat = field.float;
@@ -29,7 +28,6 @@ export const ClickerRow = ({
         write: async (nextValue) => {
             return writeVerified(`OptionsListAccount[${field.index}]`, nextValue, {
                 write: (_path, value) => onWrite(field.index, value),
-                message: () => getWriteMismatchMessage(field.index, nextValue),
             });
         },
         renderInfo: () => [

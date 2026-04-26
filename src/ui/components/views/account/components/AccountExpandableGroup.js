@@ -24,6 +24,7 @@ export const AccountExpandableGroup = ({
             {
                 type: "button",
                 class: "account-expandable-group__header",
+                "aria-expanded": () => String(Boolean(expanded.val)),
                 onclick: () => {
                     expanded.val = !expanded.val;
                 },

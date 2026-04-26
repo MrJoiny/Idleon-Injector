@@ -63,7 +63,7 @@
     box-shadow: var(--tab-nav-active-glow, none);
 }
 
-.account-sub-tab-button {
+.account-top-tab-btn {
     --tab-nav-color: var(--c-text-dim);
     --tab-nav-padding: 8px 14px;
     --tab-nav-font-size: 0.875rem;
@@ -160,16 +160,16 @@
     background: var(--c-panel-dim);
 }
 
-.world-sub-tab-btn {
+.account-world-sub-tab-btn {
     --tab-nav-active-bg: var(--c-panel-dim);
     --tab-nav-active-indicator: var(--world-color, var(--c-accent));
 }
 
-.world-sub-tab-btn--stub {
+.account-world-sub-tab-btn--stub {
     color: var(--c-text-muted);
     cursor: default;
 }
-.world-sub-tab-btn--stub:hover {
+.account-world-sub-tab-btn--stub:hover {
     color: var(--c-text-muted);
 }
 

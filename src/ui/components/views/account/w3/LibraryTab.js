@@ -124,6 +124,7 @@ export const LibraryTab = () => {
     const maxStates = new Map();
     const availablePointsStates = new Map();
     const listNode = div({ class: "account-list" });
+    const availableTalentCount = van.state(0);
 
     let staticMeta = null;
     let currentAvailableTalentIds = [];
@@ -151,6 +152,7 @@ export const LibraryTab = () => {
 
     const reconcileRows = ({ activeClassName, maxBookLv, groups, availableTalentIds }) => {
         currentAvailableTalentIds = availableTalentIds;
+        availableTalentCount.val = availableTalentIds.length;
         activeClassNameState.val = activeClassName;
         maxBookLvState.val = maxBookLv;
 
@@ -277,7 +279,7 @@ export const LibraryTab = () => {
                 {
                     label: "MAX ALL",
                     status: bulkStatus,
-                    disabled: () => loading.val || !currentAvailableTalentIds.length,
+                    disabled: () => loading.val || availableTalentCount.val <= 0,
                     tooltip: "Set all available Library books to the current max book level",
                     onClick: doMaxAll,
                 },

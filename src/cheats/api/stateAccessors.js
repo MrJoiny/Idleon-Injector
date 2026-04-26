@@ -112,14 +112,6 @@ export function readEntries(rootPath, keys, fields = null) {
  * Uses the same injected ActorEvents access pattern as the minigame cheats:
  * events(345), events(579), etc. The UI never touches ActorEvents directly.
  *
- * Supported namespaces:
- * - workbench     -> events(345)._customBlock_WorkbenchStuff(name, ...args)
- * - alchemy       -> events(189)._customBlock_cauldronp2wbonuses(name, ...args)
- * - summoning     -> events(579)._customBlock_Summoning(name, ...args)
- * - atomCollider  -> events(579)._customBlock_AtomCollider(name, ...args)
- * - runCode       -> events(12)._customBlock_RunCodeOfTypeXforThingY(name, ...args)
- * - runCodeType   -> events(12)._customBlock_RunCodeOfType(name)
- *
  * @param {string} namespace
  * @param {string} name
  * @param {Array=} args
@@ -204,8 +196,10 @@ export function writePath(path, value) {
 
 /**
  * Write many game values by dot/bracket path strings.
- * Continues after failures and reports write-stage resolution/assignment errors.
- * Read-back verification is handled by the UI helper after the batch write returns.
+ *
+ * Non-atomic: each entry is attempted independently; earlier successful writes
+ * are not rolled back if a later entry fails. UI callers should read back each
+ * path and verify before treating the batch as committed.
  *
  * @param {Array<{ path: string, value: any }>} writes
  * @returns {{ ok: boolean, results: Array<{ path: string, ok: boolean, error?: string }> } | { error: string }}
@@ -220,7 +214,7 @@ export function writePaths(writes = []) {
         if (!path || typeof path !== "string") {
             return { path: String(path ?? ""), ok: false, error: `Invalid path at index ${index}` };
         }
-        if (!entry || !Object.prototype.hasOwnProperty.call(entry, "value")) {
+        if (!Object.prototype.hasOwnProperty.call(entry, "value")) {
             return { path, ok: false, error: `Missing value at index ${index}` };
         }
 

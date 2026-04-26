@@ -5,6 +5,7 @@ import { resolveValue, toNum, writeVerified } from "./accountShared.js";
 const { span } = van.tags;
 
 const toBound = (value, fallback) => {
+    if (value === null || value === undefined || value === "") return fallback;
     const n = Number(value);
     return Number.isNaN(n) ? fallback : n;
 };
@@ -35,7 +36,7 @@ export const ClampedLevelRow = ({
 }) => {
     const clamp = (value, fallback = null) => {
         const minValue = toBound(resolveValue(min), 0);
-        const maxValue = toBound(resolveValue(max), minValue);
+        const maxValue = toBound(resolveValue(max), Infinity);
         const rawValue = Number(value);
         if (!Number.isFinite(rawValue)) return fallback;
 
@@ -69,7 +70,7 @@ export const ClampedLevelRow = ({
             if (typeof write === "function") return write(nextLevel);
 
             const path = resolveValue(writePath);
-            return writeVerified(path, nextLevel, { message: `Write mismatch at ${path}: expected ${nextLevel}` });
+            return writeVerified(path, nextLevel);
         },
         renderInfo: renderInfo ?? defaultInfo,
         renderBadge: renderBadge ?? ((currentValue) => `LV ${currentValue ?? 0} / ${resolveValue(max)}`),

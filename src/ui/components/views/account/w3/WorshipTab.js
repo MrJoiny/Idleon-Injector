@@ -106,14 +106,12 @@ export const WorshipTab = () => {
 
         const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        return writeVerified(writePath, nextCharge, {
-            message: `Write mismatch at ${writePath}: expected ${nextCharge}`,
-        });
+        return writeVerified(writePath, nextCharge);
     };
 
     const writeWave = async (waveIndex, nextWave) => {
         const writePath = `TotemInfo[0][${waveIndex}]`;
-        return writeVerified(writePath, nextWave, { message: `Write mismatch at ${writePath}: expected ${nextWave}` });
+        return writeVerified(writePath, nextWave);
     };
 
     const chargeRowsNode = div({ class: "content-stack" });

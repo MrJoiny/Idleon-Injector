@@ -29,7 +29,7 @@ import { ActionButton } from "../components/ActionButton.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, sortPrefixedNumericCodes, writeVerified } from "../accountShared.js";
+import { cleanName, sortPrefixedNumericCodes, writeManyVerified, writeVerified } from "../accountShared.js";
 import { renderPersistentPagePanes, renderTabNav } from "../tabShared.js";
 
 const { div } = van.tags;
@@ -71,8 +71,10 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
             const levelPath = `StampLevel[${page}][${order}]`;
             const maxPath = `StampLevelMAX[${page}][${order}]`;
 
-            await writeVerified(levelPath, nextLevel);
-            await writeVerified(maxPath, maxLevel);
+            await writeManyVerified([
+                { path: levelPath, value: nextLevel },
+                { path: maxPath, value: maxLevel },
+            ]);
             maxLevelState.val = maxLevel;
 
             return nextLevel;
@@ -93,7 +95,8 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
                     e.preventDefault();
                     await run(async () => {
                         const next = new Set(exaltedCodes.val);
-                        next.has(stampCode) ? next.delete(stampCode) : next.add(stampCode);
+                        if (next.has(stampCode)) next.delete(stampCode);
+                        else next.add(stampCode);
                         await writeExaltedCodes(next);
                         exaltedCodes.val = next;
                     });
@@ -106,7 +109,7 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
                 tooltip: "Set both StampLevel and StampLevelMAX to 0",
                 onClick: (e) => {
                     e.preventDefault();
-                    applyValue(0);
+                    void applyValue(0);
                 },
             }),
         ],

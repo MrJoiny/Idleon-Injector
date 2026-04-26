@@ -80,10 +80,18 @@ const createPaneStore = (worldKey) => ({
     listNode: div({ class: `account-list${worldKey === MINIBOSS_WORLD_KEY ? "" : " dn-mob-list"}` }),
 });
 
-const KillCountRow = ({ killState, rowClass = "", controlsClass = "", renderInfo, write, onWriteError = null }) =>
+const KillCountRow = ({
+    killState,
+    rowClass = "",
+    controlsClass = "",
+    renderInfo,
+    write,
+    onWriteError = null,
+    max = null,
+}) =>
     EditableNumberRow({
         valueState: killState,
-        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, { min: 0 }),
+        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, max === null ? { min: 0 } : { min: 0, max }),
         write: async (nextKills) => {
             try {
                 return await write(nextKills);
@@ -95,7 +103,7 @@ const KillCountRow = ({ killState, rowClass = "", controlsClass = "", renderInfo
         renderInfo,
         renderBadge: (currentValue) => formatNumber(toInt(currentValue)),
         adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
+            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, max === null ? { min: 0 } : { min: 0, max }),
         rowClass,
         badgeClass: "account-row__badge--highlight",
         controlsClass,
@@ -124,16 +132,13 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
             const dbPath = playerDbKillsLeftPath(playerName, mob.mapIndex);
 
             if (isCurrentPlayer) {
-                await writeVerified(liveKillsLeftPath(mob.mapIndex), newKillsLeft, {
-                    message: `Death Note write mismatch at ${liveKillsLeftPath(mob.mapIndex)}: expected ${newKillsLeft}`,
-                });
+                await writeVerified(liveKillsLeftPath(mob.mapIndex), newKillsLeft);
             }
 
-            await writeVerified(dbPath, newKillsLeft, {
-                message: `Death Note write mismatch at ${dbPath}: expected ${newKillsLeft}`,
-            });
+            await writeVerified(dbPath, newKillsLeft);
             return nextKills;
         },
+        max: mob.required,
         onWriteError: (error, nextKills) => {
             console.error("[DeathNote][World SET] write failed", {
                 playerName,
@@ -175,9 +180,7 @@ const MinibossRow = ({ mob, killState }) =>
         renderInfo: () => span({ class: "account-row__name" }, mob.mobName),
         write: async (nextKills) => {
             const path = `Ninja[105][${mob.mobIndex}]`;
-            return writeVerified(path, nextKills, {
-                message: `Death Note write mismatch at ${path}: expected ${nextKills}`,
-            });
+            return writeVerified(path, nextKills);
         },
     });
 

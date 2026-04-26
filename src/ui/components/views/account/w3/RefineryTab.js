@@ -37,9 +37,7 @@ const RefineryValueRow = ({ label, badgePrefix, fieldIndex, gameIndex, valueStat
         },
         write: async (nextValue) => {
             const path = `Refinery[${gameIndex}][${fieldIndex}]`;
-            await writeVerified(path, nextValue, {
-                message: `Write mismatch at ${path}: expected ${nextValue}, got failed verification`,
-            });
+            await writeVerified(path, nextValue);
             return nextValue;
         },
         renderInfo: () => span({ class: "account-row__name" }, label),
