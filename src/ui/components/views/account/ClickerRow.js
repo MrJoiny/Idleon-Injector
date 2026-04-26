@@ -10,14 +10,7 @@ const { span } = van.tags;
 /**
  * Shared EditableNumberRow adapter for clicker-style OptionsListAccount fields.
  */
-export const ClickerRow = ({
-    field,
-    fieldState,
-    onWrite,
-    warnBadgeClass,
-    controlsClass,
-    emptyBadge = "—",
-}) => {
+export const ClickerRow = ({ field, fieldState, onWrite, warnBadgeClass, controlsClass, emptyBadge = "—" }) => {
     const isFormatted = field.formatted || field.float;
     const isFloat = field.float;
     const parseInputValue = (raw) => resolveNumberInput(raw, { formatted: isFormatted, float: isFloat });
