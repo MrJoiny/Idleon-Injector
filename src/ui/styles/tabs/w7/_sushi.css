@@ -1,0 +1,104 @@
+/* W7 Sushi */
+
+.sushi-station-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+}
+
+.sushi-station-board-wrap {
+    min-height: 0;
+    overflow: auto;
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    padding: 12px;
+}
+
+.sushi-station-board {
+    display: grid;
+    gap: 4px;
+    width: max-content;
+    margin-inline: auto;
+}
+
+.sushi-station-tile,
+.sushi-fireplace-cell {
+    width: 44px;
+    height: 38px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel);
+}
+
+.sushi-station-tile {
+    display: flex;
+    align-items: stretch;
+}
+
+.sushi-station-tile--plate-0 {
+    border-color: color-mix(in srgb, var(--c-text-muted) 42%, var(--c-border));
+}
+
+.sushi-station-tile--plate-1 {
+    border-color: color-mix(in srgb, var(--c-danger) 65%, var(--c-border));
+}
+
+.sushi-station-tile--plate-2 {
+    border-color: color-mix(in srgb, #4aa3ff 70%, var(--c-border));
+}
+
+.sushi-station-tile--plate-3 {
+    border-color: color-mix(in srgb, var(--c-warning) 75%, var(--c-border));
+}
+
+.sushi-station-tile--locked {
+    opacity: 0.38;
+}
+
+.sushi-station-tile--success {
+    border-color: var(--c-success);
+}
+
+.sushi-station-tile--error {
+    border-color: var(--c-danger);
+}
+
+.sushi-station-tile__input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--c-text-main);
+    font-family: var(--font-mono);
+    font-size: 0.815rem;
+    text-align: center;
+    outline: none;
+}
+
+.sushi-station-tile__input:focus {
+    box-shadow: inset 0 0 0 1px var(--c-accent);
+}
+
+.sushi-station-tile__input:disabled {
+    color: var(--c-text-dim);
+    cursor: default;
+}
+
+.sushi-fireplace-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-style: dashed;
+    margin-top: 8px;
+}
+
+.sushi-fireplace-cell--empty {
+    opacity: 0.45;
+}
+
+.sushi-fireplace-cell__value {
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.815rem;
+}

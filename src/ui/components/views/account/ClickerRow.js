@@ -3,14 +3,22 @@ import { Icons } from "../../../assets/icons.js";
 import { withTooltip } from "../../Tooltip.js";
 import { formatNumber, formattedStep } from "../../../utils/numberFormat.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
-import { largeFormatter, largeParser, resolveNumberInput, writeVerified } from "./accountShared.js";
+import { joinClasses, largeFormatter, largeParser, resolveNumberInput, writeVerified } from "./accountShared.js";
 
 const { span } = van.tags;
 
 /**
  * Shared EditableNumberRow adapter for clicker-style OptionsListAccount fields.
  */
-export const ClickerRow = ({ field, fieldState, onWrite, warnBadgeClass, controlsClass, emptyBadge = "—" }) => {
+export const ClickerRow = ({
+    field,
+    fieldState,
+    onWrite,
+    warnBadgeClass,
+    rowClass = "",
+    controlsClass,
+    emptyBadge = "—",
+}) => {
     const isFormatted = field.formatted || field.float;
     const isFloat = field.float;
     const parseInputValue = (raw) => resolveNumberInput(raw, { formatted: isFormatted, float: isFloat });
@@ -25,13 +33,14 @@ export const ClickerRow = ({ field, fieldState, onWrite, warnBadgeClass, control
         },
         renderInfo: () => [
             span({ class: "account-row__name" }, field.label),
+            field.description ? span({ class: "account-row__sub-label" }, field.description) : null,
             field.warn ? span({ class: warnBadgeClass }, Icons.Warning(), ` ${field.warn}`) : null,
         ],
         renderBadge: (currentValue) => {
             if (currentValue === undefined) return emptyBadge;
             return isFormatted ? formatNumber(currentValue) : String(currentValue);
         },
-        rowClass: () => (field.warn ? "has-warning" : ""),
+        rowClass: () => joinClasses(field.warn ? "has-warning" : "", rowClass),
         badgeClass: () => (field.live ? "account-row__badge--highlight" : ""),
         controlsClass,
         inputMode: isFloat ? "float" : "int",
