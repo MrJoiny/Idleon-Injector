@@ -22,8 +22,7 @@ const LorePageRow = ({ entry }) =>
             span({ class: "account-row__index" }, `#${entry.levelIndex + 1}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, `Chapter ${entry.chapterNumber} - Page ${entry.pageNumber}`),
-                span({ class: "account-row__sub-label" }, entry.bonusLabel)
+                span({ class: "account-row__name" }, `Chapter ${entry.chapterNumber} - Page ${entry.pageNumber}`)
             ),
         ],
         renderBadge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
@@ -56,7 +55,6 @@ const buildLoreGroups = (rawDefinitions, rawLevels) => {
                     levelIndex,
                     pageNumber: bonus.bonusIndex + 1,
                     chapterNumber: chapterIndex + 1,
-                    bonusLabel: bonus.label,
                     levelState: van.state(toInt(levels[levelIndex], { min: 0 })),
                 };
             });

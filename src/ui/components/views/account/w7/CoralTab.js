@@ -6,7 +6,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanNameEffect, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
+import { createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -28,8 +28,7 @@ const CoralRow = ({ entry, levelState }) =>
             span({ class: "account-row__index" }, `#${entry.index}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
+                span({ class: "account-row__name" }, entry.name)
             ),
         ],
         rowClass: "account-row--wide-controls",
@@ -53,7 +52,6 @@ export const CoralTab = () => {
             return {
                 ...field,
                 maxLevel: toInt(definition[1], { min: 0 }),
-                description: cleanNameEffect(definition[0]),
             };
         });
     };

@@ -8,7 +8,6 @@ import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import {
     cleanName,
-    cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
     toInt,
@@ -31,8 +30,7 @@ const BigFishRow = ({ entry, levelState }) =>
             span({ class: "account-row__index" }, `#${entry.index}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
+                span({ class: "account-row__name" }, entry.name)
             ),
         ],
         renderBadge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
@@ -59,7 +57,6 @@ export const BigFishTab = () => {
                     index,
                     rawName,
                     name: cleanName(rawName, `Big Fish ${index}`),
-                    description: cleanNameEffect(definition[1]),
                 };
             })
             .filter(Boolean);

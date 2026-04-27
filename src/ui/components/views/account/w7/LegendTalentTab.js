@@ -6,7 +6,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, cleanNameEffect, createStaticRowReconciler, toInt } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, toInt } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -42,7 +42,6 @@ const buildTalentRows = (rawDefinitions, rawOrder, rawLevels, rawMaxResults) => 
                     talentIndex,
                     rawName,
                     name: cleanName(rawName, `Talent ${talentIndex}`),
-                    description: cleanNameEffect(definition[5]),
                     maxLevel: toInt(maxResult.value, { min: 0 }),
                     levelState: van.state(toInt(levels[talentIndex], { min: 0 })),
                 };
@@ -66,8 +65,7 @@ const LegendTalentRow = ({ talent }) =>
             span({ class: "account-row__index" }, `#${talent.talentIndex}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, talent.name),
-                talent.description ? span({ class: "account-row__sub-label" }, talent.description) : null
+                span({ class: "account-row__name" }, talent.name)
             ),
         ],
         rowClass: "account-row--wide-controls",

@@ -6,7 +6,7 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import { cleanName, cleanNameEffect, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -22,8 +22,7 @@ const ShopUpgradeRow = ({ entry, levelState }) =>
             span({ class: "account-row__index" }, `#${entry.index}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
+                span({ class: "account-row__name" }, entry.name)
             ),
         ],
         rowClass: "account-row--wide-controls",
@@ -58,7 +57,6 @@ const buildShopEntries = (rawDefinitions, rawOrder) => {
                 rawName,
                 name: cleanName(rawName, `Sushi Upgrade ${index}`),
                 maxLevel: toInt(definition[1], { min: 0 }),
-                description: cleanNameEffect(definition[5]),
             };
         })
         .filter(Boolean)

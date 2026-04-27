@@ -10,7 +10,6 @@ import { PersistentAccountListPage } from "../components/PersistentAccountListPa
 import {
     adjustFormattedIntInput,
     cleanName,
-    cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
     largeFormatter,
@@ -35,8 +34,7 @@ const ZenithRow = ({ entry, levelState }) =>
             span({ class: "account-row__index" }, `#${entry.index}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.effect ? span({ class: "account-row__sub-label" }, entry.effect) : null
+                span({ class: "account-row__name" }, entry.name)
             ),
         ],
         rowClass: "account-row--wide-controls",
@@ -52,8 +50,7 @@ const ZenithClustersRow = ({ valueState }) =>
         renderInfo: () => [
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, "Zenith Clusters"),
-                span({ class: "account-row__sub-label" }, "Currency for Zenith Market upgrades")
+                span({ class: "account-row__name" }, "Zenith Clusters")
             ),
         ],
         renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
@@ -86,7 +83,6 @@ export const ZenithTab = () => {
                     rawName,
                     name: cleanName(rawName, `Zenith ${index}`),
                     maxLevel: toInt(definition[3], { min: 0 }),
-                    effect: cleanNameEffect(definition[6]),
                 };
             })
             .filter(Boolean);

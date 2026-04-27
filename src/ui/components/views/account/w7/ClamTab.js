@@ -1,12 +1,10 @@
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
+import { gga, readGgaEntries } from "../../../../services/api.js";
 import { ClickerRow } from "../ClickerRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanNameEffect } from "../accountShared.js";
-import { toIndexedArray } from "../../../../utils/index.js";
 
 const { div } = van.tags;
 
@@ -38,33 +36,20 @@ const ClamRow = ({ field, fieldState, onWrite }) =>
 export const ClamTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Clam" });
     const fieldStates = new Map(ALL_FIELDS.map((field) => [field.index, van.state(undefined)]));
-    const descriptionState = van.state([]);
 
     const load = async () =>
         run(async () => {
-            const [results, rawDescriptions] = await Promise.all([
-                readGgaEntries(
-                    "OptionsListAccount",
-                    ALL_FIELDS.map((field) => String(field.index))
-                ),
-                readCList("Spelunky[27]"),
-            ]);
+            const results = await readGgaEntries(
+                "OptionsListAccount",
+                ALL_FIELDS.map((field) => String(field.index))
+            );
 
             for (const field of ALL_FIELDS) {
                 fieldStates.get(field.index).val = results[String(field.index)] ?? 0;
             }
-
-            descriptionState.val = toIndexedArray(rawDescriptions ?? []).map((rawDescription) =>
-                cleanNameEffect(rawDescription)
-            );
         });
 
     const onWrite = async (index, value) => gga(`OptionsListAccount[${index}]`, value);
-
-    const getClamworkField = (field, orderIndex) => ({
-        ...field,
-        description: descriptionState.val[orderIndex] || null,
-    });
 
     const body = div(
         { class: "scrollable-panel content-stack" },
@@ -86,9 +71,9 @@ export const ClamTab = () => {
             body: () =>
                 div(
                     { class: "account-item-stack" },
-                    ...CLAMWORKS_FIELDS.map((field, index) =>
+                    ...CLAMWORKS_FIELDS.map((field) =>
                         ClamRow({
-                            field: getClamworkField(field, index),
+                            field,
                             fieldState: fieldStates.get(field.index),
                             onWrite,
                         })

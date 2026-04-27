@@ -34,7 +34,7 @@ export const RemovableStoredRow = ({
             div(
                 { class: nameGroupClass },
                 span({ class: "account-row__name" }, primaryLabel || fallbackLabel),
-                span({ class: "account-row__sub-label" }, secondaryLabel)
+                secondaryLabel ? span({ class: "account-row__sub-label" }, secondaryLabel) : null
             ),
         ],
         badge,

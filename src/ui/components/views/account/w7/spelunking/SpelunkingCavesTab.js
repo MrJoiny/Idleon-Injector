@@ -13,7 +13,6 @@ import { RemovableStoredRow } from "../../components/RemovableStoredRow.js";
 import {
     adjustFormattedIntInput,
     cleanName,
-    cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
     largeFormatter,
@@ -193,8 +192,7 @@ const CaveRow = ({ row, metricStates }) => {
             span({ class: "account-row__index" }, `#${row.index + 1}`),
             div(
                 { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, row.name),
-                span({ class: "account-row__sub-label" }, row.description)
+                span({ class: "account-row__name" }, row.name)
             ),
         ],
         badge: "CAVE",
@@ -215,7 +213,6 @@ const DestroyedObjectRow = ({ row, onRemove }) =>
         index: row.index,
         primaryLabel: row.name,
         fallbackLabel: row.objectId,
-        secondaryLabel: `${row.caveName} - ${row.objectId}`,
         badge: row.knownCatalogMatch ? "DISCOVERED" : "UNKNOWN",
         nameGroupClass: "account-row__name-group",
         onRemove,
@@ -291,7 +288,6 @@ export function SpelunkingCavesTab() {
                     rawName,
                     rawDescription: caveDescriptions[index],
                     name: cleanName(rawName, `Cave ${index + 1}`),
-                    description: cleanNameEffect(caveDescriptions[index]),
                 }))
                 .filter((row) => isMeaningfulCaveDefinition(row.rawName, row.rawDescription));
             reconcileCaves();
