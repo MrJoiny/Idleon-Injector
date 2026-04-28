@@ -1,0 +1,28 @@
+.summoning-tab .alchemy-sub-content {
+    min-height: 0;
+}
+
+.summoning-round-row {
+    grid-template-columns: minmax(300px, 1fr) auto auto;
+}
+
+.summoning-round-row--done:not(.account-row--success):not(.account-row--error) {
+    border-color: color-mix(in srgb, var(--c-accent) 55%, var(--c-border));
+    background: color-mix(in srgb, var(--c-accent) 8%, var(--c-panel));
+}
+
+.summoning-round-row .account-row__badge {
+    min-width: 64px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .summoning-round-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .summoning-round-row .account-row__badge,
+    .summoning-round-row .account-row__controls {
+        justify-self: start;
+    }
+}
