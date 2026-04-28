@@ -3,7 +3,6 @@ import { gga } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
 import {
     cleanName,
-    cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
     useWriteStatus,
@@ -34,11 +33,7 @@ const CharmRow = ({ entry, unlockedState }) => {
     return AccountRow({
         info: [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                span({ class: "account-row__sub-label" }, entry.effect)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => (unlockedState.val ? "UNLOCKED" : "LOCKED"),
         rowClass: () =>
@@ -65,7 +60,6 @@ const buildCharmEntries = (rawUnlocks, rawCharmRecords) => {
             index,
             rawName: String(record[2] ?? `Charm_${index}`).trim(),
             name: cleanName(record[2], `Charm ${index + 1}`),
-            effect: cleanNameEffect(record[5], "No effect text"),
             unlocked: Number(unlocks[index] ?? 0) ? 1 : 0,
         };
     });

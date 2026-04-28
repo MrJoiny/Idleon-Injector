@@ -13,8 +13,6 @@ const { div, span } = van.tags;
 const SUMMONING_UPGRADES_PATH = "Summon[0]";
 const ESSENCE_NAMES = ["White", "Green", "Yellow", "Blue", "Purple", "Red", "Cyan", "Teal"];
 
-const cleanDescription = (raw) => cleanName(String(raw ?? "").replace(/[{}@|]/g, " "), "");
-
 const UpgradeRow = ({ entry, levelState }) =>
     ClampedLevelRow({
         valueState: levelState,
@@ -23,11 +21,7 @@ const UpgradeRow = ({ entry, levelState }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${entry.maxLevel}`,
         rowClass: "account-row--wide-controls",
@@ -49,7 +43,6 @@ const buildUpgradeEntries = (rawDefinitions, rawLevels) => {
                 rawName,
                 name: cleanName(rawName, `Upgrade ${index + 1}`),
                 colorName: ESSENCE_NAMES[colorIndex] ?? `Color ${colorIndex}`,
-                description: cleanDescription(definition[11]),
                 level: toInt(levels[index], { min: 0 }),
                 maxLevel: toInt(definition[8], { min: 0 }),
             };

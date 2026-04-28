@@ -46,11 +46,7 @@ const CropAmountRow = ({ entry, amountState }) =>
         write: (nextAmount) => writeVerified(`${CROP_DEPO_PATH}[${entry.index}]`, nextAmount),
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                span({ class: "account-row__sub-label" }, entry.seedName)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
         rowClass: "account-row--wide-controls",
@@ -77,7 +73,6 @@ const buildSeedSections = (rawCropDepo, rawSeedInfo) =>
             return {
                 index,
                 name: `${seed.name} ${offset + 1}`,
-                seedName: seed.name,
                 amount: getCropAmount(rawCropDepo, index),
             };
         }),

@@ -13,8 +13,6 @@ const { div, span } = van.tags;
 const FARM_UPG_PATH = "FarmUpg";
 const MARKET_SIZE = 8;
 
-const cleanDescription = (raw) => cleanName(String(raw ?? "").replace(/[{}]/g, ""), "");
-
 const MarketUpgradeRow = ({ entry, levelState }) =>
     ClampedLevelRow({
         valueState: levelState,
@@ -23,11 +21,7 @@ const MarketUpgradeRow = ({ entry, levelState }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.pathIndex}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",
@@ -50,7 +44,6 @@ const buildMarketEntries = ({ rawDefinitions, rawLevels, rawMaxResults, mode, of
             pathIndex: pathOffset + index,
             rawName: String(definition[0] ?? `Upgrade_${index}`).trim(),
             name: cleanName(definition[0], `Upgrade ${index + 1}`),
-            description: cleanDescription(definition[1]),
             level: toInt(levels[pathOffset + index], { min: 0 }),
             maxLevel: toInt(maxResult.value, { min: 0 }),
         };

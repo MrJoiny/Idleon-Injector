@@ -20,8 +20,6 @@ const { div, span } = van.tags;
 const FARM_UPG_PATH = "FarmUpg";
 const EXOTIC_OFFSET = 20;
 
-const cleanDescription = (raw) => cleanName(String(raw ?? "").replace(/[{}]/g, ""), "");
-
 const ExoticUpgradeRow = ({ entry, levelState }) =>
     EditableNumberRow({
         valueState: levelState,
@@ -33,11 +31,7 @@ const ExoticUpgradeRow = ({ entry, levelState }) =>
         write: (nextLevel) => writeVerified(`${FARM_UPG_PATH}[${entry.pathIndex}]`, nextLevel),
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.pathIndex}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
         rowClass: "account-row--wide-controls",
@@ -54,7 +48,6 @@ const buildExoticEntries = (rawDefinitions, rawLevels) => {
             pathIndex,
             rawName: String(definition[0] ?? `NAME_MAGNI_${index}`).trim(),
             name: cleanName(definition[0], `NAME MAGNI ${index + 1}`),
-            description: cleanDescription(definition[1]),
             level: toInt(levels[pathIndex], { min: 0 }),
         };
     });

@@ -18,8 +18,6 @@ const { div, input, label, span } = van.tags;
 
 const JADE_BOUGHT_PATH = "Ninja[102][9]";
 
-const cleanDescription = (raw) => cleanName(String(raw ?? "").replace(/[{}]/g, ""), "");
-
 const toggleLetter = (encoded, letter, enabled) => {
     const current = String(encoded ?? "");
     if (enabled) return current.includes(letter) ? current : `${current}${letter}`;
@@ -41,11 +39,7 @@ const JadeUpgradeRow = ({ entry, boughtState, encodedState }) => {
     return AccountRow({
         info: [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => (boughtState.val ? "BOUGHT" : "LOCKED"),
         rowClass: () => (boughtState.val ? "sneaking-toggle-row sneaking-toggle-row--enabled" : "sneaking-toggle-row"),
@@ -79,7 +73,6 @@ const buildJadeEntries = (rawDefinitions, rawLetters, rawOrder, encoded) => {
                 index,
                 rawName,
                 name: cleanName(rawName, `Jade Upgrade ${index + 1}`),
-                description: cleanDescription(definition[6]),
                 letter,
                 bought: String(encoded ?? "").includes(letter),
             };

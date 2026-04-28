@@ -19,8 +19,6 @@ const { div, span } = van.tags;
 
 const SNEAKING_UPGRADES_PATH = "Ninja[103]";
 
-const cleanDescription = (raw) => cleanName(String(raw ?? "").replace(/[{}]/g, ""), "");
-
 const UpgradeRow = ({ entry, levelState }) =>
     EditableNumberRow({
         valueState: levelState,
@@ -32,11 +30,7 @@ const UpgradeRow = ({ entry, levelState }) =>
         write: (nextLevel) => writeVerified(`${SNEAKING_UPGRADES_PATH}[${entry.index}]`, nextLevel),
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                entry.description ? span({ class: "account-row__sub-label" }, entry.description) : null
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
         rowClass: "account-row--wide-controls",
@@ -55,7 +49,6 @@ const buildUpgradeEntries = (rawDefinitions, rawLevels) => {
                 index,
                 rawName,
                 name: cleanName(rawName, `Upgrade ${index + 1}`),
-                description: cleanDescription(definition[6]),
                 level: toInt(levels[index], { min: 0 }),
             };
         })
