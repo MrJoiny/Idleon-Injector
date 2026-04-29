@@ -1,12 +1,11 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import {
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    resolveNumberInput,
     toInt,
     useWriteStatus,
     writeVerified,
@@ -82,18 +81,15 @@ const RoundRow = ({ entry, doneState, completedIdsState }) => {
 };
 
 const EndlessRoundRow = ({ valueState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry: {
+            name: "Endless Rounds Done",
+            path: ENDLESS_ROUNDS_PATH,
+            formatted: false,
+            showIndex: false,
+            badge: (currentValue) => `ROUND ${currentValue ?? 0}`,
+        },
         valueState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextValue) => writeVerified(ENDLESS_ROUNDS_PATH, nextValue),
-        renderInfo: () => span({ class: "account-row__name" }, "Endless Rounds Done"),
-        renderBadge: (currentValue) => `ROUND ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
     });
 
 const isRoundDone = (enemyId, completedIds) =>

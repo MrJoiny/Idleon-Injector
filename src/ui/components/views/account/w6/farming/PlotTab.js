@@ -1,20 +1,11 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    adjustFormattedIntInput,
-    createStaticRowReconciler,
-    getOrCreateState,
-    largeFormatter,
-    largeParser,
-    resolveNumberInput,
-    toInt,
-    writeVerified,
-} from "../../accountShared.js";
+import { createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -31,31 +22,18 @@ const getPlotStyle = (index) => {
 };
 
 const PlotFieldRow = ({ label, valueState, writePath, float = false }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry: {
+            name: label,
+            path: writePath,
+            formatted: float,
+            float,
+            showIndex: false,
+            rowClass: "farming-grid-field-row",
+            controlsClass: "account-row__controls--xl",
+            badge: float ? null : (currentValue) => `LV ${currentValue ?? 0}`,
+        },
         valueState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: float,
-                float,
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextValue) => writeVerified(writePath, nextValue),
-        renderInfo: () => span({ class: "account-row__name" }, label),
-        renderBadge: (currentValue) => (float ? largeFormatter(currentValue ?? 0) : `LV ${currentValue ?? 0}`),
-        rowClass: "farming-grid-field-row",
-        controlsClass: "account-row__controls--xl",
-        inputMode: float ? "float" : "int",
-        inputProps: float
-            ? {
-                  formatter: largeFormatter,
-                  parser: largeParser,
-              }
-            : {},
-        adjustInput: (rawValue, delta, currentValue) =>
-            float
-                ? adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 })
-                : Math.max(0, toInt(rawValue, { min: 0 }) + delta),
     });
 
 const PlotTile = ({ entry, levelState, expState }) =>

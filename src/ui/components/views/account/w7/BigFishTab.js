@@ -1,20 +1,14 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { SimpleNumberRow } from "../SimpleNumberRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    toInt,
-    writeVerified,
-} from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const BIG_FISH_LEVELS_PATH = "Spelunk[11]";
 
@@ -22,21 +16,9 @@ const splitDefinition = (rawDefinition) =>
     Array.isArray(rawDefinition) ? toIndexedArray(rawDefinition ?? []) : String(rawDefinition ?? "").split(",");
 
 const BigFishRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: levelState,
-        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
-        write: async (nextValue) => writeVerified(`${BIG_FISH_LEVELS_PATH}[${entry.index}]`, nextValue),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
-        ],
-        renderBadge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        adjustInput: (rawValue, delta, currentValue) => Math.max(0, toInt(rawValue, currentValue ?? 0) + delta),
     });
 
 export const BigFishTab = () => {
@@ -55,8 +37,11 @@ export const BigFishTab = () => {
 
                 return {
                     index,
+                    path: `${BIG_FISH_LEVELS_PATH}[${index}]`,
                     rawName,
                     name: cleanName(rawName, `Big Fish ${index}`),
+                    badge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
+                    formatted: false,
                 };
             })
             .filter(Boolean);

@@ -1,47 +1,21 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    resolveNumberInput,
-    toInt,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const ARTIFACT_LEVELS_PATH = "Sailing[3]";
 
 const ArtifactRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: levelState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                max: 6,
-                fallback: null,
-            }),
-        write: (nextLevel) => writeVerified(`${ARTIFACT_LEVELS_PATH}[${entry.index}]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / 6`,
-        maxAction: { value: 6, label: "MAX" },
-        adjustInput: (rawValue, delta, currentValue) => {
-            const base = Number(rawValue);
-            const current = Number.isFinite(base) ? base : Number(currentValue ?? 0);
-            return Math.max(0, Math.min(6, current + delta));
-        },
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
     });
 
 const buildArtifactEntries = (rawLevels, rawArtifactInfo) => {
@@ -50,8 +24,13 @@ const buildArtifactEntries = (rawLevels, rawArtifactInfo) => {
         const artifact = toIndexedArray(rawArtifact ?? []);
         return {
             index,
+            path: `${ARTIFACT_LEVELS_PATH}[${index}]`,
             rawName: String(artifact[0] ?? `Artifact_${index}`).trim(),
             name: cleanName(artifact[0], `Artifact ${index + 1}`),
+            max: 6,
+            formatted: false,
+            badge: (currentValue) => `LV ${currentValue ?? 0} / 6`,
+            maxAction: { value: 6, label: "MAX" },
             level: Math.min(6, toInt(levels[index], { min: 0 })),
         };
     });

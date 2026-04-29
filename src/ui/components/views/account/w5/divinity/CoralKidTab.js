@@ -1,16 +1,14 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { readCList, readGgaEntries } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import {
     cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
-    resolveNumberInput,
     toInt,
     writeManyVerified,
-    writeVerified,
 } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountToggleRow } from "../../components/AccountToggleRow.js";
@@ -55,35 +53,22 @@ const UnlockRow = ({ unlockedState }) => {
     });
 };
 
-const CoralKidLevelRow = ({ entry, levelState }) =>
-    EditableNumberRow({
-        valueState: levelState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextLevel) => writeVerified(`OptionsListAccount[${entry.index}]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                span({ class: "account-row__sub-label" }, entry.description)
-            ),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-    });
+const CoralKidLevelRow = ({ entry, levelState }) => SimpleNumberRow({ entry, valueState: levelState });
 
 const buildCoralKidEntries = (rawOptions, rawDescriptions) =>
-    CORAL_KID_FIELDS.map((field) => ({
-        ...field,
-        key: String(field.index),
-        description: cleanNameEffect(rawDescriptions?.[field.descriptionIndex], field.name),
-        level: toInt(rawOptions[String(field.index)] ?? 0, { min: 0 }),
-    }));
+    CORAL_KID_FIELDS.map((field) => {
+        const description = cleanNameEffect(rawDescriptions?.[field.descriptionIndex], field.name);
+
+        return {
+            ...field,
+            key: String(field.index),
+            path: `OptionsListAccount[${field.index}]`,
+            description,
+            subLabel: description,
+            badge: (currentValue) => `LV ${currentValue ?? 0}`,
+            level: toInt(rawOptions[String(field.index)] ?? 0, { min: 0 }),
+        };
+    });
 
 export const CoralKidTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Coral Kid" });

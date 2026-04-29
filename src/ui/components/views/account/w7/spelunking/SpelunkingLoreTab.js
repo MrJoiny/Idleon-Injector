@@ -5,29 +5,25 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 import { AccountSection } from "../../components/AccountSection.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
-import { cleanName, toInt, writeVerified } from "../../accountShared.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
+import { cleanName, toInt } from "../../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const LORE_LEVELS_PATH = "Spelunk[8]";
 const LORE_PAGES_PER_CHAPTER = 4;
 
 const LorePageRow = ({ entry }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry: {
+            name: `Chapter ${entry.chapterNumber} - Page ${entry.pageNumber}`,
+            path: `${LORE_LEVELS_PATH}[${entry.levelIndex}]`,
+            indexLabel: `#${entry.levelIndex + 1}`,
+            formatted: false,
+            badge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
+            rowClass: "spelunking-lore-row",
+        },
         valueState: entry.levelState,
-        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
-        write: async (nextLevel) => writeVerified(`${LORE_LEVELS_PATH}[${entry.levelIndex}]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.levelIndex + 1}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, `Chapter ${entry.chapterNumber} - Page ${entry.pageNumber}`)
-            ),
-        ],
-        renderBadge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
-        rowClass: "spelunking-lore-row",
-        adjustInput: (rawValue, delta, currentValue) => Math.max(0, toInt(rawValue, currentValue ?? 0) + delta),
     });
 
 const buildLoreGroups = (rawDefinitions, rawLevels) => {

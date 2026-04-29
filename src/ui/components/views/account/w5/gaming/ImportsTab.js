@@ -1,40 +1,21 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    resolveNumberInput,
-    toInt,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const IMPORT_START_INDEX = 25;
 
 const ImportRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: levelState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextLevel) => writeVerified(`GamingSprout[${entry.pathIndex}][0]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.pathIndex}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
     });
 
 const buildImportEntries = (rawSprouts, rawNames) =>
@@ -42,11 +23,13 @@ const buildImportEntries = (rawSprouts, rawNames) =>
         const pathIndex = IMPORT_START_INDEX + index;
         const sprout = toIndexedArray(rawSprouts?.[pathIndex] ?? []);
         return {
-            index,
+            index: pathIndex,
             pathIndex,
+            path: `GamingSprout[${pathIndex}][0]`,
             rawName: String(rawName ?? `Import_${index}`).trim(),
             name: cleanName(rawName, `Import ${index + 1}`),
             level: toInt(sprout[0], { min: 0 }),
+            badge: (currentValue) => `LV ${currentValue ?? 0}`,
         };
     });
 

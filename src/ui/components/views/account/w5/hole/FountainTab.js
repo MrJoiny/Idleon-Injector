@@ -1,7 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { InlineEditableNumberField } from "../../components/InlineEditableNumberField.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import {
@@ -9,11 +9,8 @@ import {
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    largeFormatter,
-    largeParser,
     resolveNumberInput,
     toNum,
-    writeVerified,
 } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountRow } from "../../components/AccountRow.js";
@@ -107,37 +104,9 @@ const FountainUpgradeRow = ({ entry, valueStates }) =>
     });
 
 const FountainNumberRow = ({ entry, valueState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: true,
-                float: entry.float ?? false,
-                min: 0,
-                max: entry.max ?? Infinity,
-                fallback: null,
-            }),
-        write: (nextValue) => writeVerified(entry.path, nextValue),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => {
-            if (typeof entry.badge === "function") return entry.badge(currentValue);
-            return largeFormatter(currentValue ?? 0);
-        },
-        adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, {
-                min: 0,
-                max: entry.max ?? Infinity,
-            }),
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        inputMode: entry.float ? "float" : "int",
-        inputProps: {
-            formatter: largeFormatter,
-            parser: largeParser,
-        },
     });
 
 export const FountainTab = () => {

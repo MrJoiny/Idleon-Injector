@@ -2,8 +2,8 @@ import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { NumberInput } from "../../../../NumberInput.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
 import { EditableFieldsRow } from "../../EditableFieldsRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
@@ -18,7 +18,6 @@ import {
     resolveNumberInput,
     toInt,
     writeManyVerified,
-    writeVerified,
 } from "../../accountShared.js";
 
 const { div, span } = van.tags;
@@ -78,30 +77,16 @@ const KNOWLEDGE_FIELDS = [
 const ResourceRow = ({ field, valueState }) => {
     const isCurrency = field.mode === "currency";
 
-    return EditableNumberRow({
+    return SimpleNumberRow({
+        entry: {
+            ...field,
+            path: `${SUSHI_RESOURCES_PATH}[${field.index}]`,
+            name: field.label,
+            formatted: isCurrency,
+            float: isCurrency,
+            badge: (currentValue) => (isCurrency ? largeFormatter(currentValue ?? 0) : String(currentValue ?? 0)),
+        },
         valueState,
-        normalize: (rawValue) =>
-            isCurrency
-                ? resolveNumberInput(rawValue, { formatted: true, float: true, min: 0, fallback: null })
-                : toInt(rawValue, { min: 0 }),
-        write: async (nextValue) => writeVerified(`${SUSHI_RESOURCES_PATH}[${field.index}]`, nextValue),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${field.index}`),
-            span({ class: "account-row__name" }, field.label),
-        ],
-        renderBadge: (currentValue) => (isCurrency ? largeFormatter(currentValue ?? 0) : String(currentValue ?? 0)),
-        adjustInput: (rawValue, delta, currentValue) =>
-            isCurrency
-                ? adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 })
-                : Math.max(0, toInt(rawValue, currentValue ?? 0) + delta),
-        controlsClass: "account-row__controls--xl",
-        inputMode: isCurrency ? "float" : "int",
-        inputProps: isCurrency
-            ? {
-                  formatter: largeFormatter,
-                  parser: largeParser,
-              }
-            : {},
     });
 };
 

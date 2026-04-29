@@ -1,49 +1,24 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import {
-    adjustFormattedIntInput,
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    largeFormatter,
-    largeParser,
-    resolveNumberInput,
     toNum,
-    writeVerified,
 } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const LampRow = ({ entry, valueState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: true,
-                min: 0,
-                max: entry.max ?? Infinity,
-                fallback: null,
-            }),
-        write: (nextValue) => writeVerified(entry.path, nextValue),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => (entry.badge ? entry.badge(currentValue) : largeFormatter(currentValue ?? 0)),
-        adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, {
-                min: 0,
-                max: entry.max ?? Infinity,
-            }),
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        inputProps: { formatter: largeFormatter, parser: largeParser },
     });
 
 export const LampTab = () => {

@@ -1,15 +1,12 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import {
-    adjustFormattedIntInput,
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    largeFormatter,
-    largeParser,
     resolveNumberInput,
     useWriteStatus,
     writeVerified,
@@ -47,36 +44,6 @@ const MUTATION_FIELDS = [
     { key: "mutations", path: "Gaming[4]", name: "Unlocked Mutations", index: 4, max: 8 },
     { key: "evolve", path: "Gaming[7]", name: "Evolve Upgrade", index: 7 },
 ];
-
-const GamingNumberRow = ({ entry, valueState }) =>
-    EditableNumberRow({
-        valueState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: entry.formatted,
-                float: entry.float,
-                min: 0,
-                max: entry.max ?? Infinity,
-                fallback: null,
-            }),
-        write: (nextValue) => writeVerified(entry.path, nextValue),
-        renderInfo: () => div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        renderBadge: (currentValue) =>
-            entry.formatted ? largeFormatter(currentValue ?? 0) : `LV ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        inputMode: entry.float ? "float" : "int",
-        inputProps: entry.formatted
-            ? {
-                  formatter: largeFormatter,
-                  parser: largeParser,
-              }
-            : {},
-        adjustInput: entry.formatted
-            ? (rawValue, delta, currentValue) =>
-                  adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0, max: entry.max ?? Infinity })
-            : undefined,
-    });
 
 const LogBookRow = ({ valueState }) => {
     const { status, run } = useWriteStatus();
@@ -120,6 +87,7 @@ const buildGeneralEntries = (rawGaming, rawOptions) =>
     GENERAL_FIELDS.map((field) => ({
         ...field,
         label: field.optionIndex ? `#${field.optionIndex}` : field.path,
+        showIndex: false,
         value: field.optionIndex
             ? resolveNumberInput(rawOptions[String(field.optionIndex)] ?? 0, {
                   formatted: field.formatted,
@@ -143,6 +111,9 @@ const buildUpgradeEntries = (rawGaming, rawUpgradeNames, fields = UPGRADE_FIELDS
             ...field,
             label: field.path,
             name: cleanName(rawName, `Gaming Upgrade ${field.index}`),
+            formatted: false,
+            showIndex: false,
+            badge: (currentValue) => `LV ${currentValue ?? 0}`,
             value: resolveNumberInput(rawGaming?.[field.index] ?? 0, {
                 min: 0,
                 max: field.max ?? Infinity,
@@ -168,7 +139,7 @@ export const GeneralTab = () => {
     const reconcileRows = () => {
         reconcileGeneralRows(generalEntries.val.map((entry) => entry.key).join("|"), () =>
             generalEntries.val.map((entry) =>
-                GamingNumberRow({
+                SimpleNumberRow({
                     entry,
                     valueState: getOrCreateState(valueStates, entry.key),
                 })
@@ -176,7 +147,7 @@ export const GeneralTab = () => {
         );
         reconcileUpgradeRows(upgradeEntries.val.map((entry) => entry.key).join("|"), () =>
             upgradeEntries.val.map((entry) =>
-                GamingNumberRow({
+                SimpleNumberRow({
                     entry,
                     valueState: getOrCreateState(valueStates, entry.key),
                 })
@@ -184,7 +155,7 @@ export const GeneralTab = () => {
         );
         reconcileMutationRows(mutationEntries.val.map((entry) => entry.key).join("|"), () =>
             mutationEntries.val.map((entry) =>
-                GamingNumberRow({
+                SimpleNumberRow({
                     entry,
                     valueState: getOrCreateState(valueStates, entry.key),
                 })

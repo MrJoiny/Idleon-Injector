@@ -1,16 +1,9 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    resolveNumberInput,
-    toInt,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
@@ -20,37 +13,35 @@ const { div, span } = van.tags;
 const PALETTE_LEVELS_PATH = "Spelunk[9]";
 
 const PaletteRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: levelState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextLevel) => writeVerified(`${PALETTE_LEVELS_PATH}[${entry.index}]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            span({
-                class: "gaming-palette-swatch",
-                style: `background: rgb(${entry.rgb.join(", ")});`,
-                title: entry.rgb.join(", "),
-            }),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
     });
 
 const buildPaletteEntries = (rawLevels, rawPalette) => {
     const levels = toIndexedArray(rawLevels ?? []);
     return toIndexedArray(rawPalette ?? []).map((rawDefinition, index) => {
         const definition = toIndexedArray(rawDefinition ?? []);
+        const rgb = [
+            toInt(definition[0], { min: 0 }),
+            toInt(definition[1], { min: 0 }),
+            toInt(definition[2], { min: 0 }),
+        ];
+
         return {
             index,
+            path: `${PALETTE_LEVELS_PATH}[${index}]`,
             rawName: String(definition[3] ?? `Palette_${index}`).trim(),
             name: cleanName(definition[3], `Palette ${index + 1}`),
-            rgb: [toInt(definition[0], { min: 0 }), toInt(definition[1], { min: 0 }), toInt(definition[2], { min: 0 })],
+            rgb,
+            leading: () =>
+                span({
+                    class: "gaming-palette-swatch",
+                    style: `background: rgb(${rgb.join(", ")});`,
+                    title: rgb.join(", "),
+                }),
+            formatted: false,
+            badge: (currentValue) => `LV ${currentValue ?? 0}`,
             level: toInt(levels[index], { min: 0 }),
         };
     });

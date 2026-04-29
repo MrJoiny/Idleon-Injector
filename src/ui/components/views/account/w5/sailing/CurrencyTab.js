@@ -1,22 +1,14 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
-import {
-    adjustFormattedIntInput,
-    createStaticRowReconciler,
-    getOrCreateState,
-    largeFormatter,
-    largeParser,
-    resolveNumberInput,
-    writeVerified,
-} from "../../accountShared.js";
+import { createStaticRowReconciler, getOrCreateState } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const SAILING_CURRENCY_PATH = "Sailing[1]";
 const ISLAND_NAMES = [
@@ -49,30 +41,9 @@ const getCurrencyName = (index) => {
 };
 
 const CurrencyRow = ({ entry, amountState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: amountState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: true,
-                float: true,
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextAmount) => writeVerified(`${SAILING_CURRENCY_PATH}[${entry.index}]`, nextAmount),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        inputMode: "float",
-        inputProps: {
-            formatter: largeFormatter,
-            parser: largeParser,
-        },
-        adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
     });
 
 const buildCurrencyEntries = (rawCurrencies, rawIslandInfo) => {
@@ -83,7 +54,9 @@ const buildCurrencyEntries = (rawCurrencies, rawIslandInfo) => {
     return Array.from({ length: count }, (_, index) => ({
         index,
         name: getCurrencyName(index),
+        path: `${SAILING_CURRENCY_PATH}[${index}]`,
         amount: currencies[index] ?? 0,
+        float: true,
     }));
 };
 

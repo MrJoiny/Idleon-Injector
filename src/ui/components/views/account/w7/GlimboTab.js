@@ -1,34 +1,21 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
+import { SimpleNumberRow } from "../SimpleNumberRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const GLIMBO_LEVELS_PATH = "Research[12]";
 
 const GlimboRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: levelState,
-        normalize: (rawValue) => toInt(rawValue, { min: 0 }),
-        write: async (nextLevel) => writeVerified(`${GLIMBO_LEVELS_PATH}[${entry.index}]`, nextLevel),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name),
-                span({ class: "account-row__sub-label" }, entry.itemId)
-            ),
-        ],
-        renderBadge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        adjustInput: (rawValue, delta, currentValue) => Math.max(0, toInt(rawValue, currentValue ?? 0) + delta),
     });
 
 export const GlimboTab = () => {
@@ -51,11 +38,15 @@ export const GlimboTab = () => {
 
             return {
                 index,
+                path: `${GLIMBO_LEVELS_PATH}[${index}]`,
                 itemId,
                 name: cleanName(
                     definition.displayName ?? definition.DisplayName ?? definition.Name ?? definition.name,
                     itemId
                 ),
+                subLabel: itemId,
+                formatted: false,
+                badge: (currentValue) => `LV ${toInt(currentValue, { min: 0 })}`,
             };
         });
     };
