@@ -30,7 +30,7 @@ const BOAT_FIELDS = [
     { key: "speed", label: "Speed", index: 5 },
 ];
 const CAPTAIN_NUMBER_FIELDS = [
-    { key: "rarity", label: "Rarity", index: 0 },
+    { key: "rarity", label: "Rarity", index: 0, max: 6 },
     { key: "level", label: "Level", index: 3 },
     { key: "xp", label: "XP", index: 4, formatted: true, float: true },
 ];
@@ -51,7 +51,7 @@ const resolveInput = (rawValue, field) =>
 const fieldValue = (rawValues, index, field) =>
     field.formatted
         ? resolveNumberInput(rawValues[index], { formatted: true, float: field.float, min: 0, fallback: 0 })
-        : toInt(rawValues[index], { min: 0 });
+        : Math.min(field.max ?? Infinity, toInt(rawValues[index], { min: 0 }));
 
 const BoatRow = ({ entry, valueStates }) =>
     AccountRow({
@@ -70,6 +70,8 @@ const BoatRow = ({ entry, valueStates }) =>
                 valueState: getOrCreateState(valueStates, entry.fields[field.key].key),
                 path: entry.fields[field.key].path,
                 normalize: (rawValue) => resolveInput(rawValue, field),
+                rootClass: "account-stacked-field",
+                labelClass: "account-stacked-field__label",
             })
         ),
     });
@@ -108,13 +110,14 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
             div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => `LV ${getOrCreateState(valueStates, fieldByKey.level.key).val ?? 0}`,
+        controlsClass: "account-row__controls--stack-action",
         renderControls: ({ draftStates, resetDraft, setFieldFocused, status }) =>
             div(
-                { class: "account-row__controls--stack" },
-                CAPTAIN_NUMBER_FIELDS.map((field) =>
+                { class: "account-stacked-fields" },
+                ...CAPTAIN_NUMBER_FIELDS.map((field) =>
                     div(
-                        { class: "account-field-metric" },
-                        span({ class: "account-field-metric__label" }, field.label),
+                        { class: "account-stacked-field" },
+                        span({ class: "account-stacked-field__label" }, field.label),
                         NumberInput({
                             mode: field.float ? "float" : "int",
                             value: draftStates[fieldByKey[field.key].key],
@@ -138,15 +141,15 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                                 draftStates[draftKey].val = String(
                                     field.formatted
                                         ? adjustFormattedIntInput(draftStates[draftKey].val, 1, 0)
-                                        : toInt(draftStates[draftKey].val) + 1
+                                        : Math.min(field.max ?? Infinity, toInt(draftStates[draftKey].val) + 1)
                                 );
                             },
                         })
                     )
                 ),
                 div(
-                    { class: "account-field-metric" },
-                    span({ class: "account-field-metric__label" }, "Bonus Type I"),
+                    { class: "account-stacked-field" },
+                    span({ class: "account-stacked-field__label" }, "Bonus Type I"),
                     select(
                         {
                             class: "select-base",
@@ -165,9 +168,9 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                     )
                 ),
                 div(
-                    { class: "account-field-metric" },
+                    { class: "account-stacked-field" },
                     span(
-                        { class: "account-field-metric__label" },
+                        { class: "account-stacked-field__label" },
                         () => `${bonusTypes[toInt(draftStates[fieldByKey.bonusType1.key].val)]?.effect ?? "Bonus I"}`
                     ),
                     NumberInput({
@@ -188,8 +191,8 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                     })
                 ),
                 div(
-                    { class: "account-field-metric" },
-                    span({ class: "account-field-metric__label" }, "Bonus Type II"),
+                    { class: "account-stacked-field" },
+                    span({ class: "account-stacked-field__label" }, "Bonus Type II"),
                     select(
                         {
                             class: "select-base",
@@ -208,9 +211,9 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                     )
                 ),
                 div(
-                    { class: "account-field-metric" },
+                    { class: "account-stacked-field" },
                     span(
-                        { class: "account-field-metric__label" },
+                        { class: "account-stacked-field__label" },
                         () => `${bonusTypes[toInt(draftStates[fieldByKey.bonusType2.key].val)]?.effect ?? "Bonus II"}`
                     ),
                     NumberInput({

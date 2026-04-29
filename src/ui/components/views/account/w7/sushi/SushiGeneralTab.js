@@ -121,42 +121,44 @@ const KnowledgeRow = ({ entry, fieldStates }) =>
             span({ class: "account-row__name" }, entry.name),
         ],
         badge: `TIER ${entry.index + 1}`,
-        rowClass: "account-row--field-grid",
-        controlsClass: "account-row__controls--field-grid",
+        controlsClass: "account-row__controls--stack-action",
         renderControls: ({ draftStates, getDraftValue, resetDraft, setFieldFocused }) =>
-            KNOWLEDGE_FIELDS.map((field) => {
-                const valueState = getOrCreateState(fieldStates[field.id], entry.index);
-                return div(
-                    { class: "account-field-metric" },
-                    span({ class: "account-field-metric__label" }, field.label),
-                    NumberInput({
-                        mode: field.inputMode,
-                        value: draftStates[field.id],
-                        ...(field.inputProps ?? {}),
-                        oninput: (e) => {
-                            if (typeof field.clampDraft !== "function") return;
-                            const nextDraft = field.clampDraft(e.target.value);
-                            e.target.value = nextDraft;
-                            draftStates[field.id].val = nextDraft;
-                        },
-                        onfocus: () => setFieldFocused(field.id, true),
-                        onblur: () => {
-                            setFieldFocused(field.id, false);
-                            resetDraft(field.id);
-                        },
-                        onDecrement: () => {
-                            draftStates[field.id].val = String(
-                                field.adjust(getDraftValue(field.id), -1, valueState.val)
-                            );
-                        },
-                        onIncrement: () => {
-                            draftStates[field.id].val = String(
-                                field.adjust(getDraftValue(field.id), 1, valueState.val)
-                            );
-                        },
-                    })
-                );
-            }),
+            div(
+                { class: "account-stacked-fields" },
+                ...KNOWLEDGE_FIELDS.map((field) => {
+                    const valueState = getOrCreateState(fieldStates[field.id], entry.index);
+                    return div(
+                        { class: "account-stacked-field" },
+                        span({ class: "account-stacked-field__label" }, field.label),
+                        NumberInput({
+                            mode: field.inputMode,
+                            value: draftStates[field.id],
+                            ...(field.inputProps ?? {}),
+                            oninput: (e) => {
+                                if (typeof field.clampDraft !== "function") return;
+                                const nextDraft = field.clampDraft(e.target.value);
+                                e.target.value = nextDraft;
+                                draftStates[field.id].val = nextDraft;
+                            },
+                            onfocus: () => setFieldFocused(field.id, true),
+                            onblur: () => {
+                                setFieldFocused(field.id, false);
+                                resetDraft(field.id);
+                            },
+                            onDecrement: () => {
+                                draftStates[field.id].val = String(
+                                    field.adjust(getDraftValue(field.id), -1, valueState.val)
+                                );
+                            },
+                            onIncrement: () => {
+                                draftStates[field.id].val = String(
+                                    field.adjust(getDraftValue(field.id), 1, valueState.val)
+                                );
+                            },
+                        })
+                    );
+                })
+            ),
     });
 
 export function SushiGeneralTab() {

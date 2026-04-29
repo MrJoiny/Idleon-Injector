@@ -343,6 +343,11 @@
     gap: 4px;
 }
 
+.account-row__controls--stack-action {
+    align-items: center;
+    gap: 8px;
+}
+
 .account-row__controls--stack .number-input-wrapper {
     width: 180px;
 }
@@ -387,6 +392,37 @@
 
 .account-field-metric .number-input-wrapper {
     width: var(--account-field-metric-input-width, 118px);
+}
+
+.account-stacked-fields {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.account-stacked-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-stacked-field__label {
+    color: var(--c-text-muted);
+    font-size: 0.815rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: right;
+    text-transform: uppercase;
+    width: var(--account-stacked-field-label-width, 132px);
+}
+
+.account-stacked-field .number-input-wrapper {
+    width: var(--account-stacked-field-input-width, 180px);
+}
+
+.account-stacked-field .select-base {
+    width: var(--account-stacked-field-input-width, 180px);
 }
 
 @media (max-width: 1180px) {
