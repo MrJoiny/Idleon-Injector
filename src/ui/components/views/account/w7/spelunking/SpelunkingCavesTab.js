@@ -1,14 +1,13 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
-import { NumberInput, getNumberInputLiveRaw } from "../../../../NumberInput.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { AccountRow } from "../../components/AccountRow.js";
-import { ActionButton } from "../../components/ActionButton.js";
 import { AddFromListSection } from "../../components/AddFromListSection.js";
+import { InlineEditableNumberField } from "../../components/InlineEditableNumberField.js";
 import { RemovableStoredRow } from "../../components/RemovableStoredRow.js";
 import {
     adjustFormattedIntInput,
@@ -118,71 +117,6 @@ const buildDestroyedObjectState = (storedNames, catalog) => {
     };
 };
 
-const CaveMetricControl = ({ caveIndex, metric, valueState, rowStatus }) => {
-    const inputValue = van.state(metric.format(valueState.val));
-    const { status, run } = useWriteStatus();
-    let isFocused = false;
-
-    const syncInputToCommitted = () => {
-        inputValue.val = metric.format(valueState.val);
-    };
-
-    van.derive(() => {
-        valueState.val;
-        if (!isFocused) syncInputToCommitted();
-    });
-
-    van.derive(() => {
-        rowStatus.val = status.val;
-    });
-
-    const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
-        const nextValue = metric.normalize(rawValue);
-        if (nextValue === null || nextValue === undefined || Number.isNaN(nextValue)) return;
-
-        await run(async () => {
-            await writeVerified(`${metric.path}[${caveIndex}]`, nextValue);
-            valueState.val = nextValue;
-            inputValue.val = metric.format(nextValue);
-        });
-    };
-
-    return div(
-        { class: "spelunking-cave-metric" },
-        span({ class: "spelunking-cave-metric__label" }, metric.label),
-        NumberInput({
-            mode: metric.inputMode,
-            value: inputValue,
-            ...(metric.inputProps ?? {}),
-            onfocus: () => {
-                isFocused = true;
-            },
-            onblur: () => {
-                isFocused = false;
-                syncInputToCommitted();
-            },
-            onDecrement: () => {
-                inputValue.val = String(
-                    metric.adjust(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val)
-                );
-            },
-            onIncrement: () => {
-                inputValue.val = String(
-                    metric.adjust(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val)
-                );
-            },
-        }),
-        ActionButton({
-            label: "SET",
-            status,
-            onClick: (e) => {
-                e.preventDefault();
-                void applyValue();
-            },
-        })
-    );
-};
-
 const CaveRow = ({ row, metricStates }) => {
     const rowStatus = van.state(null);
 
@@ -190,19 +124,23 @@ const CaveRow = ({ row, metricStates }) => {
         status: rowStatus,
         info: [
             span({ class: "account-row__index" }, `#${row.index + 1}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, row.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, row.name)),
         ],
         badge: "CAVE",
         controlsClass: "account-row__controls--stack",
         controls: CAVE_METRICS.map((metric) =>
-            CaveMetricControl({
-                caveIndex: row.index,
-                metric,
+            InlineEditableNumberField({
+                label: metric.label,
                 valueState: getOrCreateState(metricStates[metric.id], row.index),
-                rowStatus,
+                path: `${metric.path}[${row.index}]`,
+                normalize: metric.normalize,
+                format: metric.format,
+                adjust: metric.adjust,
+                inputMode: metric.inputMode,
+                inputProps: metric.inputProps,
+                statusTarget: rowStatus,
+                rootClass: "spelunking-cave-metric",
+                labelClass: "spelunking-cave-metric__label",
             })
         ),
     });

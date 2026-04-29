@@ -1,24 +1,22 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
-import { SpelunkingCavesTab } from "./spelunking/SpelunkingCavesTab.js";
-import { SpelunkingLoreTab } from "./spelunking/SpelunkingLoreTab.js";
-import { SpelunkingShopTab } from "./spelunking/SpelunkingShopTab.js";
+import { CoralKidTab } from "./divinity/CoralKidTab.js";
+import { GodTab } from "./divinity/GodTab.js";
 
 const { div } = van.tags;
 
-const SPELUNKING_SUBTABS = [
-    { id: "caves", label: "CAVES", component: SpelunkingCavesTab },
-    { id: "shop", label: "SHOP", component: SpelunkingShopTab },
-    { id: "lore", label: "LORE", component: SpelunkingLoreTab },
+const DIVINITY_SUBTABS = [
+    { id: "god", label: "GOD", component: GodTab },
+    { id: "coral-kid", label: "CORAL KID", component: CoralKidTab },
 ];
 
-export const SpelunkingTab = () => {
-    const activeSubTab = van.state(SPELUNKING_SUBTABS[0].id);
+export const DivinityTab = () => {
+    const activeSubTab = van.state(DIVINITY_SUBTABS[0].id);
 
     return div(
-        { class: "tab-container spelunking-tab" },
+        { class: "tab-container divinity-tab" },
         renderTabNav({
-            tabs: SPELUNKING_SUBTABS,
+            tabs: DIVINITY_SUBTABS,
             activeId: activeSubTab,
             navClass: "account-nested-sub-nav",
             buttonClass: "account-nested-sub-tab-btn",
@@ -28,11 +26,11 @@ export const SpelunkingTab = () => {
         div(
             { class: "account-nested-sub-content" },
             ...renderLazyPanes({
-                tabs: SPELUNKING_SUBTABS,
+                tabs: DIVINITY_SUBTABS,
                 activeId: activeSubTab,
                 paneClass: "account-nested-pane",
                 activeClass: "account-nested-pane--active",
-                dataAttr: "data-spelunking",
+                dataAttr: "data-divinity",
                 renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
             })
         )

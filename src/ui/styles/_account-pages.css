@@ -645,7 +645,8 @@
     font-weight: 700;
 }
 
-.alchemy-sub-nav {
+.account-nested-sub-nav {
+    flex-wrap: wrap;
     gap: 2px;
     padding: 6px 14px 0;
     border-bottom: 1px solid var(--c-border);
@@ -668,19 +669,19 @@
     cursor: default;
 }
 
-.alchemy-sub-content {
+.account-nested-sub-content {
     flex: 1;
     overflow: hidden;
     position: relative;
 }
 
-.alchemy-pane {
+.account-nested-pane {
     display: none;
     height: 100%;
     overflow-y: auto;
 }
 
-.alchemy-pane--active {
+.account-nested-pane--active {
     display: flex;
     flex-direction: column;
 }

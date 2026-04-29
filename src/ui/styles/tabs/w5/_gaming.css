@@ -1,0 +1,112 @@
+/* W5 Gaming */
+
+.gaming-palette-swatch {
+    border: 1px solid var(--c-border);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 18px;
+    width: 18px;
+}
+
+.gaming-raw-value {
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    max-width: 48ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gaming-palette-hex-panel {
+    align-items: center;
+    background: #111820;
+    display: flex;
+    justify-content: center;
+    min-height: 100%;
+    overflow: auto;
+    padding: 24px 16px 34px;
+}
+
+.gaming-palette-hex-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: max-content;
+}
+
+.gaming-palette-hex-row {
+    display: flex;
+    justify-content: center;
+    margin-top: -8px;
+}
+
+.gaming-palette-hex-row:first-child {
+    margin-top: 0;
+}
+
+.gaming-palette-hex {
+    align-items: center;
+    aspect-ratio: 0.88 / 1;
+    background: var(--hex-bg);
+    border: 2px solid rgba(255, 255, 255, 0.78);
+    clip-path: polygon(50% 0, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    color: var(--hex-fg);
+    display: flex;
+    flex: 0 0 116px;
+    flex-direction: column;
+    font-family: var(--font-primary);
+    justify-content: center;
+    margin: 0 3px;
+    text-align: center;
+    text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.28),
+        0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.gaming-palette-hex__editor {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 74px;
+}
+
+.gaming-palette-hex__editor .number-input-wrapper {
+    width: 74px;
+}
+
+.gaming-palette-hex__editor .number-input-btn {
+    display: none;
+}
+
+.gaming-palette-hex__editor input {
+    font-weight: 900;
+    height: 26px;
+    text-align: center;
+}
+
+.gaming-palette-hex__editor .account-btn {
+    height: 24px;
+    min-width: 54px;
+    padding: 0 8px;
+}
+
+@media (max-width: 900px) {
+    .gaming-palette-hex {
+        flex-basis: 96px;
+    }
+
+    .gaming-palette-hex-row {
+        margin-top: -7px;
+    }
+
+    .gaming-palette-hex__editor {
+        width: 64px;
+    }
+
+    .gaming-palette-hex__editor .number-input-wrapper {
+        width: 64px;
+    }
+}
