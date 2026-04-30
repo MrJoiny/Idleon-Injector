@@ -40,18 +40,18 @@ const AlchemyPanel = () => {
         renderTabNav({
             tabs: ALCHEMY_SUBTABS,
             activeId: active,
-            navClass: "alchemy-sub-nav",
+            navClass: "account-nested-sub-nav",
             buttonClass: "account-nested-sub-tab-btn",
             stubClass: "account-nested-sub-tab-btn--stub",
             isStub: (tab) => !tab.component,
         }),
         div(
-            { class: "alchemy-sub-content" },
+            { class: "account-nested-sub-content" },
             ...renderLazyPanes({
                 tabs: ALCHEMY_SUBTABS,
                 activeId: active,
-                paneClass: "alchemy-pane",
-                activeClass: "alchemy-pane--active",
+                paneClass: "account-nested-pane",
+                activeClass: "account-nested-pane--active",
                 dataAttr: "data-alchemy",
                 renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
             })

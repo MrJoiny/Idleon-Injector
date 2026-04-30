@@ -1,23 +1,13 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
+import { SimpleNumberRow } from "../SimpleNumberRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import {
-    adjustFormattedIntInput,
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    largeFormatter,
-    largeParser,
-    resolveFormattedIntInput,
-    toInt,
-    writeVerified,
-} from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -43,24 +33,15 @@ const ZenithRow = ({ entry, levelState }) =>
     });
 
 const ZenithClustersRow = ({ valueState }) =>
-    EditableNumberRow({
-        valueState,
-        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, { min: 0 }),
-        write: async (nextValue) => writeVerified(ZENITH_CLUSTERS_PATH, nextValue),
-        renderInfo: () => [
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, "Zenith Clusters")
-            ),
-        ],
-        renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
-        adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
-        controlsClass: "account-row__controls--xl",
-        inputProps: {
-            formatter: largeFormatter,
-            parser: largeParser,
+    SimpleNumberRow({
+        entry: {
+            name: "Zenith Clusters",
+            path: ZENITH_CLUSTERS_PATH,
+            formatted: true,
+            showIndex: false,
+            controlsClass: "account-row__controls--xl",
         },
+        valueState,
     });
 
 export const ZenithTab = () => {

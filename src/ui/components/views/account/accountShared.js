@@ -137,11 +137,18 @@ export const largeParser = (display) => {
 export const cleanName = (raw, fallback = "", { stripMarker = false } = {}) => {
     const base = String(raw ?? fallback);
     const normalized = stripMarker ? base.replace(/製.*$/, "") : base;
-    return normalized.replace(/_/g, " ").trim();
+    return normalized.replace(/[|_]/g, " ").trim();
 };
 
 export const cleanNameEffect = (raw, fallback = "") =>
-    cleanName(String(raw ?? fallback).replace(/^\+\{[%\s]*/, ""), fallback);
+    cleanName(
+        String(raw ?? fallback)
+            .replace(/^\+\{[%\s]*/, "")
+            .replace(/\}x[|_\s]*/g, "")
+            .replace(/[@$_^{}]/g, " ")
+            .replace(/\s+/g, " "),
+        fallback
+    );
 
 /**
  * Read GGA levels plus a definition table and map both by index.

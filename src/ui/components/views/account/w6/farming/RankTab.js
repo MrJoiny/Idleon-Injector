@@ -2,18 +2,11 @@ import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readComputed } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
 import { ClampedLevelRow } from "../../ClampedLevelRow.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    resolveNumberInput,
-    toInt,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -29,18 +22,17 @@ const getRankStyle = (index) => {
 };
 
 const UnboundedRankRow = ({ entry, levelState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry: {
+            ...entry,
+            path: `${FARM_RANK_DATABASE_PATH}[${entry.index}]`,
+            formatted: false,
+            showIndex: false,
+            badge: (currentValue) => `LV ${currentValue ?? 0}`,
+            rowClass: "farming-grid-field-row",
+            controlsClass: "account-row__controls--xl",
+        },
         valueState: levelState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextLevel) => writeVerified(`${FARM_RANK_DATABASE_PATH}[${entry.index}]`, nextLevel),
-        renderInfo: () => span({ class: "account-row__name" }, entry.name),
-        renderBadge: (currentValue) => `LV ${currentValue ?? 0}`,
-        rowClass: "farming-grid-field-row",
-        controlsClass: "account-row__controls--xl",
     });
 
 const RankLevelRow = ({ entry, levelState }) => {

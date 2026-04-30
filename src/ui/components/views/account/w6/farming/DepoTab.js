@@ -1,24 +1,19 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 import {
-    adjustFormattedIntInput,
     cleanName,
     createIndexedStateGetter,
     createStaticRowReconciler,
-    largeFormatter,
-    largeParser,
-    resolveNumberInput,
     toInt,
-    writeVerified,
 } from "../../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const CROP_DEPO_PATH = "FarmCrop.h";
 
@@ -34,30 +29,9 @@ const buildSeedRanges = (rawSeedInfo) =>
     });
 
 const CropAmountRow = ({ entry, amountState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: amountState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                formatted: true,
-                float: true,
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextAmount) => writeVerified(`${CROP_DEPO_PATH}[${entry.index}]`, nextAmount),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
-        inputMode: "float",
-        inputProps: {
-            formatter: largeFormatter,
-            parser: largeParser,
-        },
-        adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
     });
 
 const getCropAmount = (rawCropDepo, index) => {
@@ -73,7 +47,9 @@ const buildSeedSections = (rawCropDepo, rawSeedInfo) =>
             return {
                 index,
                 name: `${seed.name} ${offset + 1}`,
+                path: `${CROP_DEPO_PATH}[${index}]`,
                 amount: getCropAmount(rawCropDepo, index),
+                float: true,
             };
         }),
     }));

@@ -1,7 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableNumberRow } from "../../EditableNumberRow.js";
+import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
@@ -10,31 +10,17 @@ import {
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    resolveNumberInput,
     toInt,
-    writeVerified,
 } from "../../accountShared.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const STICKER_PATH = "Research[9]";
 
 const StickerRow = ({ entry, amountState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry,
         valueState: amountState,
-        normalize: (rawValue) =>
-            resolveNumberInput(rawValue, {
-                min: 0,
-                fallback: null,
-            }),
-        write: (nextAmount) => writeVerified(`${STICKER_PATH}[${entry.index}]`, nextAmount),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${entry.index}`),
-            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
-        ],
-        renderBadge: (currentValue) => `AMT ${currentValue ?? 0}`,
-        rowClass: "account-row--wide-controls",
-        controlsClass: "account-row__controls--xl",
     });
 
 const buildStickerEntries = (rawNames, rawAmounts) => {
@@ -47,9 +33,12 @@ const buildStickerEntries = (rawNames, rawAmounts) => {
 
             return {
                 index,
+                path: `${STICKER_PATH}[${index}]`,
                 rawName: name,
                 name: cleanName(name, `Sticker ${index + 1}`),
                 amount: toInt(amounts[index], { min: 0 }),
+                badge: (currentValue) => `AMT ${currentValue ?? 0}`,
+                formatted: false,
             };
         })
         .filter(Boolean);

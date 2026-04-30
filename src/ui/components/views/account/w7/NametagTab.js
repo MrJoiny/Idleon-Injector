@@ -4,11 +4,11 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountSection } from "../components/AccountSection.js";
-import { EditableNumberRow } from "../EditableNumberRow.js";
-import { cleanName, createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
+import { SimpleNumberRow } from "../SimpleNumberRow.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, span } = van.tags;
+const { div } = van.tags;
 
 const NAMETAG_COUNTS_PATH = "Spelunk[17]";
 const ITEM_DEFS_PATH = "ItemDefinitionsGET.h";
@@ -34,20 +34,16 @@ const buildNametagCatalog = (rawItemDefs) =>
         .sort((a, b) => a.nametagNumber - b.nametagNumber);
 
 const NametagRow = ({ row, amountState }) =>
-    EditableNumberRow({
+    SimpleNumberRow({
+        entry: {
+            ...row,
+            index: row.nametagNumber,
+            path: `${NAMETAG_COUNTS_PATH}[${row.nametagNumber}]`,
+            subLabel: row.itemId,
+            formatted: false,
+            badge: (currentValue) => String(currentValue),
+        },
         valueState: amountState,
-        normalize: (raw) => toInt(raw, { min: 0 }),
-        write: async (nextAmount) => writeVerified(`${NAMETAG_COUNTS_PATH}[${row.nametagNumber}]`, nextAmount),
-        renderInfo: () => [
-            span({ class: "account-row__index" }, `#${row.nametagNumber}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, row.name),
-                span({ class: "account-row__sub-label" }, row.itemId)
-            ),
-        ],
-        renderBadge: (currentValue) => String(currentValue),
-        adjustInput: (rawValue, delta, currentValue) => Math.max(0, toInt(rawValue, currentValue) + delta),
     });
 
 export const NametagTab = () => {
