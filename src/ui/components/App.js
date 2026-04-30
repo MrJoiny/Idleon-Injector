@@ -13,7 +13,7 @@ import { DevTools } from "./views/DevTools.js";
 import { Search } from "./views/Search.js";
 import { Monitor } from "./views/Monitor.js";
 
-const { div, main, header, h2 } = van.tags;
+const { div, main } = van.tags;
 
 const viewFactories = {
     [VIEWS.CHEATS.id]: Cheats,
@@ -23,11 +23,6 @@ const viewFactories = {
     [VIEWS.SEARCH.id]: Search,
     [VIEWS.MONITOR.id]: Monitor,
 };
-
-const viewLabels = Object.values(VIEWS).reduce((acc, v) => {
-    acc[v.id] = v.label;
-    return acc;
-}, {});
 
 export const App = () => {
     store.initHeartbeat();
@@ -101,14 +96,7 @@ export const App = () => {
     return div(
         { class: "app-layout" },
         Sidebar(),
-        main(
-            { class: "viewport" },
-            header(
-                { class: "viewport-header" },
-                h2({ id: "active-view-title" }, () => viewLabels[store.app.activeTab] || "MODULE")
-            ),
-            tabContent
-        ),
+        main({ class: "viewport" }, tabContent),
         Toast(),
         TooltipContainer()
     );

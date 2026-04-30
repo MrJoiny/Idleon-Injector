@@ -1,28 +1,32 @@
-/* ── Refinery tab ────────────────────────────────────────────────────────── */
-
-.refinery-row--polymer {
-    border-left: 3px solid var(--c-refinery-polymer);
+.refinery-grid {
+    align-items: start;
 }
 
-.refinery-row--placeholder {
-    opacity: 0.5;
-    border-left: 3px solid var(--c-warning);
-}
-
-.refinery-row__name-group {
+.refinery-col {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 10px;
     min-width: 0;
 }
 
-.refinery-row__badges {
+.refinery-section--polymer {
+    border-left: 3px solid var(--c-refinery-polymer);
+}
+
+.refinery-section--placeholder {
+    background: color-mix(in srgb, var(--c-warning) 8%, var(--c-panel));
+    border-left: 3px solid var(--c-warning);
+    color: var(--c-text-muted);
+}
+
+.refinery-section__badges {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
 }
 
 .refinery-badge {
-    font-size: 0.6rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
@@ -36,50 +40,4 @@
 
 .refinery-badge--placeholder {
     color: var(--c-warning);
-}
-
-/* Stacked level + charge controls */
-.refinery-control-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.refinery-control-label {
-    font-size: 0.7rem;
-    color: var(--c-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    width: 52px;
-    text-align: right;
-}
-
-/* Notices at top of refinery tab */
-.refinery-notice {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    font-size: 0.75rem;
-    color: var(--c-text-muted);
-    border-bottom: 1px solid var(--c-border);
-    flex-shrink: 0;
-}
-
-.refinery-notice--polymer {
-    background: var(--c-refinery-polymer-06);
-}
-
-.refinery-notice--placeholder {
-    background: var(--c-accent-06);
-}
-
-.refinery-notice__icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.refinery-notice__highlight {
-    font-weight: 700;
-    color: var(--c-accent);
 }

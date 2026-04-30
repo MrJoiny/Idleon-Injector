@@ -1,12 +1,12 @@
-﻿/**
+/**
  * Upgrade Vault Tab
  *
  * Reads/writes gga.UpgVault[index] for all vault upgrades.
  *
  * Data sources:
- *   cList.UpgradeVault[i][0] = name (underscores + è£½ stripped)
+ *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
  *   cList.UpgradeVault[i][4] = base max level (soft cap)
- *   VaultUpgMaxLV via readComputed("summoning", "VaultUpgMaxLV", [i, 0])
+ *   VaultUpgMaxLV via readComputedMany("summoning", "VaultUpgMaxLV", [[i, 0], ...])
  *                 = real max level (includes Glimbo trade bonuses)
  *   gga.BundlesReceived.h.bon_u
  *                 = Pot Of Gold bundle flag (0 or 1) for +0/+10 max bonus
@@ -16,225 +16,113 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga, readComputed, readCList } from "../../../services/api.js";
-import { NumberInput } from "../../NumberInput.js";
-import { Loader } from "../../Loader.js";
-import { EmptyState } from "../../EmptyState.js";
-import { Icons } from "../../../assets/icons.js";
+import { gga, readComputedMany } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
-import { cleanName, toNum, useWriteStatus } from "./featureShared.js";
+import { ClampedLevelRow } from "./ClampedLevelRow.js";
+import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
+import { useAccountLoad } from "./accountLoadPolicy.js";
+import { cleanName, createIndexedStateGetter, readLevelDefinitions, toNum } from "./accountShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div } = van.tags;
 
-// ── VaultRow ──────────────────────────────────────────────────────────────
-
-const VaultRow = ({ index, name, baseMax, realMax, initialLevel }) => {
-    const inputVal = van.state(String(initialLevel ?? 0));
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const { status, run } = useWriteStatus();
-
-    const doSet = async (targetVal) => {
-        const lvl = Math.max(0, Number(targetVal));
-        if (isNaN(lvl)) return;
-        await run(async () => {
-            const path = `UpgVault[${index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}`);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-        });
-    };
-
+const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
 
-    return div(
-        {
-            class: () =>
-                `feature-row ${status.val === "success" ? "feature-row--success" : ""} ${
-                    status.val === "error" ? "feature-row--error" : ""
-                }`,
+    return ClampedLevelRow({
+        valueState: levelState,
+        writePath: `UpgVault[${index}]`,
+        max: Infinity,
+        indexLabel: `#${index}`,
+        name,
+        renderBadge: (currentValue) => `LV ${currentValue ?? 0} / ${realMax}`,
+        wrapApplyButton: (applyButton) => withTooltip(applyButton, `Set level for ${name} (max: ${maxLabel})`),
+        maxAction: {
+            value: realMax,
+            tooltip: `Set to max level (${maxLabel})`,
         },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__name" }, name),
-            span({ class: "feature-row__index" }, `#${index}`)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${realMax}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Number(inputVal.val) + 1)),
-            }),
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: () => doSet(inputVal.val),
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                `Set level for ${name} (max: ${maxLabel})`
-            ),
-            withTooltip(
-                button(
-                    {
-                        class: "feature-btn feature-btn--apply",
-                        onclick: () => doSet(realMax),
-                        disabled: () => status.val === "loading",
-                    },
-                    "MAX"
-                ),
-                `Set to max level (${maxLabel})`
-            )
-        )
-    );
+    });
 };
 
-// ── UpgradeVaultTab ───────────────────────────────────────────────────────
-
 export const UpgradeVaultTab = () => {
-    const data = van.state(null); // { upgrades: [{name, baseMax, realMax}], levels: [] }
-    const loading = van.state(false);
-    const error = van.state(null);
+    const data = van.state(null);
+    const { loading, error, run } = useAccountLoad({ label: "Upgrade Vault" });
+    const getLevelState = createIndexedStateGetter();
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
-            const toArr = (raw) =>
-                Array.isArray(raw)
-                    ? raw
-                    : Object.keys(raw)
-                          .sort((a, b) => Number(a) - Number(b))
-                          .map((k) => raw[k]);
-
-            const [rawInfo, rawLevels, rawBonU] = await Promise.all([
-                readCList("UpgradeVault"),
-                gga("UpgVault"),
-                gga("BundlesReceived.h.bon_u").catch(() => 0),
+    const load = async () =>
+        run(async () => {
+            const [upgradeRows, rawBonU] = await Promise.all([
+                readLevelDefinitions({
+                    levelsPath: "UpgVault",
+                    definitionsPath: "UpgradeVault",
+                    mapEntry: ({ definition, rawLevel, index }) => {
+                        const name = cleanName(definition[0], "", { stripMarker: true });
+                        const baseMax = toNum(definition[4]);
+                        if (!name || baseMax <= 0) return null;
+                        return { index, name, baseMax, level: toNum(rawLevel) };
+                    },
+                }),
+                gga("BundlesReceived.h.bon_u"),
             ]);
             const bonU = Number(rawBonU);
             const bundleBonus = bonU === 1 ? 10 : 0;
 
-            const info = toArr(rawInfo ?? []);
-            const levels = toArr(rawLevels ?? []);
+            const argSets = upgradeRows.map((upgrade) => [upgrade.index, 0]);
+            const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
 
-            // Probe whether the summoning computed namespace is available (requires injector restart
-            // after the summoning namespace was added to stateAccessors). If the probe succeeds,
-            // fetch real max levels for all upgrades; otherwise fall back to baseMax for all.
-            let useComputed = false;
-            try {
-                await readComputed("summoning", "VaultUpgMaxLV", [0, 0]);
-                useComputed = true;
-            } catch {
-                // Summoning namespace unavailable — injector restart required, silently use baseMax
-            }
+            const realMaxes = computedResults.map((item, i) => {
+                if (!item?.ok) {
+                    throw new Error(`VaultUpgMaxLV failed for upgrade ${upgradeRows[i].index}`);
+                }
+                const value = toNum(item.value);
+                return value > 0 ? value : 0;
+            });
 
-            const realMaxes = useComputed
-                ? await Promise.all(
-                      info.map(async (_, i) => {
-                          try {
-                              const v = toNum(await readComputed("summoning", "VaultUpgMaxLV", [i, 0]));
-                              return v > 0 ? v : null;
-                          } catch {
-                              return null;
-                          }
-                      })
-                  )
-                : info.map(() => null);
+            const upgrades = upgradeRows.map((upgrade, i) => ({
+                index: upgrade.index,
+                name: upgrade.name,
+                baseMax: upgrade.baseMax,
+                level: upgrade.level,
+                realMax: realMaxes[i] + bundleBonus,
+            }));
 
-            const upgrades = info
-                .map((entry, i) => {
-                    const name = cleanName(entry?.[0], "", { stripMarker: true });
-                    if (!name) return null;
-                    const baseMax = toNum(entry?.[4]);
-                    if (baseMax <= 0) return null;
-                    const computedMax = realMaxes[i] ?? baseMax;
-                    const realMax = computedMax + bundleBonus;
-                    return { index: i, name, baseMax, realMax };
-                })
-                .filter(Boolean);
+            upgrades.forEach((upgrade) => {
+                getLevelState(upgrade.index).val = upgrade.level;
+            });
 
-            data.val = { upgrades, levels };
-        } catch (e) {
-            error.val = e.message || "Failed to read Upgrade Vault data";
-        } finally {
-            loading.val = false;
-        }
-    };
+            data.val = { upgrades };
+        });
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("UPGRADE VAULT"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Set levels for all vault upgrades — real max includes Glimbo trade bonuses and Pot Of Gold bundle bonus"
-                )
-            ),
-            withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read vault levels from game memory"
+    const renderBody = (resolved) => {
+        return div(
+            { class: "account-list" },
+            ...resolved.upgrades.map((upgrade) =>
+                VaultRow({
+                    index: upgrade.index,
+                    name: upgrade.name,
+                    baseMax: upgrade.baseMax,
+                    realMax: upgrade.realMax,
+                    levelState: getLevelState(upgrade.index),
+                })
             )
-        ),
+        );
+    };
 
-        div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+    return PersistentAccountListPage({
+        title: "UPGRADE VAULT",
+        description:
+            "Set levels for all vault upgrades. Real max includes Glimbo trade bonuses and the Pot Of Gold bundle bonus.",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read vault levels from game memory",
+        }),
+        topNotices: WarningBanner(
             " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
-                "SET accepts any value ≥ 0 — no hard upper limit enforced."
+                "SET accepts any value >= 0; no hard upper limit is enforced."
         ),
-
-        () => {
-            if (loading.val)
-                return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING VAULT" }))
-                );
-
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "VAULT READ FAILED", subtitle: error.val })
-                );
-
-            if (!data.val) return div({ class: "feature-list" });
-
-            const { upgrades, levels } = data.val;
-
-            if (!upgrades.length)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO VAULT DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    })
-                );
-
-            return div(
-                { class: "feature-list" },
-                ...upgrades.map((u) =>
-                    VaultRow({
-                        index: u.index,
-                        name: u.name,
-                        baseMax: u.baseMax,
-                        realMax: u.realMax,
-                        initialLevel: levels?.[u.index] ?? 0,
-                    })
-                )
-            );
-        }
-    );
+        state: { loading, error },
+        body: () => (data.val ? renderBody(data.val) : null),
+    });
 };

@@ -1,9 +1,8 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { Icons } from "../../../assets/icons.js";
+import { joinClasses, toNodes } from "./accountShared.js";
 
-const { div, button, span, h2, p } = van.tags;
-
-const joinClasses = (...parts) => parts.filter(Boolean).join(" ");
+const { div, button, span, p } = van.tags;
 
 export const createComingSoonPlaceholder = (label) =>
     div(
@@ -20,21 +19,26 @@ export const renderTabNav = ({
     activeClass = "active",
     stubClass = null,
     isStub = () => false,
+    renderLabel = (tab) => tab.label,
+    getButtonProps = null,
 }) =>
     div(
-        { class: navClass },
+        { class: joinClasses("account-sub-nav", navClass) },
         ...tabs.map((tab) =>
             button(
                 {
+                    ...(typeof getButtonProps === "function" ? getButtonProps(tab) : {}),
+                    // class and onclick are owned by renderTabNav so active-state wiring stays consistent.
                     class: () =>
                         joinClasses(
-                            buttonClass,
+                            "account-sub-tab-btn",
+                            typeof buttonClass === "function" ? buttonClass(tab) : buttonClass,
                             activeId.val === tab.id && activeClass,
                             stubClass && isStub(tab) && stubClass
                         ),
                     onclick: () => (activeId.val = tab.id),
                 },
-                tab.label
+                renderLabel(tab)
             )
         )
     );
@@ -64,32 +68,42 @@ export const renderLazyPanes = ({
         return pane;
     });
 
-export const renderWorldHeader = ({ badge, title, subtitle }) =>
-    div(
-        { class: "world-tab-header" },
-        span({ class: "world-tab-badge" }, badge),
+/**
+ * Render all pane bodies immediately and keep them mounted.
+ * `renderContent` is called eagerly for every tab when the parent mounts.
+ */
+export const renderPersistentPagePanes = ({
+    tabs,
+    activeId,
+    paneClass = "account-page-pane",
+    hiddenClass = "account-page-pane--hidden",
+    dataAttr = "data-tab",
+    renderContent = null,
+}) =>
+    tabs.map((tab, index) =>
         div(
-            { class: "world-tab-title-group" },
-            h2({ class: "world-tab-title" }, title),
-            p({ class: "world-tab-subtitle" }, subtitle)
+            {
+                class: () => joinClasses(paneClass, activeId.val !== tab.id && hiddenClass),
+                [dataAttr]: tab.id,
+            },
+            ...toNodes(typeof renderContent === "function" ? renderContent(tab, index) : null)
         )
     );
 
 export const createWorldComingSoonTab =
-    ({ worldClass, badge, title, subtitle, worldKey }) =>
+    ({ worldClass, worldKey }) =>
     () => {
         const tabs = [{ id: "coming-soon", label: "COMING SOON" }];
         const activeSubTab = van.state(tabs[0].id);
 
         return div(
             { class: joinClasses("world-tab", worldClass) },
-            renderWorldHeader({ badge, title, subtitle }),
             renderTabNav({
                 tabs,
                 activeId: activeSubTab,
                 navClass: "world-sub-nav",
-                buttonClass: "world-sub-tab-btn",
-                stubClass: "world-sub-tab-btn--stub",
+                buttonClass: "account-world-sub-tab-btn",
+                stubClass: "account-world-sub-tab-btn--stub",
                 isStub: () => true,
             }),
             div(

@@ -12,7 +12,7 @@ import { ArcadeTab } from "./w2/ArcadeTab.js";
 import { PostOfficeTab } from "./w2/PostOfficeTab.js";
 import { KillroyTab } from "./w2/KillroyTab.js";
 import { PoppyTab } from "./w2/PoppyTab.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav, renderWorldHeader } from "./tabShared.js";
+import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
@@ -41,8 +41,8 @@ const AlchemyPanel = () => {
             tabs: ALCHEMY_SUBTABS,
             activeId: active,
             navClass: "alchemy-sub-nav",
-            buttonClass: "alchemy-sub-btn",
-            stubClass: "alchemy-sub-btn--stub",
+            buttonClass: "account-nested-sub-tab-btn",
+            stubClass: "account-nested-sub-tab-btn--stub",
             isStub: (tab) => !tab.component,
         }),
         div(
@@ -64,20 +64,12 @@ export const W2Tab = () => {
 
     return div(
         { class: "world-tab w2-world-tab" },
-        renderWorldHeader({
-            badge: "W2",
-            title: () => {
-                const cur = W2_SUBTABS.find((tab) => tab.id === activeSubTab.val);
-                return `W2 — ${cur?.label ?? ""}`;
-            },
-            subtitle: "Yum-Yum Desert — Alchemy, Arcade, Post Office, Killroy & Poppy",
-        }),
         renderTabNav({
             tabs: W2_SUBTABS,
             activeId: activeSubTab,
             navClass: "world-sub-nav",
-            buttonClass: "world-sub-tab-btn",
-            stubClass: "world-sub-tab-btn--stub",
+            buttonClass: "account-world-sub-tab-btn",
+            stubClass: "account-world-sub-tab-btn--stub",
             isStub: (tab) => !tab.component && tab.id !== "alchemy",
         }),
         div(

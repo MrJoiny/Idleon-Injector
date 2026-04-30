@@ -1,10 +1,10 @@
 /**
  * Number formatting utility — matches IdleOn's display style.
  *
- * Thresholds:
+ * Thresholds (3 significant digits):
  *   < 1,000          → raw (e.g. 42)
  *   < 1e6            → K   (e.g. 4.32K)
- *   < 1e9            → M   (e.g. 123.4M)
+ *   < 1e9            → M   (e.g. 123M)
  *   < 1e12           → B   (e.g. 1.23B)
  *   < 1e15           → T   (e.g. 4.56T)
  *   < 1e18           → Q   (quadrillion)
@@ -18,13 +18,13 @@ export function formatNumber(value) {
     if (n < 0) return "-" + formatNumber(-n);
 
     if (n < 1_000) return n % 1 === 0 ? String(n) : n.toFixed(2);
-    if (n < 1e6) return (n / 1e3).toPrecision(4).replace(/\.?0+$/, "") + "K";
-    if (n < 1e9) return (n / 1e6).toPrecision(4).replace(/\.?0+$/, "") + "M";
-    if (n < 1e12) return (n / 1e9).toPrecision(4).replace(/\.?0+$/, "") + "B";
-    if (n < 1e15) return (n / 1e12).toPrecision(4).replace(/\.?0+$/, "") + "T";
-    if (n < 1e18) return (n / 1e15).toPrecision(4).replace(/\.?0+$/, "") + "Q";
-    if (n < 1e21) return (n / 1e18).toPrecision(4).replace(/\.?0+$/, "") + "QQ";
-    if (n < 1e24) return (n / 1e21).toPrecision(4).replace(/\.?0+$/, "") + "QQQ";
+    if (n < 1e6) return (n / 1e3).toPrecision(3).replace(/\.?0+$/, "") + "K";
+    if (n < 1e9) return (n / 1e6).toPrecision(3).replace(/\.?0+$/, "") + "M";
+    if (n < 1e12) return (n / 1e9).toPrecision(3).replace(/\.?0+$/, "") + "B";
+    if (n < 1e15) return (n / 1e12).toPrecision(3).replace(/\.?0+$/, "") + "T";
+    if (n < 1e18) return (n / 1e15).toPrecision(3).replace(/\.?0+$/, "") + "Q";
+    if (n < 1e21) return (n / 1e18).toPrecision(3).replace(/\.?0+$/, "") + "QQ";
+    if (n < 1e24) return (n / 1e21).toPrecision(3).replace(/\.?0+$/, "") + "QQQ";
 
     // 1.31E27 style
     const expStr = n.toExponential(2).toUpperCase().replace("E+", "E");
@@ -76,4 +76,21 @@ export function parseNumber(str) {
     }
 
     return null;
+}
+
+const FORMATTED_PRECISION = 3;
+
+/**
+ * Compute a meaningful +/− step for a number displayed by `formatNumber`.
+ * Returns the value of the least significant displayed digit so that
+ * pressing +/− always produces a visible change in the formatted output.
+ *
+ * @param {number} value
+ * @returns {number}
+ */
+export function formattedStep(value) {
+    const n = Math.abs(Number(value));
+    if (!isFinite(n) || n < 1000) return 1;
+    const exp = Math.floor(Math.log10(n));
+    return Math.pow(10, exp - (FORMATTED_PRECISION - 1));
 }

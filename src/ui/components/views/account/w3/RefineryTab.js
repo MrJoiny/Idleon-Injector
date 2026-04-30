@@ -1,259 +1,167 @@
 /**
- * W3 — Refinery Tab
+ * W3 - Refinery Tab
  *
  * Data sources:
- *   gga.Refinery[3..11][0]  — current charge (salt stored)
- *   gga.Refinery[3..11][1]  — level
- *   gga.ItemDefinitionsGET.h.Refinery1..9.h.displayName — refinery names
+ *   gga.Refinery[3..11][0]                    - current charge (salt stored)
+ *   gga.Refinery[3..11][1]                    - level
+ *   gga.ItemDefinitionsGET.h.Refinery1..9.h.displayName - refinery names
  *
  * Notes:
- *   - Refineries 7–9 require the "Polymer Refinery" research to be unlocked in-game.
- *   - Refinery 9 (gga.Refinery[11]) is a placeholder — not yet implemented in the game.
+ *   - Refineries 7-9 require the "Polymer Refinery" research to be unlocked in-game.
+ *   - Refinery 9 (gga.Refinery[11]) is a placeholder and has no in-game effect yet.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
+import { readGgaEntries } from "../../../../services/api.js";
 import { Icons } from "../../../../assets/icons.js";
-import { useWriteStatus } from "../featureShared.js";
+import { EditableNumberRow } from "../EditableNumberRow.js";
+import { AccountSection } from "../components/AccountSection.js";
+import { NoticeBanner, RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import { cleanName, readLevelDefinitions, toNum, writeVerified } from "../accountShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div, span } = van.tags;
 
 const REFINERY_COUNT = 9;
-const REFINERY_OFFSET = 3; // gga.Refinery[3] = first refinery
-
-// Indices 6–8 (game indices 9–11) require Polymer Refinery research
+const REFINERY_OFFSET = 3;
 const POLYMER_LOCK_FROM = 6;
-// Index 8 is a placeholder not yet in-game
 const PLACEHOLDER_INDEX = 8;
 
-// ── RefineryRow ────────────────────────────────────────────────────────────
+const RefineryValueRow = ({ label, badgePrefix, fieldIndex, gameIndex, valueState }) =>
+    EditableNumberRow({
+        valueState,
+        normalize: (rawValue) => {
+            const nextValue = Math.max(0, Math.round(Number(rawValue)));
+            return Number.isNaN(nextValue) ? null : nextValue;
+        },
+        write: async (nextValue) => {
+            const path = `Refinery[${gameIndex}][${fieldIndex}]`;
+            await writeVerified(path, nextValue);
+            return nextValue;
+        },
+        renderInfo: () => span({ class: "account-row__name" }, label),
+        renderBadge: (currentValue) => `${badgePrefix} ${currentValue ?? 0}`,
+        controlsClass: "account-row__controls--xl",
+    });
 
-const RefineryRow = ({ refIndex, name, levelState, chargeState }) => {
+const RefinerySection = ({ refIndex, name, levelState, chargeState }) => {
     const gameIndex = refIndex + REFINERY_OFFSET;
     const isPolymer = refIndex >= POLYMER_LOCK_FROM;
     const isPlaceholder = refIndex === PLACEHOLDER_INDEX;
+    const badges = [
+        isPolymer ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER") : null,
+        isPlaceholder
+            ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME")
+            : null,
+    ].filter(Boolean);
 
-    const levelInput = van.state("0");
-    const chargeInput = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        levelInput.val = String(levelState.val ?? 0);
-        chargeInput.val = String(chargeState.val ?? 0);
+    return AccountSection({
+        title: typeof name === "function" ? () => `#${refIndex + 1} ${name()}` : `#${refIndex + 1} ${name}`,
+        meta: badges.length ? div({ class: "refinery-section__badges" }, ...badges) : null,
+        rootClass: [
+            "refinery-section",
+            isPolymer ? "refinery-section--polymer" : "",
+            isPlaceholder ? "refinery-section--placeholder" : "",
+        ]
+            .filter(Boolean)
+            .join(" "),
+        body: [
+            RefineryValueRow({
+                label: "LEVEL",
+                badgePrefix: "LV",
+                fieldIndex: 1,
+                gameIndex,
+                valueState: levelState,
+            }),
+            RefineryValueRow({
+                label: "CHARGE",
+                badgePrefix: "CHARGE",
+                fieldIndex: 0,
+                gameIndex,
+                valueState: chargeState,
+            }),
+        ],
     });
+};
 
-    const doSet = async (field, val) => {
-        const n = Math.max(0, Math.round(Number(val)));
-        if (isNaN(n)) return;
-        await run(async () => {
-            const path = `Refinery[${gameIndex}][${field}]`;
-            const ok = await gga(path, n);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${n}, got failed verification`);
-            if (field === 1) {
-                levelState.val = n;
-            } else {
-                chargeState.val = n;
-            }
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row refinery-row",
-                    isPolymer ? "refinery-row--polymer" : "",
-                    isPlaceholder ? "refinery-row--placeholder" : "",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-
-        // Left: index + name + badges
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, refIndex + 1),
+export const RefineryTab = () => {
+    const { loading, error, run } = useAccountLoad({ label: "Refinery" });
+    const nameStates = Array.from({ length: REFINERY_COUNT }, (_, i) => van.state(`Refinery ${i + 1}`));
+    const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
+    const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
+    const sectionsPerColumn = Math.ceil(REFINERY_COUNT / 3);
+    const grid = div(
+        { class: "refinery-grid grid-3col" },
+        ...Array.from({ length: 3 }, (_, columnIndex) =>
             div(
-                { class: "refinery-row__name-group" },
-                span({ class: "feature-row__name" }, name),
-                div(
-                    { class: "refinery-row__badges" },
-                    isPolymer
-                        ? span({ class: "refinery-badge refinery-badge--polymer" }, Icons.Wrench(), " POLYMER")
-                        : null,
-                    isPlaceholder
-                        ? span({ class: "refinery-badge refinery-badge--placeholder" }, Icons.Warning(), " NOT IN GAME")
-                        : null
-                )
-            )
-        ),
-
-        // Centre: current level
-        span({ class: "feature-row__badge" }, () => `LV ${levelState.val ?? 0}`),
-
-        // Right: level + charge controls
-        div(
-            { class: "feature-row__controls feature-row__controls--stack" },
-
-            div(
-                { class: "refinery-control-row" },
-                span({ class: "refinery-control-label" }, "Level"),
-                NumberInput({
-                    mode: "int",
-                    value: levelInput,
-                    oninput: (e) => (levelInput.val = e.target.value),
-                    onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
-                    onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
-                }),
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSet(1, levelInput.val);
-                        },
-                    },
-                    () => (status.val === "loading" ? "…" : "SET")
-                )
-            ),
-
-            div(
-                { class: "refinery-control-row" },
-                span({ class: "refinery-control-label" }, "Charge"),
-                NumberInput({
-                    mode: "int",
-                    value: chargeInput,
-                    oninput: (e) => (chargeInput.val = e.target.value),
-                    onDecrement: () => (chargeInput.val = String(Math.max(0, Number(chargeInput.val) - 1))),
-                    onIncrement: () => (chargeInput.val = String(Number(chargeInput.val) + 1)),
-                }),
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        disabled: () => status.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSet(0, chargeInput.val);
-                        },
-                    },
-                    () => (status.val === "loading" ? "…" : "SET")
-                )
+                { class: "refinery-col" },
+                ...Array.from({ length: sectionsPerColumn }, (_, offset) => {
+                    const index = columnIndex * sectionsPerColumn + offset;
+                    if (index >= REFINERY_COUNT) return null;
+                    return RefinerySection({
+                        refIndex: index,
+                        name: () => nameStates[index].val,
+                        levelState: levelStates[index],
+                        chargeState: chargeStates[index],
+                    });
+                }).filter(Boolean)
             )
         )
     );
-};
+    const body = div({ class: "scrollable-panel" }, grid);
 
-// ── RefineryTab ────────────────────────────────────────────────────────────
-
-export const RefineryTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
-    const levelStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
-    const chargeStates = Array.from({ length: REFINERY_COUNT }, () => van.state(0));
-
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const load = async () =>
+        run(async () => {
             const refineryKeys = Array.from({ length: REFINERY_COUNT }, (_, i) => `Refinery${i + 1}`);
-            const [raw, nameEntries] = await Promise.all([
-                gga("Refinery"),
-                readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
-            ]);
-
-            const names = refineryKeys.map((k, i) => {
-                const entry = nameEntries[k];
-                return entry?.displayName ?? `Refinery ${i + 1}`;
+            const refineries = await readLevelDefinitions({
+                levelsPath: "Refinery",
+                readDefinitions: () => readGgaEntries("ItemDefinitionsGET.h", refineryKeys, ["displayName"]),
+                selectLevels: (_, levels) => levels.slice(REFINERY_OFFSET, REFINERY_OFFSET + REFINERY_COUNT),
+                selectDefinitions: (nameEntries) => refineryKeys.map((key) => nameEntries[key]),
+                mapEntry: ({ rawDefinition, rawLevel, index }) => ({
+                    name: cleanName(rawDefinition?.displayName, `Refinery ${index + 1}`),
+                    charge: toNum(rawLevel?.[0]),
+                    level: toNum(rawLevel?.[1]),
+                }),
             });
 
-            const levels = [];
-            const charges = [];
             for (let i = 0; i < REFINERY_COUNT; i++) {
-                const entry = (raw ?? [])[i + REFINERY_OFFSET] ?? [];
-                charges.push(entry[0] ?? 0);
-                levels.push(entry[1] ?? 0);
+                nameStates[i].val = refineries[i].name;
+                chargeStates[i].val = refineries[i].charge;
+                levelStates[i].val = refineries[i].level;
             }
-
-            for (let i = 0; i < REFINERY_COUNT; i++) {
-                chargeStates[i].val = Number(charges[i] ?? 0);
-                levelStates[i].val = Number(levels[i] ?? 0);
-            }
-
-            data.val = { names };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
-        }
-    };
+        });
 
     load();
 
-    return div(
-        { class: "tab-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "W3 — REFINERY"),
-                p({ class: "feature-header__desc" }, "Set refinery levels and salt charges.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-
-        // Notices
-        div(
-            { class: "refinery-notice refinery-notice--polymer" },
-            span({ class: "refinery-notice__icon" }, Icons.Wrench()),
-            span(
-                {},
-                "Refineries 7–9 require the ",
-                span({ class: "refinery-notice__highlight" }, "Polymer Refinery"),
-                " research to be unlocked in-game before they are available."
-            )
-        ),
-        div(
-            { class: "refinery-notice refinery-notice--placeholder" },
-            span({ class: "refinery-notice__icon" }, Icons.Warning()),
-            span(
-                {},
-                "Refinery 9 is a ",
-                span({ class: "refinery-notice__highlight" }, "placeholder"),
-                " — it does not exist in the game yet and setting it has no effect."
-            )
-        ),
-
-        // List
-        () => {
-            if (loading.val) return div({ class: "feature-loader" }, Loader());
-            if (error.val) return EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: error.val });
-            if (!data.val) return null;
-
-            return div(
-                { class: "feature-list" },
-                ...Array.from({ length: REFINERY_COUNT }, (_, i) =>
-                    RefineryRow({
-                        refIndex: i,
-                        name: data.val.names[i] ?? `Refinery ${i + 1}`,
-                        levelState: levelStates[i],
-                        chargeState: chargeStates[i],
-                    })
+    return PersistentAccountListPage({
+        title: "W3 - REFINERY",
+        description: "Set refinery levels and salt charges.",
+        actions: RefreshButton({ onRefresh: load }),
+        topNotices: [
+            NoticeBanner(
+                { icon: Icons.Wrench(), variant: "polymer" },
+                span(
+                    {},
+                    "Refineries 7-9 require the ",
+                    span({ class: "warning-banner__highlight" }, "Polymer Refinery"),
+                    " research to be unlocked in-game before they are available."
                 )
-            );
-        }
-    );
+            ),
+            WarningBanner(
+                span(
+                    {},
+                    "Refinery 9 is a ",
+                    span({ class: "warning-banner__highlight" }, "placeholder"),
+                    " - it does not exist in the game yet and setting it has no effect."
+                )
+            ),
+        ],
+        state: { loading, error },
+        loadingText: "READING REFINERY",
+        errorTitle: "REFINERY READ FAILED",
+        initialWrapperClass: "scrollable-panel",
+        body,
+    });
 };

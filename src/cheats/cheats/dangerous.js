@@ -225,8 +225,7 @@ function alchFn(params) {
             }
         }
         return `All cauldron rate and cap set to lvl ${setlvl}`;
-    }
-    else if(params[0] === "vials") {
+    } else if (params[0] === "vials") {
         // There are currently more vials in source code than there are available in game
         // so we need to use different way of deciding how many iterations we need rather than using Object.keys.
         // Currently I'm gonna do logic "if vial require item then it's available to unlock" but this might change in future.

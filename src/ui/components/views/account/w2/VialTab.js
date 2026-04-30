@@ -7,195 +7,109 @@
  * Levels stored in: CauldronInfo[4]
  * Level range: 0-13 (integer)
  *
- * Each VialRow holds its own local levelDisplay state. SET updates in place
- * without triggering a full list re-render.
+ * Uses one persistent van.state per vial level so row writes and bulk updates
+ * both update the same committed state without rebuilding row-local truth.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
-import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, useWriteStatus } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { BulkActionBar, SetAllNumberControl } from "../BulkActionBar.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import {
+    cleanName,
+    createIndexedStateGetter,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "../accountShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div } = van.tags;
 
 const MAX_VIAL_LEVEL = 13;
 
-const VialRow = ({ vial, initialLevel }) => {
-    const inputVal = van.state(String(initialLevel ?? 0));
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const { status, run } = useWriteStatus();
-
-    const doSet = async (raw) => {
-        const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(raw))));
-        if (isNaN(lvl)) return;
-
-        await run(async () => {
-            const path = `CauldronInfo[4][${vial.index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}`);
-            inputVal.val = String(lvl);
-            levelDisplay.val = lvl;
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, `#${vial.index}`),
-            span({ class: "feature-row__name" }, vial.name)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val} / ${MAX_VIAL_LEVEL}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, Number(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(MAX_VIAL_LEVEL, Number(inputVal.val) + 1))),
-            }),
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: () => doSet(inputVal.val),
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
+const VialRow = ({ vial, levelState }) =>
+    ClampedLevelRow({
+        valueState: levelState,
+        writePath: `CauldronInfo[4][${vial.index}]`,
+        max: MAX_VIAL_LEVEL,
+        integerMode: "round",
+        indexLabel: `#${vial.index}`,
+        name: vial.name,
+    });
 
 export const VialTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const vialDefs = van.state([]);
+    const { loading, error, run } = useAccountLoad({ label: "Vials" });
     const setAllInput = van.state("13");
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
+    const vialDefs = van.state([]);
+    const getLevelState = createIndexedStateGetter();
+    const listNode = div({ class: "account-list" });
+    const reconcileRows = createStaticRowReconciler(listNode);
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
-            const [rawCauldronInfo, rawAlchemyDesc] = await Promise.all([
-                gga("CauldronInfo"),
-                readCList("AlchemyDescription"),
-            ]);
+    const load = async () =>
+        run(async () => {
+            const nextVialDefs = await readLevelDefinitions({
+                levelsPath: "CauldronInfo",
+                definitionsPath: "AlchemyDescription",
+                selectLevels: (_, levels) => levels[4],
+                selectDefinitions: (_, definitions) => definitions[4],
+                mapEntry: ({ definition, rawLevel, index }) => {
+                    const name = cleanName(definition[0], "VIAL");
+                    if (name.toUpperCase() === "VIAL" || name.trim() === "") return null;
+                    return { name, index, level: toNum(rawLevel) };
+                },
+            });
 
-            const descArr = toIndexedArray(rawAlchemyDesc ?? []);
-            const vialDesc = toIndexedArray(descArr[4] ?? []);
-            const rawLevels = toIndexedArray(rawCauldronInfo?.[4] ?? []);
+            nextVialDefs.forEach((vial) => {
+                getLevelState(vial.index).val = vial.level;
+            });
 
-            vialDefs.val = vialDesc
-                .map((entry, idx) => {
-                    const entryArr = toIndexedArray(entry ?? []);
-                    const name = String(entryArr[0] ?? "VIAL")
-                        .replace(/_/g, " ")
-                        .trim();
-                    return { name, index: idx, level: Number(rawLevels[idx] ?? 0) };
-                })
-                .filter((v) => v.name.toUpperCase() !== "VIAL" && v.name.trim() !== "");
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            loading.val = false;
-        }
-    };
+            vialDefs.val = nextVialDefs.map(({ name, index }) => ({ name, index }));
+            reconcileRows(vialDefs.val.map((vial) => `${vial.index}:${vial.name}`).join("|"), () =>
+                vialDefs.val.map((vial) => VialRow({ vial, levelState: getLevelState(vial.index) }))
+            );
+        });
 
     const doSetAll = async () => {
         const lvl = Math.min(MAX_VIAL_LEVEL, Math.max(0, Math.round(Number(setAllInput.val))));
-        if (isNaN(lvl)) return;
+        if (Number.isNaN(lvl)) return;
         const vials = vialDefs.val ?? [];
         if (vials.length === 0) return;
 
         await runBulk(async () => {
-            for (const v of vials) {
-                const ok = await gga(`CauldronInfo[4][${v.index}]`, lvl);
-                if (!ok) throw new Error(`Write mismatch at CauldronInfo[4][${v.index}]: expected ${lvl}`);
-                await new Promise((r) => setTimeout(r, 30));
-            }
-            vialDefs.val = vials.map((v) => ({ ...v, level: lvl }));
+            await runBulkSet({
+                entries: vials,
+                getTargetValue: () => lvl,
+                getValueState: (vial) => getLevelState(vial.index),
+                getPath: (vial) => `CauldronInfo[4][${vial.index}]`,
+            });
         });
     };
 
     load();
 
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data: vialDefs,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        isEmpty: (vials) => vials.length === 0,
-        renderEmpty: () =>
-            EmptyState({ icon: Icons.SearchX(), title: "NO VIALS", subtitle: "No vial definitions found." }),
-        renderContent: (vials) =>
-            div({ class: "feature-list" }, ...vials.map((v) => VialRow({ vial: v, initialLevel: v.level }))),
+    return PersistentAccountListPage({
+        rootClass: "vials-tab tab-container",
+        title: "ALCHEMY - VIALS",
+        description: "Set vial levels (0-13) for all alchemy vials.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: SetAllNumberControl({
+                label: "SET ALL:",
+                value: setAllInput,
+                status: bulkStatus,
+                onApply: doSetAll,
+                max: MAX_VIAL_LEVEL,
+            }),
+            refresh: { onClick: load },
+        }),
+        state: { loading, error },
+        loadingText: "READING VIALS",
+        errorTitle: "VIAL READ FAILED",
+        initialWrapperClass: "account-list",
+        body: listNode,
     });
-
-    return div(
-        { class: "vials-tab tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ALCHEMY — VIALS"),
-                p({ class: "feature-header__desc" }, "Set vial levels (0–13) for all alchemy vials.")
-            ),
-            div(
-                { class: "feature-header__actions" },
-                div(
-                    {
-                        class: () =>
-                            [
-                                "brewing-setall-row",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                    },
-                    span({ class: "brewing-setall-label" }, "SET ALL:"),
-                    div(
-                        { class: "brewing-setall-input-wrap" },
-                        NumberInput({
-                            mode: "int",
-                            value: setAllInput,
-                            oninput: (e) => (setAllInput.val = e.target.value),
-                            onDecrement: () => (setAllInput.val = String(Math.max(0, Number(setAllInput.val) - 1))),
-                            onIncrement: () =>
-                                (setAllInput.val = String(Math.min(MAX_VIAL_LEVEL, Number(setAllInput.val) + 1))),
-                        })
-                    ),
-                    button(
-                        {
-                            class: () =>
-                                `feature-btn feature-btn--apply ${bulkStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                            disabled: () => bulkStatus.val === "loading",
-                            onclick: doSetAll,
-                        },
-                        () =>
-                            bulkStatus.val === "loading" ? "..." : bulkStatus.val === "success" ? "\u2713" : "SET ALL"
-                    )
-                ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-        renderBody
-    );
 };

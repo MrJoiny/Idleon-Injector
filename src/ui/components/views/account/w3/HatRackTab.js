@@ -3,6 +3,7 @@
  *
  * Reverse-engineered from:
  *   gga.Spelunk[46] - current rack item ids
+ *   gga.Cards[1] - slab history item ids
  *   gga.ItemDefinitionsGET.h - item definitions map
  *
  * Eligible hats:
@@ -11,34 +12,23 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
-import { AsyncFeatureBody, cleanName, useWriteStatus } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import { AccountSection } from "../components/AccountSection.js";
+import { AddFromListSection } from "../components/AddFromListSection.js";
+import { RemovableStoredRow } from "../components/RemovableStoredRow.js";
+import { cleanName, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div } = van.tags;
 
 const RACK_PATH = "Spelunk[46]";
 const SLAB_HISTORY_PATH = "Cards[1]";
 const ITEM_DEFS_PATH = "ItemDefinitionsGET.h";
 
-const getDef = (raw) => raw?.h ?? raw;
-
-const getName = (itemId, raw) => {
-    const def = getDef(raw);
-    return (
-        def?.displayName || def?.DisplayName || def?.name || def?.Name || def?.desc_line1 || def?.desc_line2 || itemId
-    );
-};
-
 const normalizeRackIds = (rawRack) =>
     toIndexedArray(rawRack ?? [])
-        .map((entry) => String(entry ?? "").trim())
-        .filter((entry) => entry.length > 0);
-
-const normalizeSlabHistoryIds = (rawCards) =>
-    toIndexedArray(rawCards ?? [])
         .map((entry) => String(entry ?? "").trim())
         .filter((entry) => entry.length > 0);
 
@@ -48,10 +38,10 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
 
     const eligible = Object.entries(itemDefs)
         .map(([itemId, raw]) => {
-            const def = getDef(raw);
+            const def = unwrapH(raw);
             return {
                 itemId,
-                name: cleanName(getName(itemId, raw), "", { stripMarker: true }),
+                name: cleanName(def?.displayName || itemId, "", { stripMarker: true }),
                 type: def?.Type,
                 typeGen: def?.typeGen,
                 id: def?.ID,
@@ -70,9 +60,9 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
     const rackTable = rack.map((itemId, index) => ({
         index,
         itemId,
-        name: cleanName(getName(itemId, itemDefs[itemId]), "", { stripMarker: true }),
+        name: cleanName(unwrapH(itemDefs[itemId])?.displayName || itemId, "", { stripMarker: true }),
         eligible: eligibleIds.has(itemId),
-        id: eligibleMap[itemId]?.id ?? getDef(itemDefs[itemId])?.ID ?? null,
+        id: eligibleMap[itemId]?.id ?? unwrapH(itemDefs[itemId])?.ID ?? null,
     }));
 
     return {
@@ -84,57 +74,23 @@ const buildHatRackState = (rawRack, rawItemDefs) => {
 };
 
 const RackRow = ({ row, onRemove }) => {
-    const { status, run } = useWriteStatus();
-
-    const removeRow = async () => {
-        await run(async () => {
-            await onRemove(row.index);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "hat-rack-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, row.index + 1),
-            div(
-                { class: "hat-rack-row__name-group" },
-                span({ class: "feature-row__name" }, row.name || row.itemId),
-                span({ class: "hat-rack-row__item-id" }, row.itemId)
-            )
-        ),
-        span({ class: "feature-row__badge" }, "ON RACK"),
-        div(
-            { class: "feature-row__controls" },
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading" || onRemove.isBusy(),
-                    onmousedown: (e) => e.preventDefault(),
-                    onclick: removeRow,
-                },
-                () => (status.val === "loading" ? "..." : "REMOVE")
-            )
-        )
-    );
+    return RemovableStoredRow({
+        index: row.index,
+        primaryLabel: row.name,
+        fallbackLabel: row.itemId,
+        secondaryLabel: row.itemId,
+        badge: "ON RACK",
+        rowClass: "hat-rack-row",
+        nameGroupClass: "hat-rack-row__name-group",
+        onRemove,
+        isBusy: onRemove.isBusy,
+    });
 };
 
 export const HatRackTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
+    const { loading, error, run } = useAccountLoad({ label: "Hat Rack" });
     const currentRackIds = van.state([]);
+    const slabHistoryIds = van.state([]);
     const rackRows = van.state([]);
     const missingOptions = van.state([]);
     const selectedAddItemId = van.state("");
@@ -142,13 +98,11 @@ export const HatRackTab = () => {
     const onRackCount = van.state(0);
     const missingCount = van.state(0);
     const rackCount = van.state(0);
-    const writeWarning = van.state(null);
     const mutating = van.state(false);
 
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let itemDefsCache = null;
     let scrollEl = null;
-    let loadSeq = 0;
 
     const withPreservedScroll = (fn) => {
         const prevTop = scrollEl?.scrollTop ?? 0;
@@ -171,124 +125,60 @@ export const HatRackTab = () => {
         if (!result.missingFromRack.some((item) => item.itemId === selectedAddItemId.val)) {
             selectedAddItemId.val = result.missingFromRack[0]?.itemId ?? "";
         }
-
-        writeWarning.val = null;
     };
 
-    const load = async (showSpinner = true, forceDefsReload = false) => {
-        const seq = ++loadSeq;
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            if (forceDefsReload || !itemDefsCache) {
+    const load = async () => {
+        return run(async () => {
+            let nextItemDefs = itemDefsCache;
+            if (!nextItemDefs) {
                 const defs = await gga(ITEM_DEFS_PATH);
-                itemDefsCache = defs && typeof defs === "object" ? defs : {};
+                nextItemDefs = defs && typeof defs === "object" ? defs : {};
             }
-            const rawRack = await gga(RACK_PATH);
-            if (seq !== loadSeq) return;
+
+            const [rawRack, rawSlabHistory] = await Promise.all([gga(RACK_PATH), gga(SLAB_HISTORY_PATH)]);
+
+            itemDefsCache = nextItemDefs;
             applyRackState(rawRack);
-            data.val = { loaded: true };
-        } catch (e) {
-            if (seq !== loadSeq) return;
-            error.val = e?.message ?? "Failed to load hat rack data";
-            data.val = null;
-        } finally {
-            if (showSpinner && seq === loadSeq) loading.val = false;
-        }
+            slabHistoryIds.val = [...normalizeRackIds(rawSlabHistory)];
+        });
     };
 
     const appendToRack = async (currentRack, items) => {
-        writeWarning.val = null;
         const baseRack = normalizeRackIds(currentRack);
         for (let i = 0; i < items.length; i++) {
-            try {
-                const ok = await gga(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
-                if (!ok)
-                    throw new Error(
-                        `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`
-                    );
-            } catch (e) {
-                const msg = `Failed writing rack item at index ${baseRack.length + i}. Rack may be inconsistent. Press REFRESH to resync.`;
-                writeWarning.val = msg;
-                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-            }
+            await writeVerified(`${RACK_PATH}[${baseRack.length + i}]`, items[i]);
         }
-        try {
-            const ok = await gga(`${RACK_PATH}.length`, baseRack.length + items.length);
-            if (!ok) throw new Error("Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.");
-        } catch (e) {
-            const msg = "Failed updating rack length. Rack may be inconsistent. Press REFRESH to resync.";
-            writeWarning.val = msg;
-            throw new Error(e?.message ? `${msg} (${e.message})` : msg);
-        }
+        await writeVerified(`${RACK_PATH}.length`, baseRack.length + items.length);
     };
 
-    const writeSlabHistory = async (nextHistory, failMessage) => {
-        try {
-            const ok = await gga(SLAB_HISTORY_PATH, nextHistory);
-            if (!ok) throw new Error("Write verification failed");
-        } catch (e) {
-            writeWarning.val = failMessage;
-            throw new Error(e?.message ? `${failMessage} (${e.message})` : failMessage);
-        }
-    };
-
-    const appendToSlabHistory = async (items) => {
-        if (!Array.isArray(items) || items.length === 0) return;
-        try {
-            const currentHistory = normalizeSlabHistoryIds(await gga(SLAB_HISTORY_PATH));
-            const nextHistory = [...currentHistory, ...items];
-            await writeSlabHistory(
-                nextHistory,
-                "Failed updating slab history after rack add. Slab may be inconsistent. Press REFRESH to resync."
-            );
-        } catch (e) {
-            if (e instanceof Error) throw e;
-            throw new Error(
-                "Failed updating slab history after rack add. Slab may be inconsistent. Press REFRESH to resync."
-            );
-        }
-    };
-
-    const removeFromSlabHistory = async (itemId) => {
-        if (!itemId) return;
-        try {
-            const currentHistory = normalizeSlabHistoryIds(await gga(SLAB_HISTORY_PATH));
-            const nextHistory = currentHistory.filter((id) => id !== itemId);
-            if (nextHistory.length === currentHistory.length) return;
-            await writeSlabHistory(
-                nextHistory,
-                "Failed updating slab history after rack removal. Slab may be inconsistent. Press REFRESH to resync."
-            );
-        } catch (e) {
-            if (e instanceof Error) throw e;
-            throw new Error(
-                "Failed updating slab history after rack removal. Slab may be inconsistent. Press REFRESH to resync."
-            );
-        }
+    const writeSlabHistory = async (nextHistory) => {
+        await writeVerified(SLAB_HISTORY_PATH, nextHistory);
     };
 
     const removeAtIndex = async (index) => {
         if (mutating.val) return;
         const currentRack = [...currentRackIds.val];
         if (index < 0 || index >= currentRack.length) return;
-        const removedItemId = currentRack[index];
 
         mutating.val = true;
         try {
             const nextRack = [...currentRack];
+            const removedItemId = nextRack[index];
             nextRack.splice(index, 1);
-            writeWarning.val = null;
+            const nextSlabHistory = slabHistoryIds.val.filter((itemId) => itemId !== removedItemId);
+            await writeVerified(RACK_PATH, nextRack);
             try {
-                const ok = await gga(RACK_PATH, nextRack);
-                if (!ok) throw new Error("Write verification failed");
+                if (nextSlabHistory.length !== slabHistoryIds.val.length) {
+                    await writeSlabHistory(nextSlabHistory);
+                }
+                withPreservedScroll(() => {
+                    applyRackState(nextRack);
+                    slabHistoryIds.val = nextSlabHistory;
+                });
             } catch (e) {
-                const msg = "Failed updating rack after removal. Rack may be inconsistent. Press REFRESH to resync.";
-                writeWarning.val = msg;
-                throw new Error(e?.message ? `${msg} (${e.message})` : msg);
+                withPreservedScroll(() => applyRackState(nextRack));
+                throw e;
             }
-            await removeFromSlabHistory(removedItemId);
-            withPreservedScroll(() => applyRackState(nextRack));
         } finally {
             mutating.val = false;
         }
@@ -304,9 +194,23 @@ export const HatRackTab = () => {
             try {
                 const currentRack = [...currentRackIds.val];
                 if (currentRack.includes(itemId)) return;
+                const nextRack = [...currentRack, itemId];
                 await appendToRack(currentRack, [itemId]);
-                await appendToSlabHistory([itemId]);
-                withPreservedScroll(() => applyRackState([...currentRack, itemId]));
+                const nextSlabHistory = slabHistoryIds.val.includes(itemId)
+                    ? [...slabHistoryIds.val]
+                    : [...slabHistoryIds.val, itemId];
+                try {
+                    if (nextSlabHistory.length !== slabHistoryIds.val.length) {
+                        await writeSlabHistory(nextSlabHistory);
+                    }
+                    withPreservedScroll(() => {
+                        applyRackState(nextRack);
+                        slabHistoryIds.val = nextSlabHistory;
+                    });
+                } catch (e) {
+                    withPreservedScroll(() => applyRackState(nextRack));
+                    throw e;
+                }
             } finally {
                 mutating.val = false;
             }
@@ -315,11 +219,6 @@ export const HatRackTab = () => {
 
     const addAllAvailable = async () => {
         if (mutating.val || missingOptions.val.length === 0) return;
-        const shouldContinue = window.confirm(
-            "This will add every available hat from the dropdown to your rack.\n\nAre you sure you want to continue?"
-        );
-        if (!shouldContinue) return;
-
         await runAdd(async () => {
             mutating.val = true;
             try {
@@ -328,153 +227,88 @@ export const HatRackTab = () => {
                     .map((item) => item.itemId)
                     .filter((itemId) => !currentRack.includes(itemId));
                 if (toAdd.length === 0) return;
+                const nextRack = [...currentRack, ...toAdd];
                 await appendToRack(currentRack, toAdd);
-                await appendToSlabHistory(toAdd);
-                withPreservedScroll(() => applyRackState([...currentRack, ...toAdd]));
+                const nextSlabHistory = [...slabHistoryIds.val];
+                for (const itemId of toAdd) {
+                    if (!nextSlabHistory.includes(itemId)) nextSlabHistory.push(itemId);
+                }
+                try {
+                    if (nextSlabHistory.length !== slabHistoryIds.val.length) {
+                        await writeSlabHistory(nextSlabHistory);
+                    }
+                    withPreservedScroll(() => {
+                        applyRackState(nextRack);
+                        slabHistoryIds.val = nextSlabHistory;
+                    });
+                } catch (e) {
+                    withPreservedScroll(() => applyRackState(nextRack));
+                    throw e;
+                }
             } finally {
                 mutating.val = false;
             }
         });
     };
 
-    load(true, true);
+    load();
 
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        renderContent: () =>
-            (() => {
-                const root = div(
-                    {
-                        class: "hat-rack-scroll scrollable-panel",
-                    },
-                    () =>
-                        writeWarning.val
-                            ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val)
-                            : null,
+    const body = div(
+        {
+            class: "scrollable-panel content-stack",
+        },
 
-                    div(
-                        { class: "hat-rack-section" },
-                        div(
-                            { class: "hat-rack-section__header" },
-                            span({ class: "hat-rack-section__title" }, "ON RACK"),
-                            span(
-                                { class: "hat-rack-section__note" },
-                                () => `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`
-                            )
-                        ),
-                        () => {
-                            const rows = rackRows.val;
-                            if (rows.length === 0)
-                                return div({ class: "hat-rack-empty" }, "No hats currently on rack.");
+        AddFromListSection({
+            title: "ADD ELIGIBLE HAT",
+            note: () => `${missingCount.val} AVAILABLE TO ADD`,
+            selectLabel: "SELECT HAT",
+            selectedValue: selectedAddItemId,
+            options: missingOptions,
+            emptyOptionLabel: "No eligible hats left to add",
+            getOptionValue: (item) => item.itemId,
+            getOptionLabel: (item) => `${item.name} (${item.itemId})`,
+            addStatus,
+            addDisabled: () => mutating.val || !selectedAddItemId.val || missingOptions.val.length === 0,
+            addAllDisabled: () => mutating.val || missingOptions.val.length === 0,
+            onAdd: addSelected,
+            onAddAll: addAllAvailable,
+            rowClass: "tab-add-row tab-add-row--dual-action",
+        }),
 
-                            return div(
-                                { class: "hat-rack-rows" },
-                                ...rows.map((row) =>
-                                    RackRow({
-                                        row,
-                                        onRemove: removeAtIndex,
-                                    })
-                                )
-                            );
-                        }
-                    ),
-
-                    div(
-                        { class: "hat-rack-section" },
-                        div(
-                            { class: "hat-rack-section__header" },
-                            span({ class: "hat-rack-section__title" }, "ADD ELIGIBLE HAT"),
-                            span({ class: "hat-rack-section__note" }, () => `${missingCount.val} AVAILABLE TO ADD`)
-                        ),
-                        div(
-                            {
-                                class: () =>
-                                    [
-                                        "hat-rack-add-row",
-                                        addStatus.val === "success" ? "feature-row--success" : "",
-                                        addStatus.val === "error" ? "feature-row--error" : "",
-                                    ]
-                                        .filter(Boolean)
-                                        .join(" "),
-                            },
-                            span({ class: "hat-rack-add-row__label" }, "SELECT HAT"),
-                            () =>
-                                select(
-                                    {
-                                        class: "select-base hat-rack-add-row__select",
-                                        value: selectedAddItemId,
-                                        onchange: (e) => (selectedAddItemId.val = e.target.value),
-                                    },
-                                    ...(missingOptions.val.length === 0
-                                        ? [option({ value: "" }, "No eligible hats left to add")]
-                                        : missingOptions.val.map((item) =>
-                                              option({ value: item.itemId }, `${item.name} (${item.itemId})`)
-                                          ))
-                                ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val ||
-                                        addStatus.val === "loading" ||
-                                        !selectedAddItemId.val ||
-                                        missingOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addSelected,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD")
-                            ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val || addStatus.val === "loading" || missingOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addAllAvailable,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD ALL")
-                            )
-                        )
+        AccountSection({
+            title: "ON RACK",
+            note: () => `${rackCount.val} ON RACK, ${onRackCount.val}/${eligibleCount.val} TOTAL`,
+            body: () => {
+                const rows = rackRows.val;
+                return div(
+                    { class: "hat-rack-rows" },
+                    ...rows.map((row) =>
+                        RackRow({
+                            row,
+                            onRemove: removeAtIndex,
+                        })
                     )
                 );
-                scrollEl = root;
-                return root;
-            })(),
-    });
-
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "HAT RACK"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage Spelunk hat rack entries. Remove any rack hat, or add eligible premium helmets. Note: adding/removing hats here also adds/removes them from Slab (Cards[1])."
-                )
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button(
-                    {
-                        class: "btn-secondary",
-                        disabled: () => loading.val || mutating.val,
-                        onclick: () => {
-                            if (mutating.val) return;
-                            load(true, true);
-                        },
-                    },
-                    "REFRESH"
-                )
-            )
-        ),
-        renderBody
+            },
+        })
     );
+    scrollEl = body;
+
+    return PersistentAccountListPage({
+        title: "HAT RACK",
+        description:
+            "Manage Hat rack entries. Remove any rack hat, or add eligible premium helmets. Rack changes also sync Slab history (Cards[1]).",
+        actions: RefreshButton({
+            onRefresh: () => {
+                if (mutating.val) return;
+                load();
+            },
+            disabled: () => loading.val || mutating.val,
+        }),
+        state: { loading, error },
+        loadingText: "READING HAT RACK",
+        errorTitle: "HAT RACK READ FAILED",
+        initialWrapperClass: "scrollable-panel",
+        body,
+    });
 };

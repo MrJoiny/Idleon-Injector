@@ -6,243 +6,130 @@
  *   cList.AtomInfo[b][0] - atom name (underscores -> spaces)
  *
  * Max level is computed via:
- *   readComputed("atomCollider", "AtomMaxLv", [b, 0])
+ *   readComputedMany("atomCollider", "AtomMaxLv", [[b, 0], ...])
  *
  * Array length is taken from cList.AtomInfo (authoritative source).
- * All per-atom max level requests are fetched in parallel during load via
- * Promise.all — readComputed returns 0 on failure so the tab still renders.
+ * All per-atom max level requests are batch-fetched during load.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
-import { readComputed, gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
-import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, toNum, useWriteStatus } from "../featureShared.js";
+import { readComputedMany } from "../../../../services/api.js";
+import { BulkActionBar } from "../BulkActionBar.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import {
+    cleanNameEffect,
+    createIndexedStateGetter,
+    createStaticRowReconciler,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "../accountShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div } = van.tags;
 
-const AtomRow = ({ index, name, maxLevel, levelState }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(levelState.val ?? 0);
+const AtomRow = ({ index, name, maxLevel, levelState }) =>
+    ClampedLevelRow({
+        valueState: levelState,
+        writePath: `Atoms[${index}]`,
+        max: maxLevel,
+        indexLabel: `#${index + 1}`,
+        name,
     });
 
-    const doSet = async (raw) => {
-        const lvl = Math.max(0, Math.min(maxLevel, toNum(raw)));
-        if (isNaN(lvl)) return;
-
-        await run(async () => {
-            const path = `Atoms[${index}]`;
-            const ok = await gga(path, lvl);
-            if (!ok) throw new Error(`Write mismatch at ${path}: expected ${lvl}, got failed verification`);
-            levelState.val = lvl;
-            inputVal.val = String(lvl);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name)
-        ),
-        span({ class: "feature-row__badge" }, () => `LV ${levelState.val} / ${maxLevel}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toNum(inputVal.val) - 1))),
-                onIncrement: () => (inputVal.val = String(Math.min(maxLevel, toNum(inputVal.val) + 1))),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
-
 export const AtomColliderTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
+    const { loading, error, run } = useAccountLoad({ label: "Atom Collider" });
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
-    const levelStates = [];
-
-    const getLevelState = (i) => {
-        if (!levelStates[i]) levelStates[i] = van.state(0);
-        return levelStates[i];
-    };
+    const getLevelState = createIndexedStateGetter();
+    const rowList = div({ class: "account-list" });
+    let atomsMeta = [];
+    const reconcileRows = createStaticRowReconciler(rowList);
 
     const doSetAll = async (targetLevel) => {
-        if (!data.val || data.val.atoms.length === 0) return;
+        if (!atomsMeta.length) return;
         await runBulk(async () => {
-            const atoms = data.val.atoms;
-            const expectedLevels = atoms.map((a) => (targetLevel === null ? a.maxLevel : targetLevel));
-            for (let i = 0; i < atoms.length; i++) {
-                const path = `Atoms[${i}]`;
-                const ok = await gga(path, expectedLevels[i]);
-                if (!ok)
-                    throw new Error(
-                        `Write mismatch at ${path}: expected ${expectedLevels[i]}, got failed verification`
-                    );
-                await new Promise((r) => setTimeout(r, 20));
-            }
-            for (let i = 0; i < atoms.length; i++) {
-                getLevelState(i).val = expectedLevels[i];
-            }
+            await runBulkSet({
+                entries: atomsMeta,
+                getTargetValue: (atom) => (targetLevel === null ? atom.maxLevel : targetLevel),
+                getValueState: (_, index) => getLevelState(index),
+                getPath: (_, index) => `Atoms[${index}]`,
+            });
         });
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
-            const [rawLevels, rawAtomInfo] = await Promise.all([gga("Atoms"), readCList("AtomInfo")]);
+    const load = async () =>
+        run(async () => {
+            const atomRows = await readLevelDefinitions({
+                levelsPath: "Atoms",
+                definitionsPath: "AtomInfo",
+                mapEntry: ({ definition, rawLevel, index }) => ({
+                    name: cleanNameEffect(definition[0], `Atom ${index + 1}`),
+                    level: toNum(rawLevel),
+                }),
+            });
+            const computedResults = await readComputedMany(
+                "atomCollider",
+                "AtomMaxLv",
+                atomRows.map((_, i) => [i, 0])
+            );
 
-            const atomInfoArr = toIndexedArray(rawAtomInfo ?? []);
+            const atoms = atomRows.map((atom, i) => {
+                const item = computedResults?.[i];
+                if (!item?.ok) {
+                    throw new Error(item?.error || `Failed to read AtomMaxLv for atom index ${i}`);
+                }
+                return { name: atom.name, level: atom.level, maxLevel: toNum(item.value) };
+            });
 
-            const maxLevels = await Promise.all(
-                atomInfoArr.map((_, i) =>
-                    readComputed("atomCollider", "AtomMaxLv", [i, 0])
-                        .then((v) => toNum(v))
-                        .catch(() => 0)
+            reconcileRows(atoms.map((atom) => `${atom.name}:${atom.maxLevel}`).join("|"), () =>
+                atoms.map((atom, index) =>
+                    AtomRow({
+                        index,
+                        name: atom.name,
+                        maxLevel: atom.maxLevel,
+                        levelState: getLevelState(index),
+                    })
                 )
             );
 
-            const atoms = atomInfoArr.map((entry, i) => {
-                const entryArr = toIndexedArray(entry ?? []);
-                const name = String(entryArr[0] ?? `Atom ${i + 1}`)
-                    .replace(/\+\{/g, "")
-                    .replace(/_/g, " ")
-                    .trim();
-                return { name, maxLevel: maxLevels[i] ?? 0 };
+            atoms.forEach((atom, i) => {
+                getLevelState(i).val = atom.level;
             });
 
-            const rawArr = toIndexedArray(rawLevels ?? []);
-            atoms.forEach((_, i) => {
-                getLevelState(i).val = toNum(rawArr[i]);
-            });
+            atomsMeta = atoms;
+        });
 
-            data.val = { atoms };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
+    load();
 
-    load(true);
-
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        isEmpty: (resolved) => !resolved.atoms.length,
-        renderEmpty: () =>
-            EmptyState({ icon: Icons.SearchX(), title: "NO DATA", subtitle: "No Atom Collider data found." }),
-        renderContent: (resolved) =>
-            div(
-                { class: "feature-list" },
-                ...resolved.atoms.map((a, i) =>
-                    AtomRow({
-                        index: i,
-                        name: a.name,
-                        maxLevel: a.maxLevel,
-                        levelState: getLevelState(i),
-                    })
-                )
-            ),
+    return PersistentAccountListPage({
+        title: "ATOM COLLIDER",
+        description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
+        wrapActions: false,
+        actions: BulkActionBar({
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: bulkStatus,
+                    tooltip: "Set every atom to its computed max level",
+                    onClick: () => doSetAll(null),
+                },
+                {
+                    label: "RESET ALL",
+                    status: bulkStatus,
+                    tooltip: "Reset every atom to 0",
+                    onClick: () => doSetAll(0),
+                },
+            ],
+            refresh: {
+                onClick: load,
+            },
+        }),
+        state: { loading, error },
+        loadingText: "READING ATOM COLLIDER",
+        errorTitle: "ATOM COLLIDER READ FAILED",
+        initialWrapperClass: "account-list",
+        body: rowList,
     });
-
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "ATOM COLLIDER"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Set Atom Collider upgrade levels. Max levels are computed from game data."
-                )
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSetAll(null);
-                        },
-                    },
-                    "MAX ALL"
-                ),
-                button(
-                    {
-                        type: "button",
-                        onmousedown: (e) => e.preventDefault(),
-                        class: () =>
-                            [
-                                "feature-btn feature-btn--apply",
-                                bulkStatus.val === "loading" ? "feature-btn--loading" : "",
-                                bulkStatus.val === "success" ? "feature-row--success" : "",
-                                bulkStatus.val === "error" ? "feature-row--error" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" "),
-                        disabled: () => bulkStatus.val === "loading",
-                        onclick: (e) => {
-                            e.preventDefault();
-                            doSetAll(0);
-                        },
-                    },
-                    "RESET ALL"
-                ),
-                button({ class: "btn-secondary", onclick: load }, "REFRESH")
-            )
-        ),
-        renderBody
-    );
 };

@@ -1,23 +1,32 @@
 /**
- * W1 — Statues Tab
+ * W1 - Statues Tab
  *
  * Data sources:
- *   cList.StatueInfo[i]  → [name, bonusDesc, ...]
- *   gga.StatueLevels[i]  → [level, deposited]
- *   gga.StatueG[i]       → tier: 0=Stone, 1=Gold, 2=Onyx, 3=Zenith
+ *   cList.StatueInfo[i]  -> [name, bonusDesc, ...]
+ *   gga.StatueLevels[i]  -> [level, deposited]
+ *   gga.StatueG[i]       -> tier: 0=Stone, 1=Gold, 2=Onyx, 3=Zenith
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
 import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
-import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { useWriteStatus } from "../featureShared.js";
+import { EditableFieldsRow } from "../EditableFieldsRow.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import {
+    adjustFormattedIntInput,
+    createStaticRowReconciler,
+    getOrCreateState,
+    largeFormatter,
+    largeParser,
+    resolveFormattedIntInput,
+    toInt,
+    writeVerified,
+} from "../accountShared.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div, span, select, option } = van.tags;
 
 const TIERS = [
     { value: 0, label: "Stone" },
@@ -26,234 +35,184 @@ const TIERS = [
     { value: 3, label: "Zenith" },
 ];
 
-// ── StatueRow ─────────────────────────────────────────────────────────────
+const TIER_ROW_CLASSES = ["", "tier--gold", "tier--onyx", "tier--zenith"];
+const TIER_BADGE_CLASSES = ["stone", "gold", "onyx", "zenith"];
 
-const StatueRow = ({ index, name, initialLevel, initialDeposited, initialTier }) => {
-    const levelInput = van.state(String(initialLevel ?? 0));
-    const depositedInput = van.state(String(initialDeposited ?? 0));
-    const tierInput = van.state(initialTier ?? 0);
-    const { status, run } = useWriteStatus();
+const StatueRow = ({ index, nameState, levelState, depositedState, tierState }) =>
+    EditableFieldsRow({
+        fields: [
+            { key: "level", valueState: levelState },
+            { key: "deposited", valueState: depositedState },
+            { key: "tier", valueState: tierState, toDraft: (value) => toInt(value, { min: 0 }) },
+        ],
+        normalize: ({ level, deposited, tier }) => {
+            const rawLevel = Number(level);
+            const nextDeposited = resolveFormattedIntInput(deposited, null, { min: 0 });
+            if (Number.isNaN(rawLevel) || nextDeposited === null) return null;
 
-    // Display states — updated locally on SET so the row reflects the new value
-    // without triggering a full list re-render.
-    const levelDisplay = van.state(initialLevel ?? 0);
-    const depositedDisplay = van.state(initialDeposited ?? 0);
-    const tierDisplay = van.state(initialTier ?? 0);
-
-    const doSet = async () => {
-        const lvl = Math.max(0, Number(levelInput.val));
-        const dep = Math.max(0, Number(depositedInput.val));
-        const tier = Number(tierInput.val);
-        if (isNaN(lvl) || isNaN(dep)) return;
-
-        await run(async () => {
-            const levelPath = `StatueLevels[${index}][0]`;
-            const depPath = `StatueLevels[${index}][1]`;
-            const tierPath = `StatueG[${index}]`;
-            const okLvl = await gga(levelPath, lvl);
-            if (!okLvl) throw new Error(`Write mismatch at ${levelPath}`);
-            const okDep = await gga(depPath, dep);
-            if (!okDep) throw new Error(`Write mismatch at ${depPath}`);
-            const okTier = await gga(tierPath, tier);
-            if (!okTier) throw new Error(`Write mismatch at ${tierPath}`);
-
-            levelDisplay.val = lvl;
-            depositedDisplay.val = dep;
-            tierDisplay.val = tier;
-        });
-    };
-
-    return div(
-        {
-            class: () => {
-                const tier = tierDisplay.val;
-                const tierClass = ["", "tier--gold", "tier--onyx", "tier--zenith"][tier] ?? "";
-                return `feature-row ${tierClass} ${status.val === "success" ? "feature-row--success" : ""} ${status.val === "error" ? "feature-row--error" : ""}`;
-            },
+            return {
+                level: toInt(rawLevel, { min: 0 }),
+                deposited: nextDeposited,
+                tier: Math.min(TIERS.length - 1, toInt(tier, { min: 0 })),
+            };
         },
-
-        // Name + tier badge
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__name" }, name),
+        write: async ({ level, deposited, tier }) => {
+            await writeVerified(`StatueLevels[${index}][0]`, level);
+            await writeVerified(`StatueLevels[${index}][1]`, deposited);
+            await writeVerified(`StatueG[${index}]`, tier);
+            return { level, deposited, tier };
+        },
+        rowClass: () => TIER_ROW_CLASSES[tierState.val] ?? "",
+        info: [
+            span({ class: "account-row__name" }, () => nameState.val),
             span(
                 {
-                    class: () => `statue-tier-badge tier--${["stone", "gold", "onyx", "zenith"][tierDisplay.val]}`,
+                    class: () => `statue-tier-badge tier--${TIER_BADGE_CLASSES[tierState.val] ?? "stone"}`,
                 },
-                () => TIERS[tierDisplay.val]?.label ?? "Stone"
-            )
-        ),
-
-        // Level badge
-        span({ class: "feature-row__badge" }, () => `LV ${levelDisplay.val}`),
-
-        // Controls — staged inputs + SET to the right
-        div(
-            { class: "feature-row__controls" },
+                () => TIERS[tierState.val]?.label ?? "Stone"
+            ),
+        ],
+        badge: () => `LV ${levelState.val}`,
+        renderControls: ({ draftStates, resetDraft, setFieldFocused, status }) =>
             div(
-                { class: "feature-row__controls--stack" },
-
-                // Row 1: Level
+                { class: "account-row__controls--stack" },
                 div(
                     { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Level"),
                     NumberInput({
-                        value: levelInput,
-                        oninput: (e) => (levelInput.val = e.target.value),
-                        onDecrement: () => (levelInput.val = String(Math.max(0, Number(levelInput.val) - 1))),
-                        onIncrement: () => (levelInput.val = String(Number(levelInput.val) + 1)),
+                        value: draftStates.level,
+                        onfocus: () => setFieldFocused("level", true),
+                        onblur: () => {
+                            setFieldFocused("level", false);
+                            resetDraft("level");
+                        },
+                        onDecrement: () =>
+                            (draftStates.level.val = String(Math.max(0, toInt(draftStates.level.val) - 1))),
+                        onIncrement: () => (draftStates.level.val = String(toInt(draftStates.level.val) + 1)),
                     })
                 ),
-
-                // Row 2: Deposited
                 div(
                     { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Deposited"),
                     NumberInput({
                         mode: "int",
-                        value: depositedInput,
-                        oninput: (e) => (depositedInput.val = e.target.value),
-                        onDecrement: () => (depositedInput.val = String(Math.max(0, Number(depositedInput.val) - 1))),
-                        onIncrement: () => (depositedInput.val = String(Number(depositedInput.val) + 1)),
+                        value: draftStates.deposited,
+                        formatter: largeFormatter,
+                        parser: largeParser,
+                        onfocus: () => setFieldFocused("deposited", true),
+                        onblur: () => {
+                            setFieldFocused("deposited", false);
+                            resetDraft("deposited");
+                        },
+                        onDecrement: () =>
+                            (draftStates.deposited.val = String(
+                                adjustFormattedIntInput(draftStates.deposited.val, -1, 0)
+                            )),
+                        onIncrement: () =>
+                            (draftStates.deposited.val = String(
+                                adjustFormattedIntInput(draftStates.deposited.val, 1, 0)
+                            )),
                     })
                 ),
-
-                // Row 3: Tier (staged, not written until SET)
                 div(
                     { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Tier"),
                     select(
                         {
                             class: "statue-tier-select select-base",
-                            onchange: (e) => (tierInput.val = Number(e.target.value)),
+                            onchange: (e) => (draftStates.tier.val = Number(e.target.value)),
                             disabled: () => status.val === "loading",
                         },
-                        ...TIERS.map((t) =>
+                        ...TIERS.map((tier) =>
                             option(
                                 {
-                                    value: t.value,
-                                    selected: () => tierInput.val === t.value,
+                                    value: tier.value,
+                                    selected: () => draftStates.tier.val === tier.value,
                                 },
-                                t.label
+                                tier.label
                             )
                         )
                     )
                 )
             ),
-
-            // Single SET button for all fields
-            withTooltip(
-                button(
-                    {
-                        class: () =>
-                            `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                        onclick: doSet,
-                        disabled: () => status.val === "loading",
-                    },
-                    () => (status.val === "loading" ? "..." : "SET")
-                ),
-                "Write level, deposited, and tier to game"
-            )
-        )
-    );
-};
-// ── StatuesTab ────────────────────────────────────────────────────────────
+        applyTooltip: "Write level, deposited, and tier to game",
+    });
 
 export const StatuesTab = () => {
-    const data = van.state(null);
-    const loading = van.state(false);
-    const error = van.state(null);
+    const { loading, error, run } = useAccountLoad({ label: "Statues" });
 
-    const load = async () => {
-        loading.val = true;
-        error.val = null;
-        try {
+    const nameStates = new Map();
+    const levelStates = new Map();
+    const depositedStates = new Map();
+    const tierStates = new Map();
+
+    const listNode = div({ class: "account-list" });
+    const reconcileStatueRows = createStaticRowReconciler(listNode);
+
+    const reconcileRows = (info) => {
+        const statues = (info ?? [])
+            .map((entry, index) => ({ index, name: entry?.[0] }))
+            .filter((statue) => statue.name && statue.name.trim().length > 0);
+
+        reconcileStatueRows(statues.map((statue) => statue.index).join(","), () => {
+            return statues.map((statue) =>
+                StatueRow({
+                    index: statue.index,
+                    nameState: getOrCreateState(nameStates, statue.index, statue.name),
+                    levelState: getOrCreateState(levelStates, statue.index),
+                    depositedState: getOrCreateState(depositedStates, statue.index),
+                    tierState: getOrCreateState(tierStates, statue.index),
+                })
+            );
+        });
+    };
+
+    const load = async () =>
+        run(async () => {
             const [rawInfo, rawLevels, rawTiers] = await Promise.all([
                 readCList("StatueInfo"),
                 gga("StatueLevels"),
                 gga("StatueG"),
             ]);
-            data.val = {
-                info: toIndexedArray(rawInfo),
-                levels: toIndexedArray(rawLevels),
-                tiers: toIndexedArray(rawTiers),
-            };
-        } catch (e) {
-            error.val = e.message || "Failed to read statue data";
-        } finally {
-            loading.val = false;
-        }
-    };
+            const info = toIndexedArray(rawInfo);
+            const levels = toIndexedArray(rawLevels);
+            const tiers = toIndexedArray(rawTiers);
+
+            info.forEach((entry, i) => {
+                if (!entry?.[0] || !entry[0].trim()) return;
+
+                getOrCreateState(nameStates, i, entry[0]).val = entry[0];
+                getOrCreateState(levelStates, i).val = toInt(levels?.[i]?.[0]);
+                getOrCreateState(depositedStates, i).val = toInt(levels?.[i]?.[1]);
+                getOrCreateState(tierStates, i).val = Math.min(TIERS.length - 1, toInt(tiers?.[i], { min: 0 }));
+            });
+
+            reconcileRows(info);
+        });
 
     load();
 
-    return div(
-        { class: "world-feature scroll-container" },
-
-        div(
-            { class: "feature-header" },
-            div(
-                null,
-                h3("STATUES"),
-                p({ class: "feature-header__desc" }, "Set statue levels, deposited amounts, and upgrade tiers")
-            ),
-            withTooltip(
-                button({ class: "btn-secondary", onclick: load }, "REFRESH"),
-                "Re-read statue data from game memory"
-            )
-        ),
-
-        div(
-            { class: "warning-banner" },
-            Icons.Warning(),
+    return PersistentAccountListPage({
+        rootClass: "tab-container scroll-container",
+        title: "STATUES",
+        description: "Set statue levels, deposited amounts, and upgrade tiers",
+        actions: RefreshButton({
+            onRefresh: load,
+            tooltip: "Re-read statue data from game memory",
+        }),
+        topNotices: WarningBanner(
             " Tier upgrades require specific tools: ",
             span({ class: "warning-highlight-accent" }, "Guilding Tools"),
             " for Gold, ",
             span({ class: "warning-highlight-onyx" }, "Onyx Tools"),
             " for Onyx, ",
             span({ class: "warning-highlight-zenith" }, "Zenith Tools"),
-            " for Zenith. Note that this is only visual to the StatueMan in W1, when set to any rarity it will give their full bonus"
+            " for Zenith. Note that this is only visual to the StatueMan in W1; when set to any rarity it will give their full bonus"
         ),
-
-        () => {
-            if (loading.val)
-                return div(
-                    { class: "feature-list" },
-                    div({ class: "feature-loader" }, Loader({ text: "READING STATUES" }))
-                );
-            if (error.val)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({ icon: Icons.SearchX(), title: "STATUE READ FAILED", subtitle: error.val })
-                );
-            if (!data.val) return div({ class: "feature-list" });
-
-            const statues = (data.val.info ?? [])
-                .map((entry, i) => ({ index: i, name: entry?.[0] }))
-                .filter((s) => s.name && s.name.trim().length > 0);
-
-            if (statues.length === 0)
-                return div(
-                    { class: "feature-list" },
-                    EmptyState({
-                        icon: Icons.SearchX(),
-                        title: "NO STATUE DATA",
-                        subtitle: "Ensure the game is running, then hit REFRESH",
-                    })
-                );
-
-            return div(
-                { class: "feature-list" },
-                ...statues.map((s) =>
-                    StatueRow({
-                        index: s.index,
-                        name: s.name,
-                        initialLevel: data.val.levels?.[s.index]?.[0] ?? 0,
-                        initialDeposited: data.val.levels?.[s.index]?.[1] ?? 0,
-                        initialTier: data.val.tiers?.[s.index] ?? 0,
-                    })
-                )
-            );
-        }
-    );
+        state: { loading, error },
+        loadingText: "READING STATUES",
+        errorTitle: "STATUES READ FAILED",
+        initialWrapperClass: "account-list",
+        body: listNode,
+    });
 };

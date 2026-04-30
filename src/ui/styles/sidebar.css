@@ -162,7 +162,7 @@
 
 .brand-version {
     margin-top: 6px;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     font-family: var(--font-mono);
     font-weight: 500;
@@ -309,7 +309,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.6rem;
+    font-size: 0.875rem;
     color: var(--c-success);
     font-family: var(--font-mono);
 }

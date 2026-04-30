@@ -527,12 +527,61 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Computed read returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Read computed: ${namespace}.${name}`);
             res.json({ value: data.value });
         } catch (err) {
             log.error("Error in /api/game/computed/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/computed/read-many", async (req, res) => {
+        const { namespace, name, argSets } = await req.json();
+
+        if (!namespace || typeof namespace !== "string") {
+            return res.status(400).json({ error: "Missing or invalid namespace (must be a non-empty string)" });
+        }
+        if (!name || typeof name !== "string") {
+            return res.status(400).json({ error: "Missing or invalid name (must be a non-empty string)" });
+        }
+        if (!Array.isArray(argSets)) {
+            return res.status(400).json({ error: "argSets must be an array" });
+        }
+        if (!argSets.every(Array.isArray)) {
+            return res.status(400).json({ error: "argSets must contain arrays" });
+        }
+
+        const escapedNamespace = namespace.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const escapedName = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const argSetsJson = JSON.stringify(argSets);
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readComputedValues("${escapedNamespace}", "${escapedName}", ${argSetsJson})`,
+                returnByValue: true,
+            });
+
+            if (result.exceptionDetails) {
+                const ex = result.exceptionDetails;
+                const details = ex.exception?.description ?? ex.text;
+                return res.status(500).json({ error: "Computed batch read failed", details });
+            }
+
+            const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Computed batch read returned no data" });
+            }
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Read computed batch: ${namespace}.${name} (${argSets.length} items)`);
+            res.json({ value: data.value || [] });
+        } catch (err) {
+            log.error("Error in /api/game/computed/read-many:", err);
             res.status(500).json({ error: err.message });
         }
     });
@@ -564,12 +613,66 @@ exports.injectorConfig = ${new_injectorConfig};
             }
 
             const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Write returned no data" });
+            }
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Write path: ${path} = ${serialized}`);
             res.json({ ok: true });
         } catch (err) {
             log.error("Error in /api/game/gga/write:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/write-many", async (req, res) => {
+        const { writes } = await req.json();
+        if (!Array.isArray(writes) || writes.length === 0) {
+            return res.status(400).json({ error: "Missing or invalid writes (must be a non-empty array)" });
+        }
+
+        for (const [index, entry] of writes.entries()) {
+            if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+                return res.status(400).json({ error: `Invalid write entry at index ${index}` });
+            }
+            if (!entry.path || typeof entry.path !== "string") {
+                return res.status(400).json({ error: `Invalid path at index ${index}` });
+            }
+            if (!Object.prototype.hasOwnProperty.call(entry, "value")) {
+                return res.status(400).json({ error: `Missing value at index ${index}` });
+            }
+            if (entry.value === undefined) {
+                return res.status(400).json({ error: `value must not be undefined at index ${index}` });
+            }
+        }
+
+        const serialized = JSON.stringify(writes);
+        if (serialized === undefined) {
+            return res.status(400).json({ error: "writes must be JSON-serializable" });
+        }
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `writeGamePaths(${serialized})`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Batch write failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Batch write returned no data" });
+            }
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Batch write: ${writes.length} paths`);
+            res.json(data);
+        } catch (err) {
+            log.error("Error in /api/game/gga/write-many:", err);
             res.status(500).json({ error: err.message });
         }
     });

@@ -1,11 +1,10 @@
 /* ── Statue tiers ─────────────────────────────────────────────────────── */
 
 .statue-tier-badge {
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 1px 6px;
-    border-radius: var(--radius-sm);
     margin-left: 6px;
     text-transform: uppercase;
     border: 1px solid currentColor;
@@ -27,50 +26,49 @@
     color: var(--c-tier-zenith);
 }
 
-.feature-row.tier--gold {
+.account-row.tier--gold {
     border-color: var(--c-tier-gold-35);
 }
 
-.feature-row.tier--onyx {
+.account-row.tier--onyx {
     border-color: var(--c-tier-onyx-35);
 }
 
-.feature-row.tier--zenith {
+.account-row.tier--zenith {
     border-color: var(--c-tier-zenith-35);
 }
 
 /* Base background/color/border/cursor handled by .select-base; unique properties only */
 .statue-tier-select {
-    border-radius: var(--radius-sm);
     padding: 0 6px;
     height: 32px;
     width: 180px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
 }
 
 /* ── Statue stacked controls ──────────────────────────────────────────── */
 
-.feature-row__controls--stack {
+.account-row__controls--stack {
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
 }
 
-.feature-row__controls--stack .number-input-wrapper {
+.account-row__controls--stack .number-input-wrapper {
     width: 180px;
 }
 
 .statue-control-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .statue-control-label {
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    width: 60px;
+    width: 78px;
     text-align: right;
 }

@@ -1,7 +1,20 @@
 import van from "../vendor/van-1.6.0.js";
 
-const { svg, path, circle, g, defs, mask, rect, clipPath, polygon, use, radialGradient, stop } =
-    van.tags("http://www.w3.org/2000/svg");
+const {
+    svg,
+    path,
+    line: svgLine,
+    circle,
+    g,
+    defs,
+    mask,
+    rect,
+    clipPath,
+    polygon,
+    use,
+    radialGradient,
+    stop,
+} = van.tags("http://www.w3.org/2000/svg");
 
 const SvgBase = (content, props = {}) => {
     const { class: className, ...rest } = props;
@@ -20,6 +33,30 @@ const SvgBase = (content, props = {}) => {
 };
 
 export const Cogs = {
+    FlagIcon: (props) =>
+        SvgBase(
+            [
+                path({
+                    d: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z",
+                    fill: "none",
+                    stroke: "currentColor",
+                    "stroke-width": "2",
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                }),
+                svgLine({
+                    x1: "4",
+                    y1: "22",
+                    x2: "4",
+                    y2: "15",
+                    stroke: "currentColor",
+                    "stroke-width": "2",
+                    "stroke-linecap": "round",
+                }),
+            ],
+            { viewBox: "0 0 24 24", "aria-hidden": "true", ...props }
+        ),
+
     Cog1A00: (props) =>
         SvgBase(
             [

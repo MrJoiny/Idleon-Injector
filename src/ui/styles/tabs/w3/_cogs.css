@@ -1,10 +1,6 @@
-/* -- Construction: Cogs --------------------------------------------------- */
-
-.cogs-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
+/* ── Construction: Cogs ───────────────────────────────────────────────── */
+/* .cogs-scroll    → .scrollable-panel (.content-stack if needed)             */
+/* .cogs-write-status* → .write-status / --loading / --success / --error     */
 
 .cogs-board-shell {
     display: flex;
@@ -158,7 +154,7 @@
 }
 
 .cogs-modal-cog-name {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     font-family: var(--font-mono);
     overflow: hidden;
@@ -186,7 +182,7 @@
 
 .cogs-selection-state {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     letter-spacing: 0.04em;
     padding: 2px 7px;
     border: 1px solid currentColor;
@@ -213,7 +209,7 @@
     background: var(--c-panel-dim);
     padding: 6px 8px;
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.875rem;
 }
 
 .cogs-selection-charge__label {
@@ -233,9 +229,9 @@
     width: fit-content;
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
-    background: var(--c-ui-blue-10);
+    background: color-mix(in srgb, var(--c-ui-blue) 10%, var(--c-panel));
     padding: 3px 8px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     letter-spacing: 0.04em;
     font-family: var(--font-mono);
 }
@@ -257,13 +253,13 @@
 }
 
 .cogs-cog-stats__warning {
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     font-family: var(--font-mono);
 }
 
 .cogs-cog-stats__empty {
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
     border: 1px dashed var(--c-border);
     padding: 10px;
@@ -286,7 +282,7 @@
 }
 
 .cogs-cog-stat-row__code {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-family: var(--font-mono);
     color: var(--c-accent);
     text-transform: uppercase;
@@ -300,13 +296,13 @@
 }
 
 .cogs-cog-stat-row__name {
-    font-size: 0.74rem;
+    font-size: 0.875rem;
     color: var(--c-text);
     font-family: var(--font-mono);
 }
 
 .cogs-cog-stat-row__meaning {
-    font-size: 0.67rem;
+    font-size: 0.875rem;
     color: var(--c-text-dim);
 }
 
@@ -321,7 +317,7 @@
     min-width: 96px;
     padding: 3px 6px;
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     color: var(--c-text);
@@ -334,7 +330,7 @@
 
 .cogs-cog-stat-set-btn {
     padding: 3px 8px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
 }
 
 .cogs-modal-footer {
@@ -361,23 +357,7 @@
     flex-wrap: wrap;
 }
 
-.cogs-write-status {
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-}
-
-.cogs-write-status--loading {
-    color: var(--c-text-dim);
-}
-
-.cogs-write-status--success {
-    color: var(--c-success);
-}
-
-.cogs-write-status--error {
-    color: var(--c-danger);
-}
+/* .write-status / --loading / --success / --error → _account-pages.css */
 
 @media (max-width: 980px) {
     .cogs-board-shell {

@@ -36,11 +36,40 @@
 
 /* --- WARNING BANNER --- */
 .warning-banner {
-    color: var(--c-warning);
-    border: 1px solid var(--c-warning);
-    padding: 10px;
-    background: var(--c-accent-dim-solid);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
     font-size: 0.875rem;
+    color: var(--c-text-muted);
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--c-accent) 8%, var(--c-panel));
+}
+
+.warning-banner--polymer {
+    background: color-mix(in srgb, var(--c-refinery-polymer) 8%, var(--c-panel));
+}
+
+.warning-banner__icon {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--c-warning);
+    flex-shrink: 0;
+}
+
+.warning-banner--polymer .warning-banner__icon {
+    color: var(--c-refinery-polymer);
+}
+
+.warning-banner__content {
+    min-width: 0;
+}
+
+.warning-banner__highlight {
+    font-weight: 700;
+    color: var(--c-accent);
 }
 
 /* --- DEVTOOLS FRAME --- */

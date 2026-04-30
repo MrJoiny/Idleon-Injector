@@ -20,14 +20,15 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { readComputed, gga, readGgaEntries } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
-import { Icons } from "../../../../assets/icons.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { AsyncFeatureBody, toInt, useWriteStatus } from "../featureShared.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { ClampedLevelRow } from "../ClampedLevelRow.js";
+import { AccountSection } from "../components/AccountSection.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import { createStaticRowReconciler, getOrCreateState, toInt, writeVerified } from "../accountShared.js";
 
-const { div, button, span, h3, p } = van.tags;
+const { div } = van.tags;
 
 const WORSHIP_TOTEM_NAMES = [
     "Goblin Gorefest",
@@ -40,13 +41,6 @@ const WORSHIP_TOTEM_NAMES = [
     "Pufferblob Brawl",
 ];
 
-const Section = (title, rows) =>
-    div(
-        { class: "killroy-section" },
-        div({ class: "killroy-section__header" }, span({ class: "killroy-section__title" }, title)),
-        div({ class: "killroy-rows" }, ...rows)
-    );
-
 const WorshipChargeRow = ({
     index,
     playerName,
@@ -55,169 +49,54 @@ const WorshipChargeRow = ({
     activeMaxChargeRef,
     writeCharge,
 }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(chargeState.val ?? 0);
-    });
-
     const isActiveCharacter = () =>
         typeof activeCharacterNameRef.val === "string" &&
         activeCharacterNameRef.val.length > 0 &&
         activeCharacterNameRef.val === playerName;
 
-    const doSet = async (rawValue) => {
-        const next = toInt(rawValue, { min: 0 });
-
-        await run(async () => {
-            const verified = await writeCharge(playerName, next);
-            chargeState.val = verified;
-            inputVal.val = String(verified);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, playerName)
-        ),
-        span({ class: "feature-row__badge" }, () => {
-            const current = chargeState.val ?? 0;
+    return ClampedLevelRow({
+        valueState: chargeState,
+        max: Infinity,
+        integerMode: "round",
+        invalidFallback: 0,
+        write: async (nextCharge) => writeCharge(playerName, nextCharge),
+        indexLabel: `#${index + 1}`,
+        name: playerName,
+        renderBadge: (currentValue) => {
             const active = isActiveCharacter();
             const maxLabel =
                 active && activeMaxChargeRef.val !== null && activeMaxChargeRef.val !== undefined
                     ? activeMaxChargeRef.val
                     : "?";
 
-            return active ? `CHARGE ${current} / ${maxLabel} - ACTIVE` : `CHARGE ${current}`;
-        }),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { min: 0 }) - 1))),
-                onIncrement: () => (inputVal.val = String(toInt(inputVal.val, { min: 0 }) + 1)),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
+            return active ? `CHARGE ${currentValue ?? 0} / ${maxLabel} - ACTIVE` : `CHARGE ${currentValue ?? 0}`;
+        },
+        controlsClass: "account-row__controls--xl",
+    });
 };
 
-const WorshipWaveRow = ({ index, name, waveState, writeWave }) => {
-    const inputVal = van.state("0");
-    const { status, run } = useWriteStatus();
-
-    van.derive(() => {
-        inputVal.val = String(waveState.val ?? 0);
+const WorshipWaveRow = ({ index, name, waveState, writeWave }) =>
+    ClampedLevelRow({
+        valueState: waveState,
+        max: Infinity,
+        integerMode: "round",
+        invalidFallback: 0,
+        write: async (nextWave) => writeWave(index, nextWave),
+        indexLabel: `#${index + 1}`,
+        name,
+        renderBadge: (currentValue) => `BEST WAVE ${currentValue ?? 0}`,
     });
 
-    const doSet = async (rawValue) => {
-        const next = toInt(rawValue, { min: 0 });
-
-        await run(async () => {
-            const verified = await writeWave(index, next);
-            waveState.val = verified;
-            inputVal.val = String(verified);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "killroy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, index + 1),
-            span({ class: "feature-row__name" }, name)
-        ),
-        span({ class: "feature-row__badge" }, () => `BEST WAVE ${waveState.val ?? 0}`),
-        div(
-            { class: "feature-row__controls" },
-            NumberInput({
-                mode: "int",
-                value: inputVal,
-                oninput: (e) => (inputVal.val = e.target.value),
-                onDecrement: () => (inputVal.val = String(Math.max(0, toInt(inputVal.val, { min: 0 }) - 1))),
-                onIncrement: () => (inputVal.val = String(toInt(inputVal.val, { min: 0 }) + 1)),
-            }),
-            button(
-                {
-                    type: "button",
-                    onmousedown: (e) => e.preventDefault(),
-                    class: () =>
-                        `feature-btn feature-btn--apply ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading",
-                    onclick: (e) => {
-                        e.preventDefault();
-                        doSet(inputVal.val);
-                    },
-                },
-                () => (status.val === "loading" ? "..." : "SET")
-            )
-        )
-    );
-};
-
 export const WorshipTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
-
+    const { loading, error, run } = useAccountLoad({ label: "Worship" });
     const activeCharacterNameRef = van.state(null);
     const activeMaxChargeRef = van.state(null);
 
     const chargeStatesByName = new Map();
     const waveStatesByIndex = new Map();
 
-    const getChargeState = (playerName) => {
-        if (!chargeStatesByName.has(playerName)) {
-            chargeStatesByName.set(playerName, van.state(0));
-        }
-        return chargeStatesByName.get(playerName);
-    };
-
-    const getWaveState = (index) => {
-        if (!waveStatesByIndex.has(index)) {
-            waveStatesByIndex.set(index, van.state(0));
-        }
-        return waveStatesByIndex.get(index);
-    };
+    const getChargeState = (playerName) => getOrCreateState(chargeStatesByName, playerName);
+    const getWaveState = (index) => getOrCreateState(waveStatesByIndex, index);
 
     const writeCharge = async (playerName, nextCharge) => {
         const isActiveCharacter =
@@ -227,23 +106,45 @@ export const WorshipTab = () => {
 
         const writePath = isActiveCharacter ? "PlayerStuff[0]" : `PlayerDATABASE.h[${playerName}].h.PlayerStuff[0]`;
 
-        const ok = await gga(writePath, nextCharge);
-        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextCharge}`);
-        return nextCharge;
+        return writeVerified(writePath, nextCharge);
     };
 
     const writeWave = async (waveIndex, nextWave) => {
         const writePath = `TotemInfo[0][${waveIndex}]`;
-        const ok = await gga(writePath, nextWave);
-        if (!ok) throw new Error(`Write mismatch at ${writePath}: expected ${nextWave}`);
-        return nextWave;
+        return writeVerified(writePath, nextWave);
     };
 
-    const load = async (showSpinner = true) => {
-        if (showSpinner) loading.val = true;
-        error.val = null;
+    const chargeRowsNode = div({ class: "content-stack" });
+    const reconcilePlayerRows = createStaticRowReconciler(chargeRowsNode);
 
-        try {
+    const reconcileChargeRows = (players) =>
+        reconcilePlayerRows(players.map((player) => player.playerName).join("|"), () =>
+            players.map((player, index) =>
+                WorshipChargeRow({
+                    index,
+                    playerName: player.playerName,
+                    chargeState: getChargeState(player.playerName),
+                    activeCharacterNameRef,
+                    activeMaxChargeRef,
+                    writeCharge,
+                })
+            )
+        );
+
+    const waveRowsNode = div(
+        { class: "content-stack" },
+        ...WORSHIP_TOTEM_NAMES.map((name, index) =>
+            WorshipWaveRow({
+                index,
+                name,
+                waveState: getWaveState(index),
+                writeWave,
+            })
+        )
+    );
+
+    const load = async () =>
+        run(async () => {
             const rawNames = await gga("GetPlayersUsernames");
             const playerNames = toIndexedArray(rawNames ?? []).filter(
                 (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
@@ -254,101 +155,63 @@ export const WorshipTab = () => {
                     playerNames.length
                         ? readGgaEntries("PlayerDATABASE.h", playerNames, ["PlayerStuff"])
                         : Promise.resolve({}),
-                    gga("UserInfo[0]").catch(() => null),
-                    gga("PlayerStuff[0]").catch(() => null),
-                    readComputed("skillStats", "WorshipChargeMax", []).catch(() => null),
-                    gga("TotemInfo[0]").catch(() => []),
+                    gga("UserInfo[0]"),
+                    gga("PlayerStuff[0]"),
+                    readComputed("skillStats", "WorshipChargeMax", []),
+                    gga("TotemInfo[0]"),
                 ]);
 
-            activeCharacterNameRef.val = activeCharacterName;
-            activeMaxChargeRef.val =
+            const nextActiveCharacterName = activeCharacterName;
+            const nextActiveMaxCharge =
                 activeMaxCharge === null || activeMaxCharge === undefined ? null : toInt(activeMaxCharge, { min: 0 });
+            const players = playerNames.map((playerName) => ({ playerName }));
 
-            const players = playerNames.map((playerName) => {
+            activeCharacterNameRef.val = nextActiveCharacterName;
+            activeMaxChargeRef.val = nextActiveMaxCharge;
+            reconcileChargeRows(players);
+
+            for (const playerName of playerNames) {
                 const playerStuff = toIndexedArray(playerEntries?.[playerName]?.PlayerStuff ?? []);
                 const storedCharge = toInt(playerStuff[0], { min: 0 });
-
                 const charge =
-                    typeof activeCharacterName === "string" &&
-                    activeCharacterName.length > 0 &&
-                    activeCharacterName === playerName
+                    typeof nextActiveCharacterName === "string" &&
+                    nextActiveCharacterName.length > 0 &&
+                    nextActiveCharacterName === playerName
                         ? toInt(activeLiveCharge, { min: 0 })
                         : storedCharge;
 
                 getChargeState(playerName).val = charge;
-                return { playerName };
-            });
+            }
 
             const totemWaves = toIndexedArray(rawTotemInfo0 ?? []);
-            const towerRows = WORSHIP_TOTEM_NAMES.map((name, index) => {
-                const wave = toInt(totemWaves[index], { min: 0 });
-                getWaveState(index).val = wave;
-                return { index, name };
-            });
+            for (let i = 0; i < WORSHIP_TOTEM_NAMES.length; i++) {
+                getWaveState(i).val = toInt(totemWaves[i], { min: 0 });
+            }
+        });
 
-            data.val = { players, towerRows };
-        } catch (e) {
-            error.val = e?.message ?? "Failed to load worship data";
-        } finally {
-            if (showSpinner) loading.val = false;
-        }
-    };
+    load();
 
-    load(true);
-
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        isEmpty: (resolved) => !resolved.players.length && !resolved.towerRows.length,
-        renderEmpty: () =>
-            EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO DATA",
-                subtitle: "No worship data found.",
-            }),
-        renderContent: (resolved) =>
-            div(
-                { class: "killroy-scroll scrollable-panel" },
-                Section(
-                    "WORSHIP CHARGE",
-                    resolved.players.map((player, index) =>
-                        WorshipChargeRow({
-                            index,
-                            playerName: player.playerName,
-                            chargeState: getChargeState(player.playerName),
-                            activeCharacterNameRef,
-                            activeMaxChargeRef,
-                            writeCharge,
-                        })
-                    )
-                ),
-                Section("TOWER DEFENSE", [
-                    ...resolved.towerRows.map((row) =>
-                        WorshipWaveRow({
-                            index: row.index,
-                            name: row.name,
-                            waveState: getWaveState(row.index),
-                            writeWave,
-                        })
-                    ),
-                ])
-            ),
-    });
-
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "W3 - WORSHIP"),
-                p({ class: "feature-header__desc" }, "Edit worship charge and best worship waves.")
-            ),
-            div({ class: "feature-header__actions" }, button({ class: "btn-secondary", onclick: load }, "REFRESH"))
-        ),
-        renderBody
+    const body = div(
+        { class: "scrollable-panel content-stack" },
+        AccountSection({
+            title: "WORSHIP CHARGE",
+            body: chargeRowsNode,
+        }),
+        AccountSection({
+            title: "TOWER DEFENSE",
+            body: waveRowsNode,
+        })
     );
+
+    return PersistentAccountListPage({
+        rootClass: "tab-container scroll-container",
+        title: "W3 - WORSHIP",
+        description: "Edit worship charge and best worship waves.",
+        actions: RefreshButton({ onRefresh: load }),
+        state: { loading, error },
+        loadingText: "READING WORSHIP",
+        errorTitle: "WORSHIP READ FAILED",
+        initialWrapperClass: "scrollable-panel",
+        body,
+    });
 };

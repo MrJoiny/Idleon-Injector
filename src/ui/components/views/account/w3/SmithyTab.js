@@ -10,13 +10,17 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga } from "../../../../services/api.js";
-import { Loader } from "../../../Loader.js";
-import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { AsyncFeatureBody, unwrapH, useWriteStatus } from "../featureShared.js";
+import { AccountSection } from "../components/AccountSection.js";
+import { AddFromListSection } from "../components/AddFromListSection.js";
+import { useAccountLoad } from "../accountLoadPolicy.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
+import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import { RemovableStoredRow } from "../components/RemovableStoredRow.js";
+import { unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 
-const { div, button, span, h3, p, select, option } = van.tags;
+const { div } = van.tags;
 
 const EQUIP_SETS_PATHS = ["CustomMaps.h.EquipmentSets", "CustomMaps.EquipmentSets"];
 const SET_ORDER_PATHS = ["CustomLists.h.RANDOlist[113]", "CustomLists.RANDOlist[113]"];
@@ -178,56 +182,21 @@ const readWithFallback = async (paths) => {
 };
 
 const SmithyRow = ({ row, onRemove }) => {
-    const { status, run } = useWriteStatus();
-
-    const removeRow = async () => {
-        await run(async () => {
-            await onRemove(row.index);
-        });
-    };
-
-    return div(
-        {
-            class: () =>
-                [
-                    "feature-row",
-                    "smithy-row",
-                    status.val === "success" ? "feature-row--success" : "",
-                    status.val === "error" ? "feature-row--error" : "",
-                ]
-                    .filter(Boolean)
-                    .join(" "),
-        },
-        div(
-            { class: "feature-row__info" },
-            span({ class: "feature-row__index" }, row.index + 1),
-            div(
-                { class: "smithy-row__name-group" },
-                span({ class: "feature-row__name" }, row.displayName || row.setKey),
-                span({ class: "smithy-row__set-key" }, row.setKey)
-            )
-        ),
-        span({ class: "feature-row__badge" }, () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY")),
-        div(
-            { class: "feature-row__controls" },
-            button(
-                {
-                    class: () =>
-                        `feature-btn feature-btn--danger ${status.val === "loading" ? "feature-btn--loading" : ""}`,
-                    disabled: () => status.val === "loading" || onRemove.isBusy(),
-                    onmousedown: (e) => e.preventDefault(),
-                    onclick: removeRow,
-                },
-                () => (status.val === "loading" ? "..." : "REMOVE")
-            )
-        )
-    );
+    return RemovableStoredRow({
+        index: row.index,
+        primaryLabel: row.displayName,
+        fallbackLabel: row.setKey,
+        secondaryLabel: row.setKey,
+        badge: () => (row.completedNow ? "EQUIPPED" : row.known ? "STORED" : "LEGACY"),
+        rowClass: "smithy-row",
+        nameGroupClass: "smithy-row__name-group",
+        onRemove,
+        isBusy: onRemove.isBusy,
+    });
 };
 
 export const SmithyTab = () => {
-    const loading = van.state(true);
-    const error = van.state(null);
-    const data = van.state(null);
+    const { loading, error, run } = useAccountLoad({ label: "Smithy" });
     const currentStoredSetKeys = van.state([]);
     const smithyRows = van.state([]);
     const addOptions = van.state([]);
@@ -242,7 +211,6 @@ export const SmithyTab = () => {
 
     const { status: addStatus, run: runAdd } = useWriteStatus();
     let scrollEl = null;
-    let loadSeq = 0;
 
     const applySmithyState = (rawLoadedData) => {
         const result = buildSmithyState(rawLoadedData);
@@ -263,20 +231,16 @@ export const SmithyTab = () => {
         writeWarning.val = null;
     };
 
-    const load = async (showSpinner = true) => {
-        const seq = ++loadSeq;
-        if (showSpinner) loading.val = true;
-        error.val = null;
-        try {
+    const load = async () => {
+        return run(async () => {
             const [rawEquipSets, rawSetOrder, rawStoredSets, rawEquippedMain, rawEquippedExtra] = await Promise.all([
                 readWithFallback(EQUIP_SETS_PATHS),
-                readWithFallback(SET_ORDER_PATHS).catch(() => null),
+                readWithFallback(SET_ORDER_PATHS),
                 gga(STORED_SETS_PATH),
                 gga(EQUIPPED_MAIN_PATH),
                 gga(EQUIPPED_EXTRA_PATH),
             ]);
 
-            if (seq !== loadSeq) return;
             applySmithyState({
                 rawEquipSets,
                 rawSetOrder,
@@ -284,23 +248,14 @@ export const SmithyTab = () => {
                 rawEquippedMain,
                 rawEquippedExtra,
             });
-            data.val = { loaded: true };
-        } catch (e) {
-            if (seq !== loadSeq) return;
-            error.val = e?.message ?? "Failed to load smithy data";
-            data.val = null;
-        } finally {
-            if (showSpinner && seq === loadSeq) loading.val = false;
-        }
+        });
     };
 
     const writeStoredSets = async (setKeys) => {
         writeWarning.val = null;
         const expectedSetKeys = normalizeStoredSetKeys(setKeys);
         try {
-            const ok = await gga(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
-            if (!ok)
-                throw new Error("Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.");
+            await writeVerified(STORED_SETS_PATH, encodeStoredSets(expectedSetKeys));
         } catch (e) {
             const msg = "Failed writing smithy sets. Smithy may be inconsistent. Press REFRESH to resync.";
             writeWarning.val = msg;
@@ -310,7 +265,7 @@ export const SmithyTab = () => {
 
     const refreshAfterWrite = async () => {
         const prevTop = scrollEl?.scrollTop ?? 0;
-        await load(false);
+        await load();
         requestAnimationFrame(() => {
             if (scrollEl) scrollEl.scrollTop = prevTop;
         });
@@ -352,11 +307,6 @@ export const SmithyTab = () => {
 
     const addAllAvailable = async () => {
         if (mutating.val || addOptions.val.length === 0) return;
-        const shouldContinue = window.confirm(
-            "This will add every available set from the dropdown to smithy.\n\nAre you sure you want to continue?"
-        );
-        if (!shouldContinue) return;
-
         await runAdd(async () => {
             mutating.val = true;
             try {
@@ -372,151 +322,63 @@ export const SmithyTab = () => {
         });
     };
 
-    load(true);
+    load();
 
-    const renderBody = AsyncFeatureBody({
-        loading,
-        error,
-        data,
-        renderLoading: () => div({ class: "feature-loader" }, Loader()),
-        renderError: (message) => EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message }),
-        isEmpty: () => totalSetCount.val === 0,
-        renderEmpty: () =>
-            EmptyState({
-                icon: Icons.SearchX(),
-                title: "NO SMITHY SETS",
-                subtitle: "No armor set smithy definitions were found.",
-            }),
-        renderContent: () =>
-            (() => {
-                const root = div(
-                    {
-                        class: "smithy-scroll scrollable-panel",
-                    },
-                    () =>
-                        writeWarning.val
-                            ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val)
-                            : null,
+    const body = div(
+        {
+            class: "scrollable-panel content-stack",
+        },
+        () => (writeWarning.val ? div({ class: "warning-banner" }, Icons.Warning(), " ", writeWarning.val) : null),
 
-                    div(
-                        { class: "smithy-section" },
-                        div(
-                            { class: "smithy-section__header" },
-                            span({ class: "smithy-section__title" }, "ON SMITHY"),
-                            span(
-                                { class: "smithy-section__note" },
-                                () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`
-                            )
-                        ),
-                        () => {
-                            const rows = smithyRows.val;
-                            if (rows.length === 0)
-                                return div({ class: "smithy-empty" }, "No equipment sets currently stored.");
+        AddFromListSection({
+            title: "ADD EQUIPMENT SET",
+            note: () => `${addableCount.val} AVAILABLE`,
+            selectLabel: "SELECT SET",
+            selectedValue: selectedAddSetKey,
+            options: addOptions,
+            emptyOptionLabel: "No equipment sets left to add",
+            getOptionValue: (entry) => entry.setKey,
+            getOptionLabel: (entry) => `${entry.displayName} (${entry.setKey})`,
+            addStatus,
+            addDisabled: () => mutating.val || !selectedAddSetKey.val || addOptions.val.length === 0,
+            addAllDisabled: () => mutating.val || addOptions.val.length === 0,
+            onAdd: addSelected,
+            onAddAll: addAllAvailable,
+        }),
 
-                            return div(
-                                { class: "smithy-rows" },
-                                ...rows.map((row) =>
-                                    SmithyRow({
-                                        row,
-                                        onRemove: removeAtIndex,
-                                    })
-                                )
-                            );
-                        }
-                    ),
-
-                    div(
-                        { class: "smithy-section" },
-                        div(
-                            { class: "smithy-section__header" },
-                            span({ class: "smithy-section__title" }, "ADD EQUIPMENT SET"),
-                            span({ class: "smithy-section__note" }, () => `${addableCount.val} AVAILABLE`)
-                        ),
-                        div(
-                            {
-                                class: () =>
-                                    [
-                                        "smithy-add-row",
-                                        addStatus.val === "success" ? "feature-row--success" : "",
-                                        addStatus.val === "error" ? "feature-row--error" : "",
-                                    ]
-                                        .filter(Boolean)
-                                        .join(" "),
-                            },
-                            span({ class: "smithy-add-row__label" }, "SELECT SET"),
-                            () =>
-                                select(
-                                    {
-                                        class: "select-base smithy-add-row__select",
-                                        value: selectedAddSetKey,
-                                        onchange: (e) => (selectedAddSetKey.val = e.target.value),
-                                    },
-                                    ...(addOptions.val.length === 0
-                                        ? [option({ value: "" }, "No equipment sets left to add")]
-                                        : addOptions.val.map((entry) =>
-                                              option({ value: entry.setKey }, `${entry.displayName} (${entry.setKey})`)
-                                          ))
-                                ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--apply ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val ||
-                                        addStatus.val === "loading" ||
-                                        !selectedAddSetKey.val ||
-                                        addOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addSelected,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD")
-                            ),
-                            button(
-                                {
-                                    class: () =>
-                                        `feature-btn feature-btn--danger ${addStatus.val === "loading" ? "feature-btn--loading" : ""}`,
-                                    disabled: () =>
-                                        mutating.val || addStatus.val === "loading" || addOptions.val.length === 0,
-                                    onmousedown: (e) => e.preventDefault(),
-                                    onclick: addAllAvailable,
-                                },
-                                () => (addStatus.val === "loading" ? "..." : "ADD ALL")
-                            )
-                        )
+        AccountSection({
+            title: "ON SMITHY",
+            note: () => `${unlockedCount.val}/${totalSetCount.val} TOTAL`,
+            body: () => {
+                const rows = smithyRows.val;
+                return div(
+                    { class: "smithy-rows" },
+                    ...rows.map((row) =>
+                        SmithyRow({
+                            row,
+                            onRemove: removeAtIndex,
+                        })
                     )
                 );
-                scrollEl = root;
-                return root;
-            })(),
-    });
-
-    return div(
-        { class: "tab-container" },
-        div(
-            { class: "feature-header" },
-            div(
-                {},
-                h3({}, "SMITHY"),
-                p(
-                    { class: "feature-header__desc" },
-                    "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list."
-                )
-            ),
-            div(
-                { class: "feature-header__actions" },
-                button(
-                    {
-                        class: "btn-secondary",
-                        disabled: () => loading.val || mutating.val,
-                        onclick: () => {
-                            if (mutating.val) return;
-                            load(true);
-                        },
-                    },
-                    "REFRESH"
-                )
-            )
-        ),
-        renderBody
+            },
+        })
     );
+    scrollEl = body;
+
+    return PersistentAccountListPage({
+        title: "SMITHY",
+        description: "Manage Armor Set Smithy equipment sets. Remove stored sets, or add sets from the game list.",
+        actions: RefreshButton({
+            onRefresh: () => {
+                if (mutating.val) return;
+                load();
+            },
+            disabled: () => loading.val || mutating.val,
+        }),
+        state: { loading, error },
+        loadingText: "READING SMITHY",
+        errorTitle: "SMITHY READ FAILED",
+        initialWrapperClass: "scrollable-panel",
+        body,
+    });
 };
