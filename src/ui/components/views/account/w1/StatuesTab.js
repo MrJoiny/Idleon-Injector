@@ -9,18 +9,14 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../services/api.js";
-import { NumberInput } from "../../../NumberInput.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { EditableFieldsRow } from "../EditableFieldsRow.js";
+import { EditableFieldsRow, StackedNumberField } from "../EditableFieldsRow.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import {
-    adjustFormattedIntInput,
     createStaticRowReconciler,
     getOrCreateState,
-    largeFormatter,
-    largeParser,
     resolveFormattedIntInput,
     toInt,
     writeVerified,
@@ -41,8 +37,21 @@ const TIER_BADGE_CLASSES = ["stone", "gold", "onyx", "zenith"];
 const StatueRow = ({ index, nameState, levelState, depositedState, tierState }) =>
     EditableFieldsRow({
         fields: [
-            { key: "level", valueState: levelState },
-            { key: "deposited", valueState: depositedState },
+            {
+                key: "level",
+                label: "Level",
+                valueState: levelState,
+                rootClass: "statue-control-row",
+                labelClass: "statue-control-label",
+            },
+            {
+                key: "deposited",
+                label: "Deposited",
+                valueState: depositedState,
+                formatted: true,
+                rootClass: "statue-control-row",
+                labelClass: "statue-control-label",
+            },
             { key: "tier", valueState: tierState, toDraft: (value) => toInt(value, { min: 0 }) },
         ],
         normalize: ({ level, deposited, tier }) => {
@@ -73,47 +82,34 @@ const StatueRow = ({ index, nameState, levelState, depositedState, tierState }) 
             ),
         ],
         badge: () => `LV ${levelState.val}`,
-        renderControls: ({ draftStates, resetDraft, setFieldFocused, status }) =>
+        renderControls: ({ draftStates, getDraftValue, resetDraft, setFieldFocused, status }) =>
             div(
                 { class: "account-row__controls--stack" },
-                div(
-                    { class: "statue-control-row" },
-                    span({ class: "statue-control-label" }, "Level"),
-                    NumberInput({
-                        value: draftStates.level,
-                        onfocus: () => setFieldFocused("level", true),
-                        onblur: () => {
-                            setFieldFocused("level", false);
-                            resetDraft("level");
-                        },
-                        onDecrement: () =>
-                            (draftStates.level.val = String(Math.max(0, toInt(draftStates.level.val) - 1))),
-                        onIncrement: () => (draftStates.level.val = String(toInt(draftStates.level.val) + 1)),
-                    })
-                ),
-                div(
-                    { class: "statue-control-row" },
-                    span({ class: "statue-control-label" }, "Deposited"),
-                    NumberInput({
-                        mode: "int",
-                        value: draftStates.deposited,
-                        formatter: largeFormatter,
-                        parser: largeParser,
-                        onfocus: () => setFieldFocused("deposited", true),
-                        onblur: () => {
-                            setFieldFocused("deposited", false);
-                            resetDraft("deposited");
-                        },
-                        onDecrement: () =>
-                            (draftStates.deposited.val = String(
-                                adjustFormattedIntInput(draftStates.deposited.val, -1, 0)
-                            )),
-                        onIncrement: () =>
-                            (draftStates.deposited.val = String(
-                                adjustFormattedIntInput(draftStates.deposited.val, 1, 0)
-                            )),
-                    })
-                ),
+                StackedNumberField({
+                    field: {
+                        key: "level",
+                        label: "Level",
+                        rootClass: "statue-control-row",
+                        labelClass: "statue-control-label",
+                    },
+                    draftStates,
+                    getDraftValue,
+                    setFieldFocused,
+                    resetDraft,
+                }),
+                StackedNumberField({
+                    field: {
+                        key: "deposited",
+                        label: "Deposited",
+                        formatted: true,
+                        rootClass: "statue-control-row",
+                        labelClass: "statue-control-label",
+                    },
+                    draftStates,
+                    getDraftValue,
+                    setFieldFocused,
+                    resetDraft,
+                }),
                 div(
                     { class: "statue-control-row" },
                     span({ class: "statue-control-label" }, "Tier"),

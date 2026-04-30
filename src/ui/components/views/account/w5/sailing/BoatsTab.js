@@ -1,17 +1,14 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { NumberInput } from "../../../../NumberInput.js";
-import { EditableFieldsRow } from "../../EditableFieldsRow.js";
+import { EditableFieldsRow, StackedNumberField } from "../../EditableFieldsRow.js";
 import { InlineEditableNumberField } from "../../components/InlineEditableNumberField.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import {
-    adjustFormattedIntInput,
     cleanNameEffect,
     createStaticRowReconciler,
     getOrCreateState,
     largeFormatter,
-    largeParser,
     resolveNumberInput,
     toInt,
     writeManyVerified,
@@ -111,41 +108,17 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
         ],
         badge: () => `LV ${getOrCreateState(valueStates, fieldByKey.level.key).val ?? 0}`,
         controlsClass: "account-row__controls--stack-action",
-        renderControls: ({ draftStates, resetDraft, setFieldFocused, status }) =>
+        renderControls: ({ draftStates, getDraftValue, resetDraft, setFieldFocused, status }) =>
             div(
                 { class: "account-stacked-fields" },
                 ...CAPTAIN_NUMBER_FIELDS.map((field) =>
-                    div(
-                        { class: "account-stacked-field" },
-                        span({ class: "account-stacked-field__label" }, field.label),
-                        NumberInput({
-                            mode: field.float ? "float" : "int",
-                            value: draftStates[fieldByKey[field.key].key],
-                            formatter: field.formatted ? largeFormatter : undefined,
-                            parser: field.formatted ? largeParser : undefined,
-                            onfocus: () => setFieldFocused(fieldByKey[field.key].key, true),
-                            onblur: () => {
-                                setFieldFocused(fieldByKey[field.key].key, false);
-                                resetDraft(fieldByKey[field.key].key);
-                            },
-                            onDecrement: () => {
-                                const draftKey = fieldByKey[field.key].key;
-                                draftStates[draftKey].val = String(
-                                    field.formatted
-                                        ? adjustFormattedIntInput(draftStates[draftKey].val, -1, 0)
-                                        : Math.max(0, toInt(draftStates[draftKey].val) - 1)
-                                );
-                            },
-                            onIncrement: () => {
-                                const draftKey = fieldByKey[field.key].key;
-                                draftStates[draftKey].val = String(
-                                    field.formatted
-                                        ? adjustFormattedIntInput(draftStates[draftKey].val, 1, 0)
-                                        : Math.min(field.max ?? Infinity, toInt(draftStates[draftKey].val) + 1)
-                                );
-                            },
-                        })
-                    )
+                    StackedNumberField({
+                        field: fieldByKey[field.key],
+                        draftStates,
+                        getDraftValue,
+                        setFieldFocused,
+                        resetDraft,
+                    })
                 ),
                 div(
                     { class: "account-stacked-field" },
@@ -167,29 +140,17 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                         )
                     )
                 ),
-                div(
-                    { class: "account-stacked-field" },
-                    span(
-                        { class: "account-stacked-field__label" },
-                        () => `${bonusTypes[toInt(draftStates[fieldByKey.bonusType1.key].val)]?.effect ?? "Bonus I"}`
-                    ),
-                    NumberInput({
-                        value: draftStates[fieldByKey.amount1.key],
-                        onfocus: () => setFieldFocused(fieldByKey.amount1.key, true),
-                        onblur: () => {
-                            setFieldFocused(fieldByKey.amount1.key, false);
-                            resetDraft(fieldByKey.amount1.key);
-                        },
-                        onDecrement: () =>
-                            (draftStates[fieldByKey.amount1.key].val = String(
-                                Math.max(0, toInt(draftStates[fieldByKey.amount1.key].val) - 1)
-                            )),
-                        onIncrement: () =>
-                            (draftStates[fieldByKey.amount1.key].val = String(
-                                toInt(draftStates[fieldByKey.amount1.key].val) + 1
-                            )),
-                    })
-                ),
+                StackedNumberField({
+                    field: {
+                        ...fieldByKey.amount1,
+                        label: () =>
+                            `${bonusTypes[toInt(draftStates[fieldByKey.bonusType1.key].val)]?.effect ?? "Bonus I"}`,
+                    },
+                    draftStates,
+                    getDraftValue,
+                    setFieldFocused,
+                    resetDraft,
+                }),
                 div(
                     { class: "account-stacked-field" },
                     span({ class: "account-stacked-field__label" }, "Bonus Type II"),
@@ -210,29 +171,17 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                         )
                     )
                 ),
-                div(
-                    { class: "account-stacked-field" },
-                    span(
-                        { class: "account-stacked-field__label" },
-                        () => `${bonusTypes[toInt(draftStates[fieldByKey.bonusType2.key].val)]?.effect ?? "Bonus II"}`
-                    ),
-                    NumberInput({
-                        value: draftStates[fieldByKey.amount2.key],
-                        onfocus: () => setFieldFocused(fieldByKey.amount2.key, true),
-                        onblur: () => {
-                            setFieldFocused(fieldByKey.amount2.key, false);
-                            resetDraft(fieldByKey.amount2.key);
-                        },
-                        onDecrement: () =>
-                            (draftStates[fieldByKey.amount2.key].val = String(
-                                Math.max(0, toInt(draftStates[fieldByKey.amount2.key].val) - 1)
-                            )),
-                        onIncrement: () =>
-                            (draftStates[fieldByKey.amount2.key].val = String(
-                                toInt(draftStates[fieldByKey.amount2.key].val) + 1
-                            )),
-                    })
-                )
+                StackedNumberField({
+                    field: {
+                        ...fieldByKey.amount2,
+                        label: () =>
+                            `${bonusTypes[toInt(draftStates[fieldByKey.bonusType2.key].val)]?.effect ?? "Bonus II"}`,
+                    },
+                    draftStates,
+                    getDraftValue,
+                    setFieldFocused,
+                    resetDraft,
+                })
             ),
         applyTooltip: "Write all captain fields to game",
     });

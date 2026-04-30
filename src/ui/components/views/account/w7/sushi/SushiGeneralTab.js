@@ -1,8 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
-import { NumberInput } from "../../../../NumberInput.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import { EditableFieldsRow } from "../../EditableFieldsRow.js";
+import { EditableFieldsRow, StackedNumberField } from "../../EditableFieldsRow.js";
 import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
@@ -127,36 +126,26 @@ const KnowledgeRow = ({ entry, fieldStates }) =>
                 { class: "account-stacked-fields" },
                 ...KNOWLEDGE_FIELDS.map((field) => {
                     const valueState = getOrCreateState(fieldStates[field.id], entry.index);
-                    return div(
-                        { class: "account-stacked-field" },
-                        span({ class: "account-stacked-field__label" }, field.label),
-                        NumberInput({
-                            mode: field.inputMode,
-                            value: draftStates[field.id],
-                            ...(field.inputProps ?? {}),
-                            oninput: (e) => {
-                                if (typeof field.clampDraft !== "function") return;
-                                const nextDraft = field.clampDraft(e.target.value);
-                                e.target.value = nextDraft;
-                                draftStates[field.id].val = nextDraft;
+                    return StackedNumberField({
+                        field: {
+                            ...field,
+                            key: field.id,
+                            adjustDraft: (raw, delta) => field.adjust(raw, delta, valueState.val),
+                            inputProps: {
+                                ...(field.inputProps ?? {}),
+                                oninput: (e) => {
+                                    if (typeof field.clampDraft !== "function") return;
+                                    const nextDraft = field.clampDraft(e.target.value);
+                                    e.target.value = nextDraft;
+                                    draftStates[field.id].val = nextDraft;
+                                },
                             },
-                            onfocus: () => setFieldFocused(field.id, true),
-                            onblur: () => {
-                                setFieldFocused(field.id, false);
-                                resetDraft(field.id);
-                            },
-                            onDecrement: () => {
-                                draftStates[field.id].val = String(
-                                    field.adjust(getDraftValue(field.id), -1, valueState.val)
-                                );
-                            },
-                            onIncrement: () => {
-                                draftStates[field.id].val = String(
-                                    field.adjust(getDraftValue(field.id), 1, valueState.val)
-                                );
-                            },
-                        })
-                    );
+                        },
+                        draftStates,
+                        getDraftValue,
+                        setFieldFocused,
+                        resetDraft,
+                    });
                 })
             ),
     });
