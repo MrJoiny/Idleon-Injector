@@ -169,6 +169,39 @@
     letter-spacing: 0.12em;
 }
 
+.brand-version-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: none;
+    cursor: default;
+}
+
+.brand-version-button.has-update {
+    cursor: pointer;
+}
+
+.brand-version-button.has-update:hover {
+    color: var(--c-danger-soft-text);
+}
+
+.update-ready-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c-danger);
+    box-shadow: 0 0 8px var(--c-danger);
+    animation: updateDotFlash 1s infinite;
+    flex: 0 0 auto;
+}
+
 /* --- NAVIGATION MENU --- */
 .nav-menu {
     display: flex;

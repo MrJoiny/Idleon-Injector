@@ -93,6 +93,19 @@
     }
 }
 
+@keyframes updateDotFlash {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(0.9);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
 /* --- ANIMATION UTILITY CLASSES --- */
 .feedback-success {
     animation: pulseSuccess 0.5s ease-out;
