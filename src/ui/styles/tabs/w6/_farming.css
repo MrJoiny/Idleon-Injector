@@ -1,0 +1,110 @@
+.farming-tab .alchemy-sub-content {
+    min-height: 0;
+}
+
+.farming-grid-scroll {
+    overflow-x: auto;
+}
+
+.farming-grid-note {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    padding: 2px 0;
+}
+
+.farming-grid {
+    display: grid;
+    gap: 10px;
+    width: max-content;
+    min-width: 100%;
+}
+
+.farming-plot-grid {
+    grid-template-columns: repeat(9, 190px);
+    grid-template-rows: repeat(4, auto);
+}
+
+.farming-rank-grid {
+    grid-template-columns: repeat(5, 230px);
+    grid-template-rows: repeat(4, auto);
+}
+
+.farming-grid-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 9px;
+    min-width: 0;
+}
+
+.farming-grid-tile__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 5px;
+}
+
+.farming-grid-tile__title {
+    color: var(--c-accent);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.farming-grid-tile__coord {
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.farming-grid-field-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 7px;
+    align-items: stretch;
+}
+
+.farming-grid-field-row .account-row__info {
+    justify-content: space-between;
+}
+
+.farming-grid-field-row .account-row__badge {
+    justify-self: stretch;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.farming-grid-field-row .account-row__controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    justify-content: stretch;
+}
+
+.farming-grid-field-row .account-row__controls--xl .number-input-wrapper {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+}
+
+.farming-grid-field-row .account-row__controls--xl .number-input-wrapper input {
+    min-width: 0;
+}
+
+.farming-grid-field-row .account-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 0 8px;
+}
+
+@media (max-width: 900px) {
+    .farming-grid {
+        width: max-content;
+        min-width: 0;
+    }
+}

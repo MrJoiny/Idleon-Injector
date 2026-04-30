@@ -23,6 +23,7 @@ const COMPUTED_SOURCES = {
     skillStats: { eventId: 12, method: "_customBlock_SkillStats" },
     thingies: { eventId: 579, method: "_customBlock_Thingies" },
     minehead: { eventId: 579, method: "_customBlock_Minehead" },
+    farming: { eventId: 579, method: "_customBlock_FarmingStuffs" },
 };
 
 export function getcheatStateList() {
