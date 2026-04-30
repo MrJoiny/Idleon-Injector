@@ -63,6 +63,17 @@ export async function fetchAppInfo() {
     return _request("/app-info");
 }
 
+export async function checkForUpdate(force = false) {
+    return _request(`/update/check${force ? "?force=1" : ""}`);
+}
+
+export async function applyUpdate() {
+    return _request("/update/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+    });
+}
+
 export async function updateSessionConfig(updatedConfig) {
     return _request("/config/update", {
         method: "POST",

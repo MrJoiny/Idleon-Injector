@@ -45,9 +45,13 @@ async function serveStatic(req, res, staticDir) {
             filePath = path.join(filePath, "index.html");
         }
 
-        const content = await fs.readFile(filePath);
         const ext = path.extname(filePath).toLowerCase();
-        res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
+        const content = await fs.readFile(filePath);
+        const headers = { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" };
+        if ([".html", ".js", ".css"].includes(ext)) {
+            headers["Cache-Control"] = "no-store";
+        }
+        res.writeHead(200, headers);
         res.end(content);
         return true;
     } catch {

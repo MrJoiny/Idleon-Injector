@@ -39,6 +39,8 @@ const ActiveCheatList = () => {
 };
 
 export const Sidebar = () => {
+    const hasUpdate = () => store.app.updateInfo?.updateAvailable;
+
     const NavBtn = (viewConfig, Icon) =>
         withTooltip(
             button(
@@ -72,7 +74,22 @@ export const Sidebar = () => {
                             class: () =>
                                 `brand-version ${store.app.appInfo?.version ? "" : "brand-version-hidden"}`.trim(),
                         },
-                        () => (store.app.appInfo?.version ? `v${store.app.appInfo.version}` : "")
+                        button(
+                            {
+                                type: "button",
+                                class: () => `brand-version-button ${hasUpdate() ? "has-update" : ""}`,
+                                onclick: () => store.openUpdateModal(),
+                                "aria-label": () =>
+                                    hasUpdate()
+                                        ? `Update available: ${store.app.updateInfo.latestVersion}`
+                                        : "Current version",
+                            },
+                            span(() => (store.app.appInfo?.version ? `v${store.app.appInfo.version}` : "")),
+                            span({
+                                class: () => `update-ready-dot ${hasUpdate() ? "" : "is-hidden"}`,
+                                "aria-hidden": "true",
+                            })
+                        )
                     )
                 )
             ),

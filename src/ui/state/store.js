@@ -31,6 +31,9 @@ const appState = vanX.reactive({
     isLoading: false,
     heartbeat: false,
     appInfo: null,
+    updateInfo: null,
+    updateModalOpen: false,
+    updateApplying: false,
     toast: { message: "", type: "", id: 0 },
     notificationHistory: [],
     config: null,
@@ -121,6 +124,42 @@ const SystemService = {
             });
 
         return appInfoRequest;
+    },
+
+    checkForUpdate: async (force = false) => {
+        try {
+            appState.updateInfo = await API.checkForUpdate(force);
+            return appState.updateInfo;
+        } catch (error) {
+            console.error("Error checking for updates:", error);
+            appState.updateInfo = null;
+            return null;
+        }
+    },
+
+    openUpdateModal: async () => {
+        const updateInfo = await SystemService.checkForUpdate(true);
+        if (updateInfo?.updateAvailable) {
+            appState.updateModalOpen = true;
+            return;
+        }
+
+        Actions.notify("Already on latest version");
+    },
+
+    closeUpdateModal: () => {
+        appState.updateModalOpen = false;
+    },
+
+    applyUpdate: async () => {
+        try {
+            appState.updateApplying = true;
+            const result = await API.applyUpdate();
+            Actions.notify(result.message || "Update prepared");
+        } catch (error) {
+            Actions.notify(error.message, "error");
+            appState.updateApplying = false;
+        }
     },
 };
 
@@ -335,6 +374,10 @@ const store = {
     notify: Actions.notify,
     initHeartbeat: SystemService.initHeartbeat,
     loadAppInfo: SystemService.loadAppInfo,
+    checkForUpdate: SystemService.checkForUpdate,
+    openUpdateModal: SystemService.openUpdateModal,
+    closeUpdateModal: SystemService.closeUpdateModal,
+    applyUpdate: SystemService.applyUpdate,
 
     loadCheats: CheatService.loadCheats,
     executeCheat: CheatService.executeCheat,

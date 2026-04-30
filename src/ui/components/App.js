@@ -6,6 +6,7 @@ import { VIEWS } from "../state/constants.js";
 import { Sidebar } from "./Sidebar.js";
 import { Toast } from "./Toast.js";
 import { TooltipContainer } from "./Tooltip.js";
+import { UpdateModal } from "./UpdateModal.js";
 import { Cheats } from "./views/Cheats.js";
 import { Config } from "./views/Config.js";
 import { Account } from "./views/Account.js";
@@ -27,6 +28,7 @@ const viewFactories = {
 export const App = () => {
     store.initHeartbeat();
     store.loadAppInfo();
+    store.checkForUpdate();
 
     // Global Keyboard Shortcuts
     document.addEventListener("keydown", (e) => {
@@ -97,6 +99,7 @@ export const App = () => {
         { class: "app-layout" },
         Sidebar(),
         main({ class: "viewport" }, tabContent),
+        UpdateModal(),
         Toast(),
         TooltipContainer()
     );
