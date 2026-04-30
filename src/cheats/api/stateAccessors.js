@@ -21,6 +21,8 @@ const COMPUTED_SOURCES = {
     runCodeType: { eventId: 12, method: "_customBlock_RunCodeOfType" },
     dream: { eventId: 579, method: "_customBlock_Dreamstuff" },
     skillStats: { eventId: 12, method: "_customBlock_SkillStats" },
+    thingies: { eventId: 579, method: "_customBlock_Thingies" },
+    minehead: { eventId: 579, method: "_customBlock_Minehead" },
 };
 
 export function getcheatStateList() {

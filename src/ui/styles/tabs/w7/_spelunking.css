@@ -1,0 +1,36 @@
+/* W7 Spelunking */
+
+.spelunking-lore-chapter {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.spelunking-lore-row {
+    grid-template-columns: minmax(180px, 1fr) auto auto;
+}
+
+.spelunking-cave-metric {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.spelunking-cave-metric__label {
+    color: var(--c-text-muted);
+    font-size: 0.815rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    width: 132px;
+    text-align: right;
+}
+
+.spelunking-cave-metric .number-input-wrapper {
+    width: 180px;
+}
+
+.spelunking-cave-metric .number-input-wrapper input {
+    min-width: 10ch;
+    font-size: 0.875rem;
+}
