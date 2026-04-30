@@ -43,7 +43,7 @@ const readUpgradeEntries = () =>
         definitionsPath: "PetUpgradeINFO",
         mapEntry: ({ index, definition, rawLevel }) => {
             const rawName = String(definition[0] ?? "").trim();
-            if (!rawName || rawName === "No_Upgrade_Selected") return null;
+            if (!rawName || (index !== 0 && rawName === "No_Upgrade_Selected")) return null;
 
             const maxLevel = toInt(definition[8], { min: 0 });
 
