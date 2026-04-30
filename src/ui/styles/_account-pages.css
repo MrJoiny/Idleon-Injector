@@ -66,10 +66,10 @@
     --tab-nav-padding: 6px 20px;
     --tab-nav-font-size: 0.875rem;
     --tab-nav-letter-spacing: 0.05em;
-    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-color: var(--c-text-main);
     --tab-nav-active-bg: var(--c-panel-dim);
-    --tab-nav-active-indicator: var(--c-accent);
-    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
+    --tab-nav-active-indicator: var(--world-color, var(--c-accent));
+    --tab-nav-active-glow: 0 0 5px var(--world-color, var(--c-accent-glow));
 }
 
 .account-page-pane {
@@ -694,10 +694,10 @@
     --tab-nav-font-size: 0.875rem;
     --tab-nav-font-family: var(--font-display);
     --tab-nav-letter-spacing: 0.05em;
-    --tab-nav-active-color: var(--c-accent);
+    --tab-nav-active-color: var(--c-text-main);
     --tab-nav-active-bg: var(--c-panel-dim);
-    --tab-nav-active-indicator: var(--c-accent);
-    --tab-nav-active-glow: 0 0 5px var(--c-accent-glow);
+    --tab-nav-active-indicator: var(--world-color, var(--c-accent));
+    --tab-nav-active-glow: 0 0 5px var(--world-color, var(--c-accent-glow));
 }
 
 .account-nested-sub-tab-btn--stub {

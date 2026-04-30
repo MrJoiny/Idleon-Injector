@@ -23,8 +23,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
-import { NumberInput } from "../../../NumberInput.js";
-import { EditableFieldsRow } from "../EditableFieldsRow.js";
+import { EditableFieldsRow, StackedNumberField } from "../EditableFieldsRow.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { AccountExpandableGroup } from "../components/AccountExpandableGroup.js";
@@ -35,8 +34,6 @@ import {
     cleanName,
     createStaticRowReconciler,
     getOrCreateState,
-    largeFormatter,
-    largeParser,
     resolveFormattedIntInput,
     toInt,
     unwrapH,
@@ -103,31 +100,6 @@ const parseTrapRows = (rawTraps) =>
         })
         .filter(Boolean);
 
-const TrapInput = ({ label, fieldKey, valueState, draftStates, getDraftValue, setFieldFocused, resetDraft }) =>
-    div(
-        { class: "trap-row__input-group" },
-        span({ class: "trap-row__input-label" }, label),
-        NumberInput({
-            mode: "int",
-            value: draftStates[fieldKey],
-            formatter: largeFormatter,
-            parser: largeParser,
-            onfocus: () => setFieldFocused(fieldKey, true),
-            onblur: () => {
-                setFieldFocused(fieldKey, false);
-                resetDraft(fieldKey);
-            },
-            onDecrement: () =>
-                (draftStates[fieldKey].val = String(
-                    adjustFormattedIntInput(getDraftValue(fieldKey), -1, valueState.val, { min: 0 })
-                )),
-            onIncrement: () =>
-                (draftStates[fieldKey].val = String(
-                    adjustFormattedIntInput(getDraftValue(fieldKey), 1, valueState.val, { min: 0 })
-                )),
-        })
-    );
-
 const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, onWriteField }) => {
     const qtyValue = getValueState(playerName, trap.trapIndex, "qty", toInt(trap.qty));
     const expValue = getValueState(playerName, trap.trapIndex, "exp", toInt(trap.exp));
@@ -169,28 +141,43 @@ const TrappingRow = ({ playerName, trap, isCurrentPlayer, getValueState, onWrite
         badgeClass: "trap-row__badge",
         controlsClass: "trap-row__controls",
         renderControls: ({ draftStates, getDraftValue, setFieldFocused, resetDraft }) => [
-            TrapInput({
-                label: "Qty",
-                fieldKey: "qty",
-                valueState: qtyValue,
+            StackedNumberField({
+                field: {
+                    key: "qty",
+                    label: "Qty",
+                    formatted: true,
+                    rootClass: "trap-row__input-group",
+                    labelClass: "trap-row__input-label",
+                    adjustDraft: (raw, delta) => adjustFormattedIntInput(raw, delta, qtyValue.val, { min: 0 }),
+                },
                 draftStates,
                 getDraftValue,
                 setFieldFocused,
                 resetDraft,
             }),
-            TrapInput({
-                label: "EXP",
-                fieldKey: "exp",
-                valueState: expValue,
+            StackedNumberField({
+                field: {
+                    key: "exp",
+                    label: "EXP",
+                    formatted: true,
+                    rootClass: "trap-row__input-group",
+                    labelClass: "trap-row__input-label",
+                    adjustDraft: (raw, delta) => adjustFormattedIntInput(raw, delta, expValue.val, { min: 0 }),
+                },
                 draftStates,
                 getDraftValue,
                 setFieldFocused,
                 resetDraft,
             }),
-            TrapInput({
-                label: "Rare",
-                fieldKey: "rare",
-                valueState: rareValue,
+            StackedNumberField({
+                field: {
+                    key: "rare",
+                    label: "Rare",
+                    formatted: true,
+                    rootClass: "trap-row__input-group",
+                    labelClass: "trap-row__input-label",
+                    adjustDraft: (raw, delta) => adjustFormattedIntInput(raw, delta, rareValue.val, { min: 0 }),
+                },
                 draftStates,
                 getDraftValue,
                 setFieldFocused,

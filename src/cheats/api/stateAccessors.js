@@ -14,6 +14,7 @@ import { resolvePath } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
     workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
+    breeding: { eventId: 345, method: "_customBlock_Breeding" },
     alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
     summoning: { eventId: 579, method: "_customBlock_Summoning" },
     atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
