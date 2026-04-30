@@ -11,8 +11,6 @@ import { createMethodProxy } from "../utils/proxy.js";
  */
 export function setupEvents713Proxies() {
     const actorEvents713 = events(713);
-    if (!actorEvents713) return;
-    if (actorEvents713.prototype._customEvent_SpelunkStuff._isPatched) return;
 
     createMethodProxy(actorEvents713.prototype, "_customEvent_SpelunkStuff", function (base) {
         // Only apply when spelunking menu is active (MenuType2 === 82)
@@ -25,6 +23,4 @@ export function setupEvents713Proxies() {
         }
         return base;
     });
-
-    actorEvents713.prototype._customEvent_SpelunkStuff._isPatched = true;
 }
