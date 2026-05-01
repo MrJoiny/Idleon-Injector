@@ -29,9 +29,9 @@ const makeHoleEntry = ({ key, index, name, path, value, badge = null, max = Infi
     max,
     float,
 });
-const booleanNumberProps = {
-    normalize: (raw) => resolveNumberInput(raw, { formatted: true, min: 0, max: 1, fallback: null }),
-    adjust: (raw, delta, current) => adjustFormattedIntInput(raw, delta, current ?? 0, { min: 0, max: 1 }),
+const marbleNumberProps = {
+    normalize: (raw) => resolveNumberInput(raw, { formatted: true, min: 0, fallback: null }),
+    adjust: (raw, delta, current) => adjustFormattedIntInput(raw, delta, current ?? 0, { min: 0 }),
 };
 
 const FOUNTAIN_CURRENCIES = [
@@ -73,7 +73,6 @@ const buildFountainUpgradeEntries = (data, waterIndex) => {
                     key: `fountain-${waterIndex}-${index}-marble`,
                     path: `Holes[32][${waterIndex}][${index}]`,
                     value: toNum(marbilized[index], 0),
-                    max: 1,
                 },
             },
         };
@@ -93,12 +92,16 @@ const FountainUpgradeRow = ({ entry, valueStates }) =>
                 label: "Level",
                 valueState: getOrCreateState(valueStates, entry.fields.level.key),
                 path: entry.fields.level.path,
+                rootClass: "account-stacked-field",
+                labelClass: "account-stacked-field__label",
             }),
             InlineEditableNumberField({
                 label: "Marble",
                 valueState: getOrCreateState(valueStates, entry.fields.marble.key),
                 path: entry.fields.marble.path,
-                ...booleanNumberProps,
+                rootClass: "account-stacked-field",
+                labelClass: "account-stacked-field__label",
+                ...marbleNumberProps,
             }),
         ],
     });
@@ -191,7 +194,7 @@ export const FountainTab = () => {
     return PersistentAccountListPage({
         title: "FOUNTAIN",
         description:
-            "Edit Fountain currency, marble, lanterns, upgrades, and marbilized flags from Holes[9], [11], [31], and [32].",
+            "Edit Fountain currency, marble, lanterns, upgrades, and upgrade marble values from Holes[9], [11], [31], and [32].",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
