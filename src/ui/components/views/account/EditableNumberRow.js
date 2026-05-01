@@ -1,5 +1,5 @@
 import van from "../../../vendor/van-1.6.0.js";
-import { NumberInput } from "../../NumberInput.js";
+import { getNumberInputLiveRaw, NumberInput } from "../../NumberInput.js";
 import { ActionButton } from "./components/ActionButton.js";
 import { toNodes, useWriteStatus } from "./accountShared.js";
 
@@ -59,7 +59,7 @@ export const EditableNumberRow = ({
         if (!isInputFocused) syncInputToCommitted();
     });
 
-    const applyValue = async (rawValue = inputValue.val) => {
+    const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
         const next = normalize(rawValue);
         if (next === null || next === undefined || Number.isNaN(next)) return;
 
@@ -158,11 +158,15 @@ export const EditableNumberRow = ({
                     if (typeof userOnblur === "function") userOnblur();
                 },
                 onDecrement: () => {
-                    inputValue.val = String(adjustInput(inputValue.val, -1, valueState.val ?? 0));
+                    inputValue.val = String(
+                        adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val ?? 0)
+                    );
                     if (typeof userOnDecrement === "function") userOnDecrement();
                 },
                 onIncrement: () => {
-                    inputValue.val = String(adjustInput(inputValue.val, 1, valueState.val ?? 0));
+                    inputValue.val = String(
+                        adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val ?? 0)
+                    );
                     if (typeof userOnIncrement === "function") userOnIncrement();
                 },
             }),
