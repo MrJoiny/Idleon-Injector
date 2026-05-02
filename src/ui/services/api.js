@@ -117,11 +117,11 @@ export async function fetchGgaKeys() {
     return data.keys || [];
 }
 
-export async function searchGga(query, keys) {
+export async function searchGga(query, keys, options = null) {
     return _request("/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, keys }),
+        body: JSON.stringify({ query, keys, withinPaths: options?.withinPaths || null }),
     });
 }
 

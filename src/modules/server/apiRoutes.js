@@ -450,20 +450,32 @@ exports.injectorConfig = ${new_injectorConfig};
     });
 
     app.post("/api/search", async (req, res) => {
-        const { query, keys } = await req.json();
+        const { query, keys, withinPaths } = await req.json();
 
-        if (!query || !keys || !Array.isArray(keys) || keys.length === 0) {
+        if (query === undefined || query === null) {
             return res.status(400).json({
-                error: "Missing required parameters: query (string) and keys (array)",
+                error: "Missing required parameter: query",
             });
+        }
+
+        if (typeof query !== "string") {
+            return res.status(400).json({
+                error: "Invalid query type: query must be a string",
+            });
+        }
+
+        const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
+        if (!hasWithinPaths && (!Array.isArray(keys) || keys.length === 0)) {
+            return res.status(400).json({ error: "Missing required parameters: keys (array) or withinPaths (array)" });
         }
 
         try {
             const keysJson = JSON.stringify(keys);
-            const escapedQuery = query.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+            const withinPathsJson = JSON.stringify(withinPaths || null);
+            const serializedQuery = JSON.stringify(query);
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga('${escapedQuery}', ${keysJson})`,
+                expression: `searchGga(${serializedQuery}, ${keysJson}, { withinPaths: ${withinPathsJson} })`,
                 awaitPromise: true,
                 returnByValue: true,
             });
