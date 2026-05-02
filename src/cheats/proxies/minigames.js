@@ -7,7 +7,7 @@
  *
  * Supported minigames:
  * - Mining (ActorEvents_229) - Never game over
- * - Fishing (ActorEvents_229) - Never game over
+ * - Fishing (ActorEvents_229) - Fish aimbot
  * - Catching (ActorEvents_229) - Static fly/hoop positions
  * - Choppin (ActorEvents_116) - Gold zone fills bar
  * - Hoops (ActorEvents_510) - Perfect ball/hoop position
@@ -20,9 +20,26 @@
  * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
  */
 
-import { cheatState } from "../core/state.js";
+import { cheatState, cheatConfig } from "../core/state.js";
 import { behavior, events, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
+
+// Find the highest-tier active fish, skipping bombs (type 5) and optionally whales (type 6)
+function findBestFish(genInfo) {
+    const fishes = genInfo[4];
+    let bestIndex = -1;
+    let bestType = -1;
+    for (let i = 0; i < fishes.length; i++) {
+        const f = fishes[i];
+        if (f[0] < 500 && f[1] !== 5
+            && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6)
+            && f[1] > bestType) {
+            bestType = f[1];
+            bestIndex = i;
+        }
+    }
+    return bestIndex;
+}
 
 // mining, fishing, catching
 function setupEvents229Minigames() {
@@ -35,23 +52,32 @@ function setupEvents229Minigames() {
         return Reflect.apply(originalMining, this, args);
     };
 
-    // fishing block game over
-    const originalFishing = ActorEvents229.prototype._customEvent_FishingGameOver;
-    ActorEvents229.prototype._customEvent_FishingGameOver = function (...args) {
-        if (cheatState.minigame.fishing) return; // Skip original entirely
-        return Reflect.apply(originalFishing, this, args);
-    };
-
-    // catching proxy _GenInfo array for static positions
+    // catching and fishing proxy _GenInfo array
     createMethodProxy(ActorEvents229.prototype, "init", function (base) {
         this._GenInfo = new Proxy(this._GenInfo, {
             get(target, prop, receiver) {
                 if (typeof prop === "symbol") return Reflect.get(target, prop, receiver);
 
                 const index = Number(prop);
+
                 if (cheatState.minigame.catching) {
                     if (index === 31) return 70;
                     if (index === 33) return [95, 95, 95, 95, 95];
+                }
+
+                if (cheatState.minigame.fishing) {
+                    if (index === 4 || index === 13) {
+                        const bestIndex = findBestFish(target);
+                        if (bestIndex !== -1) {
+                            const fishes = target[4];
+                            const bobber = target[8];
+                            const sines = target[13];
+
+                            fishes[bestIndex][0] = bobber[0];
+                            // fish swim offset shifts visual X; zero it so base X snap stays aligned
+                            sines[bestIndex] = 0;
+                        }
+                    }
                 }
 
                 return Reflect.get(target, prop, receiver);
