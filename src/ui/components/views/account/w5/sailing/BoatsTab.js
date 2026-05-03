@@ -32,23 +32,46 @@ const CAPTAIN_NUMBER_FIELDS = [
     { key: "xp", label: "XP", index: 4, formatted: true, float: true },
 ];
 const CAPTAIN_AMOUNT_FIELDS = [
-    { key: "amount1", label: "Bonus I Amount", index: 5, typeIndex: 1 },
-    { key: "amount2", label: "Bonus II Amount", index: 6, typeIndex: 2 },
+    { key: "amount1", label: "Bonus I Amount", index: 5, bonusTypeKey: "bonusType1" },
+    { key: "amount2", label: "Bonus II Amount", index: 6, bonusTypeKey: "bonusType2" },
 ];
+const CAPTAIN_BONUS_TABLE = {
+    boatSpeed: [1, 4, 11, 18, 26, 33, 40, 47],
+    lootValue: [4, 7, 19, 31, 43, 55, 67, 79],
+    cloudDiscover: [4, 7, 19, 31, 43, 55, 67, 79],
+    artifactFind: [1, 3, 9, 15, 21, 27, 33, 39],
+    rareChest: [1, 3, 7, 12, 17, 22, 27, 31],
+};
+const CAPTAIN_BONUS_KEYS = ["boatSpeed", "lootValue", "cloudDiscover", "artifactFind", "rareChest"];
 
-const resolveInput = (rawValue, field) =>
+const getCaptainBonusRange = (captTier, bonusIndex) => {
+    const key = CAPTAIN_BONUS_KEYS[bonusIndex];
+    const values = CAPTAIN_BONUS_TABLE[key];
+    if (!values || captTier < 0 || captTier > 6) return null;
+
+    const minStatBonus = values[0];
+    const maxStatBonus = values[captTier + 1];
+    const scaledMax = maxStatBonus * (0.5 + 0.8 * captTier);
+
+    return {
+        min: Math.floor(0.15 * minStatBonus),
+        max: Math.floor(0.15 * scaledMax),
+    };
+};
+
+const resolveInput = (rawValue, field, range = null) =>
     resolveNumberInput(rawValue, {
         formatted: field.formatted,
         float: field.float,
-        min: 0,
-        max: field.max ?? Infinity,
+        min: range?.min ?? 0,
+        max: range?.max ?? field.max ?? Infinity,
         fallback: null,
     });
 
-const fieldValue = (rawValues, index, field) =>
+const fieldValue = (rawValues, index, field, range = null) =>
     field.formatted
         ? resolveNumberInput(rawValues[index], { formatted: true, float: field.float, min: 0, fallback: 0 })
-        : Math.min(field.max ?? Infinity, toInt(rawValues[index], { min: 0 }));
+        : Math.min(range?.max ?? field.max ?? Infinity, toInt(rawValues[index], { min: range?.min ?? 0 }));
 
 const BoatRow = ({ entry, valueStates }) =>
     AccountRow({
@@ -83,11 +106,25 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
 
     const normalizeCaptain = (rawValues) => {
         const next = {};
-        for (const field of Object.values(fieldByKey)) {
+        for (const field of [
+            fieldByKey.rarity,
+            fieldByKey.level,
+            fieldByKey.xp,
+            fieldByKey.bonusType1,
+            fieldByKey.bonusType2,
+        ]) {
             const normalized = resolveInput(rawValues[field.key], field);
             if (normalized === null || normalized === undefined || Number.isNaN(normalized)) return null;
             next[field.key] = normalized;
         }
+
+        for (const field of [fieldByKey.amount1, fieldByKey.amount2]) {
+            const range = getCaptainBonusRange(next[fieldByKey.rarity.key], next[fieldByKey[field.bonusTypeKey].key]);
+            const normalized = resolveInput(rawValues[field.key], field, range);
+            if (normalized === null || normalized === undefined || Number.isNaN(normalized)) return null;
+            next[field.key] = normalized;
+        }
+
         return next;
     };
 
@@ -96,6 +133,20 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
             Object.values(fieldByKey).map((field) => ({ path: field.path, value: nextValues[field.key] }))
         );
         return nextValues;
+    };
+
+    const getDraftBonusRange = (getDraftValue, bonusTypeKey) =>
+        getCaptainBonusRange(
+            toInt(getDraftValue(fieldByKey.rarity.key), { min: 0 }),
+            toInt(getDraftValue(fieldByKey[bonusTypeKey].key), { min: 0 })
+        );
+
+    const adjustCaptainBonusAmount = (rawValue, delta, bonusTypeKey, getDraftValue) => {
+        const range = getDraftBonusRange(getDraftValue, bonusTypeKey);
+        const min = range?.min ?? 0;
+        const max = range?.max ?? Infinity;
+        const current = resolveNumberInput(rawValue, { fallback: min });
+        return Math.max(min, Math.min(max, (current ?? min) + delta));
     };
 
     return EditableFieldsRow({
@@ -145,6 +196,8 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                         ...fieldByKey.amount1,
                         label: () =>
                             `${bonusTypes[toInt(draftStates[fieldByKey.bonusType1.key].val)]?.effect ?? "Bonus I"}`,
+                        adjustDraft: (rawValue, delta) =>
+                            adjustCaptainBonusAmount(rawValue, delta, fieldByKey.amount1.bonusTypeKey, getDraftValue),
                     },
                     draftStates,
                     getDraftValue,
@@ -176,6 +229,8 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                         ...fieldByKey.amount2,
                         label: () =>
                             `${bonusTypes[toInt(draftStates[fieldByKey.bonusType2.key].val)]?.effect ?? "Bonus II"}`,
+                        adjustDraft: (rawValue, delta) =>
+                            adjustCaptainBonusAmount(rawValue, delta, fieldByKey.amount2.bonusTypeKey, getDraftValue),
                     },
                     draftStates,
                     getDraftValue,
@@ -223,6 +278,10 @@ const buildCaptainEntries = (rawCaptains, bonusTypes) =>
     toIndexedArray(rawCaptains ?? []).map((rawCaptain, captainIndex) => {
         const captain = toIndexedArray(rawCaptain ?? []);
         const typeMax = Math.max(0, bonusTypes.length - 1);
+        const captTier = fieldValue(captain, 0, CAPTAIN_NUMBER_FIELDS[0]);
+        const bonusType1 = Math.min(typeMax, toInt(captain[1], { min: 0 }));
+        const bonusType2 = Math.min(typeMax, toInt(captain[2], { min: 0 }));
+        const bonusTypesByKey = { bonusType1, bonusType2 };
         const fields = Object.fromEntries(
             [
                 ...CAPTAIN_NUMBER_FIELDS,
@@ -235,7 +294,12 @@ const buildCaptainEntries = (rawCaptains, bonusTypes) =>
                     ...field,
                     key: `captain:${captainIndex}:${field.key}`,
                     path: `${CAPTAINS_PATH}[${captainIndex}][${field.index}]`,
-                    value: fieldValue(captain, field.index, field),
+                    value: fieldValue(
+                        captain,
+                        field.index,
+                        field,
+                        field.bonusTypeKey ? getCaptainBonusRange(captTier, bonusTypesByKey[field.bonusTypeKey]) : null
+                    ),
                 },
             ])
         );

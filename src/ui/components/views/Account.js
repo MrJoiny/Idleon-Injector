@@ -10,6 +10,7 @@
 
 import van from "../../vendor/van-1.6.0.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
+import { TasksTab } from "./account/TasksTab.js";
 import { UpgradeVaultTab } from "./account/UpgradeVaultTab.js";
 import { W1Tab } from "./account/W1Tab.js";
 import { W2Tab } from "./account/W2Tab.js";
@@ -29,6 +30,7 @@ const { div, span } = van.tags;
 const ACCOUNT_TABS = [
     { id: "account-options", label: "ACCOUNT OPTIONS", isWorld: false, component: AccountOptionsTab },
     { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
+    { id: "tasks", label: "TASKS", isWorld: false, component: TasksTab },
     { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
     { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
     { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
