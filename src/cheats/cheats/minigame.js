@@ -17,7 +17,7 @@ registerCheats({
     message: "unlimited minigames",
     subcheats: [
         { name: "mining", message: "mining minigame cheat" },
-        { name: "fishing", message: "fishing minigame cheat" },
+        { name: "fishing", message: "fish aimbot", configurable: true },
         { name: "catching", message: "catching minigame cheat" },
         { name: "choppin", message: "choppin minigame cheat" },
         { name: "poing", message: "poing minigame cheat" },
