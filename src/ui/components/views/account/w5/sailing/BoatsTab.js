@@ -36,6 +36,34 @@ const CAPTAIN_AMOUNT_FIELDS = [
     { key: "amount2", label: "Bonus II Amount", index: 6, typeIndex: 2 },
 ];
 
+const captainBonusCap = (bonusTypes, bonusType, rarity) => {
+    const bonus = bonusTypes[toInt(bonusType, { min: 0 })];
+    if (!bonus) return Infinity;
+
+    const captainRarity = Math.min(6, toInt(rarity, { min: 0 }));
+    if (captainRarity === 6) return Math.floor(0.15 * 5.3 * bonus.baseMax);
+
+    return Math.floor(0.15 * (0.5 + 0.8 * captainRarity) * bonus.baseMax);
+};
+
+const captainBonusField = ({ field, fieldByKey, draftStates, bonusTypes, amountIndex }) => {
+    const typeKey = fieldByKey[`bonusType${amountIndex}`].key;
+    const getCap = () => captainBonusCap(bonusTypes, draftStates[typeKey].val, draftStates[fieldByKey.rarity.key].val);
+    const getBonus = () => bonusTypes[toInt(draftStates[typeKey].val, { min: 0 })];
+
+    return {
+        ...field,
+        label: () => {
+            const cap = getCap();
+            return `${getBonus()?.effect ?? `Bonus ${amountIndex}`}${Number.isFinite(cap) ? ` (max ${cap})` : ""}`;
+        },
+        adjustDraft: (rawValue, delta) => {
+            const currentValue = toInt(rawValue, { min: 0 });
+            return Math.max(0, Math.min(getCap(), currentValue + delta));
+        },
+    };
+};
+
 const resolveInput = (rawValue, field) =>
     resolveNumberInput(rawValue, {
         formatted: field.formatted,
@@ -83,8 +111,12 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
 
     const normalizeCaptain = (rawValues) => {
         const next = {};
-        for (const field of Object.values(fieldByKey)) {
-            const normalized = resolveInput(rawValues[field.key], field);
+        for (const [fieldName, field] of Object.entries(fieldByKey)) {
+            const amountField = CAPTAIN_AMOUNT_FIELDS.find((candidate) => candidate.key === fieldName);
+            const max = amountField
+                ? captainBonusCap(bonusTypes, next[`bonusType${amountField.typeIndex}`], next.rarity)
+                : field.max;
+            const normalized = resolveInput(rawValues[field.key], { ...field, max });
             if (normalized === null || normalized === undefined || Number.isNaN(normalized)) return null;
             next[field.key] = normalized;
         }
@@ -141,11 +173,13 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                     )
                 ),
                 StackedNumberField({
-                    field: {
-                        ...fieldByKey.amount1,
-                        label: () =>
-                            `${bonusTypes[toInt(draftStates[fieldByKey.bonusType1.key].val)]?.effect ?? "Bonus I"}`,
-                    },
+                    field: captainBonusField({
+                        field: fieldByKey.amount1,
+                        fieldByKey,
+                        draftStates,
+                        bonusTypes,
+                        amountIndex: 1,
+                    }),
                     draftStates,
                     getDraftValue,
                     setFieldFocused,
@@ -172,11 +206,13 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
                     )
                 ),
                 StackedNumberField({
-                    field: {
-                        ...fieldByKey.amount2,
-                        label: () =>
-                            `${bonusTypes[toInt(draftStates[fieldByKey.bonusType2.key].val)]?.effect ?? "Bonus II"}`,
-                    },
+                    field: captainBonusField({
+                        field: fieldByKey.amount2,
+                        fieldByKey,
+                        draftStates,
+                        bonusTypes,
+                        amountIndex: 2,
+                    }),
                     draftStates,
                     getDraftValue,
                     setFieldFocused,
@@ -193,6 +229,7 @@ const buildBonusTypes = (rawCaptainBonuses) =>
         return {
             index,
             effect: cleanNameEffect(bonus[3], `Bonus Type ${index}`),
+            baseMax: toInt(bonus[1], { min: 0 }),
         };
     });
 
@@ -272,7 +309,7 @@ export const BoatsTab = () => {
             boatEntries.val.map((entry) => BoatRow({ entry, valueStates }))
         );
         reconcileCaptainRows(
-            `${bonusTypes.val.map((bonus) => `${bonus.index}:${bonus.effect}`).join("|")}::${captainEntries.val
+            `${bonusTypes.val.map((bonus) => `${bonus.index}:${bonus.effect}:${bonus.baseMax}`).join("|")}::${captainEntries.val
                 .map((entry) => entry.key)
                 .join("|")}`,
             () => captainEntries.val.map((entry) => CaptainRow({ entry, valueStates, bonusTypes: bonusTypes.val }))
