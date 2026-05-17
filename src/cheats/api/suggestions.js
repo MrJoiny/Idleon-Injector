@@ -74,6 +74,7 @@ export function getAutoCompleteSuggestions() {
         }
         // filtering out ui items named strung jewels
         if (code !== "Quest66" && name === "Strung Jewels") return null;
+        if (code === "Bits") return null;
 
         return [
             { value: `drop ${code}`, message: name, category: "drop", needsParam: true },
