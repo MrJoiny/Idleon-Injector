@@ -9,6 +9,7 @@ import { ForgeTab } from "./w1/ForgeTab.js";
 import { StatuesTab } from "./w1/StatuesTab.js";
 import { OrionTab } from "./w1/OrionTab.js";
 import { StarSignsTab } from "./w1/StarSignsTab.js";
+import { CompanionsTab } from "./w1/CompanionsTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -20,6 +21,7 @@ const W1_SUBTABS = [
     { id: "statues", label: "STATUES", component: StatuesTab },
     { id: "starsigns", label: "STAR SIGNS", component: StarSignsTab },
     { id: "orion", label: "ORION", component: OrionTab },
+    { id: "companions", label: "PETS", component: CompanionsTab },
 ];
 
 export const W1Tab = () => {

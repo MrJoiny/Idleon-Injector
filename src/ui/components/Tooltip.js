@@ -139,6 +139,7 @@ export const withTooltip = (element, text, position = "top", enabled = true) => 
     });
 
     element.addEventListener("mouseleave", hideTooltip);
+    element.addEventListener("click", hideTooltip);
 
     return element;
 };

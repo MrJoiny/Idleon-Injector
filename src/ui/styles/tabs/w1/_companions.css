@@ -1,0 +1,97 @@
+/* ── Pets (W1 Companions) ──────────────────────────────────────────────── */
+
+.companions-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.companions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--c-border);
+}
+
+.companions-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.companions-section__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-text-dim);
+    margin-top: 2px;
+}
+
+.companions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.companion-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        background 0.15s,
+        box-shadow 0.15s;
+    user-select: none;
+}
+
+.companion-card:hover {
+    border-color: var(--c-accent);
+    background: var(--c-panel-hover);
+}
+
+.companion-card--enabled {
+    border-color: var(--c-success);
+    background: var(--c-success-10);
+}
+
+.companion-card--loading {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.companion-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.companion-card__name {
+    min-width: 0;
+    flex: 1;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--c-text-main);
+    line-height: 1.25;
+}
+
+.companion-card__id {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--c-text-muted);
+    background: var(--c-black-40);
+    padding: 2px 6px;
+}
+
+.companion-card__effect {
+    min-height: 2.7em;
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    line-height: 1.45;
+}
