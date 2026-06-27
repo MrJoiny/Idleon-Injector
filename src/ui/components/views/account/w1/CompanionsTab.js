@@ -117,8 +117,9 @@ const buildSections = (pets, rawSetsInfo) => {
 };
 
 const CompanionCard = ({ companion, enabledIds, activeWriteId, writeStatus, onToggle }) =>
-    div(
+    button(
         {
+            type: "button",
             class: () =>
                 [
                     "companion-card",
@@ -127,8 +128,9 @@ const CompanionCard = ({ companion, enabledIds, activeWriteId, writeStatus, onTo
                 ]
                     .filter(Boolean)
                     .join(" "),
+            "aria-pressed": () => enabledIds.val.has(companion.id),
             onclick: () => onToggle(companion.id),
-            title: "Left click: toggle this pet's account bonus.",
+            title: "Click: toggle this pet's account bonus.",
         },
         div(
             { class: "companion-card__top" },
@@ -183,24 +185,27 @@ export const CompanionsTab = () => {
             enabledIds.val = idSet;
         });
 
+    const isBusy = () => loading.val || activeWriteId.val !== null || writeStatus.val === "loading";
+
     const handleToggle = async (companionId) => {
-        if (activeWriteId.val !== null) return;
+        if (isBusy()) return;
         activeWriteId.val = companionId;
 
-        const next = new Set(enabledIds.val);
-        if (next.has(companionId)) next.delete(companionId);
-        else next.add(companionId);
+        try {
+            const next = new Set(enabledIds.val);
+            if (next.has(companionId)) next.delete(companionId);
+            else next.add(companionId);
 
-        await writeTokens(next);
-        activeWriteId.val = null;
+            await writeTokens(next);
+        } finally {
+            activeWriteId.val = null;
+        }
     };
 
     const handleBulkWrite = async (ids) => {
-        if (activeWriteId.val !== null) return;
+        if (isBusy()) return;
         await writeTokens(new Set(ids));
     };
-
-    const isBusy = () => activeWriteId.val !== null || writeStatus.val === "loading";
 
     load();
 

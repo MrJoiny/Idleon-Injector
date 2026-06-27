@@ -38,6 +38,11 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px 12px;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    appearance: none;
     background: var(--c-panel);
     border: 1px solid var(--c-border);
     border-radius: var(--radius-md);
@@ -52,6 +57,11 @@
 .companion-card:hover {
     border-color: var(--c-accent);
     background: var(--c-panel-hover);
+}
+
+.companion-card:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
 }
 
 .companion-card--enabled {
