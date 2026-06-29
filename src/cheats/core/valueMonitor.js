@@ -114,7 +114,14 @@ class ValueMonitor {
         const { target, prop, original, getStoredValue } = watcher;
 
         if (original) {
-            Object.defineProperty(target, prop, original);
+            if ("value" in original) {
+                Object.defineProperty(target, prop, {
+                    ...original,
+                    value: getStoredValue(),
+                });
+            } else {
+                Object.defineProperty(target, prop, original);
+            }
         } else {
             const val = getStoredValue();
             delete target[prop];

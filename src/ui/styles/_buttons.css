@@ -55,6 +55,24 @@ button {
     background: var(--c-white-05);
 }
 
+/* --- ICON BUTTON --- */
+.btn-icon {
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* --- DANGER BUTTON --- */
 .btn-danger,
 #modal-accept {
