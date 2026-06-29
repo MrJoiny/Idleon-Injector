@@ -21,7 +21,7 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { RefreshButton } from "../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, cleanNameEffect, useWriteStatus, writeVerified } from "../accountShared.js";
 
 const { div, button, span, label, input } = van.tags;
 
@@ -32,14 +32,6 @@ const normalizeSearchText = (value) => String(value ?? "").trim().toLowerCase();
 const isUnusedPetText = (value) => {
     const text = normalizeSearchText(value);
     return text.includes("not officially in the game") && text.includes("may never be");
-};
-
-const cleanText = (value, fallback = "") => {
-    const text = String(value ?? fallback)
-        .replace(/_/g, " ")
-        .replace(/^\{+\s*/, "")
-        .trim();
-    return text || fallback;
 };
 
 const parseIdList = (value) =>
@@ -69,10 +61,10 @@ const buildCompanionRows = (rawCompanionDb, rawMonsterDefs) =>
         .map((entry, id) => {
             const row = toIndexedArray(entry);
             const monsterKey = row[0];
-            const name = cleanText(rawMonsterDefs?.[monsterKey]?.Name, "");
+            const name = cleanName(rawMonsterDefs?.[monsterKey]?.Name, "");
             if (!name) return null;
 
-            const effect = cleanText(row[1], "No buff text");
+            const effect = cleanNameEffect(row[1], "No buff text");
 
             return { id, monsterKey, name, effect, isUnused: isUnusedPetText(effect) };
         })
@@ -116,16 +108,12 @@ const buildSections = (pets, rawSetsInfo) => {
     return sections;
 };
 
-const CompanionCard = ({ companion, enabledIds, activeWriteId, writeStatus, onToggle }) =>
+const CompanionCard = ({ companion, enabledIds, onToggle }) =>
     button(
         {
             type: "button",
             class: () =>
-                [
-                    "companion-card",
-                    enabledIds.val.has(companion.id) && "companion-card--enabled",
-                    activeWriteId.val === companion.id && writeStatus.val === "loading" && "companion-card--loading",
-                ]
+                ["companion-card", enabledIds.val.has(companion.id) && "companion-card--enabled"]
                     .filter(Boolean)
                     .join(" "),
             "aria-pressed": () => enabledIds.val.has(companion.id),
@@ -146,9 +134,7 @@ export const CompanionsTab = () => {
 
     const companions = van.state([]);
     const sections = van.state([]);
-    const validIds = van.state([]);
     const enabledIds = van.state(new Set());
-    const activeWriteId = van.state(null);
     const hideUnused = van.state(false);
     const searchQuery = van.state("");
 
@@ -168,12 +154,10 @@ export const CompanionsTab = () => {
                 : {};
 
             const nextCompanions = buildCompanionRows(rawCompanionDb, monsterDefs);
-            const nextValidIds = nextCompanions.map((companion) => companion.id);
-            const validIdSet = new Set(nextValidIds);
+            const validIdSet = new Set(nextCompanions.map((companion) => companion.id));
 
             companions.val = nextCompanions;
             sections.val = buildSections(nextCompanions, rawSetsInfo);
-            validIds.val = nextValidIds;
 
             const tokenValue = await gga(TOKEN_PATH);
             enabledIds.val = new Set(parseIdList(tokenValue).filter((id) => validIdSet.has(id)));
@@ -185,21 +169,16 @@ export const CompanionsTab = () => {
             enabledIds.val = idSet;
         });
 
-    const isBusy = () => loading.val || activeWriteId.val !== null || writeStatus.val === "loading";
+    const isBusy = () => loading.val || writeStatus.val === "loading";
 
     const handleToggle = async (companionId) => {
         if (isBusy()) return;
-        activeWriteId.val = companionId;
 
-        try {
-            const next = new Set(enabledIds.val);
-            if (next.has(companionId)) next.delete(companionId);
-            else next.add(companionId);
+        const next = new Set(enabledIds.val);
+        if (next.has(companionId)) next.delete(companionId);
+        else next.add(companionId);
 
-            await writeTokens(next);
-        } finally {
-            activeWriteId.val = null;
-        }
+        await writeTokens(next);
     };
 
     const handleBulkWrite = async (ids) => {
@@ -246,7 +225,7 @@ export const CompanionsTab = () => {
                     div(
                         { class: "companions-grid" },
                         ...section.companions.map((companion) =>
-                            CompanionCard({ companion, enabledIds, activeWriteId, writeStatus, onToggle: handleToggle })
+                            CompanionCard({ companion, enabledIds, onToggle: handleToggle })
                         )
                     )
                 )

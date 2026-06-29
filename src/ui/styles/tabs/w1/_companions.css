@@ -68,11 +68,6 @@
     background: var(--c-success-10);
 }
 
-.companion-card--loading {
-    opacity: 0.65;
-    cursor: wait;
-}
-
 .companion-card__top {
     display: flex;
     align-items: flex-start;
