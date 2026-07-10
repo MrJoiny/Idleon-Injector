@@ -80,6 +80,9 @@
     min-width: 130px;
     font-size: 0.875rem;
 }
+.account-compact-tab-btn {
+    min-width: 80px;
+}
 .world-tab-btn {
     min-width: 64px;
 }

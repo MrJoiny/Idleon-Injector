@@ -1,0 +1,289 @@
+.cards-page-content {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.cards-scroll {
+    width: 100%;
+}
+
+.cards-regions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-region {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
+.card-region--success {
+    border-color: var(--c-success);
+    background: color-mix(in srgb, var(--c-success) 8%, var(--c-panel-dim));
+}
+
+.card-region--error {
+    border-color: var(--c-danger);
+    background: color-mix(in srgb, var(--c-danger) 8%, var(--c-panel-dim));
+}
+
+.card-region__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 7px 10px;
+}
+
+.card-region__toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    flex: 1;
+    padding: 5px 2px;
+    color: var(--c-text-main);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.card-region__toggle:hover .card-region__title {
+    color: var(--c-accent);
+}
+
+.card-region__chevron {
+    flex-shrink: 0;
+    color: var(--c-text-muted);
+    transition: transform 0.15s;
+}
+
+.card-region--open .card-region__chevron {
+    transform: rotate(90deg);
+}
+
+.card-region__title {
+    overflow: hidden;
+    color: var(--c-text-main);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.card-region__count {
+    margin-left: auto;
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.815rem;
+    white-space: nowrap;
+}
+
+.card-region__body {
+    padding: 8px 10px 10px;
+    border-top: 1px solid var(--c-border);
+}
+
+.card-region--unresolved {
+    border-color: var(--c-danger-40);
+}
+
+.card-row .account-row__badge {
+    --card-tier-color: var(--c-text-muted);
+    display: flex;
+    align-items: center;
+    color: var(--card-tier-color);
+    background: color-mix(in srgb, var(--card-tier-color) 10%, var(--c-panel));
+    border-color: color-mix(in srgb, var(--card-tier-color) 70%, var(--c-border));
+}
+
+.card-tier-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-tier-icon {
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+}
+
+.card-tier-badge--base {
+    --card-tier-color: var(--c-text-muted) !important;
+}
+
+.card-tier-badge--tier-1,
+.card-tier-picker__option--tier-1 {
+    --card-tier-color: var(--c-tier-stone);
+}
+
+.card-tier-badge--tier-2,
+.card-tier-picker__option--tier-2 {
+    --card-tier-color: var(--c-tier-gold);
+}
+
+.card-tier-badge--tier-3,
+.card-tier-picker__option--tier-3 {
+    --card-tier-color: var(--c-cauldron-orange);
+}
+
+.card-tier-badge--tier-4,
+.card-tier-picker__option--tier-4 {
+    --card-tier-color: var(--c-tier-zenith);
+}
+
+.card-tier-badge--tier-5,
+.card-tier-picker__option--tier-5 {
+    --card-tier-color: var(--c-ui-red);
+}
+
+.card-tier-badge--tier-6,
+.card-tier-picker__option--tier-6 {
+    --card-tier-color: var(--c-tier-onyx);
+}
+
+.card-row--unresolved .account-row__badge {
+    color: var(--c-danger-soft-text);
+    background: var(--c-danger-10);
+    border-color: var(--c-danger-40);
+}
+
+.card-tier-picker {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.card-tier-picker > summary {
+    list-style: none;
+}
+
+.card-tier-picker > summary::-webkit-details-marker {
+    display: none;
+}
+
+.card-tier-picker__trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 98px;
+    justify-content: center;
+}
+
+.card-tier-picker__trigger[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.card-tier-picker__chevron {
+    transition: transform 0.15s;
+}
+
+.card-tier-picker[open] .card-tier-picker__chevron {
+    transform: rotate(90deg);
+}
+
+.card-tier-picker__menu {
+    position: absolute;
+    z-index: 80;
+    top: calc(100% + 5px);
+    right: 0;
+    display: grid;
+    gap: 3px;
+    width: 220px;
+    padding: 6px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border-strong);
+    box-shadow: 0 12px 28px var(--c-black-80);
+}
+
+.card-tier-picker__option {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 8px;
+    color: var(--c-text-main);
+    background: var(--c-panel-dim);
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+}
+
+.card-tier-picker__option .card-tier-icon {
+    color: var(--card-tier-color);
+}
+
+.card-tier-picker__option:hover {
+    background: var(--c-panel-hover);
+    border-color: var(--card-tier-color);
+}
+
+.card-tier-picker__option:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.card-tier-picker__amount {
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.815rem;
+}
+
+.card-tier-picker--loading .card-tier-picker__trigger {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.card-tier-picker--success .card-tier-picker__trigger {
+    color: var(--c-success);
+    border-color: var(--c-success);
+}
+
+.card-tier-picker--error .card-tier-picker__trigger {
+    color: var(--c-danger);
+    border-color: var(--c-danger);
+}
+
+.cards-bulk-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cards-bulk-modal__body p {
+    margin: 0;
+    line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+    .card-region__header {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .card-region__toggle {
+        flex-basis: 100%;
+    }
+
+    .card-region__tier-picker {
+        margin-left: auto;
+    }
+
+    .card-row__controls {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+}

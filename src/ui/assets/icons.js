@@ -1,6 +1,18 @@
 import van from "../vendor/van-1.6.0.js";
 
-const { svg, path, circle, line, rect, polyline, polygon, g, defs, mask } = van.tags("http://www.w3.org/2000/svg");
+const {
+    svg,
+    path,
+    circle,
+    line,
+    rect,
+    polyline,
+    polygon,
+    text: svgText,
+    g,
+    defs,
+    mask,
+} = van.tags("http://www.w3.org/2000/svg");
 
 const SvgBase = (content, props = {}) => {
     const { class: className, ...rest } = props;
@@ -146,6 +158,31 @@ export const Icons = {
             }),
             { fill: "currentColor", stroke: "none", "aria-hidden": "true", ...props }
         ),
+
+    CardTier: (tier, props = {}) => {
+        const label = Math.min(6, Math.max(1, Math.round(Number(tier) || 1)));
+
+        return SvgBase(
+            [
+                polygon({ points: "12 1.75 20.88 6.88 20.88 17.12 12 22.25 3.12 17.12 3.12 6.88" }),
+                svgText(
+                    {
+                        x: "12",
+                        y: "12.5",
+                        fill: "currentColor",
+                        stroke: "none",
+                        "text-anchor": "middle",
+                        "dominant-baseline": "middle",
+                        "font-family": "sans-serif",
+                        "font-size": "10",
+                        "font-weight": "700",
+                    },
+                    String(label)
+                ),
+            ],
+            { "stroke-width": "1.75", "aria-hidden": "true", ...props }
+        );
+    },
 
     Refresh: (props) =>
         SvgBase([path({ d: "M23 4v6h-6" }), path({ d: "M20.49 15a9 9 0 1 1-2.12-9.36L23 10" })], {
