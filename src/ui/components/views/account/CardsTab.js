@@ -164,10 +164,11 @@ const buildCardData = async (rawCards, rawCardStuff) => {
 
                 matchedIds.add(monsterId);
                 const baseRequirement = toInt(definition[2], { min: 0 });
+                let amountRequired = 1;
                 return {
                     monsterId,
                     baseRequirement,
-                    thresholds: TIER_MULTIPLIERS.map((multiplier) => baseRequirement * multiplier),
+                    thresholds: TIER_MULTIPLIERS.map((multiplier) => (amountRequired += baseRequirement * multiplier)),
                     amount: toInt(accountCards[monsterId], { min: 0 }),
                     path: `${CARD_PATH}.${monsterId}`,
                 };
