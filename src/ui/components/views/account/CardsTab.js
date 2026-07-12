@@ -152,7 +152,6 @@ const UnresolvedCardRow = ({ card, valueState }) =>
 const buildCardData = async (rawCards, rawCardStuff) => {
     const accountCards = unwrapH(rawCards) ?? {};
     const accountIds = Object.keys(accountCards);
-    const accountIdSet = new Set(accountIds);
     const matchedIds = new Set();
 
     const regions = CARD_REGION_NAMES.map((name, regionIndex) => {
@@ -160,7 +159,7 @@ const buildCardData = async (rawCards, rawCardStuff) => {
             .map((rawDefinition) => {
                 const definition = toUnwrappedIndexedArray(rawDefinition);
                 const monsterId = String(definition[0] ?? "").trim();
-                if (!monsterId || !accountIdSet.has(monsterId) || matchedIds.has(monsterId)) return null;
+                if (!monsterId || monsterId === "Blank" || matchedIds.has(monsterId)) return null;
 
                 matchedIds.add(monsterId);
                 const baseRequirement = toInt(definition[2], { min: 0 });
@@ -169,7 +168,7 @@ const buildCardData = async (rawCards, rawCardStuff) => {
                     monsterId,
                     baseRequirement,
                     thresholds: TIER_MULTIPLIERS.map((multiplier) => (amountRequired += baseRequirement * multiplier)),
-                    amount: toInt(accountCards[monsterId], { min: 0 }),
+                    amount: toInt(accountCards[monsterId] ?? 0, { min: 0 }),
                     path: `${CARD_PATH}.${monsterId}`,
                 };
             })
@@ -206,7 +205,11 @@ const buildCardData = async (rawCards, rawCardStuff) => {
         });
     });
 
-    return { regions, unresolved, total: accountIds.length };
+    return {
+        regions,
+        unresolved,
+        total: regions.reduce((sum, region) => sum + region.cards.length, unresolved.length),
+    };
 };
 
 const CardSection = ({
@@ -280,7 +283,7 @@ const BulkConfirmationModal = ({ pending, status, onCancel, onConfirm }) =>
                 { class: "modal-body cards-bulk-modal__body" },
                 p(() => {
                     if (!pending.val) return "";
-                    return `${pending.val.affectedCount} of ${pending.val.region.cards.length} Account Cards will change.`;
+                    return `${pending.val.affectedCount} of ${pending.val.region.cards.length} cards will change.`;
                 }),
                 p("Each card will be set to its own minimum Card Amount for the selected tier.")
             ),
@@ -410,7 +413,7 @@ export const CardsTab = () => {
     return PersistentAccountListPage({
         title: "CARDS",
         description: () =>
-            `${totalCards.val} Account Cards grouped by Card Region. Edit amounts or set exact tier minimums.`,
+            `${totalCards.val} cards grouped by Card Region. Edit amounts or set exact tier minimums.`,
         actions: RefreshButton({
             onRefresh: load,
             tooltip: "Re-read live cards and definitions from the running game.",
