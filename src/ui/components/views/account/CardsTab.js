@@ -18,10 +18,9 @@ import {
     writeVerified,
 } from "./accountShared.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
-import { ActionButton } from "./components/ActionButton.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 
-const { div, span, select, option, details, summary, h3, p } = van.tags;
+const { div, span, select, option, details, summary } = van.tags;
 
 const CARD_PATH = "Cards[0].h";
 const TIER_MULTIPLIERS = [1, 3, 5, 16, 459, 14645];
@@ -218,10 +217,10 @@ const CardSection = ({
     valueStates,
     bulkStatus = null,
     activeBulkRegion = null,
-    requestBulkWrite = null,
+    setRegionTier = null,
     unresolved = false,
 }) => {
-    const status = () => (requestBulkWrite && activeBulkRegion.val === region.key ? bulkStatus.val : null);
+    const status = () => (setRegionTier && activeBulkRegion.val === region.key ? bulkStatus.val : null);
     const Row = unresolved ? UnresolvedCardRow : CardRow;
 
     return div(
@@ -253,57 +252,17 @@ const CardSection = ({
                 )
             )
         ),
-        requestBulkWrite
+        setRegionTier
             ? TierSelect({
                 label: "SET REGION TIER",
                 status,
                 disabled: () => region.cards.length === 0,
                 className: "card-region__tier-select",
-                onSelect: (tierIndex) => requestBulkWrite(region, tierIndex),
+                onSelect: (tierIndex) => setRegionTier(region, tierIndex),
             })
             : null
     );
 };
-
-const BulkConfirmationModal = ({ pending, status, onCancel, onConfirm }) =>
-    div(
-        {
-            class: () => joinClasses("modal cards-bulk-modal", !pending.val ? "is-hidden" : ""),
-            onclick: () => {
-                if (status.val !== "loading") onCancel();
-            },
-        },
-        div(
-            { class: "modal-box cards-bulk-modal__box", onclick: (event) => event.stopPropagation() },
-            div(
-                { class: "modal-header" },
-                h3(() => (pending.val ? `SET ${pending.val.region.name} TO TIER ${pending.val.tierIndex + 1}?` : ""))
-            ),
-            div(
-                { class: "modal-body cards-bulk-modal__body" },
-                p(() => {
-                    if (!pending.val) return "";
-                    return `${pending.val.affectedCount} of ${pending.val.region.cards.length} cards will change.`;
-                }),
-                p("Each card will be set to its own minimum Card Amount for the selected tier.")
-            ),
-            div(
-                { class: "modal-footer" },
-                ActionButton({
-                    label: "CANCEL",
-                    variant: "max-reset",
-                    disabled: () => status.val === "loading",
-                    onClick: onCancel,
-                }),
-                ActionButton({
-                    label: () => (pending.val ? `SET TIER ${pending.val.tierIndex + 1}` : "SET TIER"),
-                    status,
-                    disabled: () => !pending.val || pending.val.affectedCount === 0,
-                    onClick: onConfirm,
-                })
-            )
-        )
-    );
 
 export const CardsTab = () => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: "Cards" });
@@ -312,18 +271,10 @@ export const CardsTab = () => {
     const amountStates = new Map();
     const openStates = new Map();
     const activeBulkRegion = van.state(null);
-    const pendingBulk = van.state(null);
     const regionsNode = div({ class: "cards-regions" });
     const reconcileRegions = createStaticRowReconciler(regionsNode);
 
     const getOpenState = (key) => getOrCreateState(openStates, key, false);
-
-    const requestBulkWrite = (region, tierIndex) => {
-        const affectedCount = region.cards.filter(
-            (card) => getOrCreateState(amountStates, card.monsterId).val !== card.thresholds[tierIndex]
-        ).length;
-        pendingBulk.val = { region, tierIndex, affectedCount };
-    };
 
     const load = () =>
         runLoad(async () => {
@@ -345,7 +296,7 @@ export const CardsTab = () => {
                         valueStates: amountStates,
                         bulkStatus,
                         activeBulkRegion,
-                        requestBulkWrite,
+                        setRegionTier,
                     })
                 ),
                 ...(data.unresolved.length
@@ -371,44 +322,28 @@ export const CardsTab = () => {
             totalCards.val = data.total;
         });
 
-    const confirmBulkWrite = async () => {
-        const pending = pendingBulk.val;
-        if (!pending || bulkStatus.val === "loading") return;
+    async function setRegionTier(region, tierIndex) {
+        if (bulkStatus.val === "loading") return;
 
-        activeBulkRegion.val = pending.region.key;
+        activeBulkRegion.val = region.key;
         const result = await runBulk(() =>
             runBulkSet({
-                entries: pending.region.cards,
-                getTargetValue: (card) => card.thresholds[pending.tierIndex],
+                entries: region.cards,
+                getTargetValue: (card) => card.thresholds[tierIndex],
                 getValueState: (card) => getOrCreateState(amountStates, card.monsterId),
                 getPath: (card) => card.path,
             })
         );
 
-        pendingBulk.val = null;
         if (!result.ok) {
-            getOpenState(pending.region.key).val = true;
+            getOpenState(region.key).val = true;
             await load();
         }
-    };
+    }
 
     load();
 
-    const body = div(
-        { class: "cards-page-content" },
-        div({ class: "scrollable-panel cards-scroll" }, regionsNode),
-        BulkConfirmationModal({
-            pending: pendingBulk,
-            status: bulkStatus,
-            onCancel: () => {
-                if (bulkStatus.val !== "loading") pendingBulk.val = null;
-            },
-            onConfirm: (event) => {
-                event.preventDefault();
-                void confirmBulkWrite();
-            },
-        })
-    );
+    const body = div({ class: "cards-page-content" }, div({ class: "scrollable-panel cards-scroll" }, regionsNode));
 
     return PersistentAccountListPage({
         title: "CARDS",

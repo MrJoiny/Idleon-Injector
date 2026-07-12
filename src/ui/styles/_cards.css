@@ -188,17 +188,6 @@
     border-color: var(--c-danger);
 }
 
-.cards-bulk-modal__body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.cards-bulk-modal__body p {
-    margin: 0;
-    line-height: 1.45;
-}
-
 @media (max-width: 760px) {
     .card-row__controls {
         flex-wrap: wrap;
