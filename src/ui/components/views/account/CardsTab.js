@@ -21,7 +21,7 @@ import { RefreshButton } from "./components/AccountPageChrome.js";
 import { ActionButton } from "./components/ActionButton.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 
-const { div, span, button, details, summary, h3, p } = van.tags;
+const { div, span, select, option, details, summary, h3, p } = van.tags;
 
 const CARD_PATH = "Cards[0].h";
 const TIER_MULTIPLIERS = [1, 3, 5, 16, 459, 14645];
@@ -42,16 +42,8 @@ const CARD_REGION_NAMES = [
 ];
 
 const toUnwrappedIndexedArray = (value) => toIndexedArray(unwrapH(value));
-const cardPath = (monsterId) => `${CARD_PATH}.${monsterId}`;
-const tierThresholds = (baseRequirement) => TIER_MULTIPLIERS.map((multiplier) => baseRequirement * multiplier);
-
-const tierIndexForAmount = (amount, thresholds) => {
-    let currentTier = -1;
-    thresholds.forEach((threshold, index) => {
-        if (Number(amount) >= threshold) currentTier = index;
-    });
-    return currentTier;
-};
+const tierIndexForAmount = (amount, thresholds) =>
+    thresholds.findLastIndex((threshold) => Number(amount) >= threshold);
 
 const nextTierLabel = (amount, thresholds) => {
     const nextThreshold = thresholds.find((threshold) => Number(amount) < threshold);
@@ -74,74 +66,43 @@ const TierBadgeContent = ({ amount, thresholds }) => {
     );
 };
 
-const closeOtherTierPickers = (activePicker) => {
-    document.querySelectorAll(".card-tier-picker[open]").forEach((picker) => {
-        if (picker !== activePicker) picker.open = false;
-    });
-};
-
-const TierPicker = ({
+const TierSelect = ({
     label = "SET TIER",
     thresholds = null,
     onSelect,
     status = null,
     disabled = false,
     className = "",
-    triggerVariant = "apply",
 }) => {
     const isDisabled = () => Boolean(resolveValue(disabled)) || resolveValue(status) === "loading";
 
-    const picker = details(
+    return select(
         {
             class: () => {
                 const resolvedStatus = resolveValue(status);
                 return joinClasses(
-                    "card-tier-picker",
+                    "select-base card-tier-select",
                     resolveValue(className),
-                    resolvedStatus === "loading" ? "card-tier-picker--loading" : "",
-                    resolvedStatus === "success" ? "card-tier-picker--success" : "",
-                    resolvedStatus === "error" ? "card-tier-picker--error" : ""
+                    resolvedStatus === "loading" ? "card-tier-select--loading" : "",
+                    resolvedStatus === "success" ? "card-tier-select--success" : "",
+                    resolvedStatus === "error" ? "card-tier-select--error" : ""
                 );
             },
-            ontoggle: () => {
-                if (picker.open) closeOtherTierPickers(picker);
+            disabled: isDisabled,
+            onchange: async (event) => {
+                const tierIndex = Number(event.target.value);
+                event.target.value = "";
+                await onSelect(tierIndex, thresholds?.[tierIndex]);
             },
         },
-        summary(
-            {
-                class: `account-btn account-btn--${triggerVariant} card-tier-picker__trigger`,
-                "aria-disabled": () => String(isDisabled()),
-                onclick: (event) => {
-                    if (isDisabled()) event.preventDefault();
-                },
-            },
-            span(label),
-            Icons.ChevronRight({ class: "card-tier-picker__chevron" })
-        ),
-        div(
-            { class: "card-tier-picker__menu" },
-            ...TIER_MULTIPLIERS.map((_, tierIndex) =>
-                button(
-                    {
-                        type: "button",
-                        class: `card-tier-picker__option card-tier-picker__option--tier-${tierIndex + 1}`,
-                        disabled: isDisabled,
-                        onclick: async (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            picker.open = false;
-                            await onSelect(tierIndex, thresholds?.[tierIndex]);
-                        },
-                    },
-                    Icons.CardTier(tierIndex + 1, { class: "card-tier-icon" }),
-                    span(`TIER ${tierIndex + 1}`),
-                    span({ class: "card-tier-picker__amount" }, thresholds ? String(thresholds[tierIndex]) : "PER CARD")
-                )
+        option({ value: "", disabled: true, selected: true }, label),
+        ...TIER_MULTIPLIERS.map((_, tierIndex) =>
+            option(
+                { value: tierIndex },
+                `TIER ${tierIndex + 1} - ${thresholds ? thresholds[tierIndex] : "PER CARD"}`
             )
         )
     );
-
-    return picker;
 };
 
 const CardRow = ({ card, valueState }) =>
@@ -160,7 +121,7 @@ const CardRow = ({ card, valueState }) =>
             ),
         renderBadge: (currentValue) => TierBadgeContent({ amount: currentValue, thresholds: card.thresholds }),
         renderExtraActions: ({ status, applyValue }) =>
-            TierPicker({
+            TierSelect({
                 thresholds: card.thresholds,
                 status,
                 onSelect: (_, threshold) => applyValue(threshold),
@@ -206,9 +167,9 @@ const buildCardData = async (rawCards, rawCardStuff) => {
                 return {
                     monsterId,
                     baseRequirement,
-                    thresholds: tierThresholds(baseRequirement),
+                    thresholds: TIER_MULTIPLIERS.map((multiplier) => baseRequirement * multiplier),
                     amount: toInt(accountCards[monsterId], { min: 0 }),
-                    path: cardPath(monsterId),
+                    path: `${CARD_PATH}.${monsterId}`,
                 };
             })
             .filter(Boolean);
@@ -240,88 +201,65 @@ const buildCardData = async (rawCards, rawCardStuff) => {
         unresolved.push({
             monsterId,
             amount: toInt(accountCards[monsterId], { min: 0 }),
-            path: cardPath(monsterId),
+            path: `${CARD_PATH}.${monsterId}`,
         });
     });
 
     return { regions, unresolved, total: accountIds.length };
 };
 
-const RegionSection = ({ region, openState, valueStates, bulkStatus, activeBulkRegion, requestBulkWrite }) => {
-    const bodyId = `card-region-${region.index}`;
-    const status = () => (activeBulkRegion.val === region.key ? bulkStatus.val : null);
+const CardSection = ({
+    region,
+    openState,
+    valueStates,
+    bulkStatus = null,
+    activeBulkRegion = null,
+    requestBulkWrite = null,
+    unresolved = false,
+}) => {
+    const status = () => (requestBulkWrite && activeBulkRegion.val === region.key ? bulkStatus.val : null);
+    const Row = unresolved ? UnresolvedCardRow : CardRow;
 
     return div(
         {
             class: () =>
                 joinClasses(
                     "card-region",
-                    openState.val ? "card-region--open" : "",
+                    unresolved ? "card-region--unresolved" : "",
                     status() === "success" ? "card-region--success" : "",
                     status() === "error" ? "card-region--error" : ""
                 ),
         },
-        div(
-            { class: "card-region__header" },
-            button(
-                {
-                    type: "button",
-                    class: "card-region__toggle",
-                    "aria-expanded": () => String(openState.val),
-                    "aria-controls": bodyId,
-                    onclick: () => (openState.val = !openState.val),
-                },
+        details(
+            {
+                class: "card-region__details",
+                open: openState,
+                ontoggle: (event) => (openState.val = event.target.open),
+            },
+            summary(
+                { class: "card-region__toggle" },
                 Icons.ChevronRight({ class: "card-region__chevron" }),
                 span({ class: "card-region__title" }, region.name),
                 span({ class: "card-region__count" }, `${region.cards.length} CARDS`)
             ),
-            TierPicker({
+            div(
+                { class: "card-region__body account-item-stack" },
+                ...region.cards.map((card) =>
+                    Row({ card, valueState: getOrCreateState(valueStates, card.monsterId) })
+                )
+            )
+        ),
+        requestBulkWrite
+            ? TierSelect({
                 label: "SET REGION TIER",
                 status,
                 disabled: () => region.cards.length === 0,
-                className: "card-region__tier-picker",
-                triggerVariant: "max-reset",
+                className: "card-region__tier-select",
                 onSelect: (tierIndex) => requestBulkWrite(region, tierIndex),
             })
-        ),
-        div(
-            {
-                id: bodyId,
-                class: () => joinClasses("card-region__body account-item-stack", !openState.val ? "is-hidden" : ""),
-            },
-            ...region.cards.map((card) => CardRow({ card, valueState: getOrCreateState(valueStates, card.monsterId) }))
-        )
+            : null
     );
 };
-
-const UnresolvedSection = ({ cards, openState, valueStates }) =>
-    div(
-        { class: () => joinClasses("card-region card-region--unresolved", openState.val ? "card-region--open" : "") },
-        div(
-            { class: "card-region__header" },
-            button(
-                {
-                    type: "button",
-                    class: "card-region__toggle",
-                    "aria-expanded": () => String(openState.val),
-                    "aria-controls": "card-region-unresolved",
-                    onclick: () => (openState.val = !openState.val),
-                },
-                Icons.ChevronRight({ class: "card-region__chevron" }),
-                span({ class: "card-region__title" }, "UNRESOLVED CARDS"),
-                span({ class: "card-region__count" }, `${cards.length} CARDS`)
-            )
-        ),
-        div(
-            {
-                id: "card-region-unresolved",
-                class: () => joinClasses("card-region__body account-item-stack", !openState.val ? "is-hidden" : ""),
-            },
-            ...cards.map((card) =>
-                UnresolvedCardRow({ card, valueState: getOrCreateState(valueStates, card.monsterId) })
-            )
-        )
-    );
 
 const BulkConfirmationModal = ({ pending, status, onCancel, onConfirm }) =>
     div(
@@ -397,7 +335,7 @@ export const CardsTab = () => {
 
             reconcileRegions(signature, () => [
                 ...data.regions.map((region) =>
-                    RegionSection({
+                    CardSection({
                         region,
                         openState: getOpenState(region.key),
                         valueStates: amountStates,
@@ -408,10 +346,15 @@ export const CardsTab = () => {
                 ),
                 ...(data.unresolved.length
                     ? [
-                          UnresolvedSection({
-                              cards: data.unresolved,
+                          CardSection({
+                              region: {
+                                  key: "unresolved",
+                                  name: "UNRESOLVED CARDS",
+                                  cards: data.unresolved,
+                              },
                               openState: getOpenState("unresolved"),
                               valueStates: amountStates,
+                              unresolved: true,
                           }),
                       ]
                     : []),
