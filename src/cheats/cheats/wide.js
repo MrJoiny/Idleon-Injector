@@ -88,13 +88,13 @@ registerCheats({
     ],
 });
 
-const bossMaps = new Set([27, 29, 65, 66, 113, 114, 163, 165, 211, 214, 266]);
+const bossMaps = new Set([29, 66, 114, 165, 214, 266]);
 let autobossArmed = false;
 let autobossReload = null;
 let autobossMap = null;
 
 setInterval(() => {
-    if (!cheatState.wide.autoboss || !gga || !bossMaps.has(gga.CurrentMap)) {
+    if (!cheatState.wide.autoboss || !bossMaps.has(gga.CurrentMap)) {
         autobossArmed = false;
         clearTimeout(autobossReload);
         autobossReload = null;
