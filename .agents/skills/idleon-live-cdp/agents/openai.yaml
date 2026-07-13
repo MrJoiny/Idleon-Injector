@@ -1,0 +1,4 @@
+interface:
+    display_name: "Idleon Live CDP"
+    short_description: "Inspect and safely modify live Idleon state"
+    default_prompt: "Use $idleon-live-cdp to inspect the current live Idleon game state through CDP port 32123."
