@@ -94,13 +94,6 @@ let autobossReload = null;
 let autobossMap = null;
 
 setInterval(() => {
-    if (gga && gga.CurrentMap !== autobossMap) {
-        autobossMap = gga.CurrentMap;
-        autobossArmed = false;
-        clearTimeout(autobossReload);
-        autobossReload = null;
-    }
-
     if (!cheatState.wide.autoboss || !gga || !bossMaps.has(gga.CurrentMap)) {
         autobossArmed = false;
         clearTimeout(autobossReload);
@@ -108,18 +101,28 @@ setInterval(() => {
         return;
     }
 
+    if (gga.CurrentMap !== autobossMap) {
+        autobossMap = gga.CurrentMap;
+        autobossArmed = false;
+        clearTimeout(autobossReload);
+        autobossReload = null;
+    }
+
     if (gga.BossHP > 0) {
         autobossArmed = true;
-    } else if (autobossArmed && !autobossReload) {
-        autobossArmed = false;
-        autobossReload = setTimeout(() => {
-            autobossReload = null;
-            if (!cheatState.wide.autoboss || !bossMaps.has(gga.CurrentMap)) return;
-
-            autobossArmed = false;
-            const fadeOut = behavior.createFadeOut(0.4, 0);
-            const fadeIn = behavior.createFadeIn(0.5, 0);
-            behavior.reloadCurrentScene(fadeOut, fadeIn);
-        }, 1000);
+        return;
     }
+
+    if (!autobossArmed || autobossReload) return;
+
+    autobossArmed = false;
+    autobossReload = setTimeout(() => {
+        autobossReload = null;
+        if (!cheatState.wide.autoboss || !bossMaps.has(gga.CurrentMap)) return;
+
+        autobossArmed = false;
+        const fadeOut = behavior.createFadeOut(0.4, 0);
+        const fadeIn = behavior.createFadeIn(0.5, 0);
+        behavior.reloadCurrentScene(fadeOut, fadeIn);
+    }, 5000);
 }, 1000);
