@@ -1,5 +1,5 @@
 import van from "../../../../../vendor/van-1.6.0.js";
-import { gga, readComputed, readGgaEntries } from "../../../../../services/api.js";
+import { gga, readComputed, readComputedMany, readGgaEntries } from "../../../../../services/api.js";
 import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
@@ -20,6 +20,7 @@ const { div } = van.tags;
 
 const BREEDING_EGGS_PATH = "Breeding[0]";
 const BREEDING_UPGRADES_PATH = "Breeding[2]";
+const PET_UPGRADE_DNA_PATH = "Breeding[3][8]";
 const ARENA_ROUND_PATH = "OptionsListAccount[89]";
 const SPICE_CLAIM_PATH = "OptionsListAccount[100]";
 const EGG_MAX_RARITY = 11;
@@ -37,33 +38,50 @@ const buildEggEntries = (rawEggs, capacity) =>
         badge: (currentValue) => `${currentValue ?? 0} / ${EGG_MAX_RARITY}`,
     }));
 
-const readUpgradeEntries = () =>
-    readLevelDefinitions({
+const readUpgradeEntries = async () => {
+    const upgrades = await readLevelDefinitions({
         levelsPath: BREEDING_UPGRADES_PATH,
         definitionsPath: "PetUpgradeINFO",
         mapEntry: ({ index, definition, rawLevel }) => {
             const rawName = String(definition[0] ?? "").trim();
             if (!rawName || (index !== 0 && rawName === "No_Upgrade_Selected")) return null;
 
-            const maxLevel = toInt(definition[8], { min: 0 });
-
             return {
                 index,
                 key: `upgrade:${index}:${rawName}`,
                 name: cleanName(rawName, `Upgrade ${index}`),
                 path: `${BREEDING_UPGRADES_PATH}[${index}]`,
-                value: Math.min(maxLevel, toInt(rawLevel, { min: 0 })),
-                max: maxLevel,
+                value: toInt(rawLevel, { min: 0 }),
                 formatted: false,
-                badge: (currentValue) => `${currentValue ?? 0} / ${maxLevel}`,
             };
         },
     });
+
+    const maximums = await readComputedMany(
+        "breeding",
+        "PetUpgMaxLV",
+        upgrades.map(({ index }) => [0, index])
+    );
+
+    return upgrades.map((upgrade, index) => {
+        if (!maximums[index]?.ok) {
+            throw new Error(`PetUpgMaxLV failed for upgrade ${upgrade.index}: ${maximums[index]?.error ?? "unknown"}`);
+        }
+        const maxLevel = toInt(maximums[index].value, { min: 0 });
+        return {
+            ...upgrade,
+            value: Math.min(maxLevel, upgrade.value),
+            max: maxLevel,
+            badge: (currentValue) => `${currentValue ?? 0} / ${maxLevel}`,
+        };
+    });
+};
 
 export const GeneralTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Breeding general" });
     const eggEntries = van.state([]);
     const upgradeEntries = van.state([]);
+    const petUpgradeDnaState = van.state(0);
     const arenaRoundState = van.state(0);
     const spiceClaimState = van.state(0);
     const getEggState = createIndexedStateGetter(0);
@@ -92,26 +110,33 @@ export const GeneralTab = () => {
             eggEntries.val.map((entry) => entry.key).join("|"),
             () => eggEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getEggState(entry.index) }))
         );
-        reconcileUpgradeRows(
-            upgradeEntries.val.map((entry) => entry.key).join("|"),
-            () =>
-                upgradeEntries.val.map((entry) =>
-                    SimpleNumberRow({ entry, valueState: getUpgradeState(entry.index) })
-                )
-        );
+        reconcileUpgradeRows(upgradeEntries.val.map((entry) => `${entry.key}:${entry.max}`).join("|"), () => [
+            SimpleNumberRow({
+                entry: {
+                    name: "Pet Upgrade DNA (Dead Cells)",
+                    path: PET_UPGRADE_DNA_PATH,
+                    formatted: true,
+                    showIndex: false,
+                },
+                valueState: petUpgradeDnaState,
+            }),
+            ...upgradeEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getUpgradeState(entry.index) })),
+        ]);
     };
 
     const load = async () =>
         run(async () => {
-            const [rawEggs, rawOptions, eggCapacity, upgrades] = await Promise.all([
+            const [rawEggs, rawOptions, eggCapacity, upgrades, petUpgradeDna] = await Promise.all([
                 gga(BREEDING_EGGS_PATH),
                 readGgaEntries("OptionsListAccount", ["89", "100"]),
                 readComputed("breeding", "TotalEggCapacity", []),
                 readUpgradeEntries(),
+                gga(PET_UPGRADE_DNA_PATH),
             ]);
 
             eggEntries.val = buildEggEntries(rawEggs, eggCapacity);
             upgradeEntries.val = upgrades;
+            petUpgradeDnaState.val = toInt(petUpgradeDna, { min: 0 });
             arenaRoundState.val = toInt(rawOptions["89"], { min: 0 });
             spiceClaimState.val = toInt(rawOptions["100"], { min: 0 });
             reconcileRows();

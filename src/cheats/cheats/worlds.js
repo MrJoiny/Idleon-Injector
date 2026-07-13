@@ -108,12 +108,12 @@ registerCheats({
         { name: "meals", message: "meal bonus cheats" },
         {
             name: "ribbon",
-            message: "Adds a ribbon (1-20) to storage. Usage: w4 ribbon [1-20]",
+            message: "Adds a ribbon (1-25) to storage. Usage: w4 ribbon [1-25]",
             needsParam: true,
             fn: (params) => {
                 const ribbonLvl = parseInt(params[1]);
-                if (isNaN(ribbonLvl) || ribbonLvl < 1 || ribbonLvl > 20) {
-                    return "Please provide a ribbon lvl between 1 and 20";
+                if (isNaN(ribbonLvl) || ribbonLvl < 1 || ribbonLvl > 25) {
+                    return "Please provide a ribbon lvl between 1 and 25";
                 }
 
                 const ribbons = gga.Ribbon;

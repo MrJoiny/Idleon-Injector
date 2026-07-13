@@ -22,7 +22,7 @@ const MEAL_LEVELS_PATH = "Meals[0]";
 const MEAL_AMOUNTS_PATH = "Meals[2]";
 const RIBBON_LEVELS_PATH = "Ribbon";
 const MEAL_RIBBON_OFFSET = 28;
-const MEAL_RIBBON_MAX_LEVEL = 20;
+const MEAL_RIBBON_MAX_LEVEL = 25;
 
 const MEAL_FIELDS = [
     { key: "level", label: "Level", path: MEAL_LEVELS_PATH, formatted: false },
