@@ -6,6 +6,7 @@
  * - giant, gems, plunderous, candy, candytime, nodmg
  * - hidenames, noanim, bigmodel, eventitems, autoloot, perfectobols, autoparty
  * - arcade, eventspins, hoopshop, dartshop, guildpoints, cardcopy, cardpassive, autoboss
+ * - votebonus
  */
 
 import { registerCheats } from "../core/registration.js";
@@ -85,6 +86,7 @@ registerCheats({
             },
         },
         { name: "cardpassive", message: "all cards always give bonus (passive)" },
+        { name: "votebonus", message: "all Ballot and Meritocracy bonuses active" },
     ],
 });
 

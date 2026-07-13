@@ -21,7 +21,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { events, gga } from "../core/globals.js";
+import { cList, events, gga } from "../core/globals.js";
 import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
 /**
@@ -38,6 +38,19 @@ export function setupEvents579Proxies() {
         { state: "w6.sumunit" },
         { state: "w6.grimoire" },
     ]);
+
+    // Summoning2 calculates individual Ballot and Meritocracy bonuses; Summoning supplies their current multiplier.
+    createMethodProxy(ActorEvents579, "_customBlock_Summoning2", function (base, key, bonusIndex) {
+        if (cheatState.wide.votebonus && key === "MeritocBonusz") {
+            const value = Number(cList.NinjaInfo[41][Math.round(1 + 3 * bonusIndex)]);
+            return value * this._customBlock_Summoning("MeritocBonuszMulti", 0, 0);
+        }
+        if (cheatState.wide.votebonus && key === "VotingBonusz") {
+            const value = Number(cList.NinjaInfo[38][Math.round(1 + 3 * bonusIndex)]);
+            return value * this._customBlock_Summoning("VotingBonuszMulti", 0, 0);
+        }
+        return base;
+    });
 
     createConfigLookupProxy(ActorEvents579, "_customBlock_Thingies", [
         { state: "wide.hoopshop" },
