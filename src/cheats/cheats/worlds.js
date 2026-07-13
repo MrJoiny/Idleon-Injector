@@ -72,7 +72,7 @@ registerCheats({
         { name: "book", message: "always max lvl talent book" },
         { name: "prayer", message: "Prayer curse nullification" },
         { name: "worshipspeed", message: "multiply worship charge speed (see config)" },
-        { name: "freeworship", message: "nullification of worship charge cost" },
+        { name: "freeworship", message: "reduce worship charge cost to the minimum" },
         { name: "globalshrines", message: "global shrines" },
         { name: "instantdreams", message: "Dream bar fills instantly" },
         { name: "bettercog", message: "Gives you a bit better cog chances" },

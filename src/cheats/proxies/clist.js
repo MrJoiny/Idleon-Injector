@@ -53,8 +53,8 @@ export function setupCListProxy() {
     // Nullify star sign unlock requirement
     nullifyListCost(cList.SSignInfoUI, 1, 4, "wide.star", "0");
 
-    // Nullify worship cost
-    nullifyListCost(cList.WorshipBASEinfos, 1, 6, "w3.freeworship", "0");
+    // Reduce worship cost to the minimum
+    nullifyListCost(cList.WorshipBASEinfos, 1, 6, "w3.freeworship", "1");
 
     // Gem buy limit (not a simple nullify operation)
     const gembuylimitIndex = 5;
