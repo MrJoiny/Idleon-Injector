@@ -2957,5 +2957,11 @@
         "description": "Toggles whether the AutoFullClearNECESSARY helper reports that an auto full clear is required",
         "type": "number",
         "AI": true
+    },
+    "601": {
+        "name": "Fountain Rubber Duckies",
+        "description": "Number of Rubber Duckies found through the Green Water Fountain",
+        "type": "number",
+        "AI": true
     }
 }

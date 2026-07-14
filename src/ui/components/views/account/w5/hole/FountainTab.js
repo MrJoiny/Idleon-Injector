@@ -19,16 +19,18 @@ import { PersistentAccountListPage } from "../../components/PersistentAccountLis
 
 const { div, span } = van.tags;
 
-const makeHoleEntry = ({ key, index, name, path, value, badge = null, max = Infinity, float = false }) => ({
+const makeHoleEntry = ({
     key,
     index,
     name,
     path,
     value,
-    badge,
-    max,
-    float,
-});
+    badge = null,
+    min = 0,
+    max = Infinity,
+    float = false,
+    formatted = true,
+}) => ({ key, index, name, path, value, badge, min, max, float, formatted });
 const marbleNumberProps = {
     normalize: (raw) => resolveNumberInput(raw, { formatted: true, min: 0, fallback: null }),
     adjust: (raw, delta, current) => adjustFormattedIntInput(raw, delta, current ?? 0, { min: 0 }),
@@ -46,6 +48,7 @@ const FOUNTAIN_CURRENCIES = [
     "Greane",
 ];
 const WATER_SECTIONS = ["Blue Water", "Yellow Water", "Green Water"];
+const RUBBER_DUCKIES_OPTION = 601;
 
 const buildFountainUpgradeEntries = (data, waterIndex) => {
     const levelGroups = toIndexedArray(toIndexedArray(data.holes)[31]);
@@ -116,6 +119,8 @@ export const FountainTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Hole Fountain" });
     const currencyEntries = van.state([]);
     const generalEntries = van.state([]);
+    const fillBarEntries = van.state([]);
+    const luckyCoinEntries = van.state([]);
     const upgradeSections = WATER_SECTIONS.map((title, waterIndex) => ({
         title,
         waterIndex,
@@ -125,8 +130,12 @@ export const FountainTab = () => {
     const valueStates = new Map();
     const currencyNode = div({ class: "account-item-stack" });
     const generalNode = div({ class: "account-item-stack" });
+    const fillBarNode = div({ class: "account-item-stack" });
+    const luckyCoinNode = div({ class: "account-item-stack" });
     const reconcileCurrencyRows = createStaticRowReconciler(currencyNode);
     const reconcileGeneralRows = createStaticRowReconciler(generalNode);
+    const reconcileFillBarRows = createStaticRowReconciler(fillBarNode);
+    const reconcileLuckyCoinRows = createStaticRowReconciler(luckyCoinNode);
     const upgradeReconcilers = upgradeSections.map((section) => createStaticRowReconciler(section.node));
 
     const reconcileSimpleRows = (nodeReconciler, entries) => {
@@ -141,8 +150,16 @@ export const FountainTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [holes, upgrades] = await Promise.all([gga("Holes"), readCList("HoleFountUPG")]);
+            const [holes, options, upgrades] = await Promise.all([
+                gga("Holes"),
+                gga("OptionsListAccount"),
+                readCList("HoleFountUPG"),
+            ]);
             const data = { holes, upgrades };
+            const holeData = toIndexedArray(holes);
+            const holeDetails = toIndexedArray(holeData[11]);
+            const luckyCoins = toIndexedArray(holeData[30]);
+            const fillBars = toIndexedArray(holeData[33]);
 
             currencyEntries.val = FOUNTAIN_CURRENCIES.map((name, index) =>
                 makeHoleEntry({
@@ -155,25 +172,73 @@ export const FountainTab = () => {
             );
             generalEntries.val = [
                 makeHoleEntry({
+                    key: "fountain-selected-water",
+                    index: 80,
+                    name: "Selected Water",
+                    path: "Holes[11][80]",
+                    value: toNum(holeDetails[80], 0),
+                    badge: (currentValue) => WATER_SECTIONS[currentValue] ?? `Water ${currentValue}`,
+                    max: WATER_SECTIONS.length - 1,
+                    formatted: false,
+                }),
+                makeHoleEntry({
                     key: "fountain-marble",
                     index: 81,
                     name: "Marble Amount",
                     path: "Holes[11][81]",
-                    value: toNum(toIndexedArray(toIndexedArray(holes)[11])[81], 0),
+                    value: toNum(holeDetails[81], 0),
                 }),
                 makeHoleEntry({
                     key: "fountain-lanterns",
                     index: 84,
                     name: "Lanterns Used",
                     path: "Holes[11][84]",
-                    value: toNum(toIndexedArray(toIndexedArray(holes)[11])[84], 0),
+                    value: toNum(holeDetails[84], 0),
                     max: 12,
                 }),
+                makeHoleEntry({
+                    key: "fountain-rubber-duckies",
+                    index: RUBBER_DUCKIES_OPTION,
+                    name: "Rubber Duckies",
+                    path: `OptionsListAccount[${RUBBER_DUCKIES_OPTION}]`,
+                    value: toNum(toIndexedArray(options)[RUBBER_DUCKIES_OPTION], 0),
+                }),
             ];
+            fillBarEntries.val = WATER_SECTIONS.map((name, index) =>
+                makeHoleEntry({
+                    key: `fountain-fill-bar-${index}`,
+                    index,
+                    name: `${name} Fill Bar`,
+                    path: `Holes[33][${index}]`,
+                    value: toNum(fillBars[index], 0),
+                    float: true,
+                    formatted: false,
+                })
+            );
+            luckyCoinEntries.val = FOUNTAIN_CURRENCIES.map((name, index) =>
+                makeHoleEntry({
+                    key: `fountain-lucky-coin-${index}`,
+                    index,
+                    name,
+                    path: `Holes[30][${index}]`,
+                    value: toNum(luckyCoins[index], -1),
+                    badge: (currentValue) => (Number(currentValue) === -1 ? "LOCKED" : String(currentValue ?? 0)),
+                    min: -1,
+                    formatted: false,
+                })
+            );
 
-            for (const entry of [...currencyEntries.val, ...generalEntries.val]) syncEntryState(entry);
+            for (const entry of [
+                ...currencyEntries.val,
+                ...generalEntries.val,
+                ...fillBarEntries.val,
+                ...luckyCoinEntries.val,
+            ])
+                syncEntryState(entry);
             reconcileSimpleRows(reconcileCurrencyRows, currencyEntries.val);
             reconcileSimpleRows(reconcileGeneralRows, generalEntries.val);
+            reconcileSimpleRows(reconcileFillBarRows, fillBarEntries.val);
+            reconcileSimpleRows(reconcileLuckyCoinRows, luckyCoinEntries.val);
 
             upgradeSections.forEach((section, sectionIndex) => {
                 section.entries.val = buildFountainUpgradeEntries(data, section.waterIndex);
@@ -194,7 +259,7 @@ export const FountainTab = () => {
     return PersistentAccountListPage({
         title: "FOUNTAIN",
         description:
-            "Edit Fountain currency, marble, lanterns, upgrades, and upgrade marble values from Holes[9], [11], [31], and [32].",
+            "Edit Fountain currency, water progress, Lucky Coins, Rubber Duckies, and upgrades from Holes and OptionsListAccount.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
@@ -214,6 +279,16 @@ export const FountainTab = () => {
                 title: "GENERAL",
                 note: () => `${generalEntries.val.length} ROWS`,
                 body: generalNode,
+            }),
+            AccountSection({
+                title: "FILL BARS",
+                note: () => `${fillBarEntries.val.length} WATERS`,
+                body: fillBarNode,
+            }),
+            AccountSection({
+                title: "LUCKY COINS",
+                note: () => `${luckyCoinEntries.val.length} CURRENCIES`,
+                body: luckyCoinNode,
             }),
             ...upgradeSections.map((section) =>
                 AccountSection({
