@@ -49,7 +49,7 @@ export function setupEvents579Proxies() {
         { state: "w6.sneaksymbol" },
     ]);
 
-    // Holes (W5)
+    // Holes (W5) - unknown keys delegate to _customBlock_Holes2, so proxy the entry point only.
     createConfigLookupProxy(ActorEvents579, "_customBlock_Holes", [{ state: "w5.holes" }]);
 
     // Sailing (W5)

@@ -295,6 +295,11 @@ export const configDescriptions = {
     "cheatConfig.w5.holes.JarCollectibleBonus": "Sneaking: Jar collectible bonuses",
     "cheatConfig.w5.holes.JarEnchantChance": "Sneaking: Jar enchantment success chance",
     "cheatConfig.w5.holes.JarNewCollectibleChance": "Sneaking: New jar collectible discovery chance",
+    "cheatConfig.w5.holes.Cost_FountainUPG": "Fountain: Upgrade costs. (lower is better)",
+    "cheatConfig.w5.holes.Fount_RoyalChance": "Fountain: Royal stack chance",
+    "cheatConfig.w5.holes.Fount_RoyalMulti": "Fountain: Royal stack value multiplier",
+    "cheatConfig.w5.holes.Fount_MarblePerFill": "Fountain: Marble gained per Yellow Water fill",
+    "cheatConfig.w5.holes.Fount_MarbleizeCost": "Fountain: Upgrade marbleization costs. (lower is better)",
 
     // W6 - World 6
     // Farming
