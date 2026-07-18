@@ -64,10 +64,13 @@ export function resolvePath(path) {
         current = gga;
         segments.shift();
     } else if (segments[0] === "bEngine" && segments[1] === "gameAttributes") {
-        // Handle full path like "bEngine.gameAttributes.h.X"
+        // Handle full paths like "bEngine.gameAttributes.X" and "bEngine.gameAttributes.h.X"
         current = gga;
         segments.shift(); // remove "bEngine"
         segments.shift(); // remove "gameAttributes"
+        if (segments[0] === "h") {
+            segments.shift(); // remove optional explicit ".h"
+        }
     }
 
     for (let i = 0; i < segments.length - 1; i++) {
