@@ -100,7 +100,7 @@ class ValueMonitor {
         const initialValue = hasOriginalAccessor && original.get ? original.get.call(target) : storedValue;
         this.broadcast(id, initialValue);
 
-        return { success: true };
+        return { success: true, value: initialValue };
     }
 
     /**

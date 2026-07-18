@@ -379,7 +379,10 @@ const SearchService = {
         return API.searchGga(query, keys, options);
     },
     setGgaValue: async (path, value) => {
-        await API.writeGga(path, value);
+        const ok = await API.gga(path, value);
+        if (!ok) {
+            throw new Error(`Write to ${path} failed verification`);
+        }
         return {
             success: true,
             path,

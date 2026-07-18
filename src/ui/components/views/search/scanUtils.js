@@ -10,6 +10,8 @@ const INPUTLESS_SCAN_TYPES = new Set([
 
 const SECONDARY_INPUT_SCAN_TYPES = new Set(["value_between"]);
 
+const NUMERIC_INPUT_SCAN_TYPES = new Set(["bigger_than", "smaller_than", "increased_value_by", "decreased_value_by"]);
+
 const NEXT_COMPARISON_SCAN_TYPES = new Set([
     "increased_value",
     "increased_value_by",
@@ -48,8 +50,24 @@ const SCAN_TYPE_LABELS = {
     unchanged_value: "Unchanged Value",
 };
 
+const SCAN_TYPE_PLACEHOLDERS = {
+    bigger_than: "BIGGER THAN",
+    smaller_than: "SMALLER THAN",
+    value_between: "MIN VALUE",
+    increased_value_by: "INCREASED BY",
+    decreased_value_by: "DECREASED BY",
+};
+
 export function getScanTypeLabel(scanType) {
     return SCAN_TYPE_LABELS[scanType] || scanType;
+}
+
+export function getScanTypePlaceholder(scanType) {
+    return SCAN_TYPE_PLACEHOLDERS[scanType] || "VALUE";
+}
+
+export function requiresNumericInput(scanType) {
+    return NUMERIC_INPUT_SCAN_TYPES.has(scanType);
 }
 
 export function isInputlessScanType(scanType) {
@@ -101,47 +119,8 @@ export function buildSnapshotFromResults(results) {
     return snapshot;
 }
 
-function parseExactScanQuery(query) {
-    const trimmed = String(query ?? "").trim();
-
-    if (trimmed === "") return { type: "any", value: null };
-    if (trimmed === "null") return { type: "null", value: null };
-    if (trimmed === "undefined") return { type: "undefined", value: undefined };
-    if (trimmed === "true") return { type: "boolean", value: true };
-    if (trimmed === "false") return { type: "boolean", value: false };
-
-    const num = Number(trimmed);
-    if (!Number.isNaN(num) && trimmed !== "") return { type: "number", value: num };
-
-    return { type: "string", value: trimmed };
-}
-
-function matchesExactValue(currentType, currentValue, parsedQuery) {
-    if (parsedQuery.type === "any") return true;
-
-    if (parsedQuery.type === "string") {
-        return currentType === "string" && String(currentValue).toLowerCase().includes(parsedQuery.value.toLowerCase());
-    }
-
-    if (parsedQuery.type === "number") {
-        if (currentType !== "number" || typeof currentValue !== "number") return false;
-        if (currentValue === parsedQuery.value) return true;
-
-        if (Number.isInteger(parsedQuery.value)) {
-            const floor = Math.floor(currentValue);
-            const ceil = Math.ceil(currentValue);
-            return floor === parsedQuery.value || ceil === parsedQuery.value;
-        }
-
-        return false;
-    }
-
-    if (parsedQuery.type === "null") return currentValue === null;
-    if (parsedQuery.type === "undefined") return currentType === "undefined";
-
-    return currentValue === parsedQuery.value;
-}
-
+// exact_value scans are matched game-side by searchGga; this filter only
+// handles the fetch-all-then-compare scan types.
 export function filterResultsByScanType(results, options) {
     const scanType = options.scanType;
     const query = String(options.query ?? "");
@@ -149,7 +128,6 @@ export function filterResultsByScanType(results, options) {
     const previousSnapshot =
         options.previousSnapshot && typeof options.previousSnapshot === "object" ? options.previousSnapshot : {};
 
-    const parsedExact = parseExactScanQuery(query);
     const qNum = Number(query.trim());
     const q2Num = Number(query2.trim());
     const min = Math.min(qNum, q2Num);
@@ -159,10 +137,6 @@ export function filterResultsByScanType(results, options) {
         const path = entry.path;
         const currentType = entry.type;
         const currentValue = getResultValue(entry);
-
-        if (scanType === "exact_value") {
-            return matchesExactValue(currentType, currentValue, parsedExact);
-        }
 
         if (scanType === "unknown_initial_value") {
             return true;

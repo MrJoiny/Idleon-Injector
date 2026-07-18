@@ -9,6 +9,10 @@ import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 import { parsePath } from "../utils/pathResolver.js";
 
+// ponytail: hard cap keeps a single CDP returnByValue payload bounded; push the
+// predicate into traverseAll if larger scans are ever needed
+const MAX_SEARCH_RESULTS = 20000;
+
 export function getGgaKeys() {
     return Object.keys(gga)
         .filter((key) => !blacklist_gga.has(key))
@@ -112,6 +116,7 @@ function searchGgaWithinPaths(query, withinPaths) {
     const parsedQuery = parseQuery(query);
     const results = [];
     const seenPaths = new Set();
+    let truncated = false;
 
     for (const fullPath of withinPaths) {
         if (typeof fullPath !== "string" || !fullPath) continue;
@@ -127,6 +132,11 @@ function searchGgaWithinPaths(query, withinPaths) {
             if (seenPaths.has(fullPath)) continue;
             seenPaths.add(fullPath);
 
+            if (results.length >= MAX_SEARCH_RESULTS) {
+                truncated = true;
+                break;
+            }
+
             results.push({
                 path: fullPath,
                 value,
@@ -136,7 +146,7 @@ function searchGgaWithinPaths(query, withinPaths) {
         }
     }
 
-    return { results, totalCount: results.length };
+    return { results, totalCount: results.length, truncated };
 }
 
 export function searchGga(query, keys, options = null) {
@@ -157,8 +167,13 @@ export function searchGga(query, keys, options = null) {
     const parsedQuery = parseQuery(query);
     const results = [];
     const seenPaths = new Set();
+    let truncated = false;
 
     for (const key of keys) {
+        if (results.length >= MAX_SEARCH_RESULTS) {
+            truncated = true;
+            break;
+        }
         if (!(key in gga) || blacklist_gga.has(key)) continue;
 
         const rootValue = gga[key];
@@ -181,6 +196,11 @@ export function searchGga(query, keys, options = null) {
                 if (seenPaths.has(fullPath)) return;
                 seenPaths.add(fullPath);
 
+                if (results.length >= MAX_SEARCH_RESULTS) {
+                    truncated = true;
+                    return;
+                }
+
                 results.push({
                     path: fullPath,
                     value,
@@ -191,7 +211,7 @@ export function searchGga(query, keys, options = null) {
         });
     }
 
-    return { results, totalCount: results.length };
+    return { results, totalCount: results.length, truncated };
 }
 
 export function detectQueryType(query) {

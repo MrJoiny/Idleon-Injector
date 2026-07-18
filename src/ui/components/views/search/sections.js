@@ -9,6 +9,7 @@ import {
     NEW_SCAN_TYPES,
     NEXT_SCAN_TYPES,
     getScanTypeLabel,
+    getScanTypePlaceholder,
     isInputlessScanType,
     requiresSecondaryInput,
 } from "./scanUtils.js";
@@ -336,7 +337,7 @@ export const SearchInputSection = ({ ui, handlers }) =>
                             ? input({
                                   type: "text",
                                   class: "search-query-input",
-                                  placeholder: handlers.getPrimaryPlaceholder(activeScanType),
+                                  placeholder: getScanTypePlaceholder(activeScanType),
                                   value: () => ui.searchQuery,
                                   oninput: handlers.handleQueryInput,
                                   onkeydown: handlers.handleKeyDown,
@@ -549,39 +550,31 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
     const monitorData = () => resolveMonitorEntry(monitorPath(), store.data.monitorValues || {}).entry;
     const isMonitorEnabled = () => entry.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
+    const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);
     const liveMonitorHistory = () => (isMonitorEnabled() ? getMonitorHistory(monitorData()) : []);
-    const cachedMonitorHistory = () => (Array.isArray(entry.lastHistory) ? entry.lastHistory : []);
     const monitorHistory = () => {
         if (!isMonitorEnabled()) return [];
 
         const liveHistory = liveMonitorHistory();
         if (liveHistory.length > 0) return liveHistory;
 
-        return cachedMonitorHistory();
+        return Array.isArray(entry.lastHistory) ? entry.lastHistory : [];
     };
     const hasLiveValue = () => liveMonitorHistory().length > 0;
-    const liveRawValue = () => getMonitorCurrentValue(monitorData());
-    const hasCachedLive = () =>
-        Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw") ||
-        Object.prototype.hasOwnProperty.call(entry, "lastLiveFormatted");
-    const cachedLiveDisplayValue = () => entry.lastLiveFormatted ?? entry.formattedValue;
     const liveDisplayValue = () => {
-        if (hasLiveValue()) return formatMonitorValue(liveRawValue());
-        return cachedLiveDisplayValue();
+        if (hasLiveValue()) return formatMonitorValue(getMonitorCurrentValue(monitorData()));
+        return entry.formattedValue;
     };
     const liveStatusClass = () => {
-        if (isMonitorEnabled()) return hasLiveValue() || hasCachedLive() ? "live-active" : "live-pending";
-        return hasCachedLive() ? "live-paused" : "live-idle";
+        if (!isMonitorEnabled()) return "live-paused";
+        if (monitorError()) return "live-error";
+        return hasLiveValue() ? "live-active" : "live-pending";
     };
 
     const handleMonitor = (e) => {
         e.stopPropagation();
         if (e.currentTarget && typeof e.currentTarget.blur === "function") {
             e.currentTarget.blur();
-        }
-
-        if (handlers.isMonitorToggleLocked(entry.path)) {
-            return;
         }
 
         handlers.toggleSavedMonitor(entry.path, !isMonitorEnabled());
@@ -627,6 +620,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                         span(
                             {
                                 class: () => "result-value saved-live-value " + liveStatusClass(),
+                                title: () => monitorError() || "",
                             },
                             liveDisplayValue
                         )
@@ -710,9 +704,13 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                 button(
                     {
                         class: () => "result-action-btn monitor-btn " + (isMonitorEnabled() ? "active" : ""),
-                        title: () => (isMonitorEnabled() ? "Stop Watcher" : "Enable Watcher"),
+                        title: () =>
+                            monitorError()
+                                ? "Watcher failed: " + monitorError()
+                                : isMonitorEnabled()
+                                  ? "Stop Watcher"
+                                  : "Enable Watcher",
                         onclick: handleMonitor,
-                        disabled: () => handlers.isMonitorToggleLocked(entry.path),
                     },
                     Icons.Eye()
                 ),

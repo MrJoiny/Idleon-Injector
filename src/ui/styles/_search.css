@@ -574,10 +574,14 @@
 }
 
 .saved-live-value.live-pending,
-.saved-live-value.live-paused,
-.saved-live-value.live-idle {
+.saved-live-value.live-paused {
     color: var(--c-accent);
     opacity: 0.9;
+}
+
+.saved-live-value.live-error {
+    color: var(--c-danger);
+    opacity: 0.95;
 }
 
 .saved-history {

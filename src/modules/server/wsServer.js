@@ -16,18 +16,26 @@ let wss = null;
 /** @type {Set<WebSocket>} */
 const clients = new Set();
 
-/** @type {Map<WebSocket, Map<string, { path: string, history: Array<{ value: any, ts: number }> }>>} */
+/** @type {Map<WebSocket, Map<string, { path: string, history: Array<{ value: any, ts: number }>, error?: string }>>} */
 const clientMonitorState = new Map();
 
-/** @type {Map<string, { id: string, path: string, refCount: number, releasePromise?: Promise<void>|null }>} */
+/**
+ * Game-side wraps currently installed, keyed by path. Subscriber counts are
+ * always derived from clientMonitorState so competing subscribe/cleanup
+ * interleavings cannot drift out of sync with reality.
+ * @type {Map<string, { id: string, releasePromise?: Promise<void>|null }>}
+ */
 const globalWatchersByPath = new Map();
-
-/** @type {Map<string, string>} */
-const globalWatchersById = new Map();
 
 const HISTORY_LIMIT = 10;
 const MONITOR_SUBSCRIBE_RETRY_DELAY_MS = 1000;
 const MONITOR_SUBSCRIBE_MAX_RETRIES = 20;
+// ponytail: coalesced full-state sends; switch to per-id delta messages if
+// clients ever watch enough paths for serialization to matter
+const MONITOR_SEND_COALESCE_MS = 100;
+
+/** @type {Map<WebSocket, NodeJS.Timeout>} */
+const monitorSendTimers = new Map();
 
 /** @type {Object|null} CDP Runtime reference for fetching cheat states */
 let runtimeRef = null;
@@ -42,8 +50,11 @@ function monitorIdFromPath(path) {
     return "mon:" + encodeURIComponent(path);
 }
 
-function escapeForDoubleQuotedJsString(value) {
-    return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+function pushHistory(entry, value, ts = Date.now()) {
+    entry.history.unshift({ value, ts });
+    if (entry.history.length > HISTORY_LIMIT) {
+        entry.history.pop();
+    }
 }
 
 function getClientMonitorMap(ws) {
@@ -62,11 +73,6 @@ function getClientRetryMap(ws) {
         monitorSubscribeRetryTimers.set(ws, retryMap);
     }
     return retryMap;
-}
-
-function hasClientMonitorSubscription(ws, id) {
-    const monitorMap = clientMonitorState.get(ws);
-    return !!monitorMap && monitorMap.has(id);
 }
 
 function countMonitorSubscribers(id) {
@@ -114,14 +120,7 @@ function isTransientMonitorSubscribeError(errorText) {
 
 function scheduleMonitorSubscribeRetry(ws, path, id, retryAttempt) {
     if (retryAttempt >= MONITOR_SUBSCRIBE_MAX_RETRIES) {
-        const monitorMap = clientMonitorState.get(ws);
-        if (monitorMap) {
-            monitorMap.delete(id);
-            sendMonitorStateToClient(ws);
-        }
-
-        log.error(`Monitor subscribe failed after retries for ${id}`);
-        clearMonitorSubscribeRetry(ws, id);
+        failMonitorSubscription(ws, id, `Gave up after ${MONITOR_SUBSCRIBE_MAX_RETRIES} retries`);
         return;
     }
 
@@ -142,12 +141,37 @@ function scheduleMonitorSubscribeRetry(ws, path, id, retryAttempt) {
     retryMap.set(id, timer);
 }
 
+/**
+ * Parks a client subscription with an error instead of deleting it: a deleted
+ * entry makes the UI's reconcile resubscribe immediately, which loops forever
+ * for permanently failing paths. A parked entry is retried only when the user
+ * toggles the watcher or the game context is replaced.
+ */
+function failMonitorSubscription(ws, id, errorText) {
+    clearMonitorSubscribeRetry(ws, id);
+
+    const monitorMap = clientMonitorState.get(ws);
+    const entry = monitorMap && monitorMap.get(id);
+    if (entry) {
+        entry.error = String(errorText || "Monitor subscribe failed");
+        sendMonitorStateToClient(ws);
+    }
+
+    log.error(`Monitor subscribe failed for ${id}: ${errorText}`);
+}
+
 function sendMonitorStateToClient(ws) {
+    const pendingTimer = monitorSendTimers.get(ws);
+    if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        monitorSendTimers.delete(ws);
+    }
+
     const monitorMap = clientMonitorState.get(ws) || new Map();
     const data = {};
 
     for (const [id, entry] of monitorMap.entries()) {
-        data[id] = { path: entry.path, history: entry.history };
+        data[id] = { path: entry.path, history: entry.history, error: entry.error || null };
     }
 
     const message = JSON.stringify({
@@ -160,14 +184,24 @@ function sendMonitorStateToClient(ws) {
     }
 }
 
+function queueMonitorStateSend(ws) {
+    if (monitorSendTimers.has(ws)) return;
+
+    monitorSendTimers.set(
+        ws,
+        setTimeout(() => {
+            monitorSendTimers.delete(ws);
+            sendMonitorStateToClient(ws);
+        }, MONITOR_SEND_COALESCE_MS)
+    );
+}
+
 async function seedClientCurrentValue(ws, id, path) {
     if (!runtimeRef || !contextRef) return;
 
-    const escapedPath = escapeForDoubleQuotedJsString(path);
-
     try {
         const result = await runtimeRef.evaluate({
-            expression: `window.readGamePath("${escapedPath}")`,
+            expression: `window.readGamePath(${JSON.stringify(path)})`,
             awaitPromise: true,
             returnByValue: true,
         });
@@ -185,10 +219,7 @@ async function seedClientCurrentValue(ws, id, path) {
         const entry = monitorMap && monitorMap.get(id);
         if (!entry) return;
 
-        entry.history.unshift({ value: payload.value, ts: Date.now() });
-        if (entry.history.length > HISTORY_LIMIT) {
-            entry.history.pop();
-        }
+        pushHistory(entry, payload.value);
     } catch (err) {
         log.debug(`Could not seed monitor value for ${path}: ${err.message}`);
     }
@@ -198,10 +229,7 @@ async function releaseGlobalWatcher(path) {
     const watcher = globalWatchersByPath.get(path);
     if (!watcher) return;
 
-    watcher.refCount -= 1;
-    if (watcher.refCount > 0) {
-        return;
-    }
+    if (countMonitorSubscribers(watcher.id) > 0) return;
 
     if (watcher.releasePromise) {
         await watcher.releasePromise;
@@ -211,9 +239,8 @@ async function releaseGlobalWatcher(path) {
     watcher.releasePromise = (async () => {
         if (runtimeRef && contextRef) {
             try {
-                const escapedId = escapeForDoubleQuotedJsString(watcher.id);
                 await runtimeRef.evaluate({
-                    expression: `window.monitorUnwrap("${escapedId}")`,
+                    expression: `window.monitorUnwrap(${JSON.stringify(watcher.id)})`,
                     awaitPromise: true,
                     returnByValue: true,
                 });
@@ -222,20 +249,25 @@ async function releaseGlobalWatcher(path) {
             }
         }
 
-        const currentWatcher = globalWatchersByPath.get(path);
-        if (currentWatcher !== watcher || watcher.refCount > 0) {
-            watcher.releasePromise = null;
-            return;
+        // Only remove our own entry: rewrapAllWatchers may have replaced it
+        // with a fresh watcher while the unwrap was in flight.
+        if (globalWatchersByPath.get(path) === watcher) {
+            globalWatchersByPath.delete(path);
         }
-
-        globalWatchersByPath.delete(path);
-        globalWatchersById.delete(watcher.id);
     })();
 
     await watcher.releasePromise;
 }
 
 async function cleanupClientSubscriptions(ws) {
+    clearAllMonitorSubscribeRetries(ws);
+
+    const sendTimer = monitorSendTimers.get(ws);
+    if (sendTimer) {
+        clearTimeout(sendTimer);
+        monitorSendTimers.delete(ws);
+    }
+
     const monitorMap = clientMonitorState.get(ws);
     if (!monitorMap) return;
 
@@ -249,8 +281,6 @@ async function cleanupClientSubscriptions(ws) {
     for (const path of paths) {
         await releaseGlobalWatcher(path);
     }
-
-    clearAllMonitorSubscribeRetries(ws);
 }
 
 /**
@@ -309,6 +339,7 @@ async function handleMessage(ws, msg) {
             log.debug(`Client identified as: ${ws.clientType}`);
             if (msg.clientType === "game") {
                 await broadcastCheatStates();
+                rewrapAllWatchers();
                 broadcastMonitorState();
             }
             break;
@@ -337,19 +368,31 @@ function handleMonitorUpdate(msg) {
     const ts = typeof msg.ts === "number" ? msg.ts : Date.now();
     if (!id) return;
 
-    const path = globalWatchersById.get(id);
-    if (!path) return;
-
+    // Routed purely by client subscription: entries exist before the wrap
+    // evaluate resolves, so wrap()'s immediate initial broadcast is captured.
     for (const [ws, monitorMap] of clientMonitorState.entries()) {
         const entry = monitorMap.get(id);
         if (!entry) continue;
 
-        entry.history.unshift({ value, ts });
-        if (entry.history.length > HISTORY_LIMIT) {
-            entry.history.pop();
-        }
+        delete entry.error;
+        pushHistory(entry, value, ts);
+        queueMonitorStateSend(ws);
+    }
+}
 
-        sendMonitorStateToClient(ws);
+/**
+ * The game reconnected with a fresh JS context: every previously installed
+ * wrap is gone. Drop the stale bookkeeping and resubscribe all current client
+ * subscriptions through the normal flow (its transient retries cover a game
+ * that is still booting).
+ */
+function rewrapAllWatchers() {
+    globalWatchersByPath.clear();
+
+    for (const [ws, monitorMap] of clientMonitorState.entries()) {
+        for (const entry of monitorMap.values()) {
+            void handleMonitorSubscribe(ws, entry.path, 0, true);
+        }
     }
 }
 
@@ -359,6 +402,46 @@ function handleMonitorUpdate(msg) {
  * @param {WebSocket} ws
  * @param {string} path
  */
+/**
+ * Ensures a game-side wrap exists for the path.
+ * @returns {Promise<{ ok: true, value?: any } | { ok: false, error: string, transient: boolean }>}
+ *   `value` is only present when this call installed the wrap.
+ */
+async function ensureGlobalWatcher(path) {
+    const id = monitorIdFromPath(path);
+
+    let watcher = globalWatchersByPath.get(path);
+    if (watcher?.releasePromise) {
+        await watcher.releasePromise;
+        watcher = globalWatchersByPath.get(path);
+    }
+    if (watcher) return { ok: true };
+
+    const result = await runtimeRef.evaluate({
+        expression: `window.monitorWrap(${JSON.stringify(id)}, ${JSON.stringify(path)})`,
+        awaitPromise: true,
+        returnByValue: true,
+    });
+
+    if (result.exceptionDetails) {
+        const errorText = result.exceptionDetails.text;
+        return { ok: false, error: errorText, transient: isTransientMonitorSubscribeError(errorText) };
+    }
+
+    const payload = result.result && result.result.value;
+    if (payload && payload.success) {
+        globalWatchersByPath.set(path, { id });
+        return { ok: true, value: payload.value };
+    }
+    if (payload && payload.error === "Already watching this ID") {
+        globalWatchersByPath.set(path, { id });
+        return { ok: true };
+    }
+
+    const errorText = (payload && payload.error) || "monitorWrap failed";
+    return { ok: false, error: errorText, transient: isTransientMonitorSubscribeError(errorText) };
+}
+
 async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt = false) {
     if (!runtimeRef || !contextRef) return;
     if (typeof path !== "string" || !path.trim()) return;
@@ -366,111 +449,56 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
     const normalizedPath = path.trim();
     const id = monitorIdFromPath(normalizedPath);
     const monitorMap = getClientMonitorMap(ws);
+    const existing = monitorMap.get(id);
 
-    if (monitorMap.has(id) && !forceAttempt) {
+    if (existing && !existing.error && !forceAttempt) {
         sendMonitorStateToClient(ws);
         return;
     }
 
-    monitorMap.set(id, { path: normalizedPath, history: [] });
-
-    let existingWatcher = globalWatchersByPath.get(normalizedPath);
-    if (existingWatcher?.releasePromise) {
-        await existingWatcher.releasePromise;
-        existingWatcher = globalWatchersByPath.get(normalizedPath);
-    }
-
-    if (existingWatcher) {
-        if (!hasClientMonitorSubscription(ws, id)) {
-            return;
-        }
-
-        existingWatcher.refCount = countMonitorSubscribers(id);
-        clearMonitorSubscribeRetry(ws, id);
-        await seedClientCurrentValue(ws, id, normalizedPath);
-        sendMonitorStateToClient(ws);
-        return;
-    }
+    // Optimistic entry (history preserved on rewrap): it also catches wrap()'s
+    // initial broadcast, which can arrive before the evaluate below resolves.
+    const entry = { path: normalizedPath, history: existing ? existing.history : [] };
+    monitorMap.set(id, entry);
 
     try {
-        const escapedId = escapeForDoubleQuotedJsString(id);
-        const escapedPath = escapeForDoubleQuotedJsString(normalizedPath);
+        const result = await ensureGlobalWatcher(normalizedPath);
 
-        const result = await runtimeRef.evaluate({
-            expression: `window.monitorWrap("${escapedId}", "${escapedPath}")`,
-            awaitPromise: true,
-            returnByValue: true,
-        });
-
-        if (result.exceptionDetails) {
-            const errorText = result.exceptionDetails.text;
-            if (isTransientMonitorSubscribeError(errorText)) {
-                log.debug(`Monitor subscribe pending for ${id}: ${errorText}`);
+        if (!result.ok) {
+            if (result.transient) {
+                log.debug(`Monitor subscribe pending for ${id}: ${result.error}`);
                 scheduleMonitorSubscribeRetry(ws, normalizedPath, id, retryAttempt);
                 return;
             }
-
-            log.error(`Failed to subscribe monitor ${id}:`, errorText);
-            clearMonitorSubscribeRetry(ws, id);
-            monitorMap.delete(id);
-            sendMonitorStateToClient(ws);
-            return;
-        }
-
-        const payload = result.result && result.result.value;
-        const alreadyWatching = payload && payload.error === "Already watching this ID";
-        const success = payload && payload.success;
-
-        if (!success && !alreadyWatching) {
-            const errorText = payload && payload.error;
-            if (isTransientMonitorSubscribeError(errorText)) {
-                log.debug(`Monitor subscribe pending for ${id}: ${errorText}`);
-                scheduleMonitorSubscribeRetry(ws, normalizedPath, id, retryAttempt);
-                return;
-            }
-
-            if (errorText) {
-                log.error(`Monitor subscribe error for ${id}:`, errorText);
-            }
-            clearMonitorSubscribeRetry(ws, id);
-            monitorMap.delete(id);
-            sendMonitorStateToClient(ws);
+            failMonitorSubscription(ws, id, result.error);
             return;
         }
 
         clearMonitorSubscribeRetry(ws, id);
 
-        const subscriberCount = countMonitorSubscribers(id);
-        if (subscriberCount === 0) {
-            globalWatchersByPath.set(normalizedPath, { id, path: normalizedPath, refCount: 1 });
-            globalWatchersById.set(id, normalizedPath);
+        const current = clientMonitorState.get(ws)?.get(id);
+        if (!current) {
+            // Client unsubscribed (or disconnected) while the wrap was in flight.
             await releaseGlobalWatcher(normalizedPath);
             return;
         }
+        if (current !== entry) return; // superseded by a newer subscribe
 
-        const watcherAfterWrap = globalWatchersByPath.get(normalizedPath);
-        if (watcherAfterWrap) {
-            watcherAfterWrap.refCount = subscriberCount;
-        } else {
-            globalWatchersByPath.set(normalizedPath, { id, path: normalizedPath, refCount: subscriberCount });
-            globalWatchersById.set(id, normalizedPath);
+        if (entry.history.length === 0) {
+            if (Object.prototype.hasOwnProperty.call(result, "value")) {
+                pushHistory(entry, result.value);
+            } else {
+                await seedClientCurrentValue(ws, id, normalizedPath);
+            }
         }
-
-        if (hasClientMonitorSubscription(ws, id)) {
-            await seedClientCurrentValue(ws, id, normalizedPath);
-            sendMonitorStateToClient(ws);
-        }
+        sendMonitorStateToClient(ws);
     } catch (err) {
         if (isTransientMonitorSubscribeError(err.message)) {
             log.debug(`Monitor subscribe pending for ${id}: ${err.message}`);
             scheduleMonitorSubscribeRetry(ws, normalizedPath, id, retryAttempt);
             return;
         }
-
-        log.error(`Error subscribing monitor ${id}:`, err.message);
-        clearMonitorSubscribeRetry(ws, id);
-        monitorMap.delete(id);
-        sendMonitorStateToClient(ws);
+        failMonitorSubscription(ws, id, err.message);
     }
 }
 
@@ -625,8 +653,11 @@ function closeWebSocket() {
             }
         }
         monitorSubscribeRetryTimers.clear();
+        for (const timer of monitorSendTimers.values()) {
+            clearTimeout(timer);
+        }
+        monitorSendTimers.clear();
         globalWatchersByPath.clear();
-        globalWatchersById.clear();
         wss.close();
         wss = null;
         log.info("Server closed");

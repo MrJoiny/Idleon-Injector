@@ -48,16 +48,11 @@ export function normalizeSavedEntry(entry) {
         normalized.value = entry.value;
     }
 
+    // Migrate legacy entries that cached the last live value in lastLive* fields.
     if (Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw")) {
-        normalized.lastLiveRaw = entry.lastLiveRaw;
-    }
-
-    if (typeof entry.lastLiveFormatted === "string") {
-        normalized.lastLiveFormatted = entry.lastLiveFormatted;
-    }
-
-    if (typeof entry.lastLiveType === "string") {
-        normalized.lastLiveType = entry.lastLiveType;
+        normalized.value = entry.lastLiveRaw;
+        if (typeof entry.lastLiveFormatted === "string") normalized.formattedValue = entry.lastLiveFormatted;
+        if (typeof entry.lastLiveType === "string") normalized.type = entry.lastLiveType;
     }
 
     if (Array.isArray(entry.lastHistory)) {

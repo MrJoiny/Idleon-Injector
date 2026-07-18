@@ -98,19 +98,8 @@ export function getMonitorCurrentValue(monitorEntry) {
 }
 
 export function resolveMonitorEntry(path, monitorValues = {}) {
-    const expectedId = monitorIdFromMonitorPath(path);
-
-    if (monitorValues[expectedId]) {
-        return { id: expectedId, entry: monitorValues[expectedId] };
-    }
-
-    for (const [id, entry] of Object.entries(monitorValues)) {
-        if (entry?.path === path) {
-            return { id, entry };
-        }
-    }
-
-    return { id: expectedId, entry: null };
+    const id = monitorIdFromMonitorPath(path);
+    return { id, entry: monitorValues[id] || null };
 }
 
 export function getUiTypeFromRawValue(value, fallback = "string") {

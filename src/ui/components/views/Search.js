@@ -7,6 +7,7 @@ import {
     NEXT_SCAN_TYPES,
     isInputlessScanType,
     requiresSecondaryInput,
+    requiresNumericInput,
     needsPreviousSnapshot,
     buildSnapshotFromResults,
     filterResultsByScanType,
@@ -78,7 +79,6 @@ export const Search = () => {
             : [],
         savedEdit: { path: null, draft: "", type: "" },
         isRefreshingSavedResults: false,
-        monitorToggleNonce: 0,
     });
 
     const getValidFavorites = () => normalizeFavoriteKeys(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
@@ -110,49 +110,13 @@ export const Search = () => {
         return resolveMonitorEntry(path, store.data.monitorValues || {});
     };
 
-    const getMonitorUnsubscribeId = (monitorPath, resolvedMonitor) => {
-        return resolvedMonitor?.id || monitorIdFromMonitorPath(monitorPath);
-    };
-
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
-    let resultsFilterSeq = 0;
-    let savedFilterSeq = 0;
     let workspacePersistTimer = null;
     const subscribedMonitorPaths = new Set();
-    const monitorToggleLocksByPath = new Map();
-    const MONITOR_TOGGLE_LOCK_MS = 280;
     const filterCache = {
         results: { source: null, query: "", values: [] },
         saved: { source: null, query: "", values: [] },
-    };
-
-    const isMonitorToggleLocked = (path) => {
-        ui.monitorToggleNonce;
-
-        const lockUntil = monitorToggleLocksByPath.get(path);
-        if (!lockUntil) return false;
-
-        if (Date.now() >= lockUntil) {
-            monitorToggleLocksByPath.delete(path);
-            return false;
-        }
-
-        return true;
-    };
-
-    const lockMonitorToggle = (path) => {
-        const lockUntil = Date.now() + MONITOR_TOGGLE_LOCK_MS;
-        monitorToggleLocksByPath.set(path, lockUntil);
-        ui.monitorToggleNonce += 1;
-
-        setTimeout(() => {
-            const current = monitorToggleLocksByPath.get(path);
-            if (current !== lockUntil) return;
-
-            monitorToggleLocksByPath.delete(path);
-            ui.monitorToggleNonce += 1;
-        }, MONITOR_TOGGLE_LOCK_MS + 20);
     };
 
     const reconcileMonitorSubscriptions = () => {
@@ -182,29 +146,9 @@ export const Search = () => {
         for (const path of [...subscribedMonitorPaths]) {
             if (desiredPaths.has(path)) continue;
 
-            const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
             subscribedMonitorPaths.delete(path);
         }
-    };
-
-    const restoreSavedMonitorsWithRetry = () => {
-        if (ui.savedResults.length === 0) return;
-
-        let attempts = 0;
-        const maxAttempts = 10;
-
-        const trySubscribe = () => {
-            reconcileMonitorSubscriptions();
-            attempts += 1;
-
-            if (attempts < maxAttempts) {
-                setTimeout(trySubscribe, 1500);
-            }
-        };
-
-        trySubscribe();
     };
 
     const updateValueInUi = (path, payload) => {
@@ -224,19 +168,12 @@ export const Search = () => {
         ui.savedResults = ui.savedResults.map((entry) => {
             if (entry.path !== path) return entry;
 
-            const nextEntry = {
+            return {
                 ...entry,
                 formattedValue: payload.formattedValue ?? entry.formattedValue,
                 type: payload.type ?? entry.type,
                 ...(hasPayloadValue ? { value: payload.value } : {}),
             };
-
-            nextEntry.lastLiveRaw = hasPayloadValue ? payload.value : nextEntry.lastLiveRaw;
-            nextEntry.lastLiveFormatted =
-                payload.formattedValue ?? nextEntry.lastLiveFormatted ?? nextEntry.formattedValue;
-            nextEntry.lastLiveType = payload.type ?? nextEntry.lastLiveType ?? nextEntry.type;
-
-            return nextEntry;
         });
     };
 
@@ -314,8 +251,6 @@ export const Search = () => {
             ui.selectedKeys = [];
         },
 
-        isMonitorToggleLocked,
-
         isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
 
         toggleFavoriteKey: (keyName) => {
@@ -330,13 +265,11 @@ export const Search = () => {
 
         handleResultsFilterInput: (e) => {
             const value = e.target.value;
-            const seq = ++resultsFilterSeq;
 
             ui.resultsFilter = value;
             if (resultsFilterTimer !== null) clearTimeout(resultsFilterTimer);
 
             resultsFilterTimer = setTimeout(() => {
-                if (seq !== resultsFilterSeq) return;
                 resultsFilterTimer = null;
                 ui.resultsFilterApplied = value;
                 ui.displayLimit = 50;
@@ -349,7 +282,6 @@ export const Search = () => {
                 resultsFilterTimer = null;
             }
 
-            resultsFilterSeq += 1;
             ui.resultsFilter = "";
             ui.resultsFilterApplied = "";
             ui.displayLimit = 50;
@@ -357,13 +289,11 @@ export const Search = () => {
 
         handleSavedFilterInput: (e) => {
             const value = e.target.value;
-            const seq = ++savedFilterSeq;
 
             ui.savedFilter = value;
             if (savedFilterTimer !== null) clearTimeout(savedFilterTimer);
 
             savedFilterTimer = setTimeout(() => {
-                if (seq !== savedFilterSeq) return;
                 savedFilterTimer = null;
                 ui.savedFilterApplied = value;
             }, 120);
@@ -375,7 +305,6 @@ export const Search = () => {
                 savedFilterTimer = null;
             }
 
-            savedFilterSeq += 1;
             ui.savedFilter = "";
             ui.savedFilterApplied = "";
         },
@@ -411,23 +340,6 @@ export const Search = () => {
             ui.searchQuery2 = e.target.value;
         },
 
-        getPrimaryPlaceholder: (scanType) => {
-            switch (scanType) {
-                case "bigger_than":
-                    return "BIGGER THAN";
-                case "smaller_than":
-                    return "SMALLER THAN";
-                case "value_between":
-                    return "MIN VALUE";
-                case "increased_value_by":
-                    return "INCREASED BY";
-                case "decreased_value_by":
-                    return "DECREASED BY";
-                default:
-                    return "VALUE";
-            }
-        },
-
         handleKeyDown: (e) => {
             if (e.key === "Enter" && !ui.isSearching) {
                 handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
@@ -453,9 +365,6 @@ export const Search = () => {
                 formattedValue: result.formattedValue,
                 value: getResultValue(result),
                 type: result.type,
-                lastLiveRaw: getResultValue(result),
-                lastLiveFormatted: result.formattedValue,
-                lastLiveType: result.type,
                 lastHistory: seededHistory,
                 monitorEnabled: true,
             };
@@ -469,11 +378,8 @@ export const Search = () => {
         },
 
         toggleSavedMonitor: (path, enabled) => {
-            lockMonitorToggle(path);
-
             const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            const currentHistory = getMonitorHistory(resolvedMonitor.entry);
+            const currentHistory = getMonitorHistory(getResolvedMonitorEntry(monitorPath).entry);
             const hasCurrentLive = currentHistory.length > 0;
             const currentLiveRaw = hasCurrentLive ? currentHistory[0].value : undefined;
 
@@ -486,12 +392,10 @@ export const Search = () => {
                 };
 
                 if (!enabled && hasCurrentLive) {
-                    nextEntry.lastLiveRaw = currentLiveRaw;
-                    nextEntry.lastLiveFormatted = formatMonitorValue(currentLiveRaw);
-                    nextEntry.lastLiveType = getUiTypeFromRawValue(currentLiveRaw, entry.type);
-                }
-
-                if (!enabled && currentHistory.length > 0) {
+                    // Snapshot the last live value so the row keeps showing it.
+                    nextEntry.value = currentLiveRaw;
+                    nextEntry.formattedValue = formatMonitorValue(currentLiveRaw);
+                    nextEntry.type = getUiTypeFromRawValue(currentLiveRaw, entry.type);
                     nextEntry.lastHistory = currentHistory.slice(0, 10);
                 }
 
@@ -505,15 +409,13 @@ export const Search = () => {
                 return;
             }
 
-            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPath));
             subscribedMonitorPaths.delete(path);
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
-            const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
             subscribedMonitorPaths.delete(path);
 
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
@@ -525,9 +427,7 @@ export const Search = () => {
             if (ui.savedResults.length === 0) return;
 
             for (const entry of ui.savedResults) {
-                const monitorPath = monitorPathForSearchResult(entry.path);
-                const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-                store.unsubscribeMonitor(getMonitorUnsubscribeId(monitorPath, resolvedMonitor));
+                store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(entry.path)));
                 subscribedMonitorPaths.delete(entry.path);
             }
 
@@ -551,21 +451,12 @@ export const Search = () => {
                     const next = nextByPath.get(entry.path);
                     if (!next) return entry;
 
-                    const nextValue = getResultValue(next);
-                    const nextType = next.type ?? entry.type;
-                    const nextFormatted = next.formattedValue ?? entry.formattedValue;
-
-                    const updated = {
+                    return {
                         ...entry,
-                        formattedValue: nextFormatted,
-                        value: nextValue,
-                        type: nextType,
-                        lastLiveRaw: nextValue,
-                        lastLiveFormatted: nextFormatted,
-                        lastLiveType: nextType,
+                        formattedValue: next.formattedValue ?? entry.formattedValue,
+                        value: getResultValue(next),
+                        type: next.type ?? entry.type,
                     };
-
-                    return updated;
                 });
 
                 store.notify("Saved list refreshed", "success");
@@ -580,36 +471,17 @@ export const Search = () => {
             handlers.cancelEdit();
             ui.savedEdit.path = entry.path;
 
+            // Prefer the freshest raw value: live monitor > cached history > stored entry value.
             const monitorPath = monitorPathForSearchResult(entry.path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            const liveHistory = getMonitorHistory(resolvedMonitor.entry);
-
-            if (entry.monitorEnabled && liveHistory.length > 0) {
-                const liveRaw = liveHistory[0].value;
-                ui.savedEdit.draft = getDraftFromRawValue(liveRaw, seedEditValue(entry));
-                ui.savedEdit.type = getUiTypeFromRawValue(liveRaw, expectedUiType(entry));
-                return;
-            }
-
-            const hasCachedLive = Object.prototype.hasOwnProperty.call(entry, "lastLiveRaw");
-            if (hasCachedLive) {
-                const raw = entry.lastLiveRaw;
-                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
-                ui.savedEdit.type = getUiTypeFromRawValue(raw, entry.lastLiveType ?? expectedUiType(entry));
-                return;
-            }
-
+            const liveHistory = entry.monitorEnabled
+                ? getMonitorHistory(getResolvedMonitorEntry(monitorPath).entry)
+                : [];
             const cachedHistory = Array.isArray(entry.lastHistory) ? entry.lastHistory : [];
-            if (cachedHistory.length > 0) {
-                const raw = cachedHistory[0].value;
-                ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
-                ui.savedEdit.type = getUiTypeFromRawValue(raw, entry.lastLiveType ?? expectedUiType(entry));
-                return;
-            }
+            const newest = liveHistory[0] ?? cachedHistory[0];
 
             const hasStoredValue = Object.prototype.hasOwnProperty.call(entry, "value") || entry.type === "undefined";
-            if (hasStoredValue) {
-                const raw = entry.type === "undefined" ? undefined : entry.value;
+            if (newest || hasStoredValue) {
+                const raw = newest ? newest.value : entry.type === "undefined" ? undefined : entry.value;
                 ui.savedEdit.draft = getDraftFromRawValue(raw, seedEditValue(entry));
                 ui.savedEdit.type = getUiTypeFromRawValue(raw, expectedUiType(entry));
                 return;
@@ -736,13 +608,7 @@ export const Search = () => {
                 return;
             }
 
-            if (
-                (scanType === "bigger_than" ||
-                    scanType === "smaller_than" ||
-                    scanType === "increased_value_by" ||
-                    scanType === "decreased_value_by") &&
-                (queryTrimmed === "" || Number.isNaN(Number(queryTrimmed)))
-            ) {
+            if (requiresNumericInput(scanType) && (queryTrimmed === "" || Number.isNaN(Number(queryTrimmed)))) {
                 store.notify("This scan type requires a numeric value", "error");
                 return;
             }
@@ -796,6 +662,10 @@ export const Search = () => {
                 ui.scopePaths = filteredResults.map((r) => r.path);
                 ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
                 ui.scanSessionActive = true;
+
+                if (baseData.truncated) {
+                    store.notify("Result cap reached — scan is partial. Narrow your keys or query.", "error");
+                }
             } catch (err) {
                 ui.error = err.message || "Search failed";
                 if (!isNext) {
@@ -823,8 +693,6 @@ export const Search = () => {
         } finally {
             ui.isLoading = false;
         }
-
-        restoreSavedMonitorsWithRetry();
     })();
 
     return div(
