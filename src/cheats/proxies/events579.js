@@ -40,6 +40,7 @@ export function setupEvents579Proxies() {
     ]);
 
     createConfigLookupProxy(ActorEvents579, "_customBlock_Thingies", [
+        { state: "wide.giant", fixedKey: "GuaranteedCrystalMobs", value: 0 },
         { state: "wide.hoopshop" },
         { state: "wide.dartshop" },
         { state: "w7.zenith" },
