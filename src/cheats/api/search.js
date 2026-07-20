@@ -9,10 +9,14 @@ import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
 import { parsePath } from "../utils/pathResolver.js";
 
-// ponytail: hard cap keeps a single CDP returnByValue payload bounded; push the
-// predicate into traverseAll if larger scans are ever needed
+// Hard cap keeps a single CDP returnByValue payload bounded and stops the walk
+// (and its getter invocations) once reached.
 const MAX_SEARCH_RESULTS = 20000;
 
+/**
+ * Get all available GGA keys (excluding blacklisted ones).
+ * @returns {string[]} Sorted array of available top-level key names
+ */
 export function getGgaKeys() {
     return Object.keys(gga)
         .filter((key) => !blacklist_gga.has(key))
@@ -82,6 +86,22 @@ function matchesQuery(value, parsedQuery) {
     return value === parsedQuery.value;
 }
 
+/**
+ * Builds the leaf-value predicate for a scan. A numeric `compare` option
+ * (bigger/smaller than) is applied game-side so the result cap keeps matching
+ * values instead of arbitrary leaves; otherwise the parsed query is used.
+ * @param {object} parsedQuery
+ * @param {{ op: "gt"|"lt", value: number }|null} compare
+ * @returns {(value: any) => boolean}
+ */
+function makeLeafPredicate(parsedQuery, compare) {
+    if (compare && typeof compare.value === "number") {
+        const { op, value: bound } = compare;
+        return (value) => typeof value === "number" && (op === "gt" ? value > bound : value < bound);
+    }
+    return (value) => matchesQuery(value, parsedQuery);
+}
+
 function formatValue(value) {
     if (value === null) return "null";
     if (value === undefined) return "undefined";
@@ -108,12 +128,12 @@ function getValueAtPath(root, path) {
     return cur;
 }
 
-function searchGgaWithinPaths(query, withinPaths) {
-    if (!gga || !Array.isArray(withinPaths) || withinPaths.length === 0) {
+function searchGgaWithinPaths(query, withinPaths, compare) {
+    if (!Array.isArray(withinPaths) || withinPaths.length === 0) {
         return { results: [], totalCount: 0 };
     }
 
-    const parsedQuery = parseQuery(query);
+    const predicate = makeLeafPredicate(parseQuery(query), compare);
     const results = [];
     const seenPaths = new Set();
     let truncated = false;
@@ -128,7 +148,7 @@ function searchGgaWithinPaths(query, withinPaths) {
         const value = getValueAtPath(gga, fullPath);
         if (typeof value === "object" && value !== null) continue;
 
-        if (matchesQuery(value, parsedQuery)) {
+        if (predicate(value)) {
             if (seenPaths.has(fullPath)) continue;
             seenPaths.add(fullPath);
 
@@ -149,22 +169,33 @@ function searchGgaWithinPaths(query, withinPaths) {
     return { results, totalCount: results.length, truncated };
 }
 
+/**
+ * Search GGA leaf values for matches, either across whole keys or within an
+ * explicit set of paths. Results are capped at MAX_SEARCH_RESULTS; a numeric
+ * `compare` predicate (for bigger/smaller-than scans) is applied game-side so
+ * the cap keeps matching values rather than arbitrary leaves.
+ * @param {string} query - Query string ("" matches any; supports "min-max" ranges)
+ * @param {string[]} keys - Top-level GGA keys to scan
+ * @param {{ withinPaths?: string[], compare?: { op: "gt"|"lt", value: number } }|null} [options]
+ * @returns {{ results: Array<{path:string,value:any,formattedValue:string,type:string}>, totalCount: number, truncated?: boolean }}
+ */
 export function searchGga(query, keys, options = null) {
-    if (!gga || query === undefined || query === null) {
+    if (query === undefined || query === null) {
         return { results: [], totalCount: 0 };
     }
 
     const withinPaths = options && Array.isArray(options.withinPaths) ? options.withinPaths : null;
+    const compare = options && options.compare ? options.compare : null;
 
     if (withinPaths && withinPaths.length > 0) {
-        return searchGgaWithinPaths(query, withinPaths);
+        return searchGgaWithinPaths(query, withinPaths, compare);
     }
 
     if (!keys || keys.length === 0) {
         return { results: [], totalCount: 0 };
     }
 
-    const parsedQuery = parseQuery(query);
+    const predicate = makeLeafPredicate(parseQuery(query), compare);
     const results = [];
     const seenPaths = new Set();
     let truncated = false;
@@ -178,7 +209,7 @@ export function searchGga(query, keys, options = null) {
 
         const rootValue = gga[key];
 
-        if ((typeof rootValue !== "object" || rootValue === null) && matchesQuery(rootValue, parsedQuery)) {
+        if ((typeof rootValue !== "object" || rootValue === null) && predicate(rootValue)) {
             results.push({
                 path: key,
                 value: rootValue,
@@ -190,30 +221,34 @@ export function searchGga(query, keys, options = null) {
 
         traverseAll(rootValue, (value, pathArray) => {
             if (typeof value === "object" && value !== null) return;
+            if (!predicate(value)) return;
 
-            if (matchesQuery(value, parsedQuery)) {
-                const fullPath = buildPath([key, ...pathArray]);
-                if (seenPaths.has(fullPath)) return;
-                seenPaths.add(fullPath);
+            const fullPath = buildPath([key, ...pathArray]);
+            if (seenPaths.has(fullPath)) return;
+            seenPaths.add(fullPath);
 
-                if (results.length >= MAX_SEARCH_RESULTS) {
-                    truncated = true;
-                    return;
-                }
-
-                results.push({
-                    path: fullPath,
-                    value,
-                    formattedValue: formatValue(value),
-                    type: typeof value,
-                });
+            if (results.length >= MAX_SEARCH_RESULTS) {
+                truncated = true;
+                return true; // stop the walk; no more getters invoked
             }
+
+            results.push({
+                path: fullPath,
+                value,
+                formattedValue: formatValue(value),
+                type: typeof value,
+            });
         });
     }
 
     return { results, totalCount: results.length, truncated };
 }
 
+/**
+ * Classify a query string into a value type (any/range/number/string/etc.).
+ * @param {string} query
+ * @returns {string} The detected type tag
+ */
 export function detectQueryType(query) {
     const parsed = parseQuery(query);
     return parsed.type;

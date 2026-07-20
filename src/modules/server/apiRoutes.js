@@ -450,32 +450,34 @@ exports.injectorConfig = ${new_injectorConfig};
     });
 
     app.post("/api/search", async (req, res) => {
-        const { query, keys, withinPaths } = await req.json();
-
-        if (query === undefined || query === null) {
-            return res.status(400).json({
-                error: "Missing required parameter: query",
-            });
-        }
-
-        if (typeof query !== "string") {
-            return res.status(400).json({
-                error: "Invalid query type: query must be a string",
-            });
-        }
-
-        const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
-        if (!hasWithinPaths && (!Array.isArray(keys) || keys.length === 0)) {
-            return res.status(400).json({ error: "Missing required parameters: keys (array) or withinPaths (array)" });
-        }
-
         try {
+            const { query, keys, withinPaths, compare } = await req.json();
+
+            if (query === undefined || query === null) {
+                return res.status(400).json({
+                    error: "Missing required parameter: query",
+                });
+            }
+
+            if (typeof query !== "string") {
+                return res.status(400).json({
+                    error: "Invalid query type: query must be a string",
+                });
+            }
+
+            const hasWithinPaths = Array.isArray(withinPaths) && withinPaths.length > 0;
+            if (!hasWithinPaths && (!Array.isArray(keys) || keys.length === 0)) {
+                return res
+                    .status(400)
+                    .json({ error: "Missing required parameters: keys (array) or withinPaths (array)" });
+            }
+
             const keysJson = JSON.stringify(keys);
-            const withinPathsJson = JSON.stringify(withinPaths || null);
+            const optionsJson = JSON.stringify({ withinPaths: withinPaths || null, compare: compare || null });
             const serializedQuery = JSON.stringify(query);
 
             const searchResult = await Runtime.evaluate({
-                expression: `searchGga(${serializedQuery}, ${keysJson}, { withinPaths: ${withinPathsJson} })`,
+                expression: `searchGga(${serializedQuery}, ${keysJson}, ${optionsJson})`,
                 awaitPromise: true,
                 returnByValue: true,
             });

@@ -54,6 +54,16 @@ class ValueMonitor {
         if (resolved.error) return resolved;
 
         const { target, prop } = resolved;
+
+        // resolvePath only validates intermediate segments, so a path whose leaf
+        // disappeared (e.g. after a game update) still resolves. Reject it here
+        // instead of letting defineProperty create the missing property. The
+        // "Cannot resolve path segment" text routes it through the same
+        // transient-retry-then-park path as any not-yet-ready path.
+        if (!(prop in target)) {
+            return { error: `Cannot resolve path segment: ${prop}` };
+        }
+
         const original = Object.getOwnPropertyDescriptor(target, prop);
 
         if (original && original.configurable === false) {
@@ -97,8 +107,10 @@ class ValueMonitor {
         this.watchers.set(id, { target, prop, original, path, getStoredValue });
         console.log(`[ValueMonitor] Now watching: ${path} (id: ${id})`);
 
+        // Return the initial value instead of broadcasting it: the server seeds
+        // its history from this return, so broadcasting here too would deliver
+        // the first sample twice over unordered transports.
         const initialValue = hasOriginalAccessor && original.get ? original.get.call(target) : storedValue;
-        this.broadcast(id, initialValue);
 
         return { success: true, value: initialValue };
     }

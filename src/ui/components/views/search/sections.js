@@ -15,11 +15,11 @@ import {
 } from "./scanUtils.js";
 import {
     monitorPathForSearchResult,
-    formatMonitorValue,
+    formatDisplayValue,
     getMonitorHistory,
-    getMonitorCurrentValue,
     resolveMonitorEntry,
 } from "./valueUtils.js";
+import { createStaticRowReconciler } from "../account/accountShared.js";
 
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
 
@@ -533,22 +533,27 @@ export const ResultsSection = ({ ui, handlers }) =>
         )
     );
 
-const SavedResultItem = ({ entry, ui, handlers }) => {
+// Returns { node, sync }: the node is cached and reused by SavedResultsSection's
+// row reconciler, and sync(entry) pushes fresh entry data into the row's state
+// so the DOM identity (and per-row copy feedback) survives list rebuilds.
+const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
+    const entryState = van.state(initialEntry);
+    const path = initialEntry.path;
     const copyFeedback = van.state(null);
 
-    const isEditing = () => ui.savedEdit.path === entry.path;
+    const isEditing = () => ui.savedEdit.path === path;
 
     const handleCopy = (e) => {
         e.stopPropagation();
-        const success = copyToClipboard("bEngine.gameAttributes.h." + entry.path);
+        const success = copyToClipboard("bEngine.gameAttributes.h." + path);
         copyFeedback.val = success ? "success" : "error";
         store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
         setTimeout(() => (copyFeedback.val = null), 1500);
     };
 
-    const monitorPath = () => monitorPathForSearchResult(entry.path);
-    const monitorData = () => resolveMonitorEntry(monitorPath(), store.data.monitorValues || {}).entry;
-    const isMonitorEnabled = () => entry.monitorEnabled === true;
+    const monitorPath = monitorPathForSearchResult(path);
+    const monitorData = () => resolveMonitorEntry(monitorPath, store.data.monitorValues || {}).entry;
+    const isMonitorEnabled = () => entryState.val.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);
     const liveMonitorHistory = () => (isMonitorEnabled() ? getMonitorHistory(monitorData()) : []);
@@ -558,12 +563,12 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
         const liveHistory = liveMonitorHistory();
         if (liveHistory.length > 0) return liveHistory;
 
-        return Array.isArray(entry.lastHistory) ? entry.lastHistory : [];
+        return Array.isArray(entryState.val.lastHistory) ? entryState.val.lastHistory : [];
     };
     const hasLiveValue = () => liveMonitorHistory().length > 0;
     const liveDisplayValue = () => {
-        if (hasLiveValue()) return formatMonitorValue(getMonitorCurrentValue(monitorData()));
-        return entry.formattedValue;
+        if (hasLiveValue()) return formatDisplayValue(getMonitorHistory(monitorData())[0]?.value);
+        return entryState.val.formattedValue;
     };
     const liveStatusClass = () => {
         if (!isMonitorEnabled()) return "live-paused";
@@ -577,12 +582,12 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
             e.currentTarget.blur();
         }
 
-        handlers.toggleSavedMonitor(entry.path, !isMonitorEnabled());
+        handlers.toggleSavedMonitor(path, !isMonitorEnabled());
     };
 
     const handleStartEdit = (e) => {
         e.stopPropagation();
-        handlers.startSavedEdit(entry);
+        handlers.startSavedEdit(entryState.val);
     };
 
     const handleCancel = (e) => {
@@ -597,10 +602,10 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
 
     const handleRemove = (e) => {
         e.stopPropagation();
-        handlers.removeSavedResult(entry.path);
+        handlers.removeSavedResult(path);
     };
 
-    return div(
+    const node = div(
         {
             class: () =>
                 "search-result-item saved-result-item " +
@@ -608,7 +613,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                 (isMonitored() ? "monitored " : "") +
                 (copyFeedback.val === "success" ? "copied" : ""),
         },
-        span({ class: "result-path" }, entry.path),
+        span({ class: "result-path" }, path),
         span({ class: "result-equals" }, "="),
 
         () => {
@@ -647,7 +652,7 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
                                         class: "saved-history-item",
                                         title: new Date(h.ts).toLocaleTimeString(),
                                     },
-                                    formatMonitorValue(h.value)
+                                    formatDisplayValue(h.value)
                                 )
                             )
                         );
@@ -733,10 +738,69 @@ const SavedResultItem = ({ entry, ui, handlers }) => {
             );
         })
     );
+
+    return { node, sync: (nextEntry) => (entryState.val = nextEntry) };
 };
 
-export const SavedResultsSection = ({ ui, handlers }) =>
-    div(
+export const SavedResultsSection = ({ ui, handlers }) => {
+    const rowCache = new Map();
+    const listNode = div({ class: "saved-results-list" });
+    const reconcile = createStaticRowReconciler(listNode);
+
+    const getRow = (entry) => {
+        const cached = rowCache.get(entry.path);
+        if (cached) {
+            cached.sync(entry);
+            return cached;
+        }
+        const row = SavedResultItem({ entry, ui, handlers });
+        rowCache.set(entry.path, row);
+        return row;
+    };
+
+    const renderRows = () => {
+        // Drop cached rows whose path is no longer saved.
+        const savedPaths = new Set(ui.savedResults.map((e) => e.path));
+        for (const key of [...rowCache.keys()]) {
+            if (!savedPaths.has(key)) rowCache.delete(key);
+        }
+
+        if (ui.savedResults.length === 0) {
+            reconcile("empty", [
+                EmptyState({
+                    icon: Icons.List(),
+                    title: "NO SAVED RESULTS",
+                    subtitle: "Use the list button on a search result to pin it here",
+                }),
+            ]);
+            return;
+        }
+
+        const filtered = handlers.getFilteredSavedResults();
+        if (filtered.length === 0) {
+            reconcile("no-match", [
+                EmptyState({
+                    icon: Icons.List(),
+                    title: "NO FILTER MATCH",
+                    subtitle: "Try a different path/value filter",
+                }),
+            ]);
+            return;
+        }
+
+        // Rebuild the DOM only when the visible path set changes; a value-only
+        // edit keeps the same signature and updates via each row's sync().
+        const rows = filtered.map((entry) => getRow(entry).node);
+        reconcile("rows:" + filtered.map((e) => e.path).join("|"), rows);
+    };
+
+    van.derive(() => {
+        ui.savedResults;
+        ui.savedFilterApplied;
+        renderRows();
+    });
+
+    return div(
         { class: "saved-results-section" },
         div(
             { class: "section-header" },
@@ -795,28 +859,7 @@ export const SavedResultsSection = ({ ui, handlers }) =>
                           )
                         : null
             ),
-            () => {
-                if (ui.savedResults.length === 0) {
-                    return EmptyState({
-                        icon: Icons.List(),
-                        title: "NO SAVED RESULTS",
-                        subtitle: "Use the list button on a search result to pin it here",
-                    });
-                }
-
-                const filteredSavedResults = handlers.getFilteredSavedResults();
-
-                return div(
-                    { class: "saved-results-list" },
-                    filteredSavedResults.length === 0
-                        ? EmptyState({
-                              icon: Icons.List(),
-                              title: "NO FILTER MATCH",
-                              subtitle: "Try a different path/value filter",
-                          })
-                        : null,
-                    ...filteredSavedResults.map((entry) => SavedResultItem({ entry, ui, handlers }))
-                );
-            }
+            listNode
         )
     );
+};

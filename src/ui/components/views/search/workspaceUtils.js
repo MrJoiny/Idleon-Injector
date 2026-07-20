@@ -4,31 +4,33 @@ const SEARCH_FAVORITE_KEYS_STORAGE_KEY = "searchFavoriteKeys";
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
 const entryFilterTextCache = new WeakMap();
 
+/** Dedupe an array down to non-empty unique strings. */
 export function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
 }
 
-export function normalizeFavoriteKeys(keys) {
-    return uniqueStrings(keys);
-}
-
+/**
+ * Load stored favorite keys.
+ * @returns {string[]|null} `null` when never stored (caller applies curated
+ *   defaults); an array — possibly empty — once the user has set favorites.
+ */
 export function loadLocalFavoriteKeys() {
     try {
         const raw = localStorage.getItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY);
-        if (!raw) return [];
-
-        const parsed = JSON.parse(raw);
-        return normalizeFavoriteKeys(parsed);
-    } catch {
-        return [];
+        if (raw === null) return null;
+        return uniqueStrings(JSON.parse(raw));
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to load favorite keys:", err);
+        return null;
     }
 }
 
+/** Persist favorite keys (an empty array is a deliberate, preserved state). */
 export function saveLocalFavoriteKeys(keys) {
     try {
-        localStorage.setItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY, JSON.stringify(normalizeFavoriteKeys(keys)));
-    } catch {
-        return;
+        localStorage.setItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY, JSON.stringify(uniqueStrings(keys)));
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to save favorite keys:", err);
     }
 }
 
@@ -88,7 +90,8 @@ export function loadSearchWorkspace() {
                 ? data.savedResults.map(normalizeSavedEntry).filter(Boolean)
                 : [],
         };
-    } catch {
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to load workspace:", err);
         return null;
     }
 }
@@ -109,8 +112,8 @@ export function saveSearchWorkspace(workspace) {
                 data: workspace,
             })
         );
-    } catch {
-        return;
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to save workspace:", err);
     }
 }
 

@@ -2,6 +2,7 @@ import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
 import { detectQueryType } from "../../utils/index.js";
+import { FAVORITE_KEYS } from "../../state/constants.js";
 import {
     NEW_SCAN_TYPES,
     NEXT_SCAN_TYPES,
@@ -18,7 +19,7 @@ import {
     validateEditDraft,
     monitorPathForSearchResult,
     monitorIdFromMonitorPath,
-    formatMonitorValue,
+    formatDisplayValue,
     getMonitorHistory,
     resolveMonitorEntry,
     getUiTypeFromRawValue,
@@ -27,7 +28,6 @@ import {
 } from "./search/valueUtils.js";
 import {
     uniqueStrings,
-    normalizeFavoriteKeys,
     loadLocalFavoriteKeys,
     saveLocalFavoriteKeys,
     normalizeSavedEntry,
@@ -44,12 +44,15 @@ const { div } = van.tags;
 
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
+    // loadLocalFavoriteKeys returns null only when the user has never set
+    // favorites; fall back to the curated defaults in that case, but honor a
+    // deliberately emptied list.
     const localFavoriteKeys = loadLocalFavoriteKeys();
     const initialSearchQuery = "";
 
     const ui = vanX.reactive({
         allKeys: [],
-        favoriteKeys: normalizeFavoriteKeys(localFavoriteKeys),
+        favoriteKeys: uniqueStrings(localFavoriteKeys ?? FAVORITE_KEYS),
         selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
         searchQuery: initialSearchQuery,
         searchQuery2: "",
@@ -81,7 +84,7 @@ export const Search = () => {
         isRefreshingSavedResults: false,
     });
 
-    const getValidFavorites = () => normalizeFavoriteKeys(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
+    const getValidFavorites = () => uniqueStrings(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
 
     const getOtherKeys = () => {
         const favSet = new Set(getValidFavorites());
@@ -177,6 +180,32 @@ export const Search = () => {
         });
     };
 
+    // Shared write flow for both the results and saved-list editors. The target
+    // path is captured before the await so a row opened/removed mid-write can't
+    // redirect the update; isSettingValue rejects overlapping writes.
+    const commitEdit = async (editState, cancel) => {
+        const path = editState.path;
+        if (!path || ui.isSettingValue) return;
+
+        const validation = validateEditDraft(editState.type, editState.draft);
+        if (!validation.ok) {
+            store.notify(validation.error, "error");
+            return;
+        }
+
+        try {
+            ui.isSettingValue = true;
+            const resp = await store.setGgaValue(path, validation.valueToSend);
+            updateValueInUi(path, resp);
+            store.notify(`Updated ${path}`, "success");
+            cancel();
+        } catch (e) {
+            store.notify(e?.message || "Failed to update value", "error");
+        } finally {
+            ui.isSettingValue = false;
+        }
+    };
+
     van.derive(() => {
         const snapshot = buildSearchWorkspace(ui);
 
@@ -200,11 +229,8 @@ export const Search = () => {
         reconcileMonitorSubscriptions();
     });
 
-    const getFilteredResults = () => {
-        const source = ui.results;
-        const query = normalizeFilterText(ui.resultsFilterApplied);
-        const cache = filterCache.results;
-
+    const getFilteredList = (source, appliedFilter, cache) => {
+        const query = normalizeFilterText(appliedFilter);
         if (cache.source === source && cache.query === query) {
             return cache.values;
         }
@@ -216,21 +242,8 @@ export const Search = () => {
         return values;
     };
 
-    const getFilteredSavedResults = () => {
-        const source = ui.savedResults;
-        const query = normalizeFilterText(ui.savedFilterApplied);
-        const cache = filterCache.saved;
-
-        if (cache.source === source && cache.query === query) {
-            return cache.values;
-        }
-
-        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
-        cache.source = source;
-        cache.query = query;
-        cache.values = values;
-        return values;
-    };
+    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied, filterCache.results);
+    const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied, filterCache.saved);
 
     const handlers = {
         getValidFavorites,
@@ -394,7 +407,7 @@ export const Search = () => {
                 if (!enabled && hasCurrentLive) {
                     // Snapshot the last live value so the row keeps showing it.
                     nextEntry.value = currentLiveRaw;
-                    nextEntry.formattedValue = formatMonitorValue(currentLiveRaw);
+                    nextEntry.formattedValue = formatDisplayValue(currentLiveRaw);
                     nextEntry.type = getUiTypeFromRawValue(currentLiveRaw, entry.type);
                     nextEntry.lastHistory = currentHistory.slice(0, 10);
                 }
@@ -468,6 +481,7 @@ export const Search = () => {
         },
 
         startSavedEdit: (entry) => {
+            if (ui.isSettingValue) return; // don't switch rows mid-write
             handlers.cancelEdit();
             ui.savedEdit.path = entry.path;
 
@@ -497,32 +511,10 @@ export const Search = () => {
             ui.savedEdit.type = "";
         },
 
-        saveSavedEdit: async () => {
-            if (!ui.savedEdit.path) return;
-
-            const type = ui.savedEdit.type;
-            const raw = ui.savedEdit.draft;
-            const validation = validateEditDraft(type, raw);
-
-            if (!validation.ok) {
-                store.notify(validation.error, "error");
-                return;
-            }
-
-            try {
-                ui.isSettingValue = true;
-                const resp = await store.setGgaValue(ui.savedEdit.path, validation.valueToSend);
-                updateValueInUi(ui.savedEdit.path, resp);
-                store.notify(`Updated ${ui.savedEdit.path}`, "success");
-                handlers.cancelSavedEdit();
-            } catch (e) {
-                store.notify(e?.message || "Failed to update value", "error");
-            } finally {
-                ui.isSettingValue = false;
-            }
-        },
+        saveSavedEdit: () => commitEdit(ui.savedEdit, handlers.cancelSavedEdit),
 
         startEdit: (result) => {
+            if (ui.isSettingValue) return; // don't switch rows mid-write
             handlers.cancelSavedEdit();
             ui.edit.path = result.path;
             ui.edit.draft = seedEditValue(result);
@@ -535,31 +527,7 @@ export const Search = () => {
             ui.edit.type = "";
         },
 
-        saveEdit: async () => {
-            if (!ui.edit.path) return;
-
-            const type = ui.edit.type;
-            const raw = ui.edit.draft;
-            const validation = validateEditDraft(type, raw);
-
-            if (!validation.ok) {
-                store.notify(validation.error, "error");
-                return;
-            }
-
-            try {
-                ui.isSettingValue = true;
-                const resp = await store.setGgaValue(ui.edit.path, validation.valueToSend);
-                updateValueInUi(ui.edit.path, resp);
-
-                store.notify(`Updated ${ui.edit.path}`, "success");
-                handlers.cancelEdit();
-            } catch (e) {
-                store.notify(e?.message || "Failed to update value", "error");
-            } finally {
-                ui.isSettingValue = false;
-            }
-        },
+        saveEdit: () => commitEdit(ui.edit, handlers.cancelEdit),
 
         handleSearch: async (mode = "new") => {
             if (ui.isSearching) return;
@@ -599,7 +567,7 @@ export const Search = () => {
             const hasSecondaryInput = requiresSecondaryInput(scanType);
 
             if (scanType === "exact_value" && queryTrimmed === "") {
-                store.notify("Enter a value for EXACT VALUE, or choose UNKNOWN INITIAL VALUE", "error");
+                store.notify("Enter a value for FIND VALUE, or choose UNKNOWN INITIAL VALUE", "error");
                 return;
             }
 
@@ -636,27 +604,42 @@ export const Search = () => {
             ui.displayLimit = 50;
             ui.lastSearchMode = mode;
 
-            const requestOptions = isNext ? { withinPaths: [...ui.scopePaths] } : null;
+            // Translate the scan type into the game search query/compare protocol.
+            // Absolute predicates (exact/bigger/smaller/between) match game-side so
+            // the result cap keeps matching values; comparison types need the
+            // previous snapshot and are filtered client-side.
+            const qNum = Number(queryTrimmed);
+            const q2Num = Number(query2Trimmed);
+
+            let effectiveQuery = "";
+            let compare = null;
+            if (scanType === "exact_value") {
+                effectiveQuery = query;
+            } else if (scanType === "bigger_than") {
+                compare = { op: "gt", value: qNum };
+            } else if (scanType === "smaller_than") {
+                compare = { op: "lt", value: qNum };
+            } else if (scanType === "value_between") {
+                effectiveQuery = `${Math.min(qNum, q2Num)}-${Math.max(qNum, q2Num)}`;
+            }
+
+            const options = {};
+            if (isNext) options.withinPaths = [...ui.scopePaths];
+            if (compare) options.compare = compare;
+            const requestOptions = Object.keys(options).length > 0 ? options : null;
+
+            const clientFiltered = needsPreviousSnapshot(scanType);
 
             try {
-                const baseData =
-                    scanType === "exact_value"
-                        ? isNext
-                            ? await store.searchGga(query, ui.selectedKeys, requestOptions)
-                            : await store.searchGga(query, ui.selectedKeys)
-                        : isNext
-                          ? await store.searchGga("", ui.selectedKeys, requestOptions)
-                          : await store.searchGga("", ui.selectedKeys);
+                const baseData = await store.searchGga(effectiveQuery, ui.selectedKeys, requestOptions);
 
-                const filteredResults =
-                    scanType === "exact_value"
-                        ? baseData.results || []
-                        : filterResultsByScanType(baseData.results || [], {
-                              scanType,
-                              query: inputless ? "" : query,
-                              query2: hasSecondaryInput ? query2 : "",
-                              previousSnapshot: ui.previousSnapshot,
-                          });
+                const filteredResults = clientFiltered
+                    ? filterResultsByScanType(baseData.results || [], {
+                          scanType,
+                          query: inputless ? "" : query,
+                          previousSnapshot: ui.previousSnapshot,
+                      })
+                    : baseData.results || [];
 
                 ui.results = filteredResults;
                 ui.scopePaths = filteredResults.map((r) => r.path);

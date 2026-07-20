@@ -239,18 +239,23 @@ async function releaseGlobalWatcher(path) {
     watcher.releasePromise = (async () => {
         if (runtimeRef && contextRef) {
             try {
-                await runtimeRef.evaluate({
+                const result = await runtimeRef.evaluate({
                     expression: `window.monitorUnwrap(${JSON.stringify(watcher.id)})`,
                     awaitPromise: true,
                     returnByValue: true,
                 });
+                if (result.exceptionDetails) {
+                    log.error(`Error unsubscribing monitor ${watcher.id}:`, result.exceptionDetails.text);
+                }
             } catch (err) {
                 log.error(`Error unsubscribing monitor ${watcher.id}:`, err.message);
             }
         }
 
         // Only remove our own entry: rewrapAllWatchers may have replaced it
-        // with a fresh watcher while the unwrap was in flight.
+        // with a fresh watcher while the unwrap was in flight. A failed unwrap
+        // still drops bookkeeping — a later subscribe re-wraps and the game
+        // returns "Already watching this ID", which the subscribe path accepts.
         if (globalWatchersByPath.get(path) === watcher) {
             globalWatchersByPath.delete(path);
         }
@@ -397,13 +402,8 @@ function rewrapAllWatchers() {
 }
 
 /**
- * Handles subscription requests from a specific UI client.
- * Uses per-client monitor lists and shared global runtime hooks.
- * @param {WebSocket} ws
- * @param {string} path
- */
-/**
  * Ensures a game-side wrap exists for the path.
+ * @param {string} path
  * @returns {Promise<{ ok: true, value?: any } | { ok: false, error: string, transient: boolean }>}
  *   `value` is only present when this call installed the wrap.
  */
@@ -442,6 +442,14 @@ async function ensureGlobalWatcher(path) {
     return { ok: false, error: errorText, transient: isTransientMonitorSubscribeError(errorText) };
 }
 
+/**
+ * Handles subscription requests from a specific UI client.
+ * Uses per-client monitor lists and shared global runtime hooks.
+ * @param {WebSocket} ws
+ * @param {string} path
+ * @param {number} [retryAttempt]
+ * @param {boolean} [forceAttempt] - Re-run the wrap even if a client entry already exists
+ */
 async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt = false) {
     if (!runtimeRef || !contextRef) return;
     if (typeof path !== "string" || !path.trim()) return;
@@ -630,16 +638,24 @@ function getConnectedClients() {
  */
 function closeWebSocket() {
     if (wss) {
+        // Best-effort, non-blocking: awaiting a CDP evaluate during shutdown can
+        // hang if the connection is already gone. We still inspect
+        // exceptionDetails so a game-context failure is logged rather than lost.
         if (runtimeRef && contextRef) {
-            void runtimeRef
-                .evaluate({
-                    expression: "window.monitorUnwrapAll()",
-                    awaitPromise: true,
-                    returnByValue: true,
-                })
-                .catch((err) => {
+            void (async () => {
+                try {
+                    const result = await runtimeRef.evaluate({
+                        expression: "window.monitorUnwrapAll()",
+                        awaitPromise: true,
+                        returnByValue: true,
+                    });
+                    if (result.exceptionDetails) {
+                        log.error("Error unwrapping all monitors during shutdown:", result.exceptionDetails.text);
+                    }
+                } catch (err) {
                     log.error("Error unwrapping all monitors during shutdown:", err.message);
-                });
+                }
+            })();
         }
 
         for (const client of clients) {

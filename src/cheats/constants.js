@@ -139,6 +139,8 @@ export const blacklist_gga = new Set([
     // "MonsterDefinitionsGET",
     // "DialogueDefGET",
     "MapMonstersList",
+    // Engine scratch/placeholder attributes: hidden from key selection and
+    // searches because they hold transient render/combat junk, not save data.
     "dummyActor",
     "DummyList",
     "DummyList2",

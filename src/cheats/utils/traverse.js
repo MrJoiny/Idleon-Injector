@@ -51,23 +51,32 @@ export function traverse(obj, depth, worker) {
  * Visit every node with path tracking (for diagnostics).
  * Does NOT unwrap .h - shows true object paths.
  *
+ * The worker may return a truthy value to stop the traversal early (e.g. when a
+ * result cap is reached), which also avoids invoking further getters.
+ *
  * @param {object} obj - The object to traverse
- * @param {function(any, string[]): void} worker - Function called with (value, path)
+ * @param {function(any, string[]): (void|boolean)} worker - Called with (value, path); return truthy to stop
  * @param {Set} [visited] - Optional: shared visited set for scanning multiple roots
  */
 export function traverseAll(obj, worker, visited = new Set()) {
     const path = [];
+    let stopped = false;
 
     function walk(node) {
         if (node === null || node === undefined) {
-            worker(node, path);
+            if (worker(node, path)) stopped = true;
             return;
         }
-        worker(node, path);
+        if (worker(node, path)) {
+            stopped = true;
+            return;
+        }
         if (typeof node !== "object" || visited.has(node)) return;
         visited.add(node);
 
         for (const key of Object.keys(node)) {
+            if (stopped) return;
+
             const descriptor = Object.getOwnPropertyDescriptor(node, key);
             if (!descriptor) continue;
 

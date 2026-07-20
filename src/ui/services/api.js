@@ -117,11 +117,23 @@ export async function fetchGgaKeys() {
     return data.keys || [];
 }
 
+/**
+ * Search GGA values.
+ * @param {string} query
+ * @param {string[]} keys
+ * @param {{ withinPaths?: string[], compare?: { op: "gt"|"lt", value: number } }|null} [options]
+ * @returns {Promise<{results: Array, totalCount: number, truncated?: boolean}>}
+ */
 export async function searchGga(query, keys, options = null) {
     return _request("/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, keys, withinPaths: options?.withinPaths || null }),
+        body: JSON.stringify({
+            query,
+            keys,
+            withinPaths: options?.withinPaths || null,
+            compare: options?.compare || null,
+        }),
     });
 }
 

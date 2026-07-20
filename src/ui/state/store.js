@@ -2,6 +2,7 @@ import vanX from "../vendor/van-x-0.6.3.js";
 import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
+import { formatDisplayValue, monitorIdFromMonitorPath } from "../components/views/search/valueUtils.js";
 import {
     initWebSocket,
     onStateUpdate,
@@ -357,27 +358,7 @@ const AccountService = {
     },
 };
 
-function formatSearchValue(value) {
-    if (value === null) return "null";
-    if (value === undefined) return "undefined";
-    if (typeof value === "string") {
-        const maxLen = 100;
-        if (value.length > maxLen) {
-            return `"${value.substring(0, maxLen)}..."`;
-        }
-        return `"${value}"`;
-    }
-    if (typeof value === "object") return "[object]";
-    return String(value);
-}
-
 const SearchService = {
-    fetchGgaKeys: async () => {
-        return API.fetchGgaKeys();
-    },
-    searchGga: async (query, keys, options = null) => {
-        return API.searchGga(query, keys, options);
-    },
     setGgaValue: async (path, value) => {
         const ok = await API.gga(path, value);
         if (!ok) {
@@ -388,15 +369,14 @@ const SearchService = {
             path,
             type: value === null ? "object" : typeof value,
             value,
-            formattedValue: formatSearchValue(value),
+            formattedValue: formatDisplayValue(value),
         };
     },
 };
 
 const MonitorService = {
     subscribe: (path) => {
-        const id = "mon:" + encodeURIComponent(path);
-        sendMonitorSubscribe(id, path);
+        sendMonitorSubscribe(monitorIdFromMonitorPath(path), path);
     },
     unsubscribe: (id) => {
         sendMonitorUnsubscribe(id);
@@ -430,8 +410,8 @@ const store = {
 
     loadAccountOptions: AccountService.loadAccountOptions,
 
-    fetchGgaKeys: SearchService.fetchGgaKeys,
-    searchGga: SearchService.searchGga,
+    fetchGgaKeys: API.fetchGgaKeys,
+    searchGga: API.searchGga,
     setGgaValue: SearchService.setGgaValue,
 
     subscribeMonitor: MonitorService.subscribe,
