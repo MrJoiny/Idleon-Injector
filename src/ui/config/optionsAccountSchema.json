@@ -2958,9 +2958,675 @@
         "type": "number",
         "AI": true
     },
+    "539": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "540": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "541": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "542": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "543": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "544": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "545": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "546": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "547": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "548": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "549": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "550": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "551": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "552": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "553": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "554": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "555": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "556": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "557": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "558": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "559": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "560": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "561": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "562": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "563": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "564": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "565": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "566": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "567": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "568": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "569": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "570": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "571": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "572": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "573": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "574": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "575": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "576": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "577": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "578": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "579": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "580": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "581": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "582": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "583": {
+        "name": "Gaming Auto-Harvest Filter - Fungi/Sprout",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Fungi and default Sprouts, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "584": {
+        "name": "Gaming Auto-Harvest Filter - Bonsai",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Bonsai, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "585": {
+        "name": "Gaming Auto-Harvest Filter - Cactus",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Cactus, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "586": {
+        "name": "Gaming Auto-Harvest Filter - Blossom",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Blossoms, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "587": {
+        "name": "Gaming Auto-Harvest Filter - Voraci",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Voraci Sprouts, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "588": {
+        "name": "Gaming Auto-Harvest Filter - Dreadlo",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Dreadlo, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "589": {
+        "name": "Gaming Auto-Harvest Filter - Evergreen",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Evergreen, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "590": {
+        "name": "Gaming Auto-Harvest Filter - Chemical Plant",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Chemical Plants, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "591": {
+        "name": "Gaming Auto-Harvest Filter - Royale Sprout/King Rat",
+        "description": "Harvest-All mutation filter; 0=auto-harvest Royale Sprouts, 1=skip them",
+        "type": "number",
+        "AI": true
+    },
+    "592": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "593": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "594": {
+        "name": "The Button Total Presses",
+        "description": "Total number of completed World 7 Button presses",
+        "type": "number",
+        "AI": true
+    },
+    "595": {
+        "name": "The Button Remaining Charges",
+        "description": "Available World 7 Button press charges",
+        "type": "number",
+        "AI": true
+    },
+    "596": {
+        "name": "Summoning Perfect Wins",
+        "description": "Total Summoning matches won without taking portal damage",
+        "type": "number",
+        "AI": true
+    },
+    "597": {
+        "name": "Glimbo Swap Meet Discovered Flag",
+        "description": "One-time flag marking Glimbo's Swap Meet as discovered",
+        "type": "number",
+        "AI": true
+    },
+    "598": {
+        "name": "Arcane Weapon Drop Filter",
+        "description": "Controls Arcane weapon drops; 0=allow, 1=block",
+        "type": "number",
+        "AI": true
+    },
+    "599": {
+        "name": "Arcane Ring Drop Filter",
+        "description": "Controls Arcane ring drops; 0=allow, 1=block",
+        "type": "number",
+        "AI": true
+    },
+    "600": {
+        "name": "Divinity Altar Details Visibility",
+        "description": "Controls Divinity Altar detail indicators; 0=show, 1=hide",
+        "type": "number",
+        "AI": true
+    },
     "601": {
         "name": "Fountain Rubber Duckies",
         "description": "Number of Rubber Duckies found through the Green Water Fountain",
+        "type": "number",
+        "AI": true
+    },
+    "602": {
+        "name": "6-Star Cardifier Count",
+        "description": "Number of Cardifiers available for upgrading cards beyond their standard maximum",
+        "type": "number",
+        "AI": true
+    },
+    "603": {
+        "name": "Tier 7 Card IDs",
+        "description": "Comma-separated IDs of cards upgraded to tier 7",
+        "type": "string",
+        "AI": true
+    },
+    "604": {
+        "name": "Daily Cglunko Upgrade Purchases",
+        "description": "Cglunko Cove upgrades purchased today; resets daily",
+        "type": "number",
+        "AI": true
+    },
+    "605": {
+        "name": "Pet Bonus Token Owned Flag",
+        "description": "Whether the Pet Bonus Token has been obtained",
+        "type": "number",
+        "AI": true
+    },
+    "606": {
+        "name": "Claimed Companion Bonus IDs",
+        "description": "Comma-separated companion IDs whose token bonuses have been claimed",
+        "type": "string",
+        "AI": true
+    },
+    "607": {
+        "name": "Farming Sticker Pity Counter",
+        "description": "Plant harvests since the last Farming sticker drop",
+        "type": "number",
+        "AI": true
+    },
+    "608": {
+        "name": "Monthly Supernova Pack Purchases",
+        "description": "Supernova Gem Packs purchased during the current calendar month",
+        "type": "number",
+        "AI": true
+    },
+    "609": {
+        "name": "Supernova Pack Month Index",
+        "description": "Calendar month index used to reset the monthly Supernova Pack purchase count",
+        "type": "number",
+        "AI": true
+    },
+    "610": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "611": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "612": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "613": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "614": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "615": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "616": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "617": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "618": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "619": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "620": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "621": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "622": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "623": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "624": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "625": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "626": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "627": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "628": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "629": {
+        "name": "Unused",
+        "description": "No identifiable direct or computed reference in current build",
+        "type": "number",
+        "AI": true
+    },
+    "630": {
+        "name": "Cglunko - Opal Find Level",
+        "description": "Grants an Opal to invest in Villagers",
+        "type": "number",
+        "AI": true
+    },
+    "631": {
+        "name": "Cglunko - Slop Drop Level",
+        "description": "Increases Drop Rate in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "632": {
+        "name": "Cglunko - Reslime Level",
+        "description": "Increases Crystal Glunko respawn rate",
+        "type": "number",
+        "AI": true
+    },
+    "633": {
+        "name": "Cglunko - Droplier Level",
+        "description": "Multiplies Drop Rate in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "634": {
+        "name": "Cglunko - Killionaire Level",
+        "description": "Increases Cglunko Cove Drop Rate per power of 10 Glunko kills",
+        "type": "number",
+        "AI": true
+    },
+    "635": {
+        "name": "Cglunko - Insta-Ribbon Level",
+        "description": "Grants a rank 15 Cooking Ribbon",
+        "type": "number",
+        "AI": true
+    },
+    "636": {
+        "name": "Cglunko - Big Hit Multkill Level",
+        "description": "Increases Multikill Per Damage Tier in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "637": {
+        "name": "Cglunko - Active Drops Level",
+        "description": "Reduces the cost of Cglunko Cove upgrades",
+        "type": "number",
+        "AI": true
+    },
+    "638": {
+        "name": "Cglunko - Sleepy Drops Level",
+        "description": "Increases AFK Gains in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "639": {
+        "name": "Cglunko - One Big Blue Level",
+        "description": "Multiplies drop value for the selected blue shape and unlocks blue focus selection",
+        "type": "number",
+        "AI": true
+    },
+    "640": {
+        "name": "Cglunko - Blue Collector Level",
+        "description": "Increases Cglunko Cove Drop Rate per digit of blue shapes owned",
+        "type": "number",
+        "AI": true
+    },
+    "641": {
+        "name": "Cglunko - Researchy Level",
+        "description": "Multiplies Research EXP gained outside Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "642": {
+        "name": "Cglunko - Droplier+ Level",
+        "description": "Multiplies Drop Rate in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "643": {
+        "name": "Cglunko - Sleepy Drops+ Level",
+        "description": "Increases AFK Gains in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "644": {
+        "name": "Cglunko - Cavernicus Level",
+        "description": "Multiplies resources earned from all caverns",
+        "type": "number",
+        "AI": true
+    },
+    "645": {
+        "name": "Cglunko - Multikill Level",
+        "description": "Increases base Multikill in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "646": {
+        "name": "Cglunko - One Big Purp Level",
+        "description": "Multiplies drop value for the selected purple shape and unlocks purple focus selection",
+        "type": "number",
+        "AI": true
+    },
+    "647": {
+        "name": "Cglunko - Slop Drop+ Level",
+        "description": "Increases Drop Rate in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "648": {
+        "name": "Cglunko - Rich Get Rich Level",
+        "description": "Increases Drop Rate per power of 10 normal Drop Rate",
+        "type": "number",
+        "AI": true
+    },
+    "649": {
+        "name": "Cglunko - DeEmGe Level",
+        "description": "Multiplies Total Damage for all characters",
+        "type": "number",
+        "AI": true
+    },
+    "650": {
+        "name": "Cglunko - Grandioso Level",
+        "description": "Multiplies Grand Discovery Chance in Spelunking",
         "type": "number",
         "AI": true
     }
