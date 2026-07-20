@@ -283,39 +283,6 @@ export function setupGameAttributeProxies() {
         });
     }
 
-    // Trapping (instant trap completion)
-    const playerDatabase = gga.PlayerDATABASE.h;
-    if (!playerDatabase._isPatched) {
-        Object.defineProperty(playerDatabase, "_isPatched", { value: true, enumerable: false });
-
-        for (const name in playerDatabase) {
-            for (const trap of playerDatabase[name].h.PldTraps) {
-                if (!trap) continue;
-
-                let elapsedTime = trap[2];
-
-                Object.defineProperty(trap, 2, {
-                    get() {
-                        return elapsedTime;
-                    },
-                    set(value) {
-                        if (cheatState.w3.trapping) {
-                            if (value <= 0) {
-                                elapsedTime = 0;
-                            } else {
-                                elapsedTime = cheatConfig.w3.trapping(value - elapsedTime) + elapsedTime;
-                            }
-                        } else {
-                            elapsedTime = value;
-                        }
-                    },
-                    enumerable: true,
-                    configurable: true,
-                });
-            }
-        }
-    }
-
     // Alchemy (vial attempts)
     const p2w = gga.CauldronP2W;
     if (!p2w._isPatched) {

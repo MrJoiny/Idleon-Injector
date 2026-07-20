@@ -9,6 +9,7 @@
 import { setupBehaviorScriptProxies } from "./behavior.js";
 import { setupFirebaseProxy, setupFirebaseStorageProxy, setupSteamAchievementProxy } from "./firebase.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
+import { setupTrappingProxies } from "./trapping.js";
 import { setupCListProxy } from "./clist.js";
 import { setupEvents012Proxies } from "./events012.js";
 import { setupEvents020Proxies } from "./events020.js";
@@ -43,8 +44,11 @@ export function setupAllProxies() {
     setupFirebaseStorageProxy();
     setupSteamAchievementProxy();
 
-    // Game attribute proxies (gems, HP, currencies, cloud save, trapping, alchemy)
+    // Game attribute proxies (gems, HP, currencies, cloud save, alchemy)
     setupGameAttributeProxies();
+
+    // Trapping progress proxies
+    setupTrappingProxies();
 
     // CList proxies (MTX, refinery, vials, prayers)
     setupCListProxy();
