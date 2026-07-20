@@ -63,15 +63,30 @@ export function setupEvents579Proxies() {
         { state: "w6.sneaksymbol" },
     ]);
 
+    // Shrine World Order Bill: shrine EXP from every world
+    createMethodProxy(ActorEvents579, "_customBlock_Thingies", (base, key, index, bonusValue) => {
+        if (cheatState.w3.globalshrines && key === "LegendPTS_bonus" && index === 38 && bonusValue === 0) {
+            return Math.max(1, base);
+        }
+        return base;
+    });
+
     // Holes (W5) - unknown keys delegate to _customBlock_Holes2, so proxy the entry point only.
     createConfigLookupProxy(ActorEvents579, "_customBlock_Holes", [{ state: "w5.holes" }]);
 
     // Sailing (W5)
     // Kept manual due to complex side-effects and context usage in endercaptains
-    createMethodProxy(ActorEvents579, "_customBlock_Sailing", function (base, key) {
+    createMethodProxy(ActorEvents579, "_customBlock_Sailing", function (base, key, index, bonusValue) {
+        // Moai Head: shrine bonuses from every map
+        const globalShrineBonus =
+            cheatState.w3.globalshrines && key === "ArtifactBonus" && index === 0 && bonusValue === 0;
+
         if (cheatState.w5.sailing && cheatConfig.w5.sailing[key]) {
-            return cheatConfig.w5.sailing[key](base);
+            const configured = cheatConfig.w5.sailing[key](base);
+            return globalShrineBonus ? Math.max(1, configured) : configured;
         }
+
+        if (globalShrineBonus) return Math.max(1, base);
 
         if (cheatState.w5.endercaptains && key === "CaptainPedastalTypeGen") {
             const hasEmporiumBonus = this._customBlock_Ninja("EmporiumBonus", 32, 0) === 1;

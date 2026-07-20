@@ -13,11 +13,10 @@
  * - DungeonCalc (arcade cheats)
  * - 2inputs (worship mob death)
  * - keychainn (keychain stats)
- * - ShrineInfo (global shrines)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { events, gga } from "../core/globals.js";
+import { events } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
 
@@ -63,20 +62,6 @@ export function setupEvents345Proxies() {
         if (cheatState.w3.mobdeath) return 0;
         return base;
     });
-
-    // Global shrines
-    const shrineInfo = gga.ShrineInfo;
-    for (const i in shrineInfo) {
-        shrineInfo[i] = new Proxy(shrineInfo[i], {
-            get(original, j) {
-                if (typeof j === "symbol") return original[j];
-                if (cheatState.w3.globalshrines && j === 0) {
-                    return gga.CurrentMap;
-                }
-                return original[j];
-            },
-        });
-    }
 
     // Tower stats (tower damage)
     createMethodProxy(ActorEvents345, "_customBlock_TowerStats", (base, key) => {
