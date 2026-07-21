@@ -115,7 +115,6 @@ export const Search = () => {
 
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
-    let workspacePersistTimer = null;
     const subscribedMonitorPaths = new Set();
     const filterCache = {
         results: { source: null, query: "", values: [] },
@@ -206,17 +205,10 @@ export const Search = () => {
         }
     };
 
+    // Persist synchronously: selectedKeys/savedResults only change on discrete
+    // user actions, so an immediate reload after a change can't lose it.
     van.derive(() => {
-        const snapshot = buildSearchWorkspace(ui);
-
-        if (workspacePersistTimer !== null) {
-            clearTimeout(workspacePersistTimer);
-        }
-
-        workspacePersistTimer = setTimeout(() => {
-            workspacePersistTimer = null;
-            saveSearchWorkspace(snapshot);
-        }, 180);
+        saveSearchWorkspace(buildSearchWorkspace(ui));
     });
 
     van.derive(() => {
