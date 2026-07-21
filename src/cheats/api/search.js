@@ -23,6 +23,11 @@ export function getGgaKeys() {
         .sort();
 }
 
+/**
+ * Parse a search query string into a typed value.
+ * @param {string} query - The search query string
+ * @returns {{ value: any, type: string, isContains: boolean, min?: number, max?: number }}
+ */
 function parseQuery(query) {
     const trimmed = String(query ?? "").trim();
 
@@ -55,9 +60,18 @@ function parseQuery(query) {
         return { value: num, type: "number", isContains: false };
     }
 
+    // Default to string with contains matching
     return { value: trimmed, type: "string", isContains: true };
 }
 
+/**
+ * Check if a value matches the parsed query.
+ * For integers, also matches floats that round to that integer (floor or ceil).
+ * For ranges, matches numbers within the min-max range (inclusive).
+ * @param {any} value - The value to check
+ * @param {{ value: any, type: string, isContains: boolean, min?: number, max?: number }} parsedQuery - The parsed query
+ * @returns {boolean}
+ */
 function matchesQuery(value, parsedQuery) {
     if (parsedQuery.type === "any") return true;
 
@@ -73,6 +87,7 @@ function matchesQuery(value, parsedQuery) {
     }
 
     if (parsedQuery.type === "number" && typeof value === "number") {
+        // Exact match
         if (value === parsedQuery.value) return true;
 
         if (Number.isInteger(parsedQuery.value)) {
@@ -83,6 +98,7 @@ function matchesQuery(value, parsedQuery) {
         return false;
     }
 
+    // Exact match for booleans, null, undefined
     return value === parsedQuery.value;
 }
 
@@ -102,6 +118,11 @@ function makeLeafPredicate(parsedQuery, compare) {
     return (value) => matchesQuery(value, parsedQuery);
 }
 
+/**
+ * Format a value for display, truncating if too long.
+ * @param {any} value - The value to format
+ * @returns {string}
+ */
 function formatValue(value) {
     if (value === null) return "null";
     if (value === undefined) return "undefined";
