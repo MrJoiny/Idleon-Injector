@@ -442,6 +442,7 @@ export const configDescriptions = {
 
     // Gallery
     "cheatConfig.w7.gallery.GalleryBonusMulti": "Gallery: All gallery-provided bonuses",
+    "cheatConfig.w7.gallery.HatrackBonusMulti": "Gallery: Premium Hat Rack bonus multiplier",
     "cheatConfig.w7.gallery.InitializeTrophyBonuses": "Gallery: Logic for initializing trophy bonuses",
     "cheatConfig.w7.gallery.InitializeNametagBonuses": "Gallery: Logic for initializing nametag bonuses",
     "cheatConfig.w7.gallery.PodiumsOwned_Lv4": "Gallery: Level 4 podiums owned (max 19)",
