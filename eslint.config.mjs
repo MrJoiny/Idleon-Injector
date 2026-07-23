@@ -59,7 +59,7 @@ export default [
         },
     },
     {
-        files: ["src/modules/**/*.js", "src/main.js", "config.js"],
+        files: ["src/modules/**/*.js", "src/main.js", "config.js", ".agents/skills/idleon-live-cdp/scripts/*.js"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "commonjs",
