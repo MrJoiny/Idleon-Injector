@@ -69,9 +69,6 @@ const GreenstackRow = ({ entry, status }) =>
         badgeClass: status === "PERMANENT" ? "account-row__badge--highlight" : "",
     });
 
-const matchesSearch = (entry, query) =>
-    !query || entry.name.toLowerCase().includes(query) || entry.itemId.toLowerCase().includes(query);
-
 export const GreenstacksTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Permanent Greenstacks" });
     const permanentEntries = van.state([]);
@@ -80,7 +77,9 @@ export const GreenstacksTab = () => {
 
     const filteredEntries = (entries) => {
         const query = searchQuery.val.trim().toLowerCase();
-        return entries.val.filter((entry) => matchesSearch(entry, query));
+        return entries.val.filter(
+            (entry) => !query || entry.name.toLowerCase().includes(query) || entry.itemId.toLowerCase().includes(query)
+        );
     };
 
     const load = async () =>
