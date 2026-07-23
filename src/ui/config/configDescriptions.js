@@ -481,6 +481,7 @@ export const configDescriptions = {
     "cheatConfig.w7.spelunkmana.StaminaCostMulti": "Spelunking: No stamina cost in spelunking",
 
     // Minehead
+    "cheatConfig.w7.minehead.Button_BonusMULTI": "The Button: Bonus multiplier",
     "cheatConfig.w7.minehead.UpgCost": "Minehead: Upgrade costs. (lower is better)",
     "cheatConfig.w7.minehead.DailyTries": "Minehead: Daily tries",
     "cheatConfig.w7.minehead.MaxHP_You": "Minehead: Max HP",
