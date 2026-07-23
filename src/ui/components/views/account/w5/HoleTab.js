@@ -1,6 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
 import { BellTab } from "./hole/BellTab.js";
+import { CglunkoTab } from "./hole/CglunkoTab.js";
 import { CosmoTab } from "./hole/CosmoTab.js";
 import { DawgDenTab } from "./hole/DawgDenTab.js";
 import { EngineerTab } from "./hole/EngineerTab.js";
@@ -40,6 +41,7 @@ const HOLE_SUBTABS = [
     { id: "gambit", label: "GAMBIT", component: GambitTab },
     { id: "temple", label: "TEMPLE", component: TempleTab },
     { id: "fountain", label: "FOUNTAIN", component: FountainTab },
+    { id: "crystal-cove", label: "CRYSTAL COVE", component: CglunkoTab },
 ];
 
 export const HoleTab = () => {
