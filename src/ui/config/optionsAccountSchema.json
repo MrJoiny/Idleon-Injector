@@ -3629,5 +3629,113 @@
         "description": "Multiplies Grand Discovery Chance in Spelunking",
         "type": "number",
         "AI": true
+    },
+    "651": {
+        "name": "Cglunko - Slop Drop++ Level",
+        "description": "Increases Drop Rate in Cavern 18",
+        "type": "number",
+        "AI": true
+    },
+    "652": {
+        "name": "Cglunko - Purp Collector Level",
+        "description": "Increases Cglunko Cove Drop Rate per digit of Quartz shapes owned",
+        "type": "number",
+        "AI": true
+    },
+    "653": {
+        "name": "Cglunko - IDK Broh Level",
+        "description": "Reserved Cglunko upgrade for a future World 7 skill",
+        "type": "number",
+        "AI": true
+    },
+    "654": {
+        "name": "Cglunko Gooey Triangle",
+        "description": "Gooey Triangle shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "655": {
+        "name": "Cglunko Gooey Square",
+        "description": "Gooey Square shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "656": {
+        "name": "Cglunko Gooey Pentagon",
+        "description": "Gooey Pentagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "657": {
+        "name": "Cglunko Gooey Hexagon",
+        "description": "Gooey Hexagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "658": {
+        "name": "Cglunko Gooey Heptagon",
+        "description": "Gooey Heptagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "659": {
+        "name": "Cglunko Gooey Nonagon",
+        "description": "Gooey Nonagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "660": {
+        "name": "Cglunko Quartz Prismagon",
+        "description": "Quartz Prismagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "661": {
+        "name": "Cglunko Quartz Cubigon",
+        "description": "Quartz Cubigon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "662": {
+        "name": "Cglunko Quartz Pointagon",
+        "description": "Quartz Pointagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "663": {
+        "name": "Cglunko Quartz Octergon",
+        "description": "Quartz Octergon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "664": {
+        "name": "Cglunko Quartz Nullagon",
+        "description": "Quartz Nullagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "665": {
+        "name": "Cglunko Quartz Brillagon",
+        "description": "Quartz Brillagon shapes owned in Cglunko Cove",
+        "type": "number",
+        "AI": true
+    },
+    "666": {
+        "name": "Cglunko Gooey Shape Focus",
+        "description": "Selected One Big Blue Gooey shape; 1-6 selects Triangle through Nonagon and 0 is unset",
+        "type": "number",
+        "AI": true
+    },
+    "667": {
+        "name": "Cglunko Quartz Shape Focus",
+        "description": "Selected One Big Purp Quartz shape; 1-6 selects Prismagon through Brillagon and 0 is unset",
+        "type": "number",
+        "AI": true
+    },
+    "668": {
+        "name": "Crystal Glunko Kill Count",
+        "description": "Total Crystal Glunko kills recorded for Cglunko Cove bonuses",
+        "type": "number",
+        "AI": true
     }
 }
