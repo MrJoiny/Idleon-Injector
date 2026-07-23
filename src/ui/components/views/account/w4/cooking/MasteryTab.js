@@ -95,6 +95,7 @@ const MasteryRankRow = ({ rankState, refreshPointsAfterWrite }) =>
         write: async (displayedRank) => {
             await writeVerified(RANK_PATH, displayedRank - 1);
             await refreshPointsAfterWrite();
+            return displayedRank;
         },
         indexLabel: "#0",
         name: "Mastery Rank",
@@ -103,8 +104,6 @@ const MasteryRankRow = ({ rankState, refreshPointsAfterWrite }) =>
         controlsClass: "account-row__controls--xl",
     });
 
-const MasteryStatRow = ({ entry, valueState }) => SimpleNumberRow({ entry, valueState });
-
 const MasteryAllocationRow = ({ entry, valueState, refreshPointsAfterWrite }) =>
     ClampedLevelRow({
         valueState,
@@ -112,8 +111,9 @@ const MasteryAllocationRow = ({ entry, valueState, refreshPointsAfterWrite }) =>
         max: Infinity,
         integerMode: "round",
         write: async (level) => {
-            await writeVerified(entry.path, level);
+            const verified = await writeVerified(entry.path, level);
             await refreshPointsAfterWrite();
+            return verified;
         },
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
@@ -224,14 +224,16 @@ export const MasteryTab = () => {
                     })
                 )
             );
-            reconcileMealRows(mealEntries.val.map((entry) => `${entry.key}:${entry.name}`).join("|"), () =>
-                mealEntries.val.map((entry) =>
-                    MasteryAllocationRow({
-                        entry,
-                        valueState: getOrCreateState(mealStates, entry.key),
-                        refreshPointsAfterWrite,
-                    })
-                )
+            reconcileMealRows(
+                mealEntries.val.map((entry) => `${entry.key}:${entry.name}:${entry.subLabel}`).join("|"),
+                () =>
+                    mealEntries.val.map((entry) =>
+                        MasteryAllocationRow({
+                            entry,
+                            valueState: getOrCreateState(mealStates, entry.key),
+                            refreshPointsAfterWrite,
+                        })
+                    )
             );
 
             for (const entry of purpleEntries.val) getOrCreateState(purpleStates, entry.key).val = entry.value;
@@ -278,7 +280,7 @@ export const MasteryTab = () => {
                     { class: "account-item-stack" },
                     MasteryRankRow({ rankState, refreshPointsAfterWrite }),
                     ...progressEntries.map((entry) =>
-                        MasteryStatRow({
+                        SimpleNumberRow({
                             entry,
                             valueState: entry.key.endsWith("exp") ? expState : ladlesState,
                         })
