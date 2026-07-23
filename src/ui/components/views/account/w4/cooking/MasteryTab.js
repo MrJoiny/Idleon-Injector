@@ -168,13 +168,7 @@ export const MasteryTab = () => {
         purplePointsState.val = toInt(purple, { min: 0 });
         yellowPointsState.val = toInt(yellow, { min: 0 });
     };
-    const refreshPointsAfterWrite = async () => {
-        try {
-            await refreshPoints();
-        } catch {
-            // The account write already verified; keep the last counters until the next refresh.
-        }
-    };
+    const refreshPointsAfterWrite = refreshPoints;
 
     const expRequirement = () => {
         const storedRank = Math.max(0, toInt(rankState.val, { min: 1 }) - 1);
