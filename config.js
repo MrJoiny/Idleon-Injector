@@ -731,6 +731,7 @@ exports.cheatConfig = {
             StaminaCostMulti: (t) => 0,
         },
         minehead: {
+            Button_BonusMULTI: (t) => t * 2, // 2x Button bonuses
             UpgCost: (t) => t / 2, // free upgrades
             DailyTries: (t) => t * 2, // lots of tries
             MaxHP_You: (t) => t * 2, // 2x max health
