@@ -647,6 +647,7 @@ exports.cheatConfig = {
         },
         gallery: {
             GalleryBonusMulti: (t) => t * 2,
+            HatrackBonusMulti: (t) => t * 2,
             InitializeTrophyBonuses: (t) => t,
             InitializeNametagBonuses: (t) => t,
             // PodiumsOwned: (t) => t,
