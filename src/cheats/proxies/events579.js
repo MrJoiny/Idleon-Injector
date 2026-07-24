@@ -24,6 +24,14 @@ import { cheatConfig, cheatState } from "../core/state.js";
 import { cList, events, gga } from "../core/globals.js";
 import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
+const FOUNTAIN_KEYS = new Set([
+    "Cost_FountainUPG",
+    "Fount_RoyalChance",
+    "Fount_RoyalMulti",
+    "Fount_MarblePerFill",
+    "Fount_MarbleizeCost",
+]);
+
 /**
  * Setup all ActorEvents_579 proxies.
  */
@@ -71,8 +79,22 @@ export function setupEvents579Proxies() {
         return base;
     });
 
-    // Holes (W5) - unknown keys delegate to _customBlock_Holes2, so proxy the entry point only.
-    createConfigLookupProxy(ActorEvents579, "_customBlock_Holes", [{ state: "w5.holes" }]);
+    // Holes (W5)
+    createMethodProxy(ActorEvents579, "_customBlock_Holes", (base, ...args) => {
+        const key = args[0];
+        if (cheatState.w5.holes && !FOUNTAIN_KEYS.has(key) && cheatConfig.w5.holes[key]) {
+            return cheatConfig.w5.holes[key](base, args);
+        }
+        return base;
+    });
+
+    createMethodProxy(ActorEvents579, "_customBlock_Holes2", (base, ...args) => {
+        const key = args[0];
+        if (cheatState.w5.holes && FOUNTAIN_KEYS.has(key) && cheatConfig.w5.holes[key]) {
+            return cheatConfig.w5.holes[key](base, args);
+        }
+        return base;
+    });
 
     // Sailing (W5)
     // Kept manual due to complex side-effects and context usage in endercaptains
