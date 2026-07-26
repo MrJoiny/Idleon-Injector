@@ -17,6 +17,7 @@ const COMPUTED_SOURCES = {
     breeding: { eventId: 345, method: "_customBlock_Breeding" },
     alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
     summoning: { eventId: 579, method: "_customBlock_Summoning" },
+    cookingMastery: { eventId: 579, method: "_customBlock_Summoning2" },
     atomCollider: { eventId: 579, method: "_customBlock_AtomCollider" },
     runCode: { eventId: 12, method: "_customBlock_RunCodeOfTypeXforThingY" },
     runCodeType: { eventId: 12, method: "_customBlock_RunCodeOfType" },
