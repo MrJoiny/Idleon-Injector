@@ -33,7 +33,11 @@ const GENERAL_FIELDS = [
     },
     { key: "acorns", path: "Gaming[9]", name: "Acorns", index: 9, formatted: true, float: true },
     { key: "snailMail", path: "Gaming[13]", name: "Snail Mail", index: 13, formatted: true, float: true },
-    { key: "ratCrowns", path: "Gaming[14]", name: "Rat Crowns", index: 14, formatted: true, float: true },
+];
+const RAT_KING_LEVEL_FIELDS = [
+    { key: "kingTokensRate", path: "GamingSprout[33][1]", name: "King Tokens/hr Level", index: 1 },
+    { key: "paletteLuck", path: "GamingSprout[33][2]", name: "Palette Luck Level", index: 2 },
+    { key: "crownChance", path: "GamingSprout[33][3]", name: "Crown Chance Level", index: 3 },
 ];
 const UPGRADE_FIELDS = [
     { key: "upgrade1", path: "Gaming[1]", index: 1, upgradeIndex: 0 },
@@ -125,20 +129,31 @@ const buildUpgradeEntries = (rawGaming, rawUpgradeNames, fields = UPGRADE_FIELDS
 export const GeneralTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Gaming General" });
     const generalEntries = van.state([]);
+    const ratKingEntries = van.state([]);
     const upgradeEntries = van.state([]);
     const mutationEntries = van.state([]);
     const logBookState = van.state("");
     const valueStates = new Map();
     const generalListNode = div({ class: "account-item-stack" });
+    const ratKingListNode = div({ class: "account-item-stack" });
     const upgradeListNode = div({ class: "account-item-stack" });
     const mutationListNode = div({ class: "account-item-stack" });
     const reconcileGeneralRows = createStaticRowReconciler(generalListNode);
+    const reconcileRatKingRows = createStaticRowReconciler(ratKingListNode);
     const reconcileUpgradeRows = createStaticRowReconciler(upgradeListNode);
     const reconcileMutationRows = createStaticRowReconciler(mutationListNode);
 
     const reconcileRows = () => {
         reconcileGeneralRows(generalEntries.val.map((entry) => entry.key).join("|"), () =>
             generalEntries.val.map((entry) =>
+                SimpleNumberRow({
+                    entry,
+                    valueState: getOrCreateState(valueStates, entry.key),
+                })
+            )
+        );
+        reconcileRatKingRows(ratKingEntries.val.map((entry) => entry.key).join("|"), () =>
+            ratKingEntries.val.map((entry) =>
                 SimpleNumberRow({
                     entry,
                     valueState: getOrCreateState(valueStates, entry.key),
@@ -165,18 +180,41 @@ export const GeneralTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawGaming, rawUpgradeNames, rawOptions] = await Promise.all([
+            const [rawGaming, rawRatKing, rawUpgradeNames, rawOptions] = await Promise.all([
                 gga("Gaming"),
+                gga("GamingSprout[33]"),
                 readCList("GamingUpgrades"),
                 readGgaEntries("OptionsListAccount", [String(GOLD_NUGGETS_DUG_OPTION)]),
             ]);
             generalEntries.val = buildGeneralEntries(rawGaming, rawOptions);
+            ratKingEntries.val = [
+                {
+                    key: "kingTokens",
+                    path: "Gaming[14]",
+                    name: "King Tokens",
+                    formatted: true,
+                    float: true,
+                    showIndex: false,
+                    value: resolveNumberInput(rawGaming?.[14] ?? 0, {
+                        formatted: true,
+                        float: true,
+                        min: 0,
+                        fallback: 0,
+                    }),
+                },
+                ...buildUpgradeEntries(toIndexedArray(rawRatKing ?? []), [], RAT_KING_LEVEL_FIELDS),
+            ];
             upgradeEntries.val = buildUpgradeEntries(rawGaming, toIndexedArray(rawUpgradeNames ?? []));
             mutationEntries.val = buildUpgradeEntries(rawGaming, [], MUTATION_FIELDS);
             logBookState.val = String(rawGaming?.[11] ?? "");
             reconcileRows();
 
-            for (const entry of [...generalEntries.val, ...upgradeEntries.val, ...mutationEntries.val]) {
+            for (const entry of [
+                ...generalEntries.val,
+                ...ratKingEntries.val,
+                ...upgradeEntries.val,
+                ...mutationEntries.val,
+            ]) {
                 getOrCreateState(valueStates, entry.key).val = entry.value;
             }
         });
@@ -189,6 +227,11 @@ export const GeneralTab = () => {
             title: "GENERAL",
             note: "Gaming state and nugget stats",
             body: generalListNode,
+        }),
+        AccountSection({
+            title: "RAT KING",
+            note: "Gaming[14] and GamingSprout[33][1-3]",
+            body: ratKingListNode,
         }),
         AccountSection({
             title: "UPGRADES",
@@ -209,7 +252,7 @@ export const GeneralTab = () => {
 
     return PersistentAccountListPage({
         title: "GENERAL",
-        description: "Edit Gaming currencies, upgrades, mutations, nugget stats, and related counters.",
+        description: "Edit Gaming currencies, Rat King levels, upgrades, mutations, nugget stats, and related counters.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
