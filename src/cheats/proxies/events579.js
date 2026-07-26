@@ -21,7 +21,7 @@
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { cList, events, gga } from "../core/globals.js";
+import { behavior, cList, events, gga } from "../core/globals.js";
 import { createMethodProxy, createConfigLookupProxy } from "../utils/proxy.js";
 
 const FOUNTAIN_KEYS = new Set([
@@ -49,6 +49,10 @@ export function setupEvents579Proxies() {
 
     // Summoning2 calculates individual Ballot and Meritocracy bonuses; Summoning supplies their current multiplier.
     createMethodProxy(ActorEvents579, "_customBlock_Summoning2", function (base, key, bonusIndex) {
+        if (cheatState.wide.votebonus) {
+            const sceneName = behavior.getCurrentSceneName();
+            if (sceneName === "GemShop" || sceneName.includes("Tutorial") || sceneName === "PlayerSelect") return base;
+        }
         if (cheatState.wide.votebonus && key === "MeritocBonusz") {
             const value = Number(cList.NinjaInfo[41][Math.round(1 + 3 * bonusIndex)]);
             return value * this._customBlock_Summoning("MeritocBonuszMulti", 0, 0);
