@@ -19,10 +19,7 @@ const DefaultWorkspaceContext = (viewId) => {
     return div(
         { class: "atlas-context-placeholder" },
         div({ class: "atlas-context-heading" }, "Context"),
-        div(
-            { class: "atlas-context-empty" },
-            `${view?.atlasLabel || view?.sidebarLabel || "Workspace"} controls are available in the main view.`
-        )
+        div({ class: "atlas-context-empty" }, `${view?.label || "Workspace"} controls are available in the main view.`)
     );
 };
 
@@ -70,10 +67,10 @@ export const Sidebar = () => {
                         type: "button",
                         onclick: () => store.setActiveTab(view.id),
                         "aria-current": () => (store.app.activeTab === view.id ? "page" : "false"),
-                        title: `${view.atlasLabel || view.sidebarLabel} (${index + 1})`,
+                        title: `${view.label} (${index + 1})`,
                     },
                     Icon(),
-                    span({ class: "tab-label" }, view.atlasLabel || view.sidebarLabel),
+                    span({ class: "tab-label" }, view.label),
                     span({ class: "atlas-nav-shortcut", "aria-hidden": "true" }, index + 1)
                 );
             })

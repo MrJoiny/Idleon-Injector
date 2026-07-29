@@ -15,7 +15,6 @@
 @import url("../styles/_utilities.css");
 
 /* COMPONENTS */
-@import url("../styles/sidebar.css");
 @import url("../styles/cheats.css");
 @import url("../styles/config.css");
 @import url("../styles/_world-tabs.css");

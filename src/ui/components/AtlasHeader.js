@@ -31,7 +31,7 @@ export const AtlasHeader = () =>
             { class: "atlas-breadcrumb", "aria-label": "Current workspace" },
             span({ class: "atlas-breadcrumb-root" }, "Workspace"),
             Icons.ChevronRight({ class: "atlas-breadcrumb-separator" }),
-            span({ class: "atlas-breadcrumb-current" }, () => activeView().atlasLabel || activeView().sidebarLabel)
+            span({ class: "atlas-breadcrumb-current" }, () => activeView().label)
         ),
         div(
             { class: "atlas-header-actions" },

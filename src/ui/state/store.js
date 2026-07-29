@@ -232,40 +232,6 @@ const CheatService = {
     closeConfigDrawer: () => {
         appState.configDrawerOpen = false;
     },
-
-    executeCheat: async (action, message) => {
-        try {
-            const result = await API.executeCheatAction(action);
-            Actions.notify(`Cheat ${result.result || "Success"}`);
-            FavoritesService.addToRecent(action);
-            // Note: Cheat states are now updated via WebSocket push from server
-            // No need for manual loadCheatStates() call
-        } catch (e) {
-            Actions.notify(`Error executing '${message}': ${e.message}`, "error");
-        }
-    },
-};
-
-const getActiveCheats = (states) => {
-    const activeCheats = [];
-
-    const normalizeKey = (key) => (key.endsWith("s") ? key.slice(0, -1) : key);
-
-    for (const key in states) {
-        const value = states[key];
-
-        if (typeof value === "object" && value !== null) {
-            for (const subKey in value) {
-                if (value[subKey] === true) {
-                    activeCheats.push(`${normalizeKey(key)} ${subKey}`);
-                }
-            }
-        } else if (value === true) {
-            activeCheats.push(normalizeKey(key));
-        }
-    }
-
-    return activeCheats;
 };
 
 const CheatStateService = {
@@ -401,14 +367,12 @@ const store = {
     applyUpdate: SystemService.applyUpdate,
 
     loadCheats: CheatService.loadCheats,
-    executeCheat: CheatService.executeCheat,
     hasConfigEntry: CheatService.hasConfigEntry,
     navigateToCheatConfig: CheatService.navigateToCheatConfig,
     clearForcedConfigPath: CheatService.clearForcedConfigPath,
     openConfigDrawer: CheatService.openConfigDrawer,
     closeConfigDrawer: CheatService.closeConfigDrawer,
     loadCheatStates: CheatStateService.loadCheatStates,
-    getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 
     loadConfig: ConfigService.loadConfig,
     saveConfig: ConfigService.saveConfig,

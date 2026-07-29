@@ -9,15 +9,9 @@ import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { CheatItem } from "../CheatItem.js";
 import { ConfigNode } from "../config/ConfigNode.js";
-import { registerWorkspaceContext, registerWorkspaceSaveHandler } from "../WorkspaceContext.js";
+import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { ConfigActions } from "./config/ConfigActions.js";
-import {
-    buildConfigPathTemplate,
-    configDraftReady,
-    getConfigDraft,
-    getConfigPathData,
-    saveConfigDraft,
-} from "./config/configDraft.js";
+import { buildConfigPathTemplate, configDraftReady, getConfigDraft, getConfigPathData } from "./config/configDraft.js";
 
 const { div, button, span, input, code } = van.tags;
 
@@ -131,7 +125,6 @@ export const AtlasCheats = () => {
     });
 
     if (store.data.cheats.length === 0) store.loadCheats();
-    registerWorkspaceSaveHandler(VIEWS.CHEATS.id, () => saveConfigDraft("disk"));
 
     const stateMap = van.derive(() => flattenCheatStates(store.data.activeCheatStates));
 

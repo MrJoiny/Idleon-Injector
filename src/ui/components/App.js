@@ -6,7 +6,7 @@ import { VIEWS } from "../state/constants.js";
 import { Sidebar, SidebarBackdrop } from "./Sidebar.js";
 import { AtlasHeader } from "./AtlasHeader.js";
 import { ActivityDrawer } from "./ActivityDrawer.js";
-import { invokeWorkspaceSave } from "./WorkspaceContext.js";
+import { saveConfigDraft } from "./views/config/configDraft.js";
 import { Toast } from "./Toast.js";
 import { TooltipContainer } from "./Tooltip.js";
 import { UpdateModal } from "./UpdateModal.js";
@@ -45,7 +45,7 @@ export const App = () => {
 
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
             e.preventDefault();
-            invokeWorkspaceSave(store.app.activeTab);
+            if ([VIEWS.CHEATS.id, VIEWS.CONFIG.id].includes(store.app.activeTab)) saveConfigDraft("disk");
             return;
         }
 

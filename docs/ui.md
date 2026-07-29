@@ -98,9 +98,9 @@ Features:
 
 Useful helpers:
 
-- `store.executeCheat(action, message)` triggers `/api/toggle` and shows toast feedback.
+- `API.executeCheatAction(action)` triggers `/api/toggle`; Atlas records the result through `store.notify()`.
 - `store.navigateToCheatConfig(cheatValue)` focuses Config for that cheat path (opens the side drawer when on Cheats, otherwise switches to full Config tab).
-- `store.getActiveCheats()` flattens active cheat state into a display list.
+- `store.data.activeCheatStates` receives WebSocket state updates that Atlas flattens for its switches and Active scope.
 
 ### Config view
 
@@ -116,7 +116,7 @@ Key behaviors:
 - Uses forced-path mode when coming from Cheats gear icon, with "SHOWING" banner.
 - Can run as a right-side drawer while Cheats stays open; close from drawer header or toggle button in Cheats.
 - Saves explicitly apply the cheat config to RAM (`/api/config/update`) or persist the full draft to disk (`/api/config/save`).
-- `Ctrl+S` invokes the active workspace's disk-save handler when one is registered.
+- `Ctrl+S` saves the shared config draft from the Cheats or Config workspace.
 - Injector config shows "restart required" warning banner.
 
 Function values (like `(t) => t * 2`) are edited through `FunctionInput`:
@@ -181,7 +181,7 @@ Features:
 Common components in `src/ui/components/`:
 
 - `AtlasHeader` + `Sidebar`: global status, workspace navigation, and workspace-specific context.
-- `WorkspaceContext`: contextual navigation and the active workspace save contract.
+- `WorkspaceContext`: contextual navigation supplied by the active workspace.
 - `ActivityDrawer`: notification history and live monitor output.
 - `SearchBar`: shared filter input used by Cheats and Account.
 - `ConfigNode`: recursive config renderer with tooltips.

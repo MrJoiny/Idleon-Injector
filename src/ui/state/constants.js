@@ -8,33 +8,23 @@
 export const VIEWS = {
     CHEATS: {
         id: "cheats-tab",
-        label: "CHEATS",
-        sidebarLabel: "CHEATS",
-        atlasLabel: "Cheats",
+        label: "Cheats",
     },
     ACCOUNT: {
         id: "options-account-tab",
-        label: "ACCOUNT OPTIONS LIST",
-        sidebarLabel: "ACCOUNT OPTIONS",
-        atlasLabel: "Account",
+        label: "Account",
     },
     CONFIG: {
         id: "config-tab",
-        label: "CONFIGURATION",
-        sidebarLabel: "CONFIG",
-        atlasLabel: "Config",
+        label: "Config",
     },
     SEARCH: {
         id: "search-tab",
-        label: "GGA SEARCH",
-        sidebarLabel: "SEARCH",
-        atlasLabel: "Search",
+        label: "Search",
     },
     DEVTOOLS: {
         id: "devtools-tab",
-        label: "CHROMEDEBUG",
-        sidebarLabel: "CHROMEDEBUG",
-        atlasLabel: "DevTools",
+        label: "DevTools",
     },
 };
 

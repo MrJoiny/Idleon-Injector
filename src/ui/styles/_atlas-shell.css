@@ -316,6 +316,8 @@ body {
 }
 
 .atlas-sidebar {
+    display: flex;
+    flex-direction: column;
     position: relative;
     z-index: 2100;
     flex: 0 0 var(--atlas-sidebar-width);
