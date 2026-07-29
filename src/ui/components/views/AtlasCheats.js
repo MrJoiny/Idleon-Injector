@@ -89,19 +89,6 @@ const resolveStoredAction = (action, cheats) => {
     };
 };
 
-const ScopeButton = ({ id, label, count, activeScope, onSelect, icon = null }) =>
-    button(
-        {
-            type: "button",
-            class: () => `atlas-scope-button ${activeScope() === id ? "is-active" : ""}`,
-            "aria-current": () => (activeScope() === id ? "page" : null),
-            onclick: () => onSelect(id),
-        },
-        icon ? span({ class: "atlas-scope-icon", "aria-hidden": "true" }, icon) : null,
-        span({ class: "atlas-scope-label" }, label),
-        span({ class: "atlas-scope-count" }, count)
-    );
-
 /**
  * Atlas dense cheat browser with explicit selection, execution, and config editing.
  * @returns {Element}
@@ -203,6 +190,19 @@ export const AtlasCheats = () => {
         ui.scope = scope;
         ui.page = 0;
     };
+
+    const ScopeButton = ({ id, label, count, icon = null }) =>
+        button(
+            {
+                type: "button",
+                class: () => `atlas-scope-button ${ui.scope === id ? "is-active" : ""}`,
+                "aria-current": () => (ui.scope === id ? "page" : null),
+                onclick: () => selectScope(id),
+            },
+            icon ? span({ class: "atlas-scope-icon", "aria-hidden": "true" }, icon) : null,
+            span({ class: "atlas-scope-label" }, label),
+            span({ class: "atlas-scope-count" }, count)
+        );
 
     const selectedEntry = van.derive(() => {
         const selected = visibleRows.val.find((entry) => entry.action === ui.selectedAction);
@@ -316,32 +316,24 @@ export const AtlasCheats = () => {
             id: "all",
             label: "All cheats",
             count: () => store.data.cheats.length,
-            activeScope: () => ui.scope,
-            onSelect: selectScope,
             icon: Icons.Cheats(),
         }),
         ScopeButton({
             id: "active",
             label: "Active",
             count: () => [...stateMap.val.values()].filter(Boolean).length,
-            activeScope: () => ui.scope,
-            onSelect: selectScope,
             icon: Icons.Lightning(),
         }),
         ScopeButton({
             id: "favorites",
             label: "Favorites",
             count: () => store.data.favoriteCheats.length,
-            activeScope: () => ui.scope,
-            onSelect: selectScope,
             icon: Icons.Star(),
         }),
         ScopeButton({
             id: "recent",
             label: "Recent",
             count: () => store.data.recentCheats.length,
-            activeScope: () => ui.scope,
-            onSelect: selectScope,
             icon: Icons.Refresh(),
         }),
         div({ class: "atlas-tree-heading atlas-category-heading" }, "CATEGORIES"),
@@ -352,8 +344,6 @@ export const AtlasCheats = () => {
                         id: `category:${category}`,
                         label: category,
                         count: () => matchingCategoryCounts.val.get(category) || 0,
-                        activeScope: () => ui.scope,
-                        onSelect: selectScope,
                     })
                 )
             )

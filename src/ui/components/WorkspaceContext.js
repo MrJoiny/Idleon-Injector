@@ -12,21 +12,11 @@ const revision = van.state(0);
  *
  * @param {string} viewId - Workspace ID from VIEWS.
  * @param {() => HTMLElement} renderer - Creates the contextual navigation node.
- * @returns {() => void} Unregister callback.
+ * @returns {void}
  */
 export const registerWorkspaceContext = (viewId, renderer) => {
-    if (!viewId || typeof renderer !== "function") {
-        throw new TypeError("Workspace context requires a view ID and renderer");
-    }
-
     renderers.set(viewId, renderer);
     revision.val += 1;
-
-    return () => {
-        if (renderers.get(viewId) !== renderer) return;
-        renderers.delete(viewId);
-        revision.val += 1;
-    };
 };
 
 /**

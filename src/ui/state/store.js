@@ -225,10 +225,6 @@ const CheatService = {
         appState.configForcedPath = null;
     },
 
-    openConfigDrawer: () => {
-        appState.configDrawerOpen = true;
-    },
-
     closeConfigDrawer: () => {
         appState.configDrawerOpen = false;
     },
@@ -282,21 +278,6 @@ const ConfigService = {
             Actions.notify(`Config Load Error: ${e.message}`, "error");
         } finally {
             appState.isLoading = false;
-        }
-    },
-
-    saveConfig: async (newConfig, isPersistent) => {
-        try {
-            // Strip Proxies via JSON cycle to prevent reactive leaks
-            const cleanConfig = JSON.parse(JSON.stringify(newConfig));
-
-            const result = isPersistent
-                ? await API.saveConfigFile(cleanConfig)
-                : await API.updateSessionConfig(cleanConfig);
-
-            Actions.notify(result.message || (isPersistent ? "SAVED TO DISK" : "RAM UPDATED"));
-        } catch (e) {
-            Actions.notify(e.message, "error");
         }
     },
 };
@@ -370,12 +351,10 @@ const store = {
     hasConfigEntry: CheatService.hasConfigEntry,
     navigateToCheatConfig: CheatService.navigateToCheatConfig,
     clearForcedConfigPath: CheatService.clearForcedConfigPath,
-    openConfigDrawer: CheatService.openConfigDrawer,
     closeConfigDrawer: CheatService.closeConfigDrawer,
     loadCheatStates: CheatStateService.loadCheatStates,
 
     loadConfig: ConfigService.loadConfig,
-    saveConfig: ConfigService.saveConfig,
 
     loadAccountOptions: AccountService.loadAccountOptions,
 

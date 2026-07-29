@@ -324,7 +324,6 @@ function setupApiRoutes(app, context, client, config) {
                 message: "Live cheat configuration updated successfully",
                 details: gameUpdateDetails,
                 appliedToGame: true,
-                ramBaseline: ramConfigBaseline,
             });
         } catch (apiError) {
             log.error("Error in /api/config/update:", apiError);
