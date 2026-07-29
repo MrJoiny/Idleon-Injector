@@ -93,7 +93,7 @@
 .atlas-tree-heading {
     margin: 0 8px 6px;
     color: #8795b1;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 750;
     letter-spacing: 0.08em;
 }
@@ -156,7 +156,7 @@
 .atlas-scope-count {
     color: #94a0b7;
     font-family: var(--font-mono);
-    font-size: 0.67rem;
+    font-size: 0.75rem;
 }
 
 .atlas-category-scopes .atlas-scope-button {
@@ -262,7 +262,7 @@
     flex: none;
     color: #8290ad;
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.75rem;
 }
 
 .atlas-cheat-pagination {
@@ -272,15 +272,15 @@
     gap: 5px;
     color: #8290ad;
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.75rem;
 }
 
 .atlas-cheat-pagination button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: 1px solid #d4dce9;
     border-radius: 6px;
@@ -321,12 +321,12 @@
 }
 
 .atlas-cheat-table-head {
-    min-height: 28px;
+    min-height: 32px;
     padding: 0 12px;
     border-bottom: 1px solid #dce3ef;
     color: #8a98b3;
     background: #f7f9fd;
-    font-size: 0.63rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -355,11 +355,11 @@
 
 .atlas-cheat-row {
     position: relative;
-    min-height: 42px;
+    min-height: 52px;
     padding: 0 12px;
     border-bottom: 1px solid #e8edf5;
     cursor: default;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     transition: background 100ms ease;
 }
 
@@ -419,11 +419,17 @@
 
 .atlas-cheat-saved-value {
     color: #7c8ba8;
-    font-size: 0.63rem;
+    font-size: 0.75rem;
 }
 
 .atlas-cheat-description {
     color: #53617b;
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 1.35;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .atlas-cheat-category {
@@ -437,8 +443,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 25px;
-    height: 25px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: 0;
     color: #a0abc0;
@@ -467,13 +473,13 @@
 
 .atlas-cheat-run {
     min-width: 54px;
-    min-height: 27px;
+    min-height: 32px;
     padding: 4px 9px;
     border: 1px solid #d6deeb;
     border-radius: 6px;
     color: #25324c;
     background: #fff;
-    font-size: 0.67rem;
+    font-size: 0.75rem;
     text-transform: none;
     letter-spacing: normal;
 }
@@ -578,7 +584,7 @@
 .atlas-inspector-title code {
     overflow: hidden;
     color: #667590;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -596,7 +602,7 @@
     border-radius: 6px;
     color: #5c6a84;
     background: transparent;
-    font-size: 0.69rem;
+    font-size: 0.75rem;
     text-transform: none;
     letter-spacing: normal;
 }
@@ -628,7 +634,7 @@
     gap: 6px;
     margin-bottom: 10px;
     color: #61708c;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 650;
 }
 
@@ -674,7 +680,7 @@
     padding: 9px 0;
     border-bottom: 1px solid #e9edf4;
     color: #15203a;
-    font-size: 0.69rem;
+    font-size: 0.75rem;
 }
 
 .atlas-inspector-facts > div > :first-child {
@@ -690,7 +696,7 @@
     margin-bottom: 10px;
     color: #7a88a4;
     font-family: var(--font-mono);
-    font-size: 0.64rem;
+    font-size: 0.75rem;
     overflow-wrap: anywhere;
 }
 
@@ -711,7 +717,7 @@
     border-radius: 6px;
     color: #3e4d68;
     background: #fff;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     text-transform: none;
     letter-spacing: normal;
 }
@@ -737,7 +743,7 @@
     padding: 8px 10px;
     color: #41506c;
     background: #f7f9fd;
-    font-size: 0.69rem;
+    font-size: 0.75rem;
 }
 
 .atlas-inspector-config .config-item {
@@ -766,7 +772,7 @@
     overflow: visible;
     padding: 0;
     color: #63718a;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     line-height: 1.4;
     text-overflow: clip;
     white-space: normal;
@@ -778,11 +784,11 @@
 }
 
 .atlas-inspector-config .number-input-wrapper {
-    min-height: 30px;
+    min-height: 32px;
 }
 
 .atlas-inspector-config .number-input-btn {
-    height: 30px;
+    height: 32px;
     padding: 0 8px;
 }
 
@@ -840,13 +846,13 @@
         align-items: center;
         justify-content: center;
         flex: none;
-        min-height: 28px;
+        min-height: 32px;
         padding: 4px 8px;
         border: 1px solid #d6deeb;
         border-radius: 6px;
         color: #4f52cf;
         background: #fff;
-        font-size: 0.67rem;
+        font-size: 0.75rem;
         text-transform: none;
         letter-spacing: normal;
     }
@@ -855,8 +861,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         padding: 0;
         border: 0;
         border-radius: 6px;

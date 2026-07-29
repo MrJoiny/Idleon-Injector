@@ -7,9 +7,10 @@ import { Sidebar, SidebarBackdrop } from "./Sidebar.js";
 import { AtlasHeader } from "./AtlasHeader.js";
 import { ActivityDrawer } from "./ActivityDrawer.js";
 import { invokeWorkspaceSave } from "./WorkspaceContext.js";
+import { Toast } from "./Toast.js";
 import { TooltipContainer } from "./Tooltip.js";
 import { UpdateModal } from "./UpdateModal.js";
-import { Cheats } from "./views/Cheats.js";
+import { AtlasCheats } from "./views/AtlasCheats.js";
 import { Config } from "./views/Config.js";
 import { Account } from "./views/Account.js";
 import { DevTools } from "./views/DevTools.js";
@@ -18,7 +19,7 @@ import { Search } from "./views/Search.js";
 const { div, main } = van.tags;
 
 const viewFactories = {
-    [VIEWS.CHEATS.id]: Cheats,
+    [VIEWS.CHEATS.id]: AtlasCheats,
     [VIEWS.CONFIG.id]: Config,
     [VIEWS.ACCOUNT.id]: Account,
     [VIEWS.DEVTOOLS.id]: DevTools,
@@ -106,6 +107,7 @@ export const App = () => {
             main({ class: "viewport atlas-canvas" }, tabContent, ActivityDrawer()),
             SidebarBackdrop()
         ),
+        Toast(),
         UpdateModal(),
         TooltipContainer()
     );

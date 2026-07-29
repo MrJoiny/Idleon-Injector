@@ -58,7 +58,7 @@
 
 #options-account-tab .account-section__title {
     color: #4f46e5;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
 }
 
@@ -76,7 +76,7 @@
 }
 
 #options-account-tab .account-row .number-input-btn {
-    height: 28px;
+    height: 32px;
     padding-inline: 8px;
 }
 
@@ -546,7 +546,7 @@
 
 .account-btn {
     padding: 0 12px;
-    height: 30px;
+    height: 32px;
     font-size: 0.875rem;
     font-family: var(--font-display);
     letter-spacing: 0.04em;
@@ -688,7 +688,7 @@
 
 .tier-card__select {
     padding: 0 6px;
-    height: 28px;
+    height: 32px;
     width: 100%;
     font-size: 0.875rem;
     font-family: var(--font-display);
@@ -751,7 +751,7 @@
 
 .account-setall-row__select {
     padding: 0 8px;
-    height: 30px;
+    height: 32px;
     font-size: 0.875rem;
     font-family: var(--font-display);
 }

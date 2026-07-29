@@ -206,8 +206,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border: 1px solid var(--c-border);
     background: transparent;
     color: var(--c-text-dim);
@@ -315,7 +315,7 @@
 
 #config-tab .config-filter-label {
     color: var(--atlas-text-muted, #66748d);
-    font-size: 0.67rem;
+    font-size: 0.75rem;
 }
 
 #config-tab .cheat-category {
@@ -391,13 +391,13 @@
     align-items: center;
     justify-content: center;
     min-inline-size: 130px;
-    min-height: 24px;
+    min-height: 32px;
     padding: 3px 7px;
     border: 1px solid #dce2ec;
     border-radius: 12px;
     color: #70809b;
     background: #f7f9fc;
-    font-size: 0.61rem;
+    font-size: 0.75rem;
     white-space: nowrap;
 }
 
@@ -409,10 +409,10 @@
 
 .atlas-config-actions .btn-primary,
 .atlas-config-actions .btn-secondary {
-    min-height: 30px;
+    min-height: 32px;
     padding: 6px 10px;
     border-radius: 6px;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     white-space: nowrap;
 }
 

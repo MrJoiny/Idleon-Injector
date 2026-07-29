@@ -130,7 +130,7 @@ body {
     overflow: hidden;
     color: #8f99ae;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
 }
 
@@ -156,11 +156,11 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 30px;
+    height: 32px;
     padding: 0 9px;
     border: 1px solid #293043;
     border-radius: 7px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -201,14 +201,14 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 30px;
+    height: 32px;
     padding: 0 9px;
     color: #c8cede;
     background: transparent;
     border: 1px solid #293043;
     border-radius: 7px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
 }
@@ -226,8 +226,9 @@ body {
     height: 14px;
 }
 
-.atlas-version[aria-disabled="true"] {
+.atlas-version:disabled {
     cursor: default;
+    opacity: 0.72;
 }
 
 .atlas-update-dot {
@@ -245,7 +246,7 @@ body {
     background: #6265ec;
     border-radius: 8px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
     line-height: 16px;
     text-align: center;
 }
@@ -342,7 +343,7 @@ body {
 .atlas-sidebar-section-label,
 .atlas-context-heading {
     color: var(--atlas-text-soft);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -403,7 +404,7 @@ body {
     margin-left: auto;
     color: #a0aabc;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
 }
 
 .atlas-sidebar-divider {
@@ -435,7 +436,7 @@ body {
 .atlas-context-empty {
     padding: 7px 8px;
     color: var(--atlas-text-soft);
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.45;
 }
 
@@ -451,7 +452,6 @@ body {
     margin-top: 5px;
 }
 
-.atlas-shortcuts-button,
 .atlas-sidebar .sidebar-toggle {
     display: inline-flex;
     align-items: center;
@@ -466,26 +466,20 @@ body {
     cursor: pointer;
 }
 
-.atlas-shortcuts-button {
-    flex: 0 0 32px;
-}
-
 .atlas-sidebar .sidebar-toggle {
     flex: 1 1 auto;
     gap: 7px;
     width: auto;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 12px;
 }
 
-.atlas-shortcuts-button:hover,
 .atlas-sidebar .sidebar-toggle:hover {
     color: var(--atlas-accent);
     background: var(--atlas-accent-soft);
     border-color: #d6d7fb;
 }
 
-.atlas-shortcuts-button svg,
 .atlas-sidebar .sidebar-toggle svg {
     width: 14px;
     height: 14px;
@@ -495,8 +489,7 @@ body {
 .atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-sidebar-divider,
 .atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-context-slot,
 .atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-nav-shortcut,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .tab-label,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-shortcuts-button {
+.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .tab-label {
     display: none;
 }
 
@@ -570,8 +563,7 @@ body {
     .atlas-sidebar.sidebar-collapsed .atlas-sidebar-divider,
     .atlas-sidebar.sidebar-collapsed .atlas-context-slot,
     .atlas-sidebar.sidebar-collapsed .atlas-nav-shortcut,
-    .atlas-sidebar.sidebar-collapsed .tab-label,
-    .atlas-sidebar.sidebar-collapsed .atlas-shortcuts-button {
+    .atlas-sidebar.sidebar-collapsed .tab-label {
         display: initial;
     }
 

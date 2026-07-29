@@ -371,7 +371,7 @@
 
 .account-root-nav .world-tab-btn-num {
     display: inline-grid;
-    width: 25px;
+    width: 36px;
     height: 20px;
     flex: 0 0 25px;
     place-items: center;
@@ -379,7 +379,7 @@
     background: color-mix(in srgb, var(--world-color) 14%, #ffffff);
     color: var(--world-color);
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.75rem;
 }
 
 .account-sub-tab-content {
@@ -401,14 +401,14 @@
 #options-account-tab .account-page-nav .account-sub-tab-btn,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn {
     bottom: 0;
-    min-height: 30px;
+    min-height: 32px;
     padding: 6px 10px;
     border: 0;
     border-radius: 6px;
     background: transparent;
     color: #64748b;
     font-family: var(--font-display);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.025em;
 }

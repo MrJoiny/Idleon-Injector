@@ -23,17 +23,33 @@ import { createStaticRowReconciler } from "../account/accountShared.js";
 
 const { div, input, button, span, label, select, option, aside } = van.tags;
 
-const KeyCheckbox = ({ keyName, selectedKeys, onChange }) => {
+const KeyCheckbox = ({ keyName, selectedKeys, onChange, isFavorite, onToggleFavorite }) => {
     const isChecked = () => selectedKeys.includes(keyName);
+    const favorite = () => isFavorite(keyName);
 
-    return label(
+    return div(
         { class: () => `key-checkbox ${isChecked() ? "checked" : ""}`, title: keyName },
-        input({
-            type: "checkbox",
-            checked: isChecked,
-            onchange: (e) => onChange(keyName, e.target.checked),
-        }),
-        span({ class: "key-checkbox-label" }, keyName)
+        label(
+            { class: "key-checkbox-select" },
+            input({
+                type: "checkbox",
+                checked: isChecked,
+                onchange: (e) => onChange(keyName, e.target.checked),
+            }),
+            span({ class: "key-checkbox-label" }, keyName)
+        ),
+        button(
+            {
+                type: "button",
+                class: () => `key-favorite-btn ${favorite() ? "active" : ""}`,
+                title: () => (favorite() ? "Remove from favorites" : "Add to favorites"),
+                "aria-label": () =>
+                    `${favorite() ? "Remove" : "Add"} ${keyName} ${favorite() ? "from" : "to"} favorites`,
+                "aria-pressed": () => String(favorite()),
+                onclick: () => onToggleFavorite(keyName),
+            },
+            Icons.Star()
+        )
     );
 };
 
@@ -216,6 +232,15 @@ export const KeysSection = ({ ui, handlers }) =>
                     () => (handlers.areAllSelected() ? "NONE" : "ALL")
                 ),
                 button(
+                    {
+                        class: "btn-secondary btn-small",
+                        onclick: () => handlers.selectKeys(handlers.getValidFavorites()),
+                        disabled: () => handlers.getValidFavorites().length === 0,
+                        title: "Select favorite keys",
+                    },
+                    "FAV"
+                ),
+                button(
                     { class: "btn-secondary btn-small", onclick: handlers.clearSelection, title: "Clear selection" },
                     "CLEAR"
                 ),
@@ -234,7 +259,29 @@ export const KeysSection = ({ ui, handlers }) =>
             { class: "keys-content scroll-container" },
             div(
                 { class: "keys-group" },
-                div({ class: "keys-group-header" }, () => `ALL KEYS (${handlers.getFilteredKeys().length})`),
+                div({ class: "keys-group-header" }, () => `FAVORITES (${handlers.getValidFavorites().length})`),
+                () => {
+                    const favorites = handlers.getValidFavorites();
+                    if (ui.isLoading) return div({ class: "keys-loading" }, "Loading");
+                    if (favorites.length === 0) return div({ class: "keys-loading" }, "No favorite keys");
+
+                    return div(
+                        { class: "keys-grid" },
+                        ...favorites.map((key) =>
+                            KeyCheckbox({
+                                keyName: key,
+                                selectedKeys: ui.selectedKeys,
+                                onChange: handlers.handleKeyChange,
+                                isFavorite: handlers.isFavoriteKey,
+                                onToggleFavorite: handlers.toggleFavoriteKey,
+                            })
+                        )
+                    );
+                }
+            ),
+            div(
+                { class: "keys-group" },
+                div({ class: "keys-group-header" }, () => `OTHER KEYS (${handlers.getFilteredKeys().length})`),
                 div(
                     { class: "keys-filter" },
                     input({
@@ -258,6 +305,8 @@ export const KeysSection = ({ ui, handlers }) =>
                                 keyName: key,
                                 selectedKeys: ui.selectedKeys,
                                 onChange: handlers.handleKeyChange,
+                                isFavorite: handlers.isFavoriteKey,
+                                onToggleFavorite: handlers.toggleFavoriteKey,
                             })
                         )
                     );

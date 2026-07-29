@@ -1,4 +1,5 @@
 const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
+const SEARCH_FAVORITE_KEYS_STORAGE_KEY = "searchFavoriteKeys";
 const SEARCH_WORKSPACE_VERSION = 2;
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
 const entryFilterTextCache = new WeakMap();
@@ -6,6 +7,25 @@ const entryFilterTextCache = new WeakMap();
 /** Dedupe an array down to non-empty unique strings. */
 export function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
+}
+
+export function loadLocalFavoriteKeys() {
+    try {
+        const raw = localStorage.getItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY);
+        if (raw === null) return null;
+        return uniqueStrings(JSON.parse(raw));
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to load favorite keys:", err);
+        return null;
+    }
+}
+
+export function saveLocalFavoriteKeys(keys) {
+    try {
+        localStorage.setItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY, JSON.stringify(uniqueStrings(keys)));
+    } catch (err) {
+        console.error("[SearchWorkspace] Failed to save favorite keys:", err);
+    }
 }
 
 export function normalizeSavedEntry(entry) {
@@ -91,10 +111,13 @@ export function saveSearchWorkspace(workspace) {
     }
 }
 
-export function pickInitialSelectedKeys(allKeys, persistedKeys) {
+export function pickInitialSelectedKeys(allKeys, persistedKeys, favoriteKeys = []) {
     const available = new Set(allKeys || []);
     const fromPersisted = uniqueStrings(persistedKeys).filter((key) => available.has(key));
     if (fromPersisted.length > 0) return fromPersisted;
+
+    const fromFavorites = uniqueStrings(favoriteKeys).filter((key) => available.has(key));
+    if (fromFavorites.length > 0) return fromFavorites.slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
 
     return (allKeys || []).slice(0, DEFAULT_SELECTED_KEYS_LIMIT);
 }

@@ -64,7 +64,7 @@ export const AtlasHeader = () =>
                     onclick: () => {
                         if (store.app.updateInfo?.updateAvailable) store.openUpdateModal();
                     },
-                    "aria-disabled": () => String(!store.app.updateInfo?.updateAvailable),
+                    disabled: () => !store.app.updateInfo?.updateAvailable,
                     title: () =>
                         store.app.updateInfo?.updateAvailable
                             ? "Update available"

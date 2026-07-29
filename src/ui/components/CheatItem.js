@@ -96,9 +96,17 @@ export const CheatItem = ({
                     getStateInfo(cheat.value).active ? "is-active" : ""
                 } ${feedback.val ? `feedback-${feedback.val}` : ""}`,
             role: "row",
+            tabindex: "0",
             "aria-selected": () => String(selected()),
+            "aria-label": `${entry.action || cheat.value}: ${cheat.message || "No description provided"}`,
             "data-cheat-row": entry.id,
             onclick: () => onSelect(entry),
+            onkeydown: (event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                onSelect(entry);
+            },
         },
         div(
             { class: "atlas-cheat-command-cell", role: "cell" },

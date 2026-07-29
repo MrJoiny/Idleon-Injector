@@ -33,13 +33,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 30px;
+    height: 32px;
     color: #65738b;
     background: transparent;
     border: 0;
     border-radius: 6px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
 }
 
@@ -63,11 +63,11 @@
     margin-left: auto;
     color: #8a96ab;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 12px;
 }
 
 .atlas-drawer-close {
-    width: 30px;
+    width: 32px;
     margin-left: 8px;
 }
 
@@ -101,7 +101,7 @@
     padding: 24px;
     color: #7f8aa3;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     text-align: center;
 }
 
@@ -112,7 +112,7 @@
     border: 1px solid rgba(142, 143, 255, 0.25);
     border-radius: 5px;
     font-family: inherit;
-    font-size: 10px;
+    font-size: 12px;
     cursor: pointer;
 }
 
@@ -126,10 +126,10 @@
 .atlas-monitor-row {
     display: grid;
     align-items: baseline;
-    min-height: 25px;
+    min-height: 32px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.035);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .atlas-activity-row {

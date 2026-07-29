@@ -102,15 +102,6 @@ export const Sidebar = () => {
                 { class: "atlas-sidebar-controls" },
                 button(
                     {
-                        class: "atlas-shortcuts-button",
-                        type: "button",
-                        title: "Shortcuts: 1-5 switch workspaces, / focuses search, Ctrl+S saves, Esc closes overlays",
-                        "aria-label": "Keyboard shortcuts",
-                    },
-                    Icons.Keyboard()
-                ),
-                button(
-                    {
                         class: "sidebar-toggle",
                         type: "button",
                         onclick: () => store.toggleSidebar(),

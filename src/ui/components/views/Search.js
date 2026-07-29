@@ -1,6 +1,7 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
+import { FAVORITE_KEYS } from "../../state/constants.js";
 import { detectQueryType } from "../../utils/index.js";
 import {
     NEW_SCAN_TYPES,
@@ -27,6 +28,8 @@ import {
 } from "./search/valueUtils.js";
 import {
     uniqueStrings,
+    loadLocalFavoriteKeys,
+    saveLocalFavoriteKeys,
     normalizeSavedEntry,
     loadSearchWorkspace,
     buildSearchWorkspace,
@@ -41,12 +44,14 @@ const { div, button, span } = van.tags;
 
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
+    const localFavoriteKeys = loadLocalFavoriteKeys();
     const inspectorOverlayQuery = window.matchMedia("(max-width: 1279px)");
     const keysOverlayQuery = window.matchMedia("(max-width: 1023px)");
     const initialSearchQuery = "";
 
     const ui = vanX.reactive({
         allKeys: [],
+        favoriteKeys: uniqueStrings(localFavoriteKeys ?? FAVORITE_KEYS),
         selectedKeys: uniqueStrings(restoredWorkspace.selectedKeys),
         searchQuery: initialSearchQuery,
         searchQuery2: "",
@@ -101,8 +106,11 @@ export const Search = () => {
         }
     });
 
+    const getValidFavorites = () => uniqueStrings(ui.favoriteKeys).filter((key) => ui.allKeys.includes(key));
+
     const getFilteredKeys = () => {
-        let keys = ui.allKeys;
+        const favorites = new Set(getValidFavorites());
+        let keys = ui.allKeys.filter((key) => !favorites.has(key));
         if (ui.allKeysFilter) {
             const filter = ui.allKeysFilter.toLowerCase();
             keys = keys.filter((k) => k.toLowerCase().includes(filter));
@@ -226,6 +234,10 @@ export const Search = () => {
     });
 
     van.derive(() => {
+        saveLocalFavoriteKeys(ui.favoriteKeys);
+    });
+
+    van.derive(() => {
         ui.savedResults;
         store.data.monitorValues;
         reconcileMonitorSubscriptions();
@@ -284,6 +296,7 @@ export const Search = () => {
     };
 
     const handlers = {
+        getValidFavorites,
         getFilteredKeys,
         areAllSelected,
         getFilteredResults,
@@ -346,6 +359,13 @@ export const Search = () => {
         selectKeys: (keys) => updateSelection(keys, true),
         clearSelection: () => {
             ui.selectedKeys = [];
+        },
+
+        isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
+        toggleFavoriteKey: (keyName) => {
+            ui.favoriteKeys = ui.favoriteKeys.includes(keyName)
+                ? ui.favoriteKeys.filter((key) => key !== keyName)
+                : [...ui.favoriteKeys, keyName];
         },
 
         handleResultsFilterInput: (e) => {
@@ -758,7 +778,7 @@ export const Search = () => {
         try {
             const allKeys = await store.fetchGgaKeys();
             ui.allKeys = allKeys;
-            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys);
+            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys, getValidFavorites());
         } catch (err) {
             ui.error = err.message || "Failed to load GGA keys";
         } finally {

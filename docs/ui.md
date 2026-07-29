@@ -6,7 +6,7 @@ How the VanJS-based UI is structured, syncs to the backend, and how to extend it
 
 - `src/ui/entry/`: HTML entry point and CSS imports.
 - `src/ui/components/`: UI building blocks and view containers.
-- `src/ui/components/views/`: Cheats, Config, Account, Search, Monitor, DevTools tabs.
+- `src/ui/components/views/`: Cheats, Config, Account, Search, and DevTools workspaces.
 - `src/ui/services/`: API and WebSocket clients.
 - `src/ui/state/`: Reactive store and constants.
 - `src/ui/styles/`: CSS partials (imported by `entry/style.css`).
@@ -27,7 +27,7 @@ van.add(document.body, App());
 
 `src/ui/entry/style.css` is the CSS entry. Add new partials in `src/ui/styles/` and import there.
 
-`src/ui/components/App.js` initializes heartbeat monitoring, keyboard shortcuts, and mounts the tab content.
+`src/ui/components/App.js` initializes heartbeat monitoring and keyboard shortcuts, mounts workspace content, and keeps global Toast, Activity, and update surfaces available.
 
 ## State management
 
@@ -35,16 +35,16 @@ van.add(document.body, App());
 
 State buckets:
 
-- `store.app`: UI state (active tab, loading state, heartbeat, toast, view mode).
+- `store.app`: UI state (active workspace, loading state, heartbeat, toast, drawers, and update state).
 - `store.data`: data from the backend (cheats, config, account options, cheat states, monitor values).
 
 Notable `store.app` UI flags include `configForcedPath` (focused config path from cheat gear icon) and `configDrawerOpen` (side drawer state while on Cheats).
 
 Persisted UI settings:
 
-- Sidebar collapsed state and cheat view mode (tabs/list) are stored in `localStorage`.
-- Favorites and recents are stored in `localStorage` via the Cheats view.
-- Config drawer open/closed state is session-only (not persisted).
+- Sidebar collapsed state is stored in `localStorage`.
+- Cheat favorites, recent commands, Search key favorites, selected Search keys, and saved Search results are stored in `localStorage`.
+- Config, Activity, Search key, and Search inspector drawers are session-only.
 
 Core flows:
 
@@ -83,20 +83,18 @@ WebSocket client auto-reconnects every 10s in all runtimes.
 
 ### Cheats view
 
-`src/ui/components/views/Cheats.js` is the main cheat explorer.
+`src/ui/components/views/AtlasCheats.js` is the main cheat explorer.
 
 Features:
 
-- Favorites and recents stored in `localStorage`.
-- Quick-access section surfaces favorites and recents for one-click execution.
-- Categories ordered by `CATEGORY_ORDER` in `src/ui/state/constants.js`.
-- `SearchBar` filters by command value or description.
-- Supports list and tab layouts (stored in `store.app.cheatsViewMode`).
-- Tabs view paginates with "Load more" (50 items per page).
-- List view uses lazy `<details>` categories, auto-expands on search.
-- Parameterized cheats render inline input ("Val"); missing values block execution.
-- Favorites support parameterized commands by storing full action string.
-- Includes a Config drawer toggle so Cheat commands stay visible while editing Config side-by-side.
+- Scope navigation covers all, active, favorite, recent, and category-filtered commands.
+- The command table filters by command, description, or category and paginates at 50 rows.
+- Row selection is available by pointer, Enter/Space, and table Arrow/J/K navigation.
+- Execution remains separate from selection; stateful commands use switches and one-shot commands use Run.
+- Parameterized commands collect their value in the inspector and block execution until it is supplied.
+- Favorites and recents preserve complete parameterized command strings in `localStorage`.
+- The inspector exposes command details and linked config without hiding the command table.
+- Linked config can also open the shared Config drawer beside the Cheats workspace.
 
 Useful helpers:
 
@@ -106,18 +104,19 @@ Useful helpers:
 
 ### Config view
 
-`src/ui/components/views/Config.js` edits `startupCheats`, `cheatConfig`, and `injectorConfig`.
+`src/ui/components/views/Config.js` edits `startupCheats`, `cheatConfig`, and `injectorConfig` through the shared draft in `views/config/configDraft.js`.
 
 Key behaviors:
 
-- Builds a local `draft` via `vanX.reactive` to avoid direct edits on live config.
+- Uses one reactive draft and separate RAM/disk baselines to avoid direct edits on live config.
 - Sub-tabs: Cheat Config, Startup Cheats, Injector Config.
 - Startup Cheats auto-show a separate `Value` input when a selected command has `needsParam`.
 - Supports category filtering and search on cheat config keys.
 - Uses `ConfigNode` to recursively render object trees.
 - Uses forced-path mode when coming from Cheats gear icon, with "SHOWING" banner.
 - Can run as a right-side drawer while Cheats stays open; close from drawer header or toggle button in Cheats.
-- Saves apply to RAM (`/api/config/update`) or persist to disk (`/api/config/save`).
+- Saves explicitly apply the cheat config to RAM (`/api/config/update`) or persist the full draft to disk (`/api/config/save`).
+- `Ctrl+S` invokes the active workspace's disk-save handler when one is registered.
 - Injector config shows "restart required" warning banner.
 
 Function values (like `(t) => t * 2`) are edited through `FunctionInput`:
@@ -148,25 +147,26 @@ Save behavior:
 Features:
 
 - **Key Whitelist**: Select top-level game attribute categories to search (e.g., `PlayerDATABASE`, `SkillLevels`).
-- **Favorites**: Quick-select common data categories.
+- **Favorites**: Curated defaults and user-edited key favorites persist independently; an intentionally empty list stays empty.
 - **Value Matching**:
     - Supports strings (case-insensitive contains).
     - Supports numbers (exact or rounding tolerance for floats).
     - Supports ranges (e.g., `100-200`).
     - Supports `true`, `false`, `null`, `undefined`.
-- **Path Copying**: Clicking a result copies the full Haxe access path to clipboard.
-- **Send to Monitor**: The eye icon subscribes the path in the Monitor view.
+- **Result inspector**: Selecting a result exposes its path, value editor, and monitor state.
+- **Path Copying**: Copy actions produce the full Haxe access path and immediate toast feedback.
+- **Saved monitors**: Saved results can subscribe or pause their live monitor in the Search inspector.
 - **Performance**: "Load more" pattern handles large result sets without freezing.
 
-### Monitor view
+### Activity drawer
 
-`src/ui/components/views/Monitor.js` tracks values over WebSocket and displays history.
+`src/ui/components/ActivityDrawer.js` keeps notifications and active value monitors available from every workspace.
 
 Features:
 
-- Add watchers by entering a path (e.g., `gga.GemsOwned`) or sending a Search result.
-- Shows current value and last 10 updates per watch.
-- Remove watchers with Unwatch action.
+- Activity lists the same success and error events shown immediately by Toast.
+- Monitors show current values and recent updates received over WebSocket.
+- Monitor subscriptions are owned by saved Search results and can be paused or removed there.
 
 ### DevTools view
 
@@ -180,10 +180,12 @@ Features:
 
 Common components in `src/ui/components/`:
 
-- `Sidebar`: tab navigation and quick actions.
+- `AtlasHeader` + `Sidebar`: global status, workspace navigation, and workspace-specific context.
+- `WorkspaceContext`: contextual navigation and the active workspace save contract.
+- `ActivityDrawer`: notification history and live monitor output.
 - `SearchBar`: shared filter input used by Cheats and Account.
 - `ConfigNode`: recursive config renderer with tooltips.
-- `Toast` + `Tooltip`: global UI helpers.
+- `Toast` + `Tooltip`: global immediate feedback helpers.
 
 Typical component pattern:
 

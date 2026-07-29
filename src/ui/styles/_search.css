@@ -125,9 +125,41 @@
     position: relative;
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
-    cursor: pointer;
     transition: background-color 0.15s ease;
     font-size: 0.875rem;
+}
+
+.key-checkbox-select {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 0.35rem;
+    cursor: pointer;
+}
+
+.key-favorite-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    color: #94a3b8;
+    background: transparent;
+}
+
+.key-favorite-btn:hover,
+.key-favorite-btn.active {
+    color: #d58a08;
+    background: #fff7df;
+}
+
+.key-favorite-btn .icon-base {
+    width: 14px;
+    height: 14px;
 }
 
 .key-checkbox:hover {
@@ -741,7 +773,7 @@
         margin-left: 0;
         width: 100%;
         justify-content: flex-end;
-        min-height: 28px;
+        min-height: 32px;
     }
 }
 
@@ -819,7 +851,7 @@
 
 #search-tab .section-title {
     color: #64748b;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.08em;
 }
@@ -859,12 +891,12 @@
 
 #search-tab .keys-group-header {
     color: #4f46e5;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
 }
 
 #search-tab .key-checkbox {
-    min-height: 30px;
+    min-height: 36px;
     border-radius: 6px;
     color: #334155;
     font-size: 0.75rem;
@@ -918,7 +950,7 @@
 #search-tab .result-path,
 #search-tab .result-value,
 #search-tab .result-equals {
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
 }
 
 #search-tab .result-value.type-number,
@@ -932,8 +964,8 @@
 }
 
 #search-tab .result-action-btn {
-    width: 26px;
-    min-height: 26px;
+    width: 32px;
+    min-height: 32px;
     border-radius: 5px;
     color: #64748b;
 }
@@ -978,7 +1010,7 @@
 
 #search-tab .saved-result-item .result-actions {
     width: 100%;
-    min-height: 28px;
+    min-height: 32px;
     justify-content: flex-end;
     margin-left: 0;
 }
@@ -998,7 +1030,7 @@
 .search-inspector-toggle,
 .search-keys-close,
 .search-inspector-close {
-    min-height: 30px;
+    min-height: 32px;
     border: 1px solid #e2e8f0;
     border-radius: 7px;
     background: #ffffff;
@@ -1026,12 +1058,12 @@
     background: #eef2ff;
     color: #4f46e5;
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.75rem;
 }
 
 .search-keys-close {
     display: none;
-    width: 30px;
+    width: 32px;
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -1069,7 +1101,7 @@
 
 .search-inspector-tab {
     display: inline-flex;
-    min-height: 30px;
+    min-height: 32px;
     align-items: center;
     gap: 6px;
     padding: 5px 9px;
@@ -1078,7 +1110,7 @@
     background: transparent;
     color: #64748b;
     cursor: pointer;
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
     font-weight: 600;
 }
 
@@ -1094,7 +1126,7 @@
 
 .search-inspector-close {
     display: none;
-    width: 30px;
+    width: 32px;
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -1141,7 +1173,7 @@
 .selected-result-kicker,
 .selected-result-label {
     color: #94a3b8;
-    font-size: 0.625rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.1em;
 }
@@ -1167,7 +1199,7 @@
     padding: 7px 0;
     border-bottom: 1px solid #f1f5f9;
     color: #64748b;
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
 }
 
 .selected-result-meta > div > span:last-child {
@@ -1207,7 +1239,7 @@
 
 .selected-result-history-empty {
     color: #94a3b8;
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
     line-height: 1.45;
 }
 
@@ -1228,7 +1260,7 @@
     background: #f1f5f9;
     color: #64748b;
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.75rem;
     white-space: nowrap;
 }
 
@@ -1251,7 +1283,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
 }
 
 .selected-result-actions .icon-base {
@@ -1417,7 +1449,7 @@
 
     #search-tab .search-result-item .result-actions {
         width: 100%;
-        min-height: 28px;
+        min-height: 32px;
         justify-content: flex-end;
     }
 }
