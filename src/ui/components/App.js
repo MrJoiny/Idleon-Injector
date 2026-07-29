@@ -3,8 +3,10 @@ import store from "../state/store.js";
 import { VIEWS } from "../state/constants.js";
 
 // Components
-import { Sidebar } from "./Sidebar.js";
-import { Toast } from "./Toast.js";
+import { Sidebar, SidebarBackdrop } from "./Sidebar.js";
+import { AtlasHeader } from "./AtlasHeader.js";
+import { ActivityDrawer } from "./ActivityDrawer.js";
+import { invokeWorkspaceSave } from "./WorkspaceContext.js";
 import { TooltipContainer } from "./Tooltip.js";
 import { UpdateModal } from "./UpdateModal.js";
 import { Cheats } from "./views/Cheats.js";
@@ -30,31 +32,34 @@ export const App = () => {
 
     // Global Keyboard Shortcuts
     document.addEventListener("keydown", (e) => {
-        const isInputFocused = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+        const activeElement = document.activeElement;
+        const isInputFocused =
+            ["INPUT", "TEXTAREA", "SELECT"].includes(activeElement?.tagName) || activeElement?.isContentEditable;
+
+        if (e.key === "Escape") {
+            store.closeMobileSidebar();
+            store.closeActivityDrawer();
+            return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+            e.preventDefault();
+            invokeWorkspaceSave(store.app.activeTab);
+            return;
+        }
 
         if (isInputFocused) return;
 
-        if (e.key === "1") store.app.activeTab = VIEWS.CHEATS.id;
-        if (e.key === "2") store.app.activeTab = VIEWS.ACCOUNT.id;
-        if (e.key === "3") store.app.activeTab = VIEWS.CONFIG.id;
-        if (e.key === "4") store.app.activeTab = VIEWS.SEARCH.id;
-        if (e.key === "5") store.app.activeTab = VIEWS.DEVTOOLS.id;
+        if (e.key === "1") store.setActiveTab(VIEWS.CHEATS.id);
+        if (e.key === "2") store.setActiveTab(VIEWS.ACCOUNT.id);
+        if (e.key === "3") store.setActiveTab(VIEWS.CONFIG.id);
+        if (e.key === "4") store.setActiveTab(VIEWS.SEARCH.id);
+        if (e.key === "5") store.setActiveTab(VIEWS.DEVTOOLS.id);
 
         if (e.key === "/") {
             e.preventDefault();
             const searchInput = document.querySelector(".tab-pane.active .global-search-input");
             searchInput?.focus();
-        }
-
-        if (e.ctrlKey && e.key === "s") {
-            e.preventDefault();
-            const isConfigActive =
-                store.app.activeTab === VIEWS.CONFIG.id ||
-                (store.app.activeTab === VIEWS.CHEATS.id && store.app.configDrawerOpen);
-
-            if (isConfigActive) {
-                document.getElementById("save-config-button")?.click();
-            }
         }
     });
 
@@ -94,10 +99,14 @@ export const App = () => {
 
     return div(
         { class: "app-layout" },
-        Sidebar(),
-        main({ class: "viewport" }, tabContent),
+        AtlasHeader(),
+        div(
+            { class: "atlas-body" },
+            Sidebar(),
+            main({ class: "viewport atlas-canvas" }, tabContent, ActivityDrawer()),
+            SidebarBackdrop()
+        ),
         UpdateModal(),
-        Toast(),
         TooltipContainer()
     );
 };

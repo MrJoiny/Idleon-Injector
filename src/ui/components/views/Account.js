@@ -9,6 +9,9 @@
  */
 
 import van from "../../vendor/van-1.6.0.js";
+import store from "../../state/store.js";
+import { VIEWS } from "../../state/constants.js";
+import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
 import { CardsTab } from "./account/CardsTab.js";
 import { TasksTab } from "./account/TasksTab.js";
@@ -44,28 +47,39 @@ const ACCOUNT_TABS = [
 
 export const Account = () => {
     const activeTab = van.state(ACCOUNT_TABS[0].id);
-
-    return div(
-        { id: "options-account-tab", class: "tab-pane account-tab-layout" },
-
-        // Sub-navigation
+    const workspaceContext = div(
+        { class: "account-workspace-context", role: "navigation", "aria-label": "Account sections" },
+        div({ class: "atlas-context-heading" }, "Account sections"),
         renderTabNav({
             tabs: ACCOUNT_TABS,
             activeId: activeTab,
-            navClass: "account-sub-nav",
+            navClass: "account-root-nav",
             buttonClass: (tab) => {
                 if (tab.isWorld) return `account-top-tab-btn world-tab-btn w${tab.worldNum}-world-tab`;
                 const compactClass = tab.id === "tasks" || tab.id === "cards" ? "account-compact-tab-btn" : "";
                 return `account-top-tab-btn account-options-btn ${compactClass}`;
             },
-            renderLabel: (tab) => (tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label),
-            getButtonProps: (tab) => ({ title: tab.label }),
-        }),
+            renderLabel: (tab) =>
+                tab.isWorld
+                    ? span(
+                          { class: "account-tree-label" },
+                          span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`),
+                          span({ class: "account-tree-label__text" }, tab.label)
+                      )
+                    : span({ class: "account-tree-label__text" }, tab.label),
+            getButtonProps: (tab) => ({ title: tab.label, "aria-label": tab.label }),
+            onSelect: () => store.closeMobileSidebar(),
+        })
+    );
+    registerWorkspaceContext(VIEWS.ACCOUNT.id, () => workspaceContext);
 
-        // Tab panes — lazy-mount: component is created (and its data fetched)
-        // only when the user first activates that tab. The div stays in the DOM
-        // so CSS visibility toggling keeps state alive after mount.
+    return div(
+        { id: "options-account-tab", class: "tab-pane account-tab-layout" },
+
         div(
+            // Tab panes — lazy-mount: component is created (and its data fetched)
+            // only when the user first activates that tab. The div stays in the DOM
+            // so CSS visibility toggling keeps state alive after mount.
             { class: "account-sub-tab-content" },
             ...renderLazyPanes({
                 tabs: ACCOUNT_TABS,

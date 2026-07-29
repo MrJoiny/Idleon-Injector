@@ -4,23 +4,102 @@
  */
 
 .devtools-popout-title {
-    font-size: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
+    color: #0f172a;
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+#devtools-tab.devtools-workspace {
+    padding: 0;
+    background: #ffffff;
+}
+
+#devtools-tab.devtools-workspace .terminal-wrapper {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.devtools-workspace #devtools-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #ffffff;
+}
+
+.devtools-popout-card {
+    width: min(520px, calc(100% - 32px));
+    margin: auto;
+    padding: 28px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    color: #64748b;
+    font-family: var(--font-sans, "Inter", "Segoe UI", sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.devtools-popout-kicker {
+    margin-bottom: 5px;
+    color: #6366f1;
+    font-size: 0.625rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
 }
 
 .devtools-actions {
-    margin: 20px auto 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 20px auto 0;
+}
+
+.devtools-actions button {
+    min-height: 36px;
+    border-radius: 8px;
+    font-size: 0.75rem;
 }
 
 .devtools-error {
-    color: var(--c-danger);
-    margin-top: 10px;
+    margin-top: 12px;
+    color: #e11d48;
 }
 
 #devtools-message.is-error {
-    color: var(--c-danger);
+    color: #e11d48;
+}
+
+.devtools-workspace #devtools-message {
+    display: grid;
+    min-height: 100%;
+    place-items: center;
+    padding: 24px;
+    background: #f8fafc;
+    color: #64748b;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.devtools-workspace button:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+    .devtools-popout-card {
+        padding: 20px;
+    }
+
+    .devtools-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

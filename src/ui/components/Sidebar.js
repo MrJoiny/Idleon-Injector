@@ -1,168 +1,135 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
-import { VIEWS, IS_ELECTRON } from "../state/constants.js";
+import { VIEWS, VIEW_ORDER, IS_ELECTRON } from "../state/constants.js";
 import { Icons } from "../assets/icons.js";
-import { withTooltip } from "./Tooltip.js";
-import { NotificationHistory } from "./NotificationHistory.js";
+import { WorkspaceContextSlot } from "./WorkspaceContext.js";
 
-const { nav, div, button, span, a } = van.tags;
+const { aside, nav, div, button, span, a } = van.tags;
 
-const SHORTCUTS_TOOLTIP_TEXT =
-    "Keyboard shortcuts:\n" +
-    "1 - Cheats\n" +
-    "2 - Account Options\n" +
-    "3 - Config\n" +
-    "4 - Search\n" +
-    "5 - Chromedebug\n" +
-    "/ - Focus search\n" +
-    "Ctrl+S - Save config (Config tab)\n";
+const viewIcons = {
+    [VIEWS.CHEATS.id]: Icons.Cheats,
+    [VIEWS.ACCOUNT.id]: Icons.Account,
+    [VIEWS.CONFIG.id]: Icons.Config,
+    [VIEWS.SEARCH.id]: Icons.Search,
+    [VIEWS.DEVTOOLS.id]: Icons.DevTools,
+};
 
-const ActiveCheatList = () => {
-    return div({ class: "active-cheats" }, div({ class: "active-cheats-header" }, "ACTIVE CHEATS"), () => {
-        const activeCheats = store.getActiveCheats();
-
-        if (activeCheats.length === 0) {
-            return div({ class: "active-cheats-list" }, span({ class: "no-active-cheats" }, "None"));
-        }
-
-        return div(
-            { class: "active-cheats-list" },
-            ...activeCheats.map((cheat) =>
-                span(
-                    { class: "active-cheat-item", onclick: () => store.executeCheat(cheat, cheat) },
-                    span({ class: "active-cheat-text" }, cheat)
-                )
-            )
-        );
-    });
+const DefaultWorkspaceContext = (viewId) => {
+    const view = VIEW_ORDER.find((candidate) => candidate.id === viewId);
+    return div(
+        { class: "atlas-context-placeholder" },
+        div({ class: "atlas-context-heading" }, "Context"),
+        div(
+            { class: "atlas-context-empty" },
+            `${view?.atlasLabel || view?.sidebarLabel || "Workspace"} controls are available in the main view.`
+        )
+    );
 };
 
 export const Sidebar = () => {
-    const hasUpdate = () => store.app.updateInfo?.updateAvailable;
+    const compactQuery = window.matchMedia("(max-width: 1023px)");
+    const responsiveRailQuery = window.matchMedia("(min-width: 1024px) and (max-width: 1280px)");
+    const compactLayout = van.state(compactQuery.matches);
+    const responsiveRail = van.state(responsiveRailQuery.matches);
 
-    const NavBtn = (viewConfig, Icon) =>
-        withTooltip(
-            button(
-                {
-                    class: () => `tab-button ${store.app.activeTab === viewConfig.id ? "active" : ""}`,
-                    onclick: () => (store.app.activeTab = viewConfig.id),
-                },
-                Icon(),
-                span({ class: "tab-label" }, viewConfig.sidebarLabel)
-            ),
-            viewConfig.sidebarLabel,
-            "right",
-            () => store.app.sidebarCollapsed
-        );
+    compactQuery.addEventListener("change", (event) => {
+        compactLayout.val = event.matches;
+        if (!event.matches) store.closeMobileSidebar();
+    });
 
-    return nav(
+    responsiveRailQuery.addEventListener("change", (event) => {
+        responsiveRail.val = event.matches;
+    });
+
+    van.derive(() => {
+        if (!compactLayout.val || !store.app.sidebarMobileOpen) return;
+        requestAnimationFrame(() => document.querySelector("#atlas-sidebar .atlas-nav-button.active")?.focus());
+    });
+
+    return aside(
         {
-            class: () => `sidebar ${store.app.sidebarCollapsed ? "sidebar-collapsed" : ""}`,
+            class: () =>
+                `sidebar atlas-sidebar ${store.app.sidebarCollapsed ? "sidebar-collapsed" : ""} ${
+                    responsiveRail.val && ![VIEWS.CHEATS.id, VIEWS.ACCOUNT.id].includes(store.app.activeTab)
+                        ? "is-responsive-rail"
+                        : ""
+                } ${store.app.sidebarMobileOpen ? "is-mobile-open" : ""}`,
+            id: "atlas-sidebar",
+            "aria-label": "Workspace navigation",
+            "aria-hidden": () => String(compactLayout.val && !store.app.sidebarMobileOpen),
+            inert: () => compactLayout.val && !store.app.sidebarMobileOpen,
         },
-        div(
-            { class: "brand" },
-            div(
-                { class: "brand-main" },
-                div({ class: "brand-logo" }, Icons.Logo()),
-                div(
-                    { class: "brand-text" },
-                    span("IDLEON"),
-                    span({ class: "highlight" }, "INJECTOR"),
-                    div(
-                        {
-                            class: () =>
-                                `brand-version ${store.app.appInfo?.version ? "" : "brand-version-hidden"}`.trim(),
-                        },
-                        button(
-                            {
-                                type: "button",
-                                class: () => `brand-version-button ${hasUpdate() ? "has-update" : ""}`,
-                                onclick: () => store.openUpdateModal(),
-                                "aria-label": () =>
-                                    hasUpdate()
-                                        ? `Update available: ${store.app.updateInfo.latestVersion}`
-                                        : "Current version",
-                            },
-                            span(() => (store.app.appInfo?.version ? `v${store.app.appInfo.version}` : "")),
-                            span({
-                                class: () => `update-ready-dot ${hasUpdate() ? "" : "is-hidden"}`,
-                                "aria-hidden": "true",
-                            })
-                        )
-                    )
-                )
-            ),
-            NotificationHistory()
-        ),
-        div(
-            { class: "nav-menu" },
-            NavBtn(VIEWS.CHEATS, Icons.Cheats),
-            NavBtn(VIEWS.ACCOUNT, Icons.Account),
-            NavBtn(VIEWS.CONFIG, Icons.Config),
-            NavBtn(VIEWS.SEARCH, Icons.Search),
-            NavBtn(VIEWS.DEVTOOLS, Icons.DevTools),
-            withTooltip(
-                a(
+        div({ class: "atlas-sidebar-section-label" }, "Workspaces"),
+        nav(
+            { class: "atlas-workspace-nav", "aria-label": "Workspaces" },
+            ...VIEW_ORDER.map((view, index) => {
+                const Icon = viewIcons[view.id];
+                return button(
                     {
-                        class: "tab-button github-link",
-                        href: "https://github.com/MrJoiny/Idleon-Injector",
-                        target: "_blank",
-                        onclick: (e) => {
-                            if (IS_ELECTRON) {
-                                e.preventDefault();
-                                store.openExternalUrl("https://github.com/MrJoiny/Idleon-Injector");
-                            }
-                        },
+                        class: () => `atlas-nav-button ${store.app.activeTab === view.id ? "active" : ""}`,
+                        type: "button",
+                        onclick: () => store.setActiveTab(view.id),
+                        "aria-current": () => (store.app.activeTab === view.id ? "page" : "false"),
+                        title: `${view.atlasLabel || view.sidebarLabel} (${index + 1})`,
                     },
-                    Icons.GitHub(),
-                    span({ class: "tab-label" }, "GitHub")
-                ),
-                "Official GitHub Repository",
-                "right",
-                () => store.app.sidebarCollapsed
-            )
+                    Icon(),
+                    span({ class: "tab-label" }, view.atlasLabel || view.sidebarLabel),
+                    span({ class: "atlas-nav-shortcut", "aria-hidden": "true" }, index + 1)
+                );
+            })
         ),
-        ActiveCheatList(),
+        div({ class: "atlas-sidebar-divider" }),
+        WorkspaceContextSlot({ fallback: DefaultWorkspaceContext }),
         div(
-            { class: "system-status" },
-            div({
-                class: () => {
-                    const online = IS_ELECTRON || store.app.heartbeat;
-                    return `status-dot ${online ? "is-online" : "is-offline"}`;
-                },
-            }),
-            span(
+            { class: "atlas-sidebar-footer" },
+            a(
                 {
-                    id: "system-status-text",
-                    class: () => {
-                        const online = IS_ELECTRON || store.app.heartbeat;
-                        return online ? "is-online" : "is-offline";
+                    class: "atlas-nav-button atlas-github-link",
+                    href: "https://github.com/MrJoiny/Idleon-Injector",
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    onclick: (event) => {
+                        if (!IS_ELECTRON) return;
+                        event.preventDefault();
+                        store.openExternalUrl("https://github.com/MrJoiny/Idleon-Injector");
                     },
+                    title: "Open GitHub repository",
                 },
-                () => (IS_ELECTRON || store.app.heartbeat ? "SYSTEM ONLINE" : "CONNECTION LOST")
+                Icons.GitHub(),
+                span({ class: "tab-label" }, "GitHub")
             ),
-
-            withTooltip(
+            div(
+                { class: "atlas-sidebar-controls" },
                 button(
                     {
+                        class: "atlas-shortcuts-button",
                         type: "button",
-                        class: "system-shortcuts-button",
+                        title: "Shortcuts: 1-5 switch workspaces, / focuses search, Ctrl+S saves, Esc closes overlays",
                         "aria-label": "Keyboard shortcuts",
                     },
                     Icons.Keyboard()
                 ),
-                SHORTCUTS_TOOLTIP_TEXT,
-                "right",
-                () => !store.app.sidebarCollapsed
+                button(
+                    {
+                        class: "sidebar-toggle",
+                        type: "button",
+                        onclick: () => store.toggleSidebar(),
+                        "aria-label": () => (store.app.sidebarCollapsed ? "Expand navigation" : "Collapse navigation"),
+                        title: () => (store.app.sidebarCollapsed ? "Expand navigation" : "Collapse navigation"),
+                    },
+                    () => (store.app.sidebarCollapsed ? Icons.ChevronRight() : Icons.ChevronLeft()),
+                    span({ class: "tab-label" }, "Collapse")
+                )
             )
-        ),
-
-        withTooltip(
-            button({ class: "sidebar-toggle", onclick: () => store.toggleSidebar() }, () =>
-                store.app.sidebarCollapsed ? Icons.ChevronRight() : Icons.ChevronLeft()
-            ),
-            () => (store.app.sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"),
-            "right"
         )
     );
 };
+
+export const SidebarBackdrop = () =>
+    button({
+        class: () => `atlas-sidebar-backdrop ${store.app.sidebarMobileOpen ? "is-visible" : ""}`,
+        type: "button",
+        onclick: () => store.closeMobileSidebar(),
+        "aria-label": "Close workspace navigation",
+        tabindex: () => (store.app.sidebarMobileOpen ? "0" : "-1"),
+    });

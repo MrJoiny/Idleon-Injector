@@ -38,3 +38,7 @@
 @import url("../styles/function-input.css");
 @import url("../styles/empty-state.css");
 @import url("../styles/_search.css");
+
+/* ATLAS APPLICATION SHELL */
+@import url("../styles/_atlas-shell.css");
+@import url("../styles/_activity-drawer.css");

@@ -43,6 +43,14 @@ function setupApiRoutes(app, context, client, config) {
     let cachedUpdateInfo = null;
     let updateCheckRequest = null;
 
+    const getCurrentConfigPayload = () => ({
+        startupCheats: [...startupCheats],
+        cheatConfig: prepareConfigForJson(cheatConfig),
+        injectorConfig: prepareConfigForJson(injectorConfig),
+    });
+    let ramConfigBaseline = getCurrentConfigPayload();
+    let diskConfigBaseline = getCurrentConfigPayload();
+
     const getUpdateInfo = (force = false) => {
         if (!force && cachedUpdateInfo) return cachedUpdateInfo;
         if (!force && updateCheckRequest) return updateCheckRequest;
@@ -231,10 +239,14 @@ function setupApiRoutes(app, context, client, config) {
             }
 
             const fullConfigResponse = {
-                startupCheats: startupCheats,
+                startupCheats: [...startupCheats],
                 cheatConfig: serializableCheatConfig,
-                injectorConfig: injectorConfig,
+                injectorConfig: prepareConfigForJson(injectorConfig),
                 defaultConfig: serializableDefaultConfig,
+                configBaselines: {
+                    ram: ramConfigBaseline,
+                    disk: diskConfigBaseline,
+                },
             };
             res.json(fullConfigResponse);
         } catch (error) {
@@ -253,24 +265,6 @@ function setupApiRoutes(app, context, client, config) {
         }
 
         try {
-            if (receivedFullConfig.cheatConfig) {
-                const receivedCheatConfig = receivedFullConfig.cheatConfig;
-                const parsedCheatConfig = parseConfigFromJson(receivedCheatConfig);
-
-                deepMerge(cheatConfig, parsedCheatConfig);
-            }
-
-            if (Array.isArray(receivedFullConfig.startupCheats)) {
-                startupCheats.length = 0;
-                startupCheats.push(...receivedFullConfig.startupCheats);
-                log.debug("Updated server-side startupCheats");
-            }
-
-            if (receivedFullConfig.injectorConfig) {
-                deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                log.debug("Updated server-side injectorConfig");
-            }
-
             const parsedCheatConfig = receivedFullConfig.cheatConfig
                 ? parseConfigFromJson(receivedFullConfig.cheatConfig)
                 : cheatConfig;
@@ -278,7 +272,8 @@ function setupApiRoutes(app, context, client, config) {
             if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
                 log.error("Cheat context not found in iframe. Cannot update config in game");
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game (context lost)",
+                    message: "Configuration was not applied because the game context was lost",
+                    appliedToGame: false,
                 });
             }
 
@@ -304,21 +299,33 @@ function setupApiRoutes(app, context, client, config) {
                 log.error("Error updating config in game:", updateResult.exceptionDetails.text);
                 gameUpdateDetails = `Failed to apply in game: ${updateResult.exceptionDetails.text}`;
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game",
+                    message: "Configuration was not applied in game",
                     details: gameUpdateDetails,
+                    appliedToGame: false,
                 });
             } else {
                 gameUpdateDetails = updateResult.result.value;
                 log.debug(`In-game config update result: ${gameUpdateDetails}`);
                 if (gameUpdateDetails.startsWith("Error:")) {
                     return res.status(200).json({
-                        message: "Configuration updated on server, but failed to apply in game",
+                        message: "Configuration was not applied in game",
                         details: gameUpdateDetails,
+                        appliedToGame: false,
                     });
                 }
             }
 
-            res.json({ message: "Configuration updated successfully", details: gameUpdateDetails });
+            deepMerge(cheatConfig, parsedCheatConfig);
+            ramConfigBaseline = {
+                ...ramConfigBaseline,
+                cheatConfig: prepareConfigForJson(cheatConfig),
+            };
+            res.json({
+                message: "Live cheat configuration updated successfully",
+                details: gameUpdateDetails,
+                appliedToGame: true,
+                ramBaseline: ramConfigBaseline,
+            });
         } catch (apiError) {
             log.error("Error in /api/config/update:", apiError);
             res.status(500).json({
@@ -415,6 +422,8 @@ exports.injectorConfig = ${new_injectorConfig};
             }
             if (parsedUiCheatConfig) deepMerge(cheatConfig, parsedUiCheatConfig);
             if (filteredInjectorConfig) deepMerge(injectorConfig, filteredInjectorConfig);
+
+            diskConfigBaseline = getCurrentConfigPayload();
 
             res.json({ message: "Configuration successfully saved to config.custom.js" });
         } catch (apiError) {

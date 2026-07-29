@@ -7,17 +7,20 @@
 .tooltip-fixed {
     position: fixed;
     z-index: 10000;
-    padding: 6px 10px;
-    background: var(--c-panel);
-    border: 1px solid var(--c-accent);
-    color: var(--c-text-main);
-    font-size: 0.875rem;
-    font-family: var(--font-mono);
+    max-width: min(320px, calc(100vw - 16px));
+    padding: 8px 10px;
+    border: 1px solid rgba(20, 33, 61, 0.14);
+    border-radius: 7px;
+    background: #14213d;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-sans, "Inter", "Segoe UI", sans-serif);
+    letter-spacing: 0.01em;
     white-space: pre-wrap;
-    max-width: 300px;
-    line-height: 1.35;
+    line-height: 1.4;
     text-align: left;
-    box-shadow: 0 4px 12px var(--c-black-50);
+    box-shadow: 0 10px 24px rgba(20, 33, 61, 0.2);
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
@@ -48,4 +51,33 @@
 
 .tooltip-fixed.tooltip-right {
     transform: translateY(-50%);
+}
+
+.tooltip-fixed::after {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #14213d;
+    content: "";
+    transform: rotate(45deg);
+}
+
+.tooltip-fixed.tooltip-top::after {
+    bottom: -5px;
+    left: calc(50% - 4px);
+}
+
+.tooltip-fixed.tooltip-bottom::after {
+    top: -5px;
+    left: calc(50% - 4px);
+}
+
+.tooltip-fixed.tooltip-left::after {
+    top: calc(50% - 4px);
+    right: -5px;
+}
+
+.tooltip-fixed.tooltip-right::after {
+    top: calc(50% - 4px);
+    left: -5px;
 }

@@ -38,9 +38,12 @@ const appState = vanX.reactive({
     toast: { message: "", type: "", id: 0 },
     notificationHistory: [],
     config: null,
+    configDirty: false,
+    connectionTransport: "disconnected",
+    activityDrawer: null,
+    sidebarMobileOpen: false,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
     configForcedPath: null,
-    cheatsViewMode: localStorage.getItem("cheatsViewMode") || "tabs",
 });
 
 const dataState = vanX.reactive({
@@ -53,7 +56,7 @@ const dataState = vanX.reactive({
     monitorValues: {},
 });
 
-const MAX_NOTIFICATION_HISTORY = 10;
+const MAX_NOTIFICATION_HISTORY = 100;
 let appInfoRequest = null;
 
 const Actions = {
@@ -96,12 +99,14 @@ const SystemService = {
             // Check WebSocket connection first
             if (getConnectionStatus()) {
                 appState.heartbeat = true;
+                appState.connectionTransport = "websocket";
                 return;
             }
 
             // Fall back to HTTP heartbeat check
             const alive = await API.checkHeartbeat();
             appState.heartbeat = !!alive;
+            appState.connectionTransport = alive ? "http" : "disconnected";
         };
         check();
         setInterval(check, 10000);
@@ -422,9 +427,33 @@ const store = {
         localStorage.setItem("sidebarCollapsed", appState.sidebarCollapsed);
     },
 
-    toggleCheatsViewMode: () => {
-        appState.cheatsViewMode = appState.cheatsViewMode === "list" ? "tabs" : "list";
-        localStorage.setItem("cheatsViewMode", appState.cheatsViewMode);
+    setActiveTab: (viewId) => {
+        appState.activeTab = viewId;
+        appState.sidebarMobileOpen = false;
+    },
+
+    toggleMobileSidebar: () => {
+        appState.sidebarMobileOpen = !appState.sidebarMobileOpen;
+    },
+
+    closeMobileSidebar: () => {
+        appState.sidebarMobileOpen = false;
+    },
+
+    openActivityDrawer: (drawer) => {
+        appState.activityDrawer = drawer;
+    },
+
+    toggleActivityDrawer: (drawer) => {
+        appState.activityDrawer = appState.activityDrawer === drawer ? null : drawer;
+    },
+
+    closeActivityDrawer: () => {
+        appState.activityDrawer = null;
+    },
+
+    setConfigDirty: (isDirty) => {
+        appState.configDirty = !!isDirty;
     },
 
     openExternalUrl: async (url) => {

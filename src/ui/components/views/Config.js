@@ -1,13 +1,21 @@
 import van from "../../vendor/van-1.6.0.js";
-import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
+import { VIEWS } from "../../state/constants.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { ConfigNode } from "../config/ConfigNode.js";
 import { StartupCheats, AddCheatSearchBar } from "../config/StartupCheats.js";
 import { SearchBar } from "../SearchBar.js";
 import { Icons } from "../../assets/icons.js";
-import { withTooltip } from "../Tooltip.js";
+import { registerWorkspaceSaveHandler } from "../WorkspaceContext.js";
+import { ConfigActions } from "./config/ConfigActions.js";
+import {
+    buildConfigPathTemplate,
+    configDraftReady,
+    getConfigDraft,
+    getConfigPathData,
+    saveConfigDraft,
+} from "./config/configDraft.js";
 
 const { div, button, select, option, label, span } = van.tags;
 
@@ -16,20 +24,10 @@ export const Config = () => {
     const categoryFilter = van.state("all");
     const configSearchTerm = van.state("");
     const isAddingCheat = van.state(false);
-    const draftReady = van.state(false);
-
-    // Draft will be a vanX.reactive object, but we store it in a regular variable to avoid reactivity cascade
-    let draft = null;
     let addCheatFn = null;
 
-    if (!store.app.config) store.loadConfig();
-
-    van.derive(() => {
-        if (store.app.config && !draft) {
-            draft = vanX.reactive(JSON.parse(JSON.stringify(store.app.config)));
-            draftReady.val = true;
-        }
-    });
+    getConfigDraft();
+    registerWorkspaceSaveHandler(VIEWS.CONFIG.id, () => saveConfigDraft("disk"));
 
     // Handle forced config path navigation from Cheats tab
     van.derive(() => {
@@ -67,15 +65,6 @@ export const Config = () => {
         store.clearForcedConfigPath();
     };
 
-    const save = (isPersistent) => {
-        if (!draft) return;
-
-        const toSave = JSON.parse(JSON.stringify(draft));
-        delete toSave.defaultConfig;
-
-        store.saveConfig(toSave, isPersistent);
-    };
-
     const handleAddCheat = (val) => {
         if (addCheatFn) {
             addCheatFn(val);
@@ -83,46 +72,8 @@ export const Config = () => {
         }
     };
 
-    /**
-     * Wraps only the first path level, keeping reactive references intact for edits.
-     * @param {object} root - Reactive config object
-     * @param {string[]} pathParts - Path segments
-     * @returns {object}
-     */
-    const getForcedPathData = (root, pathParts) => {
-        if (!pathParts?.length || !root) return root;
-        const first = pathParts[0];
-        return first in root ? { [first]: root[first] } : {};
-    };
-
-    /**
-     * Builds a filtered template with only the specified path for display.
-     * @param {object} root - Template object
-     * @param {string[]} pathParts - Path segments (e.g., ["w1", "owl"])
-     * @returns {object} Filtered structure (e.g., { w1: { owl: {...} } })
-     */
-    const buildForcedPathTemplate = (root, pathParts) => {
-        if (!pathParts?.length || !root) return root;
-
-        let current = root;
-        const result = {};
-        let node = result;
-
-        for (let i = 0; i < pathParts.length; i++) {
-            const part = pathParts[i];
-            if (!(part in current)) return {};
-
-            const isLast = i === pathParts.length - 1;
-            node[part] = isLast ? current[part] : {};
-            node = node[part];
-            current = current[part];
-        }
-
-        return result;
-    };
-
     const buildContent = () => {
-        const config = draft;
+        const config = getConfigDraft();
 
         const startupCheatsResult = StartupCheats(config.startupCheats);
         addCheatFn = startupCheatsResult.addItem;
@@ -130,43 +81,55 @@ export const Config = () => {
         const root = config.cheatConfig || {};
         const rootTemplate = store.app.config.cheatConfig || {};
 
-        const cheatConfigNode = div({ id: "cheatconfig-options" }, () => {
+        const cheatConfigNode = div({ id: "cheatconfig-options" });
+        let renderRequest = 0;
+
+        van.derive(() => {
             const forcedPath = store.app.configForcedPath;
             const filter = categoryFilter.val;
             const search = configSearchTerm.val;
+            const requestedPath = forcedPath?.length ? [...forcedPath] : null;
+            const request = ++renderRequest;
 
-            let data, template;
+            queueMicrotask(() => {
+                if (request !== renderRequest) return;
 
-            if (forcedPath && forcedPath.length > 0) {
-                // Forced path mode: show only the specific config entry
-                data = getForcedPathData(root, forcedPath);
-                template = buildForcedPathTemplate(rootTemplate, forcedPath);
-            } else {
-                // Normal filtering mode
-                data = filter === "all" ? root : { [filter]: root[filter] };
-                template = filter === "all" ? rootTemplate : { [filter]: rootTemplate[filter] };
-            }
+                let data, template;
 
-            const nodes = ConfigNode({
-                data,
-                path: "cheatConfig",
-                template,
-                searchTerm: forcedPath ? "" : search, // Ignore search term when in forced path mode
-                forceOpen: !!forcedPath,
-            });
+                if (requestedPath?.length) {
+                    // Forced path mode: show only the specific config entry
+                    data = getConfigPathData(root, requestedPath);
+                    template = buildConfigPathTemplate(rootTemplate, requestedPath);
+                } else {
+                    // Normal filtering mode
+                    data = filter === "all" ? root : { [filter]: root[filter] };
+                    template = filter === "all" ? rootTemplate : { [filter]: rootTemplate[filter] };
+                }
 
-            const hasMatches = nodes.some((node) => node !== null);
-            if ((search || forcedPath) && !hasMatches) {
-                return EmptyState({
-                    icon: Icons.SearchX(),
-                    title: "NO CONFIG FOUND",
-                    subtitle: forcedPath
-                        ? `Config path "${forcedPath.join(" ")}" not found`
-                        : "Try a different search term or category",
+                const nodes = ConfigNode({
+                    data,
+                    path: "cheatConfig",
+                    template,
+                    searchTerm: requestedPath ? "" : search, // Ignore search term when in forced path mode
+                    forceOpen: !!requestedPath,
                 });
-            }
 
-            return div(nodes);
+                const hasMatches = nodes.some((node) => node !== null);
+                if ((search || requestedPath) && !hasMatches) {
+                    cheatConfigNode.replaceChildren(
+                        EmptyState({
+                            icon: Icons.SearchX(),
+                            title: "NO CONFIG FOUND",
+                            subtitle: requestedPath
+                                ? `Config path "${requestedPath.join(" ")}" not found`
+                                : "Try a different search term or category",
+                        })
+                    );
+                    return;
+                }
+
+                cheatConfigNode.replaceChildren(div(nodes));
+            });
         });
 
         const injectorConfigNode = div(
@@ -300,15 +263,31 @@ export const Config = () => {
         );
     };
 
+    const contentHost = div({ style: "display: contents" }, Loader({ text: "LOADING CONFIG" }));
+    let contentNode = null;
+    let contentRequest = 0;
+
+    van.derive(() => {
+        const isReady = configDraftReady.val;
+        const request = ++contentRequest;
+
+        queueMicrotask(() => {
+            if (request !== contentRequest) return;
+
+            if (!isReady) {
+                contentHost.replaceChildren(Loader({ text: "LOADING CONFIG" }));
+                return;
+            }
+
+            contentNode ||= buildContent();
+            contentHost.replaceChildren(contentNode);
+        });
+    });
+
     return div(
         { id: "config-tab", class: "tab-pane config-layout" },
 
-        () => {
-            if (store.app.isLoading || !draftReady.val) {
-                return Loader({ text: "LOADING CONFIG" });
-            }
-            return buildContent();
-        },
+        contentHost,
 
         div(
             { class: "action-bar" },
@@ -336,24 +315,13 @@ export const Config = () => {
                         ? AddCheatSearchBar(
                               handleAddCheat,
                               () => (isAddingCheat.val = false),
-                              draft?.startupCheats || []
+                              getConfigDraft()?.startupCheats || []
                           )
                         : div()
             ),
 
             div({ class: () => `spacer ${activeSubTab.val === "startupcheats" && isAddingCheat.val ? "hidden" : ""}` }),
-
-            withTooltip(
-                button(
-                    { id: "update-config-button", class: "btn-secondary", onclick: () => save(false) },
-                    "APPLY (RAM)"
-                ),
-                "Apply to session only (lost on restart)"
-            ),
-            withTooltip(
-                button({ id: "save-config-button", class: "btn-primary", onclick: () => save(true) }, "SAVE (DISK)"),
-                "Save permanently to config file"
-            )
+            ConfigActions({ withIds: true })
         )
     );
 };

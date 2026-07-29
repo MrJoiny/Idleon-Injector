@@ -1,120 +1,148 @@
 import van from "../vendor/van-1.6.0.js";
-import store from "../state/store.js";
 import { Icons } from "../assets/icons.js";
 
-const { div, input, button, span } = van.tags;
+const { div, button, span } = van.tags;
 
 /**
- * Individual cheat button with optional parameter input and favorite toggle.
- * @param {object} cheat - Cheat data object with value, message, needsParam, category
- * @returns {Element} Cheat item DOM element
+ * Stable Atlas table row for one real cheat command or saved parameterized action.
+ * Row selection is intentionally separate from execution.
+ * @param {object} props
+ * @returns {Element}
  */
-export const CheatItem = (cheat) => {
-    const needsValue = cheat.needsParam === true;
-    const hasConfig = store.hasConfigEntry(cheat.value);
+export const CheatItem = ({
+    entry,
+    selected,
+    getStateInfo,
+    isFavorite,
+    onSelect,
+    onExecute,
+    onFavorite,
+    onOpenConfig,
+    canExecute,
+}) => {
+    const pending = van.state(false);
+    const feedback = van.state(null);
+    const cheat = entry.cheat;
+    const needsParameter = cheat.needsParam === true;
 
-    // Use direct DOM reference instead of van.state to save thousands of listeners
-    const inputRef = needsValue
-        ? input({
-              type: "text",
-              class: "cheat-input",
-              placeholder: "Val",
-          })
-        : null;
+    const flash = (value) => {
+        feedback.val = value;
+        setTimeout(() => {
+            if (feedback.val === value) feedback.val = null;
+        }, 1200);
+    };
 
-    const getInputValue = () => (inputRef ? inputRef.value.trim() : "");
+    const execute = async () => {
+        if (pending.val || !canExecute()) return;
 
-    const feedbackState = van.state(null);
-
-    const handleExecute = async () => {
-        let finalAction = cheat.value;
-        if (needsValue) {
-            const val = getInputValue();
-            if (!val) {
-                store.notify(`Value required for '${cheat.value}'`, "error");
-                feedbackState.val = "error";
-                setTimeout(() => (feedbackState.val = null), 1000);
-                return;
-            }
-            finalAction = `${cheat.value} ${val}`;
+        if (needsParameter && !entry.parameter) {
+            onSelect(entry, { focusParameter: true });
+            return;
         }
 
         try {
-            await store.executeCheat(finalAction, cheat.message);
-            feedbackState.val = "success";
+            pending.val = true;
+            await onExecute(entry.action || cheat.value, cheat.message || cheat.value);
+            flash("success");
         } catch {
-            feedbackState.val = "error";
-        }
-        setTimeout(() => (feedbackState.val = null), 1000);
-    };
-
-    const handleConfigClick = (e) => {
-        e.stopPropagation();
-        store.navigateToCheatConfig(cheat.value);
-    };
-
-    const handleFavorite = () => {
-        if (needsValue) {
-            const val = getInputValue();
-            if (!val) {
-                store.notify(`Enter a value first to favorite '${cheat.value}'`, "error");
-                return;
-            }
-            store.toggleFavorite(`${cheat.value} ${val}`);
-        } else {
-            store.toggleFavorite(cheat.value);
+            flash("error");
+        } finally {
+            pending.val = false;
         }
     };
 
-    const isFavorited = () => {
-        if (needsValue) {
-            const val = getInputValue();
-            if (!val) return false;
-            return store.isFavorite(`${cheat.value} ${val}`);
+    const actionControl = () => {
+        const state = getStateInfo(cheat.value);
+
+        if (state.known && !needsParameter) {
+            return button(
+                {
+                    type: "button",
+                    class: () =>
+                        `atlas-cheat-switch ${getStateInfo(cheat.value).active ? "is-on" : ""} ${
+                            pending.val ? "is-pending" : ""
+                        }`,
+                    role: "switch",
+                    "aria-checked": () => String(getStateInfo(cheat.value).active),
+                    "aria-label": () => `${getStateInfo(cheat.value).active ? "Disable" : "Enable"} ${cheat.value}`,
+                    disabled: () => pending.val || !canExecute(),
+                    onclick: (event) => {
+                        event.stopPropagation();
+                        execute();
+                    },
+                },
+                span({ class: "atlas-cheat-switch-thumb" })
+            );
         }
-        return store.isFavorite(cheat.value);
-    };
 
-    // Build button content with optional gear icon
-    const buttonContent = [
-        span(
-            { class: "cheat-button-text" },
-            cheat.message && cheat.message !== cheat.value ? `${cheat.value} - ${cheat.message}` : cheat.value
-        ),
-        hasConfig
-            ? span(
-                  {
-                      class: "cheat-config-icon",
-                      onclick: handleConfigClick,
-                      title: "Open config for this cheat",
-                  },
-                  Icons.Config()
-              )
-            : null,
-    ];
-
-    return div(
-        { class: "cheat-item-container" },
-        button(
+        return button(
             {
-                class: () =>
-                    `cheat-button ${hasConfig ? "has-config" : ""} ${
-                        feedbackState.val === "success" ? "feedback-success" : ""
-                    } ${feedbackState.val === "error" ? "feedback-error" : ""}`,
-                onclick: handleExecute,
-            },
-            ...buttonContent
-        ),
-        inputRef,
-        button(
-            {
-                class: () => `favorite-btn ${isFavorited() ? "is-favorite" : ""}`,
-                onclick: (e) => {
-                    e.stopPropagation();
-                    handleFavorite();
+                type: "button",
+                class: () => `atlas-cheat-run ${pending.val ? "is-pending" : ""}`,
+                disabled: () => pending.val || !canExecute(),
+                onclick: (event) => {
+                    event.stopPropagation();
+                    execute();
                 },
             },
-            Icons.Star()
+            () => (pending.val ? "Running" : needsParameter && !entry.parameter ? "Set value" : "Run")
+        );
+    };
+
+    return div(
+        {
+            class: () =>
+                `atlas-cheat-row ${selected() ? "is-selected" : ""} ${
+                    getStateInfo(cheat.value).active ? "is-active" : ""
+                } ${feedback.val ? `feedback-${feedback.val}` : ""}`,
+            role: "row",
+            "aria-selected": () => String(selected()),
+            "data-cheat-row": entry.id,
+            onclick: () => onSelect(entry),
+        },
+        div(
+            { class: "atlas-cheat-command-cell", role: "cell" },
+            span({ class: "atlas-cheat-glyph", "aria-hidden": "true" }, Icons.Lightning()),
+            div(
+                { class: "atlas-cheat-command-copy" },
+                span({ class: "atlas-cheat-command" }, entry.action || cheat.value),
+                entry.parameter ? span({ class: "atlas-cheat-saved-value" }, `Saved value: ${entry.parameter}`) : null
+            ),
+            entry.hasConfig
+                ? button(
+                      {
+                          type: "button",
+                          class: "atlas-cheat-config-link",
+                          title: "Edit linked configuration",
+                          "aria-label": `Edit configuration for ${cheat.value}`,
+                          onclick: (event) => {
+                              event.stopPropagation();
+                              onOpenConfig(entry);
+                          },
+                      },
+                      Icons.Config()
+                  )
+                : null
+        ),
+        span({ class: "atlas-cheat-description", role: "cell" }, cheat.message || "No description provided"),
+        span({ class: "atlas-cheat-category", role: "cell" }, cheat.category || "general"),
+        div(
+            { class: "atlas-cheat-state-cell", role: "cell" },
+            () => actionControl(),
+            button(
+                {
+                    type: "button",
+                    class: () => `atlas-cheat-favorite ${isFavorite(entry) ? "is-favorite" : ""}`,
+                    title: () => (isFavorite(entry) ? "Remove from favorites" : "Add to favorites"),
+                    "aria-label": () => (isFavorite(entry) ? "Remove from favorites" : "Add to favorites"),
+                    "aria-pressed": () => String(isFavorite(entry)),
+                    onclick: (event) => {
+                        event.stopPropagation();
+                        onFavorite(entry);
+                    },
+                },
+                Icons.Star()
+            )
         )
     );
 };

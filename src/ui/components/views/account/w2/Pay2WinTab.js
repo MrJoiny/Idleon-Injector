@@ -76,6 +76,9 @@ const P2W_SECTION_DEFS = [
         title: "PLAYER BOOSTS",
         note: "P2W player alchemy boosts",
         bucket: 3,
+        // CauldronLvMAX reads PixelHelperActor for these caps. That actor is not
+        // available in every game scene, unlike the stored P2W values.
+        maxViaFormula: false,
         rowLabels: ["ALCH SPD", "EXTRA EXP"],
     },
 ];
@@ -206,6 +209,7 @@ export const Pay2WinTab = () => {
 
                 for (let index = 0; index < section.rowLabels.length; index++) {
                     section.valueStates[index].val = Number(bucketValues[index] ?? 0);
+                    if (section.maxViaFormula === false) continue;
                     maxTargets.push({
                         args: [section.bucket, index, "0"],
                         apply: (value) => {

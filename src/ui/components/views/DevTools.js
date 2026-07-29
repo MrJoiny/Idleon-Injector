@@ -48,8 +48,9 @@ export const DevTools = () => {
 
     const renderEmbeddedView = () =>
         div(
-            { class: "danger-zone-header" },
-            div({ class: "devtools-popout-title" }, "⚠ DEVTOOLS POP-OUT"),
+            { class: "devtools-popout-card", role: "status" },
+            div({ class: "devtools-popout-kicker" }, "EMBEDDED GAME VIEW"),
+            div({ class: "devtools-popout-title" }, "ChromeDebug opens separately"),
 
             div("Embedded DevTools is disabled inside the game UI to prevent crashes"),
             div("Use the pop-out window for full DevTools access"),
@@ -57,6 +58,7 @@ export const DevTools = () => {
                 { class: "devtools-actions" },
                 button(
                     {
+                        type: "button",
                         class: "btn-primary",
                         onclick: openWebUi,
                     },
@@ -64,6 +66,7 @@ export const DevTools = () => {
                 ),
                 button(
                     {
+                        type: "button",
                         class: "btn-primary",
                         onclick: openDevTools,
                     },
@@ -71,7 +74,7 @@ export const DevTools = () => {
                 )
             ),
 
-            () => (error.val ? div({ class: "devtools-error" }, error.val) : null)
+            () => (error.val ? div({ class: "devtools-error", role: "alert" }, error.val) : null)
         );
 
     const renderContent = () => {
@@ -81,21 +84,25 @@ export const DevTools = () => {
 
         if (error.val) {
             return div(
-                { id: "devtools-message", class: "is-error" },
+                { id: "devtools-message", class: "is-error", role: "alert" },
 
                 `Failed to load DevTools: ${error.val}`
             );
         }
 
         if (!url.val) {
-            return div({ id: "devtools-message" }, "ESTABLISHING UPLINK");
+            return div({ id: "devtools-message", role: "status", "aria-live": "polite" }, "Connecting to ChromeDebug");
         }
 
         return iframe({
             id: "devtools-iframe",
             src: url.val,
+            title: "Chrome DevTools",
         });
     };
 
-    return div({ id: "devtools-tab", class: "tab-pane" }, div({ class: "terminal-wrapper" }, renderContent));
+    return div(
+        { id: "devtools-tab", class: "tab-pane devtools-workspace" },
+        div({ class: "terminal-wrapper" }, renderContent)
+    );
 };

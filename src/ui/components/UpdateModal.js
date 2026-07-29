@@ -1,12 +1,28 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { IS_ELECTRON } from "../state/constants.js";
+import { configDraftStatus, discardConfigDraft, saveConfigDraft } from "./views/config/configDraft.js";
 
 const { div, h3, p, button, a, span } = van.tags;
 
 export const UpdateModal = () => {
     const hiddenUnless = (condition) => (condition ? "" : "is-hidden");
     const updateInfo = () => store.app.updateInfo || {};
+    const isBusy = () => store.app.updateApplying || !!configDraftStatus.savingTarget;
+
+    const closeModal = () => {
+        if (!isBusy()) store.closeUpdateModal();
+    };
+
+    const saveAndApplyUpdate = async () => {
+        if (configDraftStatus.diskDirty && !(await saveConfigDraft("disk"))) return;
+        await store.applyUpdate();
+    };
+
+    const discardAndApplyUpdate = async () => {
+        if (configDraftStatus.diskDirty && !discardConfigDraft()) return;
+        await store.applyUpdate();
+    };
 
     const openReleaseLink = (event, url) => {
         if (!IS_ELECTRON) return;
@@ -19,7 +35,7 @@ export const UpdateModal = () => {
         {
             class: () =>
                 `modal update-modal ${hiddenUnless(store.app.updateModalOpen && updateInfo().updateAvailable)}`,
-            onclick: () => store.closeUpdateModal(),
+            onclick: closeModal,
         },
         div(
             { class: "modal-box update-modal-box", onclick: (event) => event.stopPropagation() },
@@ -42,8 +58,13 @@ export const UpdateModal = () => {
                 ),
                 p(
                     {
-                        class: () =>
-                            `update-modal-warning ${hiddenUnless(updateInfo().canApplyUpdate === false)}`,
+                        class: () => `update-modal-warning ${hiddenUnless(configDraftStatus.diskDirty)}`,
+                    },
+                    "You have configuration changes that have not been saved to disk."
+                ),
+                p(
+                    {
+                        class: () => `update-modal-warning ${hiddenUnless(updateInfo().canApplyUpdate === false)}`,
                     },
                     "Auto-update is only available in packaged builds."
                 ),
@@ -63,19 +84,32 @@ export const UpdateModal = () => {
                     {
                         id: "modal-cancel",
                         type: "button",
-                        disabled: () => store.app.updateApplying,
-                        onclick: () => store.closeUpdateModal(),
+                        disabled: isBusy,
+                        onclick: closeModal,
                     },
-                    "Deny"
+                    "Cancel"
+                ),
+                button(
+                    {
+                        class: () => `btn-secondary ${hiddenUnless(configDraftStatus.diskDirty)}`,
+                        type: "button",
+                        disabled: () => isBusy() || !updateInfo().canApplyUpdate,
+                        onclick: discardAndApplyUpdate,
+                    },
+                    "Discard & Update"
                 ),
                 button(
                     {
                         id: "modal-accept",
                         type: "button",
-                        disabled: () => store.app.updateApplying || !updateInfo().canApplyUpdate,
-                        onclick: () => store.applyUpdate(),
+                        disabled: () => isBusy() || !updateInfo().canApplyUpdate,
+                        onclick: saveAndApplyUpdate,
                     },
-                    () => (store.app.updateApplying ? "Preparing..." : "Accept")
+                    () => {
+                        if (store.app.updateApplying) return "Preparing...";
+                        if (configDraftStatus.savingTarget === "disk") return "Saving...";
+                        return configDraftStatus.diskDirty ? "Save & Update" : "Update";
+                    }
                 )
             )
         )

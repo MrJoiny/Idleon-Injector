@@ -276,7 +276,9 @@ export const EquinoxTab = () => {
                 gga("Dream"),
                 gga("WeeklyBoss.h"),
                 readComputed("dream", "BarFillReq", [0]),
-                readComputed("dream", "BarFillRate", [0]),
+                // BarFillRate reads an actor that is not available in every game scene.
+                // The rate is informational, so a missing value must not block the editor.
+                readComputed("dream", "BarFillRate", [0]).catch(() => 0),
                 readComputed("dream", "UpgUnlocked", [0]),
             ]);
 

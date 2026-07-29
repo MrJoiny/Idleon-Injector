@@ -10,26 +10,31 @@ export const VIEWS = {
         id: "cheats-tab",
         label: "CHEATS",
         sidebarLabel: "CHEATS",
+        atlasLabel: "Cheats",
     },
     ACCOUNT: {
         id: "options-account-tab",
         label: "ACCOUNT OPTIONS LIST",
         sidebarLabel: "ACCOUNT OPTIONS",
+        atlasLabel: "Account",
     },
     CONFIG: {
         id: "config-tab",
         label: "CONFIGURATION",
         sidebarLabel: "CONFIG",
+        atlasLabel: "Config",
     },
     SEARCH: {
         id: "search-tab",
         label: "GGA SEARCH",
         sidebarLabel: "SEARCH",
+        atlasLabel: "Search",
     },
     DEVTOOLS: {
         id: "devtools-tab",
         label: "CHROMEDEBUG",
         sidebarLabel: "CHROMEDEBUG",
+        atlasLabel: "DevTools",
     },
 };
 
@@ -49,29 +54,4 @@ export const CATEGORY_ORDER = [
     "w6",
     "w7",
     "minigame",
-];
-
-/**
- * Curated list of favorite GGA keys for quick access in Search view.
- */
-export const FAVORITE_KEYS = [
-    "OptionsListAccount",
-    "OptionsList",
-    "PlayerDATABASE",
-    "SkillLevels",
-    "SkillLevelsMAX",
-    "BundlesReceived",
-    "ChestQuantity",
-    "CurrenciesOwned",
-    "CustomLists",
-    "Exp0",
-    "GemItemsPurchased",
-    "ItemQuantity",
-    "KillsLeft2Advance",
-    "Lv0",
-    "Spelunk",
-    "Arcane",
-    "Bubba",
-    "Compass",
-    "Grimoire",
 ];

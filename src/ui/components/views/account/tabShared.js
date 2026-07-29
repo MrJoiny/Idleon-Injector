@@ -11,6 +11,21 @@ export const createComingSoonPlaceholder = (label) =>
         p({ class: "world-sub-placeholder__label" }, `${label} — COMING SOON`)
     );
 
+/**
+ * Render a shared account-workspace tab navigation row.
+ * @param {object} props - Navigation options
+ * @param {object[]} props.tabs - Tabs to render
+ * @param {object} props.activeId - VanJS state containing the active tab ID
+ * @param {string} props.navClass - Additional navigation class
+ * @param {string|Function} props.buttonClass - Additional button class or class resolver
+ * @param {string} [props.activeClass] - Class applied to the active tab
+ * @param {string|null} [props.stubClass] - Optional class applied to stub tabs
+ * @param {Function} [props.isStub] - Stub-tab predicate
+ * @param {Function} [props.renderLabel] - Tab-label renderer
+ * @param {Function|null} [props.getButtonProps] - Additional button-props resolver
+ * @param {Function|null} [props.onSelect] - Callback invoked after a tab is selected
+ * @returns {Element} Account tab navigation element
+ */
 export const renderTabNav = ({
     tabs,
     activeId,
@@ -21,6 +36,7 @@ export const renderTabNav = ({
     isStub = () => false,
     renderLabel = (tab) => tab.label,
     getButtonProps = null,
+    onSelect = null,
 }) =>
     div(
         { class: joinClasses("account-sub-nav", navClass) },
@@ -36,7 +52,11 @@ export const renderTabNav = ({
                             activeId.val === tab.id && activeClass,
                             stubClass && isStub(tab) && stubClass
                         ),
-                    onclick: () => (activeId.val = tab.id),
+                    "aria-current": () => (activeId.val === tab.id ? "page" : "false"),
+                    onclick: () => {
+                        activeId.val = tab.id;
+                        if (typeof onSelect === "function") onSelect(tab);
+                    },
                 },
                 renderLabel(tab)
             )
