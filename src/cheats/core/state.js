@@ -71,10 +71,3 @@ export let setupDone = false;
 export function markSetupDone() {
     setupDone = true;
 }
-
-/**
- * Reset setup state (used for re-initialization).
- */
-export function resetSetupState() {
-    setupDone = false;
-}

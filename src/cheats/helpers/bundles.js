@@ -25,12 +25,3 @@ export function getAllBundles() {
 
     return allBundles;
 }
-
-/**
- * Get a map from bundle code to display name.
- *
- * @returns {Map<string, string>} Map of bundleCode -> displayName
- */
-export function getBundleCodeToNameMap() {
-    return new Map(getAllBundles().map(([name, code]) => [code, name]));
-}

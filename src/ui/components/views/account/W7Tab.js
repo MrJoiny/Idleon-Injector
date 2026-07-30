@@ -1,4 +1,3 @@
-import van from "../../../vendor/van-1.6.0.js";
 import { BigFishTab } from "./w7/BigFishTab.js";
 import { ButtonTab } from "./w7/ButtonTab.js";
 import { ClamTab } from "./w7/ClamTab.js";
@@ -11,9 +10,7 @@ import { ResearchTab } from "./w7/ResearchTab.js";
 import { SpelunkingTab } from "./w7/SpelunkingTab.js";
 import { SushiTab } from "./w7/SushiTab.js";
 import { ZenithTab } from "./w7/ZenithTab.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
-
-const { div } = van.tags;
+import { createWorldTab } from "./tabShared.js";
 
 const W7_SUBTABS = [
     { id: "spelunking", label: "SPELUNKING", component: SpelunkingTab },
@@ -30,28 +27,4 @@ const W7_SUBTABS = [
     { id: "sushi", label: "SUSHI", component: SushiTab },
 ];
 
-export const W7Tab = () => {
-    const activeSubTab = van.state(W7_SUBTABS[0].id);
-
-    return div(
-        { class: "world-tab w7-world-tab" },
-        renderTabNav({
-            tabs: W7_SUBTABS,
-            activeId: activeSubTab,
-            navClass: "world-sub-nav",
-            buttonClass: "account-world-sub-tab-btn",
-            stubClass: "account-world-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component,
-        }),
-        div(
-            { class: "world-sub-content" },
-            ...renderLazyPanes({
-                tabs: W7_SUBTABS,
-                activeId: activeSubTab,
-                paneClass: "world-sub-pane",
-                dataAttr: "data-subtab",
-                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
-            })
-        )
-    );
-};
+export const W7Tab = createWorldTab(W7_SUBTABS, "w7-world-tab");

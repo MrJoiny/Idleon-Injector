@@ -264,13 +264,3 @@ export function searchGga(query, keys, options = null) {
 
     return { results, totalCount: results.length, truncated };
 }
-
-/**
- * Classify a query string into a value type (any/range/number/string/etc.).
- * @param {string} query
- * @returns {string} The detected type tag
- */
-export function detectQueryType(query) {
-    const parsed = parseQuery(query);
-    return parsed.type;
-}

@@ -773,7 +773,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
     return { node, sync: (nextEntry) => (entryState.val = nextEntry) };
 };
 
-export const SavedResultsSection = ({ ui, handlers }) => {
+const SavedResultsSection = ({ ui, handlers }) => {
     const rowCache = new Map();
     const listNode = div({ class: "saved-results-list" });
     const reconcile = createStaticRowReconciler(listNode);

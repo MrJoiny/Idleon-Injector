@@ -65,6 +65,6 @@ export async function setup() {
  *
  * @returns {string[]} Array of result messages
  */
-export function runStartupCheats() {
+function runStartupCheats() {
     return startupCheats.map((c) => cheat(c, gameContext));
 }

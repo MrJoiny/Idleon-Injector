@@ -790,11 +790,6 @@
     --tab-nav-active-glow: 0 0 5px var(--world-color, var(--c-accent-glow));
 }
 
-.account-nested-sub-tab-btn--stub {
-    color: var(--c-text-muted);
-    cursor: default;
-}
-
 .account-nested-sub-content {
     flex: 1;
     overflow: hidden;

@@ -39,21 +39,21 @@ export function rollAllObols(force = false) {
 /**
  * Roll personal obols to perfect stats.
  */
-export function rollPersonalObols() {
+function rollPersonalObols() {
     rollPerfectObols(gga.ObolEquippedOrder[0], gga.ObolEquippedMap[0], gga.CharacterClass);
 }
 
 /**
  * Roll family obols to perfect stats.
  */
-export function rollFamilyObols() {
+function rollFamilyObols() {
     rollPerfectObols(gga.ObolEquippedOrder[1], gga.ObolEquippedMap[1], gga.CharacterClass);
 }
 
 /**
  * Roll all characters' obols to perfect stats.
  */
-export function rollAllCharactersObols() {
+function rollAllCharactersObols() {
     Object.values(gga.PlayerDATABASE.h).forEach((player) => {
         rollPerfectObols(player.h.ObolEquippedOrder, player.h.ObolEquippedMap, player.h.CharacterClass);
     });
@@ -62,7 +62,7 @@ export function rollAllCharactersObols() {
 /**
  * Roll inventory obols to perfect stats.
  */
-export function rollInventoryObols() {
+function rollInventoryObols() {
     const inventoryOrder = gga.ObolInventoryOrder;
     const inventoryMap = gga.ObolInventoryMap;
     const characterClass = gga.CharacterClass;
@@ -79,7 +79,7 @@ export function rollInventoryObols() {
  * @param {Array} obolMap - Array of obol stat maps
  * @param {number} characterClass - The character class ID
  */
-export function rollPerfectObols(obolOrder, obolMap, characterClass) {
+function rollPerfectObols(obolOrder, obolMap, characterClass) {
     const primaryStat = getPrimaryStat(characterClass);
     const preferredStat =
         cheatConfig.wide.perfectobols.preferredstat === "PRIMARY"

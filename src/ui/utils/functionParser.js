@@ -144,23 +144,6 @@ export const generateFunctionString = (type, value) => {
 };
 
 /**
- * Convert a function string to an actual executable function
- *
- * @param {string} fnString - The function string
- * @returns {Function|null} The executable function, or null if invalid
- */
-export const stringToFunction = (fnString) => {
-    try {
-        // Use Function constructor to create the function
-        // This is safe since we control the input and it runs client-side only
-        return new Function("return " + fnString)();
-    } catch (e) {
-        console.warn("Failed to parse function string:", fnString, e);
-        return null;
-    }
-};
-
-/**
  * Check if a value is a function (either actual function or function string)
  *
  * @param {any} value - The value to check

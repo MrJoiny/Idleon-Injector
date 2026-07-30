@@ -168,14 +168,6 @@
     --tab-nav-active-indicator: var(--world-color, var(--c-accent));
 }
 
-.account-world-sub-tab-btn--stub {
-    color: var(--c-text-muted);
-    cursor: default;
-}
-.account-world-sub-tab-btn--stub:hover {
-    color: var(--c-text-muted);
-}
-
 /* ── World inner panes ───────────────────────────────────────────────────── */
 
 .world-sub-content {
@@ -196,57 +188,6 @@
 .world-sub-pane.active {
     display: flex;
     animation: slideIn 0.18s ease;
-}
-
-/* Empty pane (unimplemented tabs) */
-.world-sub-pane--empty {
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-direction: column;
-    color: var(--c-text-muted);
-    padding: 40px;
-}
-
-.world-empty-icon {
-    font-size: 2.5rem;
-    color: var(--c-text-muted);
-    line-height: 1;
-}
-.world-empty-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0;
-}
-.world-empty-desc {
-    font-size: 0.875rem;
-    margin: 0;
-    text-align: center;
-    max-width: 340px;
-    color: var(--c-text-muted);
-}
-
-/* Inline stub inside W1 for unimplemented sub-tabs */
-.world-sub-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 10px;
-    color: var(--c-text-muted);
-}
-
-.world-sub-placeholder__icon {
-    font-size: 2rem;
-    color: var(--c-text-muted);
-}
-.world-sub-placeholder__label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0;
 }
 
 /* Atlas account workbench -------------------------------------------------- */

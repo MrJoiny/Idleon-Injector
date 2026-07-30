@@ -163,20 +163,3 @@ export function sendMonitorUnsubscribe(id) {
 export function getConnectionStatus() {
     return isConnected;
 }
-
-/**
- * Closes the WebSocket connection
- */
-export function closeWebSocket() {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-
-    isConnected = false;
-}

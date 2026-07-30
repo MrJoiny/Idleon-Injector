@@ -2,7 +2,6 @@
  * World 2 Tab - Yum-Yum Desert
  */
 
-import van from "../../../vendor/van-1.6.0.js";
 import { BrewingTab } from "./w2/BrewingTab.js";
 import { LiquidTab } from "./w2/LiquidTab.js";
 import { VialTab } from "./w2/VialTab.js";
@@ -12,9 +11,7 @@ import { ArcadeTab } from "./w2/ArcadeTab.js";
 import { PostOfficeTab } from "./w2/PostOfficeTab.js";
 import { KillroyTab } from "./w2/KillroyTab.js";
 import { PoppyTab } from "./w2/PoppyTab.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
-
-const { div } = van.tags;
+import { createNestedTab, createWorldTab } from "./tabShared.js";
 
 const ALCHEMY_SUBTABS = [
     { id: "brewing", label: "BREWING", component: BrewingTab },
@@ -24,67 +21,14 @@ const ALCHEMY_SUBTABS = [
     { id: "sigils", label: "SIGILS", component: SigilTab },
 ];
 
+const AlchemyPanel = createNestedTab(ALCHEMY_SUBTABS, "", "data-alchemy");
+
 const W2_SUBTABS = [
-    { id: "alchemy", label: "ALCHEMY", component: null },
+    { id: "alchemy", label: "ALCHEMY", component: AlchemyPanel },
     { id: "arcade", label: "ARCADE", component: ArcadeTab },
     { id: "post-office", label: "POST OFFICE", component: PostOfficeTab },
     { id: "killroy", label: "KILLROY", component: KillroyTab },
     { id: "poppy", label: "POPPY", component: PoppyTab },
 ];
 
-const AlchemyPanel = () => {
-    const active = van.state(ALCHEMY_SUBTABS[0].id);
-
-    return div(
-        { class: "tab-container" },
-        renderTabNav({
-            tabs: ALCHEMY_SUBTABS,
-            activeId: active,
-            navClass: "account-nested-sub-nav",
-            buttonClass: "account-nested-sub-tab-btn",
-            stubClass: "account-nested-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component,
-        }),
-        div(
-            { class: "account-nested-sub-content" },
-            ...renderLazyPanes({
-                tabs: ALCHEMY_SUBTABS,
-                activeId: active,
-                paneClass: "account-nested-pane",
-                activeClass: "account-nested-pane--active",
-                dataAttr: "data-alchemy",
-                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
-            })
-        )
-    );
-};
-
-export const W2Tab = () => {
-    const activeSubTab = van.state(W2_SUBTABS[0].id);
-
-    return div(
-        { class: "world-tab w2-world-tab" },
-        renderTabNav({
-            tabs: W2_SUBTABS,
-            activeId: activeSubTab,
-            navClass: "world-sub-nav",
-            buttonClass: "account-world-sub-tab-btn",
-            stubClass: "account-world-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component && tab.id !== "alchemy",
-        }),
-        div(
-            { class: "world-sub-content" },
-            ...renderLazyPanes({
-                tabs: W2_SUBTABS,
-                activeId: activeSubTab,
-                paneClass: "world-sub-pane",
-                dataAttr: "data-subtab",
-                renderContent: (tab) => {
-                    if (tab.id === "alchemy") return AlchemyPanel();
-                    if (tab.component) return tab.component();
-                    return createComingSoonPlaceholder(tab.label);
-                },
-            })
-        )
-    );
-};
+export const W2Tab = createWorldTab(W2_SUBTABS, "w2-world-tab");

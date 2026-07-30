@@ -625,64 +625,7 @@ function broadcastMonitorState() {
     }
 }
 
-/**
- * Gets the number of connected WebSocket clients
- * @returns {number} Number of connected clients
- */
-function getConnectedClients() {
-    return clients.size;
-}
-
-/**
- * Closes the WebSocket server and all connections
- */
-function closeWebSocket() {
-    if (wss) {
-        // Best-effort, non-blocking: awaiting a CDP evaluate during shutdown can
-        // hang if the connection is already gone. We still inspect
-        // exceptionDetails so a game-context failure is logged rather than lost.
-        if (runtimeRef && contextRef) {
-            void (async () => {
-                try {
-                    const result = await runtimeRef.evaluate({
-                        expression: "window.monitorUnwrapAll()",
-                        awaitPromise: true,
-                        returnByValue: true,
-                    });
-                    if (result.exceptionDetails) {
-                        log.error("Error unwrapping all monitors during shutdown:", result.exceptionDetails.text);
-                    }
-                } catch (err) {
-                    log.error("Error unwrapping all monitors during shutdown:", err.message);
-                }
-            })();
-        }
-
-        for (const client of clients) {
-            client.close();
-        }
-        clients.clear();
-        clientMonitorState.clear();
-        for (const retryMap of monitorSubscribeRetryTimers.values()) {
-            for (const timer of retryMap.values()) {
-                clearTimeout(timer);
-            }
-        }
-        monitorSubscribeRetryTimers.clear();
-        for (const timer of monitorSendTimers.values()) {
-            clearTimeout(timer);
-        }
-        monitorSendTimers.clear();
-        globalWatchersByPath.clear();
-        wss.close();
-        wss = null;
-        log.info("Server closed");
-    }
-}
-
 module.exports = {
     initWebSocket,
     broadcastCheatStates,
-    getConnectedClients,
-    closeWebSocket,
 };

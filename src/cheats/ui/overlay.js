@@ -145,23 +145,3 @@ export function injectWebUI() {
     uiContainer.appendChild(toggleBtn);
     document.body.appendChild(uiContainer);
 }
-
-/**
- * Check if the UI is currently expanded.
- * @returns {boolean}
- */
-export function isUIExpanded() {
-    return isUiExpanded;
-}
-
-/**
- * Toggle the UI visibility.
- */
-export function toggleUI() {
-    if (uiContainer) {
-        const toggleBtn = document.getElementById("cheat-ui-toggle");
-        if (toggleBtn) {
-            toggleBtn.click();
-        }
-    }
-}

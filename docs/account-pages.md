@@ -13,7 +13,7 @@ Read these files before adding or changing an Account feature tab:
 - `src/ui/components/views/account/W1Tab.js` ... `W7Tab.js`
   World tab shells and sub-tab registries.
 - `src/ui/components/views/account/tabShared.js`
-  Shared tab navigation, lazy panes, persistent panes, and coming-soon placeholders.
+  Shared world/nested tab factories, tab navigation, lazy panes, and persistent panes.
 - `src/ui/components/views/account/accountLoadPolicy.js`
   `useAccountLoad()` for standardized load state and load failure logging.
 - `src/ui/components/views/account/accountShared.js`
@@ -24,8 +24,7 @@ Read these files before adding or changing an Account feature tab:
 Current structure:
 
 - Top-level Account tabs include Account Options, Upgrade Vault, and W1-W7.
-- W1-W3 contain implemented feature tabs.
-- W4-W7 currently use `createWorldComingSoonTab(...)`.
+- W1-W7 contain implemented feature tabs.
 - W2 has a nested Alchemy panel: Brewing, Liquid, Vials, Pay 2 Win, Sigils.
 - W3 has a nested Construction panel: Buildings, Cogs.
 
@@ -34,8 +33,7 @@ Current structure:
 ### Page chrome
 
 - Prefer `PersistentAccountListPage(...)` for most editable Account features.
-- Use `AccountPageShell(...)` directly only when the wrapper needs behavior not exposed by `PersistentAccountListPage`.
-- Use `AccountTabHeader`, `RefreshButton`, `WarningBanner`, `NoticeBanner`, `AccountSection`, and `AccountRow` before adding tab-local chrome.
+- Use `RefreshButton`, `WarningBanner`, `NoticeBanner`, `AccountSection`, and `AccountRow` before adding tab-local chrome.
 - Keep tab-specific selectors out of shared CSS unless they define a reusable primitive.
 
 ### Loading
@@ -107,7 +105,7 @@ export const MyFeatureTab = () => {
 
 Use when the tab is small, mostly read-only, and remounting content after load is acceptable.
 
-Use `AccountPageShell` with `loadState` and `renderBody`, or pass a small reactive `body` to `PersistentAccountListPage` when the surrounding page should still use persistent Account chrome.
+Pass a small reactive `body` to `PersistentAccountListPage` when the surrounding page should keep persistent Account chrome.
 
 ### Pattern C: Cached collection or card UI
 
@@ -194,7 +192,7 @@ Prefer `EditableNumberRow` when this pattern fits; it already handles draft text
 
 1. Find the nested registry, such as `ALCHEMY_SUBTABS` in `W2Tab.js` or `CONSTRUCTION_SUBTABS` in `W3Tab.js`.
 2. Add the new tab to that nested array.
-3. Reuse the existing `renderTabNav(...)` and `renderLazyPanes(...)` panel structure.
+3. Keep the registry wired through the existing `createNestedTab(...)` component.
 4. Keep panel-specific CSS near the world's existing tab CSS.
 
 ### Add a top-level Account tab
@@ -208,13 +206,8 @@ Prefer `EditableNumberRow` when this pattern fits; it already handles draft text
 
 1. Create `src/ui/components/views/account/WNTab.js`.
 2. Register it in `src/ui/components/views/Account.js` with `isWorld: true` and `worldNum`.
-3. Add world-specific styles and imports.
-4. If the world is not implemented yet, prefer `createWorldComingSoonTab(...)`.
-
-### Placeholder behavior
-
-- For unimplemented sub-tabs, use `component: null` and `createComingSoonPlaceholder(...)`.
-- Do not attach write behavior or load behavior to placeholders.
+3. Define its sub-tab registry and export it with `createWorldTab(...)`.
+4. Add world-specific styles and imports.
 
 ## 7) CSS rules
 
