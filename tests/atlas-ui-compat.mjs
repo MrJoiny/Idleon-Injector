@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
 import test from "node:test";
-import { URL } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 
 const workspaceUtilsSource = await readFile(
     new URL("../src/ui/components/views/search/workspaceUtils.js", import.meta.url),
@@ -9,6 +10,10 @@ const workspaceUtilsSource = await readFile(
 );
 const { loadLocalFavoriteKeys, pickInitialSelectedKeys, saveLocalFavoriteKeys } = await import(
     `data:text/javascript,${encodeURIComponent(workspaceUtilsSource)}`
+);
+const themeSource = await readFile(new URL("../src/ui/state/theme.js", import.meta.url), "utf8");
+const { applyTheme, loadThemePreference, normalizeTheme, saveThemePreference } = await import(
+    `data:text/javascript,${encodeURIComponent(themeSource)}`
 );
 
 const createStorage = (initial = {}) => {
@@ -40,4 +45,50 @@ test("Search selection fallback prefers persisted keys, then favorites", () => {
     assert.deepEqual(pickInitialSelectedKeys(all, ["D"], ["B", "C"]), ["D"]);
     assert.deepEqual(pickInitialSelectedKeys(all, [], ["C", "missing", "B"]), ["C", "B"]);
     assert.deepEqual(pickInitialSelectedKeys(all, [], []), all);
+});
+
+test("Theme preferences default to light and persist valid selections", () => {
+    const storage = createStorage();
+    const root = { dataset: {} };
+
+    assert.equal(loadThemePreference(storage), "light");
+    assert.equal(normalizeTheme("unknown"), "light");
+    assert.equal(applyTheme("dark", root), "dark");
+    assert.equal(root.dataset.theme, "dark");
+
+    assert.equal(saveThemePreference("system", storage, root), "system");
+    assert.equal(storage.value("uiTheme"), "system");
+    assert.equal(root.dataset.theme, "system");
+});
+
+const collectSourceFiles = async (directory) => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const files = await Promise.all(
+        entries.map((entry) => {
+            const entryPath = path.join(directory, entry.name);
+            return entry.isDirectory() ? collectSourceFiles(entryPath) : [entryPath];
+        })
+    );
+    return files.flat();
+};
+
+test("UI source keeps the Chromium 87 compatibility floor", async () => {
+    const uiRoot = fileURLToPath(new URL("../src/ui", import.meta.url));
+    const sourceFiles = (await collectSourceFiles(uiRoot)).filter(
+        (file) => !file.includes(`${path.sep}vendor${path.sep}`) && [".css", ".js"].includes(path.extname(file))
+    );
+    const unsupportedPatterns = [
+        [/:is\(/, "CSS :is()"],
+        [/\.findLast(?:Index)?\(/, "Array findLast/findLastIndex"],
+        [/\.at\(/, "Array/String at()"],
+        [/\bstructuredClone\(/, "structuredClone()"],
+        [/\bObject\.hasOwn\(/, "Object.hasOwn()"],
+    ];
+
+    for (const file of sourceFiles) {
+        const source = await readFile(file, "utf8");
+        for (const [pattern, label] of unsupportedPatterns) {
+            assert.doesNotMatch(source, pattern, `${label} is not supported by Chromium 87: ${file}`);
+        }
+    }
 });

@@ -270,6 +270,39 @@
 }
 
 /* --- ATLAS CONFIG WORKSPACE --- */
+.theme-preference {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px solid var(--atlas-border);
+    border-radius: 8px;
+    background: var(--atlas-surface);
+}
+
+.theme-preference-title {
+    color: var(--atlas-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.theme-preference-description {
+    margin-top: 3px;
+    color: var(--atlas-text-muted);
+    font-size: 0.75rem;
+}
+
+.theme-preference select {
+    width: 130px;
+    min-height: 34px;
+    color: var(--atlas-text);
+    background: var(--atlas-field);
+    border-color: var(--atlas-border-strong);
+}
+
 #config-tab.config-layout {
     color: var(--atlas-text, #14213d);
     background: var(--atlas-canvas, #f4f6fa);

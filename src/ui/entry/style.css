@@ -40,3 +40,6 @@
 /* ATLAS APPLICATION SHELL */
 @import url("../styles/_atlas-shell.css");
 @import url("../styles/_activity-drawer.css");
+
+/* THEME OVERRIDES */
+@import url("../styles/_theme.css");

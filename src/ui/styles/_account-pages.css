@@ -535,6 +535,13 @@
 }
 
 @media (max-width: 760px) {
+    .account-row__name {
+        flex-basis: 100%;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
     .account-row__controls--field-grid {
         grid-template-columns: 1fr;
     }

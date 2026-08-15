@@ -1,0 +1,612 @@
+/**
+ * Atlas light/dark themes. All base values are Chromium 87-safe HEX/RGBA colors.
+ */
+
+:root {
+    color-scheme: light;
+    --atlas-header-height: 48px;
+    --atlas-sidebar-width: 220px;
+    --atlas-sidebar-collapsed-width: 64px;
+    --atlas-header: #090b14;
+    --atlas-header-border: #1d2230;
+    --atlas-canvas: #f4f6fa;
+    --atlas-surface: #ffffff;
+    --atlas-surface-raised: #ffffff;
+    --atlas-surface-muted: #f8f9fc;
+    --atlas-surface-hover: #f0f3fa;
+    --atlas-field: #ffffff;
+    --atlas-border: #dce2ec;
+    --atlas-border-strong: #c7d0df;
+    --atlas-text: #14213d;
+    --atlas-text-muted: #66748d;
+    --atlas-text-soft: #8a96ab;
+    --atlas-accent: #5b5ce2;
+    --atlas-accent-hover: #4b4dcc;
+    --atlas-accent-soft: #ececff;
+    --atlas-focus: #7779f4;
+    --atlas-success: #0aa575;
+    --atlas-success-soft: rgba(10, 165, 117, 0.1);
+    --atlas-danger: #d9435f;
+    --atlas-danger-soft: rgba(217, 67, 95, 0.1);
+    --atlas-warning: #d58a08;
+    --atlas-warning-soft: rgba(213, 138, 8, 0.1);
+    --atlas-overlay-02: rgba(20, 33, 61, 0.02);
+    --atlas-overlay-03: rgba(20, 33, 61, 0.03);
+    --atlas-overlay-04: rgba(20, 33, 61, 0.04);
+    --atlas-overlay-05: rgba(20, 33, 61, 0.05);
+    --atlas-overlay-10: rgba(20, 33, 61, 0.1);
+    --atlas-shadow: rgba(20, 33, 61, 0.12);
+    --atlas-scrollbar: #b8c2d1;
+    --atlas-control-bg: #111a30;
+    --atlas-control-hover: #293552;
+    --atlas-control-text: #ffffff;
+    --atlas-disabled-bg: #e8ecf2;
+    --atlas-disabled-text: #7f8ca4;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --atlas-canvas: #10121a;
+    --atlas-surface: #171b25;
+    --atlas-surface-raised: #1c2130;
+    --atlas-surface-muted: #1a1f2c;
+    --atlas-surface-hover: #242b3b;
+    --atlas-field: #111620;
+    --atlas-border: #30384a;
+    --atlas-border-strong: #46516a;
+    --atlas-text: #eceff8;
+    --atlas-text-muted: #bec3d1;
+    --atlas-text-soft: #8f99ae;
+    --atlas-accent: #8b8df5;
+    --atlas-accent-hover: #a7a8ff;
+    --atlas-accent-soft: #292b50;
+    --atlas-focus: #a7a8ff;
+    --atlas-success: #59d99a;
+    --atlas-success-soft: rgba(89, 217, 154, 0.12);
+    --atlas-danger: #ff7189;
+    --atlas-danger-soft: rgba(255, 113, 137, 0.12);
+    --atlas-warning: #f3b84b;
+    --atlas-warning-soft: rgba(243, 184, 75, 0.12);
+    --atlas-overlay-02: rgba(255, 255, 255, 0.02);
+    --atlas-overlay-03: rgba(255, 255, 255, 0.03);
+    --atlas-overlay-04: rgba(255, 255, 255, 0.04);
+    --atlas-overlay-05: rgba(255, 255, 255, 0.05);
+    --atlas-overlay-10: rgba(255, 255, 255, 0.1);
+    --atlas-shadow: rgba(0, 0, 0, 0.34);
+    --atlas-scrollbar: #46516a;
+    --atlas-control-bg: #7779f4;
+    --atlas-control-hover: #8b8df5;
+    --atlas-control-text: #ffffff;
+    --atlas-disabled-bg: #252b38;
+    --atlas-disabled-text: #7f8aa3;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-theme="system"] {
+        color-scheme: dark;
+        --atlas-canvas: #10121a;
+        --atlas-surface: #171b25;
+        --atlas-surface-raised: #1c2130;
+        --atlas-surface-muted: #1a1f2c;
+        --atlas-surface-hover: #242b3b;
+        --atlas-field: #111620;
+        --atlas-border: #30384a;
+        --atlas-border-strong: #46516a;
+        --atlas-text: #eceff8;
+        --atlas-text-muted: #bec3d1;
+        --atlas-text-soft: #8f99ae;
+        --atlas-accent: #8b8df5;
+        --atlas-accent-hover: #a7a8ff;
+        --atlas-accent-soft: #292b50;
+        --atlas-focus: #a7a8ff;
+        --atlas-success: #59d99a;
+        --atlas-success-soft: rgba(89, 217, 154, 0.12);
+        --atlas-danger: #ff7189;
+        --atlas-danger-soft: rgba(255, 113, 137, 0.12);
+        --atlas-warning: #f3b84b;
+        --atlas-warning-soft: rgba(243, 184, 75, 0.12);
+        --atlas-overlay-02: rgba(255, 255, 255, 0.02);
+        --atlas-overlay-03: rgba(255, 255, 255, 0.03);
+        --atlas-overlay-04: rgba(255, 255, 255, 0.04);
+        --atlas-overlay-05: rgba(255, 255, 255, 0.05);
+        --atlas-overlay-10: rgba(255, 255, 255, 0.1);
+        --atlas-shadow: rgba(0, 0, 0, 0.34);
+        --atlas-scrollbar: #46516a;
+        --atlas-control-bg: #7779f4;
+        --atlas-control-hover: #8b8df5;
+        --atlas-control-text: #ffffff;
+        --atlas-disabled-bg: #252b38;
+        --atlas-disabled-text: #7f8aa3;
+    }
+}
+
+.viewport.atlas-canvas,
+#search-tab,
+#options-account-tab {
+    --c-void: var(--atlas-canvas);
+    --c-void-soft: var(--atlas-surface-muted);
+    --c-panel: var(--atlas-surface);
+    --c-panel-dim: var(--atlas-surface-muted);
+    --c-panel-dark-dim: var(--atlas-surface-raised);
+    --c-panel-hover: var(--atlas-surface-hover);
+    --c-panel-95: var(--atlas-surface);
+    --c-panel-98: var(--atlas-surface);
+    --c-border: var(--atlas-border);
+    --c-border-strong: var(--atlas-border-strong);
+    --c-text-main: var(--atlas-text);
+    --c-text-dim: var(--atlas-text-muted);
+    --c-text-muted: var(--atlas-text-soft);
+    --c-text: var(--atlas-text);
+    --c-accent: var(--atlas-accent);
+    --c-accent-hover: var(--atlas-accent-hover);
+    --c-accent-dim: var(--atlas-accent-soft);
+    --c-accent-dim-solid: var(--atlas-accent-soft);
+    --c-accent-glow: var(--atlas-accent-soft);
+    --c-accent-06: var(--atlas-overlay-05);
+    --c-accent-20: rgba(91, 92, 226, 0.2);
+    --c-accent-25: rgba(91, 92, 226, 0.25);
+    --c-accent-40: rgba(91, 92, 226, 0.4);
+    --c-success: var(--atlas-success);
+    --c-success-10: var(--atlas-success-soft);
+    --c-warning: var(--atlas-warning);
+    --c-warning-10: var(--atlas-warning-soft);
+    --c-danger: var(--atlas-danger);
+    --c-danger-05: var(--atlas-danger-soft);
+    --c-danger-10: var(--atlas-danger-soft);
+    --c-white-02: var(--atlas-overlay-02);
+    --c-white-03: var(--atlas-overlay-03);
+    --c-white-04: var(--atlas-overlay-04);
+    --c-white-05: var(--atlas-overlay-05);
+    --c-white-10: var(--atlas-overlay-10);
+    --c-black-20: var(--atlas-overlay-05);
+    --c-black-40: var(--atlas-overlay-10);
+    --c-hover: var(--atlas-overlay-05);
+    --c-border-faint: var(--atlas-overlay-05);
+    --c-control-border-strong: var(--atlas-border-strong);
+    --c-control-thumb: var(--atlas-text-soft);
+    --c-scrollbar-thumb: var(--atlas-scrollbar);
+}
+
+body,
+.viewport.atlas-canvas,
+#search-tab,
+#options-account-tab,
+#config-tab.config-layout,
+#devtools-tab.devtools-workspace {
+    color: var(--atlas-text);
+    background: var(--atlas-canvas);
+}
+
+.app-layout button:focus-visible,
+.app-layout a:focus-visible,
+.app-layout input:focus-visible,
+.app-layout select:focus-visible,
+.app-layout textarea:focus-visible {
+    outline-color: var(--atlas-focus);
+}
+
+/* Shell */
+.atlas-nav-button,
+.atlas-sidebar .sidebar-toggle {
+    color: var(--atlas-text-muted);
+}
+
+.atlas-nav-button:hover,
+.atlas-sidebar .sidebar-toggle:hover {
+    color: var(--atlas-text);
+    background: var(--atlas-surface-hover);
+    border-color: var(--atlas-border);
+}
+
+.atlas-nav-button.active {
+    color: var(--atlas-accent);
+    background: var(--atlas-accent-soft);
+    border-color: var(--atlas-border-strong);
+}
+
+.atlas-nav-shortcut {
+    color: var(--atlas-text-soft);
+}
+
+/* Cheats workspace */
+#cheats-tab.atlas-cheats-pane,
+.atlas-cheats-workbench {
+    color: var(--atlas-text);
+    background: var(--atlas-canvas);
+}
+
+.atlas-cheat-table,
+.atlas-cheat-inspector,
+.atlas-cheat-search,
+.atlas-cheat-pagination button,
+.atlas-cheat-run,
+.atlas-inspector-field input,
+.atlas-open-full-config,
+.atlas-inspector-config .cheat-category,
+.atlas-inspector-config .config-item,
+.atlas-inspector-config .config-item input[type="text"],
+.atlas-inspector-config .config-item input[type="number"],
+.atlas-inspector-toggle {
+    color: var(--atlas-text);
+    background: var(--atlas-surface);
+}
+
+.atlas-cheat-toolbar,
+.atlas-cheat-table-head,
+.atlas-cheat-row:hover,
+.atlas-inspector-config .cheat-category summary {
+    background: var(--atlas-surface-muted);
+}
+
+.atlas-scope-button:hover,
+.atlas-inspector-tabs button.is-active,
+.atlas-cheat-run:disabled {
+    color: var(--atlas-text);
+    background: var(--atlas-surface-hover);
+}
+
+.atlas-scope-button.is-active,
+.atlas-cheat-row.is-selected,
+.atlas-cheat-config-link:hover,
+.atlas-cheat-favorite:hover,
+.atlas-cheat-run:hover:not(:disabled) {
+    color: var(--atlas-accent);
+    background: var(--atlas-accent-soft);
+}
+
+.atlas-cheat-table,
+.atlas-cheat-toolbar,
+.atlas-cheat-table-head,
+.atlas-cheat-row,
+.atlas-table-hint,
+.atlas-inspector-header,
+.atlas-inspector-tabs,
+.atlas-inspector-facts,
+.atlas-inspector-facts > div,
+.atlas-inspector-config .cheat-category,
+.atlas-inspector-config .config-item,
+.atlas-inspector-config .cheat-category-content,
+.atlas-cheat-inspector,
+.atlas-cheat-search,
+.atlas-cheat-pagination button,
+.atlas-cheat-run,
+.atlas-cheat-switch,
+.atlas-inspector-field input,
+.atlas-open-full-config,
+.atlas-inspector-toggle {
+    border-color: var(--atlas-border);
+}
+
+.atlas-tree-heading,
+.atlas-scope-count,
+.atlas-cheat-search,
+.atlas-cheat-search input::placeholder,
+.atlas-row-count,
+.atlas-table-hint,
+.atlas-cheat-pagination,
+.atlas-cheat-table-head,
+.atlas-cheat-saved-value,
+.atlas-cheat-description,
+.atlas-cheat-category,
+.atlas-inspector-title code,
+.atlas-inspector-tabs button,
+.atlas-inspector-description,
+.atlas-inspector-field,
+.atlas-inspector-facts > div > :first-child,
+.atlas-linked-config-path,
+.atlas-inspector-config .config-description,
+.atlas-inspector-close {
+    color: var(--atlas-text-muted);
+}
+
+.atlas-scope-button,
+.atlas-cheat-search input,
+.atlas-cheat-command,
+.atlas-inspector-title > span,
+.atlas-inspector-facts > div,
+.atlas-inspector-config .cheat-category summary {
+    color: var(--atlas-text);
+}
+
+.atlas-inspector-run {
+    color: var(--atlas-control-text);
+    background: var(--atlas-control-bg);
+}
+
+.atlas-inspector-run:hover:not(:disabled) {
+    background: var(--atlas-control-hover);
+}
+
+.atlas-inspector-run:disabled {
+    color: var(--atlas-disabled-text);
+    background: var(--atlas-disabled-bg);
+}
+
+.atlas-cheat-switch {
+    background: var(--atlas-surface-hover);
+}
+
+.atlas-cheat-switch-thumb {
+    background: var(--atlas-surface-raised);
+    box-shadow: 0 1px 3px var(--atlas-shadow);
+}
+
+.atlas-cheat-switch.is-on {
+    border-color: var(--atlas-accent);
+    background: var(--atlas-accent);
+}
+
+/* Search workspace */
+#search-tab,
+#search-tab .search-layout,
+#search-tab .keys-footer,
+#search-tab .account-sub-tab-content {
+    color: var(--c-text-main);
+    background: var(--c-panel-dim);
+}
+
+#search-tab .search-keys-section,
+#search-tab .search-input-section,
+#search-tab .search-results-section,
+#search-tab .saved-results-section,
+#search-tab .section-header,
+#search-tab .search-input-content,
+#search-tab .search-pane-toolbar,
+#search-tab .search-result-item,
+#search-tab .search-keys-toggle,
+#search-tab .search-inspector-toggle,
+#search-tab .search-keys-close,
+#search-tab .search-inspector-close,
+#search-tab .search-inspector {
+    background: var(--c-panel);
+}
+
+#search-tab .search-right-column,
+#search-tab .search-keys-section,
+#search-tab .search-input-section,
+#search-tab .section-header,
+#search-tab .keys-footer,
+#search-tab .search-pane-toolbar,
+#search-tab .search-result-item,
+#search-tab .search-keys-toggle,
+#search-tab .search-inspector-toggle,
+#search-tab .search-keys-close,
+#search-tab .search-inspector-close,
+#search-tab .search-inspector-header {
+    border-color: var(--c-border);
+}
+
+#search-tab .section-title,
+#search-tab .type-label,
+#search-tab .selected-count,
+#search-tab .keys-loading,
+#search-tab .search-result-item,
+#search-tab .result-action-btn,
+#search-tab .search-inspector-tab,
+#search-tab .selected-result-kicker,
+#search-tab .selected-result-label {
+    color: var(--c-text-muted);
+}
+
+#search-tab .key-checkbox,
+#search-tab .selected-result-path,
+#search-tab .search-inspector-tab:hover {
+    color: var(--c-text-main);
+}
+
+#search-tab .key-checkbox:hover,
+#search-tab .search-inspector-tab:hover {
+    background: var(--c-panel-hover);
+}
+
+#search-tab .key-checkbox.checked,
+#search-tab .results-scope-badge,
+#search-tab .search-result-item:hover,
+#search-tab .search-result-item.is-selected,
+#search-tab .search-toolbar-count,
+#search-tab .search-inspector-count,
+#search-tab .search-inspector-tab.active {
+    color: var(--c-accent);
+    background: var(--c-accent-dim-solid);
+    border-color: var(--c-border-strong);
+}
+
+/* Account workspace */
+#options-account-tab,
+#options-account-tab .account-sub-tab-content {
+    background: var(--c-panel-dim);
+}
+
+.account-root-nav.account-sub-nav,
+#options-account-tab .world-sub-nav,
+#options-account-tab .account-page-nav,
+#options-account-tab .account-nested-sub-nav,
+#options-account-tab .account-header,
+#options-account-tab .account-section,
+#options-account-tab .account-row,
+#options-account-tab .feature-card {
+    background: var(--c-panel);
+    border-color: var(--c-border);
+}
+
+.account-root-nav .account-sub-tab-btn,
+#options-account-tab .world-sub-nav .account-sub-tab-btn,
+#options-account-tab .account-page-nav .account-sub-tab-btn,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn,
+#options-account-tab .account-tab-header__desc,
+#options-account-tab .account-row__index {
+    color: var(--c-text-dim);
+}
+
+#options-account-tab .account-tab-header__title,
+.account-root-nav .account-sub-tab-btn:hover,
+#options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-page-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn:hover {
+    color: var(--c-text-main);
+}
+
+.account-root-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-row:hover,
+#options-account-tab .feature-card:hover,
+#options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-page-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn:hover {
+    background: var(--c-panel-hover);
+    border-color: var(--c-border-strong);
+}
+
+.account-root-nav .account-sub-tab-btn.active,
+#options-account-tab .account-row__badge,
+#options-account-tab .world-sub-nav .account-sub-tab-btn.active,
+#options-account-tab .account-page-nav .account-sub-tab-btn.active,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active {
+    color: var(--c-accent);
+    background: var(--c-accent-dim-solid);
+    border-color: var(--c-border-strong);
+}
+
+#options-account-tab .account-row__index {
+    background: var(--c-panel-hover);
+}
+
+/* Config and DevTools */
+.atlas-config-status-chip {
+    color: var(--atlas-text-muted);
+    background: var(--atlas-surface-muted);
+    border-color: var(--atlas-border);
+}
+
+.atlas-config-status-chip.is-dirty {
+    color: var(--atlas-warning);
+    background: var(--atlas-warning-soft);
+    border-color: var(--atlas-warning);
+}
+
+.atlas-config-actions .btn-secondary {
+    color: var(--atlas-text);
+    background: var(--atlas-surface);
+    border-color: var(--atlas-border-strong);
+}
+
+#config-tab .action-bar {
+    box-shadow: 0 -8px 22px var(--atlas-shadow);
+}
+
+#devtools-tab.devtools-workspace,
+#devtools-tab.devtools-workspace .terminal-wrapper,
+.devtools-workspace #devtools-iframe,
+.devtools-popout-card {
+    background: var(--atlas-surface);
+}
+
+.devtools-workspace #devtools-message {
+    background: var(--atlas-canvas);
+    color: var(--atlas-text-muted);
+}
+
+.devtools-popout-card {
+    color: var(--atlas-text-muted);
+    border-color: var(--atlas-border);
+    box-shadow: 0 18px 45px var(--atlas-shadow);
+}
+
+.devtools-popout-title {
+    color: var(--atlas-text);
+}
+
+.devtools-popout-kicker {
+    color: var(--atlas-accent);
+}
+
+/* Chromium 87 fallbacks for optional color-mix() enhancements. */
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+    .summoning-round-row--done:not(.account-row--success):not(.account-row--error),
+    .sneaking-toggle-row--enabled:not(.account-row--success):not(.account-row--error),
+    .arcade-row__badge--cosmic,
+    .stamp-row--exalted,
+    .stamp-exalted-btn--active,
+    .brewing-row--prisma,
+    .brewing-prisma-btn.brewing-prisma-btn--active,
+    .brewing-prisma-btn.brewing-prisma-btn--active:hover:not(:disabled),
+    .po-currency-row__value,
+    .po-points-summary__row--highlight,
+    .sigil-card--unlocked,
+    .sigil-card--boosted,
+    .sigil-card--ionized,
+    .sigil-card--ethereal,
+    .sigil-card--eclectic,
+    .cogs-selected-summary,
+    .liquid-row__badge,
+    .library-maxbooklv,
+    .account-row__badge,
+    .account-row--info,
+    .card-row .account-row__badge,
+    .warning-banner,
+    .warning-banner--polymer,
+    .account-root-nav .world-tab-btn-num,
+    #options-account-tab .world-sub-nav .account-sub-tab-btn.active,
+    #options-account-tab .account-page-nav .account-sub-tab-btn.active,
+    #options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active {
+        background: var(--c-accent-dim-solid);
+    }
+
+    .killroy-row--blur,
+    .refinery-section--placeholder,
+    .has-warning:not(.account-row--success):not(.account-row--error) {
+        background: var(--c-warning-10);
+    }
+
+    .feature-card.account-row--success,
+    .account-row--success,
+    .account-btn--success,
+    .card-region--success {
+        background: var(--c-success-10) !important;
+    }
+
+    .feature-card.account-row--error,
+    .account-row--error,
+    .account-btn--error,
+    .card-region--error,
+    .account-btn--danger {
+        background: var(--c-danger-10) !important;
+    }
+
+    .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error),
+    .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__index,
+    .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__badge {
+        background: var(--c-warning-10);
+    }
+
+    .research-grid-tile__fill,
+    .research-grid-detail__preview-fill {
+        background: var(--c-accent);
+    }
+
+    .observation-tile--unlocked,
+    .summoning-round-row--done:not(.account-row--success):not(.account-row--error),
+    .sneaking-toggle-row--enabled:not(.account-row--success):not(.account-row--error),
+    .card-row .account-row__badge,
+    .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error),
+    .account-row.cloud-row--nightmare:not(.account-row--success):not(.account-row--error) .account-row__badge,
+    .sushi-station-tile--plate-0,
+    .sushi-station-tile--plate-1,
+    .sushi-station-tile--plate-2,
+    .sushi-station-tile--plate-3 {
+        border-color: var(--c-border-strong);
+    }
+
+    @keyframes account-row-success-flash {
+        from,
+        to {
+            background: var(--c-success-10);
+        }
+    }
+
+    @keyframes account-row-error-flash {
+        from,
+        to {
+            background: var(--c-danger-10);
+        }
+    }
+}

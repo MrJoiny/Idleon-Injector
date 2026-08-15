@@ -780,28 +780,6 @@
 /* Atlas search workbench --------------------------------------------------- */
 
 #search-tab {
-    --c-panel: #ffffff;
-    --c-panel-dim: #f8fafc;
-    --c-panel-hover: #f1f5f9;
-    --c-border: #e2e8f0;
-    --c-border-strong: #cbd5e1;
-    --c-control-border-strong: #e2e8f0;
-    --c-text-main: #0f172a;
-    --c-text-dim: #475569;
-    --c-text-muted: #94a3b8;
-    --c-accent: #6366f1;
-    --c-accent-hover: #4f46e5;
-    --c-accent-dim: rgba(99, 102, 241, 0.08);
-    --c-accent-dim-solid: #eef2ff;
-    --c-accent-06: rgba(99, 102, 241, 0.06);
-    --c-accent-20: rgba(99, 102, 241, 0.2);
-    --c-accent-25: rgba(99, 102, 241, 0.25);
-    --c-success: #10b981;
-    --c-success-10: rgba(16, 185, 129, 0.1);
-    --c-warning: #f59e0b;
-    --c-danger: #f43f5e;
-    --c-white-05: rgba(15, 23, 42, 0.04);
-    --c-white-10: rgba(15, 23, 42, 0.07);
     --font-display: var(--font-sans, "Inter", "Segoe UI", sans-serif);
     padding: 0;
     background: #f8fafc;

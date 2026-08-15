@@ -1,6 +1,7 @@
 import vanX from "../vendor/van-x-0.6.3.js";
 import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
+import { loadThemePreference, saveThemePreference } from "./theme.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
 import { formatDisplayValue, monitorIdFromMonitorPath } from "../components/views/search/valueUtils.js";
 import {
@@ -43,6 +44,7 @@ const appState = vanX.reactive({
     activityDrawer: null,
     sidebarMobileOpen: false,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
+    theme: loadThemePreference(),
     configForcedPath: null,
 });
 
@@ -368,6 +370,10 @@ const store = {
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;
         localStorage.setItem("sidebarCollapsed", appState.sidebarCollapsed);
+    },
+
+    setTheme: (theme) => {
+        appState.theme = saveThemePreference(theme);
     },
 
     setActiveTab: (viewId) => {

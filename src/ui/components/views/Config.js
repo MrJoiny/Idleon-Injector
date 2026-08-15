@@ -248,6 +248,22 @@ export const Config = () => {
                     class: () => `config-sub-tab-pane ${activeSubTab.val === "injectorconfig" ? "active" : ""}`,
                 },
 
+                div(
+                    { class: "theme-preference" },
+                    div(
+                        div({ class: "theme-preference-title" }, "INTERFACE THEME"),
+                        div({ class: "theme-preference-description" }, "Stored locally and applied without a restart.")
+                    ),
+                    select(
+                        {
+                            onchange: (event) => store.setTheme(event.target.value),
+                            "aria-label": "Interface theme",
+                        },
+                        option({ value: "system", selected: () => store.app.theme === "system" }, "System"),
+                        option({ value: "light", selected: () => store.app.theme === "light" }, "Light"),
+                        option({ value: "dark", selected: () => store.app.theme === "dark" }, "Dark")
+                    )
+                ),
                 div({ class: "warning-banner mb-20" }, "⚠ RESTART REQUIRED FOR CHANGES TO APPLY"),
                 injectorConfigNode
             )

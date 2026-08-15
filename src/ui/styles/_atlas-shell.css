@@ -3,27 +3,6 @@
  * Dark global header, light workspace canvas, and responsive navigation.
  */
 
-:root {
-    --atlas-header-height: 48px;
-    --atlas-sidebar-width: 220px;
-    --atlas-sidebar-collapsed-width: 64px;
-    --atlas-header: #090b14;
-    --atlas-header-border: #1d2230;
-    --atlas-canvas: #f4f6fa;
-    --atlas-surface: #ffffff;
-    --atlas-surface-muted: #f8f9fc;
-    --atlas-border: #dce2ec;
-    --atlas-border-strong: #c7d0df;
-    --atlas-text: #14213d;
-    --atlas-text-muted: #66748d;
-    --atlas-text-soft: #8a96ab;
-    --atlas-accent: #5b5ce2;
-    --atlas-accent-soft: #ececff;
-    --atlas-success: #0aa575;
-    --atlas-danger: #d9435f;
-    --atlas-warning: #d58a08;
-}
-
 body {
     background: var(--atlas-canvas);
 }
@@ -261,39 +240,6 @@ body {
 }
 
 .viewport.atlas-canvas {
-    --c-void: #f4f6fa;
-    --c-void-soft: #edf1f7;
-    --c-panel: #ffffff;
-    --c-panel-dim: #f8f9fc;
-    --c-panel-dark-dim: #f0f3f8;
-    --c-panel-hover: #f0f3fa;
-    --c-panel-95: rgba(255, 255, 255, 0.96);
-    --c-panel-98: rgba(255, 255, 255, 0.98);
-    --c-border: #dce2ec;
-    --c-border-strong: #c7d0df;
-    --c-text-main: #14213d;
-    --c-text-dim: #42526b;
-    --c-text-muted: #71809b;
-    --c-text: var(--c-text-main);
-    --c-accent: #5b5ce2;
-    --c-accent-hover: #4b4dcc;
-    --c-accent-dim: rgba(91, 92, 226, 0.1);
-    --c-accent-dim-solid: #ededfd;
-    --c-accent-glow: rgba(91, 92, 226, 0.22);
-    --c-accent-06: rgba(91, 92, 226, 0.06);
-    --c-accent-20: rgba(91, 92, 226, 0.2);
-    --c-accent-25: rgba(91, 92, 226, 0.25);
-    --c-accent-40: rgba(91, 92, 226, 0.4);
-    --c-success: #0aa575;
-    --c-warning: #d58a08;
-    --c-danger: #d9435f;
-    --c-success-10: rgba(10, 165, 117, 0.1);
-    --c-danger-05: rgba(217, 67, 95, 0.05);
-    --c-danger-10: rgba(217, 67, 95, 0.1);
-    --c-warning-10: rgba(213, 138, 8, 0.1);
-    --c-hover: rgba(20, 33, 61, 0.05);
-    --c-border-faint: rgba(20, 33, 61, 0.07);
-    --c-scrollbar-thumb: #b8c2d1;
     flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
@@ -487,26 +433,35 @@ body {
     height: 14px;
 }
 
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-sidebar-section-label,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-sidebar-divider,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-context-slot,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-nav-shortcut,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .tab-label {
+.atlas-sidebar.sidebar-collapsed .atlas-sidebar-section-label,
+.atlas-sidebar.sidebar-collapsed .atlas-sidebar-divider,
+.atlas-sidebar.sidebar-collapsed .atlas-context-slot,
+.atlas-sidebar.sidebar-collapsed .atlas-nav-shortcut,
+.atlas-sidebar.sidebar-collapsed .tab-label,
+.atlas-sidebar.is-responsive-rail .atlas-sidebar-section-label,
+.atlas-sidebar.is-responsive-rail .atlas-sidebar-divider,
+.atlas-sidebar.is-responsive-rail .atlas-context-slot,
+.atlas-sidebar.is-responsive-rail .atlas-nav-shortcut,
+.atlas-sidebar.is-responsive-rail .tab-label {
     display: none;
 }
 
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-nav-button,
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .sidebar-toggle {
+.atlas-sidebar.sidebar-collapsed .atlas-nav-button,
+.atlas-sidebar.sidebar-collapsed .sidebar-toggle,
+.atlas-sidebar.is-responsive-rail .atlas-nav-button,
+.atlas-sidebar.is-responsive-rail .sidebar-toggle {
     justify-content: center;
     padding-inline: 7px;
 }
 
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-sidebar-footer {
+.atlas-sidebar.sidebar-collapsed .atlas-sidebar-footer,
+.atlas-sidebar.is-responsive-rail .atlas-sidebar-footer {
     margin-top: auto;
     border-top: 0;
 }
 
-.atlas-sidebar:is(.sidebar-collapsed, .is-responsive-rail) .atlas-sidebar-controls {
+.atlas-sidebar.sidebar-collapsed .atlas-sidebar-controls,
+.atlas-sidebar.is-responsive-rail .atlas-sidebar-controls {
     display: block;
 }
 
@@ -518,7 +473,11 @@ body {
     display: none;
 }
 
-.app-layout :is(button, a, input, select, textarea):focus-visible {
+.app-layout button:focus-visible,
+.app-layout a:focus-visible,
+.app-layout input:focus-visible,
+.app-layout select:focus-visible,
+.app-layout textarea:focus-visible {
     outline: 2px solid #7779f4;
     outline-offset: 2px;
 }
