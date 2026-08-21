@@ -170,6 +170,33 @@ function setupApiRoutes(app, context, client, config) {
         }
     });
 
+    app.get("/api/game/bundles", async (req, res) => {
+        try {
+            const catalogResult = await Runtime.evaluate({
+                expression: "getBundleCatalog()",
+                awaitPromise: true,
+                returnByValue: true,
+            });
+
+            if (catalogResult.exceptionDetails) {
+                const details =
+                    catalogResult.exceptionDetails.exception?.description ?? catalogResult.exceptionDetails.text;
+                return res.status(500).json({ error: "Failed to read bundle catalog", details });
+            }
+
+            const bundles = catalogResult.result.value;
+            if (!Array.isArray(bundles)) {
+                return res.status(500).json({ error: "Bundle catalog returned invalid data" });
+            }
+
+            log.debug(`Read bundle catalog (${bundles.length} bundles)`);
+            res.json({ bundles });
+        } catch (apiError) {
+            log.error("Error in /api/game/bundles:", apiError);
+            res.status(500).json({ error: "Internal server error while reading bundle catalog" });
+        }
+    });
+
     app.post("/api/toggle", async (req, res) => {
         const { action } = await req.json();
         if (!action) {
