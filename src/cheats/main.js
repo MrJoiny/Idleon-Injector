@@ -24,6 +24,7 @@ import {
     readEntries,
     readComputed,
     readComputedMany,
+    deletePath,
     writePath,
     writePaths,
 } from "./api/stateAccessors.js";
@@ -76,6 +77,7 @@ window.readGamePath = readPath;
 window.readGameEntries = readEntries;
 window.readComputedValue = readComputed;
 window.readComputedValues = readComputedMany;
+window.deleteGamePath = deletePath;
 window.writeGamePath = writePath;
 window.writeGamePaths = writePaths;
 
