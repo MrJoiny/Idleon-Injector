@@ -1,0 +1,98 @@
+/* Masterclasses / Grimoire */
+
+.masterclasses-tab {
+    --world-color: var(--c-accent);
+}
+
+.grimoire-controls {
+    flex-shrink: 0;
+}
+
+.grimoire-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.grimoire-currency__fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.grimoire-currency__field {
+    display: grid;
+    grid-template-columns: 190px auto;
+    justify-content: start;
+    align-items: center;
+    gap: 6px;
+}
+
+.grimoire-currency__label {
+    grid-column: 1 / -1;
+    color: var(--c-text-muted);
+    font-size: 0.815rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.grimoire-currency__field .number-input-wrapper {
+    width: 190px;
+}
+
+.grimoire-currency__set {
+    align-self: end;
+}
+
+.grimoire-currency__toggle {
+    grid-template-columns: max-content max-content;
+    grid-template-areas:
+        "info info"
+        "badge controls";
+    gap: 6px;
+    justify-content: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.grimoire-currency__toggle .account-row__info {
+    grid-area: info;
+}
+
+.grimoire-currency__toggle .account-row__badge {
+    grid-area: badge;
+    justify-self: start;
+}
+
+.grimoire-currency__toggle .account-row__controls {
+    grid-area: controls;
+    justify-self: start;
+}
+
+.grimoire-upgrade-list {
+    padding-bottom: 4px;
+}
+
+@media (max-width: 980px) {
+    .grimoire-currency__fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .grimoire-currency__fields {
+        grid-template-columns: 1fr;
+    }
+
+    .grimoire-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .grimoire-row__controls {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
