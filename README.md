@@ -121,13 +121,18 @@ npm run validate
 
 ## Documentation
 
-- [Backend Architecture](docs/backend.md) - Server, CDP, and module structure.
+Docs cover navigation, domain language, and decisions - not code behavior; the
+code is the source of truth for how things work.
+
+- [Architecture Map](docs/architecture.md) - Where things live across backend, cheat bundle, and UI.
+- [Glossary](docs/glossary.md) - Domain language of the game and injector.
+- [Decisions](docs/decisions.md) - Why it is built this way, alternatives, trade-offs.
+- [Platforms](docs/platforms.md) - Steam/web modes and platform constraints.
+- [Configuration](docs/config.md) - Config layering and semantics.
+- [CLI Reference](docs/cli.md) - Console commands and shortcuts.
 - [Build Guide](docs/build.md) - Building from source for all platforms.
-- [Cheats Guide](docs/cheats.md) - Writing and registering cheats.
-- [CLI Reference](docs/cli.md) - Console commands and autocomplete.
-- [Configuration](docs/config.md) - Config files, schema, and validation.
-- [Platforms](docs/platforms.md) - Steam, web, and OS-specific setup.
-- [Web UI](docs/ui.md) - VanJS dashboard and components.
+- [Cheat Development](docs/cheats.md) - Workflow and domain rules for adding cheats.
+- [Account Pages Patterns](docs/account-pages.md) - Design rules for Account feature tabs.
 
 ## Contributing
 

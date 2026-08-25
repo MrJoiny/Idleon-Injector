@@ -1,110 +1,47 @@
-# Platform and Injection Modes
+# Platforms and Injection Modes
 
-Two targets: Steam and Web. Select via `injectorConfig.target` in `config.custom.js`.
+Two targets, selected with `injectorConfig.target` in `config.custom.js`:
+`steam` (Windows/Linux) and `web` (any desktop OS; the only option on macOS).
 
-## Common constants
+## Constants
 
-- CDP port fixed at `32123` (`getCdpPort()` in `configManager.js`).
-- UI port defaults to `8080` unless `injectorConfig.webPort` overrides.
-- Attach timeout defaults to 30s; Linux uses `injectorConfig.onLinuxTimeout`.
+- CDP port: fixed `32123`.
+- Dashboard port: `injectorConfig.webPort`, default `8080`.
 
 ## Steam target
 
-Set:
-
-```js
-exports.injectorConfig = { target: "steam" };
-```
-
-### Windows flow
-
-1. `findIdleonExe()` checks `injectorConfig.gameExePath` and common Steam install paths.
-2. `attach(exePath)` spawns `LegendsOfIdleon.exe --remote-debugging-port=32123`.
-3. If direct launch fails or times out, falls back to Steam protocol:
-
-```text
-steam://run/1476970//--remote-debugging-port=32123
-```
-
-4. Polls `http://localhost:32123/json/version` until CDP is ready.
-
-### Linux flow
-
-1. `autoAttachLinux()` searches for `steam.sh` in common paths.
-2. Spawns `steam -applaunch 1476970 --remote-debugging-port=32123`.
-3. If auto-launch fails, waits for manual launch and polls CDP.
-4. Timeout is controlled by `injectorConfig.onLinuxTimeout`.
-
-### macOS
-
-Steam target not supported on macOS. Use web target instead.
-Entry point throws an error if `target` is not `web` on macOS.
+- Windows: launches the installed game exe with
+  `--remote-debugging-port=32123`; falls back to the Steam protocol URL if
+  direct launch fails or times out.
+- Linux: launches through Steam (`steam -applaunch <appid>
+  --remote-debugging-port=32123`). If auto-launch fails, wait for a manual game
+  start while polling the endpoint. Timeout: `injectorConfig.onLinuxTimeout`.
+- macOS: unsupported - use `web`.
 
 ## Web target
 
-Set:
+Requires `injectorConfig.webUrl`.
 
-```js
-exports.injectorConfig = {
-    target: "web",
-    webUrl: "https://www.legendsofidleon.com/ytGl5oc/",
-};
-```
-
-`webUrl` is required for web mode; errors if missing.
-
-### Browser resolution
-
-`resolveBrowserPath()` picks a Chromium-based browser:
-
-1. Uses `injectorConfig.browserPath` if set.
-2. Falls back to known locations for Chrome, Edge, Brave, or Opera.
-
-If no executable found, throws "Could not find a compatible Chromium-based browser".
-
-### Browser launch arguments
-
-Spawns the browser with:
-
-```text
---remote-debugging-port=32123
---user-data-dir=<profile>
---no-first-run
---no-default-browser-check
---remote-allow-origins=*
---site-per-process
---disable-extensions
---new-window
-<webUrl>
-```
-
-Linux adds `--disable-gpu` for stability.
-
-If `injectorConfig.browserUserDataDir` is empty, defaults to `idleon-web-profile` in the runtime base directory (executable directory in packaged builds, `process.cwd()` in source runs).
-
-### Target matching
-
-`waitForIdleonTarget()` selects a CDP page target that matches `webUrl` exactly or shares the same host.
-
-If the Idleon page never appears, throws `Timeout waiting for Idleon page`.
-
-Web attach flow:
-
-1. Launch the browser with CDP enabled.
-2. Poll `/json/version` until the CDP WebSocket URL is available.
-3. Find the Idleon page target and return its `webSocketDebuggerUrl`.
+- Browser resolution: `injectorConfig.browserPath` if set, otherwise known
+  Chrome/Edge/Brave/Opera install locations. Error if none found.
+- Profile: `injectorConfig.browserUserDataDir` if set, otherwise a default
+  profile directory under the runtime directory.
+- Linux spawns the browser with `--disable-gpu` for stability.
 
 ## Injection tuning
 
-If a game update changes the bootstrap script, update these `injectorConfig` fields:
+When a game update changes the bootstrap script, adjust in `config.custom.js`:
 
-- `interceptPattern` (default `*N.js`).
-- `injreg` (default `\w+\.ApplicationMain\s*?=`).
+- `interceptPattern`: which script gets intercepted (default `*N.js`).
+- `injreg`: regex capturing the game-root variable assignment (default
+  `\w+\.ApplicationMain\s*?=`).
 
-## Troubleshooting
+## Attach errors
 
-- `No inspectable targets`: Steam not running or game launched without CDP.
-- `Timeout waiting for debugger WebSocket URL`: target did not open CDP on port 32123.
-- `Timeout waiting for Idleon page`: wrong `webUrl`, slow load, or browser profile lock.
-- `Configured browserPath does not exist`: fix path or clear to auto-detect.
-- `webUrl is required when target is 'web'`: add a valid Idleon URL.
+| Message (substring) | Meaning | Fix |
+| --- | --- | --- |
+| `No inspectable targets` | Steam not running, or game already open without CDP | Start Steam first; close the running game |
+| `Timeout waiting for debugger WebSocket URL` | Target never opened CDP on 32123 | Relaunch via the injector |
+| `Timeout waiting for Idleon page` | Wrong/slow `webUrl`, or profile locked by another window | Verify URL; close other windows using the profile |
+| `Could not find a compatible Chromium-based browser` | Auto-detection failed | Set `browserPath` |
+| `webUrl is required when target is 'web'` | Missing URL | Add `webUrl` to `injectorConfig` |
