@@ -11,6 +11,7 @@
 import van from "../../vendor/van-1.6.0.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
 import { CardsTab } from "./account/CardsTab.js";
+import { MasterclassesTab } from "./account/MasterclassesTab.js";
 import { TasksTab } from "./account/TasksTab.js";
 import { UpgradeVaultTab } from "./account/UpgradeVaultTab.js";
 import { W1Tab } from "./account/W1Tab.js";
@@ -33,6 +34,7 @@ const ACCOUNT_TABS = [
     { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
     { id: "tasks", label: "TASKS", isWorld: false, component: TasksTab },
     { id: "cards", label: "CARDS", isWorld: false, component: CardsTab },
+    { id: "masterclasses", label: "MASTERCLASSES", isWorld: false, component: MasterclassesTab },
     { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
     { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
     { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
