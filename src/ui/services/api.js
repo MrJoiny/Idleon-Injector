@@ -286,6 +286,18 @@ export async function gga(path, value) {
     }
 }
 
+/** Delete a cached or derived GGA property by dot/bracket path. */
+export async function deleteGga(path) {
+    const ggaPath = path.startsWith("gga.") ? path : `gga.${path}`;
+    const data = await _request("/game/gga/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: ggaPath }),
+    });
+
+    if (!data?.ok) throw new Error(`Failed to delete ${ggaPath}`);
+}
+
 /**
  * Write many GGA paths in one backend/CDP round-trip, then verify from the UI
  * using follow-up reads so batch verification matches the single-write gga flow.
