@@ -6,7 +6,7 @@ import { AccountRow } from "./components/AccountRow.js";
 import { AccountSection } from "./components/AccountSection.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
-import { createStaticRowReconciler, writeVerified } from "./accountShared.js";
+import { createStaticRowReconciler, useWriteStatus, writeVerified } from "./accountShared.js";
 
 const { div, span, button, h3, p } = van.tags;
 
@@ -20,6 +20,15 @@ const PLAYER_SELECTION_MESSAGE =
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const isOwned = (owned) => Number(owned) === 1;
 const bundlePath = (code) => `${BUNDLES_RECEIVED_PATH}.${code}`;
+const createDeferred = () => {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve, reject };
+};
 
 const matchesSearch = (bundle, query) => {
     const normalizedQuery = String(query ?? "")
@@ -72,7 +81,7 @@ const BundleRow = ({ bundle, state, searchQuery, buyAllStatus, onBuy, onUnbuy })
                 },
                 () => {
                     if (state.pending.val) return "BUY QUEUED";
-                    if (state.status.val === "loading") return "UNBUYING";
+                    if (state.status.val === "loading") return isOwned(state.owned.val) ? "UNBUYING" : "BUYING";
                     return isOwned(state.owned.val) ? "UNBUY" : "BUY";
                 }
             ),
@@ -139,25 +148,20 @@ export const BundlesTab = () => {
     const buyAllDialogOpen = van.state(false);
     const buyAllCountdown = van.state(0);
     const buyAllTargetCount = van.state(0);
-    const buyAllStatus = van.state("idle");
+    const { status: buyAllStatus, run: runBuyAll } = useWriteStatus();
     const listNode = div({ class: "account-item-stack bundles-list" });
     const reconcileRows = createStaticRowReconciler(listNode);
     let catalogCache = [];
     let buyAllCountdownTimer = null;
 
-    const resetBuyAllStatusAfter = (status, delayMs) => {
-        setTimeout(() => {
-            if (buyAllStatus.val === status) buyAllStatus.val = "idle";
-        }, delayMs);
-    };
-
     const getBundleState = (code, owned = 0) => {
         if (!bundleStates.has(code)) {
+            const { status, run } = useWriteStatus();
             bundleStates.set(code, {
                 owned: van.state(isOwned(owned) ? 1 : 0),
                 pending: van.state(false),
-                status: van.state("idle"),
-                statusResetTimer: null,
+                status,
+                run,
             });
         }
         return bundleStates.get(code);
@@ -170,33 +174,6 @@ export const BundlesTab = () => {
         });
 
     const buyableCount = van.derive(() => getBuyableBundles().length);
-
-    const clearStatusResetTimer = (state) => {
-        if (state.statusResetTimer !== null) {
-            clearTimeout(state.statusResetTimer);
-            state.statusResetTimer = null;
-        }
-    };
-
-    const resetStatusAfter = (state, delayMs) => {
-        clearStatusResetTimer(state);
-        state.statusResetTimer = setTimeout(() => {
-            state.status.val = "idle";
-            state.statusResetTimer = null;
-        }, delayMs);
-    };
-
-    const markPurchaseSucceeded = (state) => {
-        state.pending.val = false;
-        state.status.val = "success";
-        resetStatusAfter(state, 1200);
-    };
-
-    const markPurchaseFailed = (state) => {
-        state.pending.val = false;
-        state.status.val = "error";
-        resetStatusAfter(state, 1800);
-    };
 
     const ensurePlayerSelected = async () => {
         try {
@@ -288,15 +265,15 @@ export const BundlesTab = () => {
     };
 
     const pollForOwnershipBatch = async (entries) => {
-        const pendingEntries = new Map(entries.map(({ bundle, state }) => [bundle.code, state]));
+        const pendingEntries = new Map(entries.map((entry) => [entry.bundle.code, entry]));
 
         for (let attempt = 0; attempt < BUY_POLL_ATTEMPTS && pendingEntries.size; attempt += 1) {
             await delay(BUY_POLL_INTERVAL_MS);
             await refreshCatalog();
 
-            for (const [code, state] of pendingEntries) {
-                if (!isOwned(state.owned.val)) continue;
-                markPurchaseSucceeded(state);
+            for (const [code, entry] of pendingEntries) {
+                if (!isOwned(entry.state.owned.val)) continue;
+                entry.confirmation.resolve();
                 pendingEntries.delete(code);
             }
         }
@@ -304,109 +281,109 @@ export const BundlesTab = () => {
         return pendingEntries;
     };
 
-    const queueBundleBuy = async (bundle, state) => {
-        clearStatusResetTimer(state);
-        state.pending.val = true;
-        state.status.val = "idle";
-
-        try {
-            await executeCheatAction(`buy ${bundle.code}`);
-            return true;
-        } catch (caughtError) {
-            console.error(`[bundles] Buy failed for ${bundle.code}:`, caughtError);
-            markPurchaseFailed(state);
-            return false;
-        }
-    };
-
     async function buyBundle(bundle, state) {
         if (buyAllStatus.val === "loading" || isOwned(state.owned.val) || state.pending.val) return;
-        if (!(await ensurePlayerSelected())) {
-            markPurchaseFailed(state);
-            return;
-        }
+        return state.run(
+            async () => {
+                if (!(await ensurePlayerSelected()))
+                    throw new Error(purchaseBlockMessage.val ?? PLAYER_SELECTION_MESSAGE);
 
-        if (!(await queueBundleBuy(bundle, state))) return;
-
-        try {
-            const confirmed = await pollForOwnership(bundle.code, state);
-            if (confirmed) {
-                markPurchaseSucceeded(state);
-            } else {
-                markPurchaseFailed(state);
-            }
-        } catch (caughtError) {
-            console.error(`[bundles] Ownership poll failed for ${bundle.code}:`, caughtError);
-            markPurchaseFailed(state);
-        }
+                state.pending.val = true;
+                try {
+                    await executeCheatAction(`buy ${bundle.code}`);
+                    const confirmed = await pollForOwnership(bundle.code, state);
+                    if (!confirmed) throw new Error(`Timed out confirming ownership of ${bundle.code}.`);
+                } finally {
+                    state.pending.val = false;
+                }
+            },
+            { onError: (caughtError) => console.error(`[bundles] Buy failed for ${bundle.code}:`, caughtError) }
+        );
     }
 
     async function buyAllBundles() {
         if (buyAllCountdown.val > 0 || buyAllStatus.val === "loading") return;
-        buyAllStatus.val = "loading";
-        if (!(await ensurePlayerSelected())) {
-            closeBuyAllDialog();
-            buyAllStatus.val = "error";
-            resetBuyAllStatusAfter("error", 1800);
-            return;
-        }
-
-        const bundles = getBuyableBundles();
-        closeBuyAllDialog();
-        if (!bundles.length) {
-            buyAllStatus.val = "idle";
-            return;
-        }
-
-        const queued = [];
-        let queueRequestFailed = false;
-
-        for (const bundle of bundles) {
-            const state = getBundleState(bundle.code, bundle.owned);
-            if (await queueBundleBuy(bundle, state)) queued.push({ bundle, state });
-            else queueRequestFailed = true;
-        }
-
-        if (!queued.length) {
-            buyAllStatus.val = "error";
-            resetBuyAllStatusAfter("error", 1800);
-            return;
-        }
-
-        try {
-            const pending = await pollForOwnershipBatch(queued);
-            for (const state of pending.values()) markPurchaseFailed(state);
-
-            const completed = !queueRequestFailed && pending.size === 0;
-            buyAllStatus.val = completed ? "success" : "error";
-            resetBuyAllStatusAfter(completed ? "success" : "error", completed ? 1200 : 1800);
-        } catch (caughtError) {
-            console.error("[bundles] Ownership poll failed after Buy All:", caughtError);
-            for (const { state } of queued) {
-                if (!isOwned(state.owned.val)) markPurchaseFailed(state);
+        return runBuyAll(async () => {
+            if (!(await ensurePlayerSelected())) {
+                closeBuyAllDialog();
+                throw new Error(purchaseBlockMessage.val ?? PLAYER_SELECTION_MESSAGE);
             }
-            buyAllStatus.val = "error";
-            resetBuyAllStatusAfter("error", 1800);
-        }
+
+            const bundles = getBuyableBundles();
+            closeBuyAllDialog();
+            if (!bundles.length) return;
+
+            let queueTail = Promise.resolve();
+            const queueSequentially = (task) => {
+                const request = queueTail.then(task, task);
+                queueTail = request.catch(() => undefined);
+                return request;
+            };
+            const entries = bundles.map((bundle) => {
+                const state = getBundleState(bundle.code, bundle.owned);
+                const entry = {
+                    bundle,
+                    state,
+                    confirmation: createDeferred(),
+                    queued: false,
+                    request: null,
+                    result: null,
+                };
+
+                entry.result = state.run(
+                    async () => {
+                        try {
+                            entry.request = queueSequentially(async () => {
+                                state.pending.val = true;
+                                await executeCheatAction(`buy ${bundle.code}`);
+                                entry.queued = true;
+                            });
+                            await entry.request;
+                            await entry.confirmation.promise;
+                        } finally {
+                            state.pending.val = false;
+                        }
+                    },
+                    { onError: (caughtError) => console.error(`[bundles] Buy failed for ${bundle.code}:`, caughtError) }
+                );
+                return entry;
+            });
+
+            await Promise.allSettled(entries.map((entry) => entry.request));
+            const queued = entries.filter((entry) => entry.queued);
+
+            if (queued.length) {
+                try {
+                    const pending = await pollForOwnershipBatch(queued);
+                    for (const entry of pending.values()) {
+                        entry.confirmation.reject(new Error(`Timed out confirming ownership of ${entry.bundle.code}.`));
+                    }
+                } catch (caughtError) {
+                    console.error("[bundles] Ownership poll failed after Buy All:", caughtError);
+                    for (const entry of queued) {
+                        if (!isOwned(entry.state.owned.val)) entry.confirmation.reject(caughtError);
+                    }
+                }
+            }
+
+            const results = await Promise.all(entries.map((entry) => entry.result));
+            if (results.some(({ ok }) => !ok)) throw new Error("One or more bundle purchases could not be completed.");
+        });
     }
 
     async function unbuyBundle(bundle, state) {
         if (buyAllStatus.val === "loading" || !isOwned(state.owned.val) || state.pending.val) return;
 
-        clearStatusResetTimer(state);
-        state.status.val = "loading";
-        try {
-            // Unbuy is deliberately the only direct ownership write, and it can
-            // only write 0. writeVerified reads the flag back before this updates.
-            await writeVerified(bundlePath(bundle.code), 0);
-            state.owned.val = 0;
-            state.pending.val = false;
-            state.status.val = "success";
-            resetStatusAfter(state, 1200);
-        } catch (caughtError) {
-            console.error(`[bundles] Unbuy failed for ${bundle.code}:`, caughtError);
-            markPurchaseFailed(state);
-        }
+        return state.run(
+            async () => {
+                // Unbuy is deliberately the only direct ownership write, and it can
+                // only write 0. writeVerified reads the flag back before this updates.
+                await writeVerified(bundlePath(bundle.code), 0);
+                state.owned.val = 0;
+                state.pending.val = false;
+            },
+            { onError: (caughtError) => console.error(`[bundles] Unbuy failed for ${bundle.code}:`, caughtError) }
+        );
     }
 
     const load = () => runLoad(refreshCatalog);
