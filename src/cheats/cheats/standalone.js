@@ -429,3 +429,152 @@ registerCheat({
         return `${code} has been sent!`;
     },
 });
+
+// Pet Spoof cheat
+registerCheat({
+    name: "petspoof",
+    category: "petspoof",
+    message: "Spoof companion bonuses",
+    fn: () => {
+        const REAPPLY_INTERVAL = 500;
+        let lastState = null;
+
+        function getCompanions(db) {
+            if (!db) return [];
+
+            return Object.keys(db)
+                .filter(key => /^\d+$/.test(key))
+                .map(key => Number(key))
+                .filter(id => db[id] != null);
+        }
+
+        function spoofPets() {
+            try {
+                const ggaObj = gga;
+                if (!ggaObj) return false;
+
+                const dnsm = ggaObj?.DNSM?.h;
+                const db = ggaObj?.CustomLists?.h?.CompanionDB;
+
+                const lvz = dnsm?.CompanionLVz?.h;
+                const bon = dnsm?.CompanionBon?.h;
+
+                if (!db || !lvz || !bon) return false;
+
+                const petIds = getCompanions(db);
+                let applied = 0;
+
+                for (const id of petIds) {
+                    const pet = db[id];
+                    const key = String(id);
+
+                    const bonus = Number(pet?.[11]);
+
+                    if (!Number.isFinite(bonus)) {
+                        continue;
+                    }
+
+                    lvz[key] = 1;
+                    bon[key] = bonus;
+
+                    applied++;
+                }
+
+                console.log(
+                    `[Pet Spoof] Applied bonuses to ${applied}/${petIds.length} companions.`
+                );
+
+                return true;
+            } catch (err) {
+                console.error("[Pet Spoof] Failed:", err);
+                return false;
+            }
+        }
+
+        function petSpoofWatchdog() {
+            try {
+                const ggaObj = gga;
+                if (!ggaObj) return;
+
+                if (ggaObj !== lastState) {
+                    lastState = ggaObj;
+
+                    if (spoofPets()) {
+                        console.log(
+                            "[Pet Spoof] Game state changed; all companions reapplied."
+                        );
+                    }
+
+                    return;
+                }
+
+                const dnsm = ggaObj?.DNSM?.h;
+                const db = ggaObj?.CustomLists?.h?.CompanionDB;
+
+                const lvz = dnsm?.CompanionLVz?.h;
+                const bon = dnsm?.CompanionBon?.h;
+
+                if (!db || !lvz || !bon) return;
+
+                const petIds = getCompanions(db);
+
+                let repaired = 0;
+
+                for (const id of petIds) {
+                    const pet = db[id];
+                    const key = String(id);
+
+                    const wantedBonus = Number(pet?.[11]);
+
+                    if (!Number.isFinite(wantedBonus)) {
+                        continue;
+                    }
+
+                    let changed = false;
+
+                    if (lvz[key] !== 1) {
+                        lvz[key] = 1;
+                        changed = true;
+                    }
+
+                    if (bon[key] !== wantedBonus) {
+                        bon[key] = wantedBonus;
+                        changed = true;
+                    }
+
+                    if (changed) {
+                        repaired++;
+                    }
+                }
+
+                if (repaired > 0) {
+                    console.log(
+                        `[Pet Spoof] Repaired ${repaired} companion(s).`
+                    );
+                }
+            } catch (err) {
+                console.error("[Pet Spoof] Watchdog failed:", err);
+            }
+        }
+
+        cheatState.petspoof = !cheatState.petspoof;
+
+        if (cheatState.petspoof) {
+            spoofPets();
+
+            globalThis.petSpoofInterval = setInterval(
+                petSpoofWatchdog,
+                REAPPLY_INTERVAL
+            );
+
+            return "[Pet Spoof] Activated for all CompanionDB entries.";
+        } else {
+            if (globalThis.petSpoofInterval) {
+                clearInterval(globalThis.petSpoofInterval);
+                globalThis.petSpoofInterval = null;
+            }
+
+            return "[Pet Spoof] Deactivated.";
+        }
+    },
+});
