@@ -220,6 +220,7 @@ registerCheats({
         { name: "grimoire", message: "grimoire cheats" },
         { name: "windwalker", message: "windwalker cheats" },
         { name: "arcane", message: "arcane cultist cheats" },
+        { name: "royal", message: "royal guardian cheats" },
         { name: "emperor", message: "unlimited emperor tries" },
         { name: "endless", message: "easy endless runs for summoning" },
         { name: "sneaksymbol", message: "sneaksymbol 100% chance" },
