@@ -3,69 +3,22 @@
  *
  * Proxies for Firebase storage functions:
  * - playButton (re-initialize proxies on character selection)
- * - Companion management (delete, swap, set, get)
  * - Party members
  * - Unban (cleanMarkedFiles)
  * - Steam achievements (prevent duplicates)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
-import { registerCommonVariables, cList, firebase, gameContext, gga, monsterDefs } from "../core/globals.js";
+import { registerCommonVariables, firebase, gameContext, gga } from "../core/globals.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
 import { setupItemProxies } from "./items.js";
 
 /**
- * Setup Firebase storage proxy (companion, party, unban).
+ * Setup Firebase storage proxy (party, unban).
  */
 export function setupFirebaseStorageProxy() {
-    const deleteCompanion = firebase.deleteCompanion;
-    firebase.deleteCompanion = function (...args) {
-        if (cheatState.w1.companion) return Promise.resolve(1);
-        return Reflect.apply(deleteCompanion, this, args);
-    };
-
-    const swapCompanionOrder = firebase.swapCompanionOrder;
-    firebase.swapCompanionOrder = function (...args) {
-        if (cheatState.w1.companion) return Promise.resolve(1);
-        return Reflect.apply(swapCompanionOrder, this, args);
-    };
-
-    const setCompanionFollower = firebase.setCompanionFollower;
-    firebase.setCompanionFollower = function (...args) {
-        if (cheatState.w1.companion) {
-            cheatConfig.w1.companion.current = String(args[0]);
-        }
-        return Reflect.apply(setCompanionFollower, this, args);
-    };
-
-    const getCompanionInfoMe = firebase.getCompanionInfoMe;
-    firebase.getCompanionInfoMe = function (...args) {
-        if (cheatState.w1.companion) {
-            if (!cheatConfig.w1.companion.companions) {
-                return Array.from({ length: cList.CompanionDB.length }, (_, index) => index).filter(
-                    (index) => monsterDefs[cList.CompanionDB[index][0]]?.h.Name
-                );
-            }
-            const companions = cheatConfig.w1.companion.companions;
-            if (typeof companions === "string") {
-                return companions
-                    .split(",")
-                    .map((id) => parseInt(id.trim()))
-                    .filter((id) => !isNaN(id));
-            }
-            return companions;
-        }
-        return Reflect.apply(getCompanionInfoMe, this, args);
-    };
-
-    const getCurrentCompanion = firebase.getCurrentCompanion;
-    firebase.getCurrentCompanion = function (...args) {
-        if (cheatState.w1.companion) return cheatConfig.w1.companion.current;
-        return Reflect.apply(getCurrentCompanion, this, args);
-    };
-
     const cleanMarkedFiles = firebase.cleanMarkedFiles;
     firebase.cleanMarkedFiles = function (...args) {
         if (cheatConfig.unban) return;
