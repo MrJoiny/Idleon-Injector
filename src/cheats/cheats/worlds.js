@@ -2,7 +2,7 @@
  * Worlds Cheats
  *
  * World-specific cheats organized by world (W1-W7):
- * - W1: anvil, forge, stampcost, smith, companion, owl
+ * - W1: anvil, forge, stampcost, smith, owl
  * - W2: boss, roo, alchemy, vialrng, vialattempt, sigilspeed, killroyreset
  * - W3: mobdeath, towerdamage, refinery, trapping, prayer, shrines, etc.
  * - W4: breeding, spice, kitchens, lab, arena, mainframe, ribbon, chips, etc.
@@ -25,7 +25,6 @@ registerCheats({
         { name: "forge", message: "forge speed and capacity multiplier check config" },
         { name: "stampcost", message: "stamp cost reduction multiplier check config" },
         { name: "smith", message: "smithing cost nullification (change maps to apply)" },
-        { name: "companion", message: "companions cheat" },
         { name: "owl", message: "owl cheats, check config file" },
     ],
 });
