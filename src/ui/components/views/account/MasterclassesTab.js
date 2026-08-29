@@ -4,14 +4,14 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { RoyalArmoryTab } from "./masterclasses/RoyalArmoryTab.js";
+import { RoyalArmoryTab } from "./masterclasses/RoyalArmory.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "royal-armory", label: "R O Y A L A R M O R Y", component: RoyalArmoryTab },
+    { id: "royal-armory", label: "ROYAL ARMORY", component: RoyalArmoryTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,4 +37,3 @@ export const MasterclassesTab = () => {
         )
     );
 };
-
