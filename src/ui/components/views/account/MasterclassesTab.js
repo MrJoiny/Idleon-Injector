@@ -11,7 +11,7 @@ const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "target", label: "L I L O R B L E T S H O P", component: LilOrbletShopTab },
+    { id: "lil-orblet-shop", label: "L I L O R B L E T S H O P", component: LilOrbletShopTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,3 +37,4 @@ export const MasterclassesTab = () => {
         )
     );
 };
+
