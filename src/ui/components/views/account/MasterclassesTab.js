@@ -4,7 +4,7 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { TesseractTab } from "./masterclasses/Tesseract.js";
+import { TesseractTab } from "./masterclasses/TesseractTab.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -37,3 +37,4 @@ export const MasterclassesTab = () => {
         )
     );
 };
+
