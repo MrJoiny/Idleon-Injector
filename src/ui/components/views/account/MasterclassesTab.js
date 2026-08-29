@@ -4,14 +4,14 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { ResourceNodesTab } from "./masterclasses/ResourceNodesTab.js";
+import { ResourceNodesTab } from "./masterclasses/ResourceNodes.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "resource-nodes", label: "R E S O U R C E N O D E S", component: ResourceNodesTab },
+    { id: "resource-nodes", label: "RESOURCE NODES", component: ResourceNodesTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,4 +37,3 @@ export const MasterclassesTab = () => {
         )
     );
 };
-
