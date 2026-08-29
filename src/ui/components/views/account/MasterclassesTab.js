@@ -4,14 +4,14 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { TesseractTab } from "./masterclasses/TesseractTab.js";
+import { TesseractTab } from "./masterclasses/Tesseract.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "tesseract", label: "T E S S E R A C T", component: TesseractTab },
+    { id: "tesseract", label: "TESSERACT", component: TesseractTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,4 +37,3 @@ export const MasterclassesTab = () => {
         )
     );
 };
-
