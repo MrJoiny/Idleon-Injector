@@ -4,14 +4,14 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { CompassTab } from "./masterclasses/CompassTab.js";
+import { CompassTab } from "./masterclasses/Compass.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "compass", label: "C O M P A S S", component: CompassTab },
+    { id: "compass", label: "COMPASS", component: CompassTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,4 +37,3 @@ export const MasterclassesTab = () => {
         )
     );
 };
-
