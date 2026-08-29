@@ -141,6 +141,118 @@ registerCheat({
     fn: () => {},
 });
 
+// Pet Spoof: apply companion + bonuses by writing DNSM tables (watchdog)
+registerCheat({
+    name: "petspoof",
+    message: "Spoof companion bonuses",
+    fn: () => {
+        cheatState.petspoof = !cheatState.petspoof;
+
+        const REAPPLY_INTERVAL = 500;
+
+        function getCompanions(db) {
+            if (!db) return [];
+            return Object.keys(db)
+                .filter((key) => /^\d+$/.test(key))
+                .map((k) => Number(k))
+                .filter((id) => db[id] != null);
+        }
+
+        function spoofPetsOnce() {
+            try {
+                const ggaObj = bEngine?.gameAttributes?.h;
+                if (!ggaObj) return false;
+
+                const dnsm = ggaObj?.DNSM?.h;
+                const db = ggaObj?.CustomLists?.h?.CompanionDB;
+
+                const lvz = dnsm?.CompanionLVz?.h;
+                const bon = dnsm?.CompanionBon?.h;
+
+                if (!db || !lvz || !bon) return false;
+
+                const petIds = getCompanions(db);
+                let applied = 0;
+
+                for (const id of petIds) {
+                    const pet = db[id];
+                    const key = String(id);
+
+                    const bonus = Number(pet?.[11]);
+                    if (!Number.isFinite(bonus)) continue;
+
+                    lvz[key] = 1;
+                    bon[key] = bonus;
+                    applied++;
+                }
+
+                return true;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        function petSpoofWatchdog() {
+            try {
+                const ggaObj = bEngine?.gameAttributes?.h;
+                if (!ggaObj) return;
+
+                // Reapply once on attach/state change; then repair individual entries
+                const dnsm = ggaObj?.DNSM?.h;
+                const db = ggaObj?.CustomLists?.h?.CompanionDB;
+                const lvz = dnsm?.CompanionLVz?.h;
+                const bon = dnsm?.CompanionBon?.h;
+                if (!db || !lvz || !bon) return;
+
+                const petIds = getCompanions(db);
+                let repaired = 0;
+
+                for (const id of petIds) {
+                    const pet = db[id];
+                    const key = String(id);
+                    const wantedBonus = Number(pet?.[11]);
+                    if (!Number.isFinite(wantedBonus)) continue;
+
+                    let changed = false;
+                    if (lvz[key] !== 1) {
+                        lvz[key] = 1;
+                        changed = true;
+                    }
+                    if (bon[key] !== wantedBonus) {
+                        bon[key] = wantedBonus;
+                        changed = true;
+                    }
+                    if (changed) repaired++;
+                }
+
+                return repaired > 0;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        // Clear any previous interval
+        if (globalThis.petSpoofInterval) {
+            try { clearInterval(globalThis.petSpoofInterval); } catch (e) {}
+            globalThis.petSpoofInterval = null;
+        }
+
+        if (cheatState.petspoof) {
+            // apply immediately
+            spoofPetsOnce();
+            // start watchdog
+            globalThis.petSpoofInterval = setInterval(petSpoofWatchdog, REAPPLY_INTERVAL);
+            return "[Pet Spoof] Activated for all CompanionDB entries.";
+        } else {
+            if (globalThis.petSpoofInterval) {
+                try { clearInterval(globalThis.petSpoofInterval); } catch (e) {}
+                globalThis.petSpoofInterval = null;
+            }
+            return "[Pet Spoof] Deactivated.";
+        }
+    },
+});
+
 // Stop dropping items from monsters
 registerCheat({
     name: "nomore",
