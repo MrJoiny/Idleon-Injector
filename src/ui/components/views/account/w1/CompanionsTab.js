@@ -13,7 +13,7 @@
 
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
-import { store } from "../../../../state/store.js";
+import store from "../../../../state/store.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { SearchBar } from "../../../SearchBar.js";
 import { Icons } from "../../../../assets/icons.js";
@@ -258,7 +258,7 @@ export const CompanionsTab = () => {
                 { class: "toggle-switch account-toggle" },
                 input({
                     type: "checkbox",
-                    checked: () => store.dataState.activeCheatStates.petspoof,
+                    checked: () => store.data.activeCheatStates.petspoof,
                     onchange: () => store.executeCheat("petspoof", "Pet Spoof"),
                 }),
                 span({ class: "slider" }),
