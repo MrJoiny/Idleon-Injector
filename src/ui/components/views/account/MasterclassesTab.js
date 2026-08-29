@@ -4,14 +4,14 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
-import { LilOrbletShopTab } from "./masterclasses/LilOrbletShopTab.js";
+import { LilOrbletShopTab } from "./masterclasses/LilOrbletShop.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
-    { id: "lil-orblet-shop", label: "L I L O R B L E T S H O P", component: LilOrbletShopTab },
+    { id: "lil-orblet-shop", label: "LIL ORBLET SHOP", component: LilOrbletShopTab },
 ];
 
 export const MasterclassesTab = () => {
@@ -37,4 +37,3 @@ export const MasterclassesTab = () => {
         )
     );
 };
-
