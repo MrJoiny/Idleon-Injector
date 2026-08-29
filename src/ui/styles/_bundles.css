@@ -1,0 +1,118 @@
+.bundles-scroll {
+    width: 100%;
+}
+
+.bundles-search {
+    max-width: 480px;
+}
+
+.bundles-list {
+    min-width: 0;
+}
+
+.bundle-row-wrap[hidden] {
+    display: none;
+}
+
+.bundle-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.bundle-row__code {
+    font-family: var(--font-mono);
+}
+
+.bundle-row__pending {
+    margin-top: 2px;
+    color: var(--c-warning);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.bundle-row .account-row__badge {
+    box-sizing: border-box;
+    display: inline-flex;
+    width: 88px;
+    align-items: center;
+    justify-content: center;
+}
+
+.bundle-row__badge--owned {
+    color: var(--c-success);
+    border-color: var(--c-success);
+    background: var(--c-success-10);
+}
+
+.bundle-row__badge--unowned {
+    color: var(--c-text-muted);
+}
+
+.bundle-row__badge--queued {
+    color: var(--c-warning);
+    border-color: var(--c-warning);
+    background: color-mix(in srgb, var(--c-warning) 12%, var(--c-panel));
+}
+
+.bundle-row__controls {
+    min-width: 132px;
+}
+
+.bundle-row__action {
+    width: 100%;
+    padding-inline: 14px;
+}
+
+.bundle-row__action:disabled {
+    opacity: 0.68;
+    cursor: wait;
+}
+
+.bundles-buy-all-modal .modal-box {
+    border-color: var(--c-warning);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--c-warning) 20%, transparent);
+}
+
+.bundles-buy-all-modal .modal-header {
+    background: color-mix(in srgb, var(--c-warning) 10%, var(--c-panel));
+    border-bottom-color: var(--c-warning);
+}
+
+.bundles-buy-all-modal .modal-header h3 {
+    color: var(--c-warning);
+}
+
+.bundles-buy-all-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bundles-buy-all-modal__body p {
+    margin: 0;
+    line-height: 1.45;
+}
+
+.bundles-buy-all-modal__warning {
+    color: var(--c-warning);
+    font-weight: 700;
+}
+
+.bundles-buy-all-modal__countdown {
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+}
+
+@media (max-width: 680px) {
+    .bundle-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .bundle-row .account-row__controls {
+        grid-column: 1 / -1;
+    }
+
+    .bundle-row__controls {
+        width: 100%;
+    }
+}

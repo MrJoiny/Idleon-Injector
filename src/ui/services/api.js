@@ -47,6 +47,12 @@ export async function fetchCheatsData() {
     return _request("/cheats");
 }
 
+/** Fetch bundle names, codes, and live ownership flags from the injected runtime. */
+export async function fetchBundleCatalog() {
+    const data = await _request("/game/bundles");
+    return data.bundles;
+}
+
 export async function executeCheatAction(action) {
     return _request("/toggle", {
         method: "POST",
