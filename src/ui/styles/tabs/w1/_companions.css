@@ -32,6 +32,75 @@
     gap: 10px;
 }
 
+.companions-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--c-text-dim);
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+}
+
+.companions-notice--warn {
+    border-color: var(--c-warning);
+    color: var(--c-text-main);
+}
+
+.companions-notice .btn-secondary {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* The card is a button, so the + control sits beside it and is positioned over it. */
+.companion-card-wrap {
+    position: relative;
+    display: flex;
+}
+
+.companion-plus {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--c-text-muted);
+    background: var(--c-black-40);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    appearance: none;
+    transition:
+        border-color 0.15s,
+        background 0.15s,
+        color 0.15s;
+}
+
+.companion-plus:hover {
+    border-color: var(--c-accent);
+    color: var(--c-text-main);
+}
+
+.companion-plus:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+}
+
+.companion-plus--on {
+    border-color: var(--c-accent);
+    background: var(--c-accent);
+    color: var(--c-panel);
+}
+
 .companion-card {
     display: flex;
     flex-direction: column;
@@ -66,6 +135,15 @@
 .companion-card--enabled {
     border-color: var(--c-success);
     background: var(--c-success-10);
+}
+
+.companion-card--plus {
+    border-color: var(--c-accent);
+}
+
+/* The + control overlaps the buff text, which is the tallest thing in the card. */
+.companion-card__effect {
+    padding-right: 26px;
 }
 
 .companion-card__top {
