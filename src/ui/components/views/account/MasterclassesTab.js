@@ -1,17 +1,18 @@
 /**
- * Masterclasses account container.
- *
- * New Masterclass systems belong here rather than in the world tabs so their
- * navigation remains expandable without rearranging account-level navigation.
+ * Masterclasses (branch-specific) - limited to GRIMOIRE + TARGET tab for isolated PR testing
  */
 
 import van from "../../../vendor/van-1.6.0.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
+import { MasterclassUpgradeTab } from "./masterclasses/MasterclassUpgradeTab.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
-const MASTERCLASSES_SUBTABS = [{ id: "grimoire", label: "GRIMOIRE", component: GrimoireTab }];
+const MASTERCLASSES_SUBTABS = [
+    { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
+    { id: "masterclass-upgrade", label: "MASTERCLASS UPGRADE", component: MasterclassUpgradeTab },
+];
 
 export const MasterclassesTab = () => {
     const activeSubTab = van.state(MASTERCLASSES_SUBTABS[0].id);
@@ -36,3 +37,4 @@ export const MasterclassesTab = () => {
         )
     );
 };
+
