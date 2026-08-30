@@ -38,10 +38,24 @@ export function setCheatConfig(config) {
  * @param {object} newConfig - New configuration to merge
  */
 export function updateCheatConfig(newConfig) {
-    for (const key in newConfig) {
-        if (Object.hasOwnProperty.call(newConfig, key)) {
-            cheatConfig[key] = newConfig[key];
-        }
+    mergeCheatConfig(cheatConfig, newConfig);
+}
+
+const isPlainObject = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Merge a (possibly partial) config into the live one.
+ *
+ * Callers send only the branch they changed, so assigning top-level keys would drop
+ * every sibling - a post of just `w1.companion` used to wipe w1.anvil/forge/owl in the
+ * running game. Arrays are replaced whole so a list can be shortened or emptied.
+ */
+function mergeCheatConfig(target, source) {
+    for (const key in source) {
+        if (!Object.hasOwnProperty.call(source, key)) continue;
+        const value = source[key];
+        if (isPlainObject(value) && isPlainObject(target[key])) mergeCheatConfig(target[key], value);
+        else target[key] = value;
     }
 }
 /**
