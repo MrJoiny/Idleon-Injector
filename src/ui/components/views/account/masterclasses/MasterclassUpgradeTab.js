@@ -2,15 +2,24 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { SearchBar } from "../../../SearchBar.js";
 import { Icons } from "../../../../assets/icons.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { deleteGga, gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { AccountSection } from "../components/AccountSection.js";
+import { AccountToggleRow } from "../components/AccountToggleRow.js";
 import { InlineEditableNumberField } from "../components/InlineEditableNumberField.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { cleanName, getOrCreateState, runBulkSet, toInt, toNum, useWriteStatus } from "../accountShared.js";
+import {
+    cleanName,
+    getOrCreateState,
+    runBulkSet,
+    toInt,
+    toNum,
+    useWriteStatus,
+    writeVerified,
+} from "../accountShared.js";
 
 const { button, div, img, span } = van.tags;
 
@@ -118,7 +127,7 @@ const matchesSearch = (upgrade, query) => {
     );
 };
 
-const UpgradeRow = ({ levelsPath, upgrade, levelState }) =>
+const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) =>
     ClampedLevelRow({
         valueState: levelState,
         max: upgrade.maxLevel,
@@ -128,7 +137,16 @@ const UpgradeRow = ({ levelsPath, upgrade, levelState }) =>
             value: upgrade.maxLevel,
             tooltip: `Set ${upgrade.name} to level ${upgrade.maxLevel}`,
         },
-        writePath: `${levelsPath}[${upgrade.storageIndex}]`,
+        writePath: deleteCachePaths.length ? null : `${levelsPath}[${upgrade.storageIndex}]`,
+        write: deleteCachePaths.length
+            ? async (nextLevel) => {
+                  await writeVerified(`${levelsPath}[${upgrade.storageIndex}]`, nextLevel);
+                  for (const cachePath of deleteCachePaths) {
+                      await deleteGga(cachePath);
+                  }
+                  return nextLevel;
+              }
+            : null,
         renderInfo: () => [
             span({ class: "account-row__index" }, upgrade.displayIndex),
             span({ class: "account-row__name" }, upgrade.name),
@@ -171,14 +189,30 @@ const CurrencySection = ({ title, fields, states, tabs = [], activeTab = null })
 
         fieldRows.replaceChildren(
             ...visibleFields.map((field) =>
-                InlineEditableNumberField({
-                    label: () => FieldLabel(field),
-                    valueState: states.get(field.key),
-                    path: fieldPath(field),
-                    rootClass: "grimoire-currency__field masterclass-currency__field",
-                    labelClass: "grimoire-currency__label masterclass-currency__label",
-                    inputClass: "grimoire-currency__set masterclass-currency__set",
-                })
+                field.type === "toggle"
+                    ? AccountToggleRow({
+                          info: div(
+                              { class: "account-row__name-group" },
+                              span({ class: "account-row__name" }, field.name)
+                          ),
+                          badge: () => (states.get(field.key).val ? "ENABLED" : "DISABLED"),
+                          checked: () => Boolean(states.get(field.key).val),
+                          rowClass: "grimoire-currency__toggle masterclass-currency__toggle",
+                          title: field.title ?? field.name,
+                          write: async (enabled) => {
+                              const nextValue = enabled ? 1 : 0;
+                              await writeVerified(fieldPath(field), nextValue);
+                              states.get(field.key).val = nextValue;
+                          },
+                      })
+                    : InlineEditableNumberField({
+                          label: () => FieldLabel(field),
+                          valueState: states.get(field.key),
+                          path: fieldPath(field),
+                          rootClass: "grimoire-currency__field masterclass-currency__field",
+                          labelClass: "grimoire-currency__label masterclass-currency__label",
+                          inputClass: "grimoire-currency__set masterclass-currency__set",
+                      })
             )
         );
     };
@@ -229,6 +263,7 @@ export const MasterclassUpgradeTab = ({
     currencyTitle = null,
     currencyFields = [],
     currencyTabs = [],
+    deleteCachePaths = [],
 }) => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: title });
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -270,6 +305,7 @@ export const MasterclassUpgradeTab = ({
                     levelsPath,
                     upgrade,
                     levelState: getOrCreateState(levelStates, upgrade.index),
+                    deleteCachePaths,
                 })
             );
         });
@@ -318,12 +354,18 @@ export const MasterclassUpgradeTab = ({
         if (!currentUpgrades.length || bulkStatus.val === "loading") return;
 
         const result = await runBulk(async () => {
-            await runBulkSet({
-                entries: currentUpgrades,
-                getTargetValue: (upgrade) => (mode === "max" ? upgrade.maxLevel : 0),
-                getValueState: (upgrade) => getOrCreateState(levelStates, upgrade.index),
-                getPath: (upgrade) => `${levelsPath}[${upgrade.storageIndex}]`,
-            });
+            try {
+                await runBulkSet({
+                    entries: currentUpgrades,
+                    getTargetValue: (upgrade) => (mode === "max" ? upgrade.maxLevel : 0),
+                    getValueState: (upgrade) => getOrCreateState(levelStates, upgrade.index),
+                    getPath: (upgrade) => `${levelsPath}[${upgrade.storageIndex}]`,
+                });
+            } finally {
+                for (const cachePath of deleteCachePaths) {
+                    await deleteGga(cachePath);
+                }
+            }
         });
 
         if (!result.ok) await load();
