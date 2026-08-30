@@ -74,11 +74,18 @@ const MAP_UNIT_ARRAYS = {
     4: { typeArray: 12, mapArray: 13 },
 };
 
-const OUTPOSTS_BY_WORLD = {
-    1: [42, 32, 31, 30, 28, 27, 26, 24, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 7, 6, 2, 1],
-    2: [73, 67, 65, 64, 63, 62, 61, 60, 59, 58, 57, 55, 54, 53, 52, 51],
-    3: [117, 116, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101],
-    4: [166, 163, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151],
+const worldFromMapId = (mapId) => Math.floor(mapId / 50) + 1;
+
+const buildOutpostsByWorld = (royalMaps) => {
+    const result = {};
+    toIndexedArray(royalMaps ?? []).forEach((row, mapId) => {
+        if (!Array.isArray(row) || row.length < 10) return;
+        const world = worldFromMapId(mapId);
+        if (world < 1 || world > WORLD_COUNT) return;
+        if (!result[world]) result[world] = [];
+        result[world].push(mapId);
+    });
+    return result;
 };
 
 const DEFAULT_UNIT_COUNTS = {
@@ -334,12 +341,12 @@ const buildVanillaUnitArrays = (royalG) => {
     return { rebuilt, summaries, sovereigntyCount };
 };
 
-const buildDistributedUnitArrays = (royalG, wantedPerOutpost) => {
+const buildDistributedUnitArrays = (royalG, wantedPerOutpost, outpostsByWorld) => {
     const rebuilt = {};
     const summaries = [];
     const wantedTypes = new Set(MAP_UNIT_ORDER);
 
-    Object.entries(OUTPOSTS_BY_WORLD).forEach(([worldKey, mapIds]) => {
+    Object.entries(outpostsByWorld).forEach(([worldKey, mapIds]) => {
         const world = Number(worldKey);
         const arrays = MAP_UNIT_ARRAYS[world];
         const currentTypes = toIndexedArray(royalG?.[arrays.typeArray] ?? []);
@@ -564,13 +571,13 @@ const UnitSummaryRows = ({ summaries }) =>
         )
     );
 
-const UnitBulkPanel = ({ royalGState, onChanged }) => {
+const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld }) => {
     const vanillaStatus = useWriteStatus();
     const customStatus = useWriteStatus();
     const countStates = new Map();
     const previewState = van.state({ mode: "custom", summaries: [] });
     const summaryList = div({ class: "outpost-vanilla-units__summary" });
-    const worlds = Object.keys(OUTPOSTS_BY_WORLD).map(Number);
+    const worlds = Object.keys(outpostsByWorld).map(Number);
 
     worlds.forEach((world) => {
         MAP_UNIT_ORDER.forEach((unitType) => {
@@ -591,7 +598,7 @@ const UnitBulkPanel = ({ royalGState, onChanged }) => {
     const refreshPreview = () => {
         previewState.val = {
             mode: "custom",
-            summaries: buildDistributedUnitArrays(royalGState.val ?? [], getWantedCounts()).summaries,
+            summaries: buildDistributedUnitArrays(royalGState.val ?? [], getWantedCounts(), outpostsByWorld).summaries,
         };
         summaryList.replaceChildren(...UnitSummaryRows({ summaries: previewState.val.summaries }));
     };
@@ -656,7 +663,7 @@ const UnitBulkPanel = ({ royalGState, onChanged }) => {
                         void customStatus.run(async () => {
                             const rawRoyalG = await gga("RoyalG");
                             const royalG = toIndexedArray(rawRoyalG ?? []);
-                            const { rebuilt } = buildDistributedUnitArrays(royalG, getWantedCounts());
+                            const { rebuilt } = buildDistributedUnitArrays(royalG, getWantedCounts(), outpostsByWorld);
                             const writes = [];
 
                             Object.values(rebuilt).forEach((entry) => {
@@ -927,6 +934,7 @@ export const OutpostsTab = () => {
     const activeWorld = van.state(1);
     const outposts = van.state([]);
     const royalGState = van.state([]);
+    const outpostsByWorldState = van.state({});
     const fieldStateGroups = new Map();
     const slotStates = new Map();
     const outpostTypeStates = new Map();
@@ -942,7 +950,7 @@ export const OutpostsTab = () => {
     });
 
     const renderRows = () => {
-        if (activeWorld.val === "units") return UnitBulkPanel({ royalGState, onChanged: load });
+        if (activeWorld.val === "units") return UnitBulkPanel({ royalGState, onChanged: load, outpostsByWorld: outpostsByWorldState.val });
 
         const visible = outposts.val.filter((outpost) => outpost.world === activeWorld.val);
         rowList.replaceChildren(...visible.map((outpost) => rowNodes.get(outpost.mapId)));
@@ -957,9 +965,10 @@ export const OutpostsTab = () => {
 
     const load = () =>
         runLoad(async () => {
-            const [nextOutposts, rawRoyalG] = await Promise.all([readOutposts(), gga("RoyalG")]);
+            const [nextOutposts, rawRoyalG, rawRoyalMaps] = await Promise.all([readOutposts(), gga("RoyalG"), gga("RoyalMaps")]);
             rowNodes.clear();
             royalGState.val = toIndexedArray(rawRoyalG ?? []);
+            outpostsByWorldState.val = buildOutpostsByWorld(rawRoyalMaps);
 
             nextOutposts.forEach((outpost) => {
                 if (outpost.kind === "kills") {
