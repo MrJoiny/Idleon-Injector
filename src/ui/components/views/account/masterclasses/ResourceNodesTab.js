@@ -22,7 +22,7 @@ import {
 
 const { button, div, span } = van.tags;
 
-const WORLD_COUNT = 7;
+const WORLD_COUNT = 4;
 const NODES_PER_WORLD = 20;
 
 const nodeWorld = (nodeIndex) => Math.floor(nodeIndex / NODES_PER_WORLD) + 1;
@@ -73,7 +73,8 @@ const readNodes = async () => {
         .filter(Boolean);
 };
 
-const nodeBadge = ({ depleted, max }) => {
+const nodeBadge = ({ depleted, baseAmount, grade, nodeIndex }) => {
+    const max = nodeMax(nodeIndex, baseAmount, grade);
     if (depleted < 0) return "DEPLETED";
     if (depleted === 0) return `FULL / ${formatAmount(max)}`;
     return `LEFT ${formatAmount(max - depleted)}`;
