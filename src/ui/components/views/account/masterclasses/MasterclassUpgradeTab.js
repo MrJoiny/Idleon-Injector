@@ -23,14 +23,6 @@ import {
 
 const { button, div, img, span } = van.tags;
 
-const firstFiniteNumber = (values, fallback) => {
-    for (const value of values) {
-        const n = Number(value);
-        if (Number.isFinite(n) && n > 0) return n;
-    }
-    return fallback;
-};
-
 const cleanUpgradeName = (rawName, fallback) => {
     const name = cleanName(rawName, "", { stripMarker: true })
         .split(/[\u3400-\u9fff(（]/, 1)[0]
@@ -90,8 +82,8 @@ const buildUpgrades = ({
         const rawName = definition[0];
         const maxLevel =
             maxLevelIndex !== null && maxLevelIndex !== undefined
-                ? firstFiniteNumber([definition[maxLevelIndex]], fallbackMax)
-                : firstFiniteNumber([definition[4], definition[3], definition[2]], fallbackMax);
+                ? toInt(definition[maxLevelIndex], { min: 0, fallback: fallbackMax })
+                : toInt(definition[4], { min: 0, fallback: fallbackMax });
         const displayIndex = `#${index + 1}`;
 
         return {
@@ -99,7 +91,7 @@ const buildUpgrades = ({
             storageIndex,
             displayIndex,
             name: cleanUpgradeName(rawName, `${fallbackPrefix} ${index + 1}`),
-            maxLevel,
+            maxLevel: maxLevel > 0 ? maxLevel : fallbackMax,
         };
     }).filter((upgrade) => upgrade.maxLevel > 0);
 };
@@ -190,71 +182,81 @@ const FieldLabel = (field) =>
           ]
         : field.name;
 
+const renderCurrencyField = (field, states) =>
+    field.type === "toggle"
+        ? AccountToggleRow({
+              info: div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, field.name)),
+              badge: () => (states.get(field.key).val ? "ENABLED" : "DISABLED"),
+              checked: () => Boolean(states.get(field.key).val),
+              rowClass: "grimoire-currency__toggle masterclass-currency__toggle",
+              title: field.title ?? field.name,
+              write: async (enabled) => {
+                  const nextValue = enabled ? 1 : 0;
+                  await writeVerified(fieldPath(field), nextValue);
+                  states.get(field.key).val = nextValue;
+              },
+          })
+        : InlineEditableNumberField({
+              label: () => FieldLabel(field),
+              valueState: states.get(field.key),
+              path: fieldPath(field),
+              rootClass: "grimoire-currency__field masterclass-currency__field",
+              labelClass: "grimoire-currency__label masterclass-currency__label",
+              inputClass: "grimoire-currency__set masterclass-currency__set",
+          });
+
 const CurrencySection = ({ title, fields, states, tabs = [], activeTab = null }) => {
-    const fieldRows = div({ class: "grimoire-currency__fields masterclass-currency__fields" });
+    if (!tabs.length) {
+        return AccountSection({
+            title,
+            body: [
+                div(
+                    { class: "grimoire-currency__fields masterclass-currency__fields" },
+                    ...fields.map((field) => renderCurrencyField(field, states))
+                ),
+            ],
+        });
+    }
 
-    const renderFields = () => {
-        const selectedTab = tabs.find((tab) => tab.id === activeTab?.val) ?? tabs[0];
-        const visibleFields = tabs.length ? selectedTab?.fields ?? [] : fields;
+    const tabContainers = new Map(
+        tabs.map((tab) => [
+            tab.id,
+            div(
+                { class: "grimoire-currency__fields masterclass-currency__fields" },
+                ...(tab.fields ?? []).map((field) => renderCurrencyField(field, states))
+            ),
+        ])
+    );
 
-        fieldRows.replaceChildren(
-            ...visibleFields.map((field) =>
-                field.type === "toggle"
-                    ? AccountToggleRow({
-                          info: div(
-                              { class: "account-row__name-group" },
-                              span({ class: "account-row__name" }, field.name)
-                          ),
-                          badge: () => (states.get(field.key).val ? "ENABLED" : "DISABLED"),
-                          checked: () => Boolean(states.get(field.key).val),
-                          rowClass: "grimoire-currency__toggle masterclass-currency__toggle",
-                          title: field.title ?? field.name,
-                          write: async (enabled) => {
-                              const nextValue = enabled ? 1 : 0;
-                              await writeVerified(fieldPath(field), nextValue);
-                              states.get(field.key).val = nextValue;
-                          },
-                      })
-                    : InlineEditableNumberField({
-                          label: () => FieldLabel(field),
-                          valueState: states.get(field.key),
-                          path: fieldPath(field),
-                          rootClass: "grimoire-currency__field masterclass-currency__field",
-                          labelClass: "grimoire-currency__label masterclass-currency__label",
-                          inputClass: "grimoire-currency__set masterclass-currency__set",
-                      })
-            )
-        );
-    };
+    const fieldRows = div();
 
     van.derive(() => {
-        activeTab?.val;
-        renderFields();
+        const selectedId = activeTab?.val ?? tabs[0]?.id;
+        const container = tabContainers.get(selectedId);
+        if (container) fieldRows.replaceChildren(container);
     });
 
     return AccountSection({
         title,
         body: [
-            tabs.length
-                ? div(
-                      { class: "masterclass-category-tabs" },
-                      ...tabs.map((tab) =>
-                          button(
-                              {
-                                  type: "button",
-                                  class: () =>
-                                      `masterclass-category-tabs__button${
-                                          activeTab.val === tab.id ? " is-active" : ""
-                                      }`,
-                                  onclick: () => {
-                                      activeTab.val = tab.id;
-                                  },
-                              },
-                              tab.label
-                          )
-                      )
-                  )
-                : null,
+            div(
+                { class: "masterclass-category-tabs" },
+                ...tabs.map((tab) =>
+                    button(
+                        {
+                            type: "button",
+                            class: () =>
+                                `masterclass-category-tabs__button${
+                                    activeTab.val === tab.id ? " is-active" : ""
+                                }`,
+                            onclick: () => {
+                                activeTab.val = tab.id;
+                            },
+                        },
+                        tab.label
+                    )
+                )
+            ),
             fieldRows,
         ],
     });
