@@ -44,8 +44,8 @@ export function setupFirebaseStorageProxy() {
     firebase.getCompanionInfoMe = function (...args) {
         if (cheatState.w1.companion) {
             if (!cheatConfig.w1.companion.companions) {
-                return Array.from({ length: cList.CompanionDB.length }, (_, index) => index).filter(
-                    (index) => monsterDefs[cList.CompanionDB[index][0]]?.h.Name
+                return Array.from({ length: cList.CompanionDB.length }, (_, index) => `${index},0,0,0,1`).filter(
+                    (entry) => monsterDefs[cList.CompanionDB[parseInt(entry)][0]]?.h.Name
                 );
             }
             const companions = cheatConfig.w1.companion.companions;
@@ -53,7 +53,15 @@ export function setupFirebaseStorageProxy() {
                 return companions
                     .split(",")
                     .map((id) => parseInt(id.trim()))
-                    .filter((id) => !isNaN(id));
+                    .filter((id) => !isNaN(id))
+                    .map((id) => `${id},0,0,0,1`);
+            }
+            if (Array.isArray(companions)) {
+                return companions.map((entry) => {
+                    if (typeof entry === "number") return `${entry},0,0,0,1`;
+                    if (typeof entry === "string" && !entry.includes(",")) return `${entry},0,0,0,1`;
+                    return entry;
+                });
             }
             return companions;
         }
