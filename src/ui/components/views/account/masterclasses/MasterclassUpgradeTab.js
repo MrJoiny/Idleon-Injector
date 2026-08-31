@@ -59,6 +59,7 @@ const buildUpgrades = ({
     fallbackMax,
     getStorageIndex = null,
     preferDefinitionCount = false,
+    maxLevelIndex = null,
 }) => {
     const levelRows = toIndexedArray(levels ?? []);
     const definitionRows = toIndexedArray(definitions ?? []);
@@ -72,7 +73,10 @@ const buildUpgrades = ({
         const definition = toIndexedArray(definitionRows[index] ?? []);
         const storageIndex = resolveStorageIndex(rawDefinition, definition, index, getStorageIndex);
         const rawName = definition[0];
-        const maxLevel = firstFiniteNumber([definition[4], definition[3], definition[2]], fallbackMax);
+        const maxLevel =
+            maxLevelIndex !== null && maxLevelIndex !== undefined
+                ? firstFiniteNumber([definition[maxLevelIndex]], fallbackMax)
+                : firstFiniteNumber([definition[4], definition[3], definition[2]], fallbackMax);
         const displayIndex = storageIndex === index ? `#${index}` : `#${storageIndex}`;
 
         return {
@@ -225,6 +229,7 @@ export const MasterclassUpgradeTab = ({
     fallbackMax = 999999,
     getStorageIndex = null,
     preferDefinitionCount = false,
+    maxLevelIndex = null,
     staticUpgrades = null,
     currencyTitle = null,
     currencyFields = [],
@@ -298,6 +303,7 @@ export const MasterclassUpgradeTab = ({
                       fallbackMax,
                       getStorageIndex,
                       preferDefinitionCount,
+                      maxLevelIndex,
                   });
 
             rebuildRows(nextUpgrades);

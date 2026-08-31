@@ -5,6 +5,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { CompassTab } from "./masterclasses/CompassTab.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
+import { LilOrbletShopTab } from "./masterclasses/LilOrbletShopTab.js";
 import { OutpostsTab } from "./masterclasses/OutpostsTab.js";
 import { ResourceNodesTab } from "./masterclasses/ResourceNodesTab.js";
 import { RoyalArmoryTab } from "./masterclasses/RoyalArmoryTab.js";
@@ -20,6 +21,7 @@ const MASTERCLASSES_SUBTABS = [
     { id: "royal-armory", label: "ROYAL ARMORY", component: RoyalArmoryTab },
     { id: "resource-nodes", label: "RESOURCE NODES", component: ResourceNodesTab },
     { id: "outposts", label: "OUTPOSTS", component: OutpostsTab },
+    { id: "lil-orblet-shop", label: "LIL ORBLET SHOP", component: LilOrbletShopTab },
 ];
 
 export const MasterclassesTab = () => {
