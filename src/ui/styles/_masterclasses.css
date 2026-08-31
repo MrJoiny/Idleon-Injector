@@ -63,6 +63,11 @@
     min-width: 0;
 }
 
+.outpost-select-field {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+}
+
 .masterclass-currency__label,
 .grimoire-currency__label,
 .resource-node-row__field-label,
@@ -102,6 +107,7 @@
     align-items: center;
     justify-content: center;
     min-width: 28px;
+    min-height: 18px;
     padding: 2px 6px;
     border: 1px solid var(--c-accent);
     background: color-mix(in srgb, var(--c-accent) 14%, transparent);
@@ -110,6 +116,10 @@
     font-weight: 850;
     line-height: 1;
     white-space: nowrap;
+}
+
+.outpost-field__rank {
+    border-color: var(--c-border);
 }
 
 .outpost-field__next {
@@ -130,6 +140,11 @@
 .outpost-map-unit__field .number-input-wrapper {
     width: 120px;
     max-width: 100%;
+}
+
+.outpost-glorified-button {
+    width: 100%;
+    min-height: 34px;
 }
 
 .grimoire-currency__toggle {
@@ -286,6 +301,8 @@
 .outpost-select-field__select,
 .outpost-slot-select,
 .outpost-unit-config__input {
+    width: 100%;
+    min-width: 0;
     min-height: 34px;
     padding: 0 8px;
     border: 1px solid var(--c-border);
@@ -293,11 +310,6 @@
     color: var(--c-text-main);
     font: inherit;
     font-weight: 750;
-}
-
-.outpost-select-field__select {
-    width: 150px;
-    max-width: 100%;
 }
 
 .outpost-select-field__select:focus,
@@ -317,6 +329,11 @@
     border-color: var(--c-danger);
 }
 
+.outpost-slot-select {
+    padding: 0 4px;
+    font-size: 0.78rem;
+}
+
 .outpost-slot-select:disabled {
     opacity: 0.55;
 }
@@ -326,7 +343,7 @@
     display: grid;
     grid-column: 1 / -1;
     gap: 8px;
-    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
 }
 
 .outpost-map-units {
