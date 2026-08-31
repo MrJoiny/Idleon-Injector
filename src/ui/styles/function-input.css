@@ -11,43 +11,45 @@
     gap: 8px;
 }
 
-/* Main row: dropdown + value input on same line */
+/* Main row: dropdown + value input */
 .function-input-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 .function-type-select {
-    width: auto;
-    min-width: 130px;
+    width: 100%;
+    min-width: 0;
     padding: 6px 10px;
-    font-size: 0.875rem;
-    background: var(--c-black-40);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-main);
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--atlas-field, var(--c-panel));
+    border: 1px solid var(--atlas-border, var(--c-border));
+    border-radius: 6px;
+    color: var(--atlas-text, var(--c-text-main));
     cursor: pointer;
-    flex-shrink: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .function-type-select:hover {
-    border-color: var(--c-accent);
+    border-color: var(--atlas-accent, var(--c-accent));
 }
 
 .function-type-select:focus {
-    border-color: var(--c-accent);
+    border-color: var(--atlas-accent, var(--c-accent));
     outline: none;
-    box-shadow: 0 0 0 1px var(--c-accent-dim);
+    box-shadow: 0 0 0 2px var(--atlas-focus, var(--c-accent-dim));
 }
 
 /* Slider Group: slider + editable number input */
 .function-slider-group {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 200px;
+    gap: 8px;
+    width: 100%;
 }
 
 .function-slider {
@@ -55,11 +57,11 @@
     -webkit-appearance: none;
     appearance: none;
     height: 6px;
-    background: var(--c-border);
+    background: var(--atlas-border, var(--c-border));
     border-radius: 3px;
     outline: none;
     cursor: pointer;
-    min-width: 100px;
+    min-width: 60px;
 }
 
 .function-slider::-webkit-slider-thumb {
@@ -67,56 +69,56 @@
     appearance: none;
     width: 16px;
     height: 16px;
-    background: var(--c-accent);
+    background: var(--atlas-accent, var(--c-accent));
+    border: 2px solid var(--atlas-surface, #fff);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 6px var(--c-accent-glow);
-    transition:
-        transform 0.15s,
-        box-shadow 0.15s;
+    box-shadow: 0 1px 4px var(--atlas-shadow, rgba(0, 0, 0, 0.2));
+    transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .function-slider::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 0 10px var(--c-accent);
+    box-shadow: 0 0 8px var(--atlas-accent, var(--c-accent));
 }
 
 .function-slider::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: var(--c-accent);
-    border: none;
+    background: var(--atlas-accent, var(--c-accent));
+    border: 2px solid var(--atlas-surface, #fff);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 6px var(--c-accent-glow);
+    box-shadow: 0 1px 4px var(--atlas-shadow, rgba(0, 0, 0, 0.2));
 }
 
 /* Editable value input next to slider */
 .function-value-input-wrapper {
     display: flex;
     align-items: center;
-    gap: 4px;
-    background: var(--c-black-30);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    padding: 0 8px 0 0;
+    gap: 2px;
+    background: var(--atlas-field, var(--c-panel));
+    border: 1px solid var(--atlas-border, var(--c-border));
+    border-radius: 6px;
+    padding: 0 6px 0 0;
+    flex-shrink: 0;
 }
 
 .function-value-input-wrapper:focus-within {
-    border-color: var(--c-accent);
-    box-shadow: 0 0 0 1px var(--c-accent-dim);
+    border-color: var(--atlas-accent, var(--c-accent));
+    box-shadow: 0 0 0 2px var(--atlas-focus, var(--c-accent-dim));
 }
 
 .function-value-input {
-    width: 60px;
+    width: 48px;
     border: none;
     background: transparent;
-    color: var(--c-accent);
+    color: var(--atlas-text, var(--c-text-main));
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-align: left;
-    padding: 6px 4px 6px 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: right;
+    padding: 5px 4px 5px 6px;
     box-shadow: none !important;
 }
 
@@ -126,74 +128,87 @@
 }
 
 .function-value-suffix {
-    color: var(--c-accent);
+    color: var(--atlas-accent, var(--c-accent));
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 800;
+    user-select: none;
 }
 
 /* Preset Buttons */
 .function-presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding-left: 164px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    width: 100%;
+    padding-left: 0;
 }
 
 .function-preset-btn {
-    background: var(--c-black-30);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-dim);
-    padding: 3px 8px;
-    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 26px;
+    padding: 0;
+    background: var(--atlas-surface-muted, var(--c-panel-dim));
+    border: 1px solid var(--atlas-border, var(--c-border));
+    border-radius: 5px;
+    color: var(--atlas-text-muted, var(--c-text-dim));
+    font-size: 0.75rem;
     font-family: var(--font-mono);
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
 }
 
 .function-preset-btn:hover {
-    border-color: var(--c-accent);
-    color: var(--c-accent);
-    background: var(--c-accent-dim);
+    border-color: var(--atlas-accent, var(--c-accent));
+    color: var(--atlas-text, var(--c-text-main));
+    background: var(--atlas-surface-hover, var(--c-panel-hover));
 }
 
 .function-preset-btn.active {
-    background: var(--c-accent);
-    color: var(--c-black);
-    border-color: var(--c-accent);
-    font-weight: 600;
+    background: var(--atlas-accent, var(--c-accent));
+    color: #ffffff !important;
+    border-color: var(--atlas-accent, var(--c-accent));
+    font-weight: 700;
+    box-shadow: 0 1px 3px var(--atlas-shadow, rgba(0, 0, 0, 0.15));
 }
 
 /* Passthrough Label */
 .function-passthrough-label {
-    font-size: 0.875rem;
-    color: var(--c-text-muted);
+    font-size: 0.8rem;
+    color: var(--atlas-text-muted, var(--c-text-muted));
     font-style: italic;
+    padding: 4px 0;
 }
 
 /* Number Input Wrapper with inline +/- buttons for Fixed/Max/Min */
 .function-number-input-wrapper {
     display: flex;
     align-items: center;
-    background: var(--c-black-30);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    flex: 1;
-    min-width: 100px;
-    max-width: 160px;
+    background: var(--atlas-field, var(--c-panel));
+    border: 1px solid var(--atlas-border, var(--c-border));
+    border-radius: 6px;
+    width: 100%;
+    max-width: 180px;
+    overflow: hidden;
 }
 
 .function-number-input-wrapper:focus-within {
-    border-color: var(--c-accent);
-    box-shadow: 0 0 0 1px var(--c-accent-dim);
+    border-color: var(--atlas-accent, var(--c-accent));
+    box-shadow: 0 0 0 2px var(--atlas-focus, var(--c-accent-dim));
 }
 
 .function-number-btn {
     background: transparent;
     border: none;
-    color: var(--c-accent);
+    color: var(--atlas-accent, var(--c-accent));
     font-size: 1rem;
-    padding: 6px 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    height: 30px;
     cursor: pointer;
     transition: 0.15s;
     display: flex;
@@ -203,23 +218,24 @@
 }
 
 .function-number-btn:hover {
-    background: var(--c-accent-dim);
-    color: var(--c-white);
+    background: var(--atlas-accent-soft, var(--c-accent-dim));
+    color: var(--atlas-accent, var(--c-accent));
 }
 
 .function-number-btn:active {
-    background: var(--c-accent-20);
+    background: var(--atlas-accent-soft, var(--c-accent-20));
 }
 
 .function-number-input {
     flex: 1;
     border: none;
     background: transparent;
-    color: var(--c-text-main);
+    color: var(--atlas-text, var(--c-text-main));
     font-family: var(--font-mono);
-    font-size: 0.875rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-align: center;
-    padding: 6px 0;
+    padding: 4px 0;
     min-width: 40px;
     box-shadow: none !important;
 }
@@ -231,19 +247,19 @@
 
 /* Raw Function Text Input (single line) */
 .function-raw-input {
-    flex: 1;
-    min-width: 150px;
-    background: var(--c-black-30);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-main);
+    width: 100%;
+    min-width: 0;
+    background: var(--atlas-field, var(--c-panel));
+    border: 1px solid var(--atlas-border, var(--c-border));
+    color: var(--atlas-text, var(--c-text-main));
     font-family: var(--font-mono);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     padding: 6px 10px;
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
 }
 
 .function-raw-input:focus {
-    border-color: var(--c-accent);
+    border-color: var(--atlas-accent, var(--c-accent));
     outline: none;
-    box-shadow: 0 0 0 1px var(--c-accent-dim);
+    box-shadow: 0 0 0 2px var(--atlas-focus, var(--c-accent-dim));
 }

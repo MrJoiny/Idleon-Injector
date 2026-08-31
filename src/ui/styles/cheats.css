@@ -711,15 +711,22 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin: 12px 0;
-    padding: 8px 10px;
-    border: 1px solid #d4dce9;
+    margin: 12px 0 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--atlas-border, #d4dce9);
     border-radius: 6px;
-    color: #3e4d68;
-    background: #fff;
+    color: var(--atlas-accent, #3e4d68);
+    background: var(--atlas-surface, #fff);
     font-size: 0.75rem;
+    font-weight: 600;
     text-transform: none;
     letter-spacing: normal;
+    transition: all 0.15s;
+}
+
+.atlas-open-full-config:hover {
+    border-color: var(--atlas-accent);
+    background: var(--atlas-accent-soft);
 }
 
 .atlas-open-full-config svg {
@@ -729,26 +736,29 @@
 
 .atlas-inspector-config .cheat-category,
 .atlas-inspector-config .config-item {
-    border-color: #dce3ef;
-    color: #172033;
-    background: #fff;
+    border-color: var(--atlas-border, #dce3ef);
+    color: var(--atlas-text, #172033);
+    background: var(--atlas-surface, #fff);
+    border-radius: 6px;
 }
 
 .atlas-inspector-config .cheat-category-content {
-    padding: 8px;
-    border-color: #dce3ef;
+    padding: 6px;
+    border-color: var(--atlas-border, #dce3ef);
+    gap: 6px;
 }
 
 .atlas-inspector-config .cheat-category summary {
-    padding: 8px 10px;
-    color: #41506c;
-    background: #f7f9fd;
+    padding: 6px 10px;
+    color: var(--atlas-text, #41506c);
+    background: var(--atlas-surface-muted, #f7f9fd);
     font-size: 0.75rem;
+    font-weight: 700;
 }
 
 .atlas-inspector-config .config-item {
     gap: 7px;
-    padding: 9px;
+    padding: 8px 10px;
 }
 
 .atlas-inspector-config .config-item-header {
@@ -765,37 +775,42 @@
 .atlas-inspector-config .config-item-header > label {
     grid-area: key;
     min-width: 0;
+    color: var(--atlas-text, #111c33);
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
 }
 
 .atlas-inspector-config .config-description {
     grid-area: description;
     overflow: visible;
     padding: 0;
-    color: #63718a;
+    color: var(--atlas-text-muted, #63718a);
     font-size: 0.75rem;
-    line-height: 1.4;
+    line-height: 1.35;
     text-overflow: clip;
     white-space: normal;
 }
 
 .atlas-inspector-config .config-reset-btn {
     grid-area: reset;
-    padding: 3px 6px;
+    padding: 2px 5px;
+    border-radius: 4px;
 }
 
 .atlas-inspector-config .number-input-wrapper {
-    min-height: 32px;
+    min-height: 30px;
 }
 
 .atlas-inspector-config .number-input-btn {
-    height: 32px;
+    height: 30px;
     padding: 0 8px;
 }
 
 .atlas-inspector-config .config-item input[type="text"],
 .atlas-inspector-config .config-item input[type="number"] {
-    color: #172033;
-    background: #fff;
+    color: var(--atlas-text, #172033);
+    background: var(--atlas-field, #fff);
 }
 
 @media (max-width: 1280px) {

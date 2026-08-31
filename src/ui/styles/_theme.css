@@ -228,7 +228,12 @@ body,
 .atlas-inspector-config .config-item,
 .atlas-inspector-config .config-item input[type="text"],
 .atlas-inspector-config .config-item input[type="number"],
-.atlas-inspector-toggle {
+.atlas-inspector-toggle,
+.function-type-select,
+.function-value-input-wrapper,
+.function-number-input-wrapper,
+.function-raw-input,
+.number-input-wrapper {
     color: var(--atlas-text);
     background: var(--atlas-surface);
 }
@@ -236,13 +241,16 @@ body,
 .atlas-cheat-toolbar,
 .atlas-cheat-table-head,
 .atlas-cheat-row:hover,
-.atlas-inspector-config .cheat-category summary {
+.atlas-inspector-config .cheat-category summary,
+.function-preset-btn,
+.number-input-btn {
     background: var(--atlas-surface-muted);
 }
 
 .atlas-scope-button:hover,
 .atlas-inspector-tabs button.is-active,
-.atlas-cheat-run:disabled {
+.atlas-cheat-run:disabled,
+.function-preset-btn:hover {
     color: var(--atlas-text);
     background: var(--atlas-surface-hover);
 }
@@ -254,6 +262,12 @@ body,
 .atlas-cheat-run:hover:not(:disabled) {
     color: var(--atlas-accent);
     background: var(--atlas-accent-soft);
+}
+
+.function-preset-btn.active {
+    color: #ffffff;
+    background: var(--atlas-accent);
+    border-color: var(--atlas-accent);
 }
 
 .atlas-cheat-table,
@@ -275,7 +289,13 @@ body,
 .atlas-cheat-switch,
 .atlas-inspector-field input,
 .atlas-open-full-config,
-.atlas-inspector-toggle {
+.atlas-inspector-toggle,
+.function-type-select,
+.function-value-input-wrapper,
+.function-number-input-wrapper,
+.function-raw-input,
+.function-preset-btn,
+.number-input-wrapper {
     border-color: var(--atlas-border);
 }
 

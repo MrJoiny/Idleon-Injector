@@ -470,15 +470,32 @@
 .atlas-config-actions.is-compact {
     align-items: stretch;
     flex-direction: column;
+    gap: 6px;
 }
 
 .atlas-config-actions.is-compact .atlas-config-dirty-state {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
 }
 
 .atlas-config-actions.is-compact .atlas-config-status-chip {
+    min-inline-size: 0;
+    min-height: 26px;
+    padding: 2px 4px;
+    font-size: 0.72rem;
+    border-radius: 6px;
     justify-content: center;
+}
+
+.atlas-config-actions.is-compact .btn-primary,
+.atlas-config-actions.is-compact .btn-secondary {
+    width: 100%;
+    min-height: 32px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 6px;
 }
 
 @media (max-width: 980px) {
