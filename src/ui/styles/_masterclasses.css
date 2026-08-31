@@ -253,6 +253,11 @@
     min-width: 0;
 }
 
+.outpost-select-field {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+}
+
 .outpost-field__label,
 .outpost-select-field__label,
 .outpost-map-unit__field-label,
@@ -274,11 +279,15 @@
 
 .outpost-field__rank,
 .outpost-field__next {
-    padding: 1px 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 18px;
+    padding: 0 5px;
     border: 1px solid var(--c-border);
     color: var(--c-accent);
     font-size: 0.68rem;
-    line-height: 1.25;
+    line-height: 1;
     white-space: nowrap;
 }
 
@@ -294,6 +303,8 @@
 
 .outpost-select-field__select,
 .outpost-slot-select {
+    width: 100%;
+    min-width: 0;
     min-height: 34px;
     border: 1px solid var(--c-border);
     background: var(--c-panel-dim);
@@ -303,8 +314,12 @@
 }
 
 .outpost-select-field__select {
-    width: 150px;
     max-width: 100%;
+}
+
+.outpost-glorified-button {
+    width: 100%;
+    min-height: 34px;
 }
 
 .outpost-select-field__select:focus,
@@ -323,6 +338,11 @@
     border-color: var(--c-danger);
 }
 
+.outpost-slot-select {
+    padding: 0 4px;
+    font-size: 0.78rem;
+}
+
 .outpost-slot-select:disabled {
     opacity: 0.55;
 }
@@ -336,12 +356,7 @@
 }
 
 .outpost-slots {
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-}
-
-.outpost-slot-select {
-    width: 100%;
-    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
 }
 
 .outpost-map-units {
