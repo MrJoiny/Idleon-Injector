@@ -184,6 +184,20 @@ export function readComputedMany(namespace, name, argSets = []) {
 }
 
 /**
+ * Delete a game value by dot/bracket path string.
+ * @param {string} path - Path like "gga.DNSM.h.GrimoireTotLV"
+ * @returns {{ ok: true } | { error: string }}
+ */
+export function deletePath(path) {
+    const resolved = resolvePath(path);
+    if (resolved.error) return resolved;
+    const { target, prop } = resolved;
+    if (prop === undefined) return { error: "Path must include at least one key below the root" };
+    if (!delete target[prop]) return { error: `Unable to delete ${path}` };
+    return { ok: true };
+}
+
+/**
  * Write a game value by dot/bracket path string.
  * @param {string} path - Path like "gga.StampLevel[0][3]"
  * @param {any} value - JSON-serializable value to write

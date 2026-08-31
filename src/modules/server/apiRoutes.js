@@ -178,6 +178,33 @@ function setupApiRoutes(app, context, client, config) {
         }
     });
 
+    app.get("/api/game/bundles", async (req, res) => {
+        try {
+            const catalogResult = await Runtime.evaluate({
+                expression: "getBundleCatalog()",
+                awaitPromise: true,
+                returnByValue: true,
+            });
+
+            if (catalogResult.exceptionDetails) {
+                const details =
+                    catalogResult.exceptionDetails.exception?.description ?? catalogResult.exceptionDetails.text;
+                return res.status(500).json({ error: "Failed to read bundle catalog", details });
+            }
+
+            const bundles = catalogResult.result.value;
+            if (!Array.isArray(bundles)) {
+                return res.status(500).json({ error: "Bundle catalog returned invalid data" });
+            }
+
+            log.debug(`Read bundle catalog (${bundles.length} bundles)`);
+            res.json({ bundles });
+        } catch (apiError) {
+            log.error("Error in /api/game/bundles:", apiError);
+            res.status(500).json({ error: "Internal server error while reading bundle catalog" });
+        }
+    });
+
     app.post("/api/toggle", async (req, res) => {
         const { action } = await req.json();
         if (!action) {
@@ -723,6 +750,39 @@ exports.injectorConfig = ${new_injectorConfig};
             res.json({ ok: true });
         } catch (err) {
             log.error("Error in /api/game/gga/write:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/delete", async (req, res) => {
+        const { path } = await req.json();
+        if (!path || typeof path !== "string") {
+            return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
+        }
+
+        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `deleteGamePath("${escaped}")`,
+                returnByValue: true,
+                allowUnsafeEvalBlockedByCSP: true,
+            });
+
+            if (result.exceptionDetails) {
+                return res.status(500).json({ error: "Delete failed", details: result.exceptionDetails.text });
+            }
+
+            const data = result.result.value;
+            if (!data || typeof data !== "object") {
+                return res.status(500).json({ error: "Delete returned no data" });
+            }
+            if (data.error) return res.status(500).json({ error: data.error });
+
+            log.debug(`Deleted path: ${path}`);
+            res.json({ ok: true });
+        } catch (err) {
+            log.error("Error in /api/game/gga/delete:", err);
             res.status(500).json({ error: err.message });
         }
     });

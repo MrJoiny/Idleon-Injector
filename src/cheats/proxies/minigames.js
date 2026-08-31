@@ -18,6 +18,7 @@
  * - Log (ActorEvents_577) - Card type reveal
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
  * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
+ * - Event Card Game (ActorEvents_670) - Keep guesses alive
  */
 
 import { cheatState, cheatConfig } from "../core/state.js";
@@ -31,9 +32,7 @@ function findBestFish(genInfo) {
     let bestType = -1;
     for (let i = 0; i < fishes.length; i++) {
         const f = fishes[i];
-        if (f[0] < 500 && f[1] !== 5
-            && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6)
-            && f[1] > bestType) {
+        if (f[0] < 500 && f[1] !== 5 && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6) && f[1] > bestType) {
             bestType = f[1];
             bestIndex = i;
         }
@@ -164,7 +163,7 @@ function setupEvents510Minigames() {
     });
 }
 
-// scratch, wisdom, valentine and gold pot rush
+// scratch, wisdom, valentine, gold pot rush and event card game
 function setupEvents670Minigames() {
     const ActorEvents670 = events(670);
 
@@ -187,6 +186,7 @@ function setupEvents670Minigames() {
     const VALENTINE_CLICKED_IDX = 229;
     const VALENTINE_GRID_SIZE = 36;
     const GOLD_POT_GAME_ID = 3;
+    const CARD_GAME_ID = 4;
 
     // Gold Pot Rush state
     const GOLD_POT_PHASE_IDX = 255;
@@ -195,6 +195,14 @@ function setupEvents670Minigames() {
     const GOLD_POT_CFG_IDX = 256;
     const GOLD_POT_FRAME_IDX = 0;
     const GOLD_POT_DONE_STAGE = 9;
+
+    // Event Card Game state
+    const CARD_PHASE_IDX = 255;
+    const CARD_LIVES_IDX = 226;
+    const CARD_DECK_IDX = 271;
+    const CARD_DECK_SIZE = 52;
+    const CARD_TOP_REWARD_DEALT = 35;
+    const CARD_MAX_LIVES = 2;
 
     // Wisdom Monument state
     const WISDOM_HOLE_ID = 12;
@@ -210,6 +218,20 @@ function setupEvents670Minigames() {
 
     function isGoldPotRushRound(instance) {
         return instance._GenINFO[EVENT_GAME_IDX] === GOLD_POT_GAME_ID && instance._GenINFO[GOLD_POT_PHASE_IDX] === 1;
+    }
+
+    function isCardGameRound(instance) {
+        return instance._GenINFO[EVENT_GAME_IDX] === CARD_GAME_ID && instance._GenINFO[CARD_PHASE_IDX] === 1;
+    }
+
+    function keepCardGameAlive(instance) {
+        if (!cheatState.minigame.card || !isCardGameRound(instance)) return;
+
+        const deck = instance._GenINFO[CARD_DECK_IDX];
+        if (!Array.isArray(deck) || deck.length >= CARD_DECK_SIZE) return;
+        if (deck.length >= CARD_TOP_REWARD_DEALT) return;
+
+        instance._GenINFO[CARD_LIVES_IDX] = CARD_MAX_LIVES;
     }
 
     // _GenINFO proxy hooks for Scratch and Wisdom Monument
@@ -249,6 +271,8 @@ function setupEvents670Minigames() {
         const previousGoldPotRushActive = isGoldPotRushRound(this);
         const originalRunLater = behavior.runLater;
 
+        keepCardGameAlive(this);
+
         behavior.runLater = function (...runLaterArgs) {
             if (runLaterArgs[2] === instance.actor && isGoldPotRushRound(instance)) {
                 const callback = runLaterArgs[1];
@@ -272,6 +296,8 @@ function setupEvents670Minigames() {
         if (!previousGoldPotRushActive && isGoldPotRushRound(this)) {
             goldPotRushRoundIds.set(this, nextGoldPotRushRoundId);
         }
+
+        keepCardGameAlive(this);
 
         // this._GenINFO[213] event game 2 = valentine game
         if (cheatState.minigame.valentine && this._GenINFO[EVENT_GAME_IDX] === VALENTINE_GAME_ID) {

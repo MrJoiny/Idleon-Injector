@@ -60,15 +60,13 @@ export const SpicesTab = () => {
     const reconcileSpiceRows = createStaticRowReconciler(spiceRows);
 
     const reconcileRows = () =>
-        reconcileSpiceRows(
-            spiceEntries.val.map((entry) => entry.key).join("|"),
-            () =>
-                spiceEntries.val.map((entry) =>
-                    SimpleNumberRow({
-                        entry,
-                        valueState: getOrCreateState(spiceAmountStates, entry.index),
-                    })
-                )
+        reconcileSpiceRows(spiceEntries.val.map((entry) => entry.key).join("|"), () =>
+            spiceEntries.val.map((entry) =>
+                SimpleNumberRow({
+                    entry,
+                    valueState: getOrCreateState(spiceAmountStates, entry.index),
+                })
+            )
         );
 
     const load = async () =>

@@ -139,7 +139,9 @@ export const PetsTab = () => {
 
     const reconcileRows = () =>
         reconcilePetSectionRows(
-            petSections.val.map((section) => `${section.key}:${section.entries.map((entry) => entry.key).join("|")}`).join("|"),
+            petSections.val
+                .map((section) => `${section.key}:${section.entries.map((entry) => entry.key).join("|")}`)
+                .join("|"),
             () =>
                 petSections.val.map((section) =>
                     AccountSection({

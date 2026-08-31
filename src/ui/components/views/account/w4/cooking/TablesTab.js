@@ -87,9 +87,8 @@ export const TablesTab = () => {
     const reconcileKitchenRows = createStaticRowReconciler(kitchenRows);
 
     const reconcileRows = () =>
-        reconcileKitchenRows(
-            kitchenEntries.val.map((entry) => entry.key).join("|"),
-            () => kitchenEntries.val.map((entry) => KitchenRow({ entry, fieldStates: kitchenFieldStates }))
+        reconcileKitchenRows(kitchenEntries.val.map((entry) => entry.key).join("|"), () =>
+            kitchenEntries.val.map((entry) => KitchenRow({ entry, fieldStates: kitchenFieldStates }))
         );
 
     const load = async () =>

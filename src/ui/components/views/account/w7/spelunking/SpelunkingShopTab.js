@@ -20,10 +20,7 @@ const ShopUpgradeRow = ({ entry }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index + 1}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",

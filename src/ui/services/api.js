@@ -47,6 +47,12 @@ export async function fetchCheatsData() {
     return _request("/cheats");
 }
 
+/** Fetch bundle names, codes, and live ownership flags from the injected runtime. */
+export async function fetchBundleCatalog() {
+    const data = await _request("/game/bundles");
+    return data.bundles;
+}
+
 export async function executeCheatAction(action) {
     return _request("/toggle", {
         method: "POST",
@@ -278,6 +284,18 @@ export async function gga(path, value) {
         console.error(`[gga] Write failed at ${path}:`, error);
         return false;
     }
+}
+
+/** Delete a cached or derived GGA property by dot/bracket path. */
+export async function deleteGga(path) {
+    const ggaPath = path.startsWith("gga.") ? path : `gga.${path}`;
+    const data = await _request("/game/gga/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: ggaPath }),
+    });
+
+    if (!data?.ok) throw new Error(`Failed to delete ${ggaPath}`);
 }
 
 /**

@@ -172,10 +172,7 @@ const TomeEditableRow = ({ entry, valueState }) =>
         write: (nextValue) => writeEditableValue(entry.editor, nextValue),
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
         adjustInput: (rawValue, delta, currentValue) => adjustFormattedIntInput(rawValue, delta, currentValue ?? 0),
@@ -188,10 +185,7 @@ const TomeRow = ({ entry }) =>
     AccountRow({
         info: [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => largeFormatter(entry.value ?? 0),
     });

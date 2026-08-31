@@ -41,19 +41,42 @@ export function setupFirebaseStorageProxy() {
     };
 
     const getCompanionInfoMe = firebase.getCompanionInfoMe;
+    const companionEntryId = (entry) => parseInt(String(entry).split(",")[0]);
+
+    // A configured list names the pets to fake-own, it does not describe the whole
+    // collection: the player's real companions are merged back in, entries the config
+    // mentions winning on id. Without this, listing one pet silently deletes every pet
+    // actually owned, which the W1 Pets tab hits every time it marks a single pet.
+    const mergeWithOwnedCompanions = (entries, self, args) => {
+        const owned = Reflect.apply(getCompanionInfoMe, self, args) || [];
+        const byId = new Map(owned.map((entry) => [companionEntryId(entry), entry]));
+        entries.forEach((entry) => byId.set(companionEntryId(entry), entry));
+        return [...byId.values()];
+    };
+
     firebase.getCompanionInfoMe = function (...args) {
         if (cheatState.w1.companion) {
             if (!cheatConfig.w1.companion.companions) {
-                return Array.from({ length: cList.CompanionDB.length }, (_, index) => index).filter(
-                    (index) => monsterDefs[cList.CompanionDB[index][0]]?.h.Name
+                return Array.from({ length: cList.CompanionDB.length }, (_, index) => `${index},0,0,0,1`).filter(
+                    (entry) => monsterDefs[cList.CompanionDB[parseInt(entry)][0]]?.h.Name
                 );
             }
             const companions = cheatConfig.w1.companion.companions;
             if (typeof companions === "string") {
-                return companions
+                const entries = companions
                     .split(",")
                     .map((id) => parseInt(id.trim()))
-                    .filter((id) => !isNaN(id));
+                    .filter((id) => !isNaN(id))
+                    .map((id) => `${id},0,0,0,1`);
+                return mergeWithOwnedCompanions(entries, this, args);
+            }
+            if (Array.isArray(companions)) {
+                const entries = companions.map((entry) => {
+                    if (typeof entry === "number") return `${entry},0,0,0,1`;
+                    if (typeof entry === "string" && !entry.includes(",")) return `${entry},0,0,0,1`;
+                    return entry;
+                });
+                return mergeWithOwnedCompanions(entries, this, args);
             }
             return companions;
         }

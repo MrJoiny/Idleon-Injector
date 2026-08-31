@@ -6,12 +6,7 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createIndexedStateGetter,
-    createStaticRowReconciler,
-    toInt,
-} from "../../accountShared.js";
+import { cleanName, createIndexedStateGetter, createStaticRowReconciler, toInt } from "../../accountShared.js";
 
 const { div } = van.tags;
 

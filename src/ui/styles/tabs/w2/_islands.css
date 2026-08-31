@@ -1,0 +1,32 @@
+/* Islands tab */
+.islands-content {
+    overflow: auto;
+    min-height: 0;
+}
+
+.islands-section__controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.islands-section__controls .account-setall-row {
+    min-width: min(100%, 310px);
+}
+
+.islands-unlock-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 5px;
+}
+
+@media (max-width: 620px) {
+    .islands-section__controls {
+        width: 100%;
+    }
+
+    .islands-section__controls .account-setall-row {
+        width: 100%;
+    }
+}

@@ -145,9 +145,8 @@ export const ChipsTab = () => {
     const reconcilePlayerChipRows = createStaticRowReconciler(playerChipRows);
 
     const reconcileRows = () => {
-        reconcileChipRows(
-            chipEntries.val.map((entry) => entry.key).join("|"),
-            () => chipEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getChipState(entry.index) }))
+        reconcileChipRows(chipEntries.val.map((entry) => entry.key).join("|"), () =>
+            chipEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getChipState(entry.index) }))
         );
         reconcilePlayerChipRows(
             playerChipEntries.val.map((entry) => `${entry.key}:${entry.optionSignature}`).join("|"),

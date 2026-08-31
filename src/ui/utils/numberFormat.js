@@ -18,13 +18,13 @@ export function formatNumber(value) {
     if (n < 0) return "-" + formatNumber(-n);
 
     if (n < 1_000) return n % 1 === 0 ? String(n) : n.toFixed(2);
-    if (n < 1e6) return (n / 1e3).toPrecision(3).replace(/\.?0+$/, "") + "K";
-    if (n < 1e9) return (n / 1e6).toPrecision(3).replace(/\.?0+$/, "") + "M";
-    if (n < 1e12) return (n / 1e9).toPrecision(3).replace(/\.?0+$/, "") + "B";
-    if (n < 1e15) return (n / 1e12).toPrecision(3).replace(/\.?0+$/, "") + "T";
-    if (n < 1e18) return (n / 1e15).toPrecision(3).replace(/\.?0+$/, "") + "Q";
-    if (n < 1e21) return (n / 1e18).toPrecision(3).replace(/\.?0+$/, "") + "QQ";
-    if (n < 1e24) return (n / 1e21).toPrecision(3).replace(/\.?0+$/, "") + "QQQ";
+    if (n < 1e6) return parseFloat((n / 1e3).toPrecision(3)) + "K";
+    if (n < 1e9) return parseFloat((n / 1e6).toPrecision(3)) + "M";
+    if (n < 1e12) return parseFloat((n / 1e9).toPrecision(3)) + "B";
+    if (n < 1e15) return parseFloat((n / 1e12).toPrecision(3)) + "T";
+    if (n < 1e18) return parseFloat((n / 1e15).toPrecision(3)) + "Q";
+    if (n < 1e21) return parseFloat((n / 1e18).toPrecision(3)) + "QQ";
+    if (n < 1e24) return parseFloat((n / 1e21).toPrecision(3)) + "QQQ";
 
     // 1.31E27 style
     const expStr = n.toExponential(2).toUpperCase().replace("E+", "E");

@@ -252,7 +252,8 @@ export const GeneralTab = () => {
 
     return PersistentAccountListPage({
         title: "GENERAL",
-        description: "Edit Gaming currencies, Rat King levels, upgrades, mutations, nugget stats, and related counters.",
+        description:
+            "Edit Gaming currencies, Rat King levels, upgrades, mutations, nugget stats, and related counters.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

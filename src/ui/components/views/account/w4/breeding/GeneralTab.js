@@ -106,9 +106,8 @@ export const GeneralTab = () => {
         });
 
     const reconcileRows = () => {
-        reconcileEggRows(
-            eggEntries.val.map((entry) => entry.key).join("|"),
-            () => eggEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getEggState(entry.index) }))
+        reconcileEggRows(eggEntries.val.map((entry) => entry.key).join("|"), () =>
+            eggEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getEggState(entry.index) }))
         );
         reconcileUpgradeRows(upgradeEntries.val.map((entry) => `${entry.key}:${entry.max}`).join("|"), () => [
             SimpleNumberRow({

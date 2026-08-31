@@ -62,15 +62,13 @@ export const JewelsTab = () => {
     const reconcileJewelRows = createStaticRowReconciler(jewelRows);
 
     const reconcileRows = () =>
-        reconcileJewelRows(
-            jewelEntries.val.map((entry) => entry.key).join("|"),
-            () =>
-                jewelEntries.val.map((entry) =>
-                    JewelRow({
-                        entry,
-                        unlockedState: getJewelState(entry.index),
-                    })
-                )
+        reconcileJewelRows(jewelEntries.val.map((entry) => entry.key).join("|"), () =>
+            jewelEntries.val.map((entry) =>
+                JewelRow({
+                    entry,
+                    unlockedState: getJewelState(entry.index),
+                })
+            )
         );
 
     const load = async () =>

@@ -1,12 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, writeVerified } from "../../accountShared.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountToggleRow } from "../../components/AccountToggleRow.js";

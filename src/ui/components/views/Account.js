@@ -13,7 +13,9 @@ import store from "../../state/store.js";
 import { VIEWS } from "../../state/constants.js";
 import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
+import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
+import { MasterclassesTab } from "./account/MasterclassesTab.js";
 import { TasksTab } from "./account/TasksTab.js";
 import { UpgradeVaultTab } from "./account/UpgradeVaultTab.js";
 import { W1Tab } from "./account/W1Tab.js";
@@ -36,6 +38,8 @@ const ACCOUNT_TABS = [
     { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
     { id: "tasks", label: "TASKS", isWorld: false, component: TasksTab },
     { id: "cards", label: "CARDS", isWorld: false, component: CardsTab },
+    { id: "bundles", label: "BUNDLES", isWorld: false, component: BundlesTab },
+    { id: "masterclasses", label: "MASTERCLASSES", isWorld: false, component: MasterclassesTab },
     { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
     { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
     { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
@@ -56,7 +60,7 @@ export const Account = () => {
             navClass: "account-root-nav",
             buttonClass: (tab) => {
                 if (tab.isWorld) return `account-top-tab-btn world-tab-btn w${tab.worldNum}-world-tab`;
-                const compactClass = tab.id === "tasks" || tab.id === "cards" ? "account-compact-tab-btn" : "";
+                const compactClass = ["tasks", "cards", "bundles"].includes(tab.id) ? "account-compact-tab-btn" : "";
                 return `account-top-tab-btn account-options-btn ${compactClass}`;
             },
             renderLabel: (tab) =>

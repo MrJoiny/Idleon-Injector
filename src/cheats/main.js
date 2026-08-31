@@ -24,11 +24,13 @@ import {
     readEntries,
     readComputed,
     readComputedMany,
+    deletePath,
     writePath,
     writePaths,
 } from "./api/stateAccessors.js";
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
+import { getBundleCatalog } from "./helpers/bundles.js";
 import { monitor } from "./core/valueMonitor.js";
 
 // Sets the config, startup and webport from glob to internal state
@@ -66,6 +68,7 @@ window.updateCheatConfig = updateCheatConfig;
 // WebUI API
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;
 window.cheatStateList = getcheatStateList;
+window.getBundleCatalog = getBundleCatalog;
 
 // Search API
 window.searchGga = searchGga;
@@ -76,6 +79,7 @@ window.readGamePath = readPath;
 window.readGameEntries = readEntries;
 window.readComputedValue = readComputed;
 window.readComputedValues = readComputedMany;
+window.deleteGamePath = deletePath;
 window.writeGamePath = writePath;
 window.writeGamePaths = writePaths;
 
