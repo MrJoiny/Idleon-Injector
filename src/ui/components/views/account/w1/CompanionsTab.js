@@ -27,7 +27,7 @@ import { SearchBar } from "../../../SearchBar.js";
 import { Icons } from "../../../../assets/icons.js";
 import { withTooltip } from "../../../Tooltip.js";
 import { toIndexedArray } from "../../../../utils/index.js";
-import { RefreshButton } from "../components/AccountPageChrome.js";
+import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import { cleanName, cleanNameEffect, useWriteStatus, writeVerified } from "../accountShared.js";
@@ -410,21 +410,25 @@ export const CompanionsTab = () => {
 
     const renderNotices = () => {
         const overlap = overlapIds();
+        if (!plusAll.val && !overlap.length) return null;
         return div(
             plusAll.val
-                ? div(
-                      { class: "companions-notice" },
+                ? WarningBanner(
                       "Every pet is on the Pets+ tier: the W1 Companion cheat is on with an empty pet list. " +
                           "Click + on a pet to switch to picking them individually."
                   )
                 : null,
             overlap.length
-                ? div(
-                      { class: "companions-notice companions-notice--warn" },
+                ? WarningBanner(
                       `${overlap.length} pet${overlap.length === 1 ? " is" : "s are"} in both the pet-token list and Pets+. ` +
                           "The game overwrites Pets+ with the normal bonus for those, so they are not actually upgraded.",
                       button(
-                          { class: "btn-secondary", onclick: handleFixOverlap, disabled: () => isBusy() },
+                          {
+                              type: "button",
+                              class: "btn-secondary",
+                              onclick: handleFixOverlap,
+                              disabled: () => isBusy(),
+                          },
                           "REMOVE THEIR TOKENS"
                       )
                   )
@@ -440,14 +444,11 @@ export const CompanionsTab = () => {
             "The + button puts a pet on the Pets+ tier instead: that runs through the W1 Companion cheat, so it only lasts " +
             "while the injector is running, it changes your active follower, and a pet cannot be on a token and on Pets+ at once.",
         actions: RefreshButton({ onRefresh: load, tooltip: "Re-read live companion data from the running game." }),
+        topNotices: () => renderNotices(),
         subNav,
         state: { loading, error },
         loadingText: "READING PETS",
         errorTitle: "PET READ FAILED",
-        body: div(
-            { class: "scrollable-panel companions-scroll" },
-            () => renderNotices(),
-            () => renderSearchResults()
-        ),
+        body: div({ class: "scrollable-panel companions-scroll" }, () => renderSearchResults()),
     });
 };
