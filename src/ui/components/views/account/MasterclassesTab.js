@@ -5,6 +5,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { CompassTab } from "./masterclasses/CompassTab.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
+import { OutpostsTab } from "./masterclasses/OutpostsTab.js";
 import { ResourceNodesTab } from "./masterclasses/ResourceNodesTab.js";
 import { RoyalArmoryTab } from "./masterclasses/RoyalArmoryTab.js";
 import { TesseractTab } from "./masterclasses/TesseractTab.js";
@@ -16,8 +17,9 @@ const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
     { id: "compass", label: "COMPASS", component: CompassTab },
     { id: "tesseract", label: "TESSERACT", component: TesseractTab },
-    { id: "resource-nodes", label: "RESOURCE NODES", component: ResourceNodesTab },
     { id: "royal-armory", label: "ROYAL ARMORY", component: RoyalArmoryTab },
+    { id: "resource-nodes", label: "RESOURCE NODES", component: ResourceNodesTab },
+    { id: "outposts", label: "OUTPOSTS", component: OutpostsTab },
 ];
 
 export const MasterclassesTab = () => {
