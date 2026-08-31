@@ -11,10 +11,10 @@ const resourceFields = (resourceIds) =>
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
 const ROYAL_ARMORY_RESOURCE_TABS = [
-    { id: "w1", label: "W1", fields: resourceFields(range(0, 15)) },
-    { id: "w2", label: "W2", fields: resourceFields(range(20, 36)) },
-    { id: "w3", label: "W3", fields: resourceFields(range(40, 57)) },
-    { id: "w4", label: "W4", fields: resourceFields(range(60, 76)) },
+    { id: "w1", label: "W1", fields: resourceFields(range(0, 9)) },
+    { id: "w2", label: "W2", fields: resourceFields(range(10, 19)) },
+    { id: "w3", label: "W3", fields: resourceFields(range(20, 29)) },
+    { id: "w4", label: "W4", fields: resourceFields(range(30, 39)) },
 ];
 
 export const RoyalArmoryTab = () =>
