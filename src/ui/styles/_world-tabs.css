@@ -195,7 +195,7 @@
 #options-account-tab {
     --font-display: var(--font-sans, "Inter", "Segoe UI", sans-serif);
     padding: 0;
-    background: #f8fafc;
+    background: var(--atlas-canvas, #f8fafc);
     color: var(--c-text-main);
 }
 
@@ -218,7 +218,7 @@
     overflow-y: auto;
     padding: 8px;
     border: 0;
-    background: #ffffff;
+    background: transparent;
 }
 
 .account-root-nav .account-sub-tab-btn {
@@ -234,7 +234,7 @@
     border: 0;
     border-radius: 7px;
     background: transparent;
-    color: #475569;
+    color: var(--atlas-text-muted, #475569);
     font-family: var(--font-display);
     font-size: 0.75rem;
     font-weight: 500;
@@ -243,13 +243,13 @@
 }
 
 .account-root-nav .account-sub-tab-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--atlas-surface-hover, #f1f5f9);
+    color: var(--atlas-text, #0f172a);
 }
 
 .account-root-nav .account-sub-tab-btn.active {
-    background: #eef2ff;
-    color: #4338ca;
+    background: var(--atlas-accent-soft, #eef2ff);
+    color: var(--atlas-accent, #4338ca);
     font-weight: 650;
 }
 
@@ -260,7 +260,7 @@
     width: 3px;
     height: auto;
     border-radius: 0 3px 3px 0;
-    background: var(--world-color, #6366f1);
+    background: var(--world-color, var(--atlas-accent, #6366f1));
     box-shadow: none;
 }
 
@@ -289,7 +289,7 @@
     flex: 0 0 25px;
     place-items: center;
     border-radius: 5px;
-    background: color-mix(in srgb, var(--world-color) 14%, #ffffff);
+    background: color-mix(in srgb, var(--world-color) 14%, var(--atlas-surface, #ffffff));
     color: var(--world-color);
     font-family: var(--font-mono);
     font-size: 0.75rem;
@@ -298,7 +298,7 @@
 .account-sub-tab-content {
     width: 100%;
     height: 100%;
-    background: #f8fafc;
+    background: var(--atlas-canvas, #f8fafc);
 }
 
 #options-account-tab .world-sub-nav,
@@ -306,8 +306,8 @@
 #options-account-tab .account-nested-sub-nav {
     gap: 2px;
     padding: 7px 10px;
-    border-bottom-color: var(--c-border);
-    background: #ffffff;
+    border-bottom-color: var(--atlas-border, var(--c-border));
+    background: var(--atlas-surface, #ffffff);
 }
 
 #options-account-tab .world-sub-nav .account-sub-tab-btn,
@@ -319,7 +319,7 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: #64748b;
+    color: var(--atlas-text-muted, #64748b);
     font-family: var(--font-display);
     font-size: 0.75rem;
     font-weight: 600;
@@ -329,15 +329,15 @@
 #options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
 #options-account-tab .account-page-nav .account-sub-tab-btn:hover,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--atlas-surface-hover, #f1f5f9);
+    color: var(--atlas-text, #0f172a);
 }
 
 #options-account-tab .world-sub-nav .account-sub-tab-btn.active,
 #options-account-tab .account-page-nav .account-sub-tab-btn.active,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active {
-    background: color-mix(in srgb, var(--world-color, #6366f1) 10%, #ffffff);
-    color: color-mix(in srgb, var(--world-color, #6366f1) 78%, #0f172a);
+    background: color-mix(in srgb, var(--world-color, #6366f1) 10%, var(--atlas-surface, #ffffff));
+    color: color-mix(in srgb, var(--world-color, #6366f1) 78%, var(--atlas-text, #0f172a));
 }
 
 #options-account-tab .world-sub-nav .account-sub-tab-btn.active::after,

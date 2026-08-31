@@ -120,6 +120,8 @@
     }
 }
 
+:root,
+.app-layout,
 .viewport.atlas-canvas,
 #search-tab,
 #options-account-tab {
@@ -417,7 +419,25 @@ body,
     background: var(--c-panel-dim);
 }
 
-.account-root-nav.account-sub-nav,
+.account-root-nav.account-sub-nav {
+    background: transparent;
+    border: 0;
+}
+
+.account-root-nav .account-sub-tab-btn {
+    color: var(--atlas-text-muted);
+}
+
+.account-root-nav .account-sub-tab-btn:hover {
+    color: var(--atlas-text);
+    background: var(--atlas-surface-hover);
+}
+
+.account-root-nav .account-sub-tab-btn.active {
+    color: var(--atlas-accent);
+    background: var(--atlas-accent-soft);
+}
+
 #options-account-tab .world-sub-nav,
 #options-account-tab .account-page-nav,
 #options-account-tab .account-nested-sub-nav,
@@ -429,7 +449,6 @@ body,
     border-color: var(--c-border);
 }
 
-.account-root-nav .account-sub-tab-btn,
 #options-account-tab .world-sub-nav .account-sub-tab-btn,
 #options-account-tab .account-page-nav .account-sub-tab-btn,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn,
@@ -439,14 +458,12 @@ body,
 }
 
 #options-account-tab .account-tab-header__title,
-.account-root-nav .account-sub-tab-btn:hover,
 #options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
 #options-account-tab .account-page-nav .account-sub-tab-btn:hover,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn:hover {
     color: var(--c-text-main);
 }
 
-.account-root-nav .account-sub-tab-btn:hover,
 #options-account-tab .account-row:hover,
 #options-account-tab .feature-card:hover,
 #options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
@@ -456,7 +473,6 @@ body,
     border-color: var(--c-border-strong);
 }
 
-.account-root-nav .account-sub-tab-btn.active,
 #options-account-tab .account-row__badge,
 #options-account-tab .world-sub-nav .account-sub-tab-btn.active,
 #options-account-tab .account-page-nav .account-sub-tab-btn.active,
@@ -551,12 +567,25 @@ body,
         background: var(--c-accent-dim-solid);
     }
 
+    .bundle-row__badge--queued,
     .killroy-row--blur,
     .refinery-section--placeholder,
     .has-warning:not(.account-row--success):not(.account-row--error) {
         background: var(--c-warning-10);
     }
 
+    .outpost-card,
+    .outpost-vanilla-units,
+    .outpost-map-unit,
+    .outpost-unit-config__world,
+    .outpost-vanilla-units__row {
+        background: var(--c-panel-dim);
+    }
+
+    .masterclass-currency__badge,
+    .outpost-field__rank,
+    .outpost-field__next,
+    .masterclass-category-tabs__button.is-active,
     .feature-card.account-row--success,
     .account-row--success,
     .account-btn--success,
