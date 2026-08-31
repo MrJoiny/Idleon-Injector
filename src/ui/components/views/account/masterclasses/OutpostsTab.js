@@ -1,7 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { gga } from "../../../../services/api.js";
+import { gga, readCList } from "../../../../services/api.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
@@ -115,79 +115,6 @@ const SOVEREIGNTY_UNIT_TYPES = "0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,1,1,1,0,2,2,2,
     .map((value) => Number(value) + 5);
 const SOVEREIGNTY_WORLDS = "1,2,1,2,1,2,3,1,2,3,1,2,3,3,4,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,4,4,4"
     .split(",")
-    .map(Number);
-
-const ROYAL_MAP_NAMES = {
-    1: "Spore Meadows",
-    2: "Froggy Fields",
-    6: "Tunnels Entrance",
-    7: "Freefall Caverns",
-    10: "The Ol' Straightaway",
-    11: "Echoing Egress",
-    12: "Slip Slidy Ledges",
-    13: "The Base Of The Bark",
-    14: "Valley Of The Beans",
-    15: "Rats Nest",
-    16: "Jungle Perimeter",
-    17: "Birch Enclave",
-    18: "Hollowed Trunk",
-    19: "Winding Willows",
-    24: "Vegetable Patch",
-    26: "Forest Outskirts",
-    27: "Encroaching Forest Villas",
-    28: "Tucked Away",
-    30: "The Roots",
-    31: "Where the Branches End",
-    32: "Motherlode Pit",
-    42: "Grand Owl Perch",
-    51: "Jar Bridge",
-    52: "The Mimic Hole",
-    53: "Dessert Dunes",
-    54: "Salty Shores",
-    55: "Faraway Piers",
-    57: "The Grandioso Canyon",
-    58: "Shifty Sandbox",
-    59: "Pincer Plateau",
-    60: "Slamabam Straightaway",
-    61: "Deepwater Docks",
-    62: "The Ring",
-    63: "Up Up Down Down",
-    64: "Sands of Time",
-    65: "Djonnuttown",
-    67: "Bandit Bob's Hideout",
-    73: "The Oasis",
-    101: "Steep Sheep Ledge",
-    102: "Trappers Folley",
-    103: "Snowfield Outskirts",
-    104: "The Stache Split",
-    105: "Refrigeration Station",
-    106: "Mamooooth Mountain",
-    107: "Rollin' Tundra",
-    108: "Signature Slopes",
-    109: "Thermonuclear Climb",
-    110: "Waterlogged Entrance",
-    111: "Cryo Catacombs",
-    112: "Overpass of Sound",
-    113: "Crystal Basecamp",
-    116: "Wam Wonderland",
-    117: "Hell Hath Frozen Over",
-    151: "Spaceway Raceway",
-    152: "TV Outpost",
-    153: "Donut Drive-In",
-    154: "Outskirts of Fallstar Isle",
-    155: "Mountainous Deugh",
-    156: "Wurm Highway",
-    157: "Jelly Cube Bridge",
-    158: "Cocoa Tunnel",
-    159: "Standstill Plains",
-    160: "Shelled Shores",
-    161: "The Untraveled Octopath",
-    162: "Flamboyant Bayou",
-    163: "Enclave of Eyes",
-    166: "The Rift",
-};
-
-const worldFromMapId = (mapId) => Math.floor(mapId / 50) + 1;
 const formatAmount = (value) => formatNumber(Math.max(0, Math.floor(toNum(value, 0))));
 const rankFieldIndex = (field) => field.index - 3;
 
@@ -251,10 +178,11 @@ const readUnitPair = async (typeArray, mapArray) => {
     };
 };
 
-const getMapName = (mapDetails, mapId) => {
-    if (ROYAL_MAP_NAMES[mapId]) return ROYAL_MAP_NAMES[mapId];
+const getMapName = (mapId, mapDispNames, mapDetails) => {
+    const dispName = mapDispNames?.[mapId];
+    if (dispName && typeof dispName === "string" && dispName.trim()) return cleanName(dispName, `Map ${mapId}`);
 
-    const row = toIndexedArray(mapDetails[mapId] ?? []);
+    const row = toIndexedArray(mapDetails?.[mapId] ?? []);
     const candidates = row.flatMap((entry) => toIndexedArray(entry ?? []));
     const text = candidates.find((entry) => typeof entry === "string" && entry.trim());
     return cleanName(text, `Map ${mapId}`) || `Map ${mapId}`;
@@ -552,9 +480,11 @@ const UnitCountField = ({ unitType, valueState }) =>
         })
     );
 
-const UnitSummaryRows = ({ summaries }) =>
-    summaries.map((summary) =>
-        div(
+const UnitSummaryRows = ({ summaries, mapDispNames, mapDetails }) =>
+    summaries.map((summary) => {
+        const homeMapId = VANILLA_UNIT_HOME_MAPS[summary.world];
+        const homeMapName = homeMapId ? getMapName(homeMapId, mapDispNames, mapDetails) : `W${summary.world}`;
+        return div(
             { class: "outpost-vanilla-units__row" },
             span({ class: "account-row__index" }, `W${summary.world}`),
             span({ class: "outpost-vanilla-units__count" }, `${summary.total} Units`),
@@ -566,12 +496,12 @@ const UnitSummaryRows = ({ summaries }) =>
                 { class: "outpost-vanilla-units__meta" },
                 summary.addedNew || summary.movedExisting
                     ? `${summary.movedExisting} moved, ${summary.addedNew} added`
-                    : `Home ${ROYAL_MAP_NAMES[VANILLA_UNIT_HOME_MAPS[summary.world]] ?? `M${VANILLA_UNIT_HOME_MAPS[summary.world]}`}`
+                    : `Home ${homeMapName}`
             )
-        )
-    );
+        );
+    });
 
-const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld }) => {
+const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld, mapDispNames, mapDetails }) => {
     const vanillaStatus = useWriteStatus();
     const customStatus = useWriteStatus();
     const countStates = new Map();
@@ -600,7 +530,7 @@ const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld }) => {
             mode: "custom",
             summaries: buildDistributedUnitArrays(royalGState.val ?? [], getWantedCounts(), outpostsByWorld).summaries,
         };
-        summaryList.replaceChildren(...UnitSummaryRows({ summaries: previewState.val.summaries }));
+        summaryList.replaceChildren(...UnitSummaryRows({ summaries: previewState.val.summaries, mapDispNames, mapDetails }));
     };
 
     worlds.forEach((world) => {
@@ -771,19 +701,23 @@ const BuiltOutpostRow = ({ outpost, fieldStates, slotState, outpostTypeState, gl
                         outpost.type = value;
                     },
                 }),
-                SelectWriter({
-                    label: "GLORIFIED",
-                    valueState: glorifiedState,
-                    options: [
-                        { value: 0, label: "No" },
-                        { value: 1, label: "Yes" },
-                    ],
-                    path: `RoyalMaps[${outpost.mapId}][12]`,
-                    onApplied: async (value) => {
-                        outpost.glorified = value;
-                        await syncCapacity(fieldStates.get("barracks").val, value);
-                    },
-                })
+                div(
+                    { class: "outpost-select-field" },
+                    span({ class: "outpost-select-field__label" }, "GLORIFIED"),
+                    ActionButton({
+                        label: () => (toInt(glorifiedState.val) === 1 ? "GLORIFIED" : "STANDARD"),
+                        tooltip: "Toggle glorified outpost status.",
+                        className: "outpost-glorified-button",
+                        onClick: async (e) => {
+                            e.preventDefault();
+                            const nextValue = toInt(glorifiedState.val) === 1 ? 0 : 1;
+                            await writeVerified(`RoyalMaps[${outpost.mapId}][12]`, nextValue);
+                            glorifiedState.val = nextValue;
+                            outpost.glorified = nextValue;
+                            await syncCapacity(fieldStates.get("barracks").val, nextValue);
+                        },
+                    })
+                )
             ),
             div(
                 { class: "outpost-card__group outpost-card__group--rank-a" },
@@ -857,16 +791,18 @@ const KillOutpostRow = ({ outpost, remainingState, onConverted }) =>
     });
 
 const readOutposts = async () => {
-    const [rawRoyalMaps, rawMapDetails, rawKillReqOverrides, rawRoyalG] = await Promise.all([
+    const [rawRoyalMaps, rawMapDetails, rawKillReqOverrides, rawRoyalG, rawMapDispNames] = await Promise.all([
         gga("RoyalMaps"),
         gga("CustomLists.h.MapDetails"),
         gga("CustomMaps.h.RG_KillReq.h"),
         gga("RoyalG"),
+        readCList("MapDispName"),
     ]);
 
     const royalMaps = toIndexedArray(rawRoyalMaps ?? []);
     const mapDetails = toIndexedArray(rawMapDetails ?? []);
     const royalG = toIndexedArray(rawRoyalG ?? []);
+    const mapDispNames = toIndexedArray(rawMapDispNames ?? []);
 
     const mapUnitsByMapId = new Map();
     Object.entries(MAP_UNIT_ARRAYS).forEach(([world, arrays]) => {
@@ -891,14 +827,14 @@ const readOutposts = async () => {
         }
     });
 
-    return royalMaps
+    const outposts = royalMaps
         .map((row, mapId) => {
             const kind = rowKind(row);
             if (kind === "hidden") return null;
 
             const killReq = getKillReq(mapId, mapDetails, rawKillReqOverrides);
             const world = worldFromMapId(mapId);
-            const name = getMapName(mapDetails, mapId);
+            const name = getMapName(mapId, mapDispNames, mapDetails);
             if (world < 1 || world > WORLD_COUNT) return null;
 
             if (kind === "kills") {
@@ -927,6 +863,8 @@ const readOutposts = async () => {
             };
         })
         .filter(Boolean);
+
+    return { outposts, mapDispNames, mapDetails };
 };
 
 export const OutpostsTab = () => {
@@ -935,6 +873,8 @@ export const OutpostsTab = () => {
     const outposts = van.state([]);
     const royalGState = van.state([]);
     const outpostsByWorldState = van.state({});
+    const mapDispNamesState = van.state([]);
+    const mapDetailsState = van.state([]);
     const fieldStateGroups = new Map();
     const slotStates = new Map();
     const outpostTypeStates = new Map();
@@ -950,7 +890,14 @@ export const OutpostsTab = () => {
     });
 
     const renderRows = () => {
-        if (activeWorld.val === "units") return UnitBulkPanel({ royalGState, onChanged: load, outpostsByWorld: outpostsByWorldState.val });
+        if (activeWorld.val === "units")
+            return UnitBulkPanel({
+                royalGState,
+                onChanged: load,
+                outpostsByWorld: outpostsByWorldState.val,
+                mapDispNames: mapDispNamesState.val,
+                mapDetails: mapDetailsState.val,
+            });
 
         const visible = outposts.val.filter((outpost) => outpost.world === activeWorld.val);
         rowList.replaceChildren(...visible.map((outpost) => rowNodes.get(outpost.mapId)));
@@ -965,10 +912,16 @@ export const OutpostsTab = () => {
 
     const load = () =>
         runLoad(async () => {
-            const [nextOutposts, rawRoyalG, rawRoyalMaps] = await Promise.all([readOutposts(), gga("RoyalG"), gga("RoyalMaps")]);
+            const [{ outposts: nextOutposts, mapDispNames, mapDetails }, rawRoyalG, rawRoyalMaps] = await Promise.all([
+                readOutposts(),
+                gga("RoyalG"),
+                gga("RoyalMaps"),
+            ]);
             rowNodes.clear();
             royalGState.val = toIndexedArray(rawRoyalG ?? []);
             outpostsByWorldState.val = buildOutpostsByWorld(rawRoyalMaps);
+            mapDispNamesState.val = mapDispNames;
+            mapDetailsState.val = mapDetails;
 
             nextOutposts.forEach((outpost) => {
                 if (outpost.kind === "kills") {
