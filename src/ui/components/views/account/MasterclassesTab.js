@@ -5,6 +5,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { CompassTab } from "./masterclasses/CompassTab.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
+import { RoyalArmoryTab } from "./masterclasses/RoyalArmoryTab.js";
 import { TesseractTab } from "./masterclasses/TesseractTab.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
@@ -14,6 +15,7 @@ const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
     { id: "compass", label: "COMPASS", component: CompassTab },
     { id: "tesseract", label: "TESSERACT", component: TesseractTab },
+    { id: "royal-armory", label: "ROYAL ARMORY", component: RoyalArmoryTab },
 ];
 
 export const MasterclassesTab = () => {
