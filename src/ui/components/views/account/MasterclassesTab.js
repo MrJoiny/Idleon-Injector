@@ -3,14 +3,18 @@
  */
 
 import van from "../../../vendor/van-1.6.0.js";
+import { CompassTab } from "./masterclasses/CompassTab.js";
 import { GrimoireTab } from "./masterclasses/GrimoireTab.js";
 import { ResourceNodesTab } from "./masterclasses/ResourceNodesTab.js";
+import { TesseractTab } from "./masterclasses/TesseractTab.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
 
 const MASTERCLASSES_SUBTABS = [
     { id: "grimoire", label: "GRIMOIRE", component: GrimoireTab },
+    { id: "compass", label: "COMPASS", component: CompassTab },
+    { id: "tesseract", label: "TESSERACT", component: TesseractTab },
     { id: "resource-nodes", label: "RESOURCE NODES", component: ResourceNodesTab },
 ];
 
