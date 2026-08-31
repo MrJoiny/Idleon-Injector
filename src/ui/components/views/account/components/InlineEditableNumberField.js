@@ -28,6 +28,8 @@ export const InlineEditableNumberField = ({
     label,
     valueState,
     path,
+    write = null,
+    onApplied = null,
     normalize = defaultNormalize,
     format = largeFormatter,
     adjust = defaultAdjust,
@@ -41,6 +43,11 @@ export const InlineEditableNumberField = ({
     const inputValue = van.state(format(valueState.val));
     const { status, run } = useWriteStatus();
     let isFocused = false;
+
+    const renderLabel = () => {
+        const content = typeof label === "function" ? label() : label;
+        return Array.isArray(content) ? span({ class: labelClass }, ...content) : span({ class: labelClass }, content);
+    };
 
     const syncInputToCommitted = () => {
         inputValue.val = format(valueState.val);
@@ -62,15 +69,20 @@ export const InlineEditableNumberField = ({
         if (nextValue === null || nextValue === undefined || Number.isNaN(nextValue)) return;
 
         await run(async () => {
-            await writeVerified(path, nextValue);
+            if (typeof write === "function") {
+                await write(nextValue);
+            } else {
+                await writeVerified(path, nextValue);
+            }
             valueState.val = nextValue;
             inputValue.val = format(nextValue);
+            if (typeof onApplied === "function") await onApplied(nextValue);
         });
     };
 
     return div(
         { class: rootClass },
-        span({ class: labelClass }, () => (typeof label === "function" ? label() : label)),
+        renderLabel(),
         NumberInput({
             mode: inputMode,
             value: inputValue,
