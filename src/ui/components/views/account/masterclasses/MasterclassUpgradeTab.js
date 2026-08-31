@@ -64,6 +64,7 @@ const resolveStorageIndex = (rawDefinition, definition, index, getStorageIndex) 
 const buildUpgrades = ({
     levels,
     definitions,
+    order = null,
     fallbackPrefix,
     fallbackMax,
     getStorageIndex = null,
@@ -72,21 +73,26 @@ const buildUpgrades = ({
 }) => {
     const levelRows = toIndexedArray(levels ?? []);
     const definitionRows = toIndexedArray(definitions ?? []);
+    const orderRows = order ? toIndexedArray(order).map(Number).filter((n) => Number.isInteger(n) && n >= 0) : null;
     const count =
-        preferDefinitionCount && definitionRows.length
+        orderRows?.length
+            ? orderRows.length
+            : preferDefinitionCount && definitionRows.length
             ? definitionRows.length
             : Math.max(levelRows.length, definitionRows.length);
 
     return Array.from({ length: count }, (_, index) => {
-        const rawDefinition = definitionRows[index];
-        const definition = toIndexedArray(definitionRows[index] ?? []);
-        const storageIndex = resolveStorageIndex(rawDefinition, definition, index, getStorageIndex);
+        const storageIndex = orderRows
+            ? orderRows[index]
+            : resolveStorageIndex(definitionRows[index], toIndexedArray(definitionRows[index] ?? []), index, getStorageIndex);
+        const rawDefinition = definitionRows[storageIndex];
+        const definition = toIndexedArray(rawDefinition ?? []);
         const rawName = definition[0];
         const maxLevel =
             maxLevelIndex !== null && maxLevelIndex !== undefined
                 ? firstFiniteNumber([definition[maxLevelIndex]], fallbackMax)
                 : firstFiniteNumber([definition[4], definition[3], definition[2]], fallbackMax);
-        const displayIndex = storageIndex === index ? `#${index}` : `#${storageIndex}`;
+        const displayIndex = `#${index + 1}`;
 
         return {
             index,
@@ -259,6 +265,7 @@ export const MasterclassUpgradeTab = ({
     description,
     levelsPath,
     definitionPaths,
+    orderPath = null,
     fallbackPrefix,
     fallbackMax = 999999,
     getStorageIndex = null,
@@ -324,10 +331,11 @@ export const MasterclassUpgradeTab = ({
 
     const load = () =>
         runLoad(async () => {
-            const [rawLevels, definitionTable, rawCurrencyValues] = await Promise.all([
+            const [rawLevels, definitionTable, rawCurrencyValues, rawOrder] = await Promise.all([
                 gga(levelsPath),
                 staticUpgrades?.length ? Promise.resolve({ path: null, rows: [] }) : readFirstDefinitionTable(definitionPaths),
                 Promise.all(allCurrencyFields.map((field) => gga(fieldPath(field)))),
+                orderPath ? readCList(orderPath) : Promise.resolve(null),
             ]);
             const levels = toIndexedArray(rawLevels ?? []);
             const nextUpgrades = staticUpgrades?.length
@@ -335,6 +343,7 @@ export const MasterclassUpgradeTab = ({
                 : buildUpgrades({
                       levels,
                       definitions: definitionTable.rows,
+                      order: rawOrder,
                       fallbackPrefix,
                       fallbackMax,
                       getStorageIndex,

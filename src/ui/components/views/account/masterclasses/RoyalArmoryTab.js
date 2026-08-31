@@ -23,6 +23,7 @@ export const RoyalArmoryTab = () =>
         description: "Manage Royal Guard Royal Armory upgrades.",
         levelsPath: "RoyalG[2]",
         definitionPaths: ["ArmoryUpg"],
+        orderPath: "Research[43]",
         currencyTitle: "ROYAL RESOURCES",
         currencyTabs: ROYAL_ARMORY_RESOURCE_TABS,
         fallbackPrefix: "Royal Armory Upgrade",
