@@ -65,6 +65,15 @@
 
 .warning-banner__content {
     min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.warning-banner .btn-secondary {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .warning-banner__highlight {
