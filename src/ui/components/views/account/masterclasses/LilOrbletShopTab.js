@@ -6,5 +6,6 @@ export const LilOrbletShopTab = () =>
         description: "Manage Royal Guard Lil Orblet Shop upgrades.",
         levelsPath: "RoyalG[23]",
         definitionPaths: ["OrbletMarket"],
+        maxLevelIndex: 3,
         fallbackPrefix: "Orblet Shop Upgrade",
     });
