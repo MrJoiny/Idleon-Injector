@@ -73,14 +73,14 @@ const readNodes = async () => {
         .filter(Boolean);
 };
 
-const nodeBadge = ({ depleted, baseAmount, grade, nodeIndex }) => {
-    const max = nodeMax(nodeIndex, baseAmount, grade);
+const nodeBadge = (node, depleted, grade) => {
+    const max = nodeMax(node.nodeIndex, node.baseAmount, grade);
     if (depleted < 0) return "DEPLETED";
     if (depleted === 0) return `FULL / ${formatAmount(max)}`;
     return `LEFT ${formatAmount(max - depleted)}`;
 };
 
-const NodeInfo = ({ node }) => [
+const NodeInfo = ({ node, gradeState }) => [
     span({ class: "account-row__index" }, `N${node.localNode}`),
     span({ class: "masterclass-currency__badge resource-node-row__icon" }, `R${node.resourceType}`),
     div(
@@ -88,24 +88,22 @@ const NodeInfo = ({ node }) => [
         span({ class: "account-row__name" }, `Node ${node.nodeIndex} / RGres${node.resourceType}`),
         span(
             { class: "resource-node-row__meta" },
-            `Base ${formatAmount(node.baseAmount)} | Max ${formatAmount(node.max)} | X ${node.x}, Y ${node.y}`
+            () => {
+                const grade = toInt(gradeState.val, { min: 0 });
+                const max = nodeMax(node.nodeIndex, node.baseAmount, grade);
+                return `Base ${formatAmount(node.baseAmount)} | Max ${formatAmount(max)} | X ${node.x}, Y ${node.y}`;
+            }
         )
     ),
 ];
 
 const NodeRow = ({ node, gradeState, depletedState }) => {
     const quickStatus = useWriteStatus();
-    const refreshComputed = () => {
-        node.grade = toInt(gradeState.val, { min: 0 });
-        node.depleted = toNum(depletedState.val, 0);
-        node.max = nodeMax(node.nodeIndex, node.baseAmount, node.grade);
-    };
 
     const writeDepleted = async (value) => {
         const result = await quickStatus.run(async () => {
             await writeVerified(`RoyalG[4][${node.nodeIndex}]`, value);
             depletedState.val = value;
-            refreshComputed();
         });
         return result.ok;
     };
@@ -115,8 +113,8 @@ const NodeRow = ({ node, gradeState, depletedState }) => {
         rowClass: "resource-node-row",
         badgeClass: "resource-node-row__badge",
         controlsClass: "resource-node-row__controls",
-        info: NodeInfo({ node }),
-        badge: () => nodeBadge(node),
+        info: NodeInfo({ node, gradeState }),
+        badge: () => nodeBadge(node, toNum(depletedState.val, 0), toInt(gradeState.val, { min: 0 })),
         controls: [
             InlineEditableNumberField({
                 label: "GRADE",
@@ -199,14 +197,16 @@ export const ResourceNodesTab = () => {
                 gradeState.val = node.grade;
                 depletedState.val = node.depleted;
 
-                rowNodes.set(
-                    node.nodeIndex,
-                    NodeRow({
-                        node,
-                        gradeState,
-                        depletedState,
-                    })
-                );
+                if (!rowNodes.has(node.nodeIndex)) {
+                    rowNodes.set(
+                        node.nodeIndex,
+                        NodeRow({
+                            node,
+                            gradeState,
+                            depletedState,
+                        })
+                    );
+                }
             });
 
             nodes.val = nextNodes;
