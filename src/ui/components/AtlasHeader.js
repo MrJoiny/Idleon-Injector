@@ -78,6 +78,20 @@ export const AtlasHeader = () =>
             ),
             button(
                 {
+                    class: "atlas-header-button atlas-theme-toggle",
+                    type: "button",
+                    onclick: () => {
+                        const currentTheme = document.documentElement.dataset.theme || store.app.theme;
+                        store.setTheme(currentTheme === "dark" ? "light" : "dark");
+                    },
+                    title: () => (store.app.theme === "light" ? "Switch to dark theme" : "Switch to light theme"),
+                    "aria-label": () =>
+                        store.app.theme === "light" ? "Switch to dark theme" : "Switch to light theme",
+                },
+                () => (store.app.theme === "light" ? Icons.Moon() : Icons.Sun())
+            ),
+            button(
+                {
                     class: () =>
                         `atlas-header-button atlas-drawer-trigger ${store.app.activityDrawer === "activity" ? "is-active" : ""}`,
                     type: "button",

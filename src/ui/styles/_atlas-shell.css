@@ -205,6 +205,11 @@ body {
     height: 14px;
 }
 
+.atlas-theme-toggle {
+    width: 32px;
+    padding: 0;
+}
+
 .atlas-version:disabled {
     cursor: default;
     opacity: 0.72;
