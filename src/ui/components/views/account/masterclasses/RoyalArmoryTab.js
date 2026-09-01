@@ -1,5 +1,5 @@
 import { MasterclassUpgradeTab } from "./MasterclassUpgradeTab.js";
-import { UNIT_REBUILD_SHELVES, resetRoyalGuardUnitsToVanilla } from "./OutpostsTab.js";
+import { UNIT_REBUILD_DISPLAY_SHELVES, resetRoyalGuardUnitsToVanilla } from "./OutpostsTab.js";
 
 const resourceFields = (resourceIds) =>
     resourceIds.map((resourceId) => ({
@@ -18,6 +18,8 @@ const ROYAL_ARMORY_RESOURCE_TABS = [
     { id: "w4", label: "W4", fields: resourceFields(range(30, 39)) },
 ];
 
+const getDisplayShelf = (upgrade) => Number(upgrade.index) + 1;
+
 export const RoyalArmoryTab = () =>
     MasterclassUpgradeTab({
         title: "ROYAL ARMORY",
@@ -29,9 +31,9 @@ export const RoyalArmoryTab = () =>
         currencyTabs: ROYAL_ARMORY_RESOURCE_TABS,
         fallbackPrefix: "Royal Armory Upgrade",
         onUpgradeChanged: ({ upgrade }) =>
-            UNIT_REBUILD_SHELVES.has(Number(upgrade.index)) ? resetRoyalGuardUnitsToVanilla() : null,
+            UNIT_REBUILD_DISPLAY_SHELVES.has(getDisplayShelf(upgrade)) ? resetRoyalGuardUnitsToVanilla() : null,
         onBulkChanged: ({ upgrades }) => {
-            return upgrades.some((upgrade) => UNIT_REBUILD_SHELVES.has(Number(upgrade.index)))
+            return upgrades.some((upgrade) => UNIT_REBUILD_DISPLAY_SHELVES.has(getDisplayShelf(upgrade)))
                 ? resetRoyalGuardUnitsToVanilla()
                 : null;
         },
