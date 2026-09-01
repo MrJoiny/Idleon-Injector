@@ -38,7 +38,7 @@ body {
     align-items: center;
     gap: 18px;
     min-width: 0;
-    padding: 0 12px;
+    padding: 0 92px 0 12px;
     color: #f6f7fb;
     background: var(--atlas-header);
     border-bottom: 1px solid var(--atlas-header-border);
@@ -584,7 +584,7 @@ body {
     .atlas-header {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 8px;
-        padding-inline: 8px;
+        padding: 0 86px 0 8px;
     }
 
     .atlas-breadcrumb,
