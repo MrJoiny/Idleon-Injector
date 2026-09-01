@@ -1,7 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { deleteGga, gga, readCList } from "../../../../services/api.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
@@ -95,6 +95,13 @@ const DEFAULT_UNIT_COUNTS = {
     7: 1,
 };
 
+const VANILLA_MILITIA_SHELVES = {
+    1: 14,
+    2: 19,
+    3: 38,
+    4: 56,
+};
+
 const VANILLA_MILITIA_UPGRADES = {
     1: 60,
     2: 61,
@@ -109,12 +116,18 @@ const VANILLA_UNIT_HOME_MAPS = {
     4: 151,
 };
 
+const SOVEREIGNTY_SHELF = 28;
 const SOVEREIGNTY_UPGRADE_ID = 68;
+export const ROYAL_GUARD_VANILLA_UNIT_UPGRADES = new Set([
+    ...Object.values(VANILLA_MILITIA_SHELVES),
+    ...Object.values(VANILLA_MILITIA_UPGRADES),
+    SOVEREIGNTY_SHELF,
+    SOVEREIGNTY_UPGRADE_ID,
+]);
 const SOVEREIGNTY_UNIT_TYPES = "0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,1,1,1,0,2,2,2,1,2,2,2,2,2,2,2,0,1,2,2"
     .split(",")
     .map((value) => Number(value) + 5);
-const SOVEREIGNTY_WORLDS = "1,2,1,2,1,2,3,1,2,3,1,2,3,3,4,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,4,4,4"
-    .split(",")
+const SOVEREIGNTY_WORLDS = "1,2,1,2,1,2,3,1,2,3,1,2,3,3,4,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,4,4,4".split(",");
 const formatAmount = (value) => formatNumber(Math.max(0, Math.floor(toNum(value, 0))));
 const rankFieldIndex = (field) => field.index - 3;
 
@@ -139,10 +152,17 @@ const getOutpostRankInfo = (xp, rankType) => {
 const selectOption = ({ value, label }, current) =>
     option({ value: String(value), selected: String(value) === String(current) }, label);
 
-const decodeSlots = (value) => String(Math.trunc(toNum(value, 111111111))).padStart(9, "1").slice(-9).split("");
+const decodeSlots = (value) =>
+    String(Math.trunc(toNum(value, 111111111)))
+        .padStart(9, "1")
+        .slice(-9)
+        .split("");
 const encodeSlots = (slots) => Number(slots.join(""));
 const unlockedSlotCount = (barracksLevel, glorified) =>
-    Math.max(0, Math.min(9, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" })) + (toInt(glorified) === 1 ? 1 : 0)));
+    Math.max(
+        0,
+        Math.min(9, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" })) + (toInt(glorified) === 1 ? 1 : 0))
+    );
 
 const outpostTypeLabel = (type) =>
     OUTPOST_TYPES.find((entry) => entry.value === Number(type))?.label ?? `Outpost Type ${type}`;
@@ -211,7 +231,8 @@ const rowKind = (row) => {
     return "hidden";
 };
 
-const getUnitTypeLabel = (type) => MAP_UNIT_TYPES.find((entry) => entry.value === Number(type))?.label ?? `Unit ${type}`;
+const getUnitTypeLabel = (type) =>
+    MAP_UNIT_TYPES.find((entry) => entry.value === Number(type))?.label ?? `Unit ${type}`;
 
 const countUnitTypes = (types) =>
     types.reduce((acc, type) => {
@@ -227,17 +248,29 @@ const makeUnitSummary = ({ world, types, addedNew = 0, movedExisting = 0 }) => (
     movedExisting,
 });
 
-const buildVanillaUnitArrays = (royalG) => {
+const buildVanillaUnitArrays = (royalG, order = [], world = null) => {
     const upgrades = toIndexedArray(royalG?.[2] ?? []);
+    const resolveUpgradeId = (shelf, fallback) => {
+        const resolved = Number(toIndexedArray(order)[shelf]);
+        return Number.isInteger(resolved) && resolved >= 0 ? resolved : fallback;
+    };
+    const militiaUpgrades = Object.fromEntries(
+        Object.entries(VANILLA_MILITIA_SHELVES).map(([worldKey, shelf]) => [
+            worldKey,
+            resolveUpgradeId(shelf, VANILLA_MILITIA_UPGRADES[worldKey]),
+        ])
+    );
+    const sovereigntyUpgrade = resolveUpgradeId(SOVEREIGNTY_SHELF, SOVEREIGNTY_UPGRADE_ID);
     const rebuilt = {};
     const summaries = [];
 
     Object.entries(MAP_UNIT_ARRAYS).forEach(([worldKey, arrays]) => {
-        const world = Number(worldKey);
+        const currentWorld = Number(worldKey);
+        if (world !== null && currentWorld !== world) return;
         const types = [];
         const maps = [];
-        const homeMap = VANILLA_UNIT_HOME_MAPS[world];
-        const militiaUpgrade = VANILLA_MILITIA_UPGRADES[world];
+        const homeMap = VANILLA_UNIT_HOME_MAPS[currentWorld];
+        const militiaUpgrade = militiaUpgrades[currentWorld];
         const militiaCount = Math.max(0, Math.min(10, toInt(upgrades[militiaUpgrade], { min: 0, mode: "floor" })));
 
         for (let i = 0; i < militiaCount; i++) {
@@ -245,21 +278,21 @@ const buildVanillaUnitArrays = (royalG) => {
             maps.push(homeMap);
         }
 
-        rebuilt[world] = { ...arrays, types, maps };
+        rebuilt[currentWorld] = { ...arrays, types, maps };
     });
 
     const sovereigntyCount = Math.max(
         0,
-        Math.min(SOVEREIGNTY_UNIT_TYPES.length, toInt(upgrades[SOVEREIGNTY_UPGRADE_ID], { min: 0, mode: "floor" }))
+        Math.min(SOVEREIGNTY_UNIT_TYPES.length, toInt(upgrades[sovereigntyUpgrade], { min: 0, mode: "floor" }))
     );
 
     for (let index = 0; index < sovereigntyCount; index++) {
-        const world = SOVEREIGNTY_WORLDS[index];
-        const target = rebuilt[world];
+        const currentWorld = Number(SOVEREIGNTY_WORLDS[index]);
+        const target = rebuilt[currentWorld];
         if (!target) continue;
 
         target.types.push(SOVEREIGNTY_UNIT_TYPES[index]);
-        target.maps.push(VANILLA_UNIT_HOME_MAPS[world]);
+        target.maps.push(VANILLA_UNIT_HOME_MAPS[currentWorld]);
     }
 
     Object.entries(rebuilt).forEach(([worldKey, entry]) => {
@@ -267,6 +300,38 @@ const buildVanillaUnitArrays = (royalG) => {
     });
 
     return { rebuilt, summaries, sovereigntyCount };
+};
+
+export const refreshRoyalGuardUnitCaches = async () => {
+    await deleteGga("DNSM.h.TotUnitzAllMapz");
+};
+
+export const rebuildRoyalGuardVanillaUnits = async ({ world = null } = {}) => {
+    const [rawRoyalG, rawRoyalMaps, rawOrder] = await Promise.all([
+        gga("RoyalG"),
+        gga("RoyalMaps"),
+        readCList("Research[43]"),
+    ]);
+    const royalG = toIndexedArray(rawRoyalG ?? []);
+    const royalMaps = toIndexedArray(rawRoyalMaps ?? []);
+    const selectedWorld = world === null || world === undefined ? null : Number(world);
+    const { rebuilt } = buildVanillaUnitArrays(royalG, rawOrder, selectedWorld);
+    const writes = [];
+
+    Object.values(rebuilt).forEach((entry) => {
+        writes.push({ path: `RoyalG[${entry.typeArray}]`, value: entry.types });
+        writes.push({ path: `RoyalG[${entry.mapArray}]`, value: entry.maps });
+    });
+
+    royalMaps.forEach((row, mapId) => {
+        if (!Array.isArray(row) || row.length < BUILT_OUTPOST_LENGTH) return;
+        if (selectedWorld !== null && worldFromMapId(mapId) !== selectedWorld) return;
+        const nextSlots = normalizeSlotsForCapacity(row[11], row[0], row[12]);
+        if (nextSlots !== row[11]) writes.push({ path: `RoyalMaps[${mapId}][11]`, value: nextSlots });
+    });
+
+    await writeManyVerified(writes);
+    await refreshRoyalGuardUnitCaches();
 };
 
 const buildDistributedUnitArrays = (royalG, wantedPerOutpost, outpostsByWorld) => {
@@ -361,7 +426,7 @@ const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
                     class: () =>
                         `outpost-slot-select${status.val === "success" ? " is-success" : ""}${
                             status.val === "error" ? " is-error" : ""
-                    }`,
+                        }`,
                     value: () => slots()[slot],
                     title: `Slot ${slot + 1}`,
                     disabled: () => slot >= unlockedSlots(),
@@ -386,7 +451,8 @@ const MapUnitAddControl = ({ outpost, onAdded }) => {
     const typeState = van.state(MAP_UNIT_TYPES[0].value);
     const { status, run } = useWriteStatus();
 
-    if (!arrays) return span({ class: "outpost-map-units__empty" }, "Map unit arrays are not mapped for this world yet.");
+    if (!arrays)
+        return span({ class: "outpost-map-units__empty" }, "Map unit arrays are not mapped for this world yet.");
 
     return div(
         { class: "outpost-map-unit-add" },
@@ -490,7 +556,9 @@ const UnitSummaryRows = ({ summaries, mapDispNames, mapDetails }) =>
             span({ class: "outpost-vanilla-units__count" }, `${summary.total} Units`),
             span(
                 { class: "outpost-vanilla-units__breakdown" },
-                MAP_UNIT_ORDER.map((unitType) => `${getUnitTypeLabel(unitType)} ${summary.counts[unitType] ?? 0}`).join(" | ")
+                MAP_UNIT_ORDER.map((unitType) => `${getUnitTypeLabel(unitType)} ${summary.counts[unitType] ?? 0}`).join(
+                    " | "
+                )
             ),
             span(
                 { class: "outpost-vanilla-units__meta" },
@@ -530,7 +598,9 @@ const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld, mapDispNames, 
             mode: "custom",
             summaries: buildDistributedUnitArrays(royalGState.val ?? [], getWantedCounts(), outpostsByWorld).summaries,
         };
-        summaryList.replaceChildren(...UnitSummaryRows({ summaries: previewState.val.summaries, mapDispNames, mapDetails }));
+        summaryList.replaceChildren(
+            ...UnitSummaryRows({ summaries: previewState.val.summaries, mapDispNames, mapDetails })
+        );
     };
 
     worlds.forEach((world) => {
@@ -565,21 +635,12 @@ const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld, mapDispNames, 
                     label: "RESET TO VANILLA",
                     status: vanillaStatus.status,
                     variant: "danger",
-                    tooltip: "Rebuild RoyalG map-unit arrays from current militia and Kingdom Sovereignty upgrade levels.",
+                    tooltip:
+                        "Rebuild RoyalG map-unit arrays from current militia and Kingdom Sovereignty upgrade levels.",
                     onClick: (e) => {
                         e.preventDefault();
                         void vanillaStatus.run(async () => {
-                            const rawRoyalG = await gga("RoyalG");
-                            const royalG = toIndexedArray(rawRoyalG ?? []);
-                            const { rebuilt } = buildVanillaUnitArrays(royalG);
-                            const writes = [];
-
-                            Object.values(rebuilt).forEach((entry) => {
-                                writes.push({ path: `RoyalG[${entry.typeArray}]`, value: entry.types });
-                                writes.push({ path: `RoyalG[${entry.mapArray}]`, value: entry.maps });
-                            });
-
-                            await writeManyVerified(writes);
+                            await rebuildRoyalGuardVanillaUnits();
                             if (typeof onChanged === "function") await onChanged();
                         });
                     },
@@ -624,7 +685,15 @@ const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld, mapDispNames, 
     );
 };
 
-const BuiltOutpostRow = ({ outpost, fieldStates, slotState, outpostTypeState, glorifiedState, mapUnits, onUnitsChanged }) => {
+const BuiltOutpostRow = ({
+    outpost,
+    fieldStates,
+    slotState,
+    outpostTypeState,
+    glorifiedState,
+    mapUnits,
+    onUnitsChanged,
+}) => {
     const syncCapacity = async (nextBarracks = fieldStates.get("barracks").val, nextGlorified = glorifiedState.val) => {
         await syncSlotsToCapacity({
             mapId: outpost.mapId,
@@ -761,7 +830,10 @@ const KillOutpostRow = ({ outpost, remainingState, onConverted }) =>
             div(
                 { class: "outpost-row__text" },
                 span({ class: "account-row__name" }, outpost.name),
-                span({ class: "outpost-row__meta" }, `Kills done ${formatAmount(outpost.kills)} / ${formatAmount(outpost.killReq)}`)
+                span(
+                    { class: "outpost-row__meta" },
+                    `Kills done ${formatAmount(outpost.kills)} / ${formatAmount(outpost.killReq)}`
+                )
             ),
         ],
         renderBadge: (remaining) => `LEFT ${formatAmount(remaining)}`,

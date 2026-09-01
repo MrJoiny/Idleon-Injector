@@ -1,4 +1,5 @@
 import { MasterclassUpgradeTab } from "./MasterclassUpgradeTab.js";
+import { rebuildRoyalGuardVanillaUnits, ROYAL_GUARD_VANILLA_UNIT_UPGRADES } from "./OutpostsTab.js";
 
 const resourceFields = (resourceIds) =>
     resourceIds.map((resourceId) => ({
@@ -27,4 +28,12 @@ export const RoyalArmoryTab = () =>
         currencyTitle: "ROYAL RESOURCES",
         currencyTabs: ROYAL_ARMORY_RESOURCE_TABS,
         fallbackPrefix: "Royal Armory Upgrade",
+        onUpgradeChanged: ({ upgrade }) =>
+            ROYAL_GUARD_VANILLA_UNIT_UPGRADES.has(Number(upgrade.storageIndex))
+                ? rebuildRoyalGuardVanillaUnits()
+                : null,
+        onBulkChanged: ({ upgrades }) =>
+            upgrades.some((upgrade) => ROYAL_GUARD_VANILLA_UNIT_UPGRADES.has(Number(upgrade.storageIndex)))
+                ? rebuildRoyalGuardVanillaUnits()
+                : null,
     });

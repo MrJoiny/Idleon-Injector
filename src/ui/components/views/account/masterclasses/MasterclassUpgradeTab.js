@@ -65,18 +65,26 @@ const buildUpgrades = ({
 }) => {
     const levelRows = toIndexedArray(levels ?? []);
     const definitionRows = toIndexedArray(definitions ?? []);
-    const orderRows = order ? toIndexedArray(order).map(Number).filter((n) => Number.isInteger(n) && n >= 0) : null;
-    const count =
-        orderRows?.length
-            ? orderRows.length
-            : preferDefinitionCount && definitionRows.length
-            ? definitionRows.length
-            : Math.max(levelRows.length, definitionRows.length);
+    const orderRows = order
+        ? toIndexedArray(order)
+              .map(Number)
+              .filter((n) => Number.isInteger(n) && n >= 0)
+        : null;
+    const count = orderRows?.length
+        ? orderRows.length
+        : preferDefinitionCount && definitionRows.length
+          ? definitionRows.length
+          : Math.max(levelRows.length, definitionRows.length);
 
     return Array.from({ length: count }, (_, index) => {
         const storageIndex = orderRows
             ? orderRows[index]
-            : resolveStorageIndex(definitionRows[index], toIndexedArray(definitionRows[index] ?? []), index, getStorageIndex);
+            : resolveStorageIndex(
+                  definitionRows[index],
+                  toIndexedArray(definitionRows[index] ?? []),
+                  index,
+                  getStorageIndex
+              );
         const rawDefinition = definitionRows[storageIndex];
         const definition = toIndexedArray(rawDefinition ?? []);
         const rawName = definition[0];
@@ -129,7 +137,7 @@ const matchesSearch = (upgrade, query) => {
     );
 };
 
-const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) =>
+const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [], onChanged = null }) =>
     ClampedLevelRow({
         valueState: levelState,
         max: upgrade.maxLevel,
@@ -139,16 +147,21 @@ const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) 
             value: upgrade.maxLevel,
             tooltip: `Set ${upgrade.name} to level ${upgrade.maxLevel}`,
         },
-        writePath: deleteCachePaths.length ? null : `${levelsPath}[${upgrade.storageIndex}]`,
-        write: deleteCachePaths.length
-            ? async (nextLevel) => {
-                  await writeVerified(`${levelsPath}[${upgrade.storageIndex}]`, nextLevel);
-                  for (const cachePath of deleteCachePaths) {
-                      await deleteGga(cachePath);
+        writePath:
+            deleteCachePaths.length || typeof onChanged === "function"
+                ? null
+                : `${levelsPath}[${upgrade.storageIndex}]`,
+        write:
+            deleteCachePaths.length || typeof onChanged === "function"
+                ? async (nextLevel) => {
+                      await writeVerified(`${levelsPath}[${upgrade.storageIndex}]`, nextLevel);
+                      for (const cachePath of deleteCachePaths) {
+                          await deleteGga(cachePath);
+                      }
+                      if (typeof onChanged === "function") await onChanged({ upgrade, nextLevel });
+                      return nextLevel;
                   }
-                  return nextLevel;
-              }
-            : null,
+                : null,
         renderInfo: () => [
             span({ class: "account-row__index" }, upgrade.displayIndex),
             span({ class: "account-row__name" }, upgrade.name),
@@ -162,25 +175,22 @@ const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) 
 
 const fieldPath = (field) => field.path ?? `OptionsListAccount[${field.optionIndex}]`;
 
-const flattenCurrencyFields = (fields, tabs) => [
-    ...fields,
-    ...tabs.flatMap((tab) => tab.fields ?? []),
-];
+const flattenCurrencyFields = (fields, tabs) => [...fields, ...tabs.flatMap((tab) => tab.fields ?? [])];
 
 const FieldLabel = (field) =>
     field.badge
         ? [span({ class: "masterclass-currency__badge" }, field.badge), field.name]
         : field.iconUrl
-        ? [
-              img({
-                  class: "masterclass-currency__icon",
-                  src: field.iconUrl,
-                  alt: "",
-                  loading: "lazy",
-              }),
-              field.name,
-          ]
-        : field.name;
+          ? [
+                img({
+                    class: "masterclass-currency__icon",
+                    src: field.iconUrl,
+                    alt: "",
+                    loading: "lazy",
+                }),
+                field.name,
+            ]
+          : field.name;
 
 const renderCurrencyField = (field, states) =>
     field.type === "toggle"
@@ -246,9 +256,7 @@ const CurrencySection = ({ title, fields, states, tabs = [], activeTab = null })
                         {
                             type: "button",
                             class: () =>
-                                `masterclass-category-tabs__button${
-                                    activeTab.val === tab.id ? " is-active" : ""
-                                }`,
+                                `masterclass-category-tabs__button${activeTab.val === tab.id ? " is-active" : ""}`,
                             onclick: () => {
                                 activeTab.val = tab.id;
                             },
@@ -278,6 +286,8 @@ export const MasterclassUpgradeTab = ({
     currencyFields = [],
     currencyTabs = [],
     deleteCachePaths = [],
+    onUpgradeChanged = null,
+    onBulkChanged = null,
 }) => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: title });
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -320,6 +330,7 @@ export const MasterclassUpgradeTab = ({
                     upgrade,
                     levelState: getOrCreateState(levelStates, upgrade.index),
                     deleteCachePaths,
+                    onChanged: onUpgradeChanged,
                 })
             );
         });
@@ -335,7 +346,9 @@ export const MasterclassUpgradeTab = ({
         runLoad(async () => {
             const [rawLevels, definitionTable, rawCurrencyValues, rawOrder] = await Promise.all([
                 gga(levelsPath),
-                staticUpgrades?.length ? Promise.resolve({ path: null, rows: [] }) : readFirstDefinitionTable(definitionPaths),
+                staticUpgrades?.length
+                    ? Promise.resolve({ path: null, rows: [] })
+                    : readFirstDefinitionTable(definitionPaths),
                 Promise.all(allCurrencyFields.map((field) => gga(fieldPath(field)))),
                 orderPath ? readCList(orderPath) : Promise.resolve(null),
             ]);
@@ -378,13 +391,13 @@ export const MasterclassUpgradeTab = ({
                     getValueState: (upgrade) => getOrCreateState(levelStates, upgrade.index),
                     getPath: (upgrade) => `${levelsPath}[${upgrade.storageIndex}]`,
                 });
+                if (typeof onBulkChanged === "function") await onBulkChanged({ upgrades: currentUpgrades, mode });
             } finally {
                 for (const cachePath of deleteCachePaths) {
                     await deleteGga(cachePath);
                 }
             }
         });
-
         if (!result.ok) await load();
     };
 
