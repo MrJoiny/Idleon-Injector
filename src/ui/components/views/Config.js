@@ -259,9 +259,9 @@ export const Config = () => {
                             onchange: (event) => store.setTheme(event.target.value),
                             "aria-label": "Interface theme",
                         },
-                        option({ value: "system", selected: () => store.app.theme === "system" }, "System"),
+                        option({ value: "dark", selected: () => store.app.theme === "dark" }, "Dark"),
                         option({ value: "light", selected: () => store.app.theme === "light" }, "Light"),
-                        option({ value: "dark", selected: () => store.app.theme === "dark" }, "Dark")
+                        option({ value: "system", selected: () => store.app.theme === "system" }, "System")
                     )
                 ),
                 div({ class: "warning-banner mb-20" }, "⚠ RESTART REQUIRED FOR CHANGES TO APPLY"),

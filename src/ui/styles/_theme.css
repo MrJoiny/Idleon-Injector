@@ -3,45 +3,45 @@
  */
 
 :root {
-    color-scheme: light;
+    color-scheme: dark;
     --atlas-header-height: 48px;
     --atlas-sidebar-width: 220px;
     --atlas-sidebar-collapsed-width: 64px;
     --atlas-header: #090b14;
     --atlas-header-border: #1d2230;
-    --atlas-canvas: #f4f6fa;
-    --atlas-surface: #ffffff;
-    --atlas-surface-raised: #ffffff;
-    --atlas-surface-muted: #f8f9fc;
-    --atlas-surface-hover: #f0f3fa;
-    --atlas-field: #ffffff;
-    --atlas-border: #dce2ec;
-    --atlas-border-strong: #c7d0df;
-    --atlas-text: #14213d;
-    --atlas-text-muted: #66748d;
-    --atlas-text-soft: #8a96ab;
-    --atlas-accent: #5b5ce2;
-    --atlas-accent-hover: #4b4dcc;
-    --atlas-accent-soft: #ececff;
-    --atlas-focus: #7779f4;
-    --atlas-success: #0aa575;
-    --atlas-success-soft: rgba(10, 165, 117, 0.1);
-    --atlas-danger: #d9435f;
-    --atlas-danger-soft: rgba(217, 67, 95, 0.1);
-    --atlas-warning: #d58a08;
-    --atlas-warning-soft: rgba(213, 138, 8, 0.1);
-    --atlas-overlay-02: rgba(20, 33, 61, 0.02);
-    --atlas-overlay-03: rgba(20, 33, 61, 0.03);
-    --atlas-overlay-04: rgba(20, 33, 61, 0.04);
-    --atlas-overlay-05: rgba(20, 33, 61, 0.05);
-    --atlas-overlay-10: rgba(20, 33, 61, 0.1);
-    --atlas-shadow: rgba(20, 33, 61, 0.12);
-    --atlas-scrollbar: #b8c2d1;
-    --atlas-control-bg: #111a30;
-    --atlas-control-hover: #293552;
+    --atlas-canvas: #10121a;
+    --atlas-surface: #171b25;
+    --atlas-surface-raised: #1c2130;
+    --atlas-surface-muted: #1a1f2c;
+    --atlas-surface-hover: #242b3b;
+    --atlas-field: #111620;
+    --atlas-border: #30384a;
+    --atlas-border-strong: #46516a;
+    --atlas-text: #eceff8;
+    --atlas-text-muted: #bec3d1;
+    --atlas-text-soft: #8f99ae;
+    --atlas-accent: #8b8df5;
+    --atlas-accent-hover: #a7a8ff;
+    --atlas-accent-soft: #292b50;
+    --atlas-focus: #a7a8ff;
+    --atlas-success: #59d99a;
+    --atlas-success-soft: rgba(89, 217, 154, 0.12);
+    --atlas-danger: #ff7189;
+    --atlas-danger-soft: rgba(255, 113, 137, 0.12);
+    --atlas-warning: #f3b84b;
+    --atlas-warning-soft: rgba(243, 184, 75, 0.12);
+    --atlas-overlay-02: rgba(255, 255, 255, 0.02);
+    --atlas-overlay-03: rgba(255, 255, 255, 0.03);
+    --atlas-overlay-04: rgba(255, 255, 255, 0.04);
+    --atlas-overlay-05: rgba(255, 255, 255, 0.05);
+    --atlas-overlay-10: rgba(255, 255, 255, 0.1);
+    --atlas-shadow: rgba(0, 0, 0, 0.34);
+    --atlas-scrollbar: #46516a;
+    --atlas-control-bg: #7779f4;
+    --atlas-control-hover: #8b8df5;
     --atlas-control-text: #ffffff;
-    --atlas-disabled-bg: #e8ecf2;
-    --atlas-disabled-text: #7f8ca4;
+    --atlas-disabled-bg: #252b38;
+    --atlas-disabled-text: #7f8aa3;
 }
 
 :root[data-theme="dark"] {
@@ -81,42 +81,79 @@
     --atlas-disabled-text: #7f8aa3;
 }
 
-@media (prefers-color-scheme: dark) {
+:root[data-theme="light"] {
+    color-scheme: light;
+    --atlas-canvas: #f4f6fa;
+    --atlas-surface: #ffffff;
+    --atlas-surface-raised: #ffffff;
+    --atlas-surface-muted: #f8f9fc;
+    --atlas-surface-hover: #f0f3fa;
+    --atlas-field: #ffffff;
+    --atlas-border: #dce2ec;
+    --atlas-border-strong: #c7d0df;
+    --atlas-text: #14213d;
+    --atlas-text-muted: #66748d;
+    --atlas-text-soft: #8a96ab;
+    --atlas-accent: #5b5ce2;
+    --atlas-accent-hover: #4b4dcc;
+    --atlas-accent-soft: #ececff;
+    --atlas-focus: #7779f4;
+    --atlas-success: #0aa575;
+    --atlas-success-soft: rgba(10, 165, 117, 0.1);
+    --atlas-danger: #d9435f;
+    --atlas-danger-soft: rgba(217, 67, 95, 0.1);
+    --atlas-warning: #d58a08;
+    --atlas-warning-soft: rgba(213, 138, 8, 0.1);
+    --atlas-overlay-02: rgba(20, 33, 61, 0.02);
+    --atlas-overlay-03: rgba(20, 33, 61, 0.03);
+    --atlas-overlay-04: rgba(20, 33, 61, 0.04);
+    --atlas-overlay-05: rgba(20, 33, 61, 0.05);
+    --atlas-overlay-10: rgba(20, 33, 61, 0.1);
+    --atlas-shadow: rgba(20, 33, 61, 0.12);
+    --atlas-scrollbar: #b8c2d1;
+    --atlas-control-bg: #111a30;
+    --atlas-control-hover: #293552;
+    --atlas-control-text: #ffffff;
+    --atlas-disabled-bg: #e8ecf2;
+    --atlas-disabled-text: #7f8ca4;
+}
+
+@media (prefers-color-scheme: light) {
     :root[data-theme="system"] {
-        color-scheme: dark;
-        --atlas-canvas: #10121a;
-        --atlas-surface: #171b25;
-        --atlas-surface-raised: #1c2130;
-        --atlas-surface-muted: #1a1f2c;
-        --atlas-surface-hover: #242b3b;
-        --atlas-field: #111620;
-        --atlas-border: #30384a;
-        --atlas-border-strong: #46516a;
-        --atlas-text: #eceff8;
-        --atlas-text-muted: #bec3d1;
-        --atlas-text-soft: #8f99ae;
-        --atlas-accent: #8b8df5;
-        --atlas-accent-hover: #a7a8ff;
-        --atlas-accent-soft: #292b50;
-        --atlas-focus: #a7a8ff;
-        --atlas-success: #59d99a;
-        --atlas-success-soft: rgba(89, 217, 154, 0.12);
-        --atlas-danger: #ff7189;
-        --atlas-danger-soft: rgba(255, 113, 137, 0.12);
-        --atlas-warning: #f3b84b;
-        --atlas-warning-soft: rgba(243, 184, 75, 0.12);
-        --atlas-overlay-02: rgba(255, 255, 255, 0.02);
-        --atlas-overlay-03: rgba(255, 255, 255, 0.03);
-        --atlas-overlay-04: rgba(255, 255, 255, 0.04);
-        --atlas-overlay-05: rgba(255, 255, 255, 0.05);
-        --atlas-overlay-10: rgba(255, 255, 255, 0.1);
-        --atlas-shadow: rgba(0, 0, 0, 0.34);
-        --atlas-scrollbar: #46516a;
-        --atlas-control-bg: #7779f4;
-        --atlas-control-hover: #8b8df5;
+        color-scheme: light;
+        --atlas-canvas: #f4f6fa;
+        --atlas-surface: #ffffff;
+        --atlas-surface-raised: #ffffff;
+        --atlas-surface-muted: #f8f9fc;
+        --atlas-surface-hover: #f0f3fa;
+        --atlas-field: #ffffff;
+        --atlas-border: #dce2ec;
+        --atlas-border-strong: #c7d0df;
+        --atlas-text: #14213d;
+        --atlas-text-muted: #66748d;
+        --atlas-text-soft: #8a96ab;
+        --atlas-accent: #5b5ce2;
+        --atlas-accent-hover: #4b4dcc;
+        --atlas-accent-soft: #ececff;
+        --atlas-focus: #7779f4;
+        --atlas-success: #0aa575;
+        --atlas-success-soft: rgba(10, 165, 117, 0.1);
+        --atlas-danger: #d9435f;
+        --atlas-danger-soft: rgba(217, 67, 95, 0.1);
+        --atlas-warning: #d58a08;
+        --atlas-warning-soft: rgba(213, 138, 8, 0.1);
+        --atlas-overlay-02: rgba(20, 33, 61, 0.02);
+        --atlas-overlay-03: rgba(20, 33, 61, 0.03);
+        --atlas-overlay-04: rgba(20, 33, 61, 0.04);
+        --atlas-overlay-05: rgba(20, 33, 61, 0.05);
+        --atlas-overlay-10: rgba(20, 33, 61, 0.1);
+        --atlas-shadow: rgba(20, 33, 61, 0.12);
+        --atlas-scrollbar: #b8c2d1;
+        --atlas-control-bg: #111a30;
+        --atlas-control-hover: #293552;
         --atlas-control-text: #ffffff;
-        --atlas-disabled-bg: #252b38;
-        --atlas-disabled-text: #7f8aa3;
+        --atlas-disabled-bg: #e8ecf2;
+        --atlas-disabled-text: #7f8ca4;
     }
 }
 

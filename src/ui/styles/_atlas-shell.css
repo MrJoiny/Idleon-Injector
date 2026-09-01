@@ -315,7 +315,7 @@ body {
     min-height: 34px;
     padding: 7px 8px;
     overflow: hidden;
-    color: #52617a;
+    color: var(--atlas-text-muted, #52617a);
     background: transparent;
     border: 1px solid transparent;
     border-radius: 7px;
@@ -330,14 +330,14 @@ body {
 
 .atlas-nav-button:hover {
     color: var(--atlas-text);
-    background: var(--atlas-surface-muted);
-    border-color: #edf0f5;
+    background: var(--atlas-surface-hover);
+    border-color: var(--atlas-border);
 }
 
 .atlas-nav-button.active {
-    color: #494bc7;
+    color: var(--atlas-accent);
     background: var(--atlas-accent-soft);
-    border-color: #dddefd;
+    border-color: var(--atlas-border-strong);
     box-shadow: inset 2px 0 0 var(--atlas-accent);
 }
 

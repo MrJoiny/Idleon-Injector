@@ -24,18 +24,18 @@
 #options-account-tab .account-header {
     min-height: 52px;
     padding: 9px 14px;
-    border-bottom-color: #e2e8f0;
-    background: #ffffff;
+    border-bottom: 1px solid var(--atlas-border, var(--c-border));
+    background: var(--atlas-surface, var(--c-panel));
 }
 
 #options-account-tab .account-tab-header__title {
-    color: #0f172a;
+    color: var(--atlas-text, var(--c-text-main));
     font-size: 0.8125rem;
     letter-spacing: 0.025em;
 }
 
 #options-account-tab .account-tab-header__desc {
-    color: #64748b;
+    color: var(--atlas-text-muted, var(--c-text-dim));
     font-size: 0.75rem;
 }
 
@@ -47,27 +47,27 @@
 #options-account-tab .account-section {
     gap: 7px;
     padding: 10px;
-    border-color: #e2e8f0;
+    border: 1px solid var(--atlas-border, var(--c-border));
     border-radius: 8px;
-    background: #ffffff;
+    background: var(--atlas-surface, var(--c-panel));
 }
 
 #options-account-tab .account-section__header {
-    border-bottom-color: #e2e8f0;
+    border-bottom-color: var(--atlas-border, var(--c-border));
 }
 
 #options-account-tab .account-section__title {
-    color: #4f46e5;
+    color: var(--atlas-accent, var(--c-accent));
     font-size: 0.75rem;
     letter-spacing: 0.08em;
 }
 
 #options-account-tab .account-row,
 #options-account-tab .feature-card {
-    border-color: #e2e8f0;
+    border: 1px solid var(--atlas-border, var(--c-border));
     border-radius: 7px;
-    background: #ffffff;
-    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+    background: var(--atlas-surface, var(--c-panel));
+    box-shadow: 0 1px 2px var(--atlas-shadow, rgba(0, 0, 0, 0.05));
 }
 
 #options-account-tab .account-row {
@@ -82,21 +82,21 @@
 
 #options-account-tab .account-row:hover,
 #options-account-tab .feature-card:hover {
-    border-color: #c7d2fe;
-    background: #fafbff;
+    border-color: var(--atlas-border-strong, var(--c-border-strong));
+    background: var(--atlas-surface-hover, var(--c-panel-hover));
 }
 
 #options-account-tab .account-row__index {
     border-radius: 4px;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--atlas-surface-muted, var(--c-panel-hover));
+    color: var(--atlas-text-muted, var(--c-text-dim));
 }
 
 #options-account-tab .account-row__badge {
-    border-color: #c7d2fe;
+    border: 1px solid var(--atlas-border-strong, var(--c-border-strong));
     border-radius: 999px;
-    background: #eef2ff;
-    color: #4f46e5;
+    background: var(--atlas-accent-soft, var(--c-accent-dim-solid));
+    color: var(--atlas-accent, var(--c-accent));
 }
 
 @media (max-width: 760px) {

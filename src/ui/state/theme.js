@@ -1,7 +1,7 @@
 export const THEME_STORAGE_KEY = "uiTheme";
 export const THEMES = ["system", "light", "dark"];
 
-export const normalizeTheme = (theme) => (THEMES.includes(theme) ? theme : "light");
+export const normalizeTheme = (theme) => (THEMES.includes(theme) ? theme : "dark");
 
 export const loadThemePreference = (storage = localStorage) => normalizeTheme(storage.getItem(THEME_STORAGE_KEY));
 

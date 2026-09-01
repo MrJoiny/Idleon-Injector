@@ -317,10 +317,10 @@
     min-width: 96px;
     min-height: 30px;
     padding: 4px 7px;
-    border: 1px solid #dce2ec;
+    border: 1px solid var(--atlas-border);
     border-radius: 6px;
-    color: #14213d;
-    background: #ffffff;
+    color: var(--atlas-text);
+    background: var(--atlas-field);
     font-family: var(--font-mono);
     font-size: 0.8125rem;
     box-shadow: none;
@@ -328,17 +328,17 @@
 
 .cogs-popup .cogs-cog-stat-input:focus {
     outline: none;
-    border-color: #7779f4 !important;
-    background: #ffffff !important;
-    box-shadow: 0 0 0 2px rgb(119 121 244 / 14%) !important;
+    border-color: var(--atlas-accent) !important;
+    background: var(--atlas-field) !important;
+    box-shadow: 0 0 0 2px var(--atlas-focus) !important;
 }
 
 .cogs-popup .cogs-cog-stat-input:focus-visible {
     outline: none;
     outline-offset: 0;
-    border-color: #7779f4 !important;
-    background: #ffffff !important;
-    box-shadow: 0 0 0 2px rgb(119 121 244 / 14%) !important;
+    border-color: var(--atlas-accent) !important;
+    background: var(--atlas-field) !important;
+    box-shadow: 0 0 0 2px var(--atlas-focus) !important;
 }
 
 .cogs-cog-stat-set-btn {

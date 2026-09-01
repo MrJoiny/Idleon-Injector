@@ -5,7 +5,7 @@
 
 .devtools-popout-title {
     margin-bottom: 8px;
-    color: #0f172a;
+    color: var(--atlas-text);
     font-size: 1.125rem;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -13,7 +13,7 @@
 
 #devtools-tab.devtools-workspace {
     padding: 0;
-    background: #ffffff;
+    background: var(--atlas-canvas);
 }
 
 #devtools-tab.devtools-workspace .terminal-wrapper {
@@ -23,25 +23,25 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    background: #ffffff;
+    background: var(--atlas-canvas);
 }
 
 .devtools-workspace #devtools-iframe {
     width: 100%;
     height: 100%;
     border: 0;
-    background: #ffffff;
+    background: var(--atlas-canvas);
 }
 
 .devtools-popout-card {
     width: min(520px, calc(100% - 32px));
     margin: auto;
     padding: 28px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--atlas-border);
     border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-    color: #64748b;
+    background: var(--atlas-surface);
+    box-shadow: 0 18px 45px var(--atlas-shadow);
+    color: var(--atlas-text-muted);
     font-family: var(--font-sans, "Inter", "Segoe UI", sans-serif);
     font-size: 0.8125rem;
     line-height: 1.55;
@@ -50,7 +50,7 @@
 
 .devtools-popout-kicker {
     margin-bottom: 5px;
-    color: #6366f1;
+    color: var(--atlas-accent);
     font-size: 0.75rem;
     font-weight: 750;
     letter-spacing: 0.12em;
@@ -71,11 +71,11 @@
 
 .devtools-error {
     margin-top: 12px;
-    color: #e11d48;
+    color: var(--atlas-danger);
 }
 
 #devtools-message.is-error {
-    color: #e11d48;
+    color: var(--atlas-danger);
 }
 
 .devtools-workspace #devtools-message {
@@ -83,14 +83,14 @@
     min-height: 100%;
     place-items: center;
     padding: 24px;
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--atlas-canvas);
+    color: var(--atlas-text-muted);
     font-family: var(--font-mono);
     font-size: 0.75rem;
 }
 
 .devtools-workspace button:focus-visible {
-    outline: 2px solid #6366f1;
+    outline: 2px solid var(--atlas-focus);
     outline-offset: 2px;
 }
 

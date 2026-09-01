@@ -47,14 +47,14 @@ test("Search selection fallback prefers persisted keys, then favorites", () => {
     assert.deepEqual(pickInitialSelectedKeys(all, [], []), all);
 });
 
-test("Theme preferences default to light and persist valid selections", () => {
+test("Theme preferences default to dark and persist valid selections", () => {
     const storage = createStorage();
     const root = { dataset: {} };
 
-    assert.equal(loadThemePreference(storage), "light");
-    assert.equal(normalizeTheme("unknown"), "light");
-    assert.equal(applyTheme("dark", root), "dark");
-    assert.equal(root.dataset.theme, "dark");
+    assert.equal(loadThemePreference(storage), "dark");
+    assert.equal(normalizeTheme("unknown"), "dark");
+    assert.equal(applyTheme("light", root), "light");
+    assert.equal(root.dataset.theme, "light");
 
     assert.equal(saveThemePreference("system", storage, root), "system");
     assert.equal(storage.value("uiTheme"), "system");
