@@ -95,7 +95,7 @@ const DEFAULT_UNIT_COUNTS = {
     7: 1,
 };
 
-export const MILITIA_WORLD_TO_SHELF = {
+export const MILITIA_WORLD_TO_DISPLAY_SHELF = {
     1: 14,
     2: 19,
     3: 38,
@@ -107,7 +107,8 @@ export const MILITIA_SHELF_TO_WORLD = {
     38: 3,
     56: 4,
 };
-export const UNIT_REBUILD_SHELVES = new Set([14, 19, 28, 38, 56]);
+export const UNIT_REBUILD_DISPLAY_SHELVES = new Set([14, 19, 28, 38, 56]);
+const displayShelfToOrderIndex = (displayShelf) => displayShelf - 1;
 
 const VANILLA_MILITIA_UPGRADES = {
     1: 60,
@@ -256,12 +257,12 @@ const buildVanillaUnitArrays = (royalG, order = []) => {
         return Number.isInteger(resolved) && resolved >= 0 ? resolved : fallback;
     };
     const militiaUpgrades = Object.fromEntries(
-        Object.entries(MILITIA_WORLD_TO_SHELF).map(([worldKey, shelf]) => [
+        Object.entries(MILITIA_WORLD_TO_DISPLAY_SHELF).map(([worldKey, displayShelf]) => [
             worldKey,
-            resolveUpgradeId(shelf, VANILLA_MILITIA_UPGRADES[worldKey]),
+            resolveUpgradeId(displayShelfToOrderIndex(displayShelf), VANILLA_MILITIA_UPGRADES[worldKey]),
         ])
     );
-    const sovereigntyUpgrade = resolveUpgradeId(SOVEREIGNTY_SHELF, SOVEREIGNTY_UPGRADE_ID);
+    const sovereigntyUpgrade = resolveUpgradeId(displayShelfToOrderIndex(SOVEREIGNTY_SHELF), SOVEREIGNTY_UPGRADE_ID);
     const rebuilt = {};
     const summaries = [];
 
