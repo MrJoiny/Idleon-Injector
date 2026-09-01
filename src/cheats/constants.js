@@ -216,6 +216,15 @@ export const knownBundles = [
     ["Sweet And Lovely Pack", "bon_t"],
     ["Pot Of Gold Pack", "bon_u"],
     ["Kelp N Roll Pack", "bon_v"],
+    ["5th Birthday Bundle", "ban_a"],
+    ["Time Traveler Pack", "ban_b"],
+    ["Yolkmaster Pack", "ban_c"],
+    ["The Spooky Pack", "ban_d"],
+    ["Crystalline Glunko Pack", "ban_e"],
+    ["Paradise Pack", "ban_f"],
+    ["Armadillius Superius Pack", "ban_g"],
+    ["Coral Guardian Pack", "ban_h"],
+    ["Daydreamer Pack", "ban_i"],
 ];
 
 // Item types to exclude from bulk commands (invalid or problematic types)
