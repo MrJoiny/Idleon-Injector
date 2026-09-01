@@ -1,9 +1,5 @@
 import { MasterclassUpgradeTab } from "./MasterclassUpgradeTab.js";
-import {
-    MILITIA_SHELF_TO_WORLD,
-    syncRoyalGuardMilitiaForWorld,
-    syncRoyalGuardSovereigntyUnits,
-} from "./OutpostsTab.js";
+import { UNIT_REBUILD_SHELVES, resetRoyalGuardUnitsToVanilla } from "./OutpostsTab.js";
 
 const resourceFields = (resourceIds) =>
     resourceIds.map((resourceId) => ({
@@ -32,18 +28,11 @@ export const RoyalArmoryTab = () =>
         currencyTitle: "ROYAL RESOURCES",
         currencyTabs: ROYAL_ARMORY_RESOURCE_TABS,
         fallbackPrefix: "Royal Armory Upgrade",
-        onUpgradeChanged: ({ upgrade }) => {
-            const shelf = Number(upgrade.index);
-            if (shelf === 28) return syncRoyalGuardSovereigntyUnits();
-            const world = MILITIA_SHELF_TO_WORLD[shelf];
-            return world ? syncRoyalGuardMilitiaForWorld(world) : null;
-        },
+        onUpgradeChanged: ({ upgrade }) =>
+            UNIT_REBUILD_SHELVES.has(Number(upgrade.index)) ? resetRoyalGuardUnitsToVanilla() : null,
         onBulkChanged: ({ upgrades }) => {
-            const shelves = new Set(upgrades.map((upgrade) => Number(upgrade.index)));
-            const tasks = Object.entries(MILITIA_SHELF_TO_WORLD)
-                .filter(([shelf]) => shelves.has(Number(shelf)))
-                .map(([, world]) => syncRoyalGuardMilitiaForWorld(world));
-            if (shelves.has(28)) tasks.push(syncRoyalGuardSovereigntyUnits());
-            return Promise.all(tasks);
+            return upgrades.some((upgrade) => UNIT_REBUILD_SHELVES.has(Number(upgrade.index)))
+                ? resetRoyalGuardUnitsToVanilla()
+                : null;
         },
     });

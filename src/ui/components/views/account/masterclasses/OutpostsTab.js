@@ -95,12 +95,19 @@ const DEFAULT_UNIT_COUNTS = {
     7: 1,
 };
 
-export const MILITIA_SHELF_TO_WORLD = {
+export const MILITIA_WORLD_TO_SHELF = {
     1: 14,
     2: 19,
     3: 38,
     4: 56,
 };
+export const MILITIA_SHELF_TO_WORLD = {
+    14: 1,
+    19: 2,
+    38: 3,
+    56: 4,
+};
+export const UNIT_REBUILD_SHELVES = new Set([14, 19, 28, 38, 56]);
 
 const VANILLA_MILITIA_UPGRADES = {
     1: 60,
@@ -249,7 +256,7 @@ const buildVanillaUnitArrays = (royalG, order = []) => {
         return Number.isInteger(resolved) && resolved >= 0 ? resolved : fallback;
     };
     const militiaUpgrades = Object.fromEntries(
-        Object.entries(MILITIA_SHELF_TO_WORLD).map(([worldKey, shelf]) => [
+        Object.entries(MILITIA_WORLD_TO_SHELF).map(([worldKey, shelf]) => [
             worldKey,
             resolveUpgradeId(shelf, VANILLA_MILITIA_UPGRADES[worldKey]),
         ])
@@ -297,97 +304,6 @@ const buildVanillaUnitArrays = (royalG, order = []) => {
 
 export const refreshRoyalGuardUnitCaches = async () => {
     await deleteGga("DNSM.h.TotUnitzAllMapz");
-};
-
-const resolveArmoryUpgradeId = (order, shelf, fallback) => {
-    const resolved = Number(toIndexedArray(order)[shelf]);
-    return Number.isInteger(resolved) && resolved >= 0 ? resolved : fallback;
-};
-
-export const syncRoyalGuardMilitiaForWorld = async (world) => {
-    const arrays = MAP_UNIT_ARRAYS[world];
-    const shelf = Object.entries(MILITIA_SHELF_TO_WORLD).find(([, value]) => value === Number(world))?.[0];
-    if (!arrays || !shelf) return;
-
-    const [rawRoyalG, rawOrder] = await Promise.all([gga("RoyalG"), readCList("Research[43]")]);
-    const royalG = toIndexedArray(rawRoyalG ?? []);
-    const upgradeId = resolveArmoryUpgradeId(rawOrder, Number(shelf), VANILLA_MILITIA_UPGRADES[world]);
-    const wantedCount = Math.max(0, Math.min(10, toInt(royalG[2]?.[upgradeId], { min: 0, mode: "floor" })));
-    const types = toIndexedArray(royalG[arrays.typeArray] ?? []).slice();
-    const maps = toIndexedArray(royalG[arrays.mapArray] ?? []).slice();
-    const militiaIndexes = [];
-    for (let index = 0; index < Math.min(types.length, maps.length); index++) {
-        if (Number(types[index]) === 4) militiaIndexes.push(index);
-    }
-
-    while (militiaIndexes.length > wantedCount) {
-        const index = militiaIndexes.pop();
-        types.splice(index, 1);
-        maps.splice(index, 1);
-    }
-
-    while (militiaIndexes.length < wantedCount) {
-        types.push(4);
-        maps.push(VANILLA_UNIT_HOME_MAPS[world]);
-        militiaIndexes.push(types.length - 1);
-    }
-
-    await writeManyVerified([
-        { path: `RoyalG[${arrays.typeArray}]`, value: types },
-        { path: `RoyalG[${arrays.mapArray}]`, value: maps },
-    ]);
-    await refreshRoyalGuardUnitCaches();
-};
-
-export const syncRoyalGuardSovereigntyUnits = async () => {
-    const [rawRoyalG, rawOrder] = await Promise.all([gga("RoyalG"), readCList("Research[43]")]);
-    const royalG = toIndexedArray(rawRoyalG ?? []);
-    const upgradeId = resolveArmoryUpgradeId(rawOrder, SOVEREIGNTY_SHELF, SOVEREIGNTY_UPGRADE_ID);
-    const wantedCount = Math.max(
-        0,
-        Math.min(SOVEREIGNTY_UNIT_TYPES.length, toInt(royalG[2]?.[upgradeId], { min: 0, mode: "floor" }))
-    );
-    const wantedByWorld = {};
-    for (let index = 0; index < wantedCount; index++) {
-        const world = Number(SOVEREIGNTY_WORLDS[index]);
-        const type = SOVEREIGNTY_UNIT_TYPES[index];
-        wantedByWorld[world] ??= {};
-        wantedByWorld[world][type] = (wantedByWorld[world][type] ?? 0) + 1;
-    }
-
-    const writes = [];
-    Object.entries(MAP_UNIT_ARRAYS).forEach(([worldKey, arrays]) => {
-        const world = Number(worldKey);
-        const types = toIndexedArray(royalG[arrays.typeArray] ?? []).slice();
-        const maps = toIndexedArray(royalG[arrays.mapArray] ?? []).slice();
-        const kept = [];
-        const currentVanilla = {};
-        for (let index = 0; index < Math.min(types.length, maps.length); index++) {
-            const type = Number(types[index]);
-            const isHomeUnit = type >= 5 && type <= 7 && Number(maps[index]) === VANILLA_UNIT_HOME_MAPS[world];
-            const wanted = wantedByWorld[world]?.[type] ?? 0;
-            if (isHomeUnit && (currentVanilla[type] ?? 0) >= wanted) continue;
-            if (isHomeUnit) currentVanilla[type] = (currentVanilla[type] ?? 0) + 1;
-            kept.push([types[index], maps[index]]);
-        }
-
-        Object.entries(wantedByWorld[world] ?? {}).forEach(([type, count]) => {
-            for (let index = currentVanilla[type] ?? 0; index < count; index++)
-                kept.push([Number(type), VANILLA_UNIT_HOME_MAPS[world]]);
-        });
-
-        writes.push({
-            path: `RoyalG[${arrays.typeArray}]`,
-            value: kept.map(([type]) => type),
-        });
-        writes.push({
-            path: `RoyalG[${arrays.mapArray}]`,
-            value: kept.map(([, map]) => map),
-        });
-    });
-
-    await writeManyVerified(writes);
-    await refreshRoyalGuardUnitCaches();
 };
 
 export const resetRoyalGuardUnitsToVanilla = async () => {
