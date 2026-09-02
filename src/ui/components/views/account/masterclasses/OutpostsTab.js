@@ -1,7 +1,7 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { EmptyState } from "../../../EmptyState.js";
 import { Icons } from "../../../../assets/icons.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { deleteGga, gga, readCList } from "../../../../services/api.js";
 import { formatNumber } from "../../../../utils/numberFormat.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
@@ -95,6 +95,21 @@ const DEFAULT_UNIT_COUNTS = {
     7: 1,
 };
 
+export const MILITIA_WORLD_TO_DISPLAY_SHELF = {
+    1: 14,
+    2: 19,
+    3: 38,
+    4: 56,
+};
+export const MILITIA_SHELF_TO_WORLD = {
+    14: 1,
+    19: 2,
+    38: 3,
+    56: 4,
+};
+export const UNIT_REBUILD_DISPLAY_SHELVES = new Set([14, 19, 28, 38, 56]);
+const displayShelfToOrderIndex = (displayShelf) => displayShelf - 1;
+
 const VANILLA_MILITIA_UPGRADES = {
     1: 60,
     2: 61,
@@ -109,6 +124,7 @@ const VANILLA_UNIT_HOME_MAPS = {
     4: 151,
 };
 
+const SOVEREIGNTY_SHELF = 28;
 const SOVEREIGNTY_UPGRADE_ID = 68;
 const SOVEREIGNTY_UNIT_TYPES = "0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,1,1,1,0,2,2,2,1,2,2,2,2,2,2,2,0,1,2,2"
     .split(",")
@@ -144,18 +160,15 @@ const decodeSlots = (value) =>
         .slice(-9)
         .split("");
 const encodeSlots = (slots) => Number(slots.join(""));
-const unlockedSlotCount = (barracksLevel, glorified) =>
-    Math.max(
-        0,
-        Math.min(9, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" })) + (toInt(glorified) === 1 ? 1 : 0))
-    );
+const unlockedSlotCount = (barracksLevel) =>
+    Math.max(0, Math.min(6, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" }))));
 
 const outpostTypeLabel = (type) =>
     OUTPOST_TYPES.find((entry) => entry.value === Number(type))?.label ?? `Outpost Type ${type}`;
 
-const normalizeSlotsForCapacity = (slotValue, barracksLevel, glorified) => {
+const normalizeSlotsForCapacity = (slotValue, barracksLevel) => {
     const slots = decodeSlots(slotValue);
-    const unlockedSlots = unlockedSlotCount(barracksLevel, glorified);
+    const unlockedSlots = unlockedSlotCount(barracksLevel);
 
     for (let slot = 0; slot < slots.length; slot++) {
         if (slot >= unlockedSlots) {
@@ -168,12 +181,13 @@ const normalizeSlotsForCapacity = (slotValue, barracksLevel, glorified) => {
     return encodeSlots(slots);
 };
 
-const syncSlotsToCapacity = async ({ mapId, slotState, barracksLevel, glorified }) => {
-    const nextValue = normalizeSlotsForCapacity(slotState.val, barracksLevel, glorified);
+const syncSlotsToCapacity = async ({ mapId, slotState, barracksLevel }) => {
+    const nextValue = normalizeSlotsForCapacity(slotState.val, barracksLevel);
     if (nextValue === slotState.val) return;
 
     await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
     slotState.val = nextValue;
+    await refreshRoyalGuardUnitCaches();
 };
 
 const readUnitPair = async (typeArray, mapArray) => {
@@ -234,17 +248,28 @@ const makeUnitSummary = ({ world, types, addedNew = 0, movedExisting = 0 }) => (
     movedExisting,
 });
 
-const buildVanillaUnitArrays = (royalG) => {
+const buildVanillaUnitArrays = (royalG, order = []) => {
     const upgrades = toIndexedArray(royalG?.[2] ?? []);
+    const resolveUpgradeId = (shelf, fallback) => {
+        const resolved = Number(toIndexedArray(order)[shelf]);
+        return Number.isInteger(resolved) && resolved >= 0 ? resolved : fallback;
+    };
+    const militiaUpgrades = Object.fromEntries(
+        Object.entries(MILITIA_WORLD_TO_DISPLAY_SHELF).map(([worldKey, displayShelf]) => [
+            worldKey,
+            resolveUpgradeId(displayShelfToOrderIndex(displayShelf), VANILLA_MILITIA_UPGRADES[worldKey]),
+        ])
+    );
+    const sovereigntyUpgrade = resolveUpgradeId(displayShelfToOrderIndex(SOVEREIGNTY_SHELF), SOVEREIGNTY_UPGRADE_ID);
     const rebuilt = {};
     const summaries = [];
 
     Object.entries(MAP_UNIT_ARRAYS).forEach(([worldKey, arrays]) => {
-        const world = Number(worldKey);
+        const currentWorld = Number(worldKey);
         const types = [];
         const maps = [];
-        const homeMap = VANILLA_UNIT_HOME_MAPS[world];
-        const militiaUpgrade = VANILLA_MILITIA_UPGRADES[world];
+        const homeMap = VANILLA_UNIT_HOME_MAPS[currentWorld];
+        const militiaUpgrade = militiaUpgrades[currentWorld];
         const militiaCount = Math.max(0, Math.min(10, toInt(upgrades[militiaUpgrade], { min: 0, mode: "floor" })));
 
         for (let i = 0; i < militiaCount; i++) {
@@ -252,21 +277,21 @@ const buildVanillaUnitArrays = (royalG) => {
             maps.push(homeMap);
         }
 
-        rebuilt[world] = { ...arrays, types, maps };
+        rebuilt[currentWorld] = { ...arrays, types, maps };
     });
 
     const sovereigntyCount = Math.max(
         0,
-        Math.min(SOVEREIGNTY_UNIT_TYPES.length, toInt(upgrades[SOVEREIGNTY_UPGRADE_ID], { min: 0, mode: "floor" }))
+        Math.min(SOVEREIGNTY_UNIT_TYPES.length, toInt(upgrades[sovereigntyUpgrade], { min: 0, mode: "floor" }))
     );
 
     for (let index = 0; index < sovereigntyCount; index++) {
-        const world = SOVEREIGNTY_WORLDS[index];
-        const target = rebuilt[world];
+        const currentWorld = Number(SOVEREIGNTY_WORLDS[index]);
+        const target = rebuilt[currentWorld];
         if (!target) continue;
 
         target.types.push(SOVEREIGNTY_UNIT_TYPES[index]);
-        target.maps.push(VANILLA_UNIT_HOME_MAPS[world]);
+        target.maps.push(VANILLA_UNIT_HOME_MAPS[currentWorld]);
     }
 
     Object.entries(rebuilt).forEach(([worldKey, entry]) => {
@@ -274,6 +299,36 @@ const buildVanillaUnitArrays = (royalG) => {
     });
 
     return { rebuilt, summaries, sovereigntyCount };
+};
+
+export const refreshRoyalGuardUnitCaches = async () => {
+    await deleteGga("DNSM.h.TotUnitzAllMapz");
+};
+
+export const resetRoyalGuardUnitsToVanilla = async () => {
+    const [rawRoyalG, rawRoyalMaps, rawOrder] = await Promise.all([
+        gga("RoyalG"),
+        gga("RoyalMaps"),
+        readCList("Research[43]"),
+    ]);
+    const royalG = toIndexedArray(rawRoyalG ?? []);
+    const royalMaps = toIndexedArray(rawRoyalMaps ?? []);
+    const { rebuilt } = buildVanillaUnitArrays(royalG, rawOrder);
+    const writes = [];
+
+    Object.values(rebuilt).forEach((entry) => {
+        writes.push({ path: `RoyalG[${entry.typeArray}]`, value: entry.types });
+        writes.push({ path: `RoyalG[${entry.mapArray}]`, value: entry.maps });
+    });
+
+    royalMaps.forEach((row, mapId) => {
+        if (!Array.isArray(row) || row.length < BUILT_OUTPOST_LENGTH) return;
+        const nextSlots = normalizeSlotsForCapacity(row[11], row[0]);
+        if (nextSlots !== row[11]) writes.push({ path: `RoyalMaps[${mapId}][11]`, value: nextSlots });
+    });
+
+    await writeManyVerified(writes);
+    await refreshRoyalGuardUnitCaches();
 };
 
 const buildDistributedUnitArrays = (royalG, wantedPerOutpost, outpostsByWorld) => {
@@ -354,10 +409,10 @@ const SelectWriter = ({ label, valueState, options, path, onApplied = null, clas
     );
 };
 
-const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
+const OutpostSlots = ({ mapId, slotState, barracksState }) => {
     const { status, run } = useWriteStatus();
     const slots = () => decodeSlots(slotState.val);
-    const unlockedSlots = () => unlockedSlotCount(barracksState.val, glorifiedState.val);
+    const unlockedSlots = () => unlockedSlotCount(barracksState.val);
 
     return div(
         { class: "outpost-section outpost-section--slots" },
@@ -390,6 +445,7 @@ const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
                                 void run(async () => {
                                     await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
                                     slotState.val = nextValue;
+                                    await refreshRoyalGuardUnitCaches();
                                 });
                             },
                         },
@@ -595,17 +651,7 @@ const UnitBulkPanel = ({ royalGState, onChanged, outpostsByWorld, mapDispNames, 
                     onClick: (e) => {
                         e.preventDefault();
                         void vanillaStatus.run(async () => {
-                            const rawRoyalG = await gga("RoyalG");
-                            const royalG = toIndexedArray(rawRoyalG ?? []);
-                            const { rebuilt } = buildVanillaUnitArrays(royalG);
-                            const writes = [];
-
-                            Object.values(rebuilt).forEach((entry) => {
-                                writes.push({ path: `RoyalG[${entry.typeArray}]`, value: entry.types });
-                                writes.push({ path: `RoyalG[${entry.mapArray}]`, value: entry.maps });
-                            });
-
-                            await writeManyVerified(writes);
+                            await resetRoyalGuardUnitsToVanilla();
                             if (typeof onChanged === "function") await onChanged();
                         });
                     },
@@ -659,12 +705,11 @@ const BuiltOutpostRow = ({
     mapUnits,
     onUnitsChanged,
 }) => {
-    const syncCapacity = async (nextBarracks = fieldStates.get("barracks").val, nextGlorified = glorifiedState.val) => {
+    const syncCapacity = async (nextBarracks = fieldStates.get("barracks").val) => {
         await syncSlotsToCapacity({
             mapId: outpost.mapId,
             slotState,
             barracksLevel: nextBarracks,
-            glorified: nextGlorified,
         });
     };
 
@@ -684,7 +729,12 @@ const BuiltOutpostRow = ({
             label: () => fieldLabel(field),
             valueState: fieldStates.get(field.key),
             path: `RoyalMaps[${outpost.mapId}][${field.index}]`,
-            onApplied: field.key === "barracks" ? (value) => syncCapacity(value, glorifiedState.val) : null,
+            onApplied:
+                field.key === "barracks"
+                    ? (value) => syncCapacity(value)
+                    : field.index === 5
+                      ? () => refreshRoyalGuardUnitCaches()
+                      : null,
             inputMode: field.inputMode,
             normalize: (raw) =>
                 resolveNumberInput(raw, {
@@ -724,7 +774,7 @@ const BuiltOutpostRow = ({
                         await writeVerified(`RoyalMaps[${outpost.mapId}][12]`, nextValue);
                         glorifiedState.val = nextValue;
                         outpost.glorified = nextValue;
-                        await syncCapacity(fieldStates.get("barracks").val, nextValue);
+                        await refreshRoyalGuardUnitCaches();
                     },
                 })
             )
@@ -763,7 +813,6 @@ const BuiltOutpostRow = ({
                 mapId: outpost.mapId,
                 slotState,
                 barracksState: fieldStates.get("barracks"),
-                glorifiedState,
             }),
             div(
                 { class: "outpost-section outpost-section--units" },

@@ -137,7 +137,7 @@ const matchesSearch = (upgrade, query) => {
     );
 };
 
-const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) =>
+const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [], onChanged = null }) =>
     ClampedLevelRow({
         valueState: levelState,
         max: upgrade.maxLevel,
@@ -147,16 +147,21 @@ const UpgradeRow = ({ levelsPath, upgrade, levelState, deleteCachePaths = [] }) 
             value: upgrade.maxLevel,
             tooltip: `Set ${upgrade.name} to level ${upgrade.maxLevel}`,
         },
-        writePath: deleteCachePaths.length ? null : `${levelsPath}[${upgrade.storageIndex}]`,
-        write: deleteCachePaths.length
-            ? async (nextLevel) => {
-                  await writeVerified(`${levelsPath}[${upgrade.storageIndex}]`, nextLevel);
-                  for (const cachePath of deleteCachePaths) {
-                      await deleteGga(cachePath);
+        writePath:
+            deleteCachePaths.length || typeof onChanged === "function"
+                ? null
+                : `${levelsPath}[${upgrade.storageIndex}]`,
+        write:
+            deleteCachePaths.length || typeof onChanged === "function"
+                ? async (nextLevel) => {
+                      await writeVerified(`${levelsPath}[${upgrade.storageIndex}]`, nextLevel);
+                      for (const cachePath of deleteCachePaths) {
+                          await deleteGga(cachePath);
+                      }
+                      if (typeof onChanged === "function") await onChanged({ upgrade, nextLevel });
+                      return nextLevel;
                   }
-                  return nextLevel;
-              }
-            : null,
+                : null,
         renderInfo: () => [
             span({ class: "account-row__index" }, upgrade.displayIndex),
             span({ class: "account-row__name" }, upgrade.name),
@@ -281,6 +286,8 @@ export const MasterclassUpgradeTab = ({
     currencyFields = [],
     currencyTabs = [],
     deleteCachePaths = [],
+    onUpgradeChanged = null,
+    onBulkChanged = null,
 }) => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: title });
     const { status: bulkStatus, run: runBulk } = useWriteStatus();
@@ -323,6 +330,7 @@ export const MasterclassUpgradeTab = ({
                     upgrade,
                     levelState: getOrCreateState(levelStates, upgrade.index),
                     deleteCachePaths,
+                    onChanged: onUpgradeChanged,
                 })
             );
         });
@@ -383,13 +391,13 @@ export const MasterclassUpgradeTab = ({
                     getValueState: (upgrade) => getOrCreateState(levelStates, upgrade.index),
                     getPath: (upgrade) => `${levelsPath}[${upgrade.storageIndex}]`,
                 });
+                if (typeof onBulkChanged === "function") await onBulkChanged({ upgrades: currentUpgrades, mode });
             } finally {
                 for (const cachePath of deleteCachePaths) {
                     await deleteGga(cachePath);
                 }
             }
         });
-
         if (!result.ok) await load();
     };
 

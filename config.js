@@ -516,6 +516,73 @@ exports.cheatConfig = {
         sneaksymbol: {
             SneakSymbolChanceBase: (t) => 1,
         },
+        royal: {
+            StatueUpgOdds: (t) => t * 2, // double the odds of statue upgrade
+            Statue_CanAfford: (t) => 1, // free statue upgrades
+            StatueBon: (t) => t * 2, // double statue bonus
+            ArmoryUpgCost: (t) => t / 2, // half cost armory upgrades 
+            RatDMG: (t) => t * 2, // double rat dmg
+            ParchmentDrop: (t) => t * 2, // double parchment drop
+            MarbleDrop: (t) => t * 2, // double marble drop
+            OutpostKillsReq: (t) => t / 2, // half outpost kills req
+            SupportEXP: (t) => t * 2, // double exp
+            OutpostRange: (t) => t * 2, // double outpost range
+            // Statue_Cost: (t) => t,
+            // SF_unlocked: (t) => t,
+            // SF_maxLV: (t) => t,
+            // SF_costo: (t) => t,
+            // SF_weOwn: (t) => t,
+            // SF_bonus: (t) => t,
+            // StatueEXPmulti: (t) => t,
+            // ArmoryUpgUNLOCKED: (t) => t,
+            // ArmoryUpgTotal: (t) => t,
+            // ArmoryUpgBonus: (t) => t,
+            // RatResp: (t) => t,
+            // ParchmentDouble: (t) => t,
+            // ParchmentRecycle: (t) => t,
+            // GuardianRoyalRadius: (t) => t,
+            // RI_chance: (t) => t,
+            // RI_mobs: (t) => t,
+            // OrbletMultiDrop: (t) => t,
+            // KingdomEnabled: (t) => t,
+            // Yi_OutpostInfo: (t) => t,
+            // HasOutpost: (t) => t,
+            // OutpostTypesUnlocked: (t) => t,
+            // OutpostTypesAllowed: (t) => t,
+            // OutpostROGbon: (t) => t,
+            // SupportCollection: (t) => t,
+            // SavageCollection: (t) => t,
+            // XtraClearKillz: (t) => t,
+            // BarExpRate_Base: (t) => t,
+            // BarExpRate: (t) => t,
+            // MapOutpostBarUnlockedTot: (t) => t,
+            // OutpostEXPformula: (t) => t,
+            // OutpostEXPreq: (t) => t,
+            // OutpostEXPreqPREV: (t) => t,
+            // OutpostEXPrank: (t) => t,
+            // OutpostPTSleft: (t) => t,
+            // OutpostCost: (t) => t,
+            // OutpostLV_Bonuses: (t) => t,
+            // UnitSpecEffect: (t) => t,
+            // isMapPurified: (t) => t,
+            // OutpostResourceRate: (t) => t,
+            // OutpostPurifyBonus: (t) => t,
+            // MapOutpostBarUnlocked: (t) => t,
+            // MapWorldsUnlocked: (t) => t,
+            // MapButtonsUnlock: (t) => t,
+            // CanWeDoubleConnect: (t) => t,
+            // UnitsUnlocked: (t) => t,
+            // GEDunlocked: (t) => t,
+            // ActiveKillClear: (t) => t,
+            // OutpostUnitSlots: (t) => t,
+            // ResNodeQTYmax: (t) => t,
+            // ResNodes_LVUP: (t) => t,
+            // ResNodes_LVUPbon: (t) => t,
+            // PassiveUnitsz: (t) => t,
+            // TotalSupports: (t) => t,
+            // TotalUnitsz: (t) => t,
+            // TotalStatz: (t) => t,
+        },
     },
     w7: {
         bubba: {

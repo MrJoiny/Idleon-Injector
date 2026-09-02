@@ -14,6 +14,7 @@
  * - Ninja (ninja cheats)
  * - Windwalker (windwalker cheats)
  * - ArcaneType (arcane cheats)
+ * - RoyalG (royal guardian & kingdom cheats)
  * - Bubbastuff (W7 bubba)
  * - Spelunk (spelunk, big fish)
  * - Gallery (gallery cheats)
@@ -156,6 +157,9 @@ export function setupEvents579Proxies() {
 
     // Arcane (W6)
     createConfigLookupProxy(ActorEvents579, "_customBlock_ArcaneType", [{ state: "w6.arcane" }]);
+
+    // Royal Guardian & Kingdom (W6)
+    createConfigLookupProxy(ActorEvents579, "_customBlock_RoyalG", [{ state: "w6.royal" }]);
 
     // Bubba (W7)
     createConfigLookupProxy(ActorEvents579, "_customBlock_Bubbastuff", [{ state: "w7.bubba" }]);
