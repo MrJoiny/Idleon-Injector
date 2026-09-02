@@ -1,7 +1,7 @@
-import van from "../../../vendor/van-1.6.0.js";
-import vanX from "../../../vendor/van-x-0.6.3.js";
-import store from "../../../state/store.js";
-import * as API from "../../../services/api.js";
+import van from "../vendor/van-1.6.0.js";
+import vanX from "../vendor/van-x-0.6.3.js";
+import store from "./store.js";
+import * as API from "../services/api.js";
 
 export const configDraftReady = van.state(false);
 export const configDraftStatus = vanX.reactive({

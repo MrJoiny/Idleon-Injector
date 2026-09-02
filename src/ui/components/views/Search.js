@@ -2,6 +2,7 @@ import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
 import { FAVORITE_KEYS } from "../../state/constants.js";
+import { KeysSection, SearchInputSection, ResultsSection, SearchInspector } from "./search/SearchSections.js";
 import { detectQueryType } from "../../utils/index.js";
 import {
     NEW_SCAN_TYPES,
@@ -12,7 +13,7 @@ import {
     needsPreviousSnapshot,
     buildSnapshotFromResults,
     filterResultsByScanType,
-} from "./search/scanUtils.js";
+} from "../../utils/search/scanUtils.js";
 import {
     seedEditValue,
     expectedUiType,
@@ -25,7 +26,7 @@ import {
     getUiTypeFromRawValue,
     getDraftFromRawValue,
     getResultValue,
-} from "./search/valueUtils.js";
+} from "../../utils/search/valueUtils.js";
 import {
     uniqueStrings,
     loadLocalFavoriteKeys,
@@ -37,8 +38,7 @@ import {
     pickInitialSelectedKeys,
     normalizeFilterText,
     matchesEntryFilter,
-} from "./search/workspaceUtils.js";
-import { KeysSection, SearchInputSection, ResultsSection, SearchInspector } from "./search/sections.js";
+} from "../../utils/search/workspaceUtils.js";
 
 const { div, button, span } = van.tags;
 

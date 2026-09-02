@@ -1,7 +1,7 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { IS_ELECTRON } from "../state/constants.js";
-import { configDraftStatus, discardConfigDraft, saveConfigDraft } from "./views/config/configDraft.js";
+import { configDraftStatus, discardConfigDraft, saveConfigDraft } from "../state/configDraft.js";
 
 const { div, h3, p, button, a, span } = van.tags;
 

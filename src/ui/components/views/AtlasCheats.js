@@ -2,16 +2,21 @@ import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
 import { CATEGORY_ORDER, VIEWS } from "../../state/constants.js";
-import * as API from "../../services/api.js";
-import { configPathExists, getCheatConfigPath } from "../../utils/index.js";
-import { Icons } from "../../assets/icons.js";
+import {
+    buildConfigPathTemplate,
+    configDraftReady,
+    getConfigDraft,
+    getConfigPathData,
+} from "../../state/configDraft.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { CheatItem } from "../CheatItem.js";
 import { ConfigNode } from "../config/ConfigNode.js";
 import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { ConfigActions } from "./config/ConfigActions.js";
-import { buildConfigPathTemplate, configDraftReady, getConfigDraft, getConfigPathData } from "./config/configDraft.js";
+import * as API from "../../services/api.js";
+import { configPathExists, getCheatConfigPath } from "../../utils/index.js";
+import { Icons } from "../../assets/icons.js";
 
 const { div, button, span, input, code } = van.tags;
 
@@ -246,7 +251,14 @@ export const AtlasCheats = () => {
         }
     };
 
-    const getExecutionAction = (entry) => {
+    /**
+     * Build the executable action string for a cheat entry.
+     * Appends parameter if required by the command, or null if the parameter is empty.
+     * For non-parameterized commands, returns the command identifier.
+     * @param {object} entry
+     * @returns {string|null}
+     */
+    const buildExecutableAction = (entry) => {
         if (!entry.cheat.needsParam) return entry.cheat.value;
         const parameter = getParameterState(entry).val.trim();
         return parameter ? `${entry.cheat.value} ${parameter}` : null;
@@ -267,7 +279,7 @@ export const AtlasCheats = () => {
     };
 
     const toggleFavorite = (entry) => {
-        const action = getExecutionAction(entry);
+        const action = buildExecutableAction(entry);
         if (!action) {
             selectEntry(entry, { focusParameter: true });
             store.notify("Enter a value before saving this command", "error");
@@ -443,7 +455,7 @@ export const AtlasCheats = () => {
                         entry,
                         selected: () => selectedEntry.val?.action === entry.action,
                         getStateInfo,
-                        isFavorite: (item) => store.isFavorite(item.action || item.cheat.value),
+                        isFavorite: (item) => store.isFavorite(item.action),
                         onSelect: selectEntry,
                         onExecute: executeAction,
                         onFavorite: toggleFavorite,
@@ -459,7 +471,7 @@ export const AtlasCheats = () => {
         const parameterState = entry.cheat.needsParam ? getParameterState(entry) : null;
         const pending = van.state(false);
         const executeFromInspector = async () => {
-            const action = getExecutionAction(entry);
+            const action = buildExecutableAction(entry);
             if (!action) {
                 document.querySelector("#atlas-cheat-parameter")?.focus();
                 return;
@@ -528,7 +540,7 @@ export const AtlasCheats = () => {
                 ),
                 div(
                     span("Command"),
-                    code(() => getExecutionAction(entry) || entry.cheat.value)
+                    code(() => buildExecutableAction(entry) || entry.cheat.value)
                 )
             )
         );
@@ -631,7 +643,7 @@ export const AtlasCheats = () => {
                             {
                                 type: "button",
                                 class: () =>
-                                    `atlas-cheat-favorite ${store.isFavorite(getExecutionAction(entry) || entry.action) ? "is-favorite" : ""}`,
+                                    `atlas-cheat-favorite ${store.isFavorite(buildExecutableAction(entry) || entry.action) ? "is-favorite" : ""}`,
                                 title: "Toggle favorite",
                                 "aria-label": "Toggle favorite",
                                 onclick: () => toggleFavorite(entry),

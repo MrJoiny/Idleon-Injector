@@ -11,6 +11,12 @@ body {
     display: none;
 }
 
+/* Chromium 87 compatibility fallback for inert attribute */
+[inert] {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
 .app-layout {
     position: relative;
     display: flex;

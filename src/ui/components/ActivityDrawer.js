@@ -2,7 +2,7 @@ import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { VIEWS } from "../state/constants.js";
 import { Icons } from "../assets/icons.js";
-import { formatDisplayValue } from "./views/search/valueUtils.js";
+import { formatDisplayValue } from "../utils/search/valueUtils.js";
 
 const { section, div, button, span, code } = van.tags;
 

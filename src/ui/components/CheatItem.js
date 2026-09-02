@@ -42,7 +42,7 @@ export const CheatItem = ({
 
         try {
             pending.val = true;
-            await onExecute(entry.action || cheat.value, cheat.message || cheat.value);
+            await onExecute(entry.action, cheat.message || cheat.value);
             flash("success");
         } catch {
             flash("error");

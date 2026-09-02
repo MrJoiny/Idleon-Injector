@@ -1,13 +1,18 @@
 import van from "../../vendor/van-1.6.0.js";
 import store from "../../state/store.js";
+import {
+    buildConfigPathTemplate,
+    configDraftReady,
+    getConfigDraft,
+    getConfigPathData,
+} from "../../state/configDraft.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { ConfigNode } from "../config/ConfigNode.js";
 import { StartupCheats, AddCheatSearchBar } from "../config/StartupCheats.js";
 import { SearchBar } from "../SearchBar.js";
-import { Icons } from "../../assets/icons.js";
 import { ConfigActions } from "./config/ConfigActions.js";
-import { buildConfigPathTemplate, configDraftReady, getConfigDraft, getConfigPathData } from "./config/configDraft.js";
+import { Icons } from "../../assets/icons.js";
 
 const { div, button, select, option, label, span } = van.tags;
 

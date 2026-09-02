@@ -28,7 +28,9 @@ input[type="number"] {
     border-radius: 6px;
     overflow: hidden;
     background: var(--atlas-field, var(--c-panel-dim));
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
 }
 
 .number-input-wrapper:focus-within {

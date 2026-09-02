@@ -1,10 +1,11 @@
 import van from "../../../vendor/van-1.6.0.js";
 import store from "../../../state/store.js";
-import { copyToClipboard } from "../../../utils/index.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Sparkline, canGraph } from "../../Sparkline.js";
+import { createStaticRowReconciler } from "../account/accountShared.js";
 import { Icons } from "../../../assets/icons.js";
+import { copyToClipboard } from "../../../utils/index.js";
 import {
     NEW_SCAN_TYPES,
     NEXT_SCAN_TYPES,
@@ -12,16 +13,28 @@ import {
     getScanTypePlaceholder,
     isInputlessScanType,
     requiresSecondaryInput,
-} from "./scanUtils.js";
+} from "../../../utils/search/scanUtils.js";
 import {
     monitorPathForSearchResult,
     formatDisplayValue,
     getMonitorHistory,
     resolveMonitorEntry,
-} from "./valueUtils.js";
-import { createStaticRowReconciler } from "../account/accountShared.js";
+} from "../../../utils/search/valueUtils.js";
 
 const { div, input, button, span, label, select, option, aside } = van.tags;
+
+const ResultEditInput = ({ class: className = "result-edit-input", draft, onInput, onSave, onCancel }) =>
+    input({
+        class: className,
+        value: draft,
+        oninput: onInput,
+        onclick: (event) => event.stopPropagation(),
+        onkeydown: (event) => {
+            event.stopPropagation();
+            if (event.key === "Enter") onSave();
+            if (event.key === "Escape") onCancel();
+        },
+    });
 
 const KeyCheckbox = ({ keyName, selectedKeys, onChange, isFavorite, onToggleFavorite }) => {
     const isChecked = () => selectedKeys.includes(keyName);
@@ -691,16 +704,11 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
                 );
             }
 
-            return input({
-                class: "result-edit-input",
-                value: () => ui.savedEdit.draft,
-                oninput: (e) => (ui.savedEdit.draft = e.target.value),
-                onclick: (e) => e.stopPropagation(),
-                onkeydown: (e) => {
-                    e.stopPropagation();
-                    if (e.key === "Enter") handlers.saveSavedEdit();
-                    if (e.key === "Escape") handlers.cancelSavedEdit();
-                },
+            return ResultEditInput({
+                draft: () => ui.savedEdit.draft,
+                onInput: (e) => (ui.savedEdit.draft = e.target.value),
+                onSave: handlers.saveSavedEdit,
+                onCancel: handlers.cancelSavedEdit,
             });
         },
 
@@ -945,15 +953,12 @@ const SelectedResultSection = ({ result, ui, handlers }) => {
         ),
         div({ class: "selected-result-value" }, span({ class: "selected-result-label" }, "VALUE"), () =>
             isEditing()
-                ? input({
+                ? ResultEditInput({
                       class: "result-edit-input selected-result-edit-input",
-                      value: () => ui.edit.draft,
-                      oninput: (event) => (ui.edit.draft = event.target.value),
-                      onkeydown: (event) => {
-                          event.stopPropagation();
-                          if (event.key === "Enter") handlers.saveEdit();
-                          if (event.key === "Escape") handlers.cancelEdit();
-                      },
+                      draft: () => ui.edit.draft,
+                      onInput: (event) => (ui.edit.draft = event.target.value),
+                      onSave: handlers.saveEdit,
+                      onCancel: handlers.cancelEdit,
                   })
                 : span({ class: `selected-result-display type-${result.type}` }, result.formattedValue)
         ),

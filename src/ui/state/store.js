@@ -3,7 +3,7 @@ import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
 import { loadThemePreference, saveThemePreference } from "./theme.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
-import { formatDisplayValue, monitorIdFromMonitorPath } from "../components/views/search/valueUtils.js";
+import { formatDisplayValue, monitorIdFromMonitorPath } from "../utils/search/valueUtils.js";
 import {
     initWebSocket,
     onStateUpdate,

@@ -1,6 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
+import { configDraftStatus, saveConfigDraft } from "../../../state/configDraft.js";
 import { withTooltip } from "../../Tooltip.js";
-import { configDraftStatus, saveConfigDraft } from "./configDraft.js";
 
 const { div, button, span } = van.tags;
 

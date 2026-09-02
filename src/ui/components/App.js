@@ -2,11 +2,12 @@ import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { VIEWS } from "../state/constants.js";
 
+import { saveConfigDraft } from "../state/configDraft.js";
+
 // Components
 import { Sidebar, SidebarBackdrop } from "./Sidebar.js";
 import { AtlasHeader } from "./AtlasHeader.js";
 import { ActivityDrawer } from "./ActivityDrawer.js";
-import { saveConfigDraft } from "./views/config/configDraft.js";
 import { Toast } from "./Toast.js";
 import { TooltipContainer } from "./Tooltip.js";
 import { UpdateModal } from "./UpdateModal.js";

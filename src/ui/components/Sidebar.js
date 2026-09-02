@@ -1,8 +1,8 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { VIEWS, VIEW_ORDER, IS_ELECTRON } from "../state/constants.js";
-import { Icons } from "../assets/icons.js";
 import { WorkspaceContextSlot } from "./WorkspaceContext.js";
+import { Icons } from "../assets/icons.js";
 
 const { aside, nav, div, button, span, a } = van.tags;
 
