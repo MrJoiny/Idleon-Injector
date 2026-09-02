@@ -2,50 +2,14 @@
  * Atlas light/dark themes. All base values are Chromium 87-safe HEX/RGBA colors.
  */
 
-:root {
+:root,
+:root[data-theme="dark"] {
     color-scheme: dark;
     --atlas-header-height: 48px;
     --atlas-sidebar-width: 220px;
     --atlas-sidebar-collapsed-width: 64px;
     --atlas-header: #090b14;
     --atlas-header-border: #1d2230;
-    --atlas-canvas: #10121a;
-    --atlas-surface: #171b25;
-    --atlas-surface-raised: #1c2130;
-    --atlas-surface-muted: #1a1f2c;
-    --atlas-surface-hover: #242b3b;
-    --atlas-field: #111620;
-    --atlas-border: #30384a;
-    --atlas-border-strong: #46516a;
-    --atlas-text: #eceff8;
-    --atlas-text-muted: #bec3d1;
-    --atlas-text-soft: #8f99ae;
-    --atlas-accent: #8b8df5;
-    --atlas-accent-hover: #a7a8ff;
-    --atlas-accent-soft: #292b50;
-    --atlas-focus: #a7a8ff;
-    --atlas-success: #59d99a;
-    --atlas-success-soft: rgba(89, 217, 154, 0.12);
-    --atlas-danger: #ff7189;
-    --atlas-danger-soft: rgba(255, 113, 137, 0.12);
-    --atlas-warning: #f3b84b;
-    --atlas-warning-soft: rgba(243, 184, 75, 0.12);
-    --atlas-overlay-02: rgba(255, 255, 255, 0.02);
-    --atlas-overlay-03: rgba(255, 255, 255, 0.03);
-    --atlas-overlay-04: rgba(255, 255, 255, 0.04);
-    --atlas-overlay-05: rgba(255, 255, 255, 0.05);
-    --atlas-overlay-10: rgba(255, 255, 255, 0.1);
-    --atlas-shadow: rgba(0, 0, 0, 0.34);
-    --atlas-scrollbar: #46516a;
-    --atlas-control-bg: #7779f4;
-    --atlas-control-hover: #8b8df5;
-    --atlas-control-text: #ffffff;
-    --atlas-disabled-bg: #252b38;
-    --atlas-disabled-text: #7f8aa3;
-}
-
-:root[data-theme="dark"] {
-    color-scheme: dark;
     --atlas-canvas: #10121a;
     --atlas-surface: #171b25;
     --atlas-surface-raised: #1c2130;
@@ -393,81 +357,6 @@ body,
 .atlas-cheat-switch.is-on {
     border-color: var(--atlas-accent);
     background: var(--atlas-accent);
-}
-
-/* Search workspace */
-#search-tab,
-#search-tab .search-layout,
-#search-tab .keys-footer,
-#search-tab .account-sub-tab-content {
-    color: var(--c-text-main);
-    background: var(--c-panel-dim);
-}
-
-#search-tab .search-keys-section,
-#search-tab .search-input-section,
-#search-tab .search-results-section,
-#search-tab .saved-results-section,
-#search-tab .section-header,
-#search-tab .search-input-content,
-#search-tab .search-pane-toolbar,
-#search-tab .search-result-item,
-#search-tab .search-keys-toggle,
-#search-tab .search-inspector-toggle,
-#search-tab .search-keys-close,
-#search-tab .search-inspector-close,
-#search-tab .search-inspector {
-    background: var(--c-panel);
-}
-
-#search-tab .search-right-column,
-#search-tab .search-keys-section,
-#search-tab .search-input-section,
-#search-tab .section-header,
-#search-tab .keys-footer,
-#search-tab .search-pane-toolbar,
-#search-tab .search-result-item,
-#search-tab .search-keys-toggle,
-#search-tab .search-inspector-toggle,
-#search-tab .search-keys-close,
-#search-tab .search-inspector-close,
-#search-tab .search-inspector-header {
-    border-color: var(--c-border);
-}
-
-#search-tab .section-title,
-#search-tab .type-label,
-#search-tab .selected-count,
-#search-tab .keys-loading,
-#search-tab .search-result-item,
-#search-tab .result-action-btn,
-#search-tab .search-inspector-tab,
-#search-tab .selected-result-kicker,
-#search-tab .selected-result-label {
-    color: var(--c-text-muted);
-}
-
-#search-tab .key-checkbox,
-#search-tab .selected-result-path,
-#search-tab .search-inspector-tab:hover {
-    color: var(--c-text-main);
-}
-
-#search-tab .key-checkbox:hover,
-#search-tab .search-inspector-tab:hover {
-    background: var(--c-panel-hover);
-}
-
-#search-tab .key-checkbox.checked,
-#search-tab .results-scope-badge,
-#search-tab .search-result-item:hover,
-#search-tab .search-result-item.is-selected,
-#search-tab .search-toolbar-count,
-#search-tab .search-inspector-count,
-#search-tab .search-inspector-tab.active {
-    color: var(--c-accent);
-    background: var(--c-accent-dim-solid);
-    border-color: var(--c-border-strong);
 }
 
 /* Account workspace */

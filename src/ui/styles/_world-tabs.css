@@ -236,8 +236,8 @@
     background: transparent;
     color: var(--atlas-text-muted, #475569);
     font-family: var(--font-display);
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.84rem;
+    font-weight: 550;
     letter-spacing: 0;
     text-align: left;
 }

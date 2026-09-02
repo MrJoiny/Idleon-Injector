@@ -360,29 +360,42 @@ const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
     const unlockedSlots = () => unlockedSlotCount(barracksState.val, glorifiedState.val);
 
     return div(
-        { class: "outpost-slots" },
-        span({ class: "outpost-slots__label" }, "OUTPOST SLOTS"),
-        ...Array.from({ length: 9 }, (_, slot) =>
-            select(
-                {
-                    class: () =>
-                        `outpost-slot-select${status.val === "success" ? " is-success" : ""}${
-                            status.val === "error" ? " is-error" : ""
-                        }`,
-                    value: () => slots()[slot],
-                    title: `Slot ${slot + 1}`,
-                    disabled: () => slot >= unlockedSlots(),
-                    onchange: (e) => {
-                        const nextSlots = slots();
-                        nextSlots[slot] = e.target.value;
-                        const nextValue = encodeSlots(nextSlots);
-                        void run(async () => {
-                            await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
-                            slotState.val = nextValue;
-                        });
+        { class: "outpost-section outpost-section--slots" },
+        div(
+            { class: "outpost-section-header" },
+            span({ class: "outpost-card__group-title" }, "OUTPOST SLOTS"),
+            span({ class: "outpost-slots__count" }, () => `${unlockedSlots()} / 9 Unlocked`)
+        ),
+        div(
+            { class: "outpost-slots-grid" },
+            ...Array.from({ length: 9 }, (_, slot) =>
+                div(
+                    {
+                        class: () => `outpost-slot-item ${slot >= unlockedSlots() ? "is-locked" : "is-unlocked"}`,
                     },
-                },
-                ...SLOT_TYPES.map((entry) => selectOption(entry, slots()[slot]))
+                    span({ class: "outpost-slot-number" }, `#${slot + 1}`),
+                    select(
+                        {
+                            class: () =>
+                                `outpost-slot-select${status.val === "success" ? " is-success" : ""}${
+                                    status.val === "error" ? " is-error" : ""
+                                }`,
+                            value: () => slots()[slot],
+                            title: `Slot ${slot + 1}`,
+                            disabled: () => slot >= unlockedSlots(),
+                            onchange: (e) => {
+                                const nextSlots = slots();
+                                nextSlots[slot] = e.target.value;
+                                const nextValue = encodeSlots(nextSlots);
+                                void run(async () => {
+                                    await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
+                                    slotState.val = nextValue;
+                                });
+                            },
+                        },
+                        ...SLOT_TYPES.map((entry) => selectOption(entry, slots()[slot]))
+                    )
+                )
             )
         )
     );
@@ -700,55 +713,51 @@ const BuiltOutpostRow = ({
             ),
             div(
                 { class: "outpost-card__status" },
-                span({ class: "outpost-row__badge" }, () => (toInt(glorifiedState.val) === 1 ? "GLORIFIED" : "OUTPOST"))
+                ActionButton({
+                    label: () => (toInt(glorifiedState.val) === 1 ? "GLORIFIED" : "MAKE GLORIFIED"),
+                    tooltip: "Toggle glorified outpost status.",
+                    className: () =>
+                        `outpost-glorified-button ${toInt(glorifiedState.val) === 1 ? "is-glorified" : "is-standard"}`,
+                    onClick: async (e) => {
+                        e.preventDefault();
+                        const nextValue = toInt(glorifiedState.val) === 1 ? 0 : 1;
+                        await writeVerified(`RoyalMaps[${outpost.mapId}][12]`, nextValue);
+                        glorifiedState.val = nextValue;
+                        outpost.glorified = nextValue;
+                        await syncCapacity(fieldStates.get("barracks").val, nextValue);
+                    },
+                })
             )
         ),
         div(
             { class: "outpost-card__body" },
             div(
-                { class: "outpost-card__group outpost-card__group--levels" },
-                span({ class: "outpost-card__group-title" }, "UPGRADES"),
-                ...OUTPOST_FIELDS.slice(0, 3).map(fieldControl)
-            ),
-            div(
-                { class: "outpost-card__group outpost-card__group--settings" },
-                span({ class: "outpost-card__group-title" }, "STATE"),
-                SelectWriter({
-                    label: "TYPE",
-                    valueState: outpostTypeState,
-                    options: OUTPOST_TYPES,
-                    path: `RoyalMaps[${outpost.mapId}][10]`,
-                    onApplied: (value) => {
-                        outpost.type = value;
-                    },
-                }),
+                { class: "outpost-section outpost-section--facility" },
                 div(
-                    { class: "outpost-select-field" },
-                    span({ class: "outpost-select-field__label" }, "GLORIFIED"),
-                    ActionButton({
-                        label: () => (toInt(glorifiedState.val) === 1 ? "GLORIFIED" : "STANDARD"),
-                        tooltip: "Toggle glorified outpost status.",
-                        className: "outpost-glorified-button",
-                        onClick: async (e) => {
-                            e.preventDefault();
-                            const nextValue = toInt(glorifiedState.val) === 1 ? 0 : 1;
-                            await writeVerified(`RoyalMaps[${outpost.mapId}][12]`, nextValue);
-                            glorifiedState.val = nextValue;
-                            outpost.glorified = nextValue;
-                            await syncCapacity(fieldStates.get("barracks").val, nextValue);
+                    { class: "outpost-section-header" },
+                    span({ class: "outpost-card__group-title" }, "FACILITY UPGRADES & TYPE")
+                ),
+                div(
+                    { class: "outpost-facility-grid" },
+                    ...OUTPOST_FIELDS.slice(0, 3).map(fieldControl),
+                    SelectWriter({
+                        label: "TYPE",
+                        valueState: outpostTypeState,
+                        options: OUTPOST_TYPES,
+                        path: `RoyalMaps[${outpost.mapId}][10]`,
+                        onApplied: (value) => {
+                            outpost.type = value;
                         },
                     })
                 )
             ),
             div(
-                { class: "outpost-card__group outpost-card__group--rank-a" },
-                span({ class: "outpost-card__group-title" }, "RANK XP"),
-                ...OUTPOST_FIELDS.slice(3, 6).map(fieldControl)
-            ),
-            div(
-                { class: "outpost-card__group outpost-card__group--rank-b" },
-                span({ class: "outpost-card__group-title" }, "RANK XP"),
-                ...OUTPOST_FIELDS.slice(6).map(fieldControl)
+                { class: "outpost-section outpost-section--ranks" },
+                div(
+                    { class: "outpost-section-header" },
+                    span({ class: "outpost-card__group-title" }, "EXPEDITION RANKS (RANK XP)")
+                ),
+                div({ class: "outpost-ranks-grid" }, ...OUTPOST_FIELDS.slice(3).map(fieldControl))
             ),
             OutpostSlots({
                 mapId: outpost.mapId,
@@ -757,12 +766,18 @@ const BuiltOutpostRow = ({
                 glorifiedState,
             }),
             div(
-                { class: "outpost-map-units" },
-                span({ class: "outpost-map-units__label" }, "MAP UNITS"),
-                MapUnitAddControl({ outpost, onAdded: onUnitsChanged }),
-                mapUnits.length
-                    ? mapUnits.map((unit) => MapUnitRow({ unit, onRemoved: onUnitsChanged }))
-                    : span({ class: "outpost-map-units__empty" }, "None stationed")
+                { class: "outpost-section outpost-section--units" },
+                div({ class: "outpost-section-header" }, span({ class: "outpost-card__group-title" }, "MAP UNITS")),
+                div(
+                    { class: "outpost-map-units-wrapper" },
+                    MapUnitAddControl({ outpost, onAdded: onUnitsChanged }),
+                    div(
+                        { class: "outpost-map-units-list" },
+                        mapUnits.length
+                            ? mapUnits.map((unit) => MapUnitRow({ unit, onRemoved: onUnitsChanged }))
+                            : span({ class: "outpost-map-units__empty" }, "None stationed")
+                    )
+                )
             )
         )
     );

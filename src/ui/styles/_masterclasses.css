@@ -57,7 +57,7 @@
 .masterclass-currency__fields,
 .grimoire-currency__fields {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 8px;
 }
 
@@ -102,6 +102,15 @@
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+
+.outpost-field__label-main {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--c-text-main);
+    white-space: nowrap;
 }
 
 .masterclass-currency__icon {
@@ -145,44 +154,59 @@
 }
 
 .resource-node-row__field .number-input-wrapper {
-    width: 130px;
+    width: 160px;
 }
 
 .outpost-field .number-input-wrapper,
 .outpost-map-unit__field .number-input-wrapper {
-    width: 120px;
+    width: 180px;
     max-width: 100%;
 }
 
-.outpost-glorified-button {
-    width: 100%;
-    min-height: 34px;
+.outpost-ranks-grid .outpost-field .number-input-wrapper {
+    width: 210px;
 }
 
-.grimoire-currency__toggle {
-    grid-template-columns: max-content max-content;
-    grid-template-areas:
-        "info info"
-        "badge controls";
-    gap: 6px;
-    justify-content: start;
-    padding: 0;
-    border: 0;
-    background: transparent;
+.outpost-kill-row__controls .number-input-wrapper {
+    width: 160px;
 }
 
-.grimoire-currency__toggle .account-row__info {
-    grid-area: info;
+.grimoire-currency__toggle,
+.masterclass-currency__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background: var(--c-panel);
 }
 
-.grimoire-currency__toggle .account-row__badge {
-    grid-area: badge;
-    justify-self: start;
+.grimoire-currency__toggle .account-row__info,
+.masterclass-currency__toggle .account-row__info {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.grimoire-currency__toggle .account-row__controls {
-    grid-area: controls;
-    justify-self: start;
+.grimoire-currency__toggle .account-row__name,
+.masterclass-currency__toggle .account-row__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.grimoire-currency__toggle .account-row__badge,
+.masterclass-currency__toggle .account-row__badge {
+    flex: 0 0 auto;
+}
+
+.grimoire-currency__toggle .account-row__controls,
+.masterclass-currency__toggle .account-row__controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
 }
 
 .grimoire-upgrade-list,
@@ -264,19 +288,21 @@
 
 .outpost-card,
 .outpost-vanilla-units {
-    display: grid;
-    gap: 12px;
-    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
     border: 1px solid var(--c-border);
+    border-radius: 8px;
     background: color-mix(in srgb, var(--c-panel) 86%, transparent);
 }
 
 .outpost-card__header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 10px;
+    gap: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--c-border);
 }
 
@@ -284,30 +310,140 @@
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .outpost-card__status {
     flex: 0 0 auto;
 }
 
-.outpost-card__body {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px 24px;
-    align-items: start;
+.outpost-glorified-button {
+    min-width: 120px;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.outpost-card__group {
-    display: grid;
+.outpost-glorified-button.is-glorified {
+    background: color-mix(in srgb, var(--c-accent) 18%, transparent);
+    border: 1px solid var(--c-accent);
+    color: var(--c-accent);
+    box-shadow: 0 0 8px var(--c-accent-glow, rgba(139, 141, 245, 0.25));
+}
+
+.outpost-glorified-button.is-standard {
+    background: var(--c-panel-dim);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
+}
+
+.outpost-glorified-button:hover {
+    border-color: var(--c-accent-hover, var(--c-accent));
+    color: var(--c-text-main);
+}
+
+.outpost-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.outpost-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c-panel-dim) 50%, transparent);
+}
+
+.outpost-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--c-border) 40%, transparent);
 }
 
 .outpost-card__group-title {
     color: var(--c-accent);
     font-size: 0.75rem;
     font-weight: 900;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.outpost-facility-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px 18px;
+    align-items: start;
+}
+
+.outpost-ranks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px 22px;
+    align-items: start;
+}
+
+.outpost-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 8px;
+}
+
+.outpost-slot-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background: var(--c-panel);
+    transition:
+        opacity 0.2s,
+        border-color 0.2s;
+}
+
+.outpost-slot-item.is-locked {
+    opacity: 0.5;
+    background: transparent;
+}
+
+.outpost-slot-number {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+    text-align: center;
+}
+
+.outpost-slots__count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--c-text-muted);
+    font-family: var(--font-mono);
+}
+
+.outpost-map-units-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.outpost-map-units-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
 }
 
 .outpost-select-field__select,
@@ -348,14 +484,6 @@
 
 .outpost-slot-select:disabled {
     opacity: 0.55;
-}
-
-.outpost-slots,
-.outpost-map-units {
-    display: grid;
-    grid-column: 1 / -1;
-    gap: 8px;
-    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
 }
 
 .outpost-map-units {

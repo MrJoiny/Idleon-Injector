@@ -315,7 +315,7 @@ body {
 .atlas-workspace-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
 }
 
 .atlas-nav-button {
@@ -323,15 +323,15 @@ body {
     align-items: center;
     gap: 10px;
     width: 100%;
-    min-height: 34px;
-    padding: 7px 8px;
+    min-height: 38px;
+    padding: 8px 10px;
     overflow: hidden;
     color: var(--atlas-text-muted, #52617a);
     background: transparent;
     border: 1px solid transparent;
     border-radius: 7px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     text-align: left;
     text-decoration: none;
@@ -354,16 +354,16 @@ body {
 
 .atlas-nav-button svg {
     flex: 0 0 auto;
-    width: 16px;
-    height: 16px;
-    opacity: 0.8;
+    width: 18px;
+    height: 18px;
+    opacity: 0.85;
 }
 
 .atlas-nav-shortcut {
     margin-left: auto;
     color: #a0aabc;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .atlas-sidebar-divider {

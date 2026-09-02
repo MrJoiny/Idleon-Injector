@@ -138,10 +138,6 @@ export const Search = () => {
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
     const subscribedMonitorPaths = new Set();
-    const filterCache = {
-        results: { source: null, query: "", values: [] },
-        saved: { source: null, query: "", values: [] },
-    };
 
     const reconcileMonitorSubscriptions = () => {
         const desiredPaths = new Set();
@@ -243,43 +239,15 @@ export const Search = () => {
         reconcileMonitorSubscriptions();
     });
 
-    const getFilteredList = (source, appliedFilter, cache) => {
+    const getFilteredList = (source, appliedFilter) => {
         const query = normalizeFilterText(appliedFilter);
-        if (cache.source === source && cache.query === query) {
-            return cache.values;
-        }
-
-        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
-        cache.source = source;
-        cache.query = query;
-        cache.values = values;
-        return values;
+        return query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
     };
 
-    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied, filterCache.results);
-    const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied, filterCache.saved);
+    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied);
+    const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied);
     let inspectorTrigger = null;
     let keysTrigger = null;
-
-    const trapOverlayFocus = (panel, event, isOverlay) => {
-        if (event.key !== "Tab" || !isOverlay) return;
-        const focusable = [
-            ...panel.querySelectorAll(
-                'button:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex="0"]'
-            ),
-        ].filter((node) => node.offsetParent !== null);
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (!first || !last) return;
-
-        if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-        }
-    };
 
     const closeInspector = () => {
         if (!ui.inspectorOpen) return;
@@ -331,22 +299,16 @@ export const Search = () => {
         },
         closeKeysPane,
         handleInspectorKeydown: (event) => {
-            if (!ui.inspectorOpen) return;
-            if (event.key === "Escape") {
+            if (ui.inspectorOpen && event.key === "Escape") {
                 event.preventDefault();
                 closeInspector();
-                return;
             }
-            trapOverlayFocus(event.currentTarget, event, ui.inspectorOverlay);
         },
         handleKeysPanelKeydown: (event) => {
-            if (!ui.keysOpen) return;
-            if (event.key === "Escape") {
+            if (ui.keysOpen && event.key === "Escape") {
                 event.preventDefault();
                 closeKeysPane();
-                return;
             }
-            trapOverlayFocus(event.currentTarget, event, ui.keysOverlay);
         },
 
         handleKeyChange: (keyName, isChecked) => updateSelection([keyName], isChecked),

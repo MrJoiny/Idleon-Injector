@@ -396,15 +396,6 @@
     text-overflow: ellipsis;
 }
 
-@container account-row-info (max-width: 320px) {
-    .account-row__name {
-        flex-basis: 100%;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-    }
-}
-
 .account-row__badge {
     font-family: var(--font-mono);
     font-size: 0.875rem;
@@ -424,7 +415,7 @@
 }
 
 .account-row__controls .number-input-wrapper {
-    width: 110px;
+    width: 140px;
 }
 
 .account-row__controls--stack {
@@ -481,7 +472,7 @@
 }
 
 .account-field-metric .number-input-wrapper {
-    width: var(--account-field-metric-input-width, 118px);
+    width: var(--account-field-metric-input-width, 140px);
 }
 
 .account-stacked-fields {

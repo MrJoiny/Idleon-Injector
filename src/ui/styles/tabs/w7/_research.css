@@ -182,7 +182,7 @@
 }
 
 .research-grid-detail__edit-row .number-input-wrapper {
-    width: 120px;
+    width: 160px;
 }
 
 .observations-grid {
@@ -277,7 +277,7 @@
 }
 
 .observation-stat__controls .number-input-wrapper {
-    width: 104px;
+    width: 140px;
 }
 
 .observation-tile__toggle {
