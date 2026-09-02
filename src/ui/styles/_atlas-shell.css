@@ -59,8 +59,8 @@ body {
 }
 
 .atlas-header-brand {
-    gap: 8px;
-    font-size: 13px;
+    gap: 9px;
+    font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -71,14 +71,24 @@ body {
     justify-content: center;
     width: 26px;
     height: 26px;
-    color: #ffffff;
-    background: #6768f5;
-    border-radius: 7px;
+    color: var(--atlas-accent);
+    background: transparent;
+    border-radius: 0;
+    flex-shrink: 0;
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.atlas-brand-mark:hover {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 8px var(--c-accent-glow, rgba(139, 141, 245, 0.45)));
 }
 
 .atlas-brand-mark svg {
-    width: 15px;
-    height: 15px;
+    width: 26px;
+    height: 26px;
+    display: block;
 }
 
 .atlas-brand-name {

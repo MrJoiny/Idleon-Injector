@@ -24,7 +24,7 @@ export const AtlasHeader = () =>
                 },
                 span({ "aria-hidden": "true" }, span(), span(), span())
             ),
-            span({ class: "atlas-brand-mark", "aria-hidden": "true" }, Icons.Lightning()),
+            span({ class: "atlas-brand-mark", "aria-hidden": "true" }, Icons.Logo()),
             span({ class: "atlas-brand-name" }, "Idleon Injector")
         ),
         div(

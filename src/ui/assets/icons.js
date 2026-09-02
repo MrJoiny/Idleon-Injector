@@ -45,20 +45,30 @@ export const Icons = {
                             fill: "white",
                             d: "M108.66,15 L169.34,50 Q178,55 178,65 L178,135 Q178,145 169.34,150 L108.66,185 Q100,190 91.34,185 L30.66,150 Q22,145 22,135 L22,65 Q22,55 30.66,50 L91.34,15 Q100,10 108.66,15 Z",
                         }),
-                        g({ fill: "none", stroke: "black", "stroke-width": "8", transform: "rotate(-45 100 100)" }, [
-                            rect({
-                                x: "85",
-                                y: "60",
-                                width: "30",
-                                height: "80",
-                                rx: "4",
-                                fill: "black",
-                                stroke: "none",
-                            }),
-                            line({ x1: "100", y1: "40", x2: "100", y2: "60" }),
-                            line({ x1: "85", y1: "40", x2: "115", y2: "40" }),
-                            line({ x1: "100", y1: "140", x2: "100", y2: "170" }),
-                        ]),
+                        g(
+                            {
+                                fill: "none",
+                                stroke: "black",
+                                "stroke-width": "10",
+                                "stroke-linecap": "round",
+                                transform: "rotate(-45 100 100)",
+                            },
+                            [
+                                rect({
+                                    x: "85",
+                                    y: "60",
+                                    width: "30",
+                                    height: "80",
+                                    rx: "4",
+                                    fill: "black",
+                                    stroke: "none",
+                                }),
+                                line({ x1: "74", y1: "60", x2: "126", y2: "60" }),
+                                line({ x1: "100", y1: "38", x2: "100", y2: "60" }),
+                                line({ x1: "82", y1: "38", x2: "118", y2: "38" }),
+                                line({ x1: "100", y1: "140", x2: "100", y2: "172" }),
+                            ]
+                        ),
                     ])
                 ),
                 rect({
