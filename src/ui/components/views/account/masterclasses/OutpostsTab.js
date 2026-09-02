@@ -160,18 +160,15 @@ const decodeSlots = (value) =>
         .slice(-9)
         .split("");
 const encodeSlots = (slots) => Number(slots.join(""));
-const unlockedSlotCount = (barracksLevel, glorified) =>
-    Math.max(
-        0,
-        Math.min(9, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" })) + (toInt(glorified) === 1 ? 1 : 0))
-    );
+const unlockedSlotCount = (barracksLevel) =>
+    Math.max(0, Math.min(6, 1 + Math.min(5, toInt(barracksLevel, { min: 0, mode: "floor" }))));
 
 const outpostTypeLabel = (type) =>
     OUTPOST_TYPES.find((entry) => entry.value === Number(type))?.label ?? `Outpost Type ${type}`;
 
-const normalizeSlotsForCapacity = (slotValue, barracksLevel, glorified) => {
+const normalizeSlotsForCapacity = (slotValue, barracksLevel) => {
     const slots = decodeSlots(slotValue);
-    const unlockedSlots = unlockedSlotCount(barracksLevel, glorified);
+    const unlockedSlots = unlockedSlotCount(barracksLevel);
 
     for (let slot = 0; slot < slots.length; slot++) {
         if (slot >= unlockedSlots) {
@@ -184,12 +181,13 @@ const normalizeSlotsForCapacity = (slotValue, barracksLevel, glorified) => {
     return encodeSlots(slots);
 };
 
-const syncSlotsToCapacity = async ({ mapId, slotState, barracksLevel, glorified }) => {
-    const nextValue = normalizeSlotsForCapacity(slotState.val, barracksLevel, glorified);
+const syncSlotsToCapacity = async ({ mapId, slotState, barracksLevel }) => {
+    const nextValue = normalizeSlotsForCapacity(slotState.val, barracksLevel);
     if (nextValue === slotState.val) return;
 
     await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
     slotState.val = nextValue;
+    await refreshRoyalGuardUnitCaches();
 };
 
 const readUnitPair = async (typeArray, mapArray) => {
@@ -325,7 +323,7 @@ export const resetRoyalGuardUnitsToVanilla = async () => {
 
     royalMaps.forEach((row, mapId) => {
         if (!Array.isArray(row) || row.length < BUILT_OUTPOST_LENGTH) return;
-        const nextSlots = normalizeSlotsForCapacity(row[11], row[0], row[12]);
+        const nextSlots = normalizeSlotsForCapacity(row[11], row[0]);
         if (nextSlots !== row[11]) writes.push({ path: `RoyalMaps[${mapId}][11]`, value: nextSlots });
     });
 
@@ -411,10 +409,10 @@ const SelectWriter = ({ label, valueState, options, path, onApplied = null, clas
     );
 };
 
-const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
+const OutpostSlots = ({ mapId, slotState, barracksState }) => {
     const { status, run } = useWriteStatus();
     const slots = () => decodeSlots(slotState.val);
-    const unlockedSlots = () => unlockedSlotCount(barracksState.val, glorifiedState.val);
+    const unlockedSlots = () => unlockedSlotCount(barracksState.val);
 
     return div(
         { class: "outpost-slots" },
@@ -436,6 +434,7 @@ const OutpostSlots = ({ mapId, slotState, barracksState, glorifiedState }) => {
                         void run(async () => {
                             await writeVerified(`RoyalMaps[${mapId}][11]`, nextValue);
                             slotState.val = nextValue;
+                            await refreshRoyalGuardUnitCaches();
                         });
                     },
                 },
@@ -693,12 +692,11 @@ const BuiltOutpostRow = ({
     mapUnits,
     onUnitsChanged,
 }) => {
-    const syncCapacity = async (nextBarracks = fieldStates.get("barracks").val, nextGlorified = glorifiedState.val) => {
+    const syncCapacity = async (nextBarracks = fieldStates.get("barracks").val) => {
         await syncSlotsToCapacity({
             mapId: outpost.mapId,
             slotState,
             barracksLevel: nextBarracks,
-            glorified: nextGlorified,
         });
     };
 
@@ -718,7 +716,12 @@ const BuiltOutpostRow = ({
             label: () => fieldLabel(field),
             valueState: fieldStates.get(field.key),
             path: `RoyalMaps[${outpost.mapId}][${field.index}]`,
-            onApplied: field.key === "barracks" ? (value) => syncCapacity(value, glorifiedState.val) : null,
+            onApplied:
+                field.key === "barracks"
+                    ? (value) => syncCapacity(value)
+                    : field.index === 5
+                      ? () => refreshRoyalGuardUnitCaches()
+                      : null,
             inputMode: field.inputMode,
             normalize: (raw) =>
                 resolveNumberInput(raw, {
@@ -782,7 +785,7 @@ const BuiltOutpostRow = ({
                             await writeVerified(`RoyalMaps[${outpost.mapId}][12]`, nextValue);
                             glorifiedState.val = nextValue;
                             outpost.glorified = nextValue;
-                            await syncCapacity(fieldStates.get("barracks").val, nextValue);
+                            await refreshRoyalGuardUnitCaches();
                         },
                     })
                 )
@@ -801,7 +804,6 @@ const BuiltOutpostRow = ({
                 mapId: outpost.mapId,
                 slotState,
                 barracksState: fieldStates.get("barracks"),
-                glorifiedState,
             }),
             div(
                 { class: "outpost-map-units" },
