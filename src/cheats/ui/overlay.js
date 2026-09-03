@@ -106,21 +106,6 @@ export function injectWebUI() {
 
     const menuBar = document.getElementById("menuBar");
     const menuOffset = menuBar ? menuBar.offsetHeight : 0;
-    if (menuBar) {
-        menuBar.style.webkitAppRegion = "drag";
-        const blockers = menuBar.querySelectorAll(
-            ".menuTopper, #menuBarBg, #menuBarGradient0, #menuBarGradient1, #menuBarGradient2"
-        );
-        for (const el of blockers) {
-            el.style.pointerEvents = "none";
-        }
-        const left = menuBar.querySelector(".left");
-        if (left) {
-            left.style.webkitAppRegion = "drag";
-            const header = left.querySelector(".menuHeader");
-            if (header) header.style.webkitAppRegion = "drag";
-        }
-    }
     const styles = getStyles(menuOffset);
 
     uiContainer = document.createElement("div");
