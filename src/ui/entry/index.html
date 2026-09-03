@@ -5,10 +5,28 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Idleon Injector</title>
         <script>
-            const savedTheme = localStorage.getItem("uiTheme");
-            document.documentElement.dataset.theme = ["system", "light", "dark"].includes(savedTheme)
-                ? savedTheme
-                : "dark";
+            if (!("inert" in HTMLElement.prototype)) {
+                Object.defineProperty(HTMLElement.prototype, "inert", {
+                    enumerable: true,
+                    configurable: true,
+                    get() {
+                        return this.hasAttribute("inert") && this.getAttribute("inert") !== "false";
+                    },
+                    set(val) {
+                        if (val) {
+                            this.setAttribute("inert", "");
+                        } else {
+                            this.removeAttribute("inert");
+                        }
+                    },
+                });
+            }
+            let savedTheme = "dark";
+            try {
+                const stored = localStorage.getItem("uiTheme");
+                if (["system", "light", "dark"].includes(stored)) savedTheme = stored;
+            } catch {}
+            document.documentElement.dataset.theme = savedTheme;
         </script>
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />

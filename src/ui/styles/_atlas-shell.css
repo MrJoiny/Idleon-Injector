@@ -12,7 +12,7 @@ body {
 }
 
 /* Chromium 87 compatibility fallback for inert attribute */
-[inert] {
+[inert]:not([inert="false"]) {
     pointer-events: none !important;
     user-select: none !important;
 }
