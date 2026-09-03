@@ -298,7 +298,11 @@ body {
     width: var(--atlas-sidebar-width);
     min-width: 0;
     padding: 12px 10px 10px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--atlas-scrollbar) transparent;
     color: var(--atlas-text);
     background: var(--atlas-surface);
     border-right: 1px solid var(--atlas-border);
@@ -307,6 +311,23 @@ body {
         width 0.18s ease,
         flex-basis 0.18s ease,
         transform 0.2s ease;
+}
+
+.atlas-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.atlas-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.atlas-sidebar::-webkit-scrollbar-thumb {
+    background: var(--atlas-scrollbar);
+    border-radius: 3px;
+}
+
+.atlas-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--atlas-accent);
 }
 
 .atlas-sidebar.sidebar-collapsed,
@@ -390,9 +411,9 @@ body {
 }
 
 .atlas-context-slot {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+    flex: 0 0 auto;
+    min-height: min-content;
+    overflow: visible;
 }
 
 .atlas-context-placeholder {
@@ -418,6 +439,7 @@ body {
 
 .atlas-sidebar-footer {
     flex: 0 0 auto;
+    margin-top: auto;
     padding-top: 10px;
     border-top: 1px solid var(--atlas-border);
 }
@@ -537,6 +559,9 @@ body {
         z-index: 2600;
         width: min(310px, 86vw);
         padding: 14px 12px 12px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         visibility: hidden;
         transform: translateX(-102%);
         box-shadow: 18px 0 44px rgba(20, 33, 61, 0.18);

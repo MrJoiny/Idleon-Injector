@@ -84,10 +84,8 @@
 
 .atlas-cheat-context {
     display: flex;
-    height: 100%;
     min-height: 0;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .atlas-tree-heading {
@@ -103,9 +101,7 @@
 }
 
 .atlas-category-scopes {
-    flex: 1;
     min-height: 0;
-    overflow-y: auto;
     padding-bottom: 8px;
 }
 
