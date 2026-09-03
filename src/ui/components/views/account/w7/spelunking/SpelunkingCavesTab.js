@@ -26,6 +26,7 @@ import {
 const { div, span } = van.tags;
 
 const DEEPEST_LAYERS_PATH = "Spelunk[1]";
+const MANIC_DEEPEST_LAYERS_PATH = "Spelunk[47]";
 const BIGGEST_HAUL_PATH = "Spelunk[2]";
 const GRAND_DISCOVERIES_PATH = "Spelunk[44]";
 const DISCOVERED_OBJECTS_PATH = "Spelunk[6]";
@@ -35,6 +36,15 @@ const CAVE_METRICS = [
         id: "deepest",
         label: "Deepest Layers",
         path: DEEPEST_LAYERS_PATH,
+        normalize: (raw) => toInt(raw, { min: 0 }),
+        format: (value) => String(toInt(value, { min: 0 })),
+        adjust: (raw, delta, current) => Math.max(0, toInt(raw, current ?? 0) + delta),
+        inputMode: "int",
+    },
+    {
+        id: "manicDeepest",
+        label: "Manic Deepest",
+        path: MANIC_DEEPEST_LAYERS_PATH,
         normalize: (raw) => toInt(raw, { min: 0 }),
         format: (value) => String(toInt(value, { min: 0 })),
         adjust: (raw, delta, current) => Math.max(0, toInt(raw, current ?? 0) + delta),
@@ -161,6 +171,7 @@ export function SpelunkingCavesTab() {
     const { loading, error, run } = useAccountLoad({ label: "Spelunking Caves" });
     const metricStates = {
         deepest: new Map(),
+        manicDeepest: new Map(),
         haul: new Map(),
         discoveries: new Map(),
     };
@@ -230,18 +241,24 @@ export function SpelunkingCavesTab() {
                 .filter((row) => isMeaningfulCaveDefinition(row.rawName, row.rawDescription));
             reconcileCaves();
 
-            const [rawDeepestLayers, rawBiggestHauls, rawGrandDiscoveries, rawDestroyedObjects] = await Promise.all([
-                gga(DEEPEST_LAYERS_PATH),
-                gga(BIGGEST_HAUL_PATH),
-                gga(GRAND_DISCOVERIES_PATH),
-                gga(DISCOVERED_OBJECTS_PATH),
-            ]);
+            const [rawDeepestLayers, rawManicDeepestLayers, rawBiggestHauls, rawGrandDiscoveries, rawDestroyedObjects] =
+                await Promise.all([
+                    gga(DEEPEST_LAYERS_PATH),
+                    gga(MANIC_DEEPEST_LAYERS_PATH),
+                    gga(BIGGEST_HAUL_PATH),
+                    gga(GRAND_DISCOVERIES_PATH),
+                    gga(DISCOVERED_OBJECTS_PATH),
+                ]);
             const deepestLayers = toIndexedArray(rawDeepestLayers ?? []);
+            const manicDeepestLayers = toIndexedArray(rawManicDeepestLayers ?? []);
             const biggestHauls = toIndexedArray(rawBiggestHauls ?? []);
             const grandDiscoveries = toIndexedArray(rawGrandDiscoveries ?? []);
 
             for (const row of caveRowsState.val) {
                 getOrCreateState(metricStates.deepest, row.index).val = toInt(deepestLayers[row.index], { min: 0 });
+                getOrCreateState(metricStates.manicDeepest, row.index).val = toInt(manicDeepestLayers[row.index], {
+                    min: 0,
+                });
                 getOrCreateState(metricStates.haul, row.index).val = resolveNumberInput(biggestHauls[row.index] ?? 0, {
                     formatted: true,
                     float: true,
@@ -374,7 +391,7 @@ export function SpelunkingCavesTab() {
     return PersistentAccountListPage({
         title: "SPELUNKING CAVES",
         description:
-            "Edit cave records from Spelunk[1], Spelunk[2], and Spelunk[44], and manage discovered destroyed objects from Spelunk[6].",
+            "Edit cave records from Spelunk[1], Spelunk[47], Spelunk[2], and Spelunk[44], and manage discovered destroyed objects from Spelunk[6].",
         actions: RefreshButton({
             onRefresh: () => {
                 if (mutating.val) return;
