@@ -446,16 +446,6 @@
     grid-template-columns: minmax(300px, 1fr) auto minmax(240px, auto);
 }
 
-.account-row--field-grid {
-    grid-template-columns: minmax(220px, 1fr) auto minmax(520px, auto);
-}
-
-.account-row__controls--field-grid {
-    display: grid;
-    grid-template-columns: repeat(var(--account-row-field-count, 3), minmax(160px, 1fr)) auto;
-    gap: 8px;
-}
-
 .account-field-metric {
     display: flex;
     min-width: 0;
@@ -511,17 +501,9 @@
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .account-row--field-grid {
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-
     .account-row--wide-controls .account-row__controls {
         grid-column: 1 / -1;
         justify-content: flex-end;
-    }
-
-    .account-row--field-grid .account-row__controls {
-        grid-column: 1 / -1;
     }
 }
 
@@ -531,14 +513,6 @@
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
-    }
-
-    .account-row__controls--field-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .account-row__controls--field-grid .account-btn {
-        justify-self: end;
     }
 }
 

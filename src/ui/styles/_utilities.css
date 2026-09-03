@@ -47,20 +47,12 @@
     background: color-mix(in srgb, var(--c-accent) 8%, var(--c-panel));
 }
 
-.warning-banner--polymer {
-    background: color-mix(in srgb, var(--c-refinery-polymer) 8%, var(--c-panel));
-}
-
 .warning-banner__icon {
     display: flex;
     align-items: center;
     font-size: 1rem;
     color: var(--c-warning);
     flex-shrink: 0;
-}
-
-.warning-banner--polymer .warning-banner__icon {
-    color: var(--c-refinery-polymer);
 }
 
 .warning-banner__content {

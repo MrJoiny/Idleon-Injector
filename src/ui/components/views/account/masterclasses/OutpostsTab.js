@@ -95,17 +95,11 @@ const DEFAULT_UNIT_COUNTS = {
     7: 1,
 };
 
-export const MILITIA_WORLD_TO_DISPLAY_SHELF = {
+const MILITIA_WORLD_TO_DISPLAY_SHELF = {
     1: 14,
     2: 19,
     3: 38,
     4: 56,
-};
-export const MILITIA_SHELF_TO_WORLD = {
-    14: 1,
-    19: 2,
-    38: 3,
-    56: 4,
 };
 export const UNIT_REBUILD_DISPLAY_SHELVES = new Set([14, 19, 28, 38, 56]);
 const displayShelfToOrderIndex = (displayShelf) => displayShelf - 1;

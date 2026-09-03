@@ -994,7 +994,7 @@ const SelectedResultSection = ({ result, ui, handlers }) => {
                     : div(
                           { class: "selected-result-edit-actions" },
                           button(
-                              { class: "btn-primary", onclick: () => handlers.startInspectorEdit(result) },
+                              { class: "btn-primary", onclick: () => handlers.startEdit(result, "inspector") },
                               Icons.Pencil(),
                               "Edit value"
                           ),

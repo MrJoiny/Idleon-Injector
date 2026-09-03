@@ -2,13 +2,8 @@
 
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, ggaMany, readCList } from "../../../services/api.js";
-import { Icons } from "../../../assets/icons.js";
-import { Loader } from "../../Loader.js";
-import { EmptyState } from "../../EmptyState.js";
 import { formatNumber, formattedStep, parseNumber } from "../../../utils/numberFormat.js";
 import { toIndexedArray } from "../../../utils/index.js";
-
-const { div } = van.tags;
 
 /** Unwrap a plain value, van.state, or zero-arg function. */
 export const resolveValue = (valueOrState) => {
@@ -187,11 +182,6 @@ export const sortPrefixedNumericCodes = (a, b) => {
     if (keyDelta !== 0) return keyDelta;
     return Number(a.slice(1)) - Number(b.slice(1));
 };
-
-export const renderAccountLoading = () => div({ class: "account-loader" }, Loader());
-
-export const renderAccountError = (message) =>
-    EmptyState({ icon: Icons.SearchX(), title: "LOAD FAILED", subtitle: message });
 
 /**
  * Write a value through gga (or a compatible writer) and fail if verification

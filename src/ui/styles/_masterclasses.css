@@ -4,12 +4,10 @@
     --world-color: var(--c-accent);
 }
 
-.grimoire-controls,
 .masterclass-upgrade-controls {
     flex-shrink: 0;
 }
 
-.grimoire-scroll,
 .masterclass-upgrade-scroll {
     display: flex;
     flex-direction: column;
@@ -65,8 +63,7 @@
 .grimoire-currency__field,
 .resource-node-row__field,
 .outpost-field,
-.outpost-select-field,
-.outpost-map-unit__field {
+.outpost-select-field {
     display: grid;
     grid-template-columns: max-content max-content;
     align-items: center;
@@ -157,8 +154,7 @@
     width: 160px;
 }
 
-.outpost-field .number-input-wrapper,
-.outpost-map-unit__field .number-input-wrapper {
+.outpost-field .number-input-wrapper {
     width: 180px;
     max-width: 100%;
 }
@@ -209,7 +205,6 @@
     align-items: center;
 }
 
-.grimoire-upgrade-list,
 .masterclass-upgrade-list {
     padding-bottom: 4px;
 }
@@ -270,13 +265,6 @@
     color: var(--c-accent);
     font-weight: 850;
     text-align: center;
-}
-
-.outpost-row__controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(188px, max-content));
-    align-items: end;
-    gap: 8px;
 }
 
 .outpost-kill-row__controls {
@@ -486,10 +474,6 @@
     opacity: 0.55;
 }
 
-.outpost-map-units {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
 .outpost-map-unit-add {
     display: grid;
     grid-column: 1 / -1;
@@ -507,14 +491,6 @@
     padding: 6px;
     border: 1px solid var(--c-border);
     background: color-mix(in srgb, var(--c-panel-dim) 80%, transparent);
-}
-
-.outpost-map-unit__index {
-    align-self: center;
-    padding: 5px 7px;
-    background: var(--c-panel);
-    color: var(--c-text-muted);
-    font-weight: 800;
 }
 
 .outpost-unit-config {
@@ -576,17 +552,14 @@
 /* Responsive Media Queries */
 
 @media (max-width: 760px) {
-    .grimoire-row,
     .masterclass-upgrade-row,
     .resource-node-row,
     .outpost-row {
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .grimoire-row__controls,
     .masterclass-upgrade-row__controls,
     .resource-node-row__controls,
-    .outpost-row__controls,
     .outpost-kill-row__controls {
         grid-column: 1 / -1;
         justify-content: flex-end;

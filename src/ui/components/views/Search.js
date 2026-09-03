@@ -569,22 +569,13 @@ export const Search = () => {
 
         saveSavedEdit: () => commitEdit(ui.savedEdit, handlers.cancelSavedEdit),
 
-        startEdit: (result) => {
+        startEdit: (result, surface = "row") => {
             if (ui.isSettingValue) return; // don't switch rows mid-write
             handlers.cancelSavedEdit();
             ui.edit.path = result.path;
             ui.edit.draft = seedEditValue(result);
             ui.edit.type = expectedUiType(result);
-            ui.edit.surface = "row";
-        },
-
-        startInspectorEdit: (result) => {
-            if (ui.isSettingValue) return;
-            handlers.cancelSavedEdit();
-            ui.edit.path = result.path;
-            ui.edit.draft = seedEditValue(result);
-            ui.edit.type = expectedUiType(result);
-            ui.edit.surface = "inspector";
+            ui.edit.surface = surface;
         },
 
         cancelEdit: () => {

@@ -232,18 +232,6 @@ const CheatService = {
     },
 };
 
-const CheatStateService = {
-    loadCheatStates: async () => {
-        try {
-            const result = await API.fetchCheatStates();
-            dataState.activeCheatStates = result.data || {};
-        } catch (e) {
-            console.error("Error loading cheat states:", e);
-            dataState.activeCheatStates = {};
-        }
-    },
-};
-
 const FavoritesService = {
     toggleFavorite: (cheatValue) => {
         const index = dataState.favoriteCheats.indexOf(cheatValue);
@@ -354,7 +342,6 @@ const store = {
     navigateToCheatConfig: CheatService.navigateToCheatConfig,
     clearForcedConfigPath: CheatService.clearForcedConfigPath,
     closeConfigDrawer: CheatService.closeConfigDrawer,
-    loadCheatStates: CheatStateService.loadCheatStates,
 
     loadConfig: ConfigService.loadConfig,
 

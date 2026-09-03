@@ -285,6 +285,7 @@
     flex: 0 0 25px;
     place-items: center;
     border-radius: 5px;
+    background: var(--c-accent-dim-solid, rgba(99, 102, 241, 0.12));
     background: color-mix(in srgb, var(--world-color) 14%, var(--atlas-surface, #ffffff));
     color: var(--world-color);
     font-family: var(--font-mono);
@@ -332,6 +333,8 @@
 #options-account-tab .world-sub-nav .account-sub-tab-btn.active,
 #options-account-tab .account-page-nav .account-sub-tab-btn.active,
 #options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active {
+    background: var(--c-accent-dim-solid, rgba(99, 102, 241, 0.12));
+    color: var(--world-color, #6366f1);
     background: color-mix(in srgb, var(--world-color, #6366f1) 10%, var(--atlas-surface, #ffffff));
     color: color-mix(in srgb, var(--world-color, #6366f1) 78%, var(--atlas-text, #0f172a));
 }
