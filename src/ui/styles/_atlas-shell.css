@@ -48,11 +48,12 @@ body {
     color: #f6f7fb;
     background: var(--atlas-header);
     border-bottom: 1px solid var(--atlas-header-border);
-    -webkit-app-region: no-drag;
+    -webkit-app-region: drag;
 }
 
 .atlas-header button,
 .atlas-header a,
+.atlas-header input,
 .atlas-sidebar button {
     -webkit-app-region: no-drag;
 }
