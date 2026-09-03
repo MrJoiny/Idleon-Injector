@@ -22,8 +22,6 @@ const { div, button, span, input, code } = van.tags;
 
 const PAGE_SIZE = 50;
 
-const normalizeRootStateKey = (key) => (key.endsWith("s") ? key.slice(0, -1) : key);
-
 /**
  * Flatten the full boolean state response without discarding false values.
  * Presence in this map means the backend can truthfully expose a switch.
@@ -41,7 +39,10 @@ const flattenCheatStates = (states) => {
 
         if (!value || typeof value !== "object") return;
         for (const [key, child] of Object.entries(value)) {
-            const segment = path.length === 0 ? normalizeRootStateKey(key) : key;
+            let segment = key;
+            if (path.length === 0 && typeof child === "boolean" && key.endsWith("s") && states[key.slice(0, -1)]) {
+                segment = key.slice(0, -1);
+            }
             visit(child, [...path, segment]);
         }
     };
