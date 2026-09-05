@@ -212,7 +212,8 @@ const getKillReq = (mapId, mapDetails, killReqOverrides) => {
     const overrides = unwrapH(killReqOverrides) ?? {};
     if (Object.prototype.hasOwnProperty.call(overrides, String(mapId))) return toNum(overrides[String(mapId)], 0);
 
-    const detail = toIndexedArray(toIndexedArray(mapDetails[mapId] ?? [])[0] ?? []);
+    const mapDetail = toIndexedArray(unwrapH(mapDetails?.[mapId]) ?? []);
+    const detail = toIndexedArray(unwrapH(mapDetail[0]) ?? []);
     return (
         3 *
         (25 +
