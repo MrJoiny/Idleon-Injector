@@ -82,9 +82,6 @@
 .resource-node-row__field-label,
 .outpost-field__label,
 .outpost-select-field__label,
-.outpost-map-unit__field-label,
-.outpost-slots__label,
-.outpost-map-units__label,
 .outpost-unit-config__label {
     grid-column: 1 / -1;
     color: var(--c-text-muted);
