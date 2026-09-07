@@ -236,10 +236,16 @@ export const AtlasCheats = () => {
     const getParameterState = (entry) => {
         const key = entry.cheat.value;
         if (!parameterStates.has(key)) parameterStates.set(key, van.state(entry.parameter || ""));
-        const state = parameterStates.get(key);
-        if (entry.parameter && state.val !== entry.parameter) state.val = entry.parameter;
-        return state;
+        return parameterStates.get(key);
     };
+
+    let parameterAction = null;
+    van.derive(() => {
+        const entry = selectedEntry.val;
+        if (entry?.action === parameterAction) return;
+        parameterAction = entry?.action;
+        if (entry?.parameter) getParameterState(entry).val = entry.parameter;
+    });
 
     const selectEntry = (entry, { focusParameter = false } = {}) => {
         ui.selectedAction = entry.action;
@@ -322,47 +328,48 @@ export const AtlasCheats = () => {
             ?.scrollIntoView({ block: "nearest" });
     };
 
-    const workspaceContext = div(
-        { class: "atlas-cheat-context", role: "navigation", "aria-label": "Cheat scopes" },
-        div({ class: "atlas-tree-heading" }, "VIEWS"),
-        ScopeButton({
-            id: "all",
-            label: "All cheats",
-            count: () => store.data.cheats.length,
-            icon: Icons.Cheats(),
-        }),
-        ScopeButton({
-            id: "active",
-            label: "Active",
-            count: () => [...stateMap.val.values()].filter(Boolean).length,
-            icon: Icons.Lightning(),
-        }),
-        ScopeButton({
-            id: "favorites",
-            label: "Favorites",
-            count: () => store.data.favoriteCheats.length,
-            icon: Icons.Star(),
-        }),
-        ScopeButton({
-            id: "recent",
-            label: "Recent",
-            count: () => store.data.recentCheats.length,
-            icon: Icons.Refresh(),
-        }),
-        div({ class: "atlas-tree-heading atlas-category-heading" }, "CATEGORIES"),
-        div({ class: "atlas-category-scopes" }, () =>
-            div(
-                ...sortCategoryNames(matchingCategoryCounts.val.keys()).map((category) =>
-                    ScopeButton({
-                        id: `category:${category}`,
-                        label: category,
-                        count: () => matchingCategoryCounts.val.get(category) || 0,
-                    })
+    const workspaceContext = () =>
+        div(
+            { class: "atlas-cheat-context", role: "navigation", "aria-label": "Cheat scopes" },
+            div({ class: "atlas-tree-heading" }, "VIEWS"),
+            ScopeButton({
+                id: "all",
+                label: "All cheats",
+                count: () => store.data.cheats.length,
+                icon: Icons.Cheats(),
+            }),
+            ScopeButton({
+                id: "active",
+                label: "Active",
+                count: () => [...stateMap.val.values()].filter(Boolean).length,
+                icon: Icons.Lightning(),
+            }),
+            ScopeButton({
+                id: "favorites",
+                label: "Favorites",
+                count: () => store.data.favoriteCheats.length,
+                icon: Icons.Star(),
+            }),
+            ScopeButton({
+                id: "recent",
+                label: "Recent",
+                count: () => store.data.recentCheats.length,
+                icon: Icons.Refresh(),
+            }),
+            div({ class: "atlas-tree-heading atlas-category-heading" }, "CATEGORIES"),
+            div({ class: "atlas-category-scopes" }, () =>
+                div(
+                    ...sortCategoryNames(matchingCategoryCounts.val.keys()).map((category) =>
+                        ScopeButton({
+                            id: `category:${category}`,
+                            label: category,
+                            count: () => matchingCategoryCounts.val.get(category) || 0,
+                        })
+                    )
                 )
             )
-        )
-    );
-    registerWorkspaceContext(VIEWS.CHEATS.id, () => workspaceContext);
+        );
+    registerWorkspaceContext(VIEWS.CHEATS.id, workspaceContext);
 
     const table = div(
         {
@@ -547,17 +554,10 @@ export const AtlasCheats = () => {
         );
     };
 
-    const configInspectorCache = new Map();
-
     const getInspectorConfig = (entry) => {
-        const cacheKey = entry.cheat.value;
-        const cached = configInspectorCache.get(cacheKey);
-        if (cached) return cached;
-
         const host = div({ class: "atlas-inspector-pane atlas-inspector-config" }, Loader({ text: "LOADING CONFIG" }));
         let mounted = false;
 
-        configInspectorCache.set(cacheKey, host);
         getConfigDraft();
 
         van.derive(() => {
