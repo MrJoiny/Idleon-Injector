@@ -318,6 +318,7 @@
 }
 
 .outpost-glorified-button.is-glorified {
+    background: var(--c-accent-dim-solid);
     background: color-mix(in srgb, var(--c-accent) 18%, transparent);
     border: 1px solid var(--c-accent);
     color: var(--c-accent);
@@ -346,8 +347,10 @@
     flex-direction: column;
     gap: 12px;
     padding: 12px 14px;
+    border: 1px solid var(--c-border);
     border: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
     border-radius: 6px;
+    background: var(--c-panel-dim);
     background: color-mix(in srgb, var(--c-panel-dim) 50%, transparent);
 }
 
@@ -357,6 +360,7 @@
     justify-content: space-between;
     gap: 8px;
     padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border);
     border-bottom: 1px solid color-mix(in srgb, var(--c-border) 40%, transparent);
 }
 
