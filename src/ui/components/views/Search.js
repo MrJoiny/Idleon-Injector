@@ -1,6 +1,7 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
+import liveMonitors from "../../state/liveMonitors.js";
 import { FAVORITE_KEYS } from "../../state/constants.js";
 import { KeysSection, SearchInputSection, ResultsSection, SearchInspector } from "./search/SearchSections.js";
 import { detectQueryType } from "../../utils/index.js";
@@ -19,10 +20,8 @@ import {
     expectedUiType,
     validateEditDraft,
     monitorPathForSearchResult,
-    monitorIdFromMonitorPath,
     formatDisplayValue,
     getMonitorHistory,
-    resolveMonitorEntry,
     getUiTypeFromRawValue,
     getDraftFromRawValue,
     getResultValue,
@@ -131,45 +130,10 @@ export const Search = () => {
         }
     };
 
-    const getResolvedMonitorEntry = (path) => {
-        return resolveMonitorEntry(path, store.data.monitorValues || {});
-    };
+    const getResolvedMonitorEntry = liveMonitors.resolve;
 
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
-    const subscribedMonitorPaths = new Set();
-
-    const reconcileMonitorSubscriptions = () => {
-        const desiredPaths = new Set();
-
-        for (const entry of ui.savedResults) {
-            if (!entry?.path) continue;
-
-            if (entry.monitorEnabled === false) continue;
-
-            desiredPaths.add(entry.path);
-        }
-
-        for (const path of desiredPaths) {
-            const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-
-            if (subscribedMonitorPaths.has(path) && !resolvedMonitor.entry) {
-                subscribedMonitorPaths.delete(path);
-            }
-
-            if (subscribedMonitorPaths.has(path)) continue;
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(path);
-        }
-
-        for (const path of [...subscribedMonitorPaths]) {
-            if (desiredPaths.has(path)) continue;
-
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
-        }
-    };
 
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
@@ -234,9 +198,11 @@ export const Search = () => {
     });
 
     van.derive(() => {
-        ui.savedResults;
-        store.data.monitorValues;
-        reconcileMonitorSubscriptions();
+        liveMonitors.sync(
+            ui.savedResults
+                .filter((entry) => entry.path && entry.monitorEnabled !== false)
+                .map((entry) => monitorPathForSearchResult(entry.path))
+        );
     });
 
     const getFilteredList = (source, appliedFilter) => {
@@ -440,9 +406,6 @@ export const Search = () => {
 
             ui.savedResults = [...ui.savedResults, entry];
 
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(result.path);
-
             store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
         },
 
@@ -472,21 +435,14 @@ export const Search = () => {
             });
 
             if (enabled) {
-                store.subscribeMonitor(monitorPath);
-                subscribedMonitorPaths.add(path);
                 store.notify("Enabled watcher for " + path);
                 return;
             }
 
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPath));
-            subscribedMonitorPaths.delete(path);
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
-
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
             if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
             store.notify(`Removed ${path} from saved list`);
@@ -494,11 +450,6 @@ export const Search = () => {
 
         clearSavedResults: () => {
             if (ui.savedResults.length === 0) return;
-
-            for (const entry of ui.savedResults) {
-                store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(entry.path)));
-                subscribedMonitorPaths.delete(entry.path);
-            }
 
             ui.savedResults = [];
             handlers.cancelSavedEdit();

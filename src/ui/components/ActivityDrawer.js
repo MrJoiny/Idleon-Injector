@@ -1,5 +1,6 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
+import liveMonitors from "../state/liveMonitors.js";
 import { VIEWS } from "../state/constants.js";
 import { Icons } from "../assets/icons.js";
 import { formatDisplayValue } from "../utils/search/valueUtils.js";
@@ -46,7 +47,7 @@ const MonitorPanel = () =>
             "aria-labelledby": "atlas-monitors-tab",
         },
         () => {
-            const monitors = Object.entries(store.data.monitorValues || {}).sort(([, a], [, b]) =>
+            const monitors = Object.entries(liveMonitors.values.val).sort(([, a], [, b]) =>
                 String(a?.path || "").localeCompare(String(b?.path || ""))
             );
 
@@ -120,7 +121,7 @@ export const ActivityDrawer = () =>
                 "Monitors"
             ),
             span({ class: "atlas-drawer-summary" }, () => {
-                const monitorCount = Object.keys(store.data.monitorValues || {}).length;
+                const monitorCount = Object.keys(liveMonitors.values.val).length;
                 return `${store.app.notificationHistory.length} events / ${monitorCount} monitors`;
             }),
             button(

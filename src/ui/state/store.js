@@ -3,15 +3,8 @@ import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
 import { loadThemePreference, saveThemePreference } from "./theme.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
-import { formatDisplayValue, monitorIdFromMonitorPath } from "../utils/search/valueUtils.js";
-import {
-    initWebSocket,
-    onStateUpdate,
-    onMonitorUpdate,
-    getConnectionStatus,
-    sendMonitorSubscribe,
-    sendMonitorUnsubscribe,
-} from "../services/ws.js";
+import { formatDisplayValue } from "../utils/search/valueUtils.js";
+import { initWebSocket, onStateUpdate, getConnectionStatus } from "../services/ws.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -55,7 +48,6 @@ const dataState = vanX.reactive({
     activeCheatStates: {},
     favoriteCheats: safeParseJSON("favoriteCheats", []),
     recentCheats: safeParseJSON("recentCheats", []),
-    monitorValues: {},
 });
 
 const MAX_NOTIFICATION_HISTORY = 100;
@@ -90,10 +82,6 @@ const SystemService = {
 
         onStateUpdate((states) => {
             dataState.activeCheatStates = states || {};
-        });
-
-        onMonitorUpdate((data) => {
-            dataState.monitorValues = data || {};
         });
 
         // Use WebSocket connection status for heartbeat, with HTTP fallback
@@ -316,15 +304,6 @@ const SearchService = {
     },
 };
 
-const MonitorService = {
-    subscribe: (path) => {
-        sendMonitorSubscribe(monitorIdFromMonitorPath(path), path);
-    },
-    unsubscribe: (id) => {
-        sendMonitorUnsubscribe(id);
-    },
-};
-
 const store = {
     app: appState,
     data: dataState,
@@ -350,9 +329,6 @@ const store = {
     fetchGgaKeys: API.fetchGgaKeys,
     searchGga: API.searchGga,
     setGgaValue: SearchService.setGgaValue,
-
-    subscribeMonitor: MonitorService.subscribe,
-    unsubscribeMonitor: MonitorService.unsubscribe,
 
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;

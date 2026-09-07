@@ -1,5 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import store from "../../../state/store.js";
+import liveMonitors from "../../../state/liveMonitors.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Sparkline, canGraph } from "../../Sparkline.js";
@@ -14,12 +15,7 @@ import {
     isInputlessScanType,
     requiresSecondaryInput,
 } from "../../../utils/search/scanUtils.js";
-import {
-    monitorPathForSearchResult,
-    formatDisplayValue,
-    getMonitorHistory,
-    resolveMonitorEntry,
-} from "../../../utils/search/valueUtils.js";
+import { monitorPathForSearchResult, formatDisplayValue, getMonitorHistory } from "../../../utils/search/valueUtils.js";
 
 const { div, input, button, span, label, select, option, aside } = van.tags;
 
@@ -596,7 +592,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
     };
 
     const monitorPath = monitorPathForSearchResult(path);
-    const monitorData = () => resolveMonitorEntry(monitorPath, store.data.monitorValues || {}).entry;
+    const monitorData = () => liveMonitors.resolve(monitorPath).entry;
     const isMonitorEnabled = () => entryState.val.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);
@@ -907,8 +903,7 @@ const SelectedResultSection = ({ result, ui, handlers }) => {
     const copyFeedback = van.state(false);
     const savedEntry = () => ui.savedResults.find((entry) => entry.path === result.path) || null;
     const isEditing = () => ui.edit.path === result.path && ui.edit.surface === "inspector";
-    const monitorEntry = () =>
-        resolveMonitorEntry(monitorPathForSearchResult(result.path), store.data.monitorValues || {}).entry;
+    const monitorEntry = () => liveMonitors.resolve(monitorPathForSearchResult(result.path)).entry;
     const monitorHistory = () => (savedEntry()?.monitorEnabled === false ? [] : getMonitorHistory(monitorEntry()));
 
     const copyPath = () => {
