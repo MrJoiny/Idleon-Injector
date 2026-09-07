@@ -171,7 +171,7 @@ async function main() {
         await printHeader();
         printConfiguration(config.injectorConfig);
 
-        const app = createWebServer({ enableUI: config.injectorConfig.enableUI });
+        const app = createWebServer(config.injectorConfig);
 
         const target = (config.injectorConfig.target || "steam").toLowerCase();
         if (os.platform() === "darwin" && target !== "web") {

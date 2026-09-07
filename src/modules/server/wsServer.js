@@ -293,12 +293,13 @@ async function cleanupClientSubscriptions(ws) {
  * @param {Object} httpServer - Node.js HTTP server instance
  * @param {Object} runtime - CDP Runtime client
  * @param {string} context - JavaScript expression for game context
+ * @param {Function} acceptsRequest - Shared HTTP/WebSocket access policy
  */
-function initWebSocket(httpServer, runtime, context) {
+function initWebSocket(httpServer, runtime, context, acceptsRequest) {
     runtimeRef = runtime;
     contextRef = context;
 
-    wss = new WebSocketServer({ server: httpServer });
+    wss = new WebSocketServer({ server: httpServer, verifyClient: ({ req }) => acceptsRequest(req) });
 
     wss.on("connection", (ws) => {
         clients.add(ws);

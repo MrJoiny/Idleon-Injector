@@ -52,6 +52,11 @@ exports.injectorConfig = {
 
 `config.custom.js` can omit any export; only provided keys override defaults.
 
+The web UI is local-only by default. Remote access requires a non-loopback
+`injectorConfig.webHost` and the exact browser origins in `webAllowedOrigins`.
+Restart the injector after changing these settings. Remote access grants command
+execution and game-state editing without a login, so use it only on a trusted network.
+
 ## Startup cheats
 
 `startupCheats` is an array of command strings run after injection.

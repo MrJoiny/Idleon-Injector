@@ -11,6 +11,7 @@ const path = require("path");
 const fs = require("fs").promises;
 const TinyRouter = require("./tinyRouter");
 const { initWebSocket } = require("./wsServer");
+const { createRequestPolicy } = require("./serverAccess");
 const { createLogger } = require("../utils/logger");
 
 const log = createLogger("WebServer");
@@ -68,6 +69,7 @@ async function serveStatic(req, res, staticDir) {
 function createWebServer(config) {
     const router = new TinyRouter();
     router.enableUI = config.enableUI;
+    router.serverConfig = config;
 
     log.debug(`Web UI ${config.enableUI ? "enabled" : "disabled"}`);
 
@@ -85,9 +87,17 @@ function createWebServer(config) {
  */
 function startServer(router, port, wsConfig = null) {
     const staticDir = path.join(__dirname, "../../ui");
+    const config = router.serverConfig;
+    const host = config.webHost || "127.0.0.1";
+    let acceptsRequest = createRequestPolicy(config, port);
 
     const server = http.createServer(async (req, res) => {
         try {
+            if (!acceptsRequest(req)) {
+                res.writeHead(403, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Request origin or host is not allowed" }));
+                return;
+            }
             const handledByRouter = await router.handle(req, res);
             if (handledByRouter) return;
 
@@ -107,12 +117,13 @@ function startServer(router, port, wsConfig = null) {
 
     return new Promise((resolve, reject) => {
         server
-            .listen(port, () => {
-                log.info(`Web UI: http://localhost:${port}`);
+            .listen(port, host, () => {
+                acceptsRequest = createRequestPolicy(config, server.address().port);
+                log.info(`Web UI listening on ${host}:${server.address().port}`);
 
                 // Initialize WebSocket server if config provided
                 if (wsConfig && wsConfig.runtime && wsConfig.context) {
-                    initWebSocket(server, wsConfig.runtime, wsConfig.context);
+                    initWebSocket(server, wsConfig.runtime, wsConfig.context, (req) => acceptsRequest(req));
                 }
 
                 resolve(server);

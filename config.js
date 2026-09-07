@@ -892,6 +892,8 @@ exports.injectorConfig = {
     interceptPattern: "*N.js",
     enableUI: true,
     webPort: 8080,
+    webHost: "127.0.0.1",
+    webAllowedOrigins: [], // exact remote UI origins; requires a non-loopback webHost
     onLinuxTimeout: 60000,
     target: "web", // "web" or "steam"
     webUrl: "https://www.legendsofidleon.com/ytGl5oc/",
