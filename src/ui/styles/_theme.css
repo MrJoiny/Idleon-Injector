@@ -457,28 +457,13 @@ body,
 
 #devtools-tab.devtools-workspace,
 #devtools-tab.devtools-workspace .terminal-wrapper,
-.devtools-workspace #devtools-iframe,
-.devtools-popout-card {
+.devtools-workspace #devtools-iframe {
     background: var(--atlas-surface);
 }
 
 .devtools-workspace #devtools-message {
     background: var(--atlas-canvas);
     color: var(--atlas-text-muted);
-}
-
-.devtools-popout-card {
-    color: var(--atlas-text-muted);
-    border-color: var(--atlas-border);
-    box-shadow: 0 18px 45px var(--atlas-shadow);
-}
-
-.devtools-popout-title {
-    color: var(--atlas-text);
-}
-
-.devtools-popout-kicker {
-    color: var(--atlas-accent);
 }
 
 /* Chromium 87 fallbacks for optional color-mix() enhancements. */

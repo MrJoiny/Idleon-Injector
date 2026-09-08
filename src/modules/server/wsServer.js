@@ -6,6 +6,7 @@
  */
 
 const { WebSocketServer } = require("ws");
+const { relayDevTools } = require("./devtoolsRelay");
 const { createLogger } = require("../utils/logger");
 
 const log = createLogger("WebSocket");
@@ -294,14 +295,32 @@ async function cleanupClientSubscriptions(ws) {
  * @param {Object} runtime - CDP Runtime client
  * @param {string} context - JavaScript expression for game context
  * @param {Function} acceptsRequest - Shared HTTP/WebSocket access policy
+ * @param {Object} [devtools] - CDP client and port for the embedded inspector
  */
-function initWebSocket(httpServer, runtime, context, acceptsRequest) {
+function initWebSocket(httpServer, runtime, context, acceptsRequest, devtools) {
     runtimeRef = runtime;
     contextRef = context;
 
-    wss = new WebSocketServer({ server: httpServer, verifyClient: ({ req }) => acceptsRequest(req) });
+    wss = new WebSocketServer({
+        server: httpServer,
+        verifyClient: ({ req }) => {
+            if (acceptsRequest(req)) return true;
+            // The bundled frontend is served by CDP, on a different loopback port.
+            // Allow that origin only for the relay, retaining the shared Host check.
+            return (
+                devtools &&
+                req.url === "/devtools" &&
+                req.headers.origin === `http://localhost:${devtools.cdpPort}` &&
+                acceptsRequest({ ...req, headers: { ...req.headers, origin: `http://${req.headers.host}` } })
+            );
+        },
+    });
 
-    wss.on("connection", (ws) => {
+    wss.on("connection", (ws, req) => {
+        if (req.url === "/devtools" && devtools) {
+            void relayDevTools(ws, devtools);
+            return;
+        }
         clients.add(ws);
         getClientMonitorMap(ws);
         ws.clientType = "ui";

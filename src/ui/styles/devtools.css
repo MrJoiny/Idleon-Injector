@@ -1,19 +1,25 @@
 /**
  * DevTools View
- * Embedded warning, actions, error states
+ * Embedded inspector and error states
  */
-
-.devtools-popout-title {
-    margin-bottom: 8px;
-    color: var(--atlas-text);
-    font-size: 1.125rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
 
 #devtools-tab.devtools-workspace {
     padding: 0;
     background: var(--atlas-canvas);
+}
+
+.devtools-embedded-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    color: var(--atlas-text-muted);
+    font-size: 0.75rem;
+}
+
+.devtools-embedded-toolbar button {
+    flex-shrink: 0;
 }
 
 #devtools-tab.devtools-workspace .terminal-wrapper {
@@ -31,47 +37,6 @@
     height: 100%;
     border: 0;
     background: var(--atlas-canvas);
-}
-
-.devtools-popout-card {
-    width: min(520px, calc(100% - 32px));
-    margin: auto;
-    padding: 28px;
-    border: 1px solid var(--atlas-border);
-    border-radius: 12px;
-    background: var(--atlas-surface);
-    box-shadow: 0 18px 45px var(--atlas-shadow);
-    color: var(--atlas-text-muted);
-    font-family: var(--font-sans, "Inter", "Segoe UI", sans-serif);
-    font-size: 0.8125rem;
-    line-height: 1.55;
-    text-align: center;
-}
-
-.devtools-popout-kicker {
-    margin-bottom: 5px;
-    color: var(--atlas-accent);
-    font-size: 0.75rem;
-    font-weight: 750;
-    letter-spacing: 0.12em;
-}
-
-.devtools-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 20px auto 0;
-}
-
-.devtools-actions button {
-    min-height: 36px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-}
-
-.devtools-error {
-    margin-top: 12px;
-    color: var(--atlas-danger);
 }
 
 #devtools-message.is-error {
@@ -92,14 +57,4 @@
 .devtools-workspace button:focus-visible {
     outline: 2px solid var(--atlas-focus);
     outline-offset: 2px;
-}
-
-@media (max-width: 760px) {
-    .devtools-popout-card {
-        padding: 20px;
-    }
-
-    .devtools-actions {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }

@@ -83,6 +83,7 @@ function createWebServer(config) {
  * @param {Object} [wsConfig] - Optional WebSocket configuration
  * @param {Object} [wsConfig.runtime] - CDP Runtime client for WebSocket
  * @param {string} [wsConfig.context] - Game context expression for WebSocket
+ * @param {Object} [wsConfig.devtools] - CDP client and port for the embedded inspector
  * @returns {Promise<Object>} Server instance
  */
 function startServer(router, port, wsConfig = null) {
@@ -123,7 +124,13 @@ function startServer(router, port, wsConfig = null) {
 
                 // Initialize WebSocket server if config provided
                 if (wsConfig && wsConfig.runtime && wsConfig.context) {
-                    initWebSocket(server, wsConfig.runtime, wsConfig.context, (req) => acceptsRequest(req));
+                    initWebSocket(
+                        server,
+                        wsConfig.runtime,
+                        wsConfig.context,
+                        (req) => acceptsRequest(req),
+                        wsConfig.devtools
+                    );
                 }
 
                 resolve(server);

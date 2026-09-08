@@ -123,6 +123,7 @@ async function handlePageLoad(gameContext, config, app) {
         await startWebServer(app, config.webPort, {
             runtime: Runtime,
             context: context,
+            devtools: { client, cdpPort: config.cdpPort },
         });
     }
 

@@ -170,11 +170,10 @@ Features:
 
 ### DevTools view
 
-`src/ui/components/views/DevTools.js` embeds or launches Chrome DevTools:
-
-- Calls `/api/devtools-url` and loads it in an iframe.
-- When embedded in the in-game UI, prompts for pop-out to avoid crashes.
-- Embedded mode can open Web UI or DevTools in external window via `/api/open-url`.
+The in-game inspector supports console evaluation and inspection of the main game.
+Pauses are skipped while it is connected. Use **Open externally** for breakpoints,
+child frames, and workers. Opening externally disconnects the embedded inspector;
+**Reconnect here** returns to in-game inspection.
 
 ## Components and patterns
 
@@ -220,5 +219,3 @@ const viewFactories = {
 ## Embedded vs desktop behavior
 
 `IS_ELECTRON` in `src/ui/state/constants.js` handles Electron-specific UI behavior (like external link handling). WebSocket updates available in Electron and browser modes.
-
-`window.parent !== window` detects embedded mode for DevTools view, forcing pop-out workflow.
