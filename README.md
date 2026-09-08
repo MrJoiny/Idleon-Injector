@@ -123,13 +123,15 @@ npm run validate
 
 ## Documentation
 
-- [Backend Architecture](docs/backend.md) - Server, CDP, and module structure.
+- [Architecture Map](docs/architecture.md) - Runtime boundaries and source entry points.
+- [Domain Language](docs/glossary.md) - Shared project terminology.
+- [Design Decisions](docs/decisions.md) - Choices, alternatives, and trade-offs.
 - [Build Guide](docs/build.md) - Building from source for all platforms.
-- [Cheats Guide](docs/cheats.md) - Writing and registering cheats.
+- [Cheats Guide](docs/cheats.md) - Usage safety and contributor entry points.
 - [CLI Reference](docs/cli.md) - Console commands and autocomplete.
-- [Configuration](docs/config.md) - Config files, schema, and validation.
+- [Configuration](docs/config.md) - Applying settings, saving overrides, and safety.
 - [Platforms](docs/platforms.md) - Steam, web, and OS-specific setup.
-- [Web UI](docs/ui.md) - VanJS dashboard and components.
+- [Account Pages](docs/account-pages.md) - Editing safety and source entry points.
 
 ## Contributing
 
