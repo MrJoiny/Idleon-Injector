@@ -466,7 +466,8 @@ export const AtlasCheats = () => {
                         isFavorite: (item) => store.isFavorite(item.action),
                         onSelect: selectEntry,
                         onExecute: executeAction,
-                        onFavorite: toggleFavorite,
+                        onFavorite: (entry) =>
+                            entry.parameter ? store.toggleFavorite(entry.action) : toggleFavorite(entry),
                         onOpenConfig: openConfig,
                         canExecute: () => store.app.heartbeat,
                     })

@@ -7,6 +7,7 @@
  * @returns {(req: import("http").IncomingMessage) => boolean} Request predicate.
  */
 function createRequestPolicy(config, port) {
+    const target = (config.target || "steam").toLowerCase();
     const uiOrigins = new Set([`http://localhost:${port}`, `http://127.0.0.1:${port}`, `http://[::1]:${port}`]);
     const localHosts = new Set(["127.0.0.1", "localhost", "::1"]);
     if (!localHosts.has(config.webHost || "127.0.0.1")) {
@@ -20,7 +21,7 @@ function createRequestPolicy(config, port) {
     }
     const hosts = new Set([...uiOrigins].map((origin) => new URL(origin).host));
     const origins = new Set(uiOrigins);
-    if (config.target === "web") {
+    if (target === "web") {
         origins.add(new URL(config.webUrl).origin);
     } else {
         origins.add("null");
@@ -31,7 +32,28 @@ function createRequestPolicy(config, port) {
         if (!hosts.has(req.headers.host)) return false;
         const origin = req.headers.origin;
         if (origin !== undefined) return origins.has(origin);
-        return req.headers["sec-fetch-site"] !== "cross-site";
+        if (req.headers["sec-fetch-site"] !== "cross-site") return true;
+
+        // Embedded UI navigations and GETs may omit Origin while the game
+        // ancestor makes Sec-Fetch-Site cross-site. Verify their referrer instead.
+        if (req.method !== "GET" && req.method !== "HEAD") return false;
+        // File documents never send a referrer. Permit Steam's initial UI shell
+        // navigation only; its API requests and WebSocket still need authorization.
+        if (
+            target === "steam" &&
+            req.method === "GET" &&
+            (req.url === "/" || req.url === "/index.html") &&
+            req.headers.referer === undefined &&
+            req.headers["sec-fetch-mode"] === "navigate" &&
+            req.headers["sec-fetch-dest"] === "iframe"
+        ) {
+            return true;
+        }
+        try {
+            return origins.has(new URL(req.headers.referer).origin);
+        } catch {
+            return false;
+        }
     };
 }
 

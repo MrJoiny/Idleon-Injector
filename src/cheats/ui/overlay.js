@@ -113,6 +113,9 @@ export function injectWebUI() {
     uiContainer.style.cssText = styles.container;
 
     uiIframe = document.createElement("iframe");
+    // The HTTPS game embeds the local HTTP UI; send its origin across the
+    // downgrade so the server can authorize the iframe navigation.
+    uiIframe.referrerPolicy = "origin";
     uiIframe.src = `http://localhost:${webPort}`;
     uiIframe.style.cssText = styles.iframe;
 
