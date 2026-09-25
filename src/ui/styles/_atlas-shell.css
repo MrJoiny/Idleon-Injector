@@ -313,6 +313,39 @@ body {
         transform 0.2s ease;
 }
 
+.atlas-context-sidebar {
+    display: flex;
+    flex: 0 0 220px;
+    flex-direction: column;
+    min-width: 0;
+    padding: 16px 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--atlas-scrollbar) transparent;
+    color: var(--atlas-text);
+    background: var(--atlas-surface);
+    border-right: 1px solid var(--atlas-border);
+}
+
+.atlas-context-sidebar.is-empty {
+    display: none;
+}
+
+.atlas-context-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.atlas-context-sidebar::-webkit-scrollbar-thumb {
+    background: var(--atlas-scrollbar);
+    border-radius: 3px;
+}
+
+.atlas-context-sidebar .atlas-context-heading {
+    padding: 0 8px 8px;
+}
+
 .atlas-sidebar::-webkit-scrollbar {
     width: 5px;
 }
@@ -410,31 +443,11 @@ body {
     background: var(--atlas-border);
 }
 
-.atlas-context-slot {
-    flex: 0 0 auto;
-    min-height: min-content;
-    overflow: visible;
-}
-
-.atlas-context-placeholder {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-}
-
 .atlas-context-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 8px 8px;
-}
-
-.atlas-context-empty {
-    padding: 7px 8px;
-    color: var(--atlas-text-soft);
-    font-size: 12px;
-    line-height: 1.45;
 }
 
 .atlas-sidebar-footer {
@@ -485,12 +498,10 @@ body {
 
 .atlas-sidebar.sidebar-collapsed .atlas-sidebar-section-label,
 .atlas-sidebar.sidebar-collapsed .atlas-sidebar-divider,
-.atlas-sidebar.sidebar-collapsed .atlas-context-slot,
 .atlas-sidebar.sidebar-collapsed .atlas-nav-shortcut,
 .atlas-sidebar.sidebar-collapsed .tab-label,
 .atlas-sidebar.is-responsive-rail .atlas-sidebar-section-label,
 .atlas-sidebar.is-responsive-rail .atlas-sidebar-divider,
-.atlas-sidebar.is-responsive-rail .atlas-context-slot,
 .atlas-sidebar.is-responsive-rail .atlas-nav-shortcut,
 .atlas-sidebar.is-responsive-rail .tab-label {
     display: none;
@@ -542,12 +553,52 @@ body {
 }
 
 @media (max-width: 1023px) {
+    .atlas-body {
+        flex-direction: column;
+    }
+
     .atlas-header {
         grid-template-columns: auto minmax(80px, 1fr) auto;
     }
 
     .atlas-mobile-menu {
         display: inline-flex;
+    }
+
+    .atlas-context-sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+        height: 72px;
+        padding: 8px 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: 0;
+        border-bottom: 1px solid var(--atlas-border);
+    }
+
+    .atlas-context-sidebar .account-workspace-context {
+        width: max-content;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .atlas-context-sidebar .atlas-context-heading {
+        flex: 0 0 auto;
+        padding: 0 8px 0 0;
+    }
+
+    .atlas-context-sidebar .account-root-nav.account-sub-nav {
+        width: max-content;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        padding: 0;
+    }
+
+    .atlas-context-sidebar .account-root-nav .account-sub-tab-btn {
+        width: auto;
+        min-width: max-content;
+        white-space: nowrap;
     }
 
     .atlas-sidebar,
@@ -575,13 +626,11 @@ body {
 
     .atlas-sidebar.sidebar-collapsed .atlas-sidebar-section-label,
     .atlas-sidebar.sidebar-collapsed .atlas-sidebar-divider,
-    .atlas-sidebar.sidebar-collapsed .atlas-context-slot,
     .atlas-sidebar.sidebar-collapsed .atlas-nav-shortcut,
     .atlas-sidebar.sidebar-collapsed .tab-label {
         display: initial;
     }
 
-    .atlas-sidebar.sidebar-collapsed .atlas-context-slot,
     .atlas-sidebar.sidebar-collapsed .atlas-sidebar-divider {
         display: block;
     }

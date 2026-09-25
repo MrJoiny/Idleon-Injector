@@ -1,7 +1,6 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 import { VIEWS, VIEW_ORDER, IS_ELECTRON } from "../state/constants.js";
-import { WorkspaceContextSlot } from "./WorkspaceContext.js";
 import { Icons } from "../assets/icons.js";
 
 const { aside, nav, div, button, span, a } = van.tags;
@@ -12,15 +11,6 @@ const viewIcons = {
     [VIEWS.CONFIG.id]: Icons.Config,
     [VIEWS.SEARCH.id]: Icons.Search,
     [VIEWS.DEVTOOLS.id]: Icons.DevTools,
-};
-
-const DefaultWorkspaceContext = (viewId) => {
-    const view = VIEW_ORDER.find((candidate) => candidate.id === viewId);
-    return div(
-        { class: "atlas-context-placeholder" },
-        div({ class: "atlas-context-heading" }, "Context"),
-        div({ class: "atlas-context-empty" }, `${view?.label || "Workspace"} controls are available in the main view.`)
-    );
 };
 
 export const Sidebar = () => {
@@ -47,7 +37,7 @@ export const Sidebar = () => {
         {
             class: () =>
                 `sidebar atlas-sidebar ${store.app.sidebarCollapsed ? "sidebar-collapsed" : ""} ${
-                    responsiveRail.val && ![VIEWS.CHEATS.id, VIEWS.ACCOUNT.id].includes(store.app.activeTab)
+                    responsiveRail.val && store.app.activeTab !== VIEWS.CHEATS.id
                         ? "is-responsive-rail"
                         : ""
                 } ${store.app.sidebarMobileOpen ? "is-mobile-open" : ""}`,
@@ -76,7 +66,6 @@ export const Sidebar = () => {
             })
         ),
         div({ class: "atlas-sidebar-divider" }),
-        WorkspaceContextSlot({ fallback: DefaultWorkspaceContext }),
         div(
             { class: "atlas-sidebar-footer" },
             a(

@@ -6,6 +6,7 @@ import { saveConfigDraft } from "../state/configDraft.js";
 
 // Components
 import { Sidebar, SidebarBackdrop } from "./Sidebar.js";
+import { WorkspaceContextSidebar } from "./WorkspaceContext.js";
 import { AtlasHeader } from "./AtlasHeader.js";
 import { ActivityDrawer } from "./ActivityDrawer.js";
 import { Toast } from "./Toast.js";
@@ -105,6 +106,7 @@ export const App = () => {
         div(
             { class: "atlas-body" },
             Sidebar(),
+            WorkspaceContextSidebar(),
             main({ class: "viewport atlas-canvas" }, tabContent, ActivityDrawer()),
             SidebarBackdrop()
         ),

@@ -1,7 +1,7 @@
 import van from "../vendor/van-1.6.0.js";
 import store from "../state/store.js";
 
-const { div } = van.tags;
+const { aside } = van.tags;
 
 const renderers = new Map();
 const revision = van.state(0);
@@ -20,15 +20,26 @@ export const registerWorkspaceContext = (viewId, renderer) => {
 };
 
 /**
- * Render the active workspace's registered context, or the supplied fallback.
+ * Render contextual navigation for the active workspace when it registers one.
  *
- * @param {{fallback: (viewId: string) => HTMLElement}} props
  * @returns {HTMLElement}
  */
-export const WorkspaceContextSlot = ({ fallback }) =>
-    div({ class: "atlas-context-slot", id: "atlas-workspace-context" }, () => {
-        revision.val;
-        const viewId = store.app.activeTab;
-        const renderer = renderers.get(viewId);
-        return renderer ? renderer() : fallback(viewId);
-    });
+export const WorkspaceContextSidebar = () =>
+    aside(
+        {
+            class: () => {
+                revision.val;
+                return `atlas-context-sidebar${renderers.has(store.app.activeTab) ? "" : " is-empty"}`;
+            },
+            id: "atlas-workspace-context",
+            "aria-label": "Page context",
+            "aria-hidden": () => {
+                revision.val;
+                return !renderers.has(store.app.activeTab);
+            },
+        },
+        () => {
+            revision.val;
+            return renderers.get(store.app.activeTab)?.() ?? "";
+        }
+    );
