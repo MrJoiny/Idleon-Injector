@@ -53,6 +53,107 @@
 }
 
 /* --- ATLAS CHEAT WORKBENCH --- */
+.atlas-choice-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+}
+
+.atlas-choice-menu {
+    position: relative;
+    flex: 1 1 100px;
+    min-width: 90px;
+    border: 1px solid var(--atlas-border);
+    border-radius: 5px;
+    background: var(--atlas-surface);
+}
+
+.atlas-choice-menu summary {
+    padding: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.atlas-choice-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 20;
+    width: 320px;
+    max-width: calc(100vw - 48px);
+    padding: 6px;
+    border: 1px solid var(--atlas-border);
+    border-radius: 5px;
+    background: var(--atlas-surface);
+    box-shadow: 0 6px 20px #0006;
+}
+
+.atlas-choice-controls input {
+    width: 100%;
+    min-width: 0;
+    padding: 7px;
+    border: 1px solid var(--atlas-border);
+    border-radius: 5px;
+    color: var(--atlas-text);
+    background: var(--atlas-surface);
+}
+
+.atlas-cheat-inspector .atlas-choice-popup {
+    width: 100%;
+}
+
+.atlas-choice-controls > input {
+    flex: 0 0 106px;
+}
+
+.atlas-cheat-inspector .atlas-choice-controls {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.atlas-cheat-inspector .atlas-choice-menu,
+.atlas-cheat-inspector .atlas-choice-controls > input {
+    flex: none;
+    width: 100%;
+}
+
+.atlas-choice-count {
+    display: block;
+    padding: 5px 0;
+    font-size: 11px;
+    color: var(--atlas-text-muted);
+}
+
+.atlas-choice-results {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.atlas-choice-results button {
+    display: block;
+    width: 100%;
+    padding: 7px;
+    border: 0;
+    color: var(--atlas-text);
+    background: transparent;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.atlas-choice-results button:hover,
+.atlas-choice-results button:focus,
+.atlas-choice-results button[aria-pressed="true"] {
+    background: var(--atlas-surface-hover);
+}
+
 #cheats-tab.atlas-cheats-pane {
     padding: 0;
     min-width: 0;

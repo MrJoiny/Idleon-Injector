@@ -19,6 +19,8 @@ export const CheatItem = ({
     onFavorite,
     onOpenConfig,
     canExecute,
+    choiceControls,
+    buildExecutableAction,
 }) => {
     const pending = van.state(false);
     const feedback = van.state(null);
@@ -41,8 +43,10 @@ export const CheatItem = ({
         }
 
         try {
+            const action = cheat.choices ? buildExecutableAction(entry) : entry.action;
+            if (!action) return;
             pending.val = true;
-            await onExecute(entry.action, cheat.message || cheat.value);
+            await onExecute(action, cheat.message || cheat.value);
             flash("success");
         } catch {
             flash("error");
@@ -54,7 +58,7 @@ export const CheatItem = ({
     const actionControl = () => {
         const state = getStateInfo(cheat.value);
 
-        if (state.known && !needsParameter) {
+        if (state.known && !needsParameter && !cheat.choices) {
             return button(
                 {
                     type: "button",
@@ -79,7 +83,7 @@ export const CheatItem = ({
             {
                 type: "button",
                 class: () => `atlas-cheat-run ${pending.val ? "is-pending" : ""}`,
-                disabled: () => pending.val || !canExecute(),
+                disabled: () => pending.val || !canExecute() || (cheat.choices && !buildExecutableAction(entry)),
                 onclick: (event) => {
                     event.stopPropagation();
                     execute();
@@ -132,7 +136,9 @@ export const CheatItem = ({
                   )
                 : null
         ),
-        span({ class: "atlas-cheat-description", role: "cell" }, cheat.message || "No description provided"),
+        cheat.choices
+            ? div({ class: "atlas-cheat-choice-cell", role: "cell" }, choiceControls(entry, true))
+            : span({ class: "atlas-cheat-description", role: "cell" }, cheat.message || "No description provided"),
         span({ class: "atlas-cheat-category", role: "cell" }, cheat.category || "general"),
         div(
             { class: "atlas-cheat-state-cell", role: "cell" },

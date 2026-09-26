@@ -11,6 +11,7 @@ import {
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { CheatItem } from "../CheatItem.js";
+import { CheatChoices, groupCheatChoices, buildChoiceAction } from "../CheatChoices.js";
 import { ConfigNode } from "../config/ConfigNode.js";
 import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { ConfigActions } from "./config/ConfigActions.js";
@@ -69,7 +70,8 @@ const makeBaseEntry = (cheat) => ({
 });
 
 const matchesFilter = (cheat, term) =>
-    [cheat.value, cheat.message, cheat.category].filter(Boolean).some((value) => value.toLowerCase().includes(term));
+    [cheat.value, cheat.message, cheat.category].filter(Boolean).some((value) => value.toLowerCase().includes(term)) ||
+    (cheat.choices?.some((choice) => matchesFilter(choice, term)) ?? false);
 
 /**
  * Resolve a stored favorite/recent action back to its command definition.
@@ -86,7 +88,12 @@ const resolveStoredAction = (action, cheats) => {
         .filter((cheat) => cheat.needsParam && action.startsWith(`${cheat.value} `))
         .sort((a, b) => b.value.length - a.value.length)[0];
 
-    if (!parameterized) return null;
+    if (!parameterized) {
+        if (action.startsWith("nomore ")) {
+            return makeBaseEntry({ value: action, message: "Custom drop-blocking regex", category: "nomore" });
+        }
+        return null;
+    }
     return {
         id: `action:${action}`,
         action,
@@ -111,6 +118,16 @@ export const AtlasCheats = () => {
         page: 0,
     });
     const parameterStates = new Map();
+    const choiceStates = new Map();
+    const groupedCheats = van.derive(() => groupCheatChoices([...store.data.cheats]));
+    const getChoiceState = (cheat) => {
+        if (!choiceStates.has(cheat.value)) {
+            choiceStates.set(cheat.value, { target: van.state(""), amount: van.state(""), pattern: van.state("") });
+        }
+        return choiceStates.get(cheat.value);
+    };
+    const choiceControls = (entry, compact = false) =>
+        CheatChoices({ cheat: entry.cheat, state: getChoiceState(entry.cheat), compact });
 
     compactInspectorQuery.addEventListener("change", (event) => {
         compactInspector.val = event.matches;
@@ -150,7 +167,7 @@ export const AtlasCheats = () => {
                 .map(decorateEntry);
         }
 
-        const entries = cheats.map(makeBaseEntry).map(decorateEntry);
+        const entries = groupedCheats.val.map(makeBaseEntry).map(decorateEntry);
         if (ui.scope === "active") return entries.filter((entry) => getStateInfo(entry.cheat.value).active);
         if (ui.scope.startsWith("category:")) {
             const category = ui.scope.slice("category:".length);
@@ -163,7 +180,7 @@ export const AtlasCheats = () => {
         const term = ui.filter.trim().toLowerCase();
         const counts = new Map();
 
-        for (const cheat of store.data.cheats) {
+        for (const cheat of groupedCheats.val) {
             if (term && !matchesFilter(cheat, term)) continue;
             const category = cheat.category || "general";
             counts.set(category, (counts.get(category) || 0) + 1);
@@ -266,6 +283,7 @@ export const AtlasCheats = () => {
      * @returns {string|null}
      */
     const buildExecutableAction = (entry) => {
+        if (entry.cheat.choices) return buildChoiceAction(entry.cheat, getChoiceState(entry.cheat));
         if (!entry.cheat.needsParam) return entry.cheat.value;
         const parameter = getParameterState(entry).val.trim();
         return parameter ? `${entry.cheat.value} ${parameter}` : null;
@@ -289,7 +307,7 @@ export const AtlasCheats = () => {
         const action = buildExecutableAction(entry);
         if (!action) {
             selectEntry(entry, { focusParameter: true });
-            store.notify("Enter a value before saving this command", "error");
+            store.notify("Select a target and enter any required value before saving this command", "error");
             return;
         }
         store.toggleFavorite(action);
@@ -335,7 +353,7 @@ export const AtlasCheats = () => {
             ScopeButton({
                 id: "all",
                 label: "All cheats",
-                count: () => store.data.cheats.length,
+                count: () => groupedCheats.val.length,
                 icon: Icons.Cheats(),
             }),
             ScopeButton({
@@ -441,7 +459,7 @@ export const AtlasCheats = () => {
         div(
             { class: "atlas-cheat-table-head", role: "row" },
             span({ role: "columnheader" }, "Command"),
-            span({ role: "columnheader" }, "Description"),
+            span({ role: "columnheader" }, "Description / target"),
             span({ role: "columnheader" }, "Category"),
             span({ role: "columnheader" }, "State / action")
         ),
@@ -463,7 +481,10 @@ export const AtlasCheats = () => {
                         entry,
                         selected: () => selectedEntry.val?.action === entry.action,
                         getStateInfo,
-                        isFavorite: (item) => store.isFavorite(item.action),
+                        isFavorite: (item) =>
+                            store.isFavorite(item.cheat.choices ? buildExecutableAction(item) : item.action),
+                        choiceControls,
+                        buildExecutableAction,
                         onSelect: selectEntry,
                         onExecute: executeAction,
                         onFavorite: (entry) =>
@@ -489,7 +510,7 @@ export const AtlasCheats = () => {
             pending.val = true;
             try {
                 await executeAction(action, entry.cheat.message || entry.cheat.value);
-                ui.selectedAction = action;
+                if (!entry.cheat.choices) ui.selectedAction = action;
             } finally {
                 pending.val = false;
             }
@@ -498,6 +519,7 @@ export const AtlasCheats = () => {
         return div(
             { class: "atlas-inspector-pane atlas-inspector-details" },
             div({ class: "atlas-inspector-description" }, entry.cheat.message || "No description provided."),
+            entry.cheat.choices ? choiceControls(entry) : null,
             entry.cheat.needsParam
                 ? div(
                       { class: "atlas-inspector-field" },
@@ -518,15 +540,14 @@ export const AtlasCheats = () => {
                 {
                     type: "button",
                     class: "atlas-inspector-run",
-                    disabled: () =>
-                        pending.val || !store.app.heartbeat || (entry.cheat.needsParam && !parameterState.val.trim()),
+                    disabled: () => pending.val || !store.app.heartbeat || !buildExecutableAction(entry),
                     onclick: executeFromInspector,
                 },
                 () => {
                     if (pending.val) return "Running...";
                     if (!store.app.heartbeat) return "Disconnected";
                     const state = getStateInfo(entry.cheat.value);
-                    if (state.known) return `${state.active ? "Disable" : "Enable"} cheat`;
+                    if (state.known && !entry.cheat.choices) return `${state.active ? "Disable" : "Enable"} cheat`;
                     return "Run command";
                 }
             ),
@@ -537,7 +558,11 @@ export const AtlasCheats = () => {
                     span("Behavior"),
                     span(() => {
                         const state = getStateInfo(entry.cheat.value);
-                        return entry.cheat.needsParam ? "Parameterized command" : state.known ? "Toggle" : "Command";
+                        return entry.cheat.needsParam || entry.cheat.choices
+                            ? "Parameterized command"
+                            : state.known
+                              ? "Toggle"
+                              : "Command";
                     })
                 ),
                 div(
