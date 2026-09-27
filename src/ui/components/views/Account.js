@@ -10,8 +10,6 @@
 
 import van from "../../vendor/van-1.6.0.js";
 import store from "../../state/store.js";
-import { VIEWS } from "../../state/constants.js";
-import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
@@ -53,7 +51,6 @@ export const Account = () => {
     const activeTab = van.state(ACCOUNT_TABS[0].id);
     const workspaceContext = div(
         { class: "account-workspace-context", role: "navigation", "aria-label": "Account sections" },
-        div({ class: "atlas-context-heading" }, "Account sections"),
         renderTabNav({
             tabs: ACCOUNT_TABS,
             activeId: activeTab,
@@ -75,11 +72,9 @@ export const Account = () => {
             onSelect: () => store.closeMobileSidebar(),
         })
     );
-    registerWorkspaceContext(VIEWS.ACCOUNT.id, () => workspaceContext);
-
     return div(
         { id: "options-account-tab", class: "tab-pane account-tab-layout" },
-
+        workspaceContext,
         div(
             // Tab panes — lazy-mount: component is created (and its data fetched)
             // only when the user first activates that tab. The div stays in the DOM

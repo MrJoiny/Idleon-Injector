@@ -313,30 +313,50 @@
 }
 
 #config-tab .sub-nav {
+    flex-wrap: wrap;
     gap: 4px;
+    margin-top: 0;
     margin-bottom: 14px;
-    padding: 6px;
-    border: 1px solid var(--atlas-border, #dce2ec);
-    border-radius: 8px;
-    background: var(--atlas-surface, #fff);
+    padding: 8px 10px;
+    border: 0;
+    border-bottom: 1px solid var(--atlas-border, #dce2ec);
+    border-radius: 0;
+    background: transparent;
 }
 
 #config-tab .config-sub-tab-button {
-    padding: 7px 12px;
-    border-radius: 6px;
+    display: flex;
+    min-height: 34px;
+    align-items: center;
+    padding: 7px 9px;
+    border-radius: 7px;
     color: var(--atlas-text-muted, #66748d);
-    font-size: 0.7rem;
+    font-size: 0.84rem;
+    font-weight: 550;
     text-transform: none;
-    letter-spacing: normal;
+    letter-spacing: 0;
+}
+
+#config-tab .config-sub-tab-button:hover {
+    color: var(--atlas-text, #0f172a);
+    background: var(--atlas-surface-hover, #f1f5f9);
 }
 
 #config-tab .config-sub-tab-button.active {
-    color: var(--atlas-text, #14213d);
-    background: var(--atlas-surface-muted, #f8f9fc);
+    color: var(--atlas-accent, #4338ca);
+    background: var(--atlas-accent-soft, #eef2ff);
+    font-weight: 650;
 }
 
 #config-tab .config-sub-tab-button.active::after {
-    display: none;
+    top: 7px;
+    bottom: 7px;
+    left: 0;
+    width: 3px;
+    height: auto;
+    border-radius: 0 3px 3px 0;
+    background: var(--atlas-accent, #6366f1);
+    box-shadow: none;
 }
 
 #config-tab .panel-section {

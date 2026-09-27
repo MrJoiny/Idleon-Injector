@@ -185,32 +185,42 @@
 
 .atlas-cheat-context {
     display: flex;
+    min-width: 0;
     min-height: 0;
     flex-direction: column;
+    border-bottom: 1px solid var(--atlas-border);
+    background: var(--atlas-surface);
 }
 
-.atlas-tree-heading {
-    margin: 0 8px 6px;
-    color: var(--atlas-text-soft);
-    font-size: 0.75rem;
-    font-weight: 750;
-    letter-spacing: 0.08em;
-}
-
-.atlas-category-heading {
-    margin-top: 22px;
+.atlas-scope-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 12px;
 }
 
 .atlas-category-scopes {
     min-height: 0;
-    padding-bottom: 8px;
+    overflow-x: auto;
+    border-top: 1px solid var(--atlas-border);
+    scrollbar-color: var(--atlas-scrollbar) transparent;
+}
+
+.atlas-category-scope-list {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 4px;
+    padding: 6px 12px;
 }
 
 .atlas-scope-button {
     display: grid;
+    flex: 0 0 auto;
     grid-template-columns: 18px minmax(0, 1fr) auto;
     align-items: center;
-    width: 100%;
+    column-gap: 5px;
+    width: auto;
     min-height: 34px;
     padding: 6px 9px;
     border: 0;
@@ -257,7 +267,8 @@
 }
 
 .atlas-category-scopes .atlas-scope-button {
-    grid-template-columns: 9px minmax(0, 1fr) auto;
+    grid-template-columns: 9px auto auto;
+    white-space: nowrap;
 }
 
 .atlas-category-scopes .atlas-scope-button::before {
@@ -282,7 +293,8 @@
 
 .atlas-cheat-table {
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     border-right: 1px solid var(--atlas-border);
     outline: none;
 }

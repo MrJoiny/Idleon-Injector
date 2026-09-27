@@ -1,7 +1,7 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
-import { CATEGORY_ORDER, VIEWS } from "../../state/constants.js";
+import { CATEGORY_ORDER } from "../../state/constants.js";
 import {
     buildConfigPathTemplate,
     configDraftReady,
@@ -13,7 +13,6 @@ import { EmptyState } from "../EmptyState.js";
 import { CheatItem } from "../CheatItem.js";
 import { CheatChoices, groupCheatChoices, buildChoiceAction } from "../CheatChoices.js";
 import { ConfigNode } from "../config/ConfigNode.js";
-import { registerWorkspaceContext } from "../WorkspaceContext.js";
 import { ConfigActions } from "./config/ConfigActions.js";
 import * as API from "../../services/api.js";
 import { configPathExists, getCheatConfigPath } from "../../utils/index.js";
@@ -363,34 +362,36 @@ export const AtlasCheats = () => {
     const workspaceContext = () =>
         div(
             { class: "atlas-cheat-context", role: "navigation", "aria-label": "Cheat scopes" },
-            div({ class: "atlas-tree-heading" }, "VIEWS"),
-            ScopeButton({
-                id: "all",
-                label: "All cheats",
-                count: () => groupedCheats.val.length,
-                icon: Icons.Cheats(),
-            }),
-            ScopeButton({
-                id: "active",
-                label: "Active",
-                count: () => [...stateMap.val.values()].filter(Boolean).length,
-                icon: Icons.Lightning(),
-            }),
-            ScopeButton({
-                id: "favorites",
-                label: "Favorites",
-                count: () => store.data.favoriteCheats.length,
-                icon: Icons.Star(),
-            }),
-            ScopeButton({
-                id: "recent",
-                label: "Recent",
-                count: () => store.data.recentCheats.length,
-                icon: Icons.Refresh(),
-            }),
-            div({ class: "atlas-tree-heading atlas-category-heading" }, "CATEGORIES"),
-            div({ class: "atlas-category-scopes" }, () =>
+            div(
+                { class: "atlas-scope-list" },
+                ScopeButton({
+                    id: "all",
+                    label: "All cheats",
+                    count: () => groupedCheats.val.length,
+                    icon: Icons.Cheats(),
+                }),
+                ScopeButton({
+                    id: "active",
+                    label: "Active",
+                    count: () => [...stateMap.val.values()].filter(Boolean).length,
+                    icon: Icons.Lightning(),
+                }),
+                ScopeButton({
+                    id: "favorites",
+                    label: "Favorites",
+                    count: () => store.data.favoriteCheats.length,
+                    icon: Icons.Star(),
+                }),
+                ScopeButton({
+                    id: "recent",
+                    label: "Recent",
+                    count: () => store.data.recentCheats.length,
+                    icon: Icons.Refresh(),
+                })
+            ),
+            div({ class: "atlas-category-scopes", "aria-label": "Cheat categories" }, () =>
                 div(
+                    { class: "atlas-category-scope-list" },
                     ...sortCategoryNames(matchingCategoryCounts.val.keys()).map((category) =>
                         ScopeButton({
                             id: `category:${category}`,
@@ -401,7 +402,6 @@ export const AtlasCheats = () => {
                 )
             )
         );
-    registerWorkspaceContext(VIEWS.CHEATS.id, workspaceContext);
 
     const table = div(
         {
@@ -469,6 +469,7 @@ export const AtlasCheats = () => {
                 "Inspect"
             )
         ),
+        workspaceContext(),
         div(
             { class: "atlas-cheat-table-head", role: "row" },
             span({ role: "columnheader" }, "Command"),
