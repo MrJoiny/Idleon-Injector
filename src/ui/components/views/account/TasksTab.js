@@ -127,7 +127,7 @@ const TasksWorldTasksTab = ({ worldIndex }) => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "TASKS",
-            note: () => `${entries.val.length} TASKS FROM Tasks[1][${worldIndex}]`,
+            note: () => `${entries.val.length} TASKS`,
             body: listNode,
         })
     );
@@ -377,7 +377,7 @@ const TasksWorldMeritShopTab = ({ worldIndex }) => {
 
     return PersistentAccountListPage({
         title: `${worldLabel} MERIT SHOP`,
-        description: "Edit merit shop purchases from Tasks[2]. Max purchases come from TaskShopDesc.",
+        description: "Edit merit shop purchases.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
         state: { loading, error },
         loadingText: `READING ${worldLabel} MERIT SHOP`,

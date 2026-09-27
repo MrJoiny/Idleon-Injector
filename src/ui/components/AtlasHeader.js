@@ -44,7 +44,7 @@ export const AtlasHeader = () =>
                 span({ class: "atlas-connection-dot", "aria-hidden": "true" }),
                 span(() => {
                     if (!store.app.heartbeat) return "Disconnected";
-                    return store.app.connectionTransport === "websocket" ? "Connected / WS" : "Connected / HTTP";
+                    return "Connected";
                 })
             ),
             span(

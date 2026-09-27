@@ -150,7 +150,7 @@ export const GeneralTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "EGGS",
-            note: () => `${eggEntries.val.length} EGG SLOTS FROM TotalEggCapacity`,
+            note: () => `${eggEntries.val.length} EGG SLOTS`,
             meta: spacedActionGroup(
                 ActionButton({
                     label: "MAX ALL",
@@ -180,7 +180,6 @@ export const GeneralTab = () => {
         }),
         AccountSection({
             title: "ARENA",
-            note: "OptionsListAccount[89]",
             body: div(
                 { class: "account-item-stack" },
                 SimpleNumberRow({
@@ -197,7 +196,6 @@ export const GeneralTab = () => {
         }),
         AccountSection({
             title: "SPICE CLAIM",
-            note: "OptionsListAccount[100]",
             body: div(
                 { class: "account-item-stack" },
                 SimpleNumberRow({

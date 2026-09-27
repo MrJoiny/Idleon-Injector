@@ -139,7 +139,7 @@ export const SuperbitsTab = () => {
 
     return PersistentAccountListPage({
         title: "SUPERBITS",
-        description: "Toggle Gaming superbit unlocks from Gaming[12]. Names come from GamingUpg.",
+        description: "Toggle Gaming superbit unlocks.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

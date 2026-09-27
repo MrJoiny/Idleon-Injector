@@ -85,7 +85,7 @@ export const SpicesTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SPICES",
-            note: () => `${spiceEntries.val.length} SPICES FROM ${SPICE_AMOUNTS_PATH}`,
+            note: () => `${spiceEntries.val.length} SPICES`,
             body: spiceRows,
         })
     );

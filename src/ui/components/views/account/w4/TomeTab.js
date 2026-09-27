@@ -231,14 +231,14 @@ export const TomeTab = () => {
         AccountSection({
             title: "TOME",
             note: () =>
-                `${entries.val.filter((entry) => entry.editor).length} EDITABLE / ${entries.val.length} VALUES FROM ${TOME_VALUES_PATH}`,
+                `${entries.val.filter((entry) => entry.editor).length} EDITABLE / ${entries.val.length} VALUES`,
             body: tomeRows,
         })
     );
 
     return PersistentAccountListPage({
         title: "TOME",
-        description: "View W4 Tome values from DNSM. Editable rows write to their real backing paths.",
+        description: "View W4 Tome values and edit supported rows.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

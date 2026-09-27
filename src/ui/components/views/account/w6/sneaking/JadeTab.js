@@ -130,7 +130,7 @@ export const JadeTab = () => {
 
     return PersistentAccountListPage({
         title: "JADE",
-        description: "Toggle Jade Emporium upgrades stored in Ninja[102][9] using Number2Letter encoding.",
+        description: "Toggle Jade Emporium upgrades.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -259,7 +259,7 @@ export const MasteryTab = () => {
 
     return PersistentAccountListPage({
         title: "COOKING MASTERY",
-        description: "Edit Cooking Mastery rank, EXP, perk levels, and per-meal mastery allocations from CookMaster.",
+        description: "Edit Cooking Mastery rank, EXP, perk levels, and per-meal mastery allocations.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
         state: { loading, error },
         loadingText: "READING COOKING MASTERY",

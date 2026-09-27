@@ -354,8 +354,7 @@
     color: var(--atlas-text-soft);
 }
 
-.atlas-row-count,
-.atlas-table-hint {
+.atlas-row-count {
     flex: none;
     color: var(--atlas-text-soft);
     font-family: var(--font-mono);
@@ -398,11 +397,6 @@
 .atlas-cheat-pagination svg {
     width: 13px;
     height: 13px;
-}
-
-.atlas-table-hint {
-    padding-left: 10px;
-    border-left: 1px solid var(--atlas-border);
 }
 
 .atlas-inspector-toggle,
@@ -679,14 +673,6 @@
     white-space: nowrap;
 }
 
-.atlas-inspector-title code {
-    overflow: hidden;
-    color: var(--atlas-text-soft);
-    font-size: 0.75rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .atlas-inspector-tabs {
     display: flex;
     gap: 4px;
@@ -914,10 +900,6 @@
 @media (max-width: 1280px) {
     .atlas-cheats-workbench {
         grid-template-columns: minmax(400px, 1fr) 300px;
-    }
-
-    .atlas-table-hint {
-        display: none;
     }
 
     .atlas-cheat-table-head,

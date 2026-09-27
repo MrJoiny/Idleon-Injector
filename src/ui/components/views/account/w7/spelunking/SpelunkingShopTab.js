@@ -107,7 +107,7 @@ export function SpelunkingShopTab() {
 
     return PersistentAccountListPage({
         title: "SPELUNKING SHOP",
-        description: "Set W7 Spelunking shop upgrade levels from Spelunk[5]. Max levels come from SpelunkUpg.",
+        description: "Set W7 Spelunking shop upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

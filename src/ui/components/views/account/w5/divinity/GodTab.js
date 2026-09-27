@@ -101,19 +101,18 @@ export const GodTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "GOD PROGRESS",
-            note: "Divinity[25]",
             body: div({ class: "account-item-stack" }, GodProgressRow({ valueState: progressState })),
         }),
         AccountSection({
             title: "GOD LEVELS",
-            note: () => `${entries.val.length} GODS FROM Divinity[28-37]`,
+            note: () => `${entries.val.length} GODS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "GOD",
-        description: "Edit Divinity god unlock/rank value and god levels. God names come from GodsInfo.",
+        description: "Edit Divinity god unlock/rank value and god levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

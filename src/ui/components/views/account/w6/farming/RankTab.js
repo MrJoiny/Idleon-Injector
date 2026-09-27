@@ -124,7 +124,7 @@ export const RankTab = () => {
 
     return PersistentAccountListPage({
         title: "RANK",
-        description: "Edit the 5x4 Land Rank Database from FarmRank[2]. The fifth column uses the live max level cap.",
+        description: "Edit the 5x4 Land Rank Database. The fifth column uses the live max level cap.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

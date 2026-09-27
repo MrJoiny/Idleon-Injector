@@ -109,19 +109,17 @@ export const CoralKidTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "UNLOCK",
-            note: "OptionsListAccount[426] + [433]",
             body: div({ class: "account-item-stack" }, UnlockRow({ unlockedState })),
         }),
         AccountSection({
             title: "UPGRADES",
-            note: "OptionsListAccount[427-432]",
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "CORAL KID",
-        description: "Toggle Coral Kid unlock flags and edit Coral Kid upgrade levels from OptionsListAccount.",
+        description: "Toggle Coral Kid unlock flags and edit Coral Kid upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

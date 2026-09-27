@@ -112,7 +112,7 @@ export const CharmsTab = () => {
 
     return PersistentAccountListPage({
         title: "CHARMS",
-        description: "Toggle Pristine Charm unlocks from Ninja[107]. Names come from NjTrP0 through NjTrP22.",
+        description: "Toggle Pristine Charm unlocks.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

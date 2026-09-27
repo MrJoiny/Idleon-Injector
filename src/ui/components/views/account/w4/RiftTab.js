@@ -26,7 +26,6 @@ export const RiftTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "RIFTS",
-            note: "Rift[0]",
             body: div(
                 { class: "account-item-stack" },
                 SimpleNumberRow({

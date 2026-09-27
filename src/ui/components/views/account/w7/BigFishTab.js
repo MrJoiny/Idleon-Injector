@@ -81,7 +81,7 @@ export const BigFishTab = () => {
 
     return PersistentAccountListPage({
         title: "BIG FISH",
-        description: "Set Big Fish NPC bonus levels from Spelunk[11]. Names and bonuses come from Spelunky[18].",
+        description: "Set Big Fish NPC bonus levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

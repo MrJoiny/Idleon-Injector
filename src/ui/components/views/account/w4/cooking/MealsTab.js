@@ -144,7 +144,7 @@ export const MealsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "MEALS",
-            note: () => `${mealEntries.val.length} NAMED MEALS FROM MealINFO`,
+            note: () => `${mealEntries.val.length} NAMED MEALS`,
             body: mealRows,
         })
     );

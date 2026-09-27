@@ -80,7 +80,6 @@ export const TerritoryTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "TERRITORY UNLOCK",
-            note: "OptionsListAccount[85]",
             body: div(
                 { class: "account-item-stack" },
                 SimpleNumberRow({

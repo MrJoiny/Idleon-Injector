@@ -70,14 +70,14 @@ export const StickerTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "STICKERS",
-            note: () => `${entries.val.length} STICKER SLOTS FROM Research[9]`,
+            note: () => `${entries.val.length} STICKER SLOTS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "STICKER",
-        description: "Edit Farming sticker amounts from Research[9]. Names come from Research[23].",
+        description: "Edit Farming sticker amounts.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

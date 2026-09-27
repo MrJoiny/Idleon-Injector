@@ -144,7 +144,7 @@ export const UpgradesTab = () => {
 
     return PersistentAccountListPage({
         title: "UPGRADES",
-        description: "Edit Summoning upgrade levels from Summon[0]. Max levels and names come from SummonUPG.",
+        description: "Edit Summoning upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

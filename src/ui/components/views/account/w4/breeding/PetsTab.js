@@ -181,7 +181,7 @@ export const PetsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "PETS",
-            note: "DNA, breedability, and shiny days from Breeding W1-W4 pet arrays",
+            note: "DNA, breedability, and shiny days",
             body: petSectionRows,
         })
     );

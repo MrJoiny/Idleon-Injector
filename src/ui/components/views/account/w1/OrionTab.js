@@ -92,7 +92,7 @@ export const OrionTab = () => {
     return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
         title: "ORION",
-        description: "Manage Orion the Great Horned Owl - loads once, refreshes after each set",
+        description: "Manage Orion the Great Horned Owl.",
         actions: RefreshButton({
             onRefresh: load,
             tooltip: "Re-read Orion data from game",

@@ -170,7 +170,7 @@ export function SushiStationTab() {
 
     return PersistentAccountListPage({
         title: "SUSHI STATION",
-        description: "Edit Sushi[0] slot tiers. Plate types from Sushi[1] and fireplaces from Sushi[3] are read-only.",
+        description: "Edit Sushi station slot tiers. Plate types and fireplaces are read-only.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

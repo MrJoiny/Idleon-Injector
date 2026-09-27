@@ -112,7 +112,6 @@ export const MineheadTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "MINEHEAD STATS",
-            note: "Research[7]",
             body: div(
                 { class: "account-item-stack" },
                 ...MINEHEAD_STATS.map((stat) =>
@@ -132,7 +131,7 @@ export const MineheadTab = () => {
 
     return PersistentAccountListPage({
         title: "MINEHEAD",
-        description: "Set Minehead stats from Research[7] and upgrade levels from Research[8].",
+        description: "Set Minehead stats and upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

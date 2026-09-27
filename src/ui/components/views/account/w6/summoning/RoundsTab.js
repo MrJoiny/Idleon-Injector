@@ -192,7 +192,6 @@ export const RoundsTab = () => {
             () => [
                 AccountSection({
                     title: "ENDLESS",
-                    note: "OptionsListAccount[319]",
                     body: endlessNode,
                 }),
                 AccountSection({
@@ -250,7 +249,7 @@ export const RoundsTab = () => {
     return PersistentAccountListPage({
         title: "ROUNDS",
         description:
-            "Toggle normal round completion from Summon[1] and set endless rounds from OptionsListAccount[319]. Normal sections follow the in-game stone order.",
+            "Toggle normal round completion and set endless rounds. Normal sections follow the in-game stone order.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

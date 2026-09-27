@@ -177,12 +177,12 @@ export const ChipsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "CHIPS",
-            note: () => `${chipEntries.val.length} CHIP AMOUNTS FROM Lab[15]`,
+            note: () => `${chipEntries.val.length} CHIP AMOUNTS`,
             body: chipRows,
         }),
         AccountSection({
             title: "PLAYER CHIPS",
-            note: "Lab[1-10], seven equipped chip ids per player",
+            note: "Seven equipped chips per player",
             body: playerChipRows,
         })
     );

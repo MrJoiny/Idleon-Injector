@@ -106,7 +106,7 @@ export function SushiShopTab() {
 
     return PersistentAccountListPage({
         title: "SUSHI SHOP",
-        description: "Set Sushi shop upgrade levels from Sushi[2]. Max levels come from SushiUPG.",
+        description: "Set Sushi shop upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -70,14 +70,14 @@ export const UpgradesTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SNEAKING UPGRADES",
-            note: () => `${entries.val.length} UPGRADES FROM Ninja[103]`,
+            note: () => `${entries.val.length} UPGRADES`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "UPGRADES",
-        description: "Edit Sneaking upgrade levels from Ninja[103]. Names come from NinjaUpg.",
+        description: "Edit Sneaking upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

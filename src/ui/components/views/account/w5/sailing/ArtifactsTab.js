@@ -70,14 +70,14 @@ export const ArtifactsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SAILING ARTIFACTS",
-            note: () => `${entries.val.length} ARTIFACTS FROM ArtifactInfo`,
+            note: () => `${entries.val.length} ARTIFACTS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "ARTIFACTS",
-        description: "Edit Sailing artifact levels from Sailing[3]. Names come from ArtifactInfo.",
+        description: "Edit Sailing artifact levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

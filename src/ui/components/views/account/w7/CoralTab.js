@@ -91,7 +91,7 @@ export const CoralTab = () => {
 
     return PersistentAccountListPage({
         title: "CORAL REEF",
-        description: "Set W7 Coral Reef levels from Spelunk[13]. Max levels come from CoralReef definitions.",
+        description: "Set W7 Coral Reef levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -1,0 +1,30 @@
+.villager-row__controls {
+    width: clamp(360px, 40vw, 560px);
+    align-items: stretch;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.villager-row__controls .account-field-metric {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.villager-row__controls .number-input-wrapper {
+    width: 100%;
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .villager-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .villager-row__controls {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-width: 0;
+    }
+}

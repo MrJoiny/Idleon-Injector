@@ -101,7 +101,7 @@ export const NametagTab = () => {
 
     return PersistentAccountListPage({
         title: "NAMETAGS",
-        description: "Set delivered nametag amounts from Spelunk[17]. Each index maps directly to EquipmentNametagX.",
+        description: "Set delivered nametag amounts.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

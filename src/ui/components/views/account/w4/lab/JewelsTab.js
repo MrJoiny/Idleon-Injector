@@ -85,7 +85,7 @@ export const JewelsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "JEWELS",
-            note: () => `${jewelEntries.val.length} JEWELS FROM Lab[14]`,
+            note: () => `${jewelEntries.val.length} JEWELS`,
             body: jewelRows,
         })
     );

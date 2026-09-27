@@ -105,7 +105,7 @@ export const AtomColliderTab = () => {
 
     return PersistentAccountListPage({
         title: "ATOM COLLIDER",
-        description: "Set Atom Collider upgrade levels. Max levels are computed from game data.",
+        description: "Set Atom Collider upgrade levels.",
         wrapActions: false,
         actions: BulkActionBar({
             actions: [

@@ -102,7 +102,7 @@ export const IslandsTab = () => {
 
     return PersistentAccountListPage({
         title: "ISLANDS",
-        description: "Toggle Sailing island unlocks. Unlock flags are stored as -1 for unlocked and 0 for locked.",
+        description: "Toggle Sailing island unlocks.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

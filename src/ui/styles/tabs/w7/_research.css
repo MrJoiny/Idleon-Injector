@@ -187,7 +187,7 @@
 
 .observations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 8px;
 }
 
@@ -210,6 +210,11 @@
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+}
+
+.observation-tile__body {
+    width: 100%;
+    min-width: 0;
 }
 
 .observation-tile--unlocked {
@@ -258,11 +263,12 @@
 
 .observation-tile__stats {
     align-items: stretch;
+    flex-wrap: wrap;
 }
 
 .observation-stat {
     display: flex;
-    flex: 1;
+    flex: 1 1 200px;
     min-width: 0;
     flex-direction: column;
     gap: 4px;
@@ -277,7 +283,11 @@
 }
 
 .observation-stat__controls .number-input-wrapper {
-    width: 140px;
+    width: 132px;
+}
+
+.observation-stat__value {
+    white-space: nowrap;
 }
 
 .observation-tile__toggle {

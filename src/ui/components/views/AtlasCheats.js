@@ -22,6 +22,19 @@ import { Icons } from "../../assets/icons.js";
 const { div, button, span, input, code } = van.tags;
 
 const PAGE_SIZE = 50;
+const GENERAL_CHOICE_CATEGORIES = new Set([
+    "buy",
+    "bulk",
+    "class",
+    "drop",
+    "keychain",
+    "lvl",
+    "multiplestacks",
+    "nomore",
+    "spawn",
+]);
+const withDisplayCategory = (cheat) =>
+    GENERAL_CHOICE_CATEGORIES.has(cheat.category) ? { ...cheat, category: "general" } : cheat;
 
 /**
  * Flatten the full boolean state response without discarding false values.
@@ -90,7 +103,7 @@ const resolveStoredAction = (action, cheats) => {
 
     if (!parameterized) {
         if (action.startsWith("nomore ")) {
-            return makeBaseEntry({ value: action, message: "Custom drop-blocking regex", category: "nomore" });
+            return makeBaseEntry({ value: action, message: "Custom drop-blocking regex", category: "general" });
         }
         return null;
     }
@@ -119,7 +132,8 @@ export const AtlasCheats = () => {
     });
     const parameterStates = new Map();
     const choiceStates = new Map();
-    const groupedCheats = van.derive(() => groupCheatChoices([...store.data.cheats]));
+    const displayCheats = van.derive(() => [...store.data.cheats].map(withDisplayCategory));
+    const groupedCheats = van.derive(() => groupCheatChoices(displayCheats.val));
     const getChoiceState = (cheat) => {
         if (!choiceStates.has(cheat.value)) {
             choiceStates.set(cheat.value, { target: van.state(""), amount: van.state(""), pattern: van.state("") });
@@ -147,7 +161,7 @@ export const AtlasCheats = () => {
     };
 
     const getEntriesForScope = () => {
-        const cheats = [...store.data.cheats];
+        const cheats = displayCheats.val;
         const decorateEntry = (entry) => ({
             ...entry,
             hasConfig: store.hasConfigEntry(entry.cheat.value),
@@ -453,8 +467,7 @@ export const AtlasCheats = () => {
                     "aria-expanded": () => String(ui.inspectorOpen),
                 },
                 "Inspect"
-            ),
-            span({ class: "atlas-table-hint" }, "Up/Down or j/k move - Enter inspect")
+            )
         ),
         div(
             { class: "atlas-cheat-table-head", role: "row" },
@@ -553,25 +566,6 @@ export const AtlasCheats = () => {
             ),
             div(
                 { class: "atlas-inspector-facts" },
-                div(span("Category"), span(entry.cheat.category || "general")),
-                div(
-                    span("Behavior"),
-                    span(() => {
-                        const state = getStateInfo(entry.cheat.value);
-                        return entry.cheat.needsParam || entry.cheat.choices
-                            ? "Parameterized command"
-                            : state.known
-                              ? "Toggle"
-                              : "Command";
-                    })
-                ),
-                div(
-                    span("Live state"),
-                    span(() => {
-                        const state = getStateInfo(entry.cheat.value);
-                        return state.known ? (state.active ? "Active" : "Inactive") : "Not exposed";
-                    })
-                ),
                 div(
                     span("Command"),
                     code(() => buildExecutableAction(entry) || entry.cheat.value)
@@ -663,7 +657,7 @@ export const AtlasCheats = () => {
                 div(
                     { class: "atlas-inspector-header" },
                     span({ class: "atlas-inspector-icon", "aria-hidden": "true" }, Icons.Lightning()),
-                    div({ class: "atlas-inspector-title" }, span(entry.cheat.value), code(entry.action)),
+                    div({ class: "atlas-inspector-title" }, span(entry.cheat.value)),
                     div(
                         { class: "atlas-inspector-header-actions" },
                         button(

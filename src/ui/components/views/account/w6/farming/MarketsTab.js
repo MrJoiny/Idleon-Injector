@@ -127,19 +127,19 @@ export const MarketsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "MARKET UPGRADES",
-            note: () => `${marketEntries.val.length} UPGRADES FROM FarmUpg[2-9]`,
+            note: () => `${marketEntries.val.length} UPGRADES`,
             body: marketListNode,
         }),
         AccountSection({
             title: "NIGHT MARKET UPGRADES",
-            note: () => `${nightMarketEntries.val.length} UPGRADES FROM FarmUpg[10-17]`,
+            note: () => `${nightMarketEntries.val.length} UPGRADES`,
             body: nightMarketListNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "MARKETS",
-        description: "Set Farming market and night market upgrade levels. Max levels are read from FarmingStuffs.",
+        description: "Set Farming market and night market upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

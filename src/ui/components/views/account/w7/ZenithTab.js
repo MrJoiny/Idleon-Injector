@@ -98,7 +98,6 @@ export const ZenithTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "CURRENCY",
-            note: "OptionsListAccount[486]",
             body: div({ class: "account-item-stack" }, ZenithClustersRow({ valueState: clusterState })),
         }),
         AccountSection({
@@ -110,7 +109,7 @@ export const ZenithTab = () => {
 
     return PersistentAccountListPage({
         title: "ZENITH",
-        description: "Set W7 Zenith market levels from Spelunk[45]. Max levels come from ZenithMarket definitions.",
+        description: "Set W7 Zenith market levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
