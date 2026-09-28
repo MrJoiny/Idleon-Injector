@@ -41,7 +41,7 @@ const withDisplayCategory = (cheat) =>
  * @param {object} states
  * @returns {Map<string, boolean>}
  */
-const flattenCheatStates = (states) => {
+export const flattenCheatStates = (states) => {
     const result = new Map();
 
     const visit = (value, path) => {
@@ -92,7 +92,7 @@ const matchesFilter = (cheat, term) =>
  * @param {object[]} cheats
  * @returns {object|null}
  */
-const resolveStoredAction = (action, cheats) => {
+export const resolveStoredAction = (action, cheats) => {
     const exact = cheats.find((cheat) => cheat.value === action);
     if (exact) return makeBaseEntry(exact);
 
@@ -222,7 +222,10 @@ export const AtlasCheats = () => {
         return visibleEntries.val.slice(start, start + PAGE_SIZE);
     });
 
+    const retainedActiveEntry = van.state(null);
+
     const selectScope = (scope) => {
+        retainedActiveEntry.val = null;
         ui.scope = scope;
         ui.page = 0;
     };
@@ -242,7 +245,13 @@ export const AtlasCheats = () => {
 
     const selectedEntry = van.derive(() => {
         const selected = visibleRows.val.find((entry) => entry.action === ui.selectedAction);
-        return selected || visibleRows.val[0] || null;
+        const retained = retainedActiveEntry.val;
+        return (
+            selected ||
+            (ui.scope === "active" && retained?.action === ui.selectedAction ? retained : null) ||
+            visibleRows.val[0] ||
+            null
+        );
     });
 
     van.derive(() => {
@@ -278,6 +287,7 @@ export const AtlasCheats = () => {
     });
 
     const selectEntry = (entry, { focusParameter = false } = {}) => {
+        retainedActiveEntry.val = null;
         ui.selectedAction = entry.action;
         if (compactInspector.val) ui.inspectorOpen = true;
         if (entry.parameter) getParameterState(entry).val = entry.parameter;
@@ -287,6 +297,31 @@ export const AtlasCheats = () => {
             requestAnimationFrame(() => document.querySelector("#atlas-cheat-parameter")?.focus());
         }
     };
+
+    let handledNavigationId = 0;
+    van.derive(() => {
+        const request = store.app.cheatNavigation;
+        if (!request || request.id === handledNavigationId || !displayCheats.val.length) return;
+        handledNavigationId = request.id;
+        queueMicrotask(() => {
+            if (store.app.cheatNavigation?.id === request.id) store.app.cheatNavigation = null;
+        });
+        ui.scope = request.scope;
+        ui.filter = "";
+        const index = getEntriesForScope().findIndex((entry) => entry.action === request.action);
+        if (index < 0) {
+            store.notify(`Command '${request.action}' is unavailable in Cheats`, "error");
+            return;
+        }
+        const entry = getEntriesForScope()[index];
+        ui.page = Math.floor(index / PAGE_SIZE);
+        selectEntry(entry);
+        ui.inspectorTab = "details";
+        ui.inspectorOpen = true;
+        requestAnimationFrame(() =>
+            document.querySelector(`[data-cheat-row="${CSS.escape(entry.id)}"]`)?.scrollIntoView({ block: "nearest" })
+        );
+    });
 
     /**
      * Build the executable action string for a cheat entry.
@@ -524,7 +559,30 @@ export const AtlasCheats = () => {
             pending.val = true;
             try {
                 await executeAction(action, entry.cheat.message || entry.cheat.value);
-                if (!entry.cheat.choices) ui.selectedAction = action;
+                if (!entry.cheat.choices) ui.selectedAction = entry.action;
+            } finally {
+                pending.val = false;
+            }
+        };
+
+        const disableFromInspector = async () => {
+            if (pending.val) return;
+            pending.val = true;
+            try {
+                const command = entry.cheat.value;
+                const before = (await API.fetchCheatStates()).data;
+                if (ui.scope === "active" && ui.selectedAction === entry.action) retainedActiveEntry.val = entry;
+                store.data.activeCheatStates = before;
+                const states = flattenCheatStates(before);
+                if (!states.has(command)) throw new Error("Switch state is unavailable");
+                if (states.get(command)) await API.executeCheatAction(command);
+
+                const after = (await API.fetchCheatStates()).data;
+                if (flattenCheatStates(after).get(command) !== false)
+                    throw new Error("State did not change as requested");
+                store.data.activeCheatStates = after;
+            } catch (error) {
+                store.notify(`Error disabling '${entry.cheat.value}': ${error.message}`, "error");
             } finally {
                 pending.val = false;
             }
@@ -561,10 +619,24 @@ export const AtlasCheats = () => {
                     if (pending.val) return "Running...";
                     if (!store.app.heartbeat) return "Disconnected";
                     const state = getStateInfo(entry.cheat.value);
+                    if (entry.cheat.needsParam && state.known) return "Set value";
                     if (state.known && !entry.cheat.choices) return `${state.active ? "Disable" : "Enable"} cheat`;
                     return "Run command";
                 }
             ),
+            () =>
+                entry.cheat.needsParam && getStateInfo(entry.cheat.value).active
+                    ? button(
+                          {
+                              type: "button",
+                              class: "atlas-inspector-run",
+                              disabled: () => pending.val || !store.app.heartbeat,
+                              "aria-label": `Disable ${entry.cheat.value}`,
+                              onclick: disableFromInspector,
+                          },
+                          () => (pending.val ? "Working..." : "Disable cheat")
+                      )
+                    : null,
             div(
                 { class: "atlas-inspector-facts" },
                 div(

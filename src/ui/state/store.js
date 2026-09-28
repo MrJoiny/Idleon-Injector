@@ -37,6 +37,7 @@ const appState = vanX.reactive({
     activityDrawer: null,
     sidebarMobileOpen: false,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
+    cheatNavigation: null,
     theme: loadThemePreference(),
     configForcedPath: null,
 });
@@ -52,6 +53,7 @@ const dataState = vanX.reactive({
 
 const MAX_NOTIFICATION_HISTORY = 100;
 let appInfoRequest = null;
+let cheatNavigationId = 0;
 
 const Actions = {
     notify: (message, type = "success") => {
@@ -342,6 +344,12 @@ const store = {
     setActiveTab: (viewId) => {
         appState.activeTab = viewId;
         appState.sidebarMobileOpen = false;
+    },
+
+    navigateToCheat: (action, scope) => {
+        appState.activeTab = VIEWS.CHEATS.id;
+        appState.sidebarMobileOpen = false;
+        appState.cheatNavigation = { action, scope, id: ++cheatNavigationId };
     },
 
     toggleMobileSidebar: () => {
