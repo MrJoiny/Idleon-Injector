@@ -474,3 +474,15 @@
         justify-self: start;
     }
 }
+
+/* Resource node world actions */
+.resource-node-toolbar {
+    align-items: center;
+}
+
+.resource-node-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+}
