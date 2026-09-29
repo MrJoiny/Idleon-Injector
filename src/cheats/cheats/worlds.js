@@ -285,6 +285,7 @@ registerCheats({
         { name: "zenith", message: "zenith market cheats" },
         { name: "minehead", message: "minehead cheats" },
         { name: "research", message: "research cheats" },
+        { name: "jelly", message: "jelly operator dispatch overrides" },
         { name: "glimbo", message: "glimbo cheats" },
         { name: "spelunkmana", message: "no stamina cost in spelunking" },
         {
