@@ -72,7 +72,7 @@ const LevelRow = ({
         },
         adjustInput: (raw, delta, current) =>
             Math.max(0, Math.min(max, (validLevel(raw, max) ?? current ?? 0) + delta)),
-        rowClass: "account-row--wide-controls",
+        rowClass: "account-row--wide-controls jelly-level-row",
         controlsClass: "account-row__controls--xl",
     });
 };
@@ -82,18 +82,10 @@ export const JellyTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Jelly Operator" });
     const activePane = van.state("upgrades");
     const bloodcells = van.state(0);
-    const attempts = van.state(0);
-    const obstruction = van.state(0);
-    const purchasedSlots = van.state(0);
+    const operationsLeft = van.state(0);
     const upgradeCount = van.state(0);
     const upgradeStates = new Map();
     const cellStates = new Map();
-    const totalCellLevels = van.derive(() =>
-        Array.from({ length: 9 }, (_, id) => Number(getOrCreateState(cellStates, id).val) || 0).reduce(
-            (total, level) => total + level,
-            0
-        )
-    );
     const upgradeList = div({ class: "account-item-stack" });
     const cellList = div({ class: "account-item-stack" });
     const reconcileUpgrades = createStaticRowReconciler(upgradeList);
@@ -113,13 +105,10 @@ export const JellyTab = () => {
             const stats = toIndexedArray(research[7]);
             const levels = toIndexedArray(research[17]);
             const cellLevels = toIndexedArray(research[16]);
-            const slots = toIndexedArray(research[18]);
             const accountLevel = Number(rawLevel) || 0;
 
             bloodcells.val = Number(stats[11]) || 0;
-            attempts.val = Number(stats[10]) || 0;
-            obstruction.val = Number(stats[9]) || 0;
-            purchasedSlots.val = slots.length;
+            operationsLeft.val = Number(stats[10]) || 0;
 
             const entries = order
                 .map((rawId, orderIndex) => {
@@ -228,42 +217,18 @@ export const JellyTab = () => {
     const body = div(
         { class: "scrollable-panel content-stack" },
         AccountSection({
-            title: "PROGRESS",
-            body: div(
-                {
-                    class: "nametag-gallery-summary",
-                    style: "display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 16px;",
-                },
-                div(
-                    span({ class: "nametag-gallery-summary__label" }, "Attempts left "),
-                    span({ class: "nametag-gallery-summary__value" }, () => String(attempts.val))
-                ),
-                div(
-                    span({ class: "nametag-gallery-summary__label" }, "Obstruction level "),
-                    span({ class: "nametag-gallery-summary__value" }, () => String(obstruction.val))
-                ),
-                div(
-                    span({ class: "nametag-gallery-summary__label" }, "Purchased slots "),
-                    span({ class: "nametag-gallery-summary__value" }, () => String(purchasedSlots.val))
-                ),
-                div(
-                    span({ class: "nametag-gallery-summary__label" }, "Cell levels "),
-                    span({ class: "nametag-gallery-summary__value" }, () => String(totalCellLevels.val))
-                )
-            ),
-        }),
-        AccountSection({
             title: "BLOODCELLS",
             body: SimpleNumberRow({
                 entry: { name: "Bloodcells", path: "Research[7][11]", formatted: true, float: true },
                 valueState: bloodcells,
             }),
         }),
-        renderTabNav({
-            tabs: PANES,
-            activeId: activePane,
-            navClass: "account-nested-sub-nav",
-            buttonClass: "account-nested-sub-tab-btn",
+        AccountSection({
+            title: "OPERATIONS LEFT",
+            body: SimpleNumberRow({
+                entry: { name: "Operations left", path: "Research[7][10]" },
+                valueState: operationsLeft,
+            }),
         }),
         div(
             { class: () => (activePane.val === "upgrades" ? "" : "is-hidden-until-ready") },
@@ -276,8 +241,14 @@ export const JellyTab = () => {
     );
     return PersistentAccountListPage({
         title: "JELLY OPERATOR",
-        description: "Inspect progress and set Bloodcells, upgrade levels, and cell levels.",
+        description: "Set Bloodcells, operations left, upgrade levels, and cell levels.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        subNav: renderTabNav({
+            tabs: PANES,
+            activeId: activePane,
+            navClass: "account-nested-sub-nav",
+            buttonClass: "account-nested-sub-tab-btn",
+        }),
         state: { loading, error },
         loadingText: "READING JELLY OPERATOR",
         errorTitle: "JELLY OPERATOR READ FAILED",
