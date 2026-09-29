@@ -362,6 +362,11 @@
     container: account-row-info / inline-size;
 }
 
+.jelly-level-row .account-row__info {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+}
+
 .account-row__name-group {
     display: flex;
     min-width: 0;

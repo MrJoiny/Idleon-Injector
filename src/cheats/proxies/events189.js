@@ -6,6 +6,7 @@
  * - CauldronStats (alchemy cheats)
  * - chipBonuses (chip bonus modifications)
  * - MealBonus (meal bonus modifications)
+ * - JellyOperation (Jelly Operator dispatch overrides)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
@@ -35,4 +36,7 @@ export function setupEvents189Proxies() {
 
     // Meal bonuses
     createConfigLookupProxy(ActorEvents189, "_customBlock_MealBonus", [{ state: "w4.meals" }]);
+
+    // Jelly Operator dispatch; the original method must run before any configured override.
+    createConfigLookupProxy(ActorEvents189, "_customBlock_JellyOperation", [{ state: "w7.jelly" }]);
 }

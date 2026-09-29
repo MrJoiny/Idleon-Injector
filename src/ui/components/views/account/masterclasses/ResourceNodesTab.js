@@ -11,7 +11,15 @@ import { AccountSection } from "../components/AccountSection.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { InlineEditableNumberField } from "../components/InlineEditableNumberField.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
-import { getOrCreateState, resolveNumberInput, toInt, toNum, useWriteStatus, writeVerified } from "../accountShared.js";
+import {
+    getOrCreateState,
+    resolveNumberInput,
+    toInt,
+    toNum,
+    useWriteStatus,
+    writeManyVerified,
+    writeVerified,
+} from "../accountShared.js";
 
 const { button, div, span } = van.tags;
 
@@ -151,6 +159,8 @@ const NodeRow = ({ node, gradeState, depletedState }) => {
 export const ResourceNodesTab = () => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: "Resource Nodes" });
     const activeWorld = van.state(1);
+    const bulkStatus = useWriteStatus();
+    const bulkMessage = van.state("");
     const nodes = van.state([]);
     const gradeStates = new Map();
     const depletedStates = new Map();
@@ -201,6 +211,32 @@ export const ResourceNodesTab = () => {
             nodes.val = nextNodes;
         });
 
+    const writeWorldDepleted = async (value) => {
+        if (loading.val || bulkStatus.status.val === "loading") return;
+        const world = activeWorld.val;
+        const targets = nodes.val.filter((node) => node.world === world);
+        if (!targets.length) return;
+
+        bulkMessage.val = "";
+        await bulkStatus.run(
+            async () => {
+                await writeManyVerified(targets.map((node) => ({ path: `RoyalG[4][${node.nodeIndex}]`, value })));
+                targets.forEach((node) => {
+                    depletedStates.get(node.nodeIndex).val = value;
+                });
+                bulkMessage.val = `W${world}: ${targets.length} nodes ${value === 0 ? "refreshed" : "depleted"}.`;
+            },
+            {
+                onError: (error) => {
+                    bulkMessage.val = `W${world} bulk action failed: ${error.message}. Re-reading node state.`;
+                    void load();
+                },
+            }
+        );
+    };
+
+    const bulkDisabled = () => loading.val || !nodes.val.some((node) => node.world === activeWorld.val);
+
     load();
 
     return PersistentAccountListPage({
@@ -211,7 +247,7 @@ export const ResourceNodesTab = () => {
             refresh: {
                 onClick: load,
                 tooltip: "Re-read Royal resource nodes from the running game.",
-                disabled: () => loading.val,
+                disabled: () => loading.val || bulkStatus.status.val === "loading",
             },
         }),
         state: { loading, error },
@@ -224,7 +260,7 @@ export const ResourceNodesTab = () => {
                 title: "NODE WORLDS",
                 body: [
                     div(
-                        { class: "masterclass-category-tabs" },
+                        { class: "masterclass-category-tabs resource-node-toolbar" },
                         ...Array.from({ length: WORLD_COUNT }, (_, index) => {
                             const world = index + 1;
                             return button(
@@ -234,14 +270,34 @@ export const ResourceNodesTab = () => {
                                         `masterclass-category-tabs__button${
                                             activeWorld.val === world ? " is-active" : ""
                                         }`,
+                                    disabled: () => bulkStatus.status.val === "loading",
                                     onclick: () => {
                                         activeWorld.val = world;
                                     },
                                 },
                                 `W${world}`
                             );
-                        })
+                        }),
+                        div(
+                            { class: "resource-node-toolbar__actions" },
+                            ActionButton({
+                                label: "REFRESH ALL",
+                                status: bulkStatus.status,
+                                disabled: bulkDisabled,
+                                tooltip: "Set every node in the selected world to fresh (collected = 0).",
+                                onClick: () => void writeWorldDepleted(0),
+                            }),
+                            ActionButton({
+                                label: "DEPLETE ALL",
+                                status: bulkStatus.status,
+                                disabled: bulkDisabled,
+                                variant: "danger",
+                                tooltip: "Deplete every node in the selected world (collected = -1).",
+                                onClick: () => void writeWorldDepleted(-1),
+                            })
+                        )
                     ),
+                    div({ role: "status", "aria-live": "polite" }, () => bulkMessage.val),
                     bodyContent,
                 ],
             })
