@@ -87,14 +87,11 @@ const NodeInfo = ({ node, gradeState }) => [
     div(
         { class: "resource-node-row__text" },
         span({ class: "account-row__name" }, `Node ${node.nodeIndex} / RGres${node.resourceType}`),
-        span(
-            { class: "resource-node-row__meta" },
-            () => {
-                const grade = toInt(gradeState.val, { min: 0 });
-                const max = nodeMax(node.nodeIndex, node.baseAmount, grade);
-                return `Base ${formatAmount(node.baseAmount)} | Max ${formatAmount(max)} | X ${node.x}, Y ${node.y}`;
-            }
-        )
+        span({ class: "resource-node-row__meta" }, () => {
+            const grade = toInt(gradeState.val, { min: 0 });
+            const max = nodeMax(node.nodeIndex, node.baseAmount, grade);
+            return `Base ${formatAmount(node.baseAmount)} | Max ${formatAmount(max)} | X ${node.x}, Y ${node.y}`;
+        })
     ),
 ];
 
@@ -131,8 +128,7 @@ const NodeRow = ({ node, gradeState, depletedState }) => {
                 valueState: depletedState,
                 path: `RoyalG[4][${node.nodeIndex}]`,
                 inputMode: "float",
-                normalize: (raw) =>
-                    resolveNumberInput(raw, { formatted: true, float: true, min: -1, fallback: null }),
+                normalize: (raw) => resolveNumberInput(raw, { formatted: true, float: true, min: -1, fallback: null }),
                 rootClass: "resource-node-row__field",
                 labelClass: "resource-node-row__field-label",
                 inputClass: "resource-node-row__set",
@@ -304,7 +300,7 @@ export const ResourceNodesTab = () => {
                     div({ role: "status", "aria-live": "polite" }, () => bulkMessage.val),
                     bodyContent,
                 ],
-            }),
+            })
         ),
     });
 };

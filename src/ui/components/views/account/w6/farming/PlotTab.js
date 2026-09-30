@@ -111,7 +111,7 @@ export const PlotTab = () => {
 
     return PersistentAccountListPage({
         title: "PLOT",
-        description: "Edit the 9x4 land plot level and EXP grids from FarmRank[0] and FarmRank[1].",
+        description: "Edit the 9x4 land plot level and EXP grids.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

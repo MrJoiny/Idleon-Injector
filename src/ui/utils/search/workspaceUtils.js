@@ -1,6 +1,6 @@
 const SEARCH_WORKSPACE_STORAGE_KEY = "searchWorkspace";
-const SEARCH_WORKSPACE_VERSION = 2;
 const SEARCH_FAVORITE_KEYS_STORAGE_KEY = "searchFavoriteKeys";
+const SEARCH_WORKSPACE_VERSION = 2;
 const DEFAULT_SELECTED_KEYS_LIMIT = 8;
 const entryFilterTextCache = new WeakMap();
 
@@ -9,11 +9,6 @@ export function uniqueStrings(items) {
     return [...new Set((items || []).filter((item) => typeof item === "string" && item))];
 }
 
-/**
- * Load stored favorite keys.
- * @returns {string[]|null} `null` when never stored (caller applies curated
- *   defaults); an array — possibly empty — once the user has set favorites.
- */
 export function loadLocalFavoriteKeys() {
     try {
         const raw = localStorage.getItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY);
@@ -25,7 +20,6 @@ export function loadLocalFavoriteKeys() {
     }
 }
 
-/** Persist favorite keys (an empty array is a deliberate, preserved state). */
 export function saveLocalFavoriteKeys(keys) {
     try {
         localStorage.setItem(SEARCH_FAVORITE_KEYS_STORAGE_KEY, JSON.stringify(uniqueStrings(keys)));
@@ -117,7 +111,7 @@ export function saveSearchWorkspace(workspace) {
     }
 }
 
-export function pickInitialSelectedKeys(allKeys, persistedKeys, favoriteKeys) {
+export function pickInitialSelectedKeys(allKeys, persistedKeys, favoriteKeys = []) {
     const available = new Set(allKeys || []);
     const fromPersisted = uniqueStrings(persistedKeys).filter((key) => available.has(key));
     if (fromPersisted.length > 0) return fromPersisted;

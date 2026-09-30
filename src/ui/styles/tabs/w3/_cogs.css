@@ -315,17 +315,30 @@
 .cogs-cog-stat-input {
     width: 96px;
     min-width: 96px;
-    padding: 3px 6px;
+    min-height: 30px;
+    padding: 4px 7px;
+    border: 1px solid var(--atlas-border);
+    border-radius: 6px;
+    color: var(--atlas-text);
+    background: var(--atlas-field);
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    color: var(--c-text);
+    font-size: 0.8125rem;
+    box-shadow: none;
 }
 
-.cogs-cog-stat-input:focus {
+.cogs-popup .cogs-cog-stat-input:focus {
     outline: none;
-    border-color: var(--c-border-strong);
+    border-color: var(--atlas-accent) !important;
+    background: var(--atlas-field) !important;
+    box-shadow: 0 0 0 2px var(--atlas-focus) !important;
+}
+
+.cogs-popup .cogs-cog-stat-input:focus-visible {
+    outline: none;
+    outline-offset: 0;
+    border-color: var(--atlas-accent) !important;
+    background: var(--atlas-field) !important;
+    box-shadow: 0 0 0 2px var(--atlas-focus) !important;
 }
 
 .cogs-cog-stat-set-btn {

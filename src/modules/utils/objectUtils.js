@@ -2,7 +2,7 @@
  * Object Utility Functions
  *
  * Native JavaScript implementations for object manipulation.
- * Provides deepClone, deepMerge, and union functions.
+ * Provides deepClone and deepMerge functions.
  */
 
 /**
@@ -47,18 +47,6 @@ const deepClone = (obj) => {
 };
 
 /**
- * Union of two arrays (concatenates and deduplicates)
- * @param {Array} arr1 - First array
- * @param {Array} arr2 - Second array
- * @returns {Array} New array with unique elements from both arrays
- */
-const union = (arr1, arr2) => {
-    const a1 = Array.isArray(arr1) ? arr1 : [];
-    const a2 = Array.isArray(arr2) ? arr2 : [];
-    return [...new Set([...a1, ...a2])];
-};
-
-/**
  * Deep merge two objects (mutates target in-place)
  * Behavior matches lodash merge:
  * - Replaces primitives with source values
@@ -98,6 +86,5 @@ const deepMerge = (target, source) => {
 
 module.exports = {
     deepClone,
-    union,
     deepMerge,
 };

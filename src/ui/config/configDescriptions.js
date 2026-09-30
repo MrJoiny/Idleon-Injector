@@ -627,6 +627,8 @@ export const configDescriptions = {
     "injectorConfig.enableUI": "Enable/disable the webui",
     "injectorConfig.onLinuxTimeout": "Timeout in milliseconds for Linux-specific operations",
     "injectorConfig.webPort": "Port for the webui",
+    "injectorConfig.webHost": "UI listen address. Default is local-only. Restart the injector after changing.",
+    "injectorConfig.webAllowedOrigins": "Exact remote UI origins, e.g. http://192.168.1.10:8080. Requires a non-loopback webHost and restart.",
     "injectorConfig.target": "Injection target platform (steam or web)",
     "injectorConfig.webUrl": "Idleon web URL when using browser injection",
     "injectorConfig.browserPath": "Browser executable path for web injection (auto if empty)",

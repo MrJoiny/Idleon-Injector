@@ -20,10 +20,7 @@ const ShopUpgradeRow = ({ entry, levelState }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",
@@ -109,7 +106,7 @@ export function SushiShopTab() {
 
     return PersistentAccountListPage({
         title: "SUSHI SHOP",
-        description: "Set Sushi shop upgrade levels from Sushi[2]. Max levels come from SushiUPG.",
+        description: "Set Sushi shop upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

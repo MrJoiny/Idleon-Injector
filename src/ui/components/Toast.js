@@ -30,6 +30,9 @@ export const Toast = () => {
     return div(
         {
             id: "status-message",
+            role: "status",
+            "aria-live": "polite",
+            "aria-atomic": "true",
             class: () => {
                 const typeClass = store.app.toast.type === "error" ? "status-error" : "status-success";
                 const fadeClass = isFading.val ? "fade-out" : "";

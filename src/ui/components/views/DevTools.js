@@ -7,23 +7,24 @@ const { div, iframe, button } = van.tags;
 export const DevTools = () => {
     const url = van.state("");
     const error = van.state("");
+    const openedExternally = van.state(false);
     const isEmbedded = window.parent !== window;
-    const webUiUrl = `http://localhost:${window.location.port || "8080"}`;
-
-    // Load DevTools URL on mount (skip if embedded to prevent crashes)
-    if (!isEmbedded) {
-        API.fetchDevToolsUrl()
-            .then((devtoolsUrl) => {
-                url.val = devtoolsUrl;
-            })
-            .catch((e) => {
-                error.val = e.message;
-            });
-    }
+    API.fetchDevToolsUrl()
+        .then((devtoolsUrl) => {
+            const frameUrl = new URL(devtoolsUrl);
+            if (isEmbedded) frameUrl.searchParams.set("ws", `${window.location.host}/devtools`);
+            url.val = frameUrl.href;
+        })
+        .catch((e) => {
+            error.val = e.message;
+        });
 
     const openDevTools = async () => {
         try {
             const devtoolsUrl = await API.fetchDevToolsUrl();
+            openedExternally.val = true;
+            // Let VanJS remove the iframe and close its pause-suppressing session.
+            await new Promise((resolve) => setTimeout(resolve, 0));
             if (IS_ELECTRON) {
                 await API.openExternalUrl(devtoolsUrl);
             } else {
@@ -34,68 +35,46 @@ export const DevTools = () => {
         }
     };
 
-    const openWebUi = async () => {
-        try {
-            if (IS_ELECTRON) {
-                await API.openExternalUrl(webUiUrl);
-            } else {
-                window.open(webUiUrl, "_blank", "noopener,noreferrer");
-            }
-        } catch (e) {
-            error.val = `Failed to open Web UI: ${e.message}`;
-        }
-    };
-
-    const renderEmbeddedView = () =>
-        div(
-            { class: "danger-zone-header" },
-            div({ class: "devtools-popout-title" }, "⚠ DEVTOOLS POP-OUT"),
-
-            div("Embedded DevTools is disabled inside the game UI to prevent crashes"),
-            div("Use the pop-out window for full DevTools access"),
-            div(
-                { class: "devtools-actions" },
-                button(
-                    {
-                        class: "btn-primary",
-                        onclick: openWebUi,
-                    },
-                    "Open Web UI"
-                ),
-                button(
-                    {
-                        class: "btn-primary",
-                        onclick: openDevTools,
-                    },
-                    "Open ChromeDebug"
-                )
-            ),
-
-            () => (error.val ? div({ class: "devtools-error" }, error.val) : null)
-        );
-
     const renderContent = () => {
-        if (isEmbedded) {
-            return renderEmbeddedView();
-        }
-
         if (error.val) {
             return div(
-                { id: "devtools-message", class: "is-error" },
+                { id: "devtools-message", class: "is-error", role: "alert" },
 
                 `Failed to load DevTools: ${error.val}`
             );
         }
 
+        if (openedExternally.val) {
+            return div(
+                { id: "devtools-message", role: "status" },
+                "Embedded inspector disconnected for external debugging.",
+                button(
+                    { type: "button", class: "btn-primary", onclick: () => (openedExternally.val = false) },
+                    "Reconnect here"
+                )
+            );
+        }
+
         if (!url.val) {
-            return div({ id: "devtools-message" }, "ESTABLISHING UPLINK");
+            return div({ id: "devtools-message", role: "status", "aria-live": "polite" }, "Connecting to ChromeDebug");
         }
 
         return iframe({
             id: "devtools-iframe",
             src: url.val,
+            title: "Chrome DevTools",
         });
     };
 
-    return div({ id: "devtools-tab", class: "tab-pane" }, div({ class: "terminal-wrapper" }, renderContent));
+    return div(
+        { id: "devtools-tab", class: "tab-pane devtools-workspace" },
+        isEmbedded
+            ? div(
+                  { class: "devtools-embedded-toolbar" },
+                  div("Inspecting the main game. Use the external window for breakpoints, child frames and workers."),
+                  button({ type: "button", class: "btn-primary", onclick: openDevTools }, "Open externally")
+              )
+            : null,
+        div({ class: "terminal-wrapper" }, renderContent)
+    );
 };

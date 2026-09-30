@@ -1,10 +1,12 @@
 import van from "../../../vendor/van-1.6.0.js";
 import store from "../../../state/store.js";
-import { copyToClipboard } from "../../../utils/index.js";
+import liveMonitors from "../../../state/liveMonitors.js";
 import { Loader } from "../../Loader.js";
 import { EmptyState } from "../../EmptyState.js";
 import { Sparkline, canGraph } from "../../Sparkline.js";
+import { createStaticRowReconciler } from "../account/accountShared.js";
 import { Icons } from "../../../assets/icons.js";
+import { copyToClipboard } from "../../../utils/index.js";
 import {
     NEW_SCAN_TYPES,
     NEXT_SCAN_TYPES,
@@ -12,38 +14,48 @@ import {
     getScanTypePlaceholder,
     isInputlessScanType,
     requiresSecondaryInput,
-} from "./scanUtils.js";
-import {
-    monitorPathForSearchResult,
-    formatDisplayValue,
-    getMonitorHistory,
-    resolveMonitorEntry,
-} from "./valueUtils.js";
-import { createStaticRowReconciler } from "../account/accountShared.js";
+} from "../../../utils/search/scanUtils.js";
+import { monitorPathForSearchResult, formatDisplayValue, getMonitorHistory } from "../../../utils/search/valueUtils.js";
 
-const { div, input, button, span, label, details, summary, select, option } = van.tags;
+const { div, input, button, span, label, select, option, aside } = van.tags;
+
+const ResultEditInput = ({ class: className = "result-edit-input", draft, onInput, onSave, onCancel }) =>
+    input({
+        class: className,
+        value: draft,
+        oninput: onInput,
+        onclick: (event) => event.stopPropagation(),
+        onkeydown: (event) => {
+            event.stopPropagation();
+            if (event.key === "Enter") onSave();
+            if (event.key === "Escape") onCancel();
+        },
+    });
 
 const KeyCheckbox = ({ keyName, selectedKeys, onChange, isFavorite, onToggleFavorite }) => {
     const isChecked = () => selectedKeys.includes(keyName);
-    const favorite = () => (typeof isFavorite === "function" ? isFavorite(keyName) : false);
+    const favorite = () => isFavorite(keyName);
 
-    return label(
+    return div(
         { class: () => `key-checkbox ${isChecked() ? "checked" : ""}`, title: keyName },
-        input({
-            type: "checkbox",
-            checked: isChecked,
-            onchange: (e) => onChange(keyName, e.target.checked),
-        }),
-        span({ class: "key-checkbox-label" }, keyName),
+        label(
+            { class: "key-checkbox-select" },
+            input({
+                type: "checkbox",
+                checked: isChecked,
+                onchange: (e) => onChange(keyName, e.target.checked),
+            }),
+            span({ class: "key-checkbox-label" }, keyName)
+        ),
         button(
             {
+                type: "button",
                 class: () => `key-favorite-btn ${favorite() ? "active" : ""}`,
                 title: () => (favorite() ? "Remove from favorites" : "Add to favorites"),
-                onclick: (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onToggleFavorite(keyName);
-                },
+                "aria-label": () =>
+                    `${favorite() ? "Remove" : "Add"} ${keyName} ${favorite() ? "from" : "to"} favorites`,
+                "aria-pressed": () => String(favorite()),
+                onclick: () => onToggleFavorite(keyName),
             },
             Icons.Star()
         )
@@ -53,7 +65,7 @@ const KeyCheckbox = ({ keyName, selectedKeys, onChange, isFavorite, onToggleFavo
 const ResultItem = ({ result, ui, handlers }) => {
     const copyFeedback = van.state(null);
 
-    const isEditing = () => ui.edit.path === result.path;
+    const isEditing = () => ui.edit.path === result.path && ui.edit.surface !== "inspector";
     const isInSavedList = () => ui.savedResults.some((entry) => entry.path === result.path);
 
     const handleCopy = (e) => {
@@ -95,7 +107,19 @@ const ResultItem = ({ result, ui, handlers }) => {
 
     return div(
         {
-            class: () => "search-result-item " + (copyFeedback.val === "success" ? "copied" : ""),
+            class: () =>
+                "search-result-item " +
+                (ui.selectedResultPath === result.path ? "is-selected " : "") +
+                (copyFeedback.val === "success" ? "copied" : ""),
+            onclick: (event) => handlers.selectResult(result, event),
+            onkeydown: (event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                handlers.selectResult(result, event);
+            },
+            tabindex: 0,
+            "aria-current": () => (ui.selectedResultPath === result.path ? "true" : "false"),
         },
         span({ class: "result-path" }, result.path),
         span({ class: "result-equals" }, "="),
@@ -194,7 +218,15 @@ const SearchButton = ({
 
 export const KeysSection = ({ ui, handlers }) =>
     div(
-        { class: "search-keys-section" },
+        {
+            id: "search-keys-panel",
+            class: () => `search-keys-section ${ui.keysOpen ? "is-open" : ""}`,
+            role: () => (ui.keysOverlay ? "dialog" : "navigation"),
+            "aria-modal": () => String(ui.keysOverlay && ui.keysOpen),
+            "aria-hidden": () => String(ui.keysOverlay && !ui.keysOpen),
+            "aria-label": "Search keys",
+            onkeydown: handlers.handleKeysPanelKeydown,
+        },
         div(
             { class: "section-header" },
             span({ class: "section-title" }, "SEARCH IN KEYS"),
@@ -212,74 +244,82 @@ export const KeysSection = ({ ui, handlers }) =>
                     {
                         class: "btn-secondary btn-small",
                         onclick: () => handlers.selectKeys(handlers.getValidFavorites()),
-                        title: "Select all favorites",
+                        disabled: () => handlers.getValidFavorites().length === 0,
+                        title: "Select favorite keys",
                     },
                     "FAV"
                 ),
                 button(
                     { class: "btn-secondary btn-small", onclick: handlers.clearSelection, title: "Clear selection" },
                     "CLEAR"
+                ),
+                button(
+                    {
+                        class: "search-keys-close",
+                        onclick: handlers.closeKeysPane,
+                        title: "Close key navigation",
+                        "aria-label": "Close key navigation",
+                    },
+                    Icons.X()
                 )
             )
         ),
         div(
             { class: "keys-content scroll-container" },
-            div({ class: "keys-group" }, div({ class: "keys-group-header" }, "* FAVORITES"), () => {
-                if (ui.isLoading) {
-                    return div({ class: "keys-loading" }, "Loading");
+            div(
+                { class: "keys-group" },
+                div({ class: "keys-group-header" }, () => `FAVORITES (${handlers.getValidFavorites().length})`),
+                () => {
+                    const favorites = handlers.getValidFavorites();
+                    if (ui.isLoading) return div({ class: "keys-loading" }, "Loading");
+                    if (favorites.length === 0) return div({ class: "keys-loading" }, "No favorite keys");
+
+                    return div(
+                        { class: "keys-grid" },
+                        ...favorites.map((key) =>
+                            KeyCheckbox({
+                                keyName: key,
+                                selectedKeys: ui.selectedKeys,
+                                onChange: handlers.handleKeyChange,
+                                isFavorite: handlers.isFavoriteKey,
+                                onToggleFavorite: handlers.toggleFavoriteKey,
+                            })
+                        )
+                    );
                 }
-                const validFavorites = handlers.getValidFavorites();
-                if (validFavorites.length === 0) {
-                    return div({ class: "keys-loading" }, "No keys available");
-                }
-                return div(
-                    { class: "keys-grid" },
-                    ...validFavorites.map((key) =>
-                        KeyCheckbox({
-                            keyName: key,
-                            selectedKeys: ui.selectedKeys,
-                            onChange: handlers.handleKeyChange,
-                            isFavorite: handlers.isFavoriteKey,
-                            onToggleFavorite: handlers.toggleFavoriteKey,
-                        })
-                    )
-                );
-            }),
-            details(
-                {
-                    class: "keys-group expandable",
-                    open: ui.allKeysExpanded,
-                    ontoggle: (e) => (ui.allKeysExpanded = e.target.open),
-                },
-                summary({ class: "keys-group-header" }, () => `ALL KEYS (${handlers.getOtherKeys().length} MORE)`),
+            ),
+            div(
+                { class: "keys-group" },
+                div({ class: "keys-group-header" }, () => `OTHER KEYS (${handlers.getFilteredKeys().length})`),
                 div(
-                    { class: "keys-expand-content" },
-                    div(
-                        { class: "keys-filter" },
-                        input({
-                            type: "text",
-                            class: "keys-filter-input",
-                            placeholder: "FILTER KEYS",
-                            value: () => ui.allKeysFilter,
-                            oninput: (e) => (ui.allKeysFilter = e.target.value),
-                        })
-                    ),
-                    () => {
-                        const otherKeys = handlers.getOtherKeys();
-                        return div(
-                            { class: "keys-grid" },
-                            ...otherKeys.map((key) =>
-                                KeyCheckbox({
-                                    keyName: key,
-                                    selectedKeys: ui.selectedKeys,
-                                    onChange: handlers.handleKeyChange,
-                                    isFavorite: handlers.isFavoriteKey,
-                                    onToggleFavorite: handlers.toggleFavoriteKey,
-                                })
-                            )
-                        );
-                    }
-                )
+                    { class: "keys-filter" },
+                    input({
+                        type: "text",
+                        class: "keys-filter-input",
+                        placeholder: "FILTER KEYS",
+                        value: () => ui.allKeysFilter,
+                        oninput: (e) => (ui.allKeysFilter = e.target.value),
+                    })
+                ),
+                () => {
+                    if (ui.isLoading) return div({ class: "keys-loading" }, "Loading");
+
+                    const keys = handlers.getFilteredKeys();
+                    if (keys.length === 0) return div({ class: "keys-loading" }, "No keys match this filter");
+
+                    return div(
+                        { class: "keys-grid" },
+                        ...keys.map((key) =>
+                            KeyCheckbox({
+                                keyName: key,
+                                selectedKeys: ui.selectedKeys,
+                                onChange: handlers.handleKeyChange,
+                                isFavorite: handlers.isFavoriteKey,
+                                onToggleFavorite: handlers.toggleFavoriteKey,
+                            })
+                        )
+                    );
+                }
             )
         ),
         div({ class: "keys-footer" }, () =>
@@ -336,7 +376,7 @@ export const SearchInputSection = ({ ui, handlers }) =>
                         showPrimaryInput
                             ? input({
                                   type: "text",
-                                  class: "search-query-input",
+                                  class: "search-query-input global-search-input",
                                   placeholder: getScanTypePlaceholder(activeScanType),
                                   value: () => ui.searchQuery,
                                   oninput: handlers.handleQueryInput,
@@ -552,7 +592,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
     };
 
     const monitorPath = monitorPathForSearchResult(path);
-    const monitorData = () => resolveMonitorEntry(monitorPath, store.data.monitorValues || {}).entry;
+    const monitorData = () => liveMonitors.resolve(monitorPath).entry;
     const isMonitorEnabled = () => entryState.val.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);
@@ -660,16 +700,11 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
                 );
             }
 
-            return input({
-                class: "result-edit-input",
-                value: () => ui.savedEdit.draft,
-                oninput: (e) => (ui.savedEdit.draft = e.target.value),
-                onclick: (e) => e.stopPropagation(),
-                onkeydown: (e) => {
-                    e.stopPropagation();
-                    if (e.key === "Enter") handlers.saveSavedEdit();
-                    if (e.key === "Escape") handlers.cancelSavedEdit();
-                },
+            return ResultEditInput({
+                draft: () => ui.savedEdit.draft,
+                onInput: (e) => (ui.savedEdit.draft = e.target.value),
+                onSave: handlers.saveSavedEdit,
+                onCancel: handlers.cancelSavedEdit,
             });
         },
 
@@ -742,7 +777,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
     return { node, sync: (nextEntry) => (entryState.val = nextEntry) };
 };
 
-export const SavedResultsSection = ({ ui, handlers }) => {
+const SavedResultsSection = ({ ui, handlers }) => {
     const rowCache = new Map();
     const listNode = div({ class: "saved-results-list" });
     const reconcile = createStaticRowReconciler(listNode);
@@ -861,5 +896,210 @@ export const SavedResultsSection = ({ ui, handlers }) => {
             ),
             listNode
         )
+    );
+};
+
+const SelectedResultSection = ({ result, ui, handlers }) => {
+    const copyFeedback = van.state(false);
+    const savedEntry = () => ui.savedResults.find((entry) => entry.path === result.path) || null;
+    const isEditing = () => ui.edit.path === result.path && ui.edit.surface === "inspector";
+    const monitorEntry = () => liveMonitors.resolve(monitorPathForSearchResult(result.path)).entry;
+    const monitorHistory = () => (savedEntry()?.monitorEnabled === false ? [] : getMonitorHistory(monitorEntry()));
+
+    const copyPath = () => {
+        const success = copyToClipboard("bEngine.gameAttributes.h." + result.path);
+        copyFeedback.val = success;
+        store.notify(success ? "Path copied to clipboard" : "Failed to copy", success ? "success" : "error");
+        if (success) setTimeout(() => (copyFeedback.val = false), 1500);
+    };
+
+    const toggleSavedMonitor = () => {
+        const entry = savedEntry();
+        if (!entry) {
+            handlers.addToSavedResults(result);
+            return;
+        }
+        handlers.toggleSavedMonitor(result.path, entry.monitorEnabled === false);
+    };
+
+    return div(
+        { class: "search-selected-result" },
+        div(
+            { class: "selected-result-heading" },
+            span({ class: "selected-result-kicker" }, "GGA PATH"),
+            span({ class: "selected-result-path" }, result.path)
+        ),
+        div(
+            { class: "selected-result-meta" },
+            div(span("Type"), span({ class: `type-${result.type}` }, result.type || "unknown")),
+            div(
+                span("Saved"),
+                span(() => (savedEntry() ? "Yes" : "No"))
+            ),
+            div(
+                span("Watcher"),
+                span(() => {
+                    const entry = savedEntry();
+                    if (!entry) return "Not saved";
+                    if (entry.monitorEnabled === false) return "Paused";
+                    return monitorEntry()?.error ? "Error" : monitorEntry() ? "Live" : "Pending";
+                })
+            )
+        ),
+        div({ class: "selected-result-value" }, span({ class: "selected-result-label" }, "VALUE"), () =>
+            isEditing()
+                ? ResultEditInput({
+                      class: "result-edit-input selected-result-edit-input",
+                      draft: () => ui.edit.draft,
+                      onInput: (event) => (ui.edit.draft = event.target.value),
+                      onSave: handlers.saveEdit,
+                      onCancel: handlers.cancelEdit,
+                  })
+                : span({ class: `selected-result-display type-${result.type}` }, result.formattedValue)
+        ),
+        div({ class: "selected-result-history" }, () => {
+            const history = monitorHistory();
+            if (history.length === 0) {
+                return span({ class: "selected-result-history-empty" }, "Save this path to retain a live monitor.");
+            }
+            if (canGraph(history)) {
+                return div(
+                    { class: "selected-result-sparkline" },
+                    Sparkline({ data: history, width: 280, height: 54 })
+                );
+            }
+            return div(
+                { class: "selected-result-history-values" },
+                ...history
+                    .slice(0, 10)
+                    .map((entry) =>
+                        span({ title: new Date(entry.ts).toLocaleTimeString() }, formatDisplayValue(entry.value))
+                    )
+            );
+        }),
+        div(
+            { class: "selected-result-actions" },
+            () =>
+                isEditing()
+                    ? div(
+                          { class: "selected-result-edit-actions" },
+                          button({ class: "btn-primary", onclick: handlers.saveEdit }, "Save value"),
+                          button({ class: "btn-secondary", onclick: handlers.cancelEdit }, "Cancel")
+                      )
+                    : div(
+                          { class: "selected-result-edit-actions" },
+                          button(
+                              { class: "btn-primary", onclick: () => handlers.startEdit(result, "inspector") },
+                              Icons.Pencil(),
+                              "Edit value"
+                          ),
+                          button({ class: "btn-secondary", onclick: copyPath }, () =>
+                              copyFeedback.val ? "Copied" : "Copy path"
+                          )
+                      ),
+            button(
+                {
+                    class: () =>
+                        `btn-secondary selected-monitor-action ${savedEntry() && savedEntry().monitorEnabled !== false ? "active" : ""}`,
+                    onclick: toggleSavedMonitor,
+                },
+                Icons.Eye(),
+                () => {
+                    const entry = savedEntry();
+                    if (!entry) return "Save & monitor";
+                    return entry.monitorEnabled === false ? "Resume monitor" : "Pause monitor";
+                }
+            )
+        )
+    );
+};
+
+export const SearchInspector = ({ ui, handlers }) => {
+    const savedSection = SavedResultsSection({ ui, handlers });
+    const inspector = aside(
+        {
+            id: "search-inspector",
+            class: () => `search-inspector ${ui.inspectorOpen ? "is-open" : ""}`,
+            role: () => (ui.inspectorOverlay ? "dialog" : "complementary"),
+            "aria-modal": () => String(ui.inspectorOverlay && ui.inspectorOpen),
+            "aria-hidden": () => String(ui.inspectorOverlay && !ui.inspectorOpen),
+            "aria-label": "Search inspector",
+            onkeydown: handlers.handleInspectorKeydown,
+        },
+        div(
+            { class: "search-inspector-header" },
+            div(
+                { class: "search-inspector-tabs", role: "tablist", "aria-label": "Search inspector views" },
+                button(
+                    {
+                        class: () => `search-inspector-tab ${ui.inspectorTab === "selected" ? "active" : ""}`,
+                        role: "tab",
+                        "aria-selected": () => String(ui.inspectorTab === "selected"),
+                        onclick: () => (ui.inspectorTab = "selected"),
+                    },
+                    "Selected"
+                ),
+                button(
+                    {
+                        class: () => `search-inspector-tab ${ui.inspectorTab === "saved" ? "active" : ""}`,
+                        role: "tab",
+                        "aria-selected": () => String(ui.inspectorTab === "saved"),
+                        onclick: () => (ui.inspectorTab = "saved"),
+                    },
+                    "Saved",
+                    span({ class: "search-inspector-count" }, () => ui.savedResults.length)
+                )
+            ),
+            button(
+                {
+                    class: "search-inspector-close",
+                    onclick: handlers.closeInspector,
+                    "aria-label": "Close search inspector",
+                    title: "Close inspector",
+                },
+                Icons.X()
+            )
+        ),
+        div(
+            {
+                class: () => `search-inspector-panel ${ui.inspectorTab === "selected" ? "active" : ""}`,
+                role: "tabpanel",
+            },
+            () => {
+                const selected = handlers.getSelectedResult();
+                if (!selected) {
+                    return EmptyState({
+                        icon: Icons.Search(),
+                        title: "NO RESULT SELECTED",
+                        subtitle: "Select a result to inspect its path, value and monitor state",
+                    });
+                }
+                return SelectedResultSection({ result: selected, ui, handlers });
+            }
+        ),
+        div(
+            {
+                class: () => `search-inspector-panel ${ui.inspectorTab === "saved" ? "active" : ""}`,
+                role: "tabpanel",
+            },
+            savedSection
+        )
+    );
+
+    van.derive(() => {
+        if (!ui.inspectorOverlay || !ui.inspectorOpen) return;
+        setTimeout(() => inspector.querySelector(".search-inspector-tab.active")?.focus(), 0);
+    });
+
+    return div(
+        { class: "search-inspector-layer" },
+        button({
+            type: "button",
+            class: () => `search-inspector-backdrop ${ui.inspectorOpen ? "is-open" : ""}`,
+            onclick: handlers.closeInspector,
+            tabindex: () => (ui.inspectorOpen ? 0 : -1),
+            "aria-label": "Close search inspector",
+        }),
+        inspector
     );
 };

@@ -9,6 +9,7 @@
  */
 
 import van from "../../vendor/van-1.6.0.js";
+import store from "../../state/store.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
@@ -48,28 +49,36 @@ const ACCOUNT_TABS = [
 
 export const Account = () => {
     const activeTab = van.state(ACCOUNT_TABS[0].id);
-
-    return div(
-        { id: "options-account-tab", class: "tab-pane account-tab-layout" },
-
-        // Sub-navigation
+    const workspaceContext = div(
+        { class: "account-workspace-context", role: "navigation", "aria-label": "Account sections" },
         renderTabNav({
             tabs: ACCOUNT_TABS,
             activeId: activeTab,
-            navClass: "account-sub-nav",
+            navClass: "account-root-nav",
             buttonClass: (tab) => {
                 if (tab.isWorld) return `account-top-tab-btn world-tab-btn w${tab.worldNum}-world-tab`;
                 const compactClass = ["tasks", "cards", "bundles"].includes(tab.id) ? "account-compact-tab-btn" : "";
                 return `account-top-tab-btn account-options-btn ${compactClass}`;
             },
-            renderLabel: (tab) => (tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label),
-            getButtonProps: (tab) => ({ title: tab.label }),
-        }),
-
-        // Tab panes — lazy-mount: component is created (and its data fetched)
-        // only when the user first activates that tab. The div stays in the DOM
-        // so CSS visibility toggling keeps state alive after mount.
+            renderLabel: (tab) =>
+                tab.isWorld
+                    ? span(
+                          { class: "account-tree-label" },
+                          span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`),
+                          span({ class: "account-tree-label__text" }, tab.label)
+                      )
+                    : span({ class: "account-tree-label__text" }, tab.label),
+            getButtonProps: (tab) => ({ title: tab.label, "aria-label": tab.label }),
+            onSelect: () => store.closeMobileSidebar(),
+        })
+    );
+    return div(
+        { id: "options-account-tab", class: "tab-pane account-tab-layout" },
+        workspaceContext,
         div(
+            // Tab panes — lazy-mount: component is created (and its data fetched)
+            // only when the user first activates that tab. The div stays in the DOM
+            // so CSS visibility toggling keeps state alive after mount.
             { class: "account-sub-tab-content" },
             ...renderLazyPanes({
                 tabs: ACCOUNT_TABS,

@@ -87,14 +87,14 @@ export const BeanstackTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "GOLD FOOD",
-            note: () => `${entries.val.length} GOLD FOODS FROM Ninja[104]`,
+            note: () => `${entries.val.length} GOLD FOODS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "BEANSTACK",
-        description: "Edit Beanstack gold food levels from Ninja[104]. Names resolve through ItemDefinitionsGET.",
+        description: "Edit Beanstack gold food levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

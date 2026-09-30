@@ -9,7 +9,7 @@
  * The Stencyl game engine reference.
  * @type {object|null}
  */
-export let bEngine = null;
+let bEngine = null;
 
 /**
  * Game attributes map from the game.
@@ -134,22 +134,6 @@ export function registerCommonVariables(context) {
     });
 }
 
-/**
- * Get the current game context.
- * @returns {object|null}
- */
-export function getGameContext() {
-    return gameContext;
-}
-
-/**
- * Check if game globals are initialized.
- * @returns {boolean}
- */
-export function isGameReady() {
-    return bEngine !== null && itemDefs !== null;
-}
-
 // Individual accessor functions for backwards compatibility
 export const getBEngine = () => bEngine;
 export const getItemDefs = () => itemDefs;
@@ -157,5 +141,4 @@ export const getMonsterDefs = () => monsterDefs;
 export const getCList = () => cList;
 export const getBehavior = () => behavior;
 export const getEvents = () => events;
-export const getActorModel = () => ActorModel;
 export const getGGA = () => gga;

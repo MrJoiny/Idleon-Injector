@@ -32,9 +32,7 @@ function findBestFish(genInfo) {
     let bestType = -1;
     for (let i = 0; i < fishes.length; i++) {
         const f = fishes[i];
-        if (f[0] < 500 && f[1] !== 5
-            && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6)
-            && f[1] > bestType) {
+        if (f[0] < 500 && f[1] !== 5 && !(cheatConfig.minigame.fishing.skipWhale && f[1] === 6) && f[1] > bestType) {
             bestType = f[1];
             bestIndex = i;
         }

@@ -8,28 +8,23 @@
 export const VIEWS = {
     CHEATS: {
         id: "cheats-tab",
-        label: "CHEATS",
-        sidebarLabel: "CHEATS",
+        label: "Cheats",
     },
     ACCOUNT: {
         id: "options-account-tab",
-        label: "ACCOUNT OPTIONS LIST",
-        sidebarLabel: "ACCOUNT OPTIONS",
+        label: "Account",
     },
     CONFIG: {
         id: "config-tab",
-        label: "CONFIGURATION",
-        sidebarLabel: "CONFIG",
+        label: "Config",
     },
     SEARCH: {
         id: "search-tab",
-        label: "GGA SEARCH",
-        sidebarLabel: "SEARCH",
+        label: "Search",
     },
     DEVTOOLS: {
         id: "devtools-tab",
-        label: "CHROMEDEBUG",
-        sidebarLabel: "CHROMEDEBUG",
+        label: "DevTools",
     },
 };
 
@@ -51,9 +46,6 @@ export const CATEGORY_ORDER = [
     "minigame",
 ];
 
-/**
- * Curated list of favorite GGA keys for quick access in Search view.
- */
 export const FAVORITE_KEYS = [
     "OptionsListAccount",
     "OptionsList",

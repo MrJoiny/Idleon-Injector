@@ -20,8 +20,8 @@ let stateUpdateHandler = null;
 /** @type {Function|null} */
 let monitorUpdateHandler = null;
 
-/** @type {Map<string, string>} */
-const desiredMonitorSubscriptions = new Map();
+/** @type {Function|null} */
+let connectionChangeHandler = null;
 
 /** Reconnect interval in milliseconds (same as heartbeat) */
 const RECONNECT_INTERVAL = 10000;
@@ -84,9 +84,7 @@ function connect() {
             isConnected = true;
             console.log("[WebSocket] Connected to server");
 
-            for (const [id, path] of desiredMonitorSubscriptions.entries()) {
-                ws.send(JSON.stringify({ type: "monitor-subscribe", id, path }));
-            }
+            connectionChangeHandler?.(true);
         };
 
         ws.onmessage = handleMessage;
@@ -94,6 +92,7 @@ function connect() {
         ws.onclose = () => {
             isConnected = false;
             ws = null;
+            connectionChangeHandler?.(false);
             console.log("[WebSocket] Disconnected from server");
             scheduleReconnect();
         };
@@ -132,13 +131,20 @@ export function onMonitorUpdate(handler) {
 }
 
 /**
+ * Register the live-monitor owner's connection lifecycle handler.
+ * @param {Function} handler - Receives whether the socket is connected.
+ * @returns {void}
+ */
+export function onConnectionChange(handler) {
+    connectionChangeHandler = handler;
+}
+
+/**
  * Sends a monitor subscription request to the server
  * @param {string} id
  * @param {string} path
  */
 export function sendMonitorSubscribe(id, path) {
-    desiredMonitorSubscriptions.set(id, path);
-
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "monitor-subscribe", id, path }));
     }
@@ -149,8 +155,6 @@ export function sendMonitorSubscribe(id, path) {
  * @param {string} id
  */
 export function sendMonitorUnsubscribe(id) {
-    desiredMonitorSubscriptions.delete(id);
-
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "monitor-unsubscribe", id }));
     }
@@ -162,21 +166,4 @@ export function sendMonitorUnsubscribe(id) {
  */
 export function getConnectionStatus() {
     return isConnected;
-}
-
-/**
- * Closes the WebSocket connection
- */
-export function closeWebSocket() {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-
-    isConnected = false;
 }

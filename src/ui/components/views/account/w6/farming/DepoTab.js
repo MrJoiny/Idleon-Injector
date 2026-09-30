@@ -6,12 +6,7 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createIndexedStateGetter,
-    createStaticRowReconciler,
-    toInt,
-} from "../../accountShared.js";
+import { cleanName, createIndexedStateGetter, createStaticRowReconciler, toInt } from "../../accountShared.js";
 
 const { div } = van.tags;
 
@@ -89,7 +84,7 @@ export const DepoTab = () => {
                 seedSections.val.map((section) =>
                     AccountSection({
                         title: section.name,
-                        note: `${section.crops.length} CROPS, INDEX ${section.start}-${section.end}`,
+                        note: `${section.crops.length} CROPS`,
                         body: reconcileSection(section),
                     })
                 )
@@ -116,7 +111,7 @@ export const DepoTab = () => {
 
     return PersistentAccountListPage({
         title: "DEPO",
-        description: "Edit W6 Farming crop depo amounts from FarmCrop.h. Missing crops from SeedInfo show as 0.",
+        description: "Edit W6 Farming crop depo amounts. Missing crops show as 0.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -1,4 +1,3 @@
-const https = require("https");
 const { createLogger } = require("./utils/logger");
 
 const log = createLogger("UpdateChecker");
@@ -27,62 +26,33 @@ function compareVersions(v1, v2) {
  * @param {string} currentVersion - The current version of the application.
  * @returns {Promise<{updateAvailable: boolean, latestVersion: string, url: string}|null>}
  */
-function checkForUpdates(currentVersion) {
-    return new Promise((resolve) => {
-        const options = {
-            hostname: "api.github.com",
-            path: "/repos/MrJoiny/Idleon-Injector/releases/latest",
-            method: "GET",
-            headers: {
-                "User-Agent": "Idleon-Injector-Update-Checker",
-            },
+async function checkForUpdates(currentVersion) {
+    try {
+        const response = await fetch("https://api.github.com/repos/MrJoiny/Idleon-Injector/releases/latest", {
+            headers: { "User-Agent": "Idleon-Injector-Update-Checker" },
+        });
+
+        // Silently fail on non-200 to avoid annoying users if offline/rate limited
+        if (!response.ok) return null;
+
+        const release = await response.json();
+        const latestVersion = release.tag_name;
+        if (compareVersions(latestVersion, currentVersion) <= 0) return { updateAvailable: false };
+
+        return {
+            updateAvailable: true,
+            latestVersion,
+            url: release.html_url,
+            assets: (release.assets || []).map((asset) => ({
+                name: asset.name,
+                url: asset.browser_download_url,
+                size: asset.size,
+            })),
         };
-
-        const req = https.request(options, (res) => {
-            let data = "";
-
-            res.on("data", (chunk) => {
-                data += chunk;
-            });
-
-            res.on("end", () => {
-                if (res.statusCode === 200) {
-                    try {
-                        const release = JSON.parse(data);
-                        const latestVersion = release.tag_name;
-
-                        if (compareVersions(latestVersion, currentVersion) > 0) {
-                            resolve({
-                                updateAvailable: true,
-                                latestVersion: latestVersion,
-                                url: release.html_url,
-                                assets: (release.assets || []).map((a) => ({
-                                    name: a.name,
-                                    url: a.browser_download_url,
-                                    size: a.size,
-                                })),
-                            });
-                        } else {
-                            resolve({ updateAvailable: false });
-                        }
-                    } catch (e) {
-                        log.error("Failed to parse update check response:", e);
-                        resolve(null);
-                    }
-                } else {
-                    // Silently fail on non-200 to avoid annoying users if offline/rate limited
-                    resolve(null);
-                }
-            });
-        });
-
-        req.on("error", (error) => {
-            log.error("Update check failed:", error.message);
-            resolve(null);
-        });
-
-        req.end();
-    });
+    } catch (error) {
+        log.error("Update check failed:", error.message);
+        return null;
+    }
 }
 
 module.exports = { checkForUpdates };

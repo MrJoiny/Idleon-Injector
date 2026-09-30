@@ -52,7 +52,10 @@ const parsePlusIds = (value) => {
         .filter((id) => Number.isFinite(id));
 };
 
-const normalizeSearchText = (value) => String(value ?? "").trim().toLowerCase();
+const normalizeSearchText = (value) =>
+    String(value ?? "")
+        .trim()
+        .toLowerCase();
 
 const isUnusedPetText = (value) => {
     const text = normalizeSearchText(value);
@@ -168,7 +171,8 @@ const CompanionCard = ({ companion, enabledIds, isPlus, onToggle, onTogglePlus }
             button(
                 {
                     type: "button",
-                    class: () => ["companion-plus", isPlus(companion.id) && "companion-plus--on"].filter(Boolean).join(" "),
+                    class: () =>
+                        ["companion-plus", isPlus(companion.id) && "companion-plus--on"].filter(Boolean).join(" "),
                     "aria-pressed": () => isPlus(companion.id),
                     "aria-label": `Pets+ tier for ${companion.name}`,
                     onclick: () => onTogglePlus(companion.id),
@@ -195,7 +199,8 @@ export const CompanionsTab = () => {
 
     const isPlus = (id) => plusAll.val || plusIds.val.has(id);
 
-    const eligibleIds = () => companions.val.filter((companion) => !companion.isUnused).map((companion) => companion.id);
+    const eligibleIds = () =>
+        companions.val.filter((companion) => !companion.isUnused).map((companion) => companion.id);
 
     const load = () =>
         runLoad(async () => {
@@ -204,7 +209,11 @@ export const CompanionsTab = () => {
                 readCList("CompanionSetsInfo"),
             ]);
             const monsterKeys = [
-                ...new Set(toIndexedArray(rawCompanionDb).map((entry) => toIndexedArray(entry)[0]).filter(Boolean)),
+                ...new Set(
+                    toIndexedArray(rawCompanionDb)
+                        .map((entry) => toIndexedArray(entry)[0])
+                        .filter(Boolean)
+                ),
             ];
             const monsterDefs = monsterKeys.length
                 ? await readGgaEntries("MonsterDefinitionsGET.h", monsterKeys, ["Name"])
@@ -223,9 +232,7 @@ export const CompanionsTab = () => {
             const cheatOn = !!cheatStates?.data?.w1?.companion;
             const configured = config?.cheatConfig?.w1?.companion?.companions ?? "";
             plusAll.val = cheatOn && !configured;
-            plusIds.val = cheatOn
-                ? new Set(parsePlusIds(configured).filter((id) => validIdSet.has(id)))
-                : new Set();
+            plusIds.val = cheatOn ? new Set(parsePlusIds(configured).filter((id) => validIdSet.has(id))) : new Set();
         });
 
     const writeTokens = (idSet) =>
@@ -396,7 +403,10 @@ export const CompanionsTab = () => {
             "Activate the bonus of every available pet."
         ),
         withTooltip(
-            button({ class: "btn-secondary", onclick: () => handleBulkWrite([]), disabled: () => isBusy() }, "CLEAR ALL"),
+            button(
+                { class: "btn-secondary", onclick: () => handleBulkWrite([]), disabled: () => isBusy() },
+                "CLEAR ALL"
+            ),
             "Deactivate all pet bonuses."
         ),
         withTooltip(

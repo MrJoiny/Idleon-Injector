@@ -64,14 +64,14 @@ export const ImportsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "IMPORTS",
-            note: () => `${entries.val.length} IMPORTS FROM GamingSprout[25+]`,
+            note: () => `${entries.val.length} IMPORTS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "IMPORTS",
-        description: "Edit Gaming import levels from GamingSprout[25+] using RandoListo2 names.",
+        description: "Edit Gaming import levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

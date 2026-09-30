@@ -58,14 +58,14 @@ export const EssenceTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "ESSENCE",
-            note: () => `${entries.val.length} ESSENCE AMOUNTS FROM Summon[2]`,
+            note: () => `${entries.val.length} ESSENCE AMOUNTS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "ESSENCE",
-        description: "Edit Summoning essence amounts from Summon[2]. Names use the in-game essence color order.",
+        description: "Edit Summoning essence amounts. Names use the in-game essence color order.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

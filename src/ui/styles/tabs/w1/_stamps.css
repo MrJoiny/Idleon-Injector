@@ -6,7 +6,8 @@
 }
 
 .stamp-exalted-btn {
-    min-width: 104px;
+    width: 120px;
+    flex: 0 0 120px;
     border: 1px solid var(--c-border);
     background: var(--c-panel);
     color: var(--c-text-dim);
@@ -22,4 +23,17 @@
     color: var(--c-accent);
     background: color-mix(in srgb, var(--c-accent) 10%, var(--c-panel));
     font-weight: 700;
+}
+
+@media (max-width: 600px) {
+    .stamp-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .stamp-row .account-row__controls {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
 }

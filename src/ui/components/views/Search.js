@@ -1,8 +1,10 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
-import { detectQueryType } from "../../utils/index.js";
+import liveMonitors from "../../state/liveMonitors.js";
 import { FAVORITE_KEYS } from "../../state/constants.js";
+import { KeysSection, SearchInputSection, ResultsSection, SearchInspector } from "./search/SearchSections.js";
+import { detectQueryType } from "../../utils/index.js";
 import {
     NEW_SCAN_TYPES,
     NEXT_SCAN_TYPES,
@@ -12,20 +14,18 @@ import {
     needsPreviousSnapshot,
     buildSnapshotFromResults,
     filterResultsByScanType,
-} from "./search/scanUtils.js";
+} from "../../utils/search/scanUtils.js";
 import {
     seedEditValue,
     expectedUiType,
     validateEditDraft,
     monitorPathForSearchResult,
-    monitorIdFromMonitorPath,
     formatDisplayValue,
     getMonitorHistory,
-    resolveMonitorEntry,
     getUiTypeFromRawValue,
     getDraftFromRawValue,
     getResultValue,
-} from "./search/valueUtils.js";
+} from "../../utils/search/valueUtils.js";
 import {
     uniqueStrings,
     loadLocalFavoriteKeys,
@@ -37,17 +37,15 @@ import {
     pickInitialSelectedKeys,
     normalizeFilterText,
     matchesEntryFilter,
-} from "./search/workspaceUtils.js";
-import { KeysSection, SearchInputSection, ResultsSection, SavedResultsSection } from "./search/sections.js";
+} from "../../utils/search/workspaceUtils.js";
 
-const { div } = van.tags;
+const { div, button, span } = van.tags;
 
 export const Search = () => {
     const restoredWorkspace = loadSearchWorkspace() || {};
-    // loadLocalFavoriteKeys returns null only when the user has never set
-    // favorites; fall back to the curated defaults in that case, but honor a
-    // deliberately emptied list.
     const localFavoriteKeys = loadLocalFavoriteKeys();
+    const inspectorOverlayQuery = window.matchMedia("(max-width: 1279px)");
+    const keysOverlayQuery = window.matchMedia("(max-width: 1023px)");
     const initialSearchQuery = "";
 
     const ui = vanX.reactive({
@@ -70,11 +68,10 @@ export const Search = () => {
         results: [],
         displayLimit: 50,
         error: null,
-        allKeysExpanded: false,
         allKeysFilter: "",
         scopePaths: [],
         lastSearchMode: "new",
-        edit: { path: null, draft: "", type: "" },
+        edit: { path: null, draft: "", type: "", surface: "row" },
         isSettingValue: false,
         hasSearched: false,
         savedResults: Array.isArray(restoredWorkspace.savedResults)
@@ -82,13 +79,37 @@ export const Search = () => {
             : [],
         savedEdit: { path: null, draft: "", type: "" },
         isRefreshingSavedResults: false,
+        selectedResultPath: null,
+        inspectorTab: "saved",
+        inspectorOpen: false,
+        keysOpen: false,
+        inspectorOverlay: inspectorOverlayQuery.matches,
+        keysOverlay: keysOverlayQuery.matches,
     });
 
-    const getValidFavorites = () => uniqueStrings(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
+    inspectorOverlayQuery.addEventListener("change", (event) => {
+        const focusWasInInspector = document.activeElement?.closest("#search-inspector");
+        ui.inspectorOverlay = event.matches;
+        ui.inspectorOpen = false;
+        if (event.matches && focusWasInInspector) {
+            setTimeout(() => document.querySelector("#search-tab .search-inspector-toggle")?.focus(), 0);
+        }
+    });
 
-    const getOtherKeys = () => {
-        const favSet = new Set(getValidFavorites());
-        let keys = ui.allKeys.filter((k) => !favSet.has(k));
+    keysOverlayQuery.addEventListener("change", (event) => {
+        const focusWasInKeys = document.activeElement?.closest("#search-keys-panel");
+        ui.keysOverlay = event.matches;
+        ui.keysOpen = false;
+        if (event.matches && focusWasInKeys) {
+            setTimeout(() => document.querySelector("#search-tab .search-keys-toggle")?.focus(), 0);
+        }
+    });
+
+    const getValidFavorites = () => uniqueStrings(ui.favoriteKeys).filter((key) => ui.allKeys.includes(key));
+
+    const getFilteredKeys = () => {
+        const favorites = new Set(getValidFavorites());
+        let keys = ui.allKeys.filter((key) => !favorites.has(key));
         if (ui.allKeysFilter) {
             const filter = ui.allKeysFilter.toLowerCase();
             keys = keys.filter((k) => k.toLowerCase().includes(filter));
@@ -109,49 +130,10 @@ export const Search = () => {
         }
     };
 
-    const getResolvedMonitorEntry = (path) => {
-        return resolveMonitorEntry(path, store.data.monitorValues || {});
-    };
+    const getResolvedMonitorEntry = liveMonitors.resolve;
 
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
-    const subscribedMonitorPaths = new Set();
-    const filterCache = {
-        results: { source: null, query: "", values: [] },
-        saved: { source: null, query: "", values: [] },
-    };
-
-    const reconcileMonitorSubscriptions = () => {
-        const desiredPaths = new Set();
-
-        for (const entry of ui.savedResults) {
-            if (!entry?.path) continue;
-
-            if (entry.monitorEnabled === false) continue;
-
-            desiredPaths.add(entry.path);
-        }
-
-        for (const path of desiredPaths) {
-            const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-
-            if (subscribedMonitorPaths.has(path) && !resolvedMonitor.entry) {
-                subscribedMonitorPaths.delete(path);
-            }
-
-            if (subscribedMonitorPaths.has(path)) continue;
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(path);
-        }
-
-        for (const path of [...subscribedMonitorPaths]) {
-            if (desiredPaths.has(path)) continue;
-
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
-        }
-    };
 
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
@@ -216,33 +198,84 @@ export const Search = () => {
     });
 
     van.derive(() => {
-        ui.savedResults;
-        store.data.monitorValues;
-        reconcileMonitorSubscriptions();
+        liveMonitors.sync(
+            ui.savedResults
+                .filter((entry) => entry.path && entry.monitorEnabled !== false)
+                .map((entry) => monitorPathForSearchResult(entry.path))
+        );
     });
 
-    const getFilteredList = (source, appliedFilter, cache) => {
+    const getFilteredList = (source, appliedFilter) => {
         const query = normalizeFilterText(appliedFilter);
-        if (cache.source === source && cache.query === query) {
-            return cache.values;
-        }
-
-        const values = query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
-        cache.source = source;
-        cache.query = query;
-        cache.values = values;
-        return values;
+        return query ? source.filter((entry) => matchesEntryFilter(entry, query)) : source;
     };
 
-    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied, filterCache.results);
-    const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied, filterCache.saved);
+    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied);
+    const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied);
+    let inspectorTrigger = null;
+    let keysTrigger = null;
+
+    const closeInspector = () => {
+        if (!ui.inspectorOpen) return;
+        if (document.activeElement?.closest("#search-inspector")) document.activeElement.blur();
+        ui.inspectorOpen = false;
+        setTimeout(() => inspectorTrigger?.focus(), 0);
+    };
+
+    const closeKeysPane = () => {
+        if (!ui.keysOpen) return;
+        if (document.activeElement?.closest("#search-keys-panel")) document.activeElement.blur();
+        ui.keysOpen = false;
+        setTimeout(() => keysTrigger?.focus(), 0);
+    };
 
     const handlers = {
         getValidFavorites,
-        getOtherKeys,
+        getFilteredKeys,
         areAllSelected,
         getFilteredResults,
         getFilteredSavedResults,
+        getSelectedResult: () => ui.results.find((result) => result.path === ui.selectedResultPath) || null,
+        selectResult: (result, event) => {
+            if (ui.edit.path && ui.edit.path !== result.path) handlers.cancelEdit();
+            if (ui.savedEdit.path) handlers.cancelSavedEdit();
+            ui.selectedResultPath = result.path;
+            ui.inspectorTab = "selected";
+            ui.inspectorOpen = ui.inspectorOverlay;
+            inspectorTrigger = event?.currentTarget || document.activeElement;
+        },
+        openSavedInspector: (event) => {
+            ui.inspectorTab = "saved";
+            ui.inspectorOpen = true;
+            inspectorTrigger = event?.currentTarget || document.activeElement;
+        },
+        closeInspector,
+        toggleInspector: (event) => {
+            if (ui.inspectorOpen) {
+                closeInspector();
+                return;
+            }
+            ui.inspectorOpen = true;
+            inspectorTrigger = event?.currentTarget || document.activeElement;
+        },
+        openKeysPane: (event) => {
+            ui.keysOpen = true;
+            keysTrigger = event?.currentTarget || document.activeElement;
+            setTimeout(() => document.querySelector("#search-keys-panel .search-keys-close")?.focus(), 0);
+        },
+        closeKeysPane,
+        handleInspectorKeydown: (event) => {
+            if (ui.inspectorOpen && event.key === "Escape") {
+                event.preventDefault();
+                closeInspector();
+            }
+        },
+        handleKeysPanelKeydown: (event) => {
+            if (ui.keysOpen && event.key === "Escape") {
+                event.preventDefault();
+                closeKeysPane();
+            }
+        },
 
         handleKeyChange: (keyName, isChecked) => updateSelection([keyName], isChecked),
 
@@ -257,15 +290,10 @@ export const Search = () => {
         },
 
         isFavoriteKey: (keyName) => ui.favoriteKeys.includes(keyName),
-
         toggleFavoriteKey: (keyName) => {
-            const hasKey = ui.favoriteKeys.includes(keyName);
-            if (hasKey) {
-                ui.favoriteKeys = ui.favoriteKeys.filter((key) => key !== keyName);
-                return;
-            }
-
-            ui.favoriteKeys = [...ui.favoriteKeys, keyName];
+            ui.favoriteKeys = ui.favoriteKeys.includes(keyName)
+                ? ui.favoriteKeys.filter((key) => key !== keyName)
+                : [...ui.favoriteKeys, keyName];
         },
 
         handleResultsFilterInput: (e) => {
@@ -323,6 +351,8 @@ export const Search = () => {
             ui.displayLimit = 50;
             ui.error = null;
             ui.hasSearched = false;
+            ui.selectedResultPath = null;
+            ui.inspectorTab = "saved";
             handlers.cancelEdit();
             handlers.cancelSavedEdit();
             store.notify("Scan reset. Ready for first scan.", "success");
@@ -376,9 +406,6 @@ export const Search = () => {
 
             ui.savedResults = [...ui.savedResults, entry];
 
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(result.path);
-
             store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
         },
 
@@ -408,21 +435,14 @@ export const Search = () => {
             });
 
             if (enabled) {
-                store.subscribeMonitor(monitorPath);
-                subscribedMonitorPaths.add(path);
                 store.notify("Enabled watcher for " + path);
                 return;
             }
 
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPath));
-            subscribedMonitorPaths.delete(path);
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
-
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
             if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
             store.notify(`Removed ${path} from saved list`);
@@ -430,11 +450,6 @@ export const Search = () => {
 
         clearSavedResults: () => {
             if (ui.savedResults.length === 0) return;
-
-            for (const entry of ui.savedResults) {
-                store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(entry.path)));
-                subscribedMonitorPaths.delete(entry.path);
-            }
 
             ui.savedResults = [];
             handlers.cancelSavedEdit();
@@ -505,18 +520,20 @@ export const Search = () => {
 
         saveSavedEdit: () => commitEdit(ui.savedEdit, handlers.cancelSavedEdit),
 
-        startEdit: (result) => {
+        startEdit: (result, surface = "row") => {
             if (ui.isSettingValue) return; // don't switch rows mid-write
             handlers.cancelSavedEdit();
             ui.edit.path = result.path;
             ui.edit.draft = seedEditValue(result);
             ui.edit.type = expectedUiType(result);
+            ui.edit.surface = surface;
         },
 
         cancelEdit: () => {
             ui.edit.path = null;
             ui.edit.draft = "";
             ui.edit.type = "";
+            ui.edit.surface = "row";
         },
 
         saveEdit: () => commitEdit(ui.edit, handlers.cancelEdit),
@@ -634,6 +651,10 @@ export const Search = () => {
                     : baseData.results || [];
 
                 ui.results = filteredResults;
+                if (!filteredResults.some((result) => result.path === ui.selectedResultPath)) {
+                    ui.selectedResultPath = null;
+                    ui.inspectorTab = "saved";
+                }
                 ui.scopePaths = filteredResults.map((r) => r.path);
                 ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
                 ui.scanSessionActive = true;
@@ -661,8 +682,7 @@ export const Search = () => {
         try {
             const allKeys = await store.fetchGgaKeys();
             ui.allKeys = allKeys;
-            const validFavorites = getValidFavorites();
-            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys, validFavorites);
+            ui.selectedKeys = pickInitialSelectedKeys(allKeys, restoredWorkspace.selectedKeys, getValidFavorites());
         } catch (err) {
             ui.error = err.message || "Failed to load GGA keys";
         } finally {
@@ -675,12 +695,46 @@ export const Search = () => {
         div(
             { class: "search-layout" },
             KeysSection({ ui, handlers }),
+            button({
+                type: "button",
+                class: () => `search-keys-backdrop ${ui.keysOpen ? "is-open" : ""}`,
+                onclick: handlers.closeKeysPane,
+                tabindex: () => (ui.keysOpen ? 0 : -1),
+                "aria-label": "Close key navigation",
+            }),
             div(
                 { class: "search-right-column" },
+                div(
+                    { class: "search-pane-toolbar" },
+                    button(
+                        {
+                            type: "button",
+                            class: "search-keys-toggle",
+                            onclick: handlers.openKeysPane,
+                            "aria-expanded": () => String(ui.keysOpen),
+                            "aria-controls": "search-keys-panel",
+                        },
+                        "Keys",
+                        span({ class: "search-toolbar-count" }, () => ui.selectedKeys.length)
+                    ),
+                    button(
+                        {
+                            type: "button",
+                            class: "search-inspector-toggle",
+                            onclick: handlers.toggleInspector,
+                            "aria-expanded": () => String(ui.inspectorOpen),
+                            "aria-controls": "search-inspector",
+                        },
+                        () => (ui.inspectorTab === "saved" ? "Saved" : "Inspector"),
+                        span({ class: "search-toolbar-count" }, () =>
+                            ui.inspectorTab === "saved" ? ui.savedResults.length : ui.selectedResultPath ? 1 : 0
+                        )
+                    )
+                ),
                 SearchInputSection({ ui, handlers }),
-                ResultsSection({ ui, handlers }),
-                SavedResultsSection({ ui, handlers })
-            )
+                ResultsSection({ ui, handlers })
+            ),
+            SearchInspector({ ui, handlers })
         )
     );
 };

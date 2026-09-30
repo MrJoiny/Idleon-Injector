@@ -520,7 +520,7 @@ exports.cheatConfig = {
             StatueUpgOdds: (t) => t * 2, // double the odds of statue upgrade
             Statue_CanAfford: (t) => 1, // free statue upgrades
             StatueBon: (t) => t * 2, // double statue bonus
-            ArmoryUpgCost: (t) => t / 2, // half cost armory upgrades 
+            ArmoryUpgCost: (t) => t / 2, // half cost armory upgrades
             RatDMG: (t) => t * 2, // double rat dmg
             ParchmentDrop: (t) => t * 2, // double parchment drop
             MarbleDrop: (t) => t * 2, // double marble drop
@@ -934,6 +934,8 @@ exports.injectorConfig = {
     interceptPattern: "*N.js",
     enableUI: true,
     webPort: 8080,
+    webHost: "127.0.0.1",
+    webAllowedOrigins: [], // exact remote UI origins; requires a non-loopback webHost
     onLinuxTimeout: 60000,
     target: "web", // "web" or "steam"
     webUrl: "https://www.legendsofidleon.com/ytGl5oc/",

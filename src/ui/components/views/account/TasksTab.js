@@ -8,7 +8,7 @@ import { cleanName, cleanNameEffect, createStaticRowReconciler, getOrCreateState
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { AccountSection } from "./components/AccountSection.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
+import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div, span } = van.tags;
 
@@ -127,7 +127,7 @@ const TasksWorldTasksTab = ({ worldIndex }) => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "TASKS",
-            note: () => `${entries.val.length} TASKS FROM Tasks[1][${worldIndex}]`,
+            note: () => `${entries.val.length} TASKS`,
             body: listNode,
         })
     );
@@ -377,7 +377,7 @@ const TasksWorldMeritShopTab = ({ worldIndex }) => {
 
     return PersistentAccountListPage({
         title: `${worldLabel} MERIT SHOP`,
-        description: "Edit merit shop purchases from Tasks[2]. Max purchases come from TaskShopDesc.",
+        description: "Edit merit shop purchases.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
         state: { loading, error },
         loadingText: `READING ${worldLabel} MERIT SHOP`,
@@ -397,8 +397,6 @@ const WorldTasksPanel = ({ worldIndex }) => {
             activeId: active,
             navClass: "account-nested-sub-nav",
             buttonClass: "account-nested-sub-tab-btn",
-            stubClass: "account-nested-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component,
         }),
         div(
             { class: "account-nested-sub-content" },
@@ -408,8 +406,7 @@ const WorldTasksPanel = ({ worldIndex }) => {
                 paneClass: "account-nested-pane",
                 activeClass: "account-nested-pane--active",
                 dataAttr: "data-tasks-panel",
-                renderContent: (tab) =>
-                    tab.component ? tab.component(worldIndex) : createComingSoonPlaceholder(tab.label),
+                renderContent: (tab) => tab.component(worldIndex),
             })
         )
     );

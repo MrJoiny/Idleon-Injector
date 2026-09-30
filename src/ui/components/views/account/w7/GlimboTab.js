@@ -86,7 +86,7 @@ export const GlimboTab = () => {
 
     return PersistentAccountListPage({
         title: "GLIMBO",
-        description: "Set W7 Glimbo trade levels from Research[12]. Item names come from Research[27] item IDs.",
+        description: "Set W7 Glimbo trade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -1,5 +1,4 @@
-import van from "../../../../vendor/van-1.6.0.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
+import { createNestedTab } from "../tabShared.js";
 import { BellTab } from "./hole/BellTab.js";
 import { CglunkoTab } from "./hole/CglunkoTab.js";
 import { CosmoTab } from "./hole/CosmoTab.js";
@@ -19,8 +18,6 @@ import { StudiesTab } from "./hole/StudiesTab.js";
 import { TempleTab } from "./hole/TempleTab.js";
 import { VillagersTab } from "./hole/VillagersTab.js";
 import { WellTab } from "./hole/WellTab.js";
-
-const { div } = van.tags;
 
 const HOLE_SUBTABS = [
     { id: "opals", label: "OPALS", component: OpalsTab },
@@ -44,29 +41,4 @@ const HOLE_SUBTABS = [
     { id: "crystal-cove", label: "CRYSTAL COVE", component: CglunkoTab },
 ];
 
-export const HoleTab = () => {
-    const activeSubTab = van.state(HOLE_SUBTABS[0].id);
-
-    return div(
-        { class: "tab-container hole-tab" },
-        renderTabNav({
-            tabs: HOLE_SUBTABS,
-            activeId: activeSubTab,
-            navClass: "account-nested-sub-nav",
-            buttonClass: "account-nested-sub-tab-btn",
-            stubClass: "account-nested-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component,
-        }),
-        div(
-            { class: "account-nested-sub-content" },
-            ...renderLazyPanes({
-                tabs: HOLE_SUBTABS,
-                activeId: activeSubTab,
-                paneClass: "account-nested-pane",
-                activeClass: "account-nested-pane--active",
-                dataAttr: "data-hole",
-                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
-            })
-        )
-    );
-};
+export const HoleTab = createNestedTab(HOLE_SUBTABS, "hole-tab", "data-hole");

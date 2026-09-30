@@ -116,14 +116,17 @@ export const MealsTab = () => {
     const reconcileMealRows = createStaticRowReconciler(mealRows);
 
     const reconcileRows = () =>
-        reconcileMealRows(
-            mealEntries.val.map((entry) => entry.key).join("|"),
-            () => mealEntries.val.map((entry) => MealRow({ entry, fieldStates: mealFieldStates }))
+        reconcileMealRows(mealEntries.val.map((entry) => entry.key).join("|"), () =>
+            mealEntries.val.map((entry) => MealRow({ entry, fieldStates: mealFieldStates }))
         );
 
     const load = async () =>
         run(async () => {
-            const [rawMeals, rawMealInfo, rawRibbons] = await Promise.all([gga("Meals"), readCList("MealINFO"), gga("Ribbon")]);
+            const [rawMeals, rawMealInfo, rawRibbons] = await Promise.all([
+                gga("Meals"),
+                readCList("MealINFO"),
+                gga("Ribbon"),
+            ]);
 
             mealEntries.val = buildMealEntries(rawMealInfo, rawMeals?.[0], rawMeals?.[2], rawRibbons);
             reconcileRows();
@@ -141,7 +144,7 @@ export const MealsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "MEALS",
-            note: () => `${mealEntries.val.length} NAMED MEALS FROM MealINFO`,
+            note: () => `${mealEntries.val.length} NAMED MEALS`,
             body: mealRows,
         })
     );

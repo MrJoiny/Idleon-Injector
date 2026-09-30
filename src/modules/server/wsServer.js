@@ -6,6 +6,7 @@
  */
 
 const { WebSocketServer } = require("ws");
+const { relayDevTools } = require("./devtoolsRelay");
 const { createLogger } = require("../utils/logger");
 
 const log = createLogger("WebSocket");
@@ -293,14 +294,33 @@ async function cleanupClientSubscriptions(ws) {
  * @param {Object} httpServer - Node.js HTTP server instance
  * @param {Object} runtime - CDP Runtime client
  * @param {string} context - JavaScript expression for game context
+ * @param {Function} acceptsRequest - Shared HTTP/WebSocket access policy
+ * @param {Object} [devtools] - CDP client and port for the embedded inspector
  */
-function initWebSocket(httpServer, runtime, context) {
+function initWebSocket(httpServer, runtime, context, acceptsRequest, devtools) {
     runtimeRef = runtime;
     contextRef = context;
 
-    wss = new WebSocketServer({ server: httpServer });
+    wss = new WebSocketServer({
+        server: httpServer,
+        verifyClient: ({ req }) => {
+            if (acceptsRequest(req)) return true;
+            // The bundled frontend is served by CDP, on a different loopback port.
+            // Allow that origin only for the relay, retaining the shared Host check.
+            return (
+                devtools &&
+                req.url === "/devtools" &&
+                req.headers.origin === `http://localhost:${devtools.cdpPort}` &&
+                acceptsRequest({ ...req, headers: { ...req.headers, origin: `http://${req.headers.host}` } })
+            );
+        },
+    });
 
-    wss.on("connection", (ws) => {
+    wss.on("connection", (ws, req) => {
+        if (req.url === "/devtools" && devtools) {
+            void relayDevTools(ws, devtools);
+            return;
+        }
         clients.add(ws);
         getClientMonitorMap(ws);
         ws.clientType = "ui";
@@ -625,64 +645,7 @@ function broadcastMonitorState() {
     }
 }
 
-/**
- * Gets the number of connected WebSocket clients
- * @returns {number} Number of connected clients
- */
-function getConnectedClients() {
-    return clients.size;
-}
-
-/**
- * Closes the WebSocket server and all connections
- */
-function closeWebSocket() {
-    if (wss) {
-        // Best-effort, non-blocking: awaiting a CDP evaluate during shutdown can
-        // hang if the connection is already gone. We still inspect
-        // exceptionDetails so a game-context failure is logged rather than lost.
-        if (runtimeRef && contextRef) {
-            void (async () => {
-                try {
-                    const result = await runtimeRef.evaluate({
-                        expression: "window.monitorUnwrapAll()",
-                        awaitPromise: true,
-                        returnByValue: true,
-                    });
-                    if (result.exceptionDetails) {
-                        log.error("Error unwrapping all monitors during shutdown:", result.exceptionDetails.text);
-                    }
-                } catch (err) {
-                    log.error("Error unwrapping all monitors during shutdown:", err.message);
-                }
-            })();
-        }
-
-        for (const client of clients) {
-            client.close();
-        }
-        clients.clear();
-        clientMonitorState.clear();
-        for (const retryMap of monitorSubscribeRetryTimers.values()) {
-            for (const timer of retryMap.values()) {
-                clearTimeout(timer);
-            }
-        }
-        monitorSubscribeRetryTimers.clear();
-        for (const timer of monitorSendTimers.values()) {
-            clearTimeout(timer);
-        }
-        monitorSendTimers.clear();
-        globalWatchersByPath.clear();
-        wss.close();
-        wss = null;
-        log.info("Server closed");
-    }
-}
-
 module.exports = {
     initWebSocket,
     broadcastCheatStates,
-    getConnectedClients,
-    closeWebSocket,
 };

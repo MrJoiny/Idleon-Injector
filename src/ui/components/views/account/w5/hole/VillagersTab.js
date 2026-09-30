@@ -32,12 +32,13 @@ const buildVillagerEntries = (holes, rawNames) => {
 
 const VillagerRow = ({ entry, valueStates }) =>
     AccountRow({
+        rowClass: "villager-row",
         info: [
             span({ class: "account-row__index" }, `#${entry.index}`),
             div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => `LV ${getOrCreateState(valueStates, entry.fields.level.key).val ?? 0}`,
-        controlsClass: "account-row__controls--stack",
+        controlsClass: "account-row__controls--stack villager-row__controls",
         controls: [
             InlineEditableNumberField({
                 label: "Level",
@@ -83,7 +84,7 @@ export const VillagersTab = () => {
 
     return PersistentAccountListPage({
         title: "VILLAGERS",
-        description: "Edit villager levels, XP, and opals from Holes[1], Holes[2], and Holes[3].",
+        description: "Edit villager levels, XP, and opals.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

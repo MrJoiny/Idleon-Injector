@@ -702,7 +702,7 @@ export const CogsTab = () => {
 
     return PersistentAccountListPage({
         title: "CONSTRUCTION - COGS",
-        description: "Click a slot to view details and edit CogMap fields.",
+        description: "Click a slot to view details and edit its values.",
         actions: RefreshButton({ onRefresh: load }),
         state: { loading, error },
         body: boardPane,

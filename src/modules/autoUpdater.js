@@ -1,5 +1,3 @@
-const https = require("https");
-const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -9,7 +7,6 @@ const { createLogger } = require("./utils/logger");
 
 const log = createLogger("AutoUpdater");
 
-const MAX_REDIRECTS = 5;
 const UPDATE_FILES = ["cheats.js", "config.js"];
 const RELEASE_ARCHIVES = {
     win32: [{ name: "InjectCheatsUI-Windows.zip" }],
@@ -24,48 +21,15 @@ const RELEASE_ARCHIVES = {
  * Download a file from a URL, following HTTP redirects.
  * @param {string} url - URL to download
  * @param {string} destPath - Local file path to write to
- * @param {number} [redirectCount=0] - Current redirect depth
  * @returns {Promise<void>}
  */
-function downloadFile(url, destPath, redirectCount = 0) {
-    return new Promise((resolve, reject) => {
-        if (redirectCount > MAX_REDIRECTS) {
-            return reject(new Error("Too many redirects"));
-        }
-
-        const requestUrl = new URL(url);
-        const options = {
-            hostname: requestUrl.hostname,
-            path: requestUrl.pathname + requestUrl.search,
-            method: "GET",
-            headers: { "User-Agent": "Idleon-Injector-AutoUpdater" },
-        };
-
-        const handler = (res) => {
-            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                res.resume();
-                return resolve(downloadFile(res.headers.location, destPath, redirectCount + 1));
-            }
-
-            if (res.statusCode !== 200) {
-                res.resume();
-                return reject(new Error(`Download failed with status ${res.statusCode}`));
-            }
-
-            const file = fs.createWriteStream(destPath);
-            res.pipe(file);
-            file.on("finish", () => file.close(resolve));
-            file.on("error", (err) => {
-                fs.unlink(destPath, () => {});
-                reject(err);
-            });
-        };
-
-        const transport = requestUrl.protocol === "https:" ? https : http;
-        const req = transport.request(options, handler);
-        req.on("error", reject);
-        req.end();
+async function downloadFile(url, destPath) {
+    const response = await fetch(url, {
+        headers: { "User-Agent": "Idleon-Injector-AutoUpdater" },
     });
+    if (!response.ok) throw new Error(`Download failed with status ${response.status}`);
+
+    await fs.promises.writeFile(destPath, Buffer.from(await response.arrayBuffer()));
 }
 
 /**

@@ -62,15 +62,13 @@ export const JewelsTab = () => {
     const reconcileJewelRows = createStaticRowReconciler(jewelRows);
 
     const reconcileRows = () =>
-        reconcileJewelRows(
-            jewelEntries.val.map((entry) => entry.key).join("|"),
-            () =>
-                jewelEntries.val.map((entry) =>
-                    JewelRow({
-                        entry,
-                        unlockedState: getJewelState(entry.index),
-                    })
-                )
+        reconcileJewelRows(jewelEntries.val.map((entry) => entry.key).join("|"), () =>
+            jewelEntries.val.map((entry) =>
+                JewelRow({
+                    entry,
+                    unlockedState: getJewelState(entry.index),
+                })
+            )
         );
 
     const load = async () =>
@@ -87,7 +85,7 @@ export const JewelsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "JEWELS",
-            note: () => `${jewelEntries.val.length} JEWELS FROM Lab[14]`,
+            note: () => `${jewelEntries.val.length} JEWELS`,
             body: jewelRows,
         })
     );

@@ -45,20 +45,30 @@ export const Icons = {
                             fill: "white",
                             d: "M108.66,15 L169.34,50 Q178,55 178,65 L178,135 Q178,145 169.34,150 L108.66,185 Q100,190 91.34,185 L30.66,150 Q22,145 22,135 L22,65 Q22,55 30.66,50 L91.34,15 Q100,10 108.66,15 Z",
                         }),
-                        g({ fill: "none", stroke: "black", "stroke-width": "8", transform: "rotate(-45 100 100)" }, [
-                            rect({
-                                x: "85",
-                                y: "60",
-                                width: "30",
-                                height: "80",
-                                rx: "4",
-                                fill: "black",
-                                stroke: "none",
-                            }),
-                            line({ x1: "100", y1: "40", x2: "100", y2: "60" }),
-                            line({ x1: "85", y1: "40", x2: "115", y2: "40" }),
-                            line({ x1: "100", y1: "140", x2: "100", y2: "170" }),
-                        ]),
+                        g(
+                            {
+                                fill: "none",
+                                stroke: "black",
+                                "stroke-width": "10",
+                                "stroke-linecap": "round",
+                                transform: "rotate(-45 100 100)",
+                            },
+                            [
+                                rect({
+                                    x: "85",
+                                    y: "60",
+                                    width: "30",
+                                    height: "80",
+                                    rx: "4",
+                                    fill: "black",
+                                    stroke: "none",
+                                }),
+                                line({ x1: "74", y1: "60", x2: "126", y2: "60" }),
+                                line({ x1: "100", y1: "38", x2: "100", y2: "60" }),
+                                line({ x1: "82", y1: "38", x2: "118", y2: "38" }),
+                                line({ x1: "100", y1: "140", x2: "100", y2: "172" }),
+                            ]
+                        ),
                     ])
                 ),
                 rect({
@@ -201,23 +211,6 @@ export const Icons = {
             { "stroke-width": "2", "aria-hidden": "true", ...props }
         ),
 
-    Keyboard: (props) =>
-        SvgBase(
-            [
-                rect({ x: "2", y: "4", width: "20", height: "16", rx: "2", ry: "2" }),
-                line({ x1: "6", y1: "8", x2: "6.01", y2: "8" }),
-                line({ x1: "10", y1: "8", x2: "10.01", y2: "8" }),
-                line({ x1: "14", y1: "8", x2: "14.01", y2: "8" }),
-                line({ x1: "18", y1: "8", x2: "18.01", y2: "8" }),
-                line({ x1: "6", y1: "12", x2: "6.01", y2: "12" }),
-                line({ x1: "10", y1: "12", x2: "10.01", y2: "12" }),
-                line({ x1: "14", y1: "12", x2: "14.01", y2: "12" }),
-                line({ x1: "18", y1: "12", x2: "18.01", y2: "12" }),
-                line({ x1: "7", y1: "16", x2: "17", y2: "16" }),
-            ],
-            { "stroke-width": "2", "aria-hidden": "true", ...props }
-        ),
-
     List: (props) =>
         SvgBase(
             [
@@ -227,17 +220,6 @@ export const Icons = {
                 line({ x1: "3", y1: "6", x2: "3.01", y2: "6" }),
                 line({ x1: "3", y1: "12", x2: "3.01", y2: "12" }),
                 line({ x1: "3", y1: "18", x2: "3.01", y2: "18" }),
-            ],
-            { "stroke-width": "2", "aria-hidden": "true", ...props }
-        ),
-
-    Tabs: (props) =>
-        SvgBase(
-            [
-                rect({ x: "3", y: "3", width: "7", height: "7" }),
-                rect({ x: "14", y: "3", width: "7", height: "7" }),
-                rect({ x: "14", y: "14", width: "7", height: "7" }),
-                rect({ x: "3", y: "14", width: "7", height: "7" }),
             ],
             { "stroke-width": "2", "aria-hidden": "true", ...props }
         ),
@@ -302,4 +284,27 @@ export const Icons = {
             }),
             { "stroke-width": "2", "aria-hidden": "true", ...props }
         ),
+
+    Sun: (props) =>
+        SvgBase(
+            [
+                circle({ cx: "12", cy: "12", r: "5" }),
+                line({ x1: "12", y1: "1", x2: "12", y2: "3" }),
+                line({ x1: "12", y1: "21", x2: "12", y2: "23" }),
+                line({ x1: "4.22", y1: "4.22", x2: "5.64", y2: "5.64" }),
+                line({ x1: "18.36", y1: "18.36", x2: "19.78", y2: "19.78" }),
+                line({ x1: "1", y1: "12", x2: "3", y2: "12" }),
+                line({ x1: "21", y1: "12", x2: "23", y2: "12" }),
+                line({ x1: "4.22", y1: "19.78", x2: "5.64", y2: "18.36" }),
+                line({ x1: "18.36", y1: "5.64", x2: "19.78", y2: "4.22" }),
+            ],
+            { "stroke-width": "2", "aria-hidden": "true", ...props }
+        ),
+
+    Moon: (props) =>
+        SvgBase(path({ d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" }), {
+            "stroke-width": "2",
+            "aria-hidden": "true",
+            ...props,
+        }),
 };

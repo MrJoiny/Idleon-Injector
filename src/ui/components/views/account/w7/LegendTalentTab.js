@@ -63,10 +63,7 @@ const LegendTalentRow = ({ talent }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${talent.talentIndex}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, talent.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, talent.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",

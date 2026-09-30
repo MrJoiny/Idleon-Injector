@@ -6,12 +6,7 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    toInt,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 
 const { div } = van.tags;
 
@@ -73,14 +68,14 @@ export const ExoticTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "EXOTIC MARKET UPGRADES",
-            note: () => `${entries.val.length} UPGRADES FROM FarmUpg[20+]`,
+            note: () => `${entries.val.length} UPGRADES`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "EXOTIC",
-        description: "Set Exotic Market upgrade levels from FarmUpg[20+] with names from MarketExoticInfo.",
+        description: "Set Exotic Market upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

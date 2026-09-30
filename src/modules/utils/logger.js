@@ -124,14 +124,6 @@ function getConfiguredLevel() {
 }
 
 /**
- * Resets the cached log level. Call this after config changes.
- */
-function resetLogLevel() {
-    configuredLevel = null;
-    configLoaded = false;
-}
-
-/**
  * Ensures the log directory exists.
  */
 function ensureLogDir() {
@@ -308,6 +300,5 @@ function createLogger(moduleName) {
 
 module.exports = {
     createLogger,
-    resetLogLevel,
     setActivePrompt,
 };

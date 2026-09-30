@@ -48,6 +48,10 @@
 
 /* ── Statue stacked controls ──────────────────────────────────────────── */
 
+.statue-list > .account-row {
+    flex-shrink: 0;
+}
+
 .statue-control-row {
     display: flex;
     align-items: center;
@@ -61,4 +65,22 @@
     letter-spacing: 0.05em;
     width: 78px;
     text-align: right;
+}
+
+@media (max-width: 700px) {
+    .statue-list .account-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .statue-list .account-row__controls {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 400px) {
+    .statue-list .account-row__controls .number-input-wrapper,
+    .statue-list .statue-tier-select {
+        width: 150px;
+    }
 }

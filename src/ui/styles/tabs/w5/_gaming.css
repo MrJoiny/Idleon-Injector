@@ -48,6 +48,7 @@
 
 .gaming-palette-hex {
     align-items: center;
+    height: 132px;
     aspect-ratio: 0.88 / 1;
     background: var(--hex-bg);
     border: 2px solid rgba(255, 255, 255, 0.78);

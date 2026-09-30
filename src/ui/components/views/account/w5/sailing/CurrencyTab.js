@@ -94,14 +94,14 @@ export const CurrencyTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SAILING CURRENCY",
-            note: () => `${entries.val.length} VALUES FROM Sailing[1]`,
+            note: () => `${entries.val.length} VALUES`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "CURRENCY",
-        description: "Edit Sailing currencies from Sailing[1]. Treasure names are inferred from island order.",
+        description: "Edit Sailing currencies.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

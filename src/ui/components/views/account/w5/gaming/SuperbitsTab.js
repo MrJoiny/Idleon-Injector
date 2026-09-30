@@ -1,12 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    writeVerified,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, writeVerified } from "../../accountShared.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountToggleRow } from "../../components/AccountToggleRow.js";
@@ -144,7 +139,7 @@ export const SuperbitsTab = () => {
 
     return PersistentAccountListPage({
         title: "SUPERBITS",
-        description: "Toggle Gaming superbit unlocks from Gaming[12]. Names come from GamingUpg.",
+        description: "Toggle Gaming superbit unlocks.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

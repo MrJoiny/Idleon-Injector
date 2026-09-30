@@ -20,10 +20,7 @@ const ShopUpgradeRow = ({ entry }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index + 1}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",
@@ -110,7 +107,7 @@ export function SpelunkingShopTab() {
 
     return PersistentAccountListPage({
         title: "SPELUNKING SHOP",
-        description: "Set W7 Spelunking shop upgrade levels from Spelunk[5]. Max levels come from SpelunkUpg.",
+        description: "Set W7 Spelunking shop upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

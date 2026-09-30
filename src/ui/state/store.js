@@ -1,16 +1,10 @@
 import vanX from "../vendor/van-x-0.6.3.js";
 import * as API from "../services/api.js";
 import { VIEWS } from "./constants.js";
+import { loadThemePreference, saveThemePreference } from "./theme.js";
 import { getCheatConfigPath, configPathExists } from "../utils/index.js";
-import { formatDisplayValue, monitorIdFromMonitorPath } from "../components/views/search/valueUtils.js";
-import {
-    initWebSocket,
-    onStateUpdate,
-    onMonitorUpdate,
-    getConnectionStatus,
-    sendMonitorSubscribe,
-    sendMonitorUnsubscribe,
-} from "../services/ws.js";
+import { formatDisplayValue } from "../utils/search/valueUtils.js";
+import { initWebSocket, onStateUpdate, getConnectionStatus } from "../services/ws.js";
 
 /**
  * Safely parse JSON from localStorage with fallback
@@ -38,9 +32,14 @@ const appState = vanX.reactive({
     toast: { message: "", type: "", id: 0 },
     notificationHistory: [],
     config: null,
+    configDirty: false,
+    connectionTransport: "disconnected",
+    activityDrawer: null,
+    sidebarMobileOpen: false,
     sidebarCollapsed: localStorage.getItem("sidebarCollapsed") === "true",
+    cheatNavigation: null,
+    theme: loadThemePreference(),
     configForcedPath: null,
-    cheatsViewMode: localStorage.getItem("cheatsViewMode") || "tabs",
 });
 
 const dataState = vanX.reactive({
@@ -50,11 +49,11 @@ const dataState = vanX.reactive({
     activeCheatStates: {},
     favoriteCheats: safeParseJSON("favoriteCheats", []),
     recentCheats: safeParseJSON("recentCheats", []),
-    monitorValues: {},
 });
 
-const MAX_NOTIFICATION_HISTORY = 10;
+const MAX_NOTIFICATION_HISTORY = 100;
 let appInfoRequest = null;
+let cheatNavigationId = 0;
 
 const Actions = {
     notify: (message, type = "success") => {
@@ -87,21 +86,19 @@ const SystemService = {
             dataState.activeCheatStates = states || {};
         });
 
-        onMonitorUpdate((data) => {
-            dataState.monitorValues = data || {};
-        });
-
         // Use WebSocket connection status for heartbeat, with HTTP fallback
         const check = async () => {
             // Check WebSocket connection first
             if (getConnectionStatus()) {
                 appState.heartbeat = true;
+                appState.connectionTransport = "websocket";
                 return;
             }
 
             // Fall back to HTTP heartbeat check
             const alive = await API.checkHeartbeat();
             appState.heartbeat = !!alive;
+            appState.connectionTransport = alive ? "http" : "disconnected";
         };
         check();
         setInterval(check, 10000);
@@ -220,58 +217,8 @@ const CheatService = {
         appState.configForcedPath = null;
     },
 
-    openConfigDrawer: () => {
-        appState.configDrawerOpen = true;
-    },
-
     closeConfigDrawer: () => {
         appState.configDrawerOpen = false;
-    },
-
-    executeCheat: async (action, message) => {
-        try {
-            const result = await API.executeCheatAction(action);
-            Actions.notify(`Cheat ${result.result || "Success"}`);
-            FavoritesService.addToRecent(action);
-            // Note: Cheat states are now updated via WebSocket push from server
-            // No need for manual loadCheatStates() call
-        } catch (e) {
-            Actions.notify(`Error executing '${message}': ${e.message}`, "error");
-        }
-    },
-};
-
-const getActiveCheats = (states) => {
-    const activeCheats = [];
-
-    const normalizeKey = (key) => (key.endsWith("s") ? key.slice(0, -1) : key);
-
-    for (const key in states) {
-        const value = states[key];
-
-        if (typeof value === "object" && value !== null) {
-            for (const subKey in value) {
-                if (value[subKey] === true) {
-                    activeCheats.push(`${normalizeKey(key)} ${subKey}`);
-                }
-            }
-        } else if (value === true) {
-            activeCheats.push(normalizeKey(key));
-        }
-    }
-
-    return activeCheats;
-};
-
-const CheatStateService = {
-    loadCheatStates: async () => {
-        try {
-            const result = await API.fetchCheatStates();
-            dataState.activeCheatStates = result.data || {};
-        } catch (e) {
-            console.error("Error loading cheat states:", e);
-            dataState.activeCheatStates = {};
-        }
     },
 };
 
@@ -311,21 +258,6 @@ const ConfigService = {
             Actions.notify(`Config Load Error: ${e.message}`, "error");
         } finally {
             appState.isLoading = false;
-        }
-    },
-
-    saveConfig: async (newConfig, isPersistent) => {
-        try {
-            // Strip Proxies via JSON cycle to prevent reactive leaks
-            const cleanConfig = JSON.parse(JSON.stringify(newConfig));
-
-            const result = isPersistent
-                ? await API.saveConfigFile(cleanConfig)
-                : await API.updateSessionConfig(cleanConfig);
-
-            Actions.notify(result.message || (isPersistent ? "SAVED TO DISK" : "RAM UPDATED"));
-        } catch (e) {
-            Actions.notify(e.message, "error");
         }
     },
 };
@@ -374,15 +306,6 @@ const SearchService = {
     },
 };
 
-const MonitorService = {
-    subscribe: (path) => {
-        sendMonitorSubscribe(monitorIdFromMonitorPath(path), path);
-    },
-    unsubscribe: (id) => {
-        sendMonitorUnsubscribe(id);
-    },
-};
-
 const store = {
     app: appState,
     data: dataState,
@@ -396,17 +319,12 @@ const store = {
     applyUpdate: SystemService.applyUpdate,
 
     loadCheats: CheatService.loadCheats,
-    executeCheat: CheatService.executeCheat,
     hasConfigEntry: CheatService.hasConfigEntry,
     navigateToCheatConfig: CheatService.navigateToCheatConfig,
     clearForcedConfigPath: CheatService.clearForcedConfigPath,
-    openConfigDrawer: CheatService.openConfigDrawer,
     closeConfigDrawer: CheatService.closeConfigDrawer,
-    loadCheatStates: CheatStateService.loadCheatStates,
-    getActiveCheats: () => getActiveCheats(dataState.activeCheatStates),
 
     loadConfig: ConfigService.loadConfig,
-    saveConfig: ConfigService.saveConfig,
 
     loadAccountOptions: AccountService.loadAccountOptions,
 
@@ -414,17 +332,48 @@ const store = {
     searchGga: API.searchGga,
     setGgaValue: SearchService.setGgaValue,
 
-    subscribeMonitor: MonitorService.subscribe,
-    unsubscribeMonitor: MonitorService.unsubscribe,
-
     toggleSidebar: () => {
         appState.sidebarCollapsed = !appState.sidebarCollapsed;
         localStorage.setItem("sidebarCollapsed", appState.sidebarCollapsed);
     },
 
-    toggleCheatsViewMode: () => {
-        appState.cheatsViewMode = appState.cheatsViewMode === "list" ? "tabs" : "list";
-        localStorage.setItem("cheatsViewMode", appState.cheatsViewMode);
+    setTheme: (theme) => {
+        appState.theme = saveThemePreference(theme);
+    },
+
+    setActiveTab: (viewId) => {
+        appState.activeTab = viewId;
+        appState.sidebarMobileOpen = false;
+    },
+
+    navigateToCheat: (action, scope) => {
+        appState.activeTab = VIEWS.CHEATS.id;
+        appState.sidebarMobileOpen = false;
+        appState.cheatNavigation = { action, scope, id: ++cheatNavigationId };
+    },
+
+    toggleMobileSidebar: () => {
+        appState.sidebarMobileOpen = !appState.sidebarMobileOpen;
+    },
+
+    closeMobileSidebar: () => {
+        appState.sidebarMobileOpen = false;
+    },
+
+    openActivityDrawer: (drawer) => {
+        appState.activityDrawer = drawer;
+    },
+
+    toggleActivityDrawer: (drawer) => {
+        appState.activityDrawer = appState.activityDrawer === drawer ? null : drawer;
+    },
+
+    closeActivityDrawer: () => {
+        appState.activityDrawer = null;
+    },
+
+    setConfigDirty: (isDirty) => {
+        appState.configDirty = !!isDirty;
     },
 
     openExternalUrl: async (url) => {

@@ -29,7 +29,6 @@ export function getAllBundles() {
 
     return allBundles;
 }
-
 /**
  * Return the current bundle catalog with live ownership flags.
  *
@@ -48,13 +47,4 @@ export function getBundleCatalog() {
         name,
         owned: Number(bundlesReceived[code]) === 1 ? 1 : 0,
     }));
-}
-
-/**
- * Get a map from bundle code to display name.
- *
- * @returns {Map<string, string>} Map of bundleCode -> displayName
- */
-export function getBundleCodeToNameMap() {
-    return new Map(getAllBundles().map(([name, code]) => [code, name]));
 }

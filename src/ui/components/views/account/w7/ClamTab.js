@@ -55,7 +55,6 @@ export const ClamTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "PEARLS",
-            note: "OptionsListAccount[454]",
             body: div(
                 { class: "account-item-stack" },
                 ClamRow({
@@ -86,7 +85,7 @@ export const ClamTab = () => {
 
     return PersistentAccountListPage({
         title: "CLAM",
-        description: "Set W7 Clam pearl amount and Clamworks upgrade levels from OptionsListAccount.",
+        description: "Set W7 Clam pearl amount and Clamworks upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

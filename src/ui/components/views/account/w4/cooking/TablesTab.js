@@ -87,9 +87,8 @@ export const TablesTab = () => {
     const reconcileKitchenRows = createStaticRowReconciler(kitchenRows);
 
     const reconcileRows = () =>
-        reconcileKitchenRows(
-            kitchenEntries.val.map((entry) => entry.key).join("|"),
-            () => kitchenEntries.val.map((entry) => KitchenRow({ entry, fieldStates: kitchenFieldStates }))
+        reconcileKitchenRows(kitchenEntries.val.map((entry) => entry.key).join("|"), () =>
+            kitchenEntries.val.map((entry) => KitchenRow({ entry, fieldStates: kitchenFieldStates }))
         );
 
     const load = async () =>
@@ -110,7 +109,7 @@ export const TablesTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "KITCHEN TABLES",
-            note: () => `${kitchenEntries.val.length} KITCHENS FROM Cooking[i][6-8]`,
+            note: () => `${kitchenEntries.val.length} KITCHENS`,
             body: kitchenRows,
         })
     );

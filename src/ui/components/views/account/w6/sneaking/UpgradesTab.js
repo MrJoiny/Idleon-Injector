@@ -3,12 +3,7 @@ import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
 import { SimpleNumberRow } from "../../SimpleNumberRow.js";
 import { useAccountLoad } from "../../accountLoadPolicy.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    toInt,
-} from "../../accountShared.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
@@ -75,14 +70,14 @@ export const UpgradesTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SNEAKING UPGRADES",
-            note: () => `${entries.val.length} UPGRADES FROM Ninja[103]`,
+            note: () => `${entries.val.length} UPGRADES`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "UPGRADES",
-        description: "Edit Sneaking upgrade levels from Ninja[103]. Names come from NinjaUpg.",
+        description: "Edit Sneaking upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

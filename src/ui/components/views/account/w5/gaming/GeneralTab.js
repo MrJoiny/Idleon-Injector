@@ -230,29 +230,26 @@ export const GeneralTab = () => {
         }),
         AccountSection({
             title: "RAT KING",
-            note: "Gaming[14] and GamingSprout[33][1-3]",
             body: ratKingListNode,
         }),
         AccountSection({
             title: "UPGRADES",
-            note: "Gaming[1-3]",
             body: upgradeListNode,
         }),
         AccountSection({
             title: "MUTATION",
-            note: "Gaming[4] and Gaming[7]",
             body: mutationListNode,
         }),
         AccountSection({
             title: "LOG BOOK",
-            note: "Gaming[11]",
             body: div({ class: "account-item-stack" }, LogBookRow({ valueState: logBookState })),
         })
     );
 
     return PersistentAccountListPage({
         title: "GENERAL",
-        description: "Edit Gaming currencies, Rat King levels, upgrades, mutations, nugget stats, and related counters.",
+        description:
+            "Edit Gaming currencies, Rat King levels, upgrades, mutations, nugget stats, and related counters.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -142,7 +142,7 @@ export const StatuesTab = () => {
     const depositedStates = new Map();
     const tierStates = new Map();
 
-    const listNode = div({ class: "account-list" });
+    const listNode = div({ class: "account-list statue-list" });
     const reconcileStatueRows = createStaticRowReconciler(listNode);
 
     const reconcileRows = (info) => {

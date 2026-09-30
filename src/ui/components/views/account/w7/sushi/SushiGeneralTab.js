@@ -221,7 +221,6 @@ export function SushiGeneralTab() {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "RESOURCES",
-            note: "Sushi[4]",
             body: div(
                 { class: "account-item-stack" },
                 ...RESOURCE_FIELDS.map((field) =>
@@ -241,7 +240,7 @@ export function SushiGeneralTab() {
 
     return PersistentAccountListPage({
         title: "SUSHI GENERAL",
-        description: "Edit Sushi resources from Sushi[4], and per-tier unlock, XP, and knowledge levels.",
+        description: "Edit Sushi resources, per-tier unlocks, XP, and knowledge levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

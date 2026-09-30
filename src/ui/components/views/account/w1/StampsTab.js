@@ -82,7 +82,7 @@ const StampRow = ({ page, order, name, step, levelState, maxLevelState, exaltedC
         indexLabel: `#${order}`,
         name,
         renderBadge: (currentValue) => `LV ${currentValue} / ${maxLevelState.val}`,
-        rowClass: () => (isExalted.val ? "stamp-row--exalted" : ""),
+        rowClass: () => `stamp-row${isExalted.val ? " stamp-row--exalted" : ""}`,
         wrapApplyButton: (applyButton) => withTooltip(applyButton, "Set StampLevel and StampLevelMAX in game memory"),
         renderExtraActions: ({ status, run, applyValue }) => [
             ActionButton({

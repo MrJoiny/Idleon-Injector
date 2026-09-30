@@ -139,7 +139,9 @@ export const PetsTab = () => {
 
     const reconcileRows = () =>
         reconcilePetSectionRows(
-            petSections.val.map((section) => `${section.key}:${section.entries.map((entry) => entry.key).join("|")}`).join("|"),
+            petSections.val
+                .map((section) => `${section.key}:${section.entries.map((entry) => entry.key).join("|")}`)
+                .join("|"),
             () =>
                 petSections.val.map((section) =>
                     AccountSection({
@@ -179,7 +181,7 @@ export const PetsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "PETS",
-            note: "DNA, breedability, and shiny days from Breeding W1-W4 pet arrays",
+            note: "DNA, breedability, and shiny days",
             body: petSectionRows,
         })
     );

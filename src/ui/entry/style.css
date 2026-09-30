@@ -15,7 +15,6 @@
 @import url("../styles/_utilities.css");
 
 /* COMPONENTS */
-@import url("../styles/sidebar.css");
 @import url("../styles/cheats.css");
 @import url("../styles/config.css");
 @import url("../styles/_world-tabs.css");
@@ -34,9 +33,15 @@
 @import url("../styles/startup-cheats.css");
 @import url("../styles/modal.css");
 @import url("../styles/toast.css");
-@import url("../styles/_notificationHistory.css");
 @import url("../styles/tooltip.css");
 @import url("../styles/number-input.css");
 @import url("../styles/function-input.css");
 @import url("../styles/empty-state.css");
 @import url("../styles/_search.css");
+
+/* ATLAS APPLICATION SHELL */
+@import url("../styles/_atlas-shell.css");
+@import url("../styles/_activity-drawer.css");
+
+/* THEME OVERRIDES */
+@import url("../styles/_theme.css");

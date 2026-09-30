@@ -49,7 +49,6 @@ export const ButtonTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "BUTTON",
-            note: "OptionsListAccount[594] / [595]",
             body: div(
                 { class: "account-item-stack" },
                 ...BUTTON_FIELDS.map((field) =>
@@ -63,7 +62,7 @@ export const ButtonTab = () => {
 
     return PersistentAccountListPage({
         title: "BUTTON",
-        description: "Set W7 Button presses done and remaining charges from OptionsListAccount[594] and [595].",
+        description: "Set W7 Button presses done and remaining charges.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

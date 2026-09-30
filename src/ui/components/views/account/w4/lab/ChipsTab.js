@@ -145,9 +145,8 @@ export const ChipsTab = () => {
     const reconcilePlayerChipRows = createStaticRowReconciler(playerChipRows);
 
     const reconcileRows = () => {
-        reconcileChipRows(
-            chipEntries.val.map((entry) => entry.key).join("|"),
-            () => chipEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getChipState(entry.index) }))
+        reconcileChipRows(chipEntries.val.map((entry) => entry.key).join("|"), () =>
+            chipEntries.val.map((entry) => SimpleNumberRow({ entry, valueState: getChipState(entry.index) }))
         );
         reconcilePlayerChipRows(
             playerChipEntries.val.map((entry) => `${entry.key}:${entry.optionSignature}`).join("|"),
@@ -178,12 +177,12 @@ export const ChipsTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "CHIPS",
-            note: () => `${chipEntries.val.length} CHIP AMOUNTS FROM Lab[15]`,
+            note: () => `${chipEntries.val.length} CHIP AMOUNTS`,
             body: chipRows,
         }),
         AccountSection({
             title: "PLAYER CHIPS",
-            note: "Lab[1-10], seven equipped chip ids per player",
+            note: "Seven equipped chips per player",
             body: playerChipRows,
         })
     );

@@ -1,14 +1,3 @@
-.danger-zone-header {
-    border: 1px dashed var(--c-danger);
-    background: var(--c-danger-05);
-    color: var(--c-danger);
-    padding: 12px;
-    text-align: center;
-    font-size: 0.875rem;
-    margin-bottom: 20px;
-    letter-spacing: 0.05em;
-}
-
 .toggle-switch {
     display: inline-flex;
     align-items: center;

@@ -172,10 +172,7 @@ const TomeEditableRow = ({ entry, valueState }) =>
         write: (nextValue) => writeEditableValue(entry.editor, nextValue),
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         renderBadge: (currentValue) => largeFormatter(currentValue ?? 0),
         adjustInput: (rawValue, delta, currentValue) => adjustFormattedIntInput(rawValue, delta, currentValue ?? 0),
@@ -188,10 +185,7 @@ const TomeRow = ({ entry }) =>
     AccountRow({
         info: [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         badge: () => largeFormatter(entry.value ?? 0),
     });
@@ -237,14 +231,14 @@ export const TomeTab = () => {
         AccountSection({
             title: "TOME",
             note: () =>
-                `${entries.val.filter((entry) => entry.editor).length} EDITABLE / ${entries.val.length} VALUES FROM ${TOME_VALUES_PATH}`,
+                `${entries.val.filter((entry) => entry.editor).length} EDITABLE / ${entries.val.length} VALUES`,
             body: tomeRows,
         })
     );
 
     return PersistentAccountListPage({
         title: "TOME",
-        description: "View W4 Tome values from DNSM. Editable rows write to their real backing paths.",
+        description: "View W4 Tome values and edit supported rows.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

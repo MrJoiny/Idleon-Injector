@@ -1,13 +1,10 @@
-import van from "../../../../vendor/van-1.6.0.js";
-import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
+import { createNestedTab } from "../tabShared.js";
 import { DepoTab } from "./farming/DepoTab.js";
 import { ExoticTab } from "./farming/ExoticTab.js";
 import { MarketsTab } from "./farming/MarketsTab.js";
 import { PlotTab } from "./farming/PlotTab.js";
 import { RankTab } from "./farming/RankTab.js";
 import { StickerTab } from "./farming/StickerTab.js";
-
-const { div } = van.tags;
 
 const FARMING_SUBTABS = [
     { id: "depo", label: "DEPO", component: DepoTab },
@@ -18,29 +15,4 @@ const FARMING_SUBTABS = [
     { id: "rank", label: "RANK", component: RankTab },
 ];
 
-export const FarmingTab = () => {
-    const activeSubTab = van.state(FARMING_SUBTABS[0].id);
-
-    return div(
-        { class: "tab-container farming-tab" },
-        renderTabNav({
-            tabs: FARMING_SUBTABS,
-            activeId: activeSubTab,
-            navClass: "account-nested-sub-nav",
-            buttonClass: "account-nested-sub-tab-btn",
-            stubClass: "account-nested-sub-tab-btn--stub",
-            isStub: (tab) => !tab.component,
-        }),
-        div(
-            { class: "account-nested-sub-content" },
-            ...renderLazyPanes({
-                tabs: FARMING_SUBTABS,
-                activeId: activeSubTab,
-                paneClass: "account-nested-pane",
-                activeClass: "account-nested-pane--active",
-                dataAttr: "data-farming",
-                renderContent: (tab) => (tab.component ? tab.component() : createComingSoonPlaceholder(tab.label)),
-            })
-        )
-    );
-};
+export const FarmingTab = createNestedTab(FARMING_SUBTABS, "farming-tab", "data-farming");

@@ -18,6 +18,7 @@ const {
 const { getRuntimePath } = require("../utils/runtimePaths");
 const { exec } = require("child_process");
 const { broadcastCheatStates } = require("./wsServer");
+const { evaluateGame } = require("./gameAccess");
 const { createLogger } = require("../utils/logger");
 const { checkForUpdates } = require("../updateChecker");
 const { performUpdate } = require("../autoUpdater");
@@ -42,6 +43,14 @@ function setupApiRoutes(app, context, client, config) {
     const { cheatConfig, defaultConfig, startupCheats, injectorConfig, cdpPort } = config;
     let cachedUpdateInfo = null;
     let updateCheckRequest = null;
+
+    const getCurrentConfigPayload = () => ({
+        startupCheats: [...startupCheats],
+        cheatConfig: prepareConfigForJson(cheatConfig),
+        injectorConfig: prepareConfigForJson(injectorConfig),
+    });
+    let ramConfigBaseline = getCurrentConfigPayload();
+    let diskConfigBaseline = getCurrentConfigPayload();
 
     const getUpdateInfo = (force = false) => {
         if (!force && cachedUpdateInfo) return cachedUpdateInfo;
@@ -132,19 +141,17 @@ function setupApiRoutes(app, context, client, config) {
 
     app.get("/api/cheats", async (req, res) => {
         try {
-            const suggestionsResult = await Runtime.evaluate({
+            const suggestionsResult = await evaluateGame(Runtime, {
                 expression: `getAutoCompleteSuggestions()`,
-                awaitPromise: true,
-                returnByValue: true,
             });
-            if (suggestionsResult.exceptionDetails) {
-                log.error("Error getting autocomplete suggestions:", suggestionsResult.exceptionDetails.text);
+            if (suggestionsResult.error) {
+                log.error("Error getting autocomplete suggestions:", suggestionsResult.error);
                 res.status(500).json({
                     error: "Failed to get cheats from game",
-                    details: suggestionsResult.exceptionDetails.text,
+                    details: suggestionsResult.error,
                 });
             } else {
-                const allCheats = suggestionsResult.result.value || [];
+                const allCheats = suggestionsResult.value || [];
 
                 const EXCLUDED_PREFIXES = [
                     "gga",
@@ -172,19 +179,16 @@ function setupApiRoutes(app, context, client, config) {
 
     app.get("/api/game/bundles", async (req, res) => {
         try {
-            const catalogResult = await Runtime.evaluate({
+            const catalogResult = await evaluateGame(Runtime, {
                 expression: "getBundleCatalog()",
-                awaitPromise: true,
-                returnByValue: true,
             });
 
-            if (catalogResult.exceptionDetails) {
-                const details =
-                    catalogResult.exceptionDetails.exception?.description ?? catalogResult.exceptionDetails.text;
+            if (catalogResult.error) {
+                const details = catalogResult.error;
                 return res.status(500).json({ error: "Failed to read bundle catalog", details });
             }
 
-            const bundles = catalogResult.result.value;
+            const bundles = catalogResult.value;
             if (!Array.isArray(bundles)) {
                 return res.status(500).json({ error: "Bundle catalog returned invalid data" });
             }
@@ -203,20 +207,19 @@ function setupApiRoutes(app, context, client, config) {
             return res.status(400).json({ error: "Missing action parameter" });
         }
         try {
-            const cheatResponse = await Runtime.evaluate({
-                expression: `cheat.call(${context}, '${action}')`,
-                awaitPromise: true,
+            const cheatResponse = await evaluateGame(Runtime, {
+                expression: `cheat.call(${context}, ${JSON.stringify(action)})`,
                 allowUnsafeEvalBlockedByCSP: true,
             });
-            if (cheatResponse.exceptionDetails) {
-                log.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
+            if (cheatResponse.error) {
+                log.error(`Error executing cheat '${action}':`, cheatResponse.error);
                 res.status(500).json({
                     error: `Failed to execute cheat '${action}'`,
-                    details: cheatResponse.exceptionDetails.text,
+                    details: cheatResponse.error,
                 });
             } else {
-                log.debug(`Executed: ${action} -> ${cheatResponse.result.value}`);
-                res.json({ result: cheatResponse.result.value });
+                log.debug(`Executed: ${action} -> ${cheatResponse.value}`);
+                res.json({ result: cheatResponse.value });
 
                 // Broadcast updated cheat states to all WebSocket clients
                 broadcastCheatStates();
@@ -258,10 +261,14 @@ function setupApiRoutes(app, context, client, config) {
             }
 
             const fullConfigResponse = {
-                startupCheats: startupCheats,
+                startupCheats: [...startupCheats],
                 cheatConfig: serializableCheatConfig,
-                injectorConfig: injectorConfig,
+                injectorConfig: prepareConfigForJson(injectorConfig),
                 defaultConfig: serializableDefaultConfig,
+                configBaselines: {
+                    ram: ramConfigBaseline,
+                    disk: diskConfigBaseline,
+                },
             };
             res.json(fullConfigResponse);
         } catch (error) {
@@ -280,32 +287,15 @@ function setupApiRoutes(app, context, client, config) {
         }
 
         try {
-            if (receivedFullConfig.cheatConfig) {
-                const receivedCheatConfig = receivedFullConfig.cheatConfig;
-                const parsedCheatConfig = parseConfigFromJson(receivedCheatConfig);
-
-                deepMerge(cheatConfig, parsedCheatConfig);
-            }
-
-            if (Array.isArray(receivedFullConfig.startupCheats)) {
-                startupCheats.length = 0;
-                startupCheats.push(...receivedFullConfig.startupCheats);
-                log.debug("Updated server-side startupCheats");
-            }
-
-            if (receivedFullConfig.injectorConfig) {
-                deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                log.debug("Updated server-side injectorConfig");
-            }
-
             const parsedCheatConfig = receivedFullConfig.cheatConfig
                 ? parseConfigFromJson(receivedFullConfig.cheatConfig)
                 : cheatConfig;
-            const contextExistsResult = await Runtime.evaluate({ expression: `!!(${context})` });
-            if (!contextExistsResult || !contextExistsResult.result || !contextExistsResult.result.value) {
+            const contextExistsResult = await evaluateGame(Runtime, { expression: `!!(${context})` });
+            if (contextExistsResult.error || !contextExistsResult.value) {
                 log.error("Cheat context not found in iframe. Cannot update config in game");
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game (context lost)",
+                    message: "Configuration was not applied because the game context was lost",
+                    appliedToGame: false,
                 });
             }
 
@@ -320,32 +310,42 @@ function setupApiRoutes(app, context, client, config) {
         }
       `;
 
-            const updateResult = await Runtime.evaluate({
+            const updateResult = await evaluateGame(Runtime, {
                 expression: updateExpression,
-                awaitPromise: true,
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
             let gameUpdateDetails = "N/A";
-            if (updateResult.exceptionDetails) {
-                log.error("Error updating config in game:", updateResult.exceptionDetails.text);
-                gameUpdateDetails = `Failed to apply in game: ${updateResult.exceptionDetails.text}`;
+            if (updateResult.error) {
+                log.error("Error updating config in game:", updateResult.error);
+                gameUpdateDetails = `Failed to apply in game: ${updateResult.error}`;
                 return res.status(200).json({
-                    message: "Configuration updated on server, but failed to apply in game",
+                    message: "Configuration was not applied in game",
                     details: gameUpdateDetails,
+                    appliedToGame: false,
                 });
             } else {
-                gameUpdateDetails = updateResult.result.value;
+                gameUpdateDetails = updateResult.value;
                 log.debug(`In-game config update result: ${gameUpdateDetails}`);
                 if (gameUpdateDetails.startsWith("Error:")) {
                     return res.status(200).json({
-                        message: "Configuration updated on server, but failed to apply in game",
+                        message: "Configuration was not applied in game",
                         details: gameUpdateDetails,
+                        appliedToGame: false,
                     });
                 }
             }
 
-            res.json({ message: "Configuration updated successfully", details: gameUpdateDetails });
+            deepMerge(cheatConfig, parsedCheatConfig);
+            ramConfigBaseline = {
+                ...ramConfigBaseline,
+                cheatConfig: prepareConfigForJson(cheatConfig),
+            };
+            res.json({
+                message: "Live cheat configuration updated successfully",
+                details: gameUpdateDetails,
+                appliedToGame: true,
+            });
         } catch (apiError) {
             log.error("Error in /api/config/update:", apiError);
             res.status(500).json({
@@ -357,20 +357,18 @@ function setupApiRoutes(app, context, client, config) {
 
     app.get("/api/cheat-states", async (req, res) => {
         try {
-            const statesResult = await Runtime.evaluate({
+            const statesResult = await evaluateGame(Runtime, {
                 expression: `cheatStateList()`,
-                awaitPromise: true,
-                returnByValue: true,
             });
 
-            if (statesResult.exceptionDetails) {
-                log.error("Error getting cheat states:", statesResult.exceptionDetails.text);
+            if (statesResult.error) {
+                log.error("Error getting cheat states:", statesResult.error);
                 res.status(500).json({
                     error: "Failed to get cheat states from game",
-                    details: statesResult.exceptionDetails.text,
+                    details: statesResult.error,
                 });
             } else {
-                res.json({ data: statesResult.result.value || {} });
+                res.json({ data: statesResult.value || {} });
             }
         } catch (apiError) {
             log.error("Error in /api/cheat-states:", apiError);
@@ -443,6 +441,8 @@ exports.injectorConfig = ${new_injectorConfig};
             if (parsedUiCheatConfig) deepMerge(cheatConfig, parsedUiCheatConfig);
             if (filteredInjectorConfig) deepMerge(injectorConfig, filteredInjectorConfig);
 
+            diskConfigBaseline = getCurrentConfigPayload();
+
             res.json({ message: "Configuration successfully saved to config.custom.js" });
         } catch (apiError) {
             log.error("Error in /api/config/save:", apiError);
@@ -455,20 +455,18 @@ exports.injectorConfig = ${new_injectorConfig};
 
     app.get("/api/search/keys", async (req, res) => {
         try {
-            const keysResult = await Runtime.evaluate({
+            const keysResult = await evaluateGame(Runtime, {
                 expression: `getGgaKeys()`,
-                awaitPromise: true,
-                returnByValue: true,
             });
 
-            if (keysResult.exceptionDetails) {
-                log.error("Error getting GGA keys:", keysResult.exceptionDetails.text);
+            if (keysResult.error) {
+                log.error("Error getting GGA keys:", keysResult.error);
                 res.status(500).json({
                     error: "Failed to get GGA keys from game",
-                    details: keysResult.exceptionDetails.text,
+                    details: keysResult.error,
                 });
             } else {
-                res.json({ keys: keysResult.result.value || [] });
+                res.json({ keys: keysResult.value || [] });
             }
         } catch (apiError) {
             log.error("Error in /api/search/keys:", apiError);
@@ -503,20 +501,18 @@ exports.injectorConfig = ${new_injectorConfig};
             const optionsJson = JSON.stringify({ withinPaths: withinPaths || null, compare: compare || null });
             const serializedQuery = JSON.stringify(query);
 
-            const searchResult = await Runtime.evaluate({
+            const searchResult = await evaluateGame(Runtime, {
                 expression: `searchGga(${serializedQuery}, ${keysJson}, ${optionsJson})`,
-                awaitPromise: true,
-                returnByValue: true,
             });
 
-            if (searchResult.exceptionDetails) {
-                log.error("Error searching GGA:", searchResult.exceptionDetails.text);
+            if (searchResult.error) {
+                log.error("Error searching GGA:", searchResult.error);
                 res.status(500).json({
                     error: "Failed to search GGA",
-                    details: searchResult.exceptionDetails.text,
+                    details: searchResult.error,
                 });
             } else {
-                const data = searchResult.result.value || { results: [], totalCount: 0 };
+                const data = searchResult.value || { results: [], totalCount: 0 };
                 res.json(data);
             }
         } catch (apiError) {
@@ -536,19 +532,16 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
         }
 
-        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-
         try {
-            const result = await Runtime.evaluate({
-                expression: `readGamePath("${escaped}")`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `readGamePath(${JSON.stringify(path)})`,
             });
 
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Read failed", details: result.exceptionDetails.text });
+            if (result.error) {
+                return res.status(500).json({ error: "Read failed", details: result.error });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (data.error) return res.status(500).json({ error: data.error });
 
             // CDP may serialize Haxe arrays as plain objects with numeric keys.
@@ -592,21 +585,19 @@ exports.injectorConfig = ${new_injectorConfig};
             }
         }
 
-        const escapedRootPath = rootPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const keysJson = JSON.stringify(keys);
         const fieldsJson = JSON.stringify(fields ?? null);
 
         try {
-            const result = await Runtime.evaluate({
-                expression: `readGameEntries("${escapedRootPath}", ${keysJson}, ${fieldsJson})`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `readGameEntries(${JSON.stringify(rootPath)}, ${keysJson}, ${fieldsJson})`,
             });
 
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Read entries failed", details: result.exceptionDetails.text });
+            if (result.error) {
+                return res.status(500).json({ error: "Read entries failed", details: result.error });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (data.error) return res.status(500).json({ error: data.error });
 
             log.debug(`Read entries: ${rootPath} (${keys.length} keys)`);
@@ -630,23 +621,19 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "args must be an array when provided" });
         }
 
-        const escapedNamespace = namespace.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-        const escapedName = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const argsJson = JSON.stringify(args ?? []);
 
         try {
-            const result = await Runtime.evaluate({
-                expression: `readComputedValue("${escapedNamespace}", "${escapedName}", ${argsJson})`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `readComputedValue(${JSON.stringify(namespace)}, ${JSON.stringify(name)}, ${argsJson})`,
             });
 
-            if (result.exceptionDetails) {
-                const ex = result.exceptionDetails;
-                const details = ex.exception?.description ?? ex.text;
+            if (result.error) {
+                const details = result.error;
                 return res.status(500).json({ error: "Computed read failed", details });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (!data || typeof data !== "object") {
                 return res.status(500).json({ error: "Computed read returned no data" });
             }
@@ -676,23 +663,19 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "argSets must contain arrays" });
         }
 
-        const escapedNamespace = namespace.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-        const escapedName = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const argSetsJson = JSON.stringify(argSets);
 
         try {
-            const result = await Runtime.evaluate({
-                expression: `readComputedValues("${escapedNamespace}", "${escapedName}", ${argSetsJson})`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `readComputedValues(${JSON.stringify(namespace)}, ${JSON.stringify(name)}, ${argSetsJson})`,
             });
 
-            if (result.exceptionDetails) {
-                const ex = result.exceptionDetails;
-                const details = ex.exception?.description ?? ex.text;
+            if (result.error) {
+                const details = result.error;
                 return res.status(500).json({ error: "Computed batch read failed", details });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (!data || typeof data !== "object") {
                 return res.status(500).json({ error: "Computed batch read returned no data" });
             }
@@ -715,24 +698,23 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "Missing value" });
         }
 
-        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const serialized = JSON.stringify(value);
         if (serialized === undefined) {
             return res.status(400).json({ error: "value must be JSON-serializable" });
         }
 
         try {
-            const result = await Runtime.evaluate({
-                expression: `writeGamePath("${escaped}", ${serialized})`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `writeGamePath(${JSON.stringify(path)}, ${serialized})`,
+
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Write failed", details: result.exceptionDetails.text });
+            if (result.error) {
+                return res.status(500).json({ error: "Write failed", details: result.error });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (!data || typeof data !== "object") {
                 return res.status(500).json({ error: "Write returned no data" });
             }
@@ -752,20 +734,18 @@ exports.injectorConfig = ${new_injectorConfig};
             return res.status(400).json({ error: "Missing or invalid path (must be a non-empty string)" });
         }
 
-        const escaped = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-
         try {
-            const result = await Runtime.evaluate({
-                expression: `deleteGamePath("${escaped}")`,
-                returnByValue: true,
+            const result = await evaluateGame(Runtime, {
+                expression: `deleteGamePath(${JSON.stringify(path)})`,
+
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Delete failed", details: result.exceptionDetails.text });
+            if (result.error) {
+                return res.status(500).json({ error: "Delete failed", details: result.error });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (!data || typeof data !== "object") {
                 return res.status(500).json({ error: "Delete returned no data" });
             }
@@ -806,17 +786,17 @@ exports.injectorConfig = ${new_injectorConfig};
         }
 
         try {
-            const result = await Runtime.evaluate({
+            const result = await evaluateGame(Runtime, {
                 expression: `writeGamePaths(${serialized})`,
-                returnByValue: true,
+
                 allowUnsafeEvalBlockedByCSP: true,
             });
 
-            if (result.exceptionDetails) {
-                return res.status(500).json({ error: "Batch write failed", details: result.exceptionDetails.text });
+            if (result.error) {
+                return res.status(500).json({ error: "Batch write failed", details: result.error });
             }
 
-            const data = result.result.value;
+            const data = result.value;
             if (!data || typeof data !== "object") {
                 return res.status(500).json({ error: "Batch write returned no data" });
             }

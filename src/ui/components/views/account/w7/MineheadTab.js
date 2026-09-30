@@ -42,10 +42,7 @@ const MineheadUpgradeRow = ({ entry, levelState }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",
@@ -115,7 +112,6 @@ export const MineheadTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "MINEHEAD STATS",
-            note: "Research[7]",
             body: div(
                 { class: "account-item-stack" },
                 ...MINEHEAD_STATS.map((stat) =>
@@ -135,7 +131,7 @@ export const MineheadTab = () => {
 
     return PersistentAccountListPage({
         title: "MINEHEAD",
-        description: "Set Minehead stats from Research[7] and upgrade levels from Research[8].",
+        description: "Set Minehead stats and upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

@@ -168,14 +168,6 @@
     --tab-nav-active-indicator: var(--world-color, var(--c-accent));
 }
 
-.account-world-sub-tab-btn--stub {
-    color: var(--c-text-muted);
-    cursor: default;
-}
-.account-world-sub-tab-btn--stub:hover {
-    color: var(--c-text-muted);
-}
-
 /* ── World inner panes ───────────────────────────────────────────────────── */
 
 .world-sub-content {
@@ -198,53 +190,179 @@
     animation: slideIn 0.18s ease;
 }
 
-/* Empty pane (unimplemented tabs) */
-.world-sub-pane--empty {
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-direction: column;
-    color: var(--c-text-muted);
-    padding: 40px;
+/* Atlas account workbench -------------------------------------------------- */
+
+#options-account-tab {
+    --font-display: var(--font-sans, "Inter", "Segoe UI", sans-serif);
+    padding: 0;
+    background: var(--atlas-canvas, #f8fafc);
+    color: var(--c-text-main);
 }
 
-.world-empty-icon {
-    font-size: 2.5rem;
-    color: var(--c-text-muted);
-    line-height: 1;
-}
-.world-empty-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0;
-}
-.world-empty-desc {
-    font-size: 0.875rem;
-    margin: 0;
-    text-align: center;
-    max-width: 340px;
-    color: var(--c-text-muted);
-}
-
-/* Inline stub inside W1 for unimplemented sub-tabs */
-.world-sub-placeholder {
+.account-workspace-context {
     display: flex;
+    min-height: 0;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 10px;
-    color: var(--c-text-muted);
 }
 
-.world-sub-placeholder__icon {
-    font-size: 2rem;
-    color: var(--c-text-muted);
+.account-root-nav.account-sub-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+    display: flex;
+    min-height: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--atlas-border);
+    background: var(--atlas-surface);
 }
-.world-sub-placeholder__label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0;
+
+.account-root-nav .account-sub-tab-btn {
+    bottom: 0;
+    display: flex;
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--atlas-text-muted, #475569);
+    font-family: var(--font-display);
+    font-size: 0.84rem;
+    font-weight: 550;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.account-root-nav .account-sub-tab-btn:hover {
+    background: var(--atlas-surface-hover, #f1f5f9);
+    color: var(--atlas-text, #0f172a);
+}
+
+.account-root-nav .account-sub-tab-btn.active {
+    background: var(--atlas-accent-soft, #eef2ff);
+    color: var(--atlas-accent, #4338ca);
+    font-weight: 650;
+}
+
+.account-root-nav .account-sub-tab-btn.active::after {
+    top: 7px;
+    bottom: 7px;
+    left: 0;
+    width: 3px;
+    height: auto;
+    border-radius: 0 3px 3px 0;
+    background: var(--world-color, var(--atlas-accent, #6366f1));
+    box-shadow: none;
+}
+
+.account-tree-label {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    text-align: left;
+}
+
+.account-tree-label__text {
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.account-root-nav .world-tab-btn-num {
+    display: inline-grid;
+    width: 36px;
+    height: 20px;
+    flex: 0 0 25px;
+    place-items: center;
+    border-radius: 5px;
+    background: var(--c-accent-dim-solid, rgba(99, 102, 241, 0.12));
+    background: color-mix(in srgb, var(--world-color) 14%, var(--atlas-surface, #ffffff));
+    color: var(--world-color);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.account-sub-tab-content {
+    width: 100%;
+    height: 100%;
+    background: var(--atlas-canvas, #f8fafc);
+}
+
+#options-account-tab .world-sub-nav,
+#options-account-tab .account-page-nav,
+#options-account-tab .account-nested-sub-nav {
+    gap: 2px;
+    padding: 7px 10px;
+    border-bottom-color: var(--atlas-border, var(--c-border));
+    background: var(--atlas-surface, #ffffff);
+}
+
+#options-account-tab .world-sub-nav .account-sub-tab-btn,
+#options-account-tab .account-page-nav .account-sub-tab-btn,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn {
+    bottom: 0;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--atlas-text-muted, #64748b);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+#options-account-tab .world-sub-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-page-nav .account-sub-tab-btn:hover,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn:hover {
+    background: var(--atlas-surface-hover, #f1f5f9);
+    color: var(--atlas-text, #0f172a);
+}
+
+#options-account-tab .world-sub-nav .account-sub-tab-btn.active,
+#options-account-tab .account-page-nav .account-sub-tab-btn.active,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active {
+    background: var(--c-accent-dim-solid, rgba(99, 102, 241, 0.12));
+    color: var(--world-color, #6366f1);
+    background: color-mix(in srgb, var(--world-color, #6366f1) 10%, var(--atlas-surface, #ffffff));
+    color: color-mix(in srgb, var(--world-color, #6366f1) 78%, var(--atlas-text, #0f172a));
+}
+
+#options-account-tab .world-sub-nav .account-sub-tab-btn.active::after,
+#options-account-tab .account-page-nav .account-sub-tab-btn.active::after,
+#options-account-tab .account-nested-sub-nav .account-sub-tab-btn.active::after {
+    top: auto;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+#options-account-tab button:focus-visible,
+#options-account-tab input:focus-visible,
+#options-account-tab select:focus-visible,
+#options-account-tab summary:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-sub-tab-pane.active,
+    .world-sub-pane.active {
+        animation: none;
+        transition: none;
+    }
 }

@@ -6,7 +6,7 @@
  * interface for all configuration-related operations throughout the application.
  */
 
-const { deepClone, union, deepMerge } = require("../utils/objectUtils");
+const { deepClone, deepMerge } = require("../utils/objectUtils");
 const { validateConfig } = require("../utils/helpers");
 const { getRuntimePath } = require("../utils/runtimePaths");
 const os = require("os");
@@ -46,7 +46,7 @@ function loadConfiguration() {
 
             if (customConfig.startupCheats) {
                 if (Array.isArray(customConfig.startupCheats)) {
-                    config.startupCheats = union(config.startupCheats, customConfig.startupCheats);
+                    config.startupCheats = [...new Set([...config.startupCheats, ...customConfig.startupCheats])];
                 } else {
                     log.error("startupCheats must be an array, received '" + typeof customConfig.startupCheats + "'");
                 }

@@ -78,14 +78,14 @@ export const PaletteTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "PALETTE",
-            note: () => `${entries.val.length} COLORS FROM Spelunk[9]`,
+            note: () => `${entries.val.length} COLORS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "PALETTE",
-        description: "Edit Gaming Palette upgrade levels from Spelunk[9]. Names and colors come from GamingPalette.",
+        description: "Edit Gaming Palette upgrade levels.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
