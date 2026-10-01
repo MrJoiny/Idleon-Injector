@@ -62,3 +62,15 @@
     width: 78px;
     text-align: right;
 }
+
+@media (max-width: 760px) {
+    .statues-tab .account-tab-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .statue-row .account-row__controls {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}
