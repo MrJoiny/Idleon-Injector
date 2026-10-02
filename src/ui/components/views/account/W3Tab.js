@@ -11,6 +11,7 @@ import { AtomColliderTab } from "./w3/AtomColliderTab.js";
 import { HatRackTab } from "./w3/HatRackTab.js";
 import { SmithyTab } from "./w3/SmithyTab.js";
 import { WorshipTab } from "./w3/WorshipTab.js";
+import { PrayersTab } from "./w3/PrayersTab.js";
 import { DeathNoteTab } from "./w3/DeathNoteTab.js";
 import { LibraryTab } from "./w3/LibraryTab.js";
 import { EquinoxTab } from "./w3/EquinoxTab.js";
@@ -32,6 +33,7 @@ const W3_SUBTABS = [
     { id: "hat-rack", label: "HAT RACK", component: HatRackTab },
     { id: "smithy", label: "SMITHY", component: SmithyTab },
     { id: "worship", label: "WORSHIP", component: WorshipTab },
+    { id: "prayers", label: "PRAYERS", component: PrayersTab },
     { id: "death-note", label: "DEATH NOTE", component: DeathNoteTab },
     { id: "library", label: "LIBRARY", component: LibraryTab },
     { id: "equinox", label: "EQUINOX", component: EquinoxTab },
