@@ -1,0 +1,46 @@
+.eventshop-row .account-row__name,
+.eventshop-row .account-row__sub-label {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
+.eventshop-row__note,
+.eventshop-note {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.eventshop-row__note {
+    color: var(--c-warning);
+}
+
+.eventshop-tab .account-row--success {
+    background: var(--c-panel);
+    border-color: var(--c-success);
+}
+
+.eventshop-tab .account-row--error {
+    background: var(--c-panel);
+    border-color: var(--c-danger);
+}
+
+@media (max-width: 760px) {
+    .eventshop-tab .account-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .eventshop-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .eventshop-row .account-row__info {
+        grid-column: 1 / -1;
+    }
+
+    .eventshop-row .account-row__controls {
+        justify-self: end;
+    }
+}
