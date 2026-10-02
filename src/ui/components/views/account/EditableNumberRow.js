@@ -1,7 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { getNumberInputLiveRaw, NumberInput } from "../../NumberInput.js";
 import { ActionButton } from "./components/ActionButton.js";
-import { toNodes, useWriteStatus } from "./accountShared.js";
+import { resolveValue, toNodes, useWriteStatus } from "./accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -35,6 +35,7 @@ export const EditableNumberRow = ({
     inputMode = "int",
     applyLabel = "SET",
     inputProps = {},
+    disabled = false,
 }) => {
     const {
         onfocus: userOnfocus,
@@ -60,6 +61,7 @@ export const EditableNumberRow = ({
     });
 
     const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
+        if (resolveValue(disabled) || status.val === "loading") return;
         const next = normalize(rawValue);
         if (next === null || next === undefined || Number.isNaN(next)) return;
 
@@ -74,6 +76,7 @@ export const EditableNumberRow = ({
     const applyButton = ActionButton({
         label: () => (typeof applyLabel === "function" ? applyLabel() : applyLabel),
         status,
+        disabled,
         onClick: (e) => {
             e.preventDefault();
             void applyValue();
@@ -88,6 +91,7 @@ export const EditableNumberRow = ({
         const actionButton = ActionButton({
             label: () => (typeof actionLabel === "function" ? actionLabel() : actionLabel),
             status,
+            disabled,
             variant: "max-reset",
             tooltip: action.tooltip ?? null,
             onClick: (e) => {
@@ -148,6 +152,7 @@ export const EditableNumberRow = ({
                 value: inputValue,
                 formatter,
                 ...restInputProps,
+                disabled: () => Boolean(resolveValue(disabled)) || Boolean(resolveValue(restInputProps.disabled)),
                 onfocus: () => {
                     isInputFocused = true;
                     if (typeof userOnfocus === "function") userOnfocus();
@@ -158,12 +163,14 @@ export const EditableNumberRow = ({
                     if (typeof userOnblur === "function") userOnblur();
                 },
                 onDecrement: () => {
+                    if (resolveValue(disabled) || status.val === "loading") return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val ?? 0)
                     );
                     if (typeof userOnDecrement === "function") userOnDecrement();
                 },
                 onIncrement: () => {
+                    if (resolveValue(disabled) || status.val === "loading") return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val ?? 0)
                     );
