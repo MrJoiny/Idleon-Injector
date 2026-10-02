@@ -3,6 +3,7 @@ import { DivinityTab } from "./w5/DivinityTab.js";
 import { GamingTab } from "./w5/GamingTab.js";
 import { HoleTab } from "./w5/HoleTab.js";
 import { SailingTab } from "./w5/SailingTab.js";
+import { SlabTab } from "./w5/SlabTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -12,6 +13,7 @@ const W5_SUBTABS = [
     { id: "divinity", label: "DIVINITY", component: DivinityTab },
     { id: "gaming", label: "GAMING", component: GamingTab },
     { id: "hole", label: "HOLE", component: HoleTab },
+    { id: "slab", label: "SLAB", component: SlabTab },
 ];
 
 export const W5Tab = () => {
