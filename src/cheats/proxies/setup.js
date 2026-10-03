@@ -18,6 +18,7 @@ import { setupEvents038Proxies } from "./events038.js";
 import { setupAutoLootProxy } from "./events044.js";
 import { setupEvents124Proxies } from "./events124.js";
 import { setupEvents189Proxies } from "./events189.js";
+import { setupEvents203Proxies } from "./events203.js";
 import { setupItemsMenuProxy } from "./events312.js";
 import { setupEvents345Proxies } from "./events345.js";
 import { setupEvents481Proxies } from "./events481.js";
@@ -61,6 +62,7 @@ export function setupAllProxies() {
     setupEvents038Proxies();
     setupEvents124Proxies();
     setupEvents189Proxies();
+    setupEvents203Proxies();
     setupItemsMenuProxy();
     setupEvents345Proxies();
     setupEvents481Proxies();

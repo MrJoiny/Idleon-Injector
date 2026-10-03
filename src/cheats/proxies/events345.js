@@ -30,6 +30,13 @@ import { getMultiplyValue } from "../helpers/values.js";
 export function setupEvents345Proxies() {
     const ActorEvents345 = events(345);
 
+    const ActionBlock = ActorEvents345._customBlock_ActionBlock;
+    ActorEvents345._customBlock_ActionBlock = function (...args) {
+        // This action only awards atoms and destroys overflow; it must be suppressed before base.
+        if (cheatState.wide.storagecap && args[0] === "CondenseChest2B") return;
+        return Reflect.apply(ActionBlock, this, args);
+    };
+
     // Workbench stuff (W3 construction)
     const WorkbenchStuff = ActorEvents345._customBlock_WorkbenchStuff;
     ActorEvents345._customBlock_WorkbenchStuff = function (...args) {
