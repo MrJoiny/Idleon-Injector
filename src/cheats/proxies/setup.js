@@ -16,6 +16,7 @@ import { setupEvents020Proxies } from "./events020.js";
 import { setupItemGetNotificationProxy } from "./events034.js";
 import { setupEvents038Proxies } from "./events038.js";
 import { setupAutoLootProxy } from "./events044.js";
+import { setupEvents116Proxies } from "./events116.js";
 import { setupEvents124Proxies } from "./events124.js";
 import { setupEvents189Proxies } from "./events189.js";
 import { setupEvents203Proxies } from "./events203.js";
@@ -60,6 +61,7 @@ export function setupAllProxies() {
     setupAutoLootProxy();
     setupItemGetNotificationProxy();
     setupEvents038Proxies();
+    setupEvents116Proxies();
     setupEvents124Proxies();
     setupEvents189Proxies();
     setupEvents203Proxies();
