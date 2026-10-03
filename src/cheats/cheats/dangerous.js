@@ -334,6 +334,33 @@ registerCheat({
     },
 });
 
+/**
+ * Talent ids the talent menu never shows: everything displayed after
+ * BORED_TO_DEATH, which is the last real star talent in TalentOrder.
+ *
+ * The menu hides a slot while SkillLevelsMAX is -1, so levelling those ids makes
+ * it render phantom "LV 0" entries that cannot be refunded past the daily respec
+ * limit. TalentOrder is display order, not id order (id 615 sits at slot 657),
+ * so the cut has to be found through it rather than by id.
+ *
+ * @returns {Set<number>} Ids to keep hidden, empty when the marker is missing
+ */
+function getUnusedTalentIds() {
+    const order = cList?.TalentOrder;
+    const names = cList?.TalentIconNames;
+    const ids = new Set();
+    if (!order || !names) return ids;
+
+    let cut = -1;
+    for (let i = 0; i < order.length; i++) {
+        if (names[Number(order[i])] === "BORED_TO_DEATH") cut = i;
+    }
+    if (cut < 0) return ids;
+
+    for (let i = cut + 1; i < order.length; i++) ids.add(Number(order[i]));
+    return ids;
+}
+
 // Build custom level handlers dispatch object
 const customLevelHandlers = {
     furnace: (lvl) => {
@@ -353,8 +380,21 @@ const customLevelHandlers = {
     talent: (lvl) => {
         const LevelsMax = gga.SkillLevelsMAX;
         const Levels = gga.SkillLevels;
-        for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
-        return `Talent levels has been changed to ${lvl}.`;
+        const unused = getUnusedTalentIds();
+
+        for (const idx of Object.keys(LevelsMax)) {
+            // Restore the -1 the game uses to hide these slots, so a save that an
+            // earlier run already polluted is repaired by running this again.
+            if (unused.has(Number(idx))) {
+                Levels[idx] = 0;
+                LevelsMax[idx] = -1;
+                continue;
+            }
+            LevelsMax[idx] = Levels[idx] = lvl;
+        }
+
+        const skipped = unused.size ? ` ${unused.size} empty star talent slots left hidden.` : "";
+        return `Talent levels has been changed to ${lvl}.${skipped}`;
     },
     stamp: (lvl) => {
         const LevelsMax = gga.StampLevelMAX;
