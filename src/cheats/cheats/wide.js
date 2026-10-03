@@ -21,6 +21,7 @@ registerCheats({
     message: "all account-wide cheats",
     allowToggleChildren: true,
     subcheats: [
+        { name: "storagecap", message: "uncapped storage stacks; pauses Atom Collider conversion" },
         { name: "gembuylimit", message: "set max gem item purchases", configurable: true },
         { name: "mtx", message: "gem shop cost nullification" },
         { name: "post", message: "post cost nullification" },
