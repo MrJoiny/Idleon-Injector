@@ -32,6 +32,7 @@ import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
 import { getBundleCatalog } from "./helpers/bundles.js";
 import { monitor } from "./core/valueMonitor.js";
+import { setupEvents116Proxies } from "./proxies/events116.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
@@ -64,6 +65,7 @@ async function setup() {
 window.cheat = cheat;
 window.setup = setup;
 window.updateCheatConfig = updateCheatConfig;
+window.setupEvents116Proxies = setupEvents116Proxies;
 
 // WebUI API
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;

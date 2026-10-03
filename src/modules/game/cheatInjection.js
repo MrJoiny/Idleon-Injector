@@ -11,6 +11,7 @@ const fs = require("fs").promises;
 const { getRuntimePath } = require("../utils/runtimePaths");
 const { objToString } = require("../utils/helpers");
 const { createLogger } = require("../utils/logger");
+const { patchGameScript } = require("./gameScriptPatches");
 
 const log = createLogger("Injection");
 
@@ -89,15 +90,21 @@ async function setupIntercept(hook, config, startupCheats, cheatConfig, cdpPort)
 
                 // Inject cheats directly into the current context to persist across page reloads
                 log.debug("Evaluating cheat code");
-                await Runtime.evaluate({
+                const evaluation = await Runtime.evaluate({
                     expression: cheats,
                     awaitPromise: true,
                     allowUnsafeEvalBlockedByCSP: true,
                 });
+                if (evaluation.exceptionDetails) {
+                    const details = evaluation.exceptionDetails;
+                    throw new Error(`Cheat code evaluation failed: ${details.exception?.description ?? details.text}`);
+                }
 
                 // Assign the game variable to a global window property for cheat access
                 const replacementRegex = new RegExp(config.injreg);
-                const newBody = originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`);
+                const newBody = patchGameScript(
+                    originalBody.replace(replacementRegex, `window.__idleon_cheats__=${AppVar[0]};$&`)
+                );
 
                 log.debug("Patching game script");
 
