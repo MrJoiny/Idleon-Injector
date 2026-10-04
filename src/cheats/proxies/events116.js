@@ -1,9 +1,44 @@
 /**
- * Install storage digit-font protection before actors initialize and bind their listeners.
- * @param {Function} ActorEvents116 - The game's storage actor class.
+ * Capture the storage actor class and protect its renderer before behavior creation.
+ * The first behavior lookup follows prototype assignment and precedes listener binding.
  * @returns {void}
  */
-export function setupEvents116Proxies(ActorEvents116) {
+export function setupEvents116EarlyHook() {
+    Object.defineProperty(window, "__idleon_cheats__", {
+        configurable: true,
+        enumerable: true,
+        set(registry) {
+            Object.defineProperty(window, "__idleon_cheats__", {
+                value: registry,
+                writable: true,
+                configurable: true,
+                enumerable: true,
+            });
+            Object.defineProperty(registry, "scripts.ActorEvents_116", {
+                configurable: true,
+                enumerable: true,
+                set(ActorEvents116) {
+                    Object.defineProperty(registry, "scripts.ActorEvents_116", {
+                        configurable: true,
+                        enumerable: true,
+                        get() {
+                            Object.defineProperty(registry, "scripts.ActorEvents_116", {
+                                value: ActorEvents116,
+                                writable: true,
+                                configurable: true,
+                                enumerable: true,
+                            });
+                            setupEvents116Proxies(ActorEvents116);
+                            return ActorEvents116;
+                        },
+                    });
+                },
+            });
+        },
+    });
+}
+
+function setupEvents116Proxies(ActorEvents116) {
     const quantityFormat = new Intl.NumberFormat("en-US", { useGrouping: false, maximumFractionDigits: 0 });
     const activeActors = new WeakSet();
 
