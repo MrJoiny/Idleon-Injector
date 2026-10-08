@@ -121,7 +121,9 @@ const MapCrystalRow = ({ map, states }) => {
             div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, map.name)),
         ],
         badge: formatBadge,
-        controlsClass: "account-row__controls--stack-action",
+        rowClass: "map-crystal-row account-row--wide-controls",
+        badgeClass: "map-crystal-row__badge",
+        controlsClass: "account-row__controls--stack-action map-crystal-row__controls",
         renderControls: ({ draftStates, resetDraft, setFieldFocused }) =>
             div(
                 { class: "account-stacked-fields" },
@@ -174,49 +176,49 @@ export const MapCrystalsTab = () => {
             const mapTargets = toIndexedArray(rawMapTargets ?? []);
             const deathNoteMobs = toIndexedArray(rawDeathNoteMobs ?? []).map((list) => toIndexedArray(list ?? []));
 
-            const parsedMaps = [];
+            const discoveredMaps = [];
 
             for (let i = 0; i < mapBon.length; i++) {
-                const entry = toIndexedArray(mapBon[i] ?? []);
-                if (entry.length >= 3) {
-                    const targetMob = mapTargets[i];
-                    const worldKey = resolveWorldKey(i, targetMob, deathNoteMobs);
-                    const rawName = mapDispNames[i] ? String(mapDispNames[i]).replace(/_/g, " ") : `Map ${i}`;
-                    const name = cleanName(rawName);
+                const bonEntry = mapBon[i];
+                if (!Array.isArray(bonEntry) || bonEntry.length < 3) continue;
 
-                    const states = getMapStates(i);
-                    states.purple.val = toInt(entry[0], { min: 0 });
-                    states.yellow.val = toInt(entry[1], { min: 0 });
-                    states.blue.val = toInt(entry[2], { min: 0 });
+                const targetMob = mapTargets[i];
+                const rawName = mapDispNames[i] ? String(mapDispNames[i]).replace(/_/g, " ") : `Map ${i}`;
+                const clean = cleanName(rawName);
+                if (!clean) continue;
 
-                    parsedMaps.push({
-                        mapIndex: i,
-                        name,
-                        targetMob,
-                        worldKey,
-                    });
-                }
+                const worldKey = resolveWorldKey(i, targetMob, deathNoteMobs);
+
+                discoveredMaps.push({
+                    mapIndex: i,
+                    name: clean,
+                    worldKey,
+                });
+
+                const states = getMapStates(i);
+                states.purple.val = toInt(bonEntry[0], { min: 0 });
+                states.yellow.val = toInt(bonEntry[1], { min: 0 });
+                states.blue.val = toInt(bonEntry[2], { min: 0 });
             }
 
-            allMaps.val = parsedMaps;
+            allMaps.val = discoveredMaps;
         });
 
     const applyBulkKills = async (mapsToUpdate, killCount) => {
-        if (!mapsToUpdate.length) return;
+        if (!mapsToUpdate || mapsToUpdate.length === 0) return;
         await runBulk(async () => {
-            const writes = mapsToUpdate.flatMap((map) => [
-                { path: `MapBon[${map.mapIndex}][0]`, value: killCount },
-                { path: `MapBon[${map.mapIndex}][1]`, value: killCount },
-                { path: `MapBon[${map.mapIndex}][2]`, value: killCount },
-            ]);
-
+            const writes = [];
+            for (const map of mapsToUpdate) {
+                writes.push({ path: `MapBon[${map.mapIndex}][0]`, value: killCount });
+                writes.push({ path: `MapBon[${map.mapIndex}][1]`, value: killCount });
+                writes.push({ path: `MapBon[${map.mapIndex}][2]`, value: killCount });
+            }
             await writeManyVerified(writes);
             try {
                 await deleteGga("DNSM.h.ArcMultBon");
             } catch {
-                /* non-fatal if DNSM does not exist */
+                /* non-fatal */
             }
-
             for (const map of mapsToUpdate) {
                 const states = getMapStates(map.mapIndex);
                 states.purple.val = killCount;
@@ -227,11 +229,9 @@ export const MapCrystalsTab = () => {
     };
 
     const getActiveWorldMaps = () => {
-        const selectedTab = WORLD_TABS.find((t) => t.id === activeTab.val);
-        if (!selectedTab || selectedTab.worldKey === "ALL") {
-            return allMaps.val;
-        }
-        return allMaps.val.filter((m) => m.worldKey === selectedTab.worldKey);
+        if (activeTab.val === "all") return allMaps.val;
+        const targetWorld = activeTab.val.toUpperCase();
+        return allMaps.val.filter((m) => m.worldKey === targetWorld);
     };
 
     load();
@@ -257,7 +257,7 @@ export const MapCrystalsTab = () => {
         }
 
         return div(
-            { class: "account-list" },
+            { class: "account-list map-crystals-list" },
             ...visibleMaps.map((map) => MapCrystalRow({ map, states: getMapStates(map.mapIndex) }))
         );
     };
@@ -284,12 +284,13 @@ export const MapCrystalsTab = () => {
     ];
 
     const body = div(
-        { class: "account-page-layout" },
+        { class: "map-crystals-container" },
         div(
-            { class: "masterclasses-search-bar" },
+            { class: "map-crystals-search-bar" },
             SearchBar({
                 placeholder: "SEARCH MAPS OR INDEX",
                 value: searchQuery,
+                debounceMs: 0,
                 onInput: (val) => (searchQuery.val = val),
             })
         ),
@@ -316,7 +317,7 @@ export const MapCrystalsTab = () => {
         state: { loading, error },
         loadingText: "READING MAP CRYSTALS",
         errorTitle: "MAP CRYSTAL READ FAILED",
-        initialWrapperClass: "account-list",
+        initialWrapperClass: "map-crystals-container",
         body,
     });
 };
