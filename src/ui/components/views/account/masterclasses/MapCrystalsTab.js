@@ -37,6 +37,16 @@ export const calculateArcaneCrystalBonus = (kills) => {
     return Math.max(0, Math.round(val * 10) / 10);
 };
 
+/** Calculate Arcane crystal stat multiplier (e.g. 1.631) matching in-game AFK screen format. */
+export const calculateArcaneCrystalMultiplier = (kills, capPercent = null) => {
+    let bonus = calculateArcaneCrystalBonus(kills);
+    if (capPercent !== null && capPercent > 0 && bonus > capPercent) {
+        bonus = capPercent;
+    }
+    const mult = Math.floor(1000 * (1 + bonus / 100)) / 1000;
+    return mult.toFixed(3);
+};
+
 const resolveWorldKey = (mapIndex, targetMob, deathNoteMobs) => {
     if (targetMob && deathNoteMobs) {
         for (let w = 0; w < deathNoteMobs.length; w++) {
@@ -56,7 +66,7 @@ const resolveWorldKey = (mapIndex, targetMob, deathNoteMobs) => {
     return "W7";
 };
 
-const MapCrystalRow = ({ map, states }) => {
+const MapCrystalRow = ({ map, states, talentCap }) => {
     const { purple: purpleState, yellow: yellowState, blue: blueState } = states;
 
     const fields = [
@@ -87,11 +97,36 @@ const MapCrystalRow = ({ map, states }) => {
     ];
 
     const formatBadge = () => {
-        const p = calculateArcaneCrystalBonus(purpleState.val);
-        const y = calculateArcaneCrystalBonus(yellowState.val);
-        const b = calculateArcaneCrystalBonus(blueState.val);
-        if (p === 0 && y === 0 && b === 0) return "0% BONUS";
-        return `+${p}% DMG · +${y}% DROP · +${b}% AFK`;
+        const pRaw = calculateArcaneCrystalBonus(purpleState.val);
+        const yRaw = calculateArcaneCrystalBonus(yellowState.val);
+        const bRaw = calculateArcaneCrystalBonus(blueState.val);
+
+        if (pRaw === 0 && yRaw === 0 && bRaw === 0) return "1.000x (+0%)";
+
+        const cap = talentCap ? talentCap.val : null;
+        const isCapped = (raw) => cap !== null && cap > 0 && raw > cap;
+        const getEffectiveBonus = (raw) => (isCapped(raw) ? cap : raw);
+        const toMult = (raw) => {
+            const eff = getEffectiveBonus(raw);
+            return (Math.floor(1000 * (1 + eff / 100)) / 1000).toFixed(3);
+        };
+
+        const pMult = toMult(pRaw);
+        const yMult = toMult(yRaw);
+        const bMult = toMult(bRaw);
+
+        const anyCapped = isCapped(pRaw) || isCapped(yRaw) || isCapped(bRaw);
+
+        if (purpleState.val === yellowState.val && yellowState.val === blueState.val) {
+            const rawMult = (Math.floor(1000 * (1 + pRaw / 100)) / 1000).toFixed(3);
+            if (anyCapped) {
+                return `${pMult}x (Capped · Max ${rawMult}x / +${pRaw}%)`;
+            }
+            return `${pMult}x (+${pRaw}%)`;
+        }
+
+        const cappedSuffix = anyCapped ? " (Capped)" : "";
+        return `${pMult}x DMG · ${yMult}x DROP · ${bMult}x AFK${cappedSuffix}`;
     };
 
     return EditableFieldsRow({
@@ -134,7 +169,7 @@ const MapCrystalRow = ({ map, states }) => {
                 label: "10M",
                 variant: "max-reset",
                 status,
-                tooltip: "Set all crystals for this map to 10,000,000 kills (~63% bonus)",
+                tooltip: "Set all crystals for this map to 10,000,000 kills (1.631x / +63.1% bonus)",
                 onClick: () => applyValue({ purple: 10000000, yellow: 10000000, blue: 10000000 }),
             }),
         ],
@@ -149,6 +184,7 @@ export const MapCrystalsTab = () => {
     const activeTab = van.state(WORLD_TABS[0].id);
     const searchQuery = van.state("");
     const allMaps = van.state([]);
+    const talentCap = van.state(null);
     const mapStateRegistry = new Map();
 
     const getMapStates = (mapIndex) => {
@@ -164,17 +200,22 @@ export const MapCrystalsTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawMapBon, rawMapDispNames, rawMapTargets, rawDeathNoteMobs] = await Promise.all([
+            const [rawMapBon, rawMapDispNames, rawMapTargets, rawDeathNoteMobs, rawArcMultBon] = await Promise.all([
                 gga("MapBon"),
                 gga("CustomLists.h.MapDispName"),
                 gga("CustomLists.h.MapAFKtarget"),
                 gga("CustomLists.h.DeathNoteMobs"),
+                gga("DNSM.h.ArcMultBon"),
             ]);
 
             const mapBon = toIndexedArray(rawMapBon ?? []);
             const mapDispNames = toIndexedArray(rawMapDispNames ?? []);
             const mapTargets = toIndexedArray(rawMapTargets ?? []);
             const deathNoteMobs = toIndexedArray(rawDeathNoteMobs ?? []).map((list) => toIndexedArray(list ?? []));
+
+            if (Array.isArray(rawArcMultBon) && rawArcMultBon.length > 0 && Number.isFinite(Number(rawArcMultBon[0]))) {
+                talentCap.val = Math.round(Number(rawArcMultBon[0]) * 100) / 100;
+            }
 
             const discoveredMaps = [];
 
@@ -258,7 +299,7 @@ export const MapCrystalsTab = () => {
 
         return div(
             { class: "account-list map-crystals-list" },
-            ...visibleMaps.map((map) => MapCrystalRow({ map, states: getMapStates(map.mapIndex) }))
+            ...visibleMaps.map((map) => MapCrystalRow({ map, states: getMapStates(map.mapIndex), talentCap }))
         );
     };
 
@@ -266,13 +307,13 @@ export const MapCrystalsTab = () => {
         {
             label: "SET WORLD TO 10M",
             status: bulkStatus,
-            tooltip: "Set all crystals on maps in the current world view to 10M kills (~63% bonus)",
+            tooltip: "Set all crystals on maps in the current world view to 10M kills (1.631x / +63.1% bonus)",
             onClick: () => applyBulkKills(getActiveWorldMaps(), 10000000),
         },
         {
             label: "SET ALL TO 10M",
             status: bulkStatus,
-            tooltip: "Set all crystals across all worlds to 10M kills (~63% bonus)",
+            tooltip: "Set all crystals across all worlds to 10M kills (1.631x / +63.1% bonus)",
             onClick: () => applyBulkKills(allMaps.val, 10000000),
         },
         {
@@ -300,7 +341,15 @@ export const MapCrystalsTab = () => {
     return PersistentAccountListPage({
         rootClass: "tab-container scroll-container",
         title: "MAP CRYSTALS",
-        description: "Edit Arcane Cultist crystal kill progression (Purple, Yellow, Blue) for all map stat bonuses.",
+        description: () => {
+            const base =
+                "Edit Arcane Cultist crystal kill progression (Purple: DMG, Yellow: Drop, Blue: AFK). In-game displays values as a total multiplier.";
+            if (talentCap.val !== null && talentCap.val > 0) {
+                const capMult = (Math.floor(1000 * (1 + talentCap.val / 100)) / 1000).toFixed(3);
+                return `${base} Talent 589 cap: ${capMult}x (+${talentCap.val}%).`;
+            }
+            return base;
+        },
         actions: BulkActionBar({
             actions: bulkActions,
             refresh: {
