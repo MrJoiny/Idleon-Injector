@@ -27,7 +27,7 @@ Keep the dangerous `chng` command disabled unless you understand the consequence
 ## Source entry points
 
 - [Defaults](../config.js) and [configuration loading](../src/modules/config/configManager.js).
-- [Config workspace](../src/ui/components/views/Config.js).
+- [Config view](../src/ui/components/views/Config.js).
 - [Account option labels and warnings](../src/ui/config/optionsAccountSchema.json).
 
 See [platform setup](platforms.md) for target selection and the [glossary](glossary.md) for configuration terms.

@@ -1,6 +1,6 @@
 # Cheats
 
-Use the CLI or Cheats workspace to find commands and their descriptions. The
+Use the CLI or Cheats view to find commands and their descriptions. The
 [project wiki](https://github.com/MrJoiny/Idleon-Injector/wiki) provides a user-facing command list.
 See the [glossary](glossary.md) for the distinction between commands, state, configuration, and proxies.
 

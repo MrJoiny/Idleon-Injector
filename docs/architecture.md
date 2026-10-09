@@ -24,7 +24,7 @@ Injected code runs in the game context; Node and UI code have separate environme
 | Console interaction                 | [cliInterface.js](../src/modules/cli/cliInterface.js)                                                |
 | Command registration and state      | [cheats/core](../src/cheats/core/)                                                                   |
 | Commands and game hooks             | [cheats/cheats](../src/cheats/cheats/), [proxies](../src/cheats/proxies/)                            |
-| UI workspaces and shared components | [views](../src/ui/components/views/), [components](../src/ui/components/)                            |
+| UI views and shared components      | [views](../src/ui/components/views/), [components](../src/ui/components/)                            |
 | UI state and communication          | [state](../src/ui/state/), [services](../src/ui/services/)                                           |
 | Styles                              | [style.css](../src/ui/entry/style.css), [styles](../src/ui/styles/)                                  |
 | Bundling and packaging              | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |

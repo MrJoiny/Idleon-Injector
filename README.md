@@ -12,7 +12,7 @@ Need help or want to share feedback? Join the community on Discord:
 - **Steam/Web Injection**: Injects JavaScript into the Steam client or web
   session using a configurable Chromium-based browser profile.
 - **Web Dashboard ([VanJS](https://vanjs.org/))**: Local UI at
-  `http://localhost:8080` with Atlas workspaces for cheats, account editing,
+  `http://localhost:8080` with views for cheats, account editing,
   configuration, Search, and DevTools.
 - **Live State Sync**: WebSocket updates keep cheat state in sync without
   polling.
@@ -66,7 +66,7 @@ The recommended way to interact is via the [VanJS](https://vanjs.org/)-powered W
     - View active cheat status.
     - Modify account configs.
     - Save and monitor game values from Search.
-    - Review success/error activity without leaving the active workspace.
+    - Review success/error activity without leaving the active view.
     - Access Chrome DevTools.
     - Apply config changes to RAM or save them to disk.
 
