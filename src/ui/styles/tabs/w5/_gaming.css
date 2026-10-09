@@ -110,3 +110,195 @@
         width: 64px;
     }
 }
+
+/* Rat King & Crowns */
+.rat-king-dashboard {
+    width: 100%;
+}
+
+.rat-king-overview-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.rat-king-stat-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.2s;
+}
+
+.rat-king-stat-card:hover {
+    border-color: var(--c-border-strong);
+}
+
+.rat-king-stat-card__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--c-text-muted);
+    text-transform: uppercase;
+}
+
+.rat-king-stat-card__value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--c-accent);
+    font-family: var(--font-mono, monospace);
+    white-space: nowrap;
+}
+
+.rat-king-stat-card__subtext {
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+}
+
+.rat-king-progress-wrapper {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rat-king-progress-bar {
+    height: 8px;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.rat-king-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4af37, #ffd700);
+    transition: width 0.3s ease;
+}
+
+.rat-king-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 10px 14px;
+}
+
+.rat-king-bulk-bar .account-setall-row {
+    margin-left: auto;
+}
+
+.rat-king-plants-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rat-king-plant-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rat-king-plant-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rat-king-plant-title {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--c-text-main);
+}
+
+.rat-king-plant-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.rat-king-crowns-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+}
+
+.rat-king-crown-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 6px 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    min-height: 48px;
+    color: var(--c-text-dim);
+}
+
+.rat-king-crown-chip:hover {
+    border-color: var(--c-accent);
+    color: var(--c-text-main);
+    transform: translateY(-1px);
+}
+
+.rat-king-crown-chip--active {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #d4af37;
+    color: #f3ba2f;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.25);
+}
+
+.rat-king-crown-chip--active .rat-king-crown-chip__icon svg {
+    fill: rgba(243, 186, 47, 0.35);
+}
+
+.rat-king-crown-chip:not(.rat-king-crown-chip--active) .rat-king-crown-chip__icon svg {
+    opacity: 0.4;
+}
+
+.rat-king-crown-chip--locked {
+    opacity: 0.55;
+    border-style: dashed;
+}
+
+.rat-king-crown-chip__icon {
+    font-size: 1.15rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rat-king-crown-chip__label {
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+@media (max-width: 800px) {
+    .rat-king-crowns-row {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .rat-king-bulk-bar .account-setall-row {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
