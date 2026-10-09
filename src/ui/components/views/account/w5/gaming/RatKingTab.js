@@ -161,10 +161,7 @@ export const RatKingTab = () => {
         div(
             { class: "rat-king-progress-wrapper" },
             div(
-                {
-                    class: "account-row__header",
-                    style: "display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--c-text-muted);",
-                },
+                { class: "rat-king-progress-header" },
                 span("COLLECTION PROGRESS"),
                 span(() => `${crownsSet.val.size}%`)
             ),
@@ -172,7 +169,7 @@ export const RatKingTab = () => {
                 { class: "rat-king-progress-bar" },
                 div({
                     class: "rat-king-progress-fill",
-                    style: () => `width: ${crownsSet.val.size}%;`,
+                    style: () => `--progress: ${crownsSet.val.size}%;`,
                 })
             )
         );
@@ -221,27 +218,19 @@ export const RatKingTab = () => {
                 { class: "rat-king-plant-header" },
                 span({ class: "rat-king-plant-title" }, `Plant ${p + 1} (Sprout ${sproutLetter})`),
                 span(
-                    { class: "account-row__badge", style: "font-size: 0.72rem;" },
+                    { class: "account-row__badge rat-king-badge--logbook" },
                     () => `LOGBOOK: ${getUnlockedMutationCount(logbookStr.val, p)}/10 DISCOVERED`
                 ),
                 div(
                     { class: "rat-king-plant-meta" },
-                    span(
-                        {
-                            class: "account-row__badge",
-                            style: "font-size: 0.75rem; color: #f3ba2f; display: inline-flex; align-items: center; gap: 4px;",
-                        },
-                        Icons.Crown({ style: "font-size: 0.85rem;" }),
-                        () => {
-                            const owned = MUTATION_CHARS.filter((m) => crownsSet.val.has(`${p}${m}`)).length;
-                            return `${owned}/10 CROWNS`;
-                        }
-                    ),
+                    span({ class: "account-row__badge rat-king-badge--crowns" }, Icons.Crown(), () => {
+                        const owned = MUTATION_CHARS.filter((m) => crownsSet.val.has(`${p}${m}`)).length;
+                        return `${owned}/10 CROWNS`;
+                    }),
                     button(
                         {
                             type: "button",
                             class: "account-btn account-btn--max-reset",
-                            style: "height: 24px; min-width: 44px; padding: 0 6px; font-size: 0.75rem;",
                             disabled: () => matrixStatus.status.val === "loading",
                             onclick: () => updatePlantCrowns(p, true),
                             title: `Reclaim all 10 crowns for Plant ${p + 1}`,
@@ -252,7 +241,6 @@ export const RatKingTab = () => {
                         {
                             type: "button",
                             class: "account-btn account-btn--danger",
-                            style: "height: 24px; min-width: 44px; padding: 0 6px; font-size: 0.75rem;",
                             disabled: () => matrixStatus.status.val === "loading",
                             onclick: () => updatePlantCrowns(p, false),
                             title: `Clear crowns for Plant ${p + 1}`,

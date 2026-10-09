@@ -166,6 +166,13 @@
     gap: 8px;
 }
 
+.rat-king-progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--c-text-muted);
+}
+
 .rat-king-progress-bar {
     height: 8px;
     background: var(--c-bg);
@@ -176,6 +183,7 @@
 
 .rat-king-progress-fill {
     height: 100%;
+    width: var(--progress, 0%);
     background: linear-gradient(90deg, #d4af37, #ffd700);
     transition: width 0.3s ease;
 }
@@ -222,11 +230,34 @@
     color: var(--c-text-main);
 }
 
+.rat-king-badge--logbook {
+    font-size: 0.72rem;
+}
+
+.rat-king-badge--crowns {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #f3ba2f;
+}
+
+.rat-king-badge--crowns .icon-base {
+    font-size: 0.85rem;
+}
+
 .rat-king-plant-meta {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-left: auto;
+}
+
+.rat-king-plant-meta .account-btn {
+    height: 24px;
+    min-width: 44px;
+    padding: 0 6px;
+    font-size: 0.75rem;
 }
 
 .rat-king-crowns-row {
