@@ -12,7 +12,8 @@ Need help or want to share feedback? Join the community on Discord:
 - **Steam/Web Injection**: Injects JavaScript into the Steam client or web
   session using a configurable Chromium-based browser profile.
 - **Web Dashboard ([VanJS](https://vanjs.org/))**: Local UI at
-  `http://localhost:8080` for cheats, state inspection, and DevTools.
+  `http://localhost:8080` with Atlas workspaces for cheats, account editing,
+  configuration, Search, and DevTools.
 - **Live State Sync**: WebSocket updates keep cheat state in sync without
   polling.
 - **Value Monitor**: Track in-game values with history in the Web UI.
@@ -64,7 +65,8 @@ The recommended way to interact is via the [VanJS](https://vanjs.org/)-powered W
     - Toggle cheats on/off.
     - View active cheat status.
     - Modify account configs.
-    - Monitor specific game values (manual path or from Search).
+    - Save and monitor game values from Search.
+    - Review success/error activity without leaving the active workspace.
     - Access Chrome DevTools.
     - Apply config changes to RAM or save them to disk.
 
@@ -121,13 +123,15 @@ npm run validate
 
 ## Documentation
 
-- [Backend Architecture](docs/backend.md) - Server, CDP, and module structure.
+- [Architecture Map](docs/architecture.md) - Runtime boundaries and source entry points.
+- [Domain Language](docs/glossary.md) - Shared project terminology.
+- [Design Decisions](docs/decisions.md) - Choices, alternatives, and trade-offs.
 - [Build Guide](docs/build.md) - Building from source for all platforms.
-- [Cheats Guide](docs/cheats.md) - Writing and registering cheats.
+- [Cheats Guide](docs/cheats.md) - Usage safety and contributor entry points.
 - [CLI Reference](docs/cli.md) - Console commands and autocomplete.
-- [Configuration](docs/config.md) - Config files, schema, and validation.
+- [Configuration](docs/config.md) - Applying settings, saving overrides, and safety.
 - [Platforms](docs/platforms.md) - Steam, web, and OS-specific setup.
-- [Web UI](docs/ui.md) - VanJS dashboard and components.
+- [Account Pages](docs/account-pages.md) - Editing safety and source entry points.
 
 ## Contributing
 
