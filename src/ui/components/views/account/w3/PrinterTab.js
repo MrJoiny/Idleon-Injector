@@ -13,7 +13,6 @@ import {
     unwrapH,
     useWriteStatus,
     writeManyVerified,
-    writeVerified,
 } from "../accountShared.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { AccountSection } from "../components/AccountSection.js";
@@ -57,6 +56,9 @@ export const PrinterTab = () => {
     const isDirty = (state) => {
         state.dirty.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+        if (rawQty === String(state.baseline.qty)) {
+            return state.item.val !== state.baseline.item;
+        }
         const parsed = parseNumber(rawQty);
         const qtyChanged = Number.isFinite(parsed)
             ? Math.round(parsed) !== Number(state.baseline.qty)
@@ -115,13 +117,14 @@ export const PrinterTab = () => {
     };
 
     const readSnapshot = async () => {
-        const [rawNames, current, unlocked, gems, printer, extra] = await Promise.all([
+        const [rawNames, current, unlocked, gems, printer, extra, catalogueResult] = await Promise.all([
             gga("GetPlayersUsernames"),
             gga("UserInfo[0]"),
             gga("TowerInfo[0]"),
             gga("GemItemsPurchased"),
             gga("Printer"),
             gga("PrinterXtra"),
+            getCatalogue(),
         ]);
         const names = toIndexedArray(rawNames).filter(
             (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
@@ -138,7 +141,7 @@ export const PrinterTab = () => {
             throw new Error("Printer data is unavailable or invalid. Refresh to try again.");
         }
 
-        const { catalogue, ids, namesById } = await getCatalogue();
+        const { catalogue, ids, namesById } = catalogueResult;
         return {
             names,
             current,
@@ -217,8 +220,7 @@ export const PrinterTab = () => {
 
     const applyWrites = async (writes) => {
         try {
-            if (writes.length === 1) await writeVerified(writes[0].path, writes[0].value);
-            else await writeManyVerified(writes);
+            await writeManyVerified(writes);
         } catch (caughtError) {
             try {
                 await readFresh();
@@ -242,11 +244,12 @@ export const PrinterTab = () => {
         }
         const item = clear ? "Blank" : state.item.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+        const isUnchangedQty = rawQty === String(state.baseline.qty);
         const parsed = Math.round(parseNumber(rawQty));
         if (!clear && (!isAllowedItem(item, state) || !Number.isFinite(parsed) || parsed <= 0)) return;
         const qty = clear
             ? 0
-            : parsed === Number(state.baseline.qty)
+            : isUnchangedQty || parsed === Number(state.baseline.qty)
               ? state.baseline.qty
               : typeof state.baseline.qty === "string"
                 ? String(parsed)
@@ -264,11 +267,12 @@ export const PrinterTab = () => {
                         throw new Error("This slot or item is no longer available. Refresh and check the draft.");
                     }
                     const { array, index } = state.location;
-                    if (clear && next[array][index] === "Blank" && Number(next[array][index + 1]) === 0) return;
-                    await applyWrites([
-                        { path: `${array}[${index}]`, value: item },
-                        { path: `${array}[${index + 1}]`, value: qty },
-                    ]);
+                    if (!(clear && next[array][index] === "Blank" && Number(next[array][index + 1]) === 0)) {
+                        await applyWrites([
+                            { path: `${array}[${index}]`, value: item },
+                            { path: `${array}[${index + 1}]`, value: qty },
+                        ]);
+                    }
                     updateRow(state, item, qty, true);
                     state.syncOptions();
                 },
