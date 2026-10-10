@@ -15,6 +15,7 @@ import { DeathNoteTab } from "./w3/DeathNoteTab.js";
 import { LibraryTab } from "./w3/LibraryTab.js";
 import { EquinoxTab } from "./w3/EquinoxTab.js";
 import { TrappingTab } from "./w3/TrappingTab.js";
+import { PrinterTab } from "./w3/PrinterTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -26,6 +27,7 @@ const CONSTRUCTION_SUBTABS = [
 
 const W3_SUBTABS = [
     { id: "construction", label: "CONSTRUCTION", component: ConstructionPanel },
+    { id: "printer", label: "PRINTER", component: PrinterTab },
     { id: "refinery", label: "REFINERY", component: RefineryTab },
     { id: "salt-lick", label: "SALT LICK", component: SaltLickTab },
     { id: "atom-collider", label: "ATOM COLLIDER", component: AtomColliderTab },

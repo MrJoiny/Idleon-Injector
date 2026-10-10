@@ -1,0 +1,82 @@
+.printer-capacities,
+.printer-character-control,
+.printer-capacity-control,
+.printer-capacity-control label,
+.printer-character-control label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.printer-capacities {
+    gap: 12px 24px;
+}
+
+.printer-capacity-control input {
+    width: 60px;
+}
+
+.printer-tab input {
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel);
+    color: var(--c-text);
+}
+
+.printer-tab .select-base {
+    height: 30px;
+    padding: 0 8px;
+}
+
+.printer-note {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+}
+
+.printer-section-title {
+    margin: 12px 0 8px;
+    font-size: 0.875rem;
+}
+
+.printer-row {
+    grid-template-columns: minmax(120px, 1fr) auto;
+}
+
+.printer-row .account-row__badge {
+    justify-self: end;
+}
+
+.printer-row .account-row__controls {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+}
+
+.printer-row .account-row__sub-label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.printer-item-select {
+    width: 320px;
+    max-width: 100%;
+}
+
+.printer-quantity {
+    width: 170px;
+}
+
+@media (max-width: 600px) {
+    .printer-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .printer-row .account-row__badge {
+        justify-self: start;
+    }
+
+    .printer-item-select {
+        width: 100%;
+    }
+}
