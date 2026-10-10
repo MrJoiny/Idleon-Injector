@@ -302,4 +302,11 @@ export const Icons = {
             }),
             { "stroke-width": "2", "aria-hidden": "true", ...props }
         ),
+
+    Crown: (props) =>
+        SvgBase([path({ d: "m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z" }), line({ x1: "5", y1: "20", x2: "19", y2: "20" })], {
+            "stroke-width": "2",
+            "aria-hidden": "true",
+            ...props,
+        }),
 };
