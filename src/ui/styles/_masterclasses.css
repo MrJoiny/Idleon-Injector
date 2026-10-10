@@ -439,7 +439,8 @@
     .grimoire-row,
     .masterclass-upgrade-row,
     .resource-node-row,
-    .outpost-row {
+    .outpost-row,
+    .map-crystal-row {
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
@@ -447,7 +448,8 @@
     .masterclass-upgrade-row__controls,
     .resource-node-row__controls,
     .outpost-row__controls,
-    .outpost-kill-row__controls {
+    .outpost-kill-row__controls,
+    .map-crystal-row__controls {
         grid-column: 1 / -1;
         justify-content: flex-end;
     }
@@ -485,4 +487,54 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-left: auto;
+}
+
+/* ── Map Crystals Tab ─────────────────────────────────────────────────── */
+
+.map-crystals-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+}
+
+.map-crystals-search-bar {
+    padding: 12px 14px 4px;
+    flex-shrink: 0;
+}
+
+.map-crystals-search-bar .search-wrapper {
+    max-width: 480px;
+}
+
+.map-crystals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 14px;
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.map-crystal-row {
+    grid-template-columns: minmax(240px, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.map-crystal-row .account-row__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.map-crystal-row__badge {
+    min-width: 240px;
+    text-align: center;
+    justify-content: center;
+    display: inline-flex;
 }
