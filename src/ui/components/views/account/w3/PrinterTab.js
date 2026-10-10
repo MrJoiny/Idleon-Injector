@@ -57,7 +57,11 @@ export const PrinterTab = () => {
     const isDirty = (state) => {
         state.dirty.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
-        return state.item.val !== state.baseline.item || rawQty !== String(state.baseline.qty);
+        const parsed = parseNumber(rawQty);
+        const qtyChanged = Number.isFinite(parsed)
+            ? Math.round(parsed) !== Number(state.baseline.qty)
+            : rawQty !== String(state.baseline.qty);
+        return state.item.val !== state.baseline.item || qtyChanged;
     };
     const hasDrafts = () => [...rows.values()].some(isDirty);
     const getItemDisplayName = (id) => snapshot.val?.namesById?.get(id) ?? id;
@@ -227,20 +231,29 @@ export const PrinterTab = () => {
 
     const setSlot = async (state, clear = false) => {
         if (cannotWrite()) return;
+        if (clear) {
+            const charName = snapshot.val?.names?.[state.character] ?? "character";
+            if (
+                !window.confirm(
+                    `${state.kind === "print" ? "Stop" : "Clear"} ${charName} ${state.kind} ${state.slot + 1}?`
+                )
+            )
+                return;
+        }
         const item = clear ? "Blank" : state.item.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
-        const parsed = parseNumber(rawQty);
+        const parsed = Math.round(parseNumber(rawQty));
         if (!clear && (!isAllowedItem(item, state) || !Number.isFinite(parsed) || parsed <= 0)) return;
         const qty = clear
             ? 0
-            : rawQty === String(state.baseline.qty)
+            : parsed === Number(state.baseline.qty)
               ? state.baseline.qty
               : typeof state.baseline.qty === "string"
                 ? String(parsed)
                 : parsed;
         busy.val = true;
         try {
-            const result = await state.write.run(
+            await state.write.run(
                 async () => {
                     const next = await readFresh();
                     const cap = Math.round(
@@ -251,14 +264,7 @@ export const PrinterTab = () => {
                         throw new Error("This slot or item is no longer available. Refresh and check the draft.");
                     }
                     const { array, index } = state.location;
-                    if (clear && next[array][index] === "Blank" && Number(next[array][index + 1]) === 0) return false;
-                    if (
-                        clear &&
-                        !window.confirm(
-                            `${state.kind === "print" ? "Stop" : "Clear"} ${next.names[state.character]} ${state.kind} ${state.slot + 1}?`
-                        )
-                    )
-                        return false;
+                    if (clear && next[array][index] === "Blank" && Number(next[array][index + 1]) === 0) return;
                     await applyWrites([
                         { path: `${array}[${index}]`, value: item },
                         { path: `${array}[${index + 1}]`, value: qty },
@@ -268,7 +274,6 @@ export const PrinterTab = () => {
                 },
                 { onError: (caughtError) => (error.val = caughtError.message) }
             );
-            if (result.ok && result.result === false) state.write.clearStatus();
         } finally {
             busy.val = false;
         }
@@ -276,7 +281,7 @@ export const PrinterTab = () => {
 
     const renderSlot = (state, name) => {
         const slotName = `${state.kind} ${state.slot + 1}`;
-        const lockedCharacter = () => state.character >= snapshot.val.unlocked;
+        const lockedCharacter = () => state.character >= (snapshot.val?.unlocked ?? 0);
         const lockedSlot = () => {
             const kindCap = Math.round(
                 (state.kind === "print" ? 1 : 4) + Number(snapshot.val?.gems?.[state.kind === "print" ? 111 : 112] ?? 0)
@@ -296,7 +301,7 @@ export const PrinterTab = () => {
             const unknown = [...new Set([state.baseline.item, state.item.val])].filter(
                 (id) => id !== "Blank" && !ids.has(id)
             );
-            reconcileOptions(JSON.stringify([catalogue, unknown]), () => [
+            reconcileOptions(unknown.join(","), () => [
                 option({ value: "Blank" }, "Select an item"),
                 ...unknown.map((id) => option({ value: id }, String(id))),
                 ...catalogue.map(({ id, name: itemName }) => option({ value: id }, `${itemName} (${id})`)),
@@ -316,12 +321,10 @@ export const PrinterTab = () => {
                         { class: "account-row__name" },
                         `${state.kind === "print" ? "Print" : "Sample"} ${state.slot + 1}`
                     ),
-                    span(
-                        { class: "account-row__sub-label" },
-                        () =>
-                            state.saved.val.item !== "Blank"
-                                ? `${getItemDisplayName(state.saved.val.item)} · ${largeFormatter(state.saved.val.qty)}${state.kind === "print" ? "/hr" : ""}`
-                                : "Empty slot"
+                    span({ class: "account-row__sub-label" }, () =>
+                        state.saved.val.item !== "Blank"
+                            ? `${getItemDisplayName(state.saved.val.item)} · ${largeFormatter(state.saved.val.qty)}${state.kind === "print" ? "/hr" : ""}`
+                            : "Empty slot"
                     )
                 ),
                 badge: () =>
@@ -366,17 +369,16 @@ export const PrinterTab = () => {
                             unavailable() ||
                             !isDirty(state) ||
                             lockedSlot() ||
-                            (state.item.val === "Blank" && !Number(state.quantity.val)) ||
                             !isAllowedItem(state.item.val, state) ||
-                            !Number.isFinite(parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val)) ||
-                            parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val) <= 0,
+                            !(Math.round(parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val)) > 0),
                         onClick: () => setSlot(state),
                     }),
                     ActionButton({
                         label: state.kind === "print" ? "STOP" : "CLEAR",
                         status: state.write.status,
                         variant: "danger",
-                        disabled: () => unavailable() || (state.saved.val.item === "Blank" && !state.saved.val.qty),
+                        disabled: () =>
+                            unavailable() || (state.saved.val.item === "Blank" && !Number(state.saved.val.qty)),
                         onClick: () => setSlot(state, true),
                     }),
                 ],
@@ -406,7 +408,9 @@ export const PrinterTab = () => {
                 title: "SAVED SAMPLES",
                 body: div(
                     { class: "account-item-stack" },
-                    ...Array.from({ length: 10 }, (_, slot) => renderSlot(rows.get(`${character}:sample:${slot}`), name))
+                    ...Array.from({ length: 10 }, (_, slot) =>
+                        renderSlot(rows.get(`${character}:sample:${slot}`), name)
+                    )
                 ),
             })
         );
@@ -417,9 +421,7 @@ export const PrinterTab = () => {
     const load = async () => {
         if (
             busy.val ||
-            (!loading.val &&
-                hasDrafts() &&
-                !window.confirm("Refresh Printer and discard all character drafts?"))
+            (!loading.val && hasDrafts() && !window.confirm("Refresh Printer and discard all character drafts?"))
         )
             return;
         busy.val = true;
