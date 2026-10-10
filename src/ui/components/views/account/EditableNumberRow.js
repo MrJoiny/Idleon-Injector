@@ -13,6 +13,7 @@ const { div, span } = van.tags;
  * - While input is focused, external valueState updates do not overwrite draft text.
  * - On blur without SET, draft text snaps back to committed value.
  * - `write(next)` must resolve to verified value; primitive applies that result.
+ * - Returning `{ cancelled: true }` leaves the committed value and draft unchanged, without success feedback.
  */
 export const EditableNumberRow = ({
     valueState,
@@ -47,7 +48,7 @@ export const EditableNumberRow = ({
     const formatCommittedValue = (value) =>
         typeof formatter === "function" ? formatter(value ?? 0) : String(value ?? 0);
     const inputValue = van.state(formatCommittedValue(valueState.val));
-    const { status, run } = useWriteStatus();
+    const { status, run, clearStatus } = useWriteStatus();
     let isInputFocused = false;
 
     const syncInputToCommitted = () => {
@@ -63,12 +64,20 @@ export const EditableNumberRow = ({
         const next = normalize(rawValue);
         if (next === null || next === undefined || Number.isNaN(next)) return;
 
-        await run(async () => {
-            const verified = await write(next);
-            valueState.val = verified;
-            inputValue.val = formatCommittedValue(verified);
-            return verified;
-        });
+        await run(
+            async () => {
+                const verified = await write(next);
+                if (verified?.cancelled) return verified;
+                valueState.val = verified;
+                inputValue.val = formatCommittedValue(verified);
+                return verified;
+            },
+            {
+                onSuccess: (result) => {
+                    if (result?.cancelled) clearStatus();
+                },
+            }
+        );
     };
 
     const applyButton = ActionButton({

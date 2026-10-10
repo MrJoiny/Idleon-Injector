@@ -1,0 +1,43 @@
+/* Prayer effects need wrapping below their names; shared controls already stack. */
+.prayer-row__effect {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+.prayer-row .account-row__name {
+    white-space: normal;
+}
+
+.prayer-row__level-actions {
+    display: flex;
+    gap: inherit;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+    .prayers-page .account-tab-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .prayers-page .account-setall-row {
+        flex-wrap: wrap;
+    }
+
+    .prayer-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .prayer-row .account-row__badge {
+        justify-self: start;
+    }
+
+    .prayer-row .account-row__controls {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
