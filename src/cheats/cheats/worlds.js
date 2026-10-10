@@ -206,6 +206,15 @@ registerCheats({
                 return `Added ${amount} to ${rawGems[index].split("|")[0]}.`;
             },
         },
+        {
+            name: "lanternreset",
+            message: "Resets the daily Blinding Lantern use counter (12 per day)",
+            fn: () => {
+                const used = Number(gga.Holes[11][84]);
+                gga.Holes[11][84] = 0;
+                return `Blinding Lantern uses reset (was ${used}/12).`;
+            },
+        },
     ],
 });
 
