@@ -3,13 +3,7 @@ import { gga, readCList } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    useWriteStatus,
-    writeManyVerified,
-    writeVerified,
-} from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, useWriteStatus, writeManyVerified } from "../accountShared.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
@@ -32,18 +26,27 @@ export const BribesTab = () => {
     const cannotWrite = () => isBusy() || Boolean(error.val) || !entries.length;
 
     const readStatuses = async () => {
-        const values = toIndexedArray(await gga(STATUS_PATH)).map(Number);
-        if (values.length < entries.length || entries.some(({ index }) => ![-1, 0, 1].includes(values[index]))) {
-            throw new Error("Bribe ownership data is unavailable or invalid. Refresh to try again.");
+        const raw = await gga(STATUS_PATH);
+        if (raw === null || raw === undefined) {
+            throw new Error("Bribe ownership data is unavailable. Refresh to try again.");
         }
-        for (const entry of entries) rowStates.get(entry.index).value.val = values[entry.index];
-        return values;
+        const values = toIndexedArray(raw).map(Number);
+        const resolvedValues = [];
+        for (const entry of entries) {
+            const val = values[entry.index] ?? -1;
+            if (![-1, 0, 1].includes(val)) {
+                throw new Error("Bribe ownership data is unavailable or invalid. Refresh to try again.");
+            }
+            resolvedValues[entry.index] = val;
+            rowStates.get(entry.index).value.val = val;
+        }
+        return resolvedValues;
     };
 
     const applyWrites = async (writes) => {
+        if (!writes.length) return;
         try {
-            if (writes.length === 1) await writeVerified(writes[0].path, writes[0].value);
-            else await writeManyVerified(writes);
+            await writeManyVerified(writes);
             for (const { index, value } of writes) rowStates.get(index).value.val = value;
         } catch (caughtError) {
             try {
@@ -71,7 +74,8 @@ export const BribesTab = () => {
                         for (let index = entry.start; index < entry.start + entry.count; index++) {
                             if (values[index] === -1) addWrite(index, 0);
                         }
-                    } else if (values[entry.index] === 1) {
+                    } else {
+                        if (values[entry.index] !== 1) return;
                         addWrite(entry.index, 0);
                     }
                     await applyWrites(writes);
@@ -167,24 +171,31 @@ export const BribesTab = () => {
             entries = definitions.map((raw, index) => {
                 const definition = toIndexedArray(raw);
                 const expansion = definition[4] === "BribeExpansion";
-                const [start, count] = expansion ? String(definition[5]).split("&").map(Number) : [0, 0];
-                if (
+                let [start, count] = expansion
+                    ? String(definition[5] ?? "")
+                          .split("&")
+                          .map(Number)
+                    : [0, 0];
+                const validExpansion =
                     expansion &&
-                    (!Number.isInteger(start) ||
-                        !Number.isInteger(count) ||
-                        count < 0 ||
-                        (count > 0 && (start < 0 || start + count > definitions.length)))
-                ) {
-                    throw new Error("Bribe expansion data is invalid.");
+                    Number.isInteger(start) &&
+                    Number.isInteger(count) &&
+                    count >= 0 &&
+                    (count === 0 || (start >= 0 && start + count <= definitions.length));
+
+                const isPlaceholder = expansion && (!validExpansion || count === 0);
+                if (!validExpansion) {
+                    start = 0;
+                    count = 0;
                 }
                 if (!rowStates.has(index)) rowStates.set(index, { value: van.state(-1), write: useWriteStatus() });
                 return {
                     index,
                     name: cleanName(definition[0], `Bribe ${index + 1}`),
-                    bonus: expansion && count === 0 ? "No bonus. Unpurchasable placeholder." : cleanName(definition[1]),
+                    bonus: isPlaceholder ? "No bonus. Unpurchasable placeholder." : cleanName(definition[1]),
                     start,
                     count,
-                    readOnly: expansion && count === 0,
+                    readOnly: isPlaceholder,
                 };
             });
             await readStatuses();
