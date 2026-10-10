@@ -1,5 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { BeanstackTab } from "./w6/BeanstackTab.js";
+import { EmperorTab } from "./w6/EmperorTab.js";
 import { FarmingTab } from "./w6/FarmingTab.js";
 import { SneakingTab } from "./w6/SneakingTab.js";
 import { SummoningTab } from "./w6/SummoningTab.js";
@@ -12,6 +13,7 @@ const W6_SUBTABS = [
     { id: "sneaking", label: "SNEAKING", component: SneakingTab },
     { id: "summoning", label: "SUMMONING", component: SummoningTab },
     { id: "beanstack", label: "BEANSTACK", component: BeanstackTab },
+    { id: "emperor", label: "EMPEROR", component: EmperorTab },
 ];
 
 export const W6Tab = () => {
