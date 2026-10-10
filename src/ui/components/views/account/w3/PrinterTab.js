@@ -2,32 +2,36 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { parseNumber } from "../../../../utils/numberFormat.js";
-import { BulkActionBar } from "../BulkActionBar.js";
+import { RefreshButton } from "../components/AccountPageChrome.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
+    adjustFormattedIntInput,
     cleanName,
     createStaticRowReconciler,
+    largeFormatter,
+    largeParser,
     unwrapH,
     useWriteStatus,
     writeManyVerified,
     writeVerified,
 } from "../accountShared.js";
 import { AccountRow } from "../components/AccountRow.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { ActionButton } from "../components/ActionButton.js";
+import { getNumberInputLiveRaw, NumberInput } from "../../../NumberInput.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 
-const { div, span, h3, label, input, select, option } = van.tags;
+const { div, span, select, option } = van.tags;
 
 const slotLocation = (character, kind, slot) =>
     kind === "sample" && slot >= 5
         ? { array: "PrinterXtra", index: 10 * character + 2 * (slot - 5) }
         : { array: "Printer", index: (kind === "print" ? 15 : 5) + 14 * character + 2 * slot };
 
-/** Edit stored printer samples, active prints, and capacity without spending gems. */
+/** Edit stored printer samples and active prints. */
 export const PrinterTab = () => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: "Printer" });
     const busy = van.state(false);
-    const message = van.state("");
     const snapshot = van.state(null);
     const selected = van.state(-1);
     const rows = new Map();
@@ -46,20 +50,18 @@ export const PrinterTab = () => {
         },
     });
     const reconcileCharacters = createStaticRowReconciler(characterSelect);
-    const capacities = [
-        { index: 111, label: "Extra print purchases", base: 1, maxSlots: 2 },
-        { index: 112, label: "Extra sample purchases", base: 4, maxSlots: 10 },
-    ].map((entry) => ({ ...entry, draft: van.state("0"), baseline: 0, write: useWriteStatus({ errorMs: 0 }) }));
     let accountIdentity = "";
 
     const cannotWrite = () => isBusy() || Boolean(error.val) || !snapshot.val;
-    const isDirty = (state) =>
-        state.item.val !== state.baseline.item || state.quantity.val !== String(state.baseline.qty);
-    const hasDrafts = () =>
-        [...rows.values()].some(isDirty) || capacities.some((entry) => entry.draft.val !== String(entry.baseline));
+    const isDirty = (state) => {
+        const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+        return state.item.val !== state.baseline.item || rawQty !== String(state.baseline.qty);
+    };
+    const hasDrafts = () => [...rows.values()].some(isDirty);
+    const getItemDisplayName = (id) => snapshot.val?.namesById?.get(id) ?? id;
 
     const readSnapshot = async () => {
-        const [rawNames, current, unlocked, gems, printer, extra, monsters, fishPools, drops, nonAfk, mtx] =
+        const [rawNames, current, unlocked, gems, printer, extra, monsters, fishPools, drops, nonAfk] =
             await Promise.all([
                 gga("GetPlayersUsernames"),
                 gga("UserInfo[0]"),
@@ -71,14 +73,13 @@ export const PrinterTab = () => {
                 gga("CustomMaps.h.FishPools"),
                 gga("CustomMaps.h.MonsterDrops"),
                 readCList("NonAFKmonsters"),
-                readCList("MTXinfo"),
             ]);
-        const names = toIndexedArray(rawNames);
+        const names = toIndexedArray(rawNames).filter(
+            (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
+        );
         if (
             !names.length ||
-            names.some((name) => typeof name !== "string" || !name.trim() || name.startsWith("__")) ||
             new Set(names).size !== names.length ||
-            !names.includes(current) ||
             !Number.isInteger(Number(unlocked)) ||
             Number(unlocked) < 0 ||
             !printer ||
@@ -87,33 +88,9 @@ export const PrinterTab = () => {
             !monsters ||
             !fishPools ||
             !drops ||
-            !nonAfk ||
-            !mtx
+            !nonAfk
         ) {
             throw new Error("Printer data is unavailable or invalid. Refresh to try again.");
-        }
-
-        const limits = {};
-        const visit = (raw) => {
-            const node = unwrapH(raw);
-            if (!node || typeof node !== "object") return;
-            if (String(node[4]) === "111" || String(node[4]) === "112") limits[node[4]] = Number(node[5]);
-            else Object.values(node).forEach(visit);
-        };
-        visit(mtx);
-        for (const entry of capacities) {
-            const count = Number(gems[entry.index]);
-            const max = limits[entry.index];
-            if (
-                !Number.isInteger(max) ||
-                max < 0 ||
-                max + entry.base > entry.maxSlots ||
-                !Number.isInteger(count) ||
-                count < 0 ||
-                count > max
-            ) {
-                throw new Error("Printer capacity metadata or purchase counters are invalid.");
-            }
         }
 
         const candidates = new Set();
@@ -134,22 +111,24 @@ export const PrinterTab = () => {
                 if (firstDrop) candidates.add(firstDrop[0]);
             }
         }
+
         const definitions = await readGgaEntries("ItemDefinitionsGET.h", [...candidates], ["displayName"]);
         const catalogue = [...candidates]
             .filter((id) => definitions[id])
             .map((id) => ({ id, name: cleanName(unwrapH(definitions[id]).displayName, id) }))
             .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
         if (!catalogue.length) throw new Error("Printer item catalogue is unavailable.");
+        const namesById = new Map(catalogue.map((entry) => [entry.id, entry.name]));
         return {
             names,
             current,
             unlocked: Math.min(Number(unlocked), names.length),
-            gems,
-            Printer: printer,
-            PrinterXtra: extra,
-            limits,
+            gems: toIndexedArray(gems),
+            Printer: toIndexedArray(printer),
+            PrinterXtra: toIndexedArray(extra),
             catalogue,
             ids: new Set(catalogue.map(({ id }) => id)),
+            namesById,
         };
     };
 
@@ -165,14 +144,6 @@ export const PrinterTab = () => {
 
     const syncSnapshot = (next, resetDrafts = false) => {
         snapshot.val = next;
-        for (const entry of capacities) {
-            const retainDraft = !resetDrafts && entry.draft.val !== String(entry.baseline);
-            if (!retainDraft) {
-                entry.baseline = next.gems[entry.index];
-                entry.draft.val = String(entry.baseline);
-            }
-            if (resetDrafts) entry.write.clearStatus();
-        }
         for (let character = 0; character < next.names.length; character++) {
             for (const kind of ["print", "sample"]) {
                 for (let slot = 0; slot < (kind === "print" ? 2 : 10); slot++) {
@@ -242,17 +213,17 @@ export const PrinterTab = () => {
     const setSlot = async (state, clear = false) => {
         if (cannotWrite()) return;
         const item = clear ? "Blank" : state.item.val;
-        const parsed = parseNumber(state.quantity.val);
+        const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+        const parsed = parseNumber(rawQty);
         if (!clear && (!snapshot.val.ids.has(item) || !Number.isFinite(parsed) || parsed <= 0)) return;
         const qty = clear
             ? 0
-            : state.quantity.val === String(state.baseline.qty)
+            : rawQty === String(state.baseline.qty)
               ? state.baseline.qty
               : typeof state.baseline.qty === "string"
                 ? String(parsed)
                 : parsed;
         busy.val = true;
-        message.val = "";
         try {
             const result = await state.write.run(
                 async () => {
@@ -285,46 +256,9 @@ export const PrinterTab = () => {
                     updateRow(state, item, qty, true);
                     state.syncOptions();
                 },
-                { onError: (caughtError) => (message.val = caughtError.message) }
+                { onError: (caughtError) => (error.val = caughtError.message) }
             );
             if (result.ok && result.result === false) state.write.clearStatus();
-        } finally {
-            busy.val = false;
-        }
-    };
-
-    const setCapacity = async (entry) => {
-        if (cannotWrite() || !entry.draft.val.trim()) return;
-        const value = Number(entry.draft.val);
-        if (!Number.isInteger(value)) return;
-        busy.val = true;
-        message.val = "";
-        try {
-            const result = await entry.write.run(
-                async () => {
-                    let next = await readFresh();
-                    if (value < 0 || value > next.limits[entry.index])
-                        throw new Error("Capacity is outside the available purchase range.");
-                    if (value < Number(next.gems[entry.index])) {
-                        if (
-                            !window.confirm(
-                                `Reduce ${entry.label.toLowerCase()} to ${value}? All saved samples and active prints will stay unchanged.${entry.index === 111 ? " A populated second print will keep printing until you stop it." : ""}`
-                            )
-                        )
-                            return false;
-                        next = await readFresh();
-                        if (value > next.limits[entry.index])
-                            throw new Error("Capacity is outside the available purchase range.");
-                    }
-                    await applyWrites([{ path: `GemItemsPurchased[${entry.index}]`, value }]);
-                    next.gems[entry.index] = value;
-                    entry.baseline = value;
-                    entry.draft.val = String(value);
-                    syncSnapshot({ ...next });
-                },
-                { onError: (caughtError) => (message.val = caughtError.message) }
-            );
-            if (result.ok && result.result === false) entry.write.clearStatus();
         } finally {
             busy.val = false;
         }
@@ -333,24 +267,24 @@ export const PrinterTab = () => {
     const renderSlot = (state, name) => {
         const slotName = `${state.kind} ${state.slot + 1}`;
         const lockedCharacter = () => state.character >= snapshot.val.unlocked;
-        const lockedSlot = () =>
-            state.slot >=
-            Math.round(
+        const lockedSlot = () => {
+            const kindCap = Math.round(
                 (state.kind === "print" ? 1 : 4) + Number(snapshot.val.gems[state.kind === "print" ? 111 : 112])
             );
+            return state.slot >= kindCap;
+        };
         const unavailable = () => cannotWrite() || lockedCharacter();
         const itemSelect = select({
             class: "select-base printer-item-select",
             "aria-label": `${name} ${slotName} item`,
             disabled: () => unavailable() || lockedSlot(),
-            value: state.item,
             onchange: (event) => (state.item.val = event.target.value),
         });
         const reconcileOptions = createStaticRowReconciler(itemSelect);
         state.syncOptions = () => {
-            const catalogue = snapshot.val.catalogue;
-            const unknown = [...new Set([state.item.val, state.saved.val.item])].filter(
-                (id) => id !== "Blank" && !snapshot.val.ids.has(id)
+            const { catalogue, ids } = snapshot.val;
+            const unknown = [...new Set([state.baseline.item, state.item.val])].filter(
+                (id) => id !== "Blank" && !ids.has(id)
             );
             reconcileOptions(JSON.stringify([catalogue, unknown]), () => [
                 option({ value: "Blank" }, "Select an item"),
@@ -363,7 +297,8 @@ export const PrinterTab = () => {
         return div(
             { "data-printer-slot": `${state.kind}-${state.slot + 1}` },
             AccountRow({
-                rowClass: "printer-row",
+                rowClass: "printer-row account-row--wide-controls",
+                controlsClass: "account-row__controls--xl",
                 status: state.write.status,
                 info: div(
                     { class: "account-row__name-group" },
@@ -371,46 +306,64 @@ export const PrinterTab = () => {
                         { class: "account-row__name" },
                         `${state.kind === "print" ? "Print" : "Sample"} ${state.slot + 1}`
                     ),
-                    span({ class: "account-row__sub-label" }, () => `${state.saved.val.item} · ${state.saved.val.qty}`)
+                    span(
+                        { class: "account-row__sub-label" },
+                        () =>
+                            state.saved.val.item !== "Blank"
+                                ? `${getItemDisplayName(state.saved.val.item)} · ${largeFormatter(state.saved.val.qty)}${state.kind === "print" ? "/hr" : ""}`
+                                : "Empty slot"
+                    )
                 ),
-                badge: () => (lockedCharacter() ? "CHARACTER LOCKED" : lockedSlot() ? "SLOT LOCKED" : "AVAILABLE"),
+                badge: () =>
+                    lockedCharacter()
+                        ? "CHARACTER LOCKED"
+                        : lockedSlot()
+                          ? "SLOT LOCKED"
+                          : state.saved.val.item !== "Blank"
+                            ? state.kind === "print"
+                                ? "PRINTING"
+                                : "STORED"
+                            : "EMPTY",
                 controls: [
                     itemSelect,
-                    input({
-                        type: "text",
-                        class: "printer-quantity",
-                        "aria-label": `${name} ${slotName} quantity`,
+                    NumberInput({
                         value: state.quantity,
+                        mode: "int",
+                        formatter: largeFormatter,
+                        parser: largeParser,
+                        "aria-label": `${name} ${slotName} quantity`,
                         disabled: () => unavailable() || lockedSlot(),
-                        oninput: (event) => (state.quantity.val = event.target.value),
+                        onDecrement: () => {
+                            if (unavailable() || lockedSlot()) return;
+                            const raw = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+                            state.quantity.val = String(adjustFormattedIntInput(raw, -1, 0, { min: 0 }));
+                        },
+                        onIncrement: () => {
+                            if (unavailable() || lockedSlot()) return;
+                            const raw = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
+                            state.quantity.val = String(adjustFormattedIntInput(raw, 1, 0, { min: 0 }));
+                        },
                     }),
                     ActionButton({
-                        label: "APPLY",
+                        label: "SET",
                         status: state.write.status,
                         disabled: () =>
                             unavailable() ||
+                            !isDirty(state) ||
                             lockedSlot() ||
+                            (state.item.val === "Blank" && !Number(state.quantity.val)) ||
                             !snapshot.val.ids.has(state.item.val) ||
-                            !Number.isFinite(parseNumber(state.quantity.val)) ||
-                            parseNumber(state.quantity.val) <= 0,
+                            !Number.isFinite(parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val)) ||
+                            parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val) <= 0,
                         onClick: () => setSlot(state),
                     }),
                     ActionButton({
                         label: state.kind === "print" ? "STOP" : "CLEAR",
+                        status: state.write.status,
                         variant: "danger",
-                        disabled: () =>
-                            unavailable() || (state.saved.val.item === "Blank" && Number(state.saved.val.qty) === 0),
+                        disabled: () => unavailable() || (state.saved.val.item === "Blank" && !state.saved.val.qty),
                         onClick: () => setSlot(state, true),
                     }),
-                    span({ class: "write-status", role: "status" }, () =>
-                        state.write.status.val === "loading"
-                            ? "SAVING"
-                            : state.write.status.val === "success"
-                              ? "SAVED"
-                              : state.write.status.val === "error"
-                                ? "FAILED"
-                                : ""
-                    ),
                 ],
             })
         );
@@ -422,17 +375,25 @@ export const PrinterTab = () => {
         const character = selected.val;
         const name = next.names[character];
         const panel = div(
-            { "data-printer-character": name, style: () => (selected.val === character ? "" : "display: none;") },
-            h3({ class: "printer-section-title" }, "Active prints"),
-            div(
-                { class: "account-item-stack" },
-                ...[0, 1].map((slot) => renderSlot(rows.get(`${character}:print:${slot}`), name))
-            ),
-            h3({ class: "printer-section-title" }, "Saved samples"),
-            div(
-                { class: "account-item-stack" },
-                ...Array.from({ length: 10 }, (_, slot) => renderSlot(rows.get(`${character}:sample:${slot}`), name))
-            )
+            {
+                class: "content-stack",
+                "data-printer-character": name,
+                style: () => (selected.val === character ? "" : "display: none;"),
+            },
+            AccountSection({
+                title: "ACTIVE PRINTS",
+                body: div(
+                    { class: "account-item-stack" },
+                    ...[0, 1].map((slot) => renderSlot(rows.get(`${character}:print:${slot}`), name))
+                ),
+            }),
+            AccountSection({
+                title: "SAVED SAMPLES",
+                body: div(
+                    { class: "account-item-stack" },
+                    ...Array.from({ length: 10 }, (_, slot) => renderSlot(rows.get(`${character}:sample:${slot}`), name))
+                ),
+            })
         );
         panels.set(character, panel);
         panelsNode.append(panel);
@@ -443,7 +404,7 @@ export const PrinterTab = () => {
             busy.val ||
             (!loading.val &&
                 hasDrafts() &&
-                !window.confirm("Refresh Printer and discard all character and capacity drafts?"))
+                !window.confirm("Refresh Printer and discard all character drafts?"))
         )
             return;
         busy.val = true;
@@ -451,86 +412,47 @@ export const PrinterTab = () => {
             await runLoad(async () => {
                 const next = await readSnapshot();
                 const identity = JSON.stringify(next.names);
-                if (accountIdentity && identity !== accountIdentity) {
-                    rows.forEach((state) => state.write.clearStatus());
+                if (identity !== accountIdentity) {
                     rows.clear();
                     panels.clear();
                     panelsNode.replaceChildren();
                 }
-                if (identity !== accountIdentity || selected.val < 0) selected.val = next.names.indexOf(next.current);
+                if (identity !== accountIdentity || selected.val < 0) {
+                    const currentIdx = next.names.indexOf(next.current);
+                    selected.val = currentIdx >= 0 ? currentIdx : 0;
+                }
                 accountIdentity = identity;
                 reconcileCharacters(identity, () => next.names.map((name, index) => option({ value: index }, name)));
                 characterSelect.value = String(selected.val);
                 syncSnapshot(next, true);
-                message.val = "";
             });
         } finally {
             busy.val = false;
         }
     };
 
-    const capacityControls = capacities.map((entry) =>
-        div(
-            { class: "printer-capacity-control" },
-            label(
-                span(entry.label),
-                input({
-                    type: "number",
-                    min: 0,
-                    max: () => (snapshot.val ? snapshot.val.limits[entry.index] : 0),
-                    step: 1,
-                    "aria-label": entry.label,
-                    value: entry.draft,
-                    disabled: cannotWrite,
-                    oninput: (event) => (entry.draft.val = event.target.value),
-                })
-            ),
-            span({ class: "write-status" }, () => (snapshot.val ? `0–${snapshot.val.limits[entry.index]}` : "")),
-            ActionButton({
-                label: "APPLY",
-                status: entry.write.status,
-                disabled: () =>
-                    cannotWrite() ||
-                    !entry.draft.val.trim() ||
-                    !Number.isInteger(Number(entry.draft.val)) ||
-                    Number(entry.draft.val) < 0 ||
-                    Number(entry.draft.val) > snapshot.val.limits[entry.index],
-                onClick: () => setCapacity(entry),
-            })
-        )
-    );
-
     load();
     return PersistentAccountListPage({
-        rootClass: "printer-tab tab-container",
+        rootClass: "tab-container scroll-container",
         title: "PRINTER",
-        description: "Edit stored samples and active prints independently. Capacity edits do not spend gems.",
-        wrapActions: false,
-        actions: BulkActionBar({ refresh: { onClick: load, disabled: isBusy } }),
+        description: "Edit stored samples and active prints independently.",
+        actions: RefreshButton({ onRefresh: load, disabled: isBusy }),
         state: { loading, error },
         loadingText: "READING PRINTER",
         errorTitle: "PRINTER READ FAILED",
+        initialWrapperClass: "scrollable-panel",
         body: div(
             { class: "scrollable-panel content-stack" },
-            div({ class: "write-status write-status--error", role: "alert" }, () => message.val),
-            div({ class: "printer-capacities" }, ...capacityControls),
-            div(
-                { class: "printer-note" },
-                "Reducing capacity preserves every sample and print. A populated second print keeps printing until stopped."
-            ),
-            div(
-                { class: "printer-character-control" },
-                label("Character", characterSelect),
-                span({ class: "write-status" }, () =>
-                    snapshot.val
-                        ? `${snapshot.val.unlocked}/${snapshot.val.names.length} characters unlocked. Unlock level is edited in Construction.`
-                        : ""
-                )
-            ),
-            div(
-                { class: "printer-note" },
-                "Print quantities are stored base quantities. Bonuses can change actual production. Editing a sample does not update an active print."
-            ),
+            AccountSection({
+                title: "CHARACTER",
+                body: AccountRow({
+                    info: [
+                        span({ class: "account-row__name" }, "Selected Character"),
+                        span({ class: "account-row__sub-label" }, "Inspect and edit 3D printer for this character"),
+                    ],
+                    controls: characterSelect,
+                }),
+            }),
             panelsNode
         ),
     });
