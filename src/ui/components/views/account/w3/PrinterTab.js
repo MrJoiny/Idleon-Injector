@@ -51,46 +51,29 @@ export const PrinterTab = () => {
     });
     const reconcileCharacters = createStaticRowReconciler(characterSelect);
     let accountIdentity = "";
+    let cachedCatalogue = null;
 
     const cannotWrite = () => isBusy() || Boolean(error.val) || !snapshot.val;
     const isDirty = (state) => {
+        state.dirty.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
         return state.item.val !== state.baseline.item || rawQty !== String(state.baseline.qty);
     };
     const hasDrafts = () => [...rows.values()].some(isDirty);
     const getItemDisplayName = (id) => snapshot.val?.namesById?.get(id) ?? id;
+    const isAllowedItem = (item, state, snap = snapshot.val) =>
+        Boolean(snap?.ids?.has(item)) || (item !== "Blank" && item === state.baseline.item);
 
-    const readSnapshot = async () => {
-        const [rawNames, current, unlocked, gems, printer, extra, monsters, fishPools, drops, nonAfk] =
-            await Promise.all([
-                gga("GetPlayersUsernames"),
-                gga("UserInfo[0]"),
-                gga("TowerInfo[0]"),
-                gga("GemItemsPurchased"),
-                gga("Printer"),
-                gga("PrinterXtra"),
-                gga("MonsterDefinitionsGET.h"),
-                gga("CustomMaps.h.FishPools"),
-                gga("CustomMaps.h.MonsterDrops"),
-                readCList("NonAFKmonsters"),
-            ]);
-        const names = toIndexedArray(rawNames).filter(
-            (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
-        );
-        if (
-            !names.length ||
-            new Set(names).size !== names.length ||
-            !Number.isInteger(Number(unlocked)) ||
-            Number(unlocked) < 0 ||
-            !printer ||
-            !extra ||
-            !gems ||
-            !monsters ||
-            !fishPools ||
-            !drops ||
-            !nonAfk
-        ) {
-            throw new Error("Printer data is unavailable or invalid. Refresh to try again.");
+    const getCatalogue = async () => {
+        if (cachedCatalogue) return cachedCatalogue;
+        const [monsters, fishPools, drops, nonAfk] = await Promise.all([
+            gga("MonsterDefinitionsGET.h"),
+            gga("CustomMaps.h.FishPools"),
+            gga("CustomMaps.h.MonsterDrops"),
+            readCList("NonAFKmonsters"),
+        ]);
+        if (!monsters || !fishPools || !drops || !nonAfk) {
+            throw new Error("Printer catalogue definitions are unavailable.");
         }
 
         const candidates = new Set();
@@ -119,6 +102,39 @@ export const PrinterTab = () => {
             .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
         if (!catalogue.length) throw new Error("Printer item catalogue is unavailable.");
         const namesById = new Map(catalogue.map((entry) => [entry.id, entry.name]));
+        cachedCatalogue = {
+            catalogue,
+            ids: new Set(catalogue.map(({ id }) => id)),
+            namesById,
+        };
+        return cachedCatalogue;
+    };
+
+    const readSnapshot = async () => {
+        const [rawNames, current, unlocked, gems, printer, extra] = await Promise.all([
+            gga("GetPlayersUsernames"),
+            gga("UserInfo[0]"),
+            gga("TowerInfo[0]"),
+            gga("GemItemsPurchased"),
+            gga("Printer"),
+            gga("PrinterXtra"),
+        ]);
+        const names = toIndexedArray(rawNames).filter(
+            (name) => typeof name === "string" && name.trim().length > 0 && !name.startsWith("__")
+        );
+        if (
+            !names.length ||
+            new Set(names).size !== names.length ||
+            !Number.isInteger(Number(unlocked)) ||
+            Number(unlocked) < 0 ||
+            !printer ||
+            !extra ||
+            !gems
+        ) {
+            throw new Error("Printer data is unavailable or invalid. Refresh to try again.");
+        }
+
+        const { catalogue, ids, namesById } = await getCatalogue();
         return {
             names,
             current,
@@ -127,7 +143,7 @@ export const PrinterTab = () => {
             Printer: toIndexedArray(printer),
             PrinterXtra: toIndexedArray(extra),
             catalogue,
-            ids: new Set(catalogue.map(({ id }) => id)),
+            ids,
             namesById,
         };
     };
@@ -139,6 +155,7 @@ export const PrinterTab = () => {
             state.baseline = { item, qty };
             state.item.val = item;
             state.quantity.val = String(qty);
+            state.dirty.val++;
         }
     };
 
@@ -151,9 +168,6 @@ export const PrinterTab = () => {
                     const location = slotLocation(character, kind, slot);
                     const values = next[location.array];
                     const present = values[location.index] !== undefined && values[location.index + 1] !== undefined;
-                    if (character < next.unlocked && !present) {
-                        throw new Error(`Printer data for ${next.names[character]} ${kind} ${slot + 1} is missing.`);
-                    }
                     if (!rows.has(key)) {
                         rows.set(key, {
                             character,
@@ -164,6 +178,7 @@ export const PrinterTab = () => {
                             saved: van.state({ item: "Blank", qty: 0 }),
                             item: van.state("Blank"),
                             quantity: van.state("0"),
+                            dirty: van.state(0),
                             write: useWriteStatus({ errorMs: 0 }),
                         });
                     }
@@ -215,7 +230,7 @@ export const PrinterTab = () => {
         const item = clear ? "Blank" : state.item.val;
         const rawQty = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
         const parsed = parseNumber(rawQty);
-        if (!clear && (!snapshot.val.ids.has(item) || !Number.isFinite(parsed) || parsed <= 0)) return;
+        if (!clear && (!isAllowedItem(item, state) || !Number.isFinite(parsed) || parsed <= 0)) return;
         const qty = clear
             ? 0
             : rawQty === String(state.baseline.qty)
@@ -229,10 +244,10 @@ export const PrinterTab = () => {
                 async () => {
                     const next = await readFresh();
                     const cap = Math.round(
-                        (state.kind === "print" ? 1 : 4) + Number(next.gems[state.kind === "print" ? 111 : 112])
+                        (state.kind === "print" ? 1 : 4) + Number(next.gems[state.kind === "print" ? 111 : 112] ?? 0)
                     );
                     if (state.character >= next.unlocked) throw new Error("This character's Printer is locked.");
-                    if (!clear && (state.slot >= cap || !next.ids.has(item))) {
+                    if (!clear && (state.slot >= cap || !isAllowedItem(item, state, next))) {
                         throw new Error("This slot or item is no longer available. Refresh and check the draft.");
                     }
                     const { array, index } = state.location;
@@ -244,11 +259,6 @@ export const PrinterTab = () => {
                         )
                     )
                         return false;
-                    if (clear) {
-                        const confirmed = await readFresh();
-                        if (state.character >= confirmed.unlocked)
-                            throw new Error("This character's Printer is locked.");
-                    }
                     await applyWrites([
                         { path: `${array}[${index}]`, value: item },
                         { path: `${array}[${index + 1}]`, value: qty },
@@ -269,7 +279,7 @@ export const PrinterTab = () => {
         const lockedCharacter = () => state.character >= snapshot.val.unlocked;
         const lockedSlot = () => {
             const kindCap = Math.round(
-                (state.kind === "print" ? 1 : 4) + Number(snapshot.val.gems[state.kind === "print" ? 111 : 112])
+                (state.kind === "print" ? 1 : 4) + Number(snapshot.val?.gems?.[state.kind === "print" ? 111 : 112] ?? 0)
             );
             return state.slot >= kindCap;
         };
@@ -333,15 +343,20 @@ export const PrinterTab = () => {
                         parser: largeParser,
                         "aria-label": `${name} ${slotName} quantity`,
                         disabled: () => unavailable() || lockedSlot(),
+                        oninput: () => {
+                            state.dirty.val++;
+                        },
                         onDecrement: () => {
                             if (unavailable() || lockedSlot()) return;
                             const raw = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
                             state.quantity.val = String(adjustFormattedIntInput(raw, -1, 0, { min: 0 }));
+                            state.dirty.val++;
                         },
                         onIncrement: () => {
                             if (unavailable() || lockedSlot()) return;
                             const raw = getNumberInputLiveRaw(state.quantity) ?? state.quantity.val;
                             state.quantity.val = String(adjustFormattedIntInput(raw, 1, 0, { min: 0 }));
+                            state.dirty.val++;
                         },
                     }),
                     ActionButton({
@@ -352,7 +367,7 @@ export const PrinterTab = () => {
                             !isDirty(state) ||
                             lockedSlot() ||
                             (state.item.val === "Blank" && !Number(state.quantity.val)) ||
-                            !snapshot.val.ids.has(state.item.val) ||
+                            !isAllowedItem(state.item.val, state) ||
                             !Number.isFinite(parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val)) ||
                             parseNumber(getNumberInputLiveRaw(state.quantity) ?? state.quantity.val) <= 0,
                         onClick: () => setSlot(state),
