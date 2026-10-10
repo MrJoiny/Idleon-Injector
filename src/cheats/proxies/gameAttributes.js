@@ -118,6 +118,22 @@ export function setupGameAttributeProxies() {
         });
     }
 
+    // Holes - Blinding Lantern daily use cap (W5)
+    const cavernCounters = gga.Holes[11];
+    if (!cavernCounters._isPatched) {
+        Object.defineProperty(cavernCounters, "_isPatched", { value: true, enumerable: false });
+        createProxy(cavernCounters, 84, {
+            get(original) {
+                // The item refuses once this reaches 12, so reading 0 keeps the gate open.
+                if (cheatState.w5.lantern) return 0;
+                return original;
+            },
+            set(value, backupKey) {
+                this[backupKey] = value;
+            },
+        });
+    }
+
     // Currencies - teleports, tickets, obol fragments, silver pens
     const currencies = gga.CurrenciesOwned.h;
     if (!currencies._isPatched) {

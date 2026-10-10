@@ -173,6 +173,7 @@ registerCheats({
         { name: "divinity", message: "divinity cheats" },
         { name: "collider", message: "collider cheats" },
         { name: "holes", message: "holes cheats" },
+        { name: "lantern", message: "no daily limit on Blinding Lantern uses" },
         {
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
@@ -204,15 +205,6 @@ registerCheats({
 
                 gemCounts[index] += amount;
                 return `Added ${amount} to ${rawGems[index].split("|")[0]}.`;
-            },
-        },
-        {
-            name: "lanternreset",
-            message: "Resets the daily Blinding Lantern use counter (12 per day)",
-            fn: () => {
-                const used = Number(gga.Holes[11][84]);
-                gga.Holes[11][84] = 0;
-                return `Blinding Lantern uses reset (was ${used}/12).`;
             },
         },
     ],
