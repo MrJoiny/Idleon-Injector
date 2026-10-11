@@ -1,7 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { getNumberInputLiveRaw, NumberInput } from "../../NumberInput.js";
 import { ActionButton } from "./components/ActionButton.js";
-import { toNodes, useWriteStatus } from "./accountShared.js";
+import { resolveValue, toNodes, useWriteStatus } from "./accountShared.js";
 
 const { div, span } = van.tags;
 
@@ -13,7 +13,7 @@ const { div, span } = van.tags;
  * - While input is focused, external valueState updates do not overwrite draft text.
  * - On blur without SET, draft text snaps back to committed value.
  * - `write(next)` must resolve to verified value; primitive applies that result.
- * - Returning `{ cancelled: true }` leaves the committed value and draft unchanged, without success feedback.
+ * - Returning `{ cancelled: true }` leaves the committed value unchanged and resets the draft, without success feedback.
  */
 export const EditableNumberRow = ({
     valueState,
@@ -36,6 +36,7 @@ export const EditableNumberRow = ({
     inputMode = "int",
     applyLabel = "SET",
     inputProps = {},
+    disabled = null,
 }) => {
     const {
         onfocus: userOnfocus,
@@ -48,7 +49,8 @@ export const EditableNumberRow = ({
     const formatCommittedValue = (value) =>
         typeof formatter === "function" ? formatter(value ?? 0) : String(value ?? 0);
     const inputValue = van.state(formatCommittedValue(valueState.val));
-    const { status, run, clearStatus } = useWriteStatus();
+    const { status, run } = useWriteStatus();
+    const isDisabled = () => Boolean(resolveValue(disabled));
     let isInputFocused = false;
 
     const syncInputToCommitted = () => {
@@ -61,28 +63,26 @@ export const EditableNumberRow = ({
     });
 
     const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
+        if (isDisabled()) return;
         const next = normalize(rawValue);
         if (next === null || next === undefined || Number.isNaN(next)) return;
 
-        await run(
-            async () => {
-                const verified = await write(next);
-                if (verified?.cancelled) return verified;
-                valueState.val = verified;
-                inputValue.val = formatCommittedValue(verified);
+        await run(async () => {
+            const verified = await write(next);
+            if (verified?.cancelled) {
+                syncInputToCommitted();
                 return verified;
-            },
-            {
-                onSuccess: (result) => {
-                    if (result?.cancelled) clearStatus();
-                },
             }
-        );
+            valueState.val = verified;
+            inputValue.val = formatCommittedValue(verified);
+            return verified;
+        });
     };
 
     const applyButton = ActionButton({
         label: () => (typeof applyLabel === "function" ? applyLabel() : applyLabel),
         status,
+        disabled: isDisabled,
         onClick: (e) => {
             e.preventDefault();
             void applyValue();
@@ -94,11 +94,16 @@ export const EditableNumberRow = ({
 
         const actionValue = action.value ?? fallbackValue;
         const actionLabel = action.label ?? fallbackLabel;
+        const actionDisabled =
+            action.disabled !== undefined && action.disabled !== null
+                ? () => Boolean(resolveValue(action.disabled))
+                : isDisabled;
         const actionButton = ActionButton({
             label: () => (typeof actionLabel === "function" ? actionLabel() : actionLabel),
             status,
             variant: "max-reset",
             tooltip: action.tooltip ?? null,
+            disabled: actionDisabled,
             onClick: (e) => {
                 e.preventDefault();
                 void applyValue(actionValue);
@@ -156,6 +161,7 @@ export const EditableNumberRow = ({
                 mode: inputMode,
                 value: inputValue,
                 formatter,
+                disabled: restInputProps.disabled ?? isDisabled,
                 ...restInputProps,
                 onfocus: () => {
                     isInputFocused = true;
@@ -167,12 +173,14 @@ export const EditableNumberRow = ({
                     if (typeof userOnblur === "function") userOnblur();
                 },
                 onDecrement: () => {
+                    if (isDisabled()) return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val ?? 0)
                     );
                     if (typeof userOnDecrement === "function") userOnDecrement();
                 },
                 onIncrement: () => {
+                    if (isDisabled()) return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val ?? 0)
                     );

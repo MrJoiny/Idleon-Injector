@@ -9,13 +9,16 @@
     white-space: normal;
 }
 
-.prayer-row__level-actions {
-    display: flex;
-    gap: inherit;
-    border: 0;
-    margin: 0;
-    padding: 0;
-    min-width: 0;
+/* Keep badge and controls aligned uniformly across equipped and unequipped rows */
+.prayer-row .account-row__badge {
+    min-width: 176px;
+    text-align: center;
+}
+
+.prayer-row__equip-btn {
+    width: 96px;
+    min-width: 96px;
+    text-align: center;
 }
 
 @media (max-width: 600px) {
@@ -34,6 +37,7 @@
 
     .prayer-row .account-row__badge {
         justify-self: start;
+        min-width: auto;
     }
 
     .prayer-row .account-row__controls {
