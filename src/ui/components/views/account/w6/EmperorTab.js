@@ -26,13 +26,15 @@ const baseRewards = (progress, metadata) => {
     return totals;
 };
 
-const rewardText = (template, amount) =>
-    cleanName(
+const rewardText = (template, amount) => {
+    const mult = Math.round((1 + amount / 100) * 10000) / 10000;
+    return cleanName(
         template
-            .replace(/}/g, String(1 + amount / 100))
+            .replace(/}/g, String(mult))
             .replace(/{/g, String(amount))
             .replace(/\$/g, String(amount === 0 ? 0 : Math.floor(((amount + 4) / (amount + 100)) * 1000) / 10))
     );
+};
 
 const wholeNumber = (raw, max, label) => {
     const value = Number(raw);
@@ -65,12 +67,9 @@ export const EmperorTab = () => {
     const isBusy = () => loading.val || busy.val;
     const cannotWrite = () => isBusy() || Boolean(error.val) || !snapshot.val;
     const cannotWriteEntries = () => cannotWrite() || snapshot.val.cheatEnabled;
-    const cacheMatches = (current) => {
-        const expected = baseRewards(current.progress, current.metadata);
-        return (
-            current.cache.length === expected.length && expected.every((value, index) => current.cache[index] === value)
-        );
-    };
+    const cacheMatches = (current) =>
+        current.cache.length === current.baseRewards.length &&
+        current.baseRewards.every((value, index) => current.cache[index] === value);
 
     const readSnapshot = async () => {
         const [rawProgress, rawCounter, rawMetadata, rawCapacity, rawDaily, cheats, rawCache] = await Promise.all([
@@ -82,7 +81,7 @@ export const EmperorTab = () => {
             fetchCheatStates(),
             gga(CACHE_PATH),
         ]);
-        const progress = wholeNumber(rawProgress, PROGRESS_LIMIT, "Completed showdowns");
+        const progress = Number(rawProgress);
         const counter = Number(rawCounter);
         const capacity = Number(rawCapacity) + 1;
         const daily = Number(rawDaily);
@@ -93,11 +92,19 @@ export const EmperorTab = () => {
             mapping: toIndexedArray(definitions[2]).map(Number),
         };
         if (
+            rawProgress === null ||
+            rawProgress === undefined ||
+            String(rawProgress).trim() === "" ||
+            !Number.isSafeInteger(progress) ||
+            progress < 0
+        ) {
+            throw new Error("Completed showdowns is unavailable or invalid. Refresh to retry.");
+        }
+        if (
             [rawCounter, rawCapacity, rawDaily].some(
                 (value) => value === null || value === undefined || String(value).trim() === ""
             ) ||
             !Number.isSafeInteger(counter) ||
-            !Number.isSafeInteger(1 - counter) ||
             !Number.isSafeInteger(capacity) ||
             capacity < 1 ||
             !Number.isSafeInteger(daily) ||
@@ -118,6 +125,7 @@ export const EmperorTab = () => {
         ) {
             throw new Error("Emperor reward definitions are unavailable or invalid. Refresh to retry.");
         }
+        const rewards = baseRewards(progress, metadata);
         return {
             progress,
             counter,
@@ -126,6 +134,7 @@ export const EmperorTab = () => {
             daily,
             cheatEnabled: cheats.data.w6.emperor,
             metadata,
+            baseRewards: rewards,
             cache: toIndexedArray(rawCache).map(Number),
         };
     };
@@ -157,11 +166,12 @@ export const EmperorTab = () => {
                         )
                     ),
                     badge: () => {
-                        const current = snapshot.val;
-                        return rewardText(
-                            cleanName(description).split(" ")[0],
-                            baseRewards(current.progress, current.metadata)[index]
-                        );
+                        const active = snapshot.val;
+                        if (!active) return "—";
+                        const match = cleanName(description).match(/^(\}x|\$%|\+\{%?)/);
+                        return match
+                            ? rewardText(match[1], active.baseRewards[index])
+                            : `+${active.baseRewards[index]}`;
                     },
                 })
             )
@@ -193,6 +203,7 @@ export const EmperorTab = () => {
             const next = reset ? 0 : wholeNumber(progressDraft.val, PROGRESS_LIMIT, "Completed showdowns");
             const before = await readSnapshot();
             showSnapshot(before);
+            let fresh = before;
             if (
                 next < before.progress &&
                 !window.confirm(
@@ -201,8 +212,10 @@ export const EmperorTab = () => {
             ) {
                 return;
             }
-            const fresh = await readSnapshot();
-            showSnapshot(fresh);
+            if (next < before.progress) {
+                fresh = await readSnapshot();
+                showSnapshot(fresh);
+            }
             if (
                 fresh.progress !== before.progress ||
                 JSON.stringify(fresh.metadata) !== JSON.stringify(before.metadata)
@@ -216,9 +229,6 @@ export const EmperorTab = () => {
                 async () => {
                     writesStarted = true;
                     await writeVerified(PROGRESS_PATH, next);
-                    const progress = Number(await gga(PROGRESS_PATH));
-                    if (progress !== next)
-                        throw new Error("Progress changed before the reward cache write. Refresh and retry.");
                     await writeVerified(CACHE_PATH, totals);
                     const actual = await readSnapshot();
                     if (actual.progress !== next || !cacheMatches(actual)) {
@@ -248,17 +258,13 @@ export const EmperorTab = () => {
             const fresh = await readSnapshot();
             showSnapshot(fresh);
             if (fresh.cheatEnabled) throw new Error("Disable the w6 emperor cheat before editing stored entries.");
+            if (!refill && String(raw).trim() !== "" && Number(raw) === fresh.remaining) return;
             const next = refill ? fresh.capacity : wholeNumber(raw, fresh.capacity, "Remaining entries");
             if (refill && fresh.remaining >= fresh.capacity) {
                 message.val = "Entries are already at or above natural capacity.";
                 return;
             }
             if (next === fresh.remaining) return;
-            const cheats = await fetchCheatStates();
-            if (typeof cheats?.data?.w6?.emperor !== "boolean" || cheats.data.w6.emperor) {
-                snapshot.val = { ...fresh, cheatEnabled: true };
-                throw new Error("Stored entries cannot be edited while the w6 emperor cheat is enabled or unreadable.");
-            }
             const result = await entriesWrite.run(
                 async () => {
                     writesStarted = true;
@@ -293,7 +299,7 @@ export const EmperorTab = () => {
     const numberControl = (value, max, disabled, label, onSave, entryControl = false) => {
         const control = NumberInput({
             value,
-            mode: "float",
+            mode: "int",
             inputmode: "numeric",
             "aria-label": label,
             readOnly: isBusy,
@@ -406,7 +412,9 @@ export const EmperorTab = () => {
                 ? "The w6 emperor cheat masks the stored entry count and forces the disabled input value. Disable it to read and edit stored entries. Progress remains editable."
                 : current.remaining > current.capacity
                   ? "Existing entries above natural capacity are preserved. New entry edits must stay within natural capacity."
-                  : "";
+                  : current.progress > PROGRESS_LIMIT
+                    ? `Completed showdowns exceed the numeric safety ceiling of ${PROGRESS_LIMIT}. Edits must stay within the safety ceiling.`
+                    : "";
         }),
         div({ class: "write-status", role: "status" }, () =>
             snapshot.val && !cacheMatches(snapshot.val)
