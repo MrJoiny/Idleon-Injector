@@ -218,7 +218,8 @@ export const EventshopTab = () => {
     load();
     return PersistentAccountListPage({
         title: "EVENTSHOP",
-        description: "Edit account ownership without spending event points.",
+        description:
+            "Edit account ownership without spending event points. Effects may require reopening the relevant game screen or reentering town. Disabling ownership does not undo rewards already received.",
         rootClass: "tab-container eventshop-tab",
         actions: BulkActionBar({
             actions: [
@@ -242,10 +243,6 @@ export const EventshopTab = () => {
         state: { loading, error },
         body: div(
             { class: "scrollable-panel content-stack" },
-            p(
-                { class: "eventshop-note" },
-                "Effects may require reopening the relevant game screen or reentering town. Disabling ownership does not undo rewards already received."
-            ),
             p({ class: "eventshop-note write-status", role: "status", "aria-live": "polite" }, () => notice.val),
             listNode
         ),
