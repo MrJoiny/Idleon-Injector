@@ -25,6 +25,7 @@ export default [
         ignores: [
             "node_modules/**",
             "zips/**",
+            ".scratch/**",
             "idleon-web-profile/**",
             "logs/**",
             "cheats.js",
