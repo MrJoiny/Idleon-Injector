@@ -10,6 +10,8 @@ import { StatuesTab } from "./w1/StatuesTab.js";
 import { OrionTab } from "./w1/OrionTab.js";
 import { StarSignsTab } from "./w1/StarSignsTab.js";
 import { CompanionsTab } from "./w1/CompanionsTab.js";
+import { EventshopTab } from "./w1/EventshopTab.js";
+import { BribesTab } from "./w1/BribesTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -22,6 +24,8 @@ const W1_SUBTABS = [
     { id: "starsigns", label: "STAR SIGNS", component: StarSignsTab },
     { id: "orion", label: "ORION", component: OrionTab },
     { id: "companions", label: "PETS", component: CompanionsTab },
+    { id: "eventshop", label: "EVENTSHOP", component: EventshopTab },
+    { id: "bribes", label: "BRIBES", component: BribesTab },
 ];
 
 export const W1Tab = () => {

@@ -353,7 +353,14 @@ const customLevelHandlers = {
     talent: (lvl) => {
         const LevelsMax = gga.SkillLevelsMAX;
         const Levels = gga.SkillLevels;
-        for (const idx of Object.keys(LevelsMax)) LevelsMax[idx] = Levels[idx] = lvl;
+        const descriptions = cList.TalentDescriptions;
+        // Indexed loop: Object.keys also yields the Haxe "__id__" property.
+        for (let idx = 0; idx < LevelsMax.length; idx++) {
+            // "_" descriptions are empty slots; the talent menu hides them only while max is -1.
+            const empty = descriptions[idx][0][0] === "_";
+            LevelsMax[idx] = empty ? -1 : lvl;
+            Levels[idx] = empty ? 0 : lvl;
+        }
         return `Talent levels has been changed to ${lvl}.`;
     },
     stamp: (lvl) => {
