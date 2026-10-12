@@ -183,7 +183,7 @@
 
 .rat-king-progress-fill {
     height: 100%;
-    width: var(--progress, 0%);
+    width: 0%;
     background: linear-gradient(90deg, #d4af37, #ffd700);
     transition: width 0.3s ease;
 }
@@ -240,10 +240,30 @@
     gap: 4px;
     font-size: 0.75rem;
     color: #f3ba2f;
+    border-color: rgba(212, 175, 55, 0.4);
+    background: rgba(212, 175, 55, 0.1);
 }
 
 .rat-king-badge--crowns .icon-base {
     font-size: 0.85rem;
+}
+
+.rat-king-matrix-status {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+}
+
+.rat-king-matrix-status--error {
+    color: var(--c-danger);
+    background: var(--c-danger-10);
+    border: 1px solid var(--c-danger);
+}
+
+.rat-king-matrix-status--loading {
+    color: var(--c-text-muted);
 }
 
 .rat-king-plant-meta {
@@ -283,7 +303,7 @@
     color: var(--c-text-dim);
 }
 
-.rat-king-crown-chip:hover {
+.rat-king-crown-chip:not(.rat-king-crown-chip--active):not(.rat-king-crown-chip--locked):hover {
     border-color: var(--c-accent);
     color: var(--c-text-main);
     transform: translateY(-1px);
@@ -294,6 +314,12 @@
     border-color: #d4af37;
     color: #f3ba2f;
     box-shadow: 0 0 6px rgba(212, 175, 55, 0.25);
+}
+
+.rat-king-crown-chip--active:hover {
+    border-color: #ffd700;
+    color: #ffd700;
+    transform: translateY(-1px);
 }
 
 .rat-king-crown-chip--active .rat-king-crown-chip__icon svg {
