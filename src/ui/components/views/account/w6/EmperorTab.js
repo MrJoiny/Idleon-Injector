@@ -410,11 +410,9 @@ export const EmperorTab = () => {
             if (!current) return "";
             return current.cheatEnabled
                 ? "The w6 emperor cheat masks the stored entry count and forces the disabled input value. Disable it to read and edit stored entries. Progress remains editable."
-                : current.remaining > current.capacity
-                  ? "Existing entries above natural capacity are preserved. New entry edits must stay within natural capacity."
-                  : current.progress > PROGRESS_LIMIT
-                    ? `Completed showdowns exceed the numeric safety ceiling of ${PROGRESS_LIMIT}. Edits must stay within the safety ceiling.`
-                    : "";
+                : current.progress > PROGRESS_LIMIT
+                  ? `Completed showdowns exceed the numeric safety ceiling of ${PROGRESS_LIMIT}. Edits must stay within the safety ceiling.`
+                  : "";
         }),
         div({ class: "write-status", role: "status" }, () =>
             snapshot.val && !cacheMatches(snapshot.val)
@@ -441,7 +439,7 @@ export const EmperorTab = () => {
         rootClass: "emperor-tab tab-container",
         title: "EMPEROR",
         description:
-            "Edit account progress and stored entries directly, including before fight entry unlocks. No fight loot is granted.",
+            "Edit account progress and stored entries directly, including before fight entry unlocks. No fight loot is granted. Existing entries above natural capacity are preserved. New entry edits must stay within natural capacity.",
         actions: refreshButton,
         state: { loading, error },
         loadingText: "READING EMPEROR",
