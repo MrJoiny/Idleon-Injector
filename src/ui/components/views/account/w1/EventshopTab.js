@@ -18,28 +18,17 @@ const ROW_NOTES = {
     50: "Enabling ownership grants no cardifiers and prevents the normal purchase. Disabling removes none. The normal purchase grants eight six-star cardifiers.",
 };
 
-const readIndexedMetadata = (raw, label) => {
-    const source = unwrapH(raw);
-    const values = toIndexedArray(source);
-    if (
-        !values.length ||
-        Object.keys(source).some((key) => !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= values.length)
-    ) {
-        throw new Error(`Invalid ${label} metadata. Refresh after checking the game connection.`);
-    }
-    return values;
-};
-
 const readSnapshot = async () => {
-    const [rawCatalog, rawCodes, ownership] = await Promise.all([
+    const [rawCatalog, rawCodes, rawOwnership] = await Promise.all([
         readCList("NinjaInfo[39]"),
         gga("Number2Letter"),
         gga(OWNERSHIP_PATH),
     ]);
-    const definitions = readIndexedMetadata(rawCatalog, "Eventshop catalog");
-    const codes = readIndexedMetadata(rawCodes, "ownership encoding");
-    if (definitions.length % 2 !== 0 || typeof ownership !== "string") {
-        throw new Error("Invalid Eventshop catalog or ownership string. Refresh before editing.");
+    const definitions = toIndexedArray(unwrapH(rawCatalog));
+    const codes = toIndexedArray(unwrapH(rawCodes));
+    const ownership = typeof rawOwnership === "string" ? rawOwnership : "";
+    if (!definitions.length || definitions.length % 2 !== 0 || !codes.length) {
+        throw new Error("Invalid Eventshop catalog metadata. Refresh before editing.");
     }
 
     const catalog = [];
@@ -48,11 +37,12 @@ const readSnapshot = async () => {
         const descriptor = definitions[index * 2];
         const cost = definitions[index * 2 + 1];
         const code = codes[index];
+        const separator = typeof descriptor === "string" ? descriptor.indexOf("@") : -1;
+        const name = separator > 0 ? cleanName(descriptor.slice(0, separator)) : "";
+        const effect = separator > 0 ? cleanName(descriptor.slice(separator + 1)) : "";
         if (
-            typeof descriptor !== "string" ||
-            descriptor.indexOf("@") <= 0 ||
-            !cleanName(descriptor.slice(0, descriptor.indexOf("@"))) ||
-            !cleanName(descriptor.slice(descriptor.indexOf("@") + 1)) ||
+            !name ||
+            !effect ||
             !["number", "string"].includes(typeof cost) ||
             String(cost).trim() === "" ||
             !Number.isFinite(Number(cost)) ||
@@ -64,12 +54,11 @@ const readSnapshot = async () => {
             throw new Error(`Invalid Eventshop metadata for upgrade ${index}. Refresh before editing.`);
         }
         usedCodes.add(code);
-        const separator = descriptor.indexOf("@");
         catalog.push({
             index,
             code,
-            name: cleanName(descriptor.slice(0, separator)),
-            effect: cleanName(descriptor.slice(separator + 1)),
+            name,
+            effect,
             cost: Number(cost),
         });
     }
@@ -113,12 +102,6 @@ export const EventshopTab = () => {
                     tooltip: () =>
                         `${row.owned.val ? "Disable" : "Enable"} ownership for ${row.entry.val.name}. No event points spent.`,
                     onClick: () => setOwnership(!row.owned.val, index, row.feedback),
-                });
-                van.derive(() => {
-                    action.setAttribute(
-                        "aria-label",
-                        `${row.owned.val ? "Disable" : "Enable"} ownership for ${row.entry.val.name}`
-                    );
                 });
                 return AccountRow({
                     rowClass: "eventshop-row",
@@ -169,11 +152,11 @@ export const EventshopTab = () => {
                         );
                         if (!targets.length) {
                             notice.val = "Ownership is already set. No changes made.";
-                            return false;
+                            return { cancelled: true };
                         }
                         if (index === null) {
                             const cardifierNote = targets.some((entry) => entry.index === 50)
-                                ? "\n\nThis includes 6 Star Cardifiers. Enabling grants no cardifiers and prevents the normal purchase. Disabling removes none. The normal purchase grants eight six-star cardifiers."
+                                ? `\n\n${ROW_NOTES[50]}`
                                 : "";
                             if (
                                 !window.confirm(
@@ -181,7 +164,7 @@ export const EventshopTab = () => {
                                 )
                             ) {
                                 notice.val = "No changes made.";
-                                return false;
+                                return { cancelled: true };
                             }
                             const fresh = await readSnapshot();
                             applySnapshot(fresh);
@@ -191,7 +174,7 @@ export const EventshopTab = () => {
                             ) {
                                 notice.val =
                                     "Catalog or ownership changed during confirmation. Review the refreshed state and try again.";
-                                return false;
+                                return { cancelled: true };
                             }
                         }
 
@@ -225,12 +208,6 @@ export const EventshopTab = () => {
                         }
                         throw caughtError;
                     }
-                },
-                {
-                    successState: null,
-                    onSuccess: (changed) => {
-                        if (changed) feedback.status.val = "success";
-                    },
                 }
             );
         } finally {

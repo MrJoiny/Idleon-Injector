@@ -7,23 +7,16 @@
 
 .eventshop-row__note,
 .eventshop-note {
-    color: var(--c-text-muted);
     font-size: 0.875rem;
     margin: 0;
 }
 
+.eventshop-note {
+    color: var(--c-text-muted);
+}
+
 .eventshop-row__note {
     color: var(--c-warning);
-}
-
-.eventshop-tab .account-row--success {
-    background: var(--c-panel);
-    border-color: var(--c-success);
-}
-
-.eventshop-tab .account-row--error {
-    background: var(--c-panel);
-    border-color: var(--c-danger);
 }
 
 @media (max-width: 760px) {
