@@ -44,13 +44,15 @@ export const EditableNumberRow = ({
         onDecrement: userOnDecrement,
         onIncrement: userOnIncrement,
         formatter,
+        disabled: inputDisabled,
         ...restInputProps
     } = inputProps;
     const formatCommittedValue = (value) =>
         typeof formatter === "function" ? formatter(value ?? 0) : String(value ?? 0);
     const inputValue = van.state(formatCommittedValue(valueState.val));
     const { status, run } = useWriteStatus();
-    const isDisabled = () => Boolean(resolveValue(disabled));
+    const isDisabled = () =>
+        Boolean(resolveValue(disabled)) || Boolean(resolveValue(inputDisabled));
     let isInputFocused = false;
 
     const syncInputToCommitted = () => {
@@ -63,7 +65,7 @@ export const EditableNumberRow = ({
     });
 
     const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
-        if (isDisabled()) return;
+        if (isDisabled() || status.val === "loading") return;
         const next = normalize(rawValue);
         if (next === null || next === undefined || Number.isNaN(next)) return;
 
@@ -80,7 +82,7 @@ export const EditableNumberRow = ({
     };
 
     const applyButton = ActionButton({
-        label: () => (typeof applyLabel === "function" ? applyLabel() : applyLabel),
+        label: () => resolveValue(applyLabel),
         status,
         disabled: isDisabled,
         onClick: (e) => {
@@ -96,17 +98,18 @@ export const EditableNumberRow = ({
         const actionLabel = action.label ?? fallbackLabel;
         const actionDisabled =
             action.disabled !== undefined && action.disabled !== null
-                ? () => Boolean(resolveValue(action.disabled))
+                ? () => isDisabled() || Boolean(resolveValue(action.disabled))
                 : isDisabled;
         const actionButton = ActionButton({
-            label: () => (typeof actionLabel === "function" ? actionLabel() : actionLabel),
+            label: () => resolveValue(actionLabel),
             status,
             variant: "max-reset",
             tooltip: action.tooltip ?? null,
             disabled: actionDisabled,
             onClick: (e) => {
                 e.preventDefault();
-                void applyValue(actionValue);
+                if (actionDisabled()) return;
+                void applyValue(resolveValue(actionValue));
             },
         });
 
@@ -161,8 +164,8 @@ export const EditableNumberRow = ({
                 mode: inputMode,
                 value: inputValue,
                 formatter,
-                disabled: restInputProps.disabled ?? isDisabled,
                 ...restInputProps,
+                disabled: () => isDisabled() || status.val === "loading",
                 onfocus: () => {
                     isInputFocused = true;
                     if (typeof userOnfocus === "function") userOnfocus();
@@ -173,14 +176,14 @@ export const EditableNumberRow = ({
                     if (typeof userOnblur === "function") userOnblur();
                 },
                 onDecrement: () => {
-                    if (isDisabled()) return;
+                    if (isDisabled() || status.val === "loading") return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val ?? 0)
                     );
                     if (typeof userOnDecrement === "function") userOnDecrement();
                 },
                 onIncrement: () => {
-                    if (isDisabled()) return;
+                    if (isDisabled() || status.val === "loading") return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val ?? 0)
                     );
