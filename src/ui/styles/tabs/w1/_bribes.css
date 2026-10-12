@@ -1,0 +1,25 @@
+.bribes-row .account-row__name {
+    white-space: normal;
+}
+
+.bribes-row__bonus {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+    .bribes-tab .account-tab-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bribes-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .bribes-row .account-row__controls {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
