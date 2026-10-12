@@ -323,7 +323,6 @@ export const WeeklyBossTab = () => {
     const renderSkin = (entry) => {
         const state = skinStates.get(entry.key);
         return AccountRow({
-            rowClass: "account-row--wide-controls",
             status: state.write.status,
             info: div(
                 { class: "account-row__name-group" },
@@ -391,7 +390,6 @@ export const WeeklyBossTab = () => {
                   : "";
         };
         return AccountRow({
-            rowClass: "account-row--wide-controls",
             status: state.write.status,
             info: div(
                 { class: "account-row__name-group" },
@@ -439,7 +437,6 @@ export const WeeklyBossTab = () => {
     };
 
     const trophyRow = EditableNumberRow({
-        rowClass: "account-row--wide-controls",
         valueState: trophies,
         disabled: cannotWrite,
         normalize: (raw) => resolveNumberInput(raw, { min: 0 }),
@@ -495,7 +492,6 @@ export const WeeklyBossTab = () => {
                 body: [
                     trophyRow,
                     AccountRow({
-                        rowClass: "account-row--wide-controls",
                         info: div(
                             { class: "account-row__name-group" },
                             span({ class: "account-row__name" }, "Best stage this week"),
