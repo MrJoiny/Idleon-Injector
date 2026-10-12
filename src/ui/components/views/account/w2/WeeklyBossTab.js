@@ -7,6 +7,7 @@ import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     cleanName,
     createStaticRowReconciler,
+    resolveNumberInput,
     unwrapH,
     useWriteStatus,
     writeManyVerified,
@@ -34,81 +35,92 @@ export const WeeklyBossTab = () => {
     const playerList = div({ class: "account-item-stack" });
     const reconcileSkins = createStaticRowReconciler(skinList);
     const reconcilePlayers = createStaticRowReconciler(playerList);
+    let cachedCatalog = null;
     let entries = [];
     let players = [];
     let signature = null;
 
     const isBusy = () => loading.val || busy.val;
     const cannotWrite = () => isBusy() || Boolean(error.val) || signature === null;
-    const playerKey = ({ index, name }) => JSON.stringify([index, name]);
+    const playerKey = ({ index, name }) => `${index}:${name}`;
 
-    const readSnapshot = async () => {
-        const [rawShop, letters, rawWeekly, rawPlayers, trophyValue, bestValue, active] = await Promise.all([
-            readCList("WeeklySHOP[0]"),
-            gga("Number2Letter"),
+    const readSnapshot = async (options = {}) => {
+        const needsCatalog = !cachedCatalog || Boolean(options.reloadCatalog);
+        const [rawShop, rawLetters, rawWeekly, rawPlayers, trophyValue, bestValue, active] = await Promise.all([
+            needsCatalog ? readCList("WeeklySHOP[0]") : null,
+            needsCatalog ? gga("Number2Letter") : null,
             gga("WeeklyBoss"),
             gga("GetPlayersUsernames"),
             gga("OptionsListAccount[188]"),
             gga("OptionsListAccount[189]"),
             gga("UserInfo[0]").catch(() => null),
         ]);
-        const definitions = toIndexedArray(rawShop);
+        let skins = cachedCatalog;
+        if (needsCatalog) {
+            const rawCatalog = unwrapH(rawShop);
+            const rawLettersUnwrapped = unwrapH(rawLetters);
+            const letters = toIndexedArray(rawLettersUnwrapped);
+            if (!rawCatalog || typeof rawCatalog !== "object" || !letters.length) {
+                throw new Error("Weekly Boss data is unavailable. Refresh to try again.");
+            }
+            const shopEntries = Object.keys(rawCatalog)
+                .map((key) => ({ shopIndex: Number(key), raw: rawCatalog[key] }))
+                .filter(({ shopIndex, raw }) => Number.isInteger(shopIndex) && shopIndex >= 0 && raw)
+                .sort((a, b) => a.shopIndex - b.shopIndex);
+
+            if (!shopEntries.length) {
+                throw new Error("Weekly Boss data is unavailable. Refresh to try again.");
+            }
+            skins = shopEntries.map(({ shopIndex, raw }) => {
+                const definition = toIndexedArray(unwrapH(raw));
+                const letter = letters[shopIndex + 1];
+                const cost = Number(definition[1]);
+                if (
+                    definition.length < 4 ||
+                    typeof definition[0] !== "string" ||
+                    !definition[0] ||
+                    typeof letter !== "string" ||
+                    !/^[A-Za-z0-9_]+$/.test(letter) ||
+                    !Number.isFinite(cost) ||
+                    cost < 0
+                ) {
+                    throw new Error("Weekly Boss skin definitions changed or are invalid. Refresh to try again.");
+                }
+                return {
+                    selection: shopIndex + 1,
+                    key: `UI_${letter}`,
+                    name: cleanName(definition[0]),
+                    cost,
+                    description: definition[3] === "filler" ? "" : cleanName(definition[3]),
+                };
+            });
+            if (new Set(skins.map(({ key }) => key)).size !== skins.length) {
+                throw new Error("Weekly Boss skin keys are ambiguous. Refresh to try again.");
+            }
+            cachedCatalog = skins;
+        }
         const weekly = unwrapH(rawWeekly);
-        if (
-            !definitions.length ||
-            Object.keys(rawShop).some((key, index) => Number(key) !== index) ||
-            !letters ||
-            !weekly ||
-            typeof weekly !== "object" ||
-            !rawPlayers
-        ) {
+        const playersMap = unwrapH(rawPlayers);
+        if (!weekly || typeof weekly !== "object" || !playersMap || typeof playersMap !== "object") {
             throw new Error("Weekly Boss data is unavailable. Refresh to try again.");
         }
-        const skins = definitions.map((raw, index) => {
-            const definition = toIndexedArray(raw);
-            const letter = letters[index + 1];
-            const cost = Number(definition[1]);
-            if (
-                definition.length < 5 ||
-                typeof definition[0] !== "string" ||
-                !definition[0] ||
-                typeof letter !== "string" ||
-                !/^[A-Za-z0-9_]+$/.test(letter) ||
-                !Number.isFinite(cost) ||
-                cost < 0 ||
-                Number(definition[4]) !== 0
-            ) {
-                throw new Error("Weekly Boss skin definitions changed or are invalid. Refresh to try again.");
+        for (const skin of skins) {
+            if (weekly[skin.key] !== undefined && weekly[skin.key] !== null && ![0, 1].includes(Number(weekly[skin.key]))) {
+                throw new Error(`Invalid unlock value for ${skin.name}.`);
             }
-            const key = `UI_${letter}`;
-            if (weekly[key] !== undefined && weekly[key] !== null && ![0, 1].includes(Number(weekly[key]))) {
-                throw new Error(`Invalid unlock value for ${cleanName(definition[0])}.`);
-            }
-            return {
-                selection: index + 1,
-                key,
-                name: cleanName(definition[0]),
-                cost,
-                image: definition[2],
-                description: definition[3] === "filler" ? "" : cleanName(definition[3]),
-            };
-        });
-        if (new Set(skins.map(({ key }) => key)).size !== skins.length) {
-            throw new Error("Weekly Boss skin keys are ambiguous. Refresh to try again.");
         }
-        const roster = Object.keys(rawPlayers)
-            .map((key) => {
-                const index = Number(key);
-                const name = rawPlayers[key];
-                if (!Number.isInteger(index) || index < 0 || typeof name !== "string") {
-                    throw new Error("Character roster is invalid. Refresh to try again.");
-                }
-                return { index, name };
-            })
-            .filter(({ name }) => name.trim())
+        const roster = Object.keys(playersMap)
+            .map((key) => ({ index: Number(key), name: playersMap[key] }))
+            .filter(
+                ({ index, name }) =>
+                    Number.isInteger(index) &&
+                    index >= 0 &&
+                    typeof name === "string" &&
+                    name.trim().length > 0 &&
+                    !name.startsWith("__")
+            )
             .sort((a, b) => a.index - b.index);
         if (
-            !roster.length ||
             trophyValue === null ||
             trophyValue === undefined ||
             bestValue === null ||
@@ -130,7 +142,7 @@ export const WeeklyBossTab = () => {
         };
     };
 
-    const syncSnapshot = (snapshot) => {
+    const syncSnapshot = (snapshot, { resetDrafts = false } = {}) => {
         trophies.val = snapshot.trophies;
         best.val = snapshot.best;
         activePlayer.val = snapshot.active;
@@ -147,24 +159,19 @@ export const WeeklyBossTab = () => {
                 playerStates.set(key, { value: van.state(value), draft: van.state(value), write: useWriteStatus() });
             } else {
                 const state = playerStates.get(key);
-                if (state.draft.val === state.value.val) state.draft.val = value;
+                if (resetDrafts || state.draft.val === state.value.val) state.draft.val = value;
                 state.value.val = value;
             }
         }
     };
 
     const readFresh = async () => {
-        try {
-            const snapshot = await readSnapshot();
-            if (snapshot.signature !== signature) {
-                throw new Error("Skin definitions or the character roster changed. Refresh before editing.");
-            }
-            syncSnapshot(snapshot);
-            return snapshot;
-        } catch (caughtError) {
-            error.val = caughtError.message;
-            throw caughtError;
+        const snapshot = await readSnapshot();
+        if (snapshot.signature !== signature) {
+            throw new Error("Skin definitions or the character roster changed. Refresh before editing.");
         }
+        syncSnapshot(snapshot);
+        return snapshot;
     };
 
     const submitWrites = async (writes) => {
@@ -173,22 +180,24 @@ export const WeeklyBossTab = () => {
             if (writes.length === 1) await writeVerified(writes[0].path, writes[0].value);
             else await writeManyVerified(writes);
         } catch (caughtError) {
+            try {
+                await readFresh();
+            } catch {
+                // Ignore read failure during write error recovery.
+            }
+            if (writes.length === 1) throw caughtError;
+
             const results = caughtError.results || [];
             let verified = 0;
             let failed = 0;
             for (const write of writes) {
-                const result = results.find((entry) => entry.path.replace(/^gga\./, "") === write.path);
+                const result = results.find((entry) => entry?.path?.replace(/^gga\./, "") === write.path);
                 if (result?.ok) verified++;
                 else if (result?.ok === false) failed++;
                 if (write.key) {
                     const state = skinStates.get(write.key);
                     if (result?.ok) state.unlocked.val = write.value === 1;
                 }
-            }
-            try {
-                await readFresh();
-            } catch {
-                // The page read error already blocks further edits until refresh.
             }
             throw new Error(
                 `${verified} verified, ${failed} write or verification failures, ` +
@@ -204,7 +213,7 @@ export const WeeklyBossTab = () => {
                 const state = playerStates.get(playerKey(write.player));
                 state.value.val = String(write.value);
                 state.draft.val = String(write.value);
-            } else {
+            } else if (write.path === "OptionsListAccount[188]") {
                 trophies.val = write.value;
             }
         }
@@ -223,7 +232,7 @@ export const WeeklyBossTab = () => {
             await skinStates.get(entry.key).write.run(
                 async () => {
                     const snapshot = await readFresh();
-                    if ((Number(snapshot.weekly[entry.key]) === 1) === enabled) return;
+                    if ((Number(snapshot.weekly[entry.key]) === 1) === enabled) return { cancelled: true };
                     await submitWrites([{ key: entry.key, path: `WeeklyBoss.h.${entry.key}`, value: enabled ? 1 : 0 }]);
                 },
                 { onError: (caughtError) => (message.val = caughtError.message) }
@@ -244,9 +253,10 @@ export const WeeklyBossTab = () => {
                 message.val = "No skin unlocks need changing.";
                 return;
             }
+            const countLabel = `${targets.length} cosmetic UI skin${targets.length === 1 ? "" : "s"}`;
             if (
                 !window.confirm(
-                    `${enabled ? "Enable" : "Disable"} ${targets.length} cosmetic UI skins? ` +
+                    `${enabled ? "Enable" : "Disable"} ${countLabel}? ` +
                         "Trophies and character selections will stay unchanged."
                 )
             )
@@ -296,7 +306,7 @@ export const WeeklyBossTab = () => {
                         snapshot.weekly[`set${player.index}`] !== undefined &&
                         snapshot.weekly[`set${player.index}`] !== null
                     )
-                        return;
+                        return { cancelled: true };
                     const entry = entries.find(({ selection }) => String(selection) === draft);
                     if (draft !== "0" && (!entry || Number(snapshot.weekly[entry.key]) !== 1)) {
                         throw new Error("Select Default or an unlocked skin. Existing selections were preserved.");
@@ -363,29 +373,37 @@ export const WeeklyBossTab = () => {
             ),
             option(
                 {
-                    value: () => state.value.val,
+                    value: () => (hasUnknownSelection() ? state.value.val : "__unknown__"),
+                    selected: () => hasUnknownSelection() && state.draft.val === state.value.val,
                     hidden: () => !hasUnknownSelection(),
                     disabled: () => !hasUnknownSelection(),
-                    selected: () => hasUnknownSelection() && state.draft.val === state.value.val,
                 },
                 () => `Unknown selection ${state.value.val}`
             )
         );
+        const getPlayerWarning = () => {
+            if (state.value.val === "0") return "";
+            const entry = entries.find(({ selection }) => String(selection) === state.value.val);
+            return !entry
+                ? `Saved selection ${state.value.val} is unknown.`
+                : !skinStates.get(entry.key).unlocked.val
+                  ? `Saved skin ${entry.name} is locked.`
+                  : "";
+        };
         return AccountRow({
             rowClass: "account-row--wide-controls",
             status: state.write.status,
             info: div(
                 { class: "account-row__name-group" },
                 span({ class: "account-row__name" }, player.name),
-                span({ class: "write-status write-status--error", role: "status" }, () => {
-                    if (state.value.val === "0") return "";
-                    const entry = entries.find(({ selection }) => String(selection) === state.value.val);
-                    return !entry
-                        ? `Saved selection ${state.value.val} is unknown.`
-                        : !skinStates.get(entry.key).unlocked.val
-                          ? `Saved skin ${entry.name} is locked.`
-                          : "";
-                })
+                span(
+                    {
+                        class: "write-status write-status--error",
+                        role: "status",
+                        style: () => (getPlayerWarning() ? "" : "display: none;"),
+                    },
+                    getPlayerWarning
+                )
             ),
             badge: () => (activePlayer.val === player.name ? "ACTIVE" : `CHAR ${player.index + 1}`),
             controls: [
@@ -405,13 +423,17 @@ export const WeeklyBossTab = () => {
         if (busy.val) return;
         busy.val = true;
         return runLoad(async () => {
-            const snapshot = await readSnapshot();
+            const snapshot = await readSnapshot({ reloadCatalog: true });
             entries = snapshot.entries;
             players = snapshot.players;
             signature = snapshot.signature;
-            syncSnapshot(snapshot);
+            syncSnapshot(snapshot, { resetDrafts: true });
             reconcileSkins(JSON.stringify(entries), () => entries.map(renderSkin));
-            reconcilePlayers(JSON.stringify([entries, players]), () => players.map(renderPlayer));
+            reconcilePlayers(JSON.stringify([entries, players]), () =>
+                players.length
+                    ? players.map(renderPlayer)
+                    : [div({ class: "account-section__note" }, "No characters found on this account.")]
+            );
             message.val = "";
         }).finally(() => (busy.val = false));
     };
@@ -420,19 +442,21 @@ export const WeeklyBossTab = () => {
         rowClass: "account-row--wide-controls",
         valueState: trophies,
         disabled: cannotWrite,
-        normalize: (raw) => {
-            const value = Number(raw);
-            return String(raw).trim() && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null;
+        normalize: (raw) => resolveNumberInput(raw, { min: 0 }),
+        adjustInput: (rawValue, delta, currentValue) => {
+            const base = Number(rawValue);
+            const next = Number.isFinite(base) ? base : Number(currentValue ?? 0);
+            return Math.max(0, next + delta);
         },
         write: async (value) => {
             if (cannotWrite())
                 throw new Error("Weekly Boss edits are unavailable. Refresh or wait for the current action.");
+            if (value === trophies.val) return { cancelled: true };
             busy.val = true;
             message.val = "";
             try {
-                await readFresh();
                 await submitWrites([{ path: "OptionsListAccount[188]", value }]);
-                return trophies.val;
+                return value;
             } catch (caughtError) {
                 message.val = caughtError.message;
                 throw caughtError;
@@ -458,7 +482,14 @@ export const WeeklyBossTab = () => {
         errorTitle: "WEEKLY BOSS READ FAILED",
         body: div(
             { class: "scrollable-panel content-stack" },
-            div({ class: "write-status write-status--error", role: "alert" }, () => message.val),
+            div(
+                {
+                    class: "write-status write-status--error",
+                    role: "alert",
+                    style: () => (message.val ? "" : "display: none;"),
+                },
+                () => message.val
+            ),
             AccountSection({
                 title: "Progress",
                 body: [
