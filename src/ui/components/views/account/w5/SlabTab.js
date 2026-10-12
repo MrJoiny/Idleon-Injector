@@ -1,8 +1,9 @@
 import van from "../../../../vendor/van-1.6.0.js";
 import { gga, readCList, readGgaEntries } from "../../../../services/api.js";
+import { debounce, toIndexedArray } from "../../../../utils/index.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { cleanName, createStaticRowReconciler, unwrapH, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, createStaticRowReconciler, useWriteStatus, writeVerified } from "../accountShared.js";
 import { AccountRow } from "../components/AccountRow.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
@@ -17,87 +18,57 @@ export const SlabTab = () => {
     const message = van.state("");
     const query = van.state("");
     const filter = van.state("all");
+    const normalizedQuery = van.derive(() => query.val.trim().toLowerCase());
     const entries = van.state([]);
     const historyCount = van.state(0);
     const bulk = useWriteStatus();
     const rowStates = new Map();
     const listNode = div({ class: "account-item-stack account-item-stack--dense" });
     const reconcileRows = createStaticRowReconciler(listNode);
-    let pageNode = null;
+    let searchInputEl = null;
+
+    const onSearchInput = debounce((value) => {
+        query.val = value;
+    }, 150);
 
     const isBusy = () => loading.val || busy.val;
     const cannotWrite = () => isBusy() || Boolean(error.val) || !entries.val.length;
-    const lockPage = () => {
-        const focused = pageNode?.contains(document.activeElement) ? document.activeElement : null;
-        let focusMoved = false;
-        const trackFocus = (event) => {
-            if (event.target !== focused) focusMoved = true;
-        };
-        const trackTab = (event) => {
-            if (event.key === "Tab") focusMoved = true;
-        };
-        const trackBlur = () => (focusMoved = true);
-        if (focused) {
-            document.addEventListener("focusin", trackFocus);
-            document.addEventListener("pointerdown", trackFocus);
-            document.addEventListener("keydown", trackTab);
-            window.addEventListener("blur", trackBlur);
-        }
-        busy.val = true;
-        return () => {
-            busy.val = false;
-            if (!focused) return;
-            setTimeout(() => {
-                document.removeEventListener("focusin", trackFocus);
-                document.removeEventListener("pointerdown", trackFocus);
-                document.removeEventListener("keydown", trackTab);
-                window.removeEventListener("blur", trackBlur);
-                if (
-                    !focusMoved &&
-                    focused.isConnected &&
-                    !focused.disabled &&
-                    document.activeElement === document.body
-                ) {
-                    focused.focus();
-                }
-                for (const state of rowStates.values()) {
-                    if (state.focused.val) state.focused.val = state.node.contains(document.activeElement);
-                }
-            }, 0);
-        };
-    };
-    const matches = (itemId, search = query.val.trim().toLowerCase(), status = filter.val) => {
+
+    const matches = (itemId, search = normalizedQuery.val, status = filter.val) => {
         const state = rowStates.get(itemId);
+        if (!state) return false;
         return (
             (status === "all" || state.registered.val === (status === "registered")) &&
-            (!search || itemId.toLowerCase().includes(search) || state.name.val.toLowerCase().includes(search))
+            (!search || Boolean(state.searchKey?.includes(search)))
         );
     };
 
     const updateHistory = (history) => {
         const registered = new Set(history);
         historyCount.val = history.length;
-        for (const itemId of entries.val) rowStates.get(itemId).registered.val = registered.has(itemId);
+        for (const itemId of entries.val) {
+            const state = rowStates.get(itemId);
+            if (state) state.registered.val = registered.has(itemId);
+        }
     };
 
     const readHistory = async () => {
-        try {
-            const history = await gga(HISTORY_PATH);
-            if (!Array.isArray(history) || history.some((itemId) => typeof itemId !== "string" || !itemId.length)) {
-                throw new Error("Slab history is unavailable or invalid. Refresh to try again.");
-            }
-            updateHistory(history);
-            return history;
-        } catch (caughtError) {
-            error.val = caughtError.message;
-            throw caughtError;
+        const raw = await gga(HISTORY_PATH);
+        if (raw === null || raw === undefined) {
+            throw new Error("Slab registration history is unavailable. Refresh to try again.");
         }
+        const history = toIndexedArray(raw)
+            .map((itemId) => String(itemId ?? "").trim())
+            .filter((itemId) => itemId.length > 0);
+        updateHistory(history);
+        return history;
     };
 
     const applyHistory = async (history, targets, registered) => {
         const targetIds = new Set(targets);
+        const historySet = new Set(history);
         const next = registered
-            ? history.concat(targets.filter((itemId) => !history.includes(itemId)))
+            ? history.concat(targets.filter((itemId) => !historySet.has(itemId)))
             : history.filter((itemId) => !targetIds.has(itemId));
         if (next.length === history.length) return;
         try {
@@ -106,8 +77,8 @@ export const SlabTab = () => {
         } catch (caughtError) {
             try {
                 await readHistory();
-            } catch {
-                // readHistory blocks further edits until a successful refresh.
+            } catch (readError) {
+                error.val = readError.message;
             }
             throw new Error(`Some changes may have applied and could not be verified. ${caughtError.message}`);
         }
@@ -115,26 +86,29 @@ export const SlabTab = () => {
 
     const setItem = async (itemId, registered) => {
         if (cannotWrite()) return;
-        const unlock = lockPage();
+        busy.val = true;
         message.val = "";
         try {
             await rowStates.get(itemId).write.run(async () => applyHistory(await readHistory(), [itemId], registered), {
                 onError: (caughtError) => (message.val = caughtError.message),
             });
         } finally {
-            unlock();
+            busy.val = false;
         }
     };
 
     const setShown = async (registered) => {
         if (cannotWrite()) return;
-        const unlock = lockPage();
+        const search = (searchInputEl?.value ?? query.val).trim().toLowerCase();
+        if (searchInputEl && searchInputEl.value !== query.val) {
+            query.val = searchInputEl.value;
+        }
+        busy.val = true;
         message.val = "";
-        const search = query.val.trim().toLowerCase();
         const status = filter.val;
         const getTargets = () =>
             entries.val.filter(
-                (itemId) => matches(itemId, search, status) && rowStates.get(itemId).registered.val !== registered
+                (itemId) => matches(itemId, search, status) && rowStates.get(itemId)?.registered.val !== registered
             );
         try {
             await readHistory();
@@ -151,25 +125,22 @@ export const SlabTab = () => {
                             : "Removes all history occurrences for these items. Owned items may register again in W5 town."
                     }`
                 )
-            )
+            ) {
                 return;
+            }
             const history = await readHistory();
-            if (JSON.stringify(targets) !== JSON.stringify(getTargets())) {
+            const currentTargets = getTargets();
+            if (targets.length !== currentTargets.length || !targets.every((id, idx) => id === currentTargets[idx])) {
                 message.val = "Slab targets changed while confirming. Bulk change cancelled; review and try again.";
                 return;
             }
-            await bulk.run(
-                async () => {
-                    const task = applyHistory(history, targets, registered);
-                    await Promise.all(targets.map((itemId) => rowStates.get(itemId).write.run(() => task)));
-                    await task;
-                },
-                { onError: (caughtError) => (message.val = caughtError.message) }
-            );
+            await bulk.run(() => applyHistory(history, targets, registered), {
+                onError: (caughtError) => (message.val = caughtError.message),
+            });
         } catch (caughtError) {
             message.val = caughtError.message;
         } finally {
-            unlock();
+            busy.val = false;
         }
     };
 
@@ -183,37 +154,18 @@ export const SlabTab = () => {
                 span({ class: "account-row__sub-label" }, itemId)
             ),
             badge: () => (state.registered.val ? "REGISTERED" : "MISSING"),
-            controls: [
-                span({ class: "write-status", role: "status" }, () => {
-                    const status = state.write.status.val;
-                    return status === "loading"
-                        ? "SAVING"
-                        : status === "success"
-                          ? "SAVED"
-                          : status === "error"
-                            ? "FAILED"
-                            : "";
-                }),
-                ActionButton({
-                    label: () => (state.registered.val ? "UNREGISTER" : "REGISTER"),
-                    status: state.write.status,
-                    disabled: cannotWrite,
-                    tooltip: () => `${state.registered.val ? "Unregister" : "Register"} ${state.name.val}`,
-                    onClick: () => setItem(itemId, !state.registered.val),
-                }),
-            ],
+            controls: ActionButton({
+                label: () => (state.registered.val ? "UNREGISTER" : "REGISTER"),
+                status: state.write.status,
+                disabled: cannotWrite,
+                tooltip: () => `${state.registered.val ? "Unregister" : "Register"} ${state.name.val}`,
+                onClick: () => setItem(itemId, !state.registered.val),
+            }),
         });
         return div(
             {
-                class: "slab-item",
                 "data-item-id": itemId,
-                style: () => (matches(itemId) || state.write.status.val || state.focused.val ? "" : "display: none;"),
-                onfocusin: () => (state.focused.val = true),
-                onfocusout: (event) => {
-                    if (!busy.val || event.relatedTarget) {
-                        state.focused.val = event.currentTarget.contains(event.relatedTarget);
-                    }
-                },
+                style: () => (matches(itemId) || state.write.status.val ? "" : "display: none;"),
             },
             row
         );
@@ -221,35 +173,38 @@ export const SlabTab = () => {
 
     const load = async () => {
         if (busy.val) return;
-        const unlock = lockPage();
+        busy.val = true;
         try {
             await runLoad(async () => {
-                const catalog = await readCList("SlabItemSort");
-                if (
-                    !Array.isArray(catalog) ||
-                    !catalog.length ||
-                    catalog.some((itemId) => typeof itemId !== "string" || !itemId.length)
-                ) {
+                const rawCatalog = await readCList("SlabItemSort");
+                const catalog = toIndexedArray(rawCatalog ?? [])
+                    .map((itemId) => String(itemId ?? "").trim())
+                    .filter((itemId) => itemId.length > 0);
+                if (!catalog.length) {
                     throw new Error("Slab catalog is unavailable or invalid.");
                 }
                 const itemIds = [...new Set(catalog)];
                 const definitions = await readGgaEntries("ItemDefinitionsGET.h", itemIds, ["displayName"]);
                 for (const itemId of itemIds) {
+                    const displayName = cleanName(definitions[itemId]?.displayName, itemId);
+                    const searchKey = `${itemId} ${displayName}`.toLowerCase();
                     if (!rowStates.has(itemId)) {
                         rowStates.set(itemId, {
-                            name: van.state(itemId),
+                            name: van.state(displayName),
+                            searchKey,
                             registered: van.state(false),
-                            focused: van.state(false),
                             write: useWriteStatus(),
                             node: null,
                         });
+                    } else {
+                        const state = rowStates.get(itemId);
+                        state.name.val = displayName;
+                        state.searchKey = searchKey;
                     }
-                    const state = rowStates.get(itemId);
-                    state.name.val = cleanName(unwrapH(definitions[itemId])?.displayName, itemId);
                 }
                 entries.val = itemIds;
                 await readHistory();
-                reconcileRows(JSON.stringify(itemIds), () =>
+                reconcileRows(itemIds.join("|"), () =>
                     itemIds.map((itemId) => {
                         const state = rowStates.get(itemId);
                         if (!state.node) state.node = createRow(itemId, state);
@@ -266,13 +221,22 @@ export const SlabTab = () => {
                 message.val = "";
             });
         } finally {
-            unlock();
+            busy.val = false;
         }
     };
 
     load();
 
-    return (pageNode = PersistentAccountListPage({
+    searchInputEl = input({
+        class: "slab-search",
+        type: "search",
+        placeholder: "Search name or item ID",
+        "aria-label": "Search Slab by name or item ID",
+        value: query,
+        oninput: (event) => onSearchInput(event.target.value),
+    });
+
+    return PersistentAccountListPage({
         rootClass: "slab-tab tab-container",
         title: "SLAB",
         description:
@@ -297,21 +261,12 @@ export const SlabTab = () => {
             { class: "scrollable-panel content-stack" },
             div(
                 { class: "slab-filters" },
-                input({
-                    class: "input-base slab-search",
-                    type: "search",
-                    placeholder: "Search name or item ID",
-                    "aria-label": "Search Slab by name or item ID",
-                    value: query,
-                    disabled: isBusy,
-                    oninput: (event) => (query.val = event.target.value),
-                }),
+                searchInputEl,
                 select(
                     {
                         class: "select-base",
                         "aria-label": "Slab registration filter",
                         value: filter,
-                        disabled: isBusy,
                         onchange: (event) => (filter.val = event.target.value),
                     },
                     option({ value: "all" }, "All"),
@@ -320,12 +275,20 @@ export const SlabTab = () => {
                 )
             ),
             div({ class: "account-section__note slab-summary", role: "status" }, () => {
-                const registered = entries.val.filter((itemId) => rowStates.get(itemId).registered.val).length;
-                const matching = entries.val.filter((itemId) => matches(itemId)).length;
+                const search = normalizedQuery.val;
+                const status = filter.val;
+                let registered = 0;
+                let matching = 0;
+                for (const itemId of entries.val) {
+                    const state = rowStates.get(itemId);
+                    if (!state) continue;
+                    if (state.registered.val) registered++;
+                    if (matches(itemId, search, status)) matching++;
+                }
                 return `${registered} registered / ${entries.val.length - registered} missing catalog items · ${historyCount.val} total history entries · ${matching} matching`;
             }),
             div({ class: "write-status write-status--error", role: "alert" }, () => message.val),
             listNode
         ),
-    }));
+    });
 };
