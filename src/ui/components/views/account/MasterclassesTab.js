@@ -1,5 +1,5 @@
 /**
- * Masterclasses (branch-specific) - limited to GRIMOIRE + TARGET tab for isolated PR testing
+ * Masterclasses tab navigation and subtab panes.
  */
 
 import van from "../../../vendor/van-1.6.0.js";

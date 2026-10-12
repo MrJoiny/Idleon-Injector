@@ -15,18 +15,18 @@ import { cleanName, resolveNumberInput, toInt, useWriteStatus, writeManyVerified
 const { div, span } = van.tags;
 
 const WORLD_TABS = [
-    { id: "all", label: "ALL", worldKey: "ALL" },
-    { id: "w1", label: "W1", worldKey: "W1" },
-    { id: "w2", label: "W2", worldKey: "W2" },
-    { id: "w3", label: "W3", worldKey: "W3" },
-    { id: "w4", label: "W4", worldKey: "W4" },
-    { id: "w5", label: "W5", worldKey: "W5" },
-    { id: "w6", label: "W6", worldKey: "W6" },
-    { id: "w7", label: "W7", worldKey: "W7" },
+    { id: "all", label: "ALL" },
+    { id: "w1", label: "W1" },
+    { id: "w2", label: "W2" },
+    { id: "w3", label: "W3" },
+    { id: "w4", label: "W4" },
+    { id: "w5", label: "W5" },
+    { id: "w6", label: "W6" },
+    { id: "w7", label: "W7" },
 ];
 
 /** Calculate Arcane crystal stat multiplier (%) given kill count. */
-export const calculateArcaneCrystalBonus = (kills) => {
+const calculateArcaneCrystalBonus = (kills) => {
     const k = Number(kills);
     if (!Number.isFinite(k) || k < 1) return 0;
     const log10 = Math.log10(k);
@@ -38,7 +38,7 @@ export const calculateArcaneCrystalBonus = (kills) => {
 };
 
 /** Calculate Arcane crystal stat multiplier (e.g. 1.631) matching in-game AFK screen format. */
-export const calculateArcaneCrystalMultiplier = (kills, capPercent = null) => {
+const calculateArcaneCrystalMultiplier = (kills, capPercent = null) => {
     let bonus = calculateArcaneCrystalBonus(kills);
     if (capPercent !== null && capPercent > 0 && bonus > capPercent) {
         bonus = capPercent;
@@ -57,13 +57,10 @@ const resolveWorldKey = (mapIndex, targetMob, deathNoteMobs) => {
         }
     }
 
-    if (mapIndex <= 36 || mapIndex === 38 || mapIndex === 39 || mapIndex === 40) return "W1";
-    if ((mapIndex >= 50 && mapIndex <= 73) || mapIndex === 37) return "W2";
-    if (mapIndex < 100) return "W3";
-    if (mapIndex < 150 || mapIndex === 166) return "W4";
-    if (mapIndex < 200) return "W5";
-    if (mapIndex < 250) return "W6";
-    return "W7";
+    if (mapIndex === 37) return "W2";
+    if (mapIndex === 166) return "W4";
+    const worldNum = Math.min(7, Math.max(1, Math.floor(mapIndex / 50) + 1));
+    return `W${worldNum}`;
 };
 
 const MapCrystalRow = ({ map, states, talentCap }) => {
@@ -105,20 +102,15 @@ const MapCrystalRow = ({ map, states, talentCap }) => {
 
         const cap = talentCap ? talentCap.val : null;
         const isCapped = (raw) => cap !== null && cap > 0 && raw > cap;
-        const getEffectiveBonus = (raw) => (isCapped(raw) ? cap : raw);
-        const toMult = (raw) => {
-            const eff = getEffectiveBonus(raw);
-            return (Math.floor(1000 * (1 + eff / 100)) / 1000).toFixed(3);
-        };
 
-        const pMult = toMult(pRaw);
-        const yMult = toMult(yRaw);
-        const bMult = toMult(bRaw);
+        const pMult = calculateArcaneCrystalMultiplier(purpleState.val, cap);
+        const yMult = calculateArcaneCrystalMultiplier(yellowState.val, cap);
+        const bMult = calculateArcaneCrystalMultiplier(blueState.val, cap);
 
         const anyCapped = isCapped(pRaw) || isCapped(yRaw) || isCapped(bRaw);
 
         if (purpleState.val === yellowState.val && yellowState.val === blueState.val) {
-            const rawMult = (Math.floor(1000 * (1 + pRaw / 100)) / 1000).toFixed(3);
+            const rawMult = calculateArcaneCrystalMultiplier(purpleState.val);
             if (anyCapped) {
                 return `${pMult}x (Capped · Max ${rawMult}x / +${pRaw}%)`;
             }
@@ -186,6 +178,7 @@ export const MapCrystalsTab = () => {
     const allMaps = van.state([]);
     const talentCap = van.state(null);
     const mapStateRegistry = new Map();
+    const rowNodes = new Map();
 
     const getMapStates = (mapIndex) => {
         if (!mapStateRegistry.has(mapIndex)) {
@@ -198,6 +191,16 @@ export const MapCrystalsTab = () => {
         return mapStateRegistry.get(mapIndex);
     };
 
+    const getMapRow = (map) => {
+        if (!rowNodes.has(map.mapIndex)) {
+            rowNodes.set(
+                map.mapIndex,
+                MapCrystalRow({ map, states: getMapStates(map.mapIndex), talentCap })
+            );
+        }
+        return rowNodes.get(map.mapIndex);
+    };
+
     const load = async () =>
         run(async () => {
             const [rawMapBon, rawMapDispNames, rawMapTargets, rawDeathNoteMobs, rawArcMultBon] = await Promise.all([
@@ -205,7 +208,7 @@ export const MapCrystalsTab = () => {
                 gga("CustomLists.h.MapDispName"),
                 gga("CustomLists.h.MapAFKtarget"),
                 gga("CustomLists.h.DeathNoteMobs"),
-                gga("DNSM.h.ArcMultBon"),
+                gga("DNSM.h.ArcMultBon").catch(() => null),
             ]);
 
             const mapBon = toIndexedArray(rawMapBon ?? []);
@@ -213,15 +216,18 @@ export const MapCrystalsTab = () => {
             const mapTargets = toIndexedArray(rawMapTargets ?? []);
             const deathNoteMobs = toIndexedArray(rawDeathNoteMobs ?? []).map((list) => toIndexedArray(list ?? []));
 
-            if (Array.isArray(rawArcMultBon) && rawArcMultBon.length > 0 && Number.isFinite(Number(rawArcMultBon[0]))) {
-                talentCap.val = Math.round(Number(rawArcMultBon[0]) * 100) / 100;
+            const arcMultBon = toIndexedArray(rawArcMultBon ?? []);
+            if (arcMultBon.length > 0 && Number.isFinite(Number(arcMultBon[0]))) {
+                talentCap.val = Math.round(Number(arcMultBon[0]) * 100) / 100;
+            } else {
+                talentCap.val = null;
             }
 
             const discoveredMaps = [];
 
             for (let i = 0; i < mapBon.length; i++) {
-                const bonEntry = mapBon[i];
-                if (!Array.isArray(bonEntry) || bonEntry.length < 3) continue;
+                const bonEntry = toIndexedArray(mapBon[i] ?? []);
+                if (bonEntry.length < 3) continue;
 
                 const targetMob = mapTargets[i];
                 const rawName = mapDispNames[i] ? String(mapDispNames[i]).replace(/_/g, " ") : `Map ${i}`;
@@ -250,11 +256,17 @@ export const MapCrystalsTab = () => {
         await runBulk(async () => {
             const writes = [];
             for (const map of mapsToUpdate) {
-                writes.push({ path: `MapBon[${map.mapIndex}][0]`, value: killCount });
-                writes.push({ path: `MapBon[${map.mapIndex}][1]`, value: killCount });
-                writes.push({ path: `MapBon[${map.mapIndex}][2]`, value: killCount });
+                const states = getMapStates(map.mapIndex);
+                if (states.purple.val !== killCount) writes.push({ path: `MapBon[${map.mapIndex}][0]`, value: killCount });
+                if (states.yellow.val !== killCount) writes.push({ path: `MapBon[${map.mapIndex}][1]`, value: killCount });
+                if (states.blue.val !== killCount) writes.push({ path: `MapBon[${map.mapIndex}][2]`, value: killCount });
             }
-            await writeManyVerified(writes);
+            if (writes.length > 0) {
+                const CHUNK_SIZE = 60;
+                for (let i = 0; i < writes.length; i += CHUNK_SIZE) {
+                    await writeManyVerified(writes.slice(i, i + CHUNK_SIZE));
+                }
+            }
             try {
                 await deleteGga("DNSM.h.ArcMultBon");
             } catch {
@@ -284,7 +296,6 @@ export const MapCrystalsTab = () => {
             ? worldMaps.filter(
                   (m) =>
                       m.name.toLowerCase().includes(query) ||
-                      String(m.mapIndex).includes(query) ||
                       `#${m.mapIndex}`.includes(query)
               )
             : worldMaps;
@@ -299,7 +310,7 @@ export const MapCrystalsTab = () => {
 
         return div(
             { class: "account-list map-crystals-list" },
-            ...visibleMaps.map((map) => MapCrystalRow({ map, states: getMapStates(map.mapIndex), talentCap }))
+            ...visibleMaps.map((map) => getMapRow(map))
         );
     };
 
@@ -307,20 +318,29 @@ export const MapCrystalsTab = () => {
         {
             label: "SET WORLD TO 10M",
             status: bulkStatus,
+            disabled: () => loading.val || activeTab.val === "all",
             tooltip: "Set all crystals on maps in the current world view to 10M kills (1.631x / +63.1% bonus)",
-            onClick: () => applyBulkKills(getActiveWorldMaps(), 10000000),
+            onClick: () => {
+                if (activeTab.val === "all") return;
+                applyBulkKills(getActiveWorldMaps(), 10000000);
+            },
         },
         {
             label: "SET ALL TO 10M",
             status: bulkStatus,
+            disabled: () => loading.val,
             tooltip: "Set all crystals across all worlds to 10M kills (1.631x / +63.1% bonus)",
             onClick: () => applyBulkKills(allMaps.val, 10000000),
         },
         {
             label: "CLEAR WORLD (0)",
             status: bulkStatus,
-            tooltip: "Reset all crystals on maps in the current world view to 0 kills",
-            onClick: () => applyBulkKills(getActiveWorldMaps(), 0),
+            disabled: () => loading.val || activeTab.val === "all",
+            tooltip: "Reset all crystals on maps in the current world view to 0 kills (select a specific world tab to enable)",
+            onClick: () => {
+                if (activeTab.val === "all") return;
+                applyBulkKills(getActiveWorldMaps(), 0);
+            },
         },
     ];
 
@@ -331,7 +351,6 @@ export const MapCrystalsTab = () => {
             SearchBar({
                 placeholder: "SEARCH MAPS OR INDEX",
                 value: searchQuery,
-                debounceMs: 0,
                 onInput: (val) => (searchQuery.val = val),
             })
         ),
@@ -339,7 +358,8 @@ export const MapCrystalsTab = () => {
     );
 
     return PersistentAccountListPage({
-        rootClass: "tab-container scroll-container",
+        rootClass: "tab-container",
+        wrapActions: false,
         title: "MAP CRYSTALS",
         description: () => {
             const base =
@@ -354,6 +374,7 @@ export const MapCrystalsTab = () => {
             actions: bulkActions,
             refresh: {
                 onClick: load,
+                disabled: () => loading.val,
                 tooltip: "Re-read map crystal data from game memory",
             },
         }),
