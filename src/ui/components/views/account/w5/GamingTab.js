@@ -4,12 +4,14 @@ import { GeneralTab } from "./gaming/GeneralTab.js";
 import { ImportsTab } from "./gaming/ImportsTab.js";
 import { PaletteHexTab } from "./gaming/PaletteHexTab.js";
 import { PaletteTab } from "./gaming/PaletteTab.js";
+import { RatKingTab } from "./gaming/RatKingTab.js";
 import { SuperbitsTab } from "./gaming/SuperbitsTab.js";
 
 const { div } = van.tags;
 
 const GAMING_SUBTABS = [
     { id: "general", label: "GENERAL", component: GeneralTab },
+    { id: "rat-king", label: "RAT KING", component: RatKingTab },
     { id: "imports", label: "IMPORTS", component: ImportsTab },
     { id: "superbits", label: "SUPERBITS", component: SuperbitsTab },
     { id: "palette", label: "PALETTE", component: PaletteTab },

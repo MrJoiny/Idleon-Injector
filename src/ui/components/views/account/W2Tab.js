@@ -13,6 +13,7 @@ import { PostOfficeTab } from "./w2/PostOfficeTab.js";
 import { KillroyTab } from "./w2/KillroyTab.js";
 import { IslandsTab } from "./w2/IslandsTab.js";
 import { PoppyTab } from "./w2/PoppyTab.js";
+import { WeeklyBossTab } from "./w2/WeeklyBossTab.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div } = van.tags;
@@ -32,6 +33,7 @@ const W2_SUBTABS = [
     { id: "killroy", label: "KILLROY", component: KillroyTab },
     { id: "islands", label: "ISLANDS", component: IslandsTab },
     { id: "poppy", label: "POPPY", component: PoppyTab },
+    { id: "weekly-boss", label: "WEEKLY BOSS", component: WeeklyBossTab },
 ];
 
 const AlchemyPanel = () => {

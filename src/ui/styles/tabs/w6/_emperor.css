@@ -1,0 +1,6 @@
+.emperor-tab .account-row--wide-controls .account-row__sub-label {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
