@@ -1,0 +1,33 @@
+/* Printer Tab */
+
+.printer-character-select {
+    width: 220px;
+    height: 32px;
+    padding: 0 8px;
+    font-family: var(--font-display);
+    font-size: 0.815rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.printer-item-select {
+    width: 210px;
+    max-width: 100%;
+    height: 32px;
+    padding: 0 8px;
+    font-family: var(--font-display);
+    font-size: 0.815rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 760px) {
+    .printer-row .account-row__controls {
+        flex-wrap: wrap;
+    }
+
+    .printer-item-select,
+    .printer-character-select {
+        width: 100%;
+    }
+}
