@@ -1,0 +1,47 @@
+/* Prayer effects need wrapping below their names; shared controls already stack. */
+.prayer-row__effect {
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+.prayer-row .account-row__name {
+    white-space: normal;
+}
+
+/* Keep badge and controls aligned uniformly across equipped and unequipped rows */
+.prayer-row .account-row__badge {
+    min-width: 176px;
+    text-align: center;
+}
+
+.prayer-row__equip-btn {
+    width: 96px;
+    min-width: 96px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .prayers-page .account-tab-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .prayers-page .account-setall-row {
+        flex-wrap: wrap;
+    }
+
+    .prayer-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .prayer-row .account-row__badge {
+        justify-self: start;
+        min-width: auto;
+    }
+
+    .prayer-row .account-row__controls {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
