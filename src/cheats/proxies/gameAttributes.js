@@ -208,6 +208,7 @@ export function setupGameAttributeProxies() {
 
                 if (cheatState.wide.eventspins && index === 325) return 10;
                 if (cheatState.w6.emperor && index === 370) return -10;
+                if (cheatState.w5.skillcaverns && index === 318) return 0;
                 if (cheatState.w3.jeweledcogs && index === 414) return 0;
 
                 // Clamp capped values on read to prevent cloud-loaded Infinity/NaN
@@ -235,6 +236,7 @@ export function setupGameAttributeProxies() {
                 if (cheatState.wide.eventspins && index === 325) return true;
 
                 if (cheatState.w6.emperor && index === 370) return true;
+                if (cheatState.w5.skillcaverns && index === 318) return true;
                 if (cheatState.w3.jeweledcogs && index === 414) return true;
 
                 // Credit/flurbo caps
