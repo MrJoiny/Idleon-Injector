@@ -335,6 +335,10 @@ export const useWriteStatus = ({ successMs = 1200, errorMs = 1200 } = {}) => {
 
         try {
             const result = await task();
+            if (result?.cancelled) {
+                status.val = null;
+                return { ok: false, cancelled: true, result };
+            }
             status.val = successState;
             if (typeof onSuccess === "function") onSuccess(result);
             if (successMs > 0) scheduleClear(successMs);
