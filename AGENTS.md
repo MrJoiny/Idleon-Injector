@@ -37,8 +37,8 @@ Operational guidelines for AI coding agents working in the Idleon Injector repos
 
 ## Verification & Testing
 
-* **Automated tests:** Run `npm run test:ui-imports` and `npm run test:ui-styles` for validation regression checks using Node's built-in test runner. No Jest, Vitest, or Mocha runner is configured.
-* **Pre-completion check:** Run `npm run validate` (builds cheats bundle, checks syntax, runs ESLint, validates schema).
+* **Automated tests:** Run `npm run test:ui-imports`, `npm run test:ui-styles`, and `npm run test:css` for validation regression checks using Node's built-in test runner. No Jest, Vitest, or Mocha runner is configured.
+* **Pre-completion check:** Run `npm run validate` (builds cheats bundle, checks syntax and UI imports, runs ESLint and CSS checks, validates schema).
 * **Manual live check:** Start with `npm run start`, attach to the running game client, and verify live behavior. Hot reload is not supported; restart the app to test backend and cheat modifications.
 * **UI verification:** Use DOM assertions for text, visibility, loading, and action feedback. Inspect the injector UI target separately from the game target; use screenshots from a supported top-level target for visual layout checks.
 * **Ad-hoc checks:**

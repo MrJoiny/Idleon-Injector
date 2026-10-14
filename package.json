@@ -13,7 +13,10 @@
         "validate:ui-imports": "node scripts/validate-ui-imports.mjs",
         "test:ui-imports": "node --test scripts/validate-ui-imports.test.mjs",
         "test:ui-styles": "node --test scripts/eslint/no-static-inline-styles.test.mjs",
-        "validate": "npm run build:cheats && node --check cheats.js config.js && npx eslint . && npm run validate:ui-imports && node -e \"require('./src/ui/config/optionsAccountSchema.json')\"",
+        "lint:css": "stylelint \"src/ui/**/*.css\" --max-warnings 0",
+        "format:check:css": "prettier --check \"src/ui/**/*.css\"",
+        "test:css": "node --test scripts/validate-css.test.mjs",
+        "validate": "npm run build:cheats && node --check cheats.js config.js && npx eslint . && npm run validate:ui-imports && npm run lint:css && npm run format:check:css && node -e \"require('./src/ui/config/optionsAccountSchema.json')\"",
         "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
         "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
         "build-macos-x64": "npm run build:cheats && pkg . -t node18-macos-x64 --compress Gzip --output InjectCheatsUI-macos-x64",
@@ -35,6 +38,7 @@
         "eslint": "^9.39.2",
         "globals": "^17.0.0",
         "prettier": "^3.8.1",
-        "rollup": "^4.41.0"
+        "rollup": "^4.41.0",
+        "stylelint": "16.12.0"
     }
 }

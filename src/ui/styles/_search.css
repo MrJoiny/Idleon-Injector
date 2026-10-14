@@ -620,7 +620,7 @@
 
 .saved-history-content .sparkline-dot:hover {
     fill: var(--c-accent);
-    r: 5;
+    r: 5px;
 }
 
 .saved-history-content .sparkline-dot-padded {
