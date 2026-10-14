@@ -82,7 +82,7 @@ export default [
         },
     },
     {
-        files: ["*.mjs"],
+        files: ["*.mjs", "scripts/**/*.mjs"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",
