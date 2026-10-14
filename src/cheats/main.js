@@ -32,14 +32,13 @@ import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
 import { getBundleCatalog } from "./helpers/bundles.js";
 import { monitor } from "./core/valueMonitor.js";
-import { setupEvents116EarlyHook } from "./proxies/events116.js";
-
-setupEvents116EarlyHook();
+import { setupStorageEarlyHooks } from "./proxies/storageEarlyHooks.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
 setStartupCheats(startupCheats);
 setWebPort(webPort);
+setupStorageEarlyHooks();
 
 // Wrapper functions for global context binding
 
