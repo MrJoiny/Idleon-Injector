@@ -1,5 +1,5 @@
 import { MasterclassUpgradeTab } from "./MasterclassUpgradeTab.js";
-import { UNIT_REBUILD_DISPLAY_SHELVES, resetRoyalGuardUnitsToVanilla } from "./OutpostsTab.js";
+import { UNIT_REBUILD_DISPLAY_SHELVES, resetRoyalGuardUnitsToVanilla } from "./royalGuardDomain.js";
 
 const resourceFields = (resourceIds) =>
     resourceIds.map((resourceId) => ({

@@ -45,3 +45,15 @@ Trade-off: stable rows require explicit value updates and collection reconciliat
 
 Source: [Account components](../src/ui/components/views/account/components/),
 [Account shared helpers](../src/ui/components/views/account/accountShared.js).
+
+## Share Royal Guard behavior outside views
+
+Decision: keep Royal Guard unit rules and reset operations in a shared domain module.
+
+Why: Armory and Outposts need the same behavior without importing each other's view implementation.
+
+Alternative: keep shared behavior exported from the Outposts view.
+
+Trade-off: the domain module still uses the existing account helpers and game API.
+
+Source: [Royal Guard domain](../src/ui/components/views/account/masterclasses/royalGuardDomain.js).
