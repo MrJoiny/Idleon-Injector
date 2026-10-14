@@ -57,3 +57,15 @@ Alternative: keep shared behavior exported from the Outposts view.
 Trade-off: the domain module still uses the existing account helpers and game API.
 
 Source: [Royal Guard domain](../src/ui/components/views/account/masterclasses/royalGuardDomain.js).
+
+## Decode game catalogs in focused helpers
+
+Decision: share jar-gem catalog decoding between command execution, list output, and autocomplete.
+
+Why: these callers need the same game-data layout and stable definition indices.
+
+Alternative: repeat the parsing in each caller or combine unrelated catalogs into one module.
+
+Trade-off: callers still own presentation and command-specific mutations.
+
+Source: [Jar-gem catalog](../src/cheats/helpers/jarGems.js).

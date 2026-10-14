@@ -15,6 +15,7 @@ import { registerCheats } from "../core/registration.js";
 import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
+import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 registerCheats({
     name: "w1",
@@ -187,8 +188,8 @@ registerCheats({
                 const holes = gga.Holes;
                 const gemCounts = holes[24];
 
-                const rawGems = cList.HolesInfo[67];
-                const gemNames = rawGems.map((g) => g.split("|")[0].toLowerCase());
+                const gems = getJarGemCatalog();
+                const gemNames = gems.map((gem) => gem.commandName);
 
                 if (target === "all") {
                     for (let i = 0; i < gemCounts.length && i < gemNames.length; i++) {
@@ -203,7 +204,7 @@ registerCheats({
                 }
 
                 gemCounts[index] += amount;
-                return `Added ${amount} to ${rawGems[index].split("|")[0]}.`;
+                return `Added ${amount} to ${gems[index].name}.`;
             },
         },
     ],

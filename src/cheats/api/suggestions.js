@@ -9,6 +9,7 @@ import { cheats } from "../core/registration.js";
 import { summonUnits, keychainStatsMap, alchemyTypes, bulkTypeBlacklist, HIDE_BARE_COMMANDS } from "../constants.js";
 import { itemDefs, monsterDefs, cList, itemTypes, gga } from "../core/globals.js";
 import { getAllBundles } from "../helpers/bundles.js";
+import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 // Custom level changers for lvl command suggestions
 const customLevelChangerNames = ["furnace", "statue", "anvil", "talent", "stamp", "shrine"];
@@ -214,12 +215,11 @@ export function getAutoCompleteSuggestions() {
         category: "w5",
         needsParam: true,
     });
-    for (const gem of cList.HolesInfo[67]) {
-        const parts = gem.split("|");
-        if (!parts[0]) continue;
+    for (const gem of getJarGemCatalog()) {
+        if (!gem.name) continue;
         choices.push({
-            value: `w5 jargems ${parts[0].toLowerCase()}`,
-            message: parts[3] || "",
+            value: `w5 jargems ${gem.commandName}`,
+            message: gem.description || "",
             category: "w5",
             needsParam: true,
         });
