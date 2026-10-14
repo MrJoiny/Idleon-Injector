@@ -53,12 +53,16 @@
 
 .research-grid-board {
     display: grid;
+    grid-template-columns: repeat(var(--research-columns), 44px);
+    grid-template-rows: repeat(var(--research-rows), 44px);
     gap: 3px;
     width: max-content;
     margin-inline: auto;
 }
 
 .research-grid-tile {
+    grid-column: var(--research-column);
+    grid-row: var(--research-row);
     position: relative;
     width: 44px;
     height: 44px;
@@ -80,6 +84,7 @@
 }
 
 .research-grid-tile__fill {
+    height: var(--research-fill);
     position: absolute;
     inset: auto 0 0;
     background: color-mix(in srgb, var(--c-accent) 45%, transparent);
@@ -138,6 +143,7 @@
 }
 
 .research-grid-detail__preview-fill {
+    height: var(--research-fill);
     position: absolute;
     inset: auto 0 0;
     background: color-mix(in srgb, var(--c-accent) 35%, transparent);

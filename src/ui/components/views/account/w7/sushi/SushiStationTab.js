@@ -149,7 +149,7 @@ export function SushiStationTab() {
             div(
                 {
                     class: "sushi-station-board",
-                    style: `grid-template-columns: repeat(${STATION_WIDTH}, minmax(36px, 44px));`,
+                    style: `--sushi-station-width: ${STATION_WIDTH};`,
                 },
                 ...tileStates.map((tileState, index) => SushiSlotTile({ index, tileState, maxTierState })),
                 ...fireplaceStates.map((fireplaceState, column) =>

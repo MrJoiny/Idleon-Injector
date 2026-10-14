@@ -30,6 +30,8 @@
 }
 
 .farming-grid-tile {
+    grid-column: var(--farming-column);
+    grid-row: var(--farming-row);
     display: flex;
     flex-direction: column;
     gap: 7px;

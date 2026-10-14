@@ -397,9 +397,8 @@ export const PrinterTab = () => {
         const name = next.names[character];
         const panel = div(
             {
-                class: "content-stack",
+                class: () => `content-stack${selected.val === character ? "" : " hidden"}`,
                 "data-printer-character": name,
-                style: () => (selected.val === character ? "" : "display: none;"),
             },
             AccountSection({
                 title: "ACTIVE PRINTS",

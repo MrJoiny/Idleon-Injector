@@ -42,7 +42,7 @@ export const NotificationHistory = () => {
             Icons.Bell()
         ),
         () => {
-            if (!isOpen.val) return span({ style: "display: none;" });
+            if (!isOpen.val) return span({ class: "hidden" });
 
             const history = store.app.notificationHistory;
 

@@ -17,6 +17,7 @@
 
 .sushi-station-board {
     display: grid;
+    grid-template-columns: repeat(var(--sushi-station-width), minmax(36px, 44px));
     gap: 4px;
     width: max-content;
     margin-inline: auto;

@@ -12,6 +12,7 @@
         "format:check": "prettier --check .",
         "validate:ui-imports": "node scripts/validate-ui-imports.mjs",
         "test:ui-imports": "node --test scripts/validate-ui-imports.test.mjs",
+        "test:ui-styles": "node --test scripts/eslint/no-static-inline-styles.test.mjs",
         "validate": "npm run build:cheats && node --check cheats.js config.js && npx eslint . && npm run validate:ui-imports && node -e \"require('./src/ui/config/optionsAccountSchema.json')\"",
         "build": "npm run build:cheats && pkg . -t node18-win-x64 --compress Gzip --output InjectCheatsUI.exe",
         "build-unix": "npm run build:cheats && pkg . -t node18-linux-x64 --compress Gzip --output InjectCheatsUI-linux",
