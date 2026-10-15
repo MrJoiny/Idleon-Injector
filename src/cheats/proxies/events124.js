@@ -15,12 +15,32 @@ import { events, gga } from "../core/globals.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 import { createMethodProxy } from "../utils/proxy.js";
 import { getMultiplyValue } from "../helpers/values.js";
+import { withStorageCapScope } from "./storageCap.js";
 
 /**
  * Setup all ActorEvents_124 proxies.
  */
 export function setupEvents124Proxies() {
     const ActorEvents124 = events(124);
+
+    const GiveItem = ActorEvents124._customBlock_GiveItem;
+    ActorEvents124._customBlock_GiveItem = function (...args) {
+        if (!cheatState.wide.storagecap) return Reflect.apply(GiveItem, this, args);
+        const order = gga.ChestOrder.slice();
+        return withStorageCapScope(() => Reflect.apply(GiveItem, this, args), {
+            giveAtoms: () => false,
+            setQuantity(target, key, value) {
+                if (Number(value) !== 2e9 || order[key] !== args[0]) return value;
+                const grant = gga.DummyNumbersStatManager.h;
+                // Only lift the merge ceiling; keep regular capacity splits and new-slot writes.
+                if (grant.ItemGiverDT22 !== "YESputInChest8910nocap" && Number(grant.ItemGiverMaxCap) <= 2e9) {
+                    return value;
+                }
+                const incoming = Number(grant.ItemGiverAmount);
+                return Number.isFinite(incoming) ? Number(target[key]) + incoming : value;
+            },
+        });
+    };
 
     // Stamp cost reduction
     createMethodProxy(ActorEvents124, "_customBlock_StampCostss", (base) => {
