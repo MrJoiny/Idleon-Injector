@@ -93,3 +93,15 @@ Alternative: merge every traversal into one behavior or leave checks spread acro
 Trade-off: raw Search paths remain explicit, value operations can address missing properties, and monitoring requires a watchable property. CLI inspection and cheat-state traversal retain their separate conventions.
 
 Source: [Game paths](../src/cheats/utils/pathResolver.js).
+
+## Keep configuration persistence with configuration loading
+
+Decision: let the configuration module save UI overrides and update its loaded state after a successful write.
+
+Why: default filtering, serialization, and disk persistence need one owner alongside configuration loading.
+
+Alternative: keep save logic in the HTTP route.
+
+Trade-off: the save operation requires loaded configuration. Routes retain request validation and HTTP responses.
+
+Source: [Configuration manager](../src/modules/config/configManager.js).
