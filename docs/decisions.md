@@ -129,3 +129,15 @@ Alternative: keep every command's suggestion logic in the shared autocomplete bu
 Trade-off: the shared builder retains ordering for migrated groups alongside legacy groups. Provider presence does not imply that the bare command should be hidden.
 
 Source: [Command registration](../src/cheats/core/registration.js), [world commands](../src/cheats/cheats/worlds.js).
+
+## Register HTTP routes by responsibility
+
+Decision: let focused registration modules own game, cheat, search, configuration, and update routes. Keep one router and one game bridge per API setup.
+
+Why: handlers should sit beside related validation and lifecycle state without sharing every dependency in one closure.
+
+Alternative: keep one large registration function or add mounted sub-routers.
+
+Trade-off: registration spans multiple modules. They retain the existing request contracts, shared configuration references, and update response timing; splitting routes does not reduce game round trips.
+
+Source: [API setup](../src/modules/server/apiRoutes.js), [route modules](../src/modules/server/routes/).
