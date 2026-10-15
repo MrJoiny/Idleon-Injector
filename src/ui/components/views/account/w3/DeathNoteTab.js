@@ -4,7 +4,7 @@
  * World mob data sources:
  *   gga.CustomLists.h.DeathNoteMobs[worldIndex]           - array of mob IDs per world (W1=0 … W7=6)
  *   gga.CustomLists.h.MapAFKtarget[mapIndex]              - mob ID at a given map index
- *   gga.CustomLists.h.MapDetails[mapIndex][0][0]          - required kills for that map (Death Note goal)
+ *   gga.CustomLists.h.MapDetails[mapIndex][0][0]          - portal unlock kill requirement for that map
  *   gga.KillsLeft2Advance[mapIndex][0]                    - kills remaining for current character
  *   gga.PlayerDATABASE[playerName].KillsLeft2Advance[mapIndex][0]
  *                                                         - kills remaining for other characters
@@ -80,18 +80,10 @@ const createPaneStore = (worldKey) => ({
     listNode: div({ class: `account-list${worldKey === MINIBOSS_WORLD_KEY ? "" : " dn-mob-list"}` }),
 });
 
-const KillCountRow = ({
-    killState,
-    rowClass = "",
-    controlsClass = "",
-    renderInfo,
-    write,
-    onWriteError = null,
-    max = null,
-}) =>
+const KillCountRow = ({ killState, rowClass = "", controlsClass = "", renderInfo, write, onWriteError = null }) =>
     EditableNumberRow({
         valueState: killState,
-        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, max === null ? { min: 0 } : { min: 0, max }),
+        normalize: (rawValue) => resolveFormattedIntInput(rawValue, null, { min: 0 }),
         write: async (nextKills) => {
             try {
                 return await write(nextKills);
@@ -103,7 +95,7 @@ const KillCountRow = ({
         renderInfo,
         renderBadge: (currentValue) => formatNumber(toInt(currentValue)),
         adjustInput: (rawValue, delta, currentValue) =>
-            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, max === null ? { min: 0 } : { min: 0, max }),
+            adjustFormattedIntInput(rawValue, delta, currentValue ?? 0, { min: 0 }),
         rowClass,
         badgeClass: "account-row__badge--highlight",
         controlsClass,
@@ -124,7 +116,12 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
             isCurrentPlayer ? span({ class: "dn-player-row__current-tag" }, "(selected)") : null,
         ],
         write: async (nextKills) => {
-            if (!Number.isInteger(mob.mapIndex) || mob.mapIndex < 0 || mob.required <= 0) {
+            if (
+                !Number.isInteger(mob.mapIndex) ||
+                mob.mapIndex < 0 ||
+                !Number.isInteger(mob.required) ||
+                mob.required < 0
+            ) {
                 throw new Error("Invalid map target for Death Note write");
             }
 
@@ -138,7 +135,6 @@ const PlayerKillRow = ({ playerName, killState, isCurrentPlayer, mob }) =>
             await writeVerified(dbPath, newKillsLeft);
             return nextKills;
         },
-        max: mob.required,
         onWriteError: (error, nextKills) => {
             console.error("[DeathNote][World SET] write failed", {
                 playerName,
@@ -209,7 +205,7 @@ const buildStaticMeta = async () => {
     const getRequired = (mapIndex) => {
         const row = toIndexedArray(mapDetails[mapIndex] ?? []);
         const inner = toIndexedArray(row[0] ?? []);
-        return toInt(inner[0] ?? 0);
+        return inner[0] ?? -1;
     };
 
     const worldMobIds = WORLD_LABELS.flatMap((_, worldIndex) =>
