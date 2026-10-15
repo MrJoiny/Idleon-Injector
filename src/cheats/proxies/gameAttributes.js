@@ -118,6 +118,22 @@ export function setupGameAttributeProxies() {
         });
     }
 
+    // Holes - Blinding Lantern daily use cap (W5)
+    const cavernCounters = gga.Holes[11];
+    if (!cavernCounters._isPatched) {
+        Object.defineProperty(cavernCounters, "_isPatched", { value: true, enumerable: false });
+        createProxy(cavernCounters, 84, {
+            get(original) {
+                // The item refuses once this reaches 12, so reading 0 keeps the gate open.
+                if (cheatState.w5.lantern) return 0;
+                return original;
+            },
+            set(value, backupKey) {
+                this[backupKey] = value;
+            },
+        });
+    }
+
     // Currencies - teleports, tickets, obol fragments, silver pens
     const currencies = gga.CurrenciesOwned.h;
     if (!currencies._isPatched) {
@@ -208,6 +224,7 @@ export function setupGameAttributeProxies() {
 
                 if (cheatState.wide.eventspins && index === 325) return 10;
                 if (cheatState.w6.emperor && index === 370) return -10;
+                if (cheatState.w5.skillcaverns && index === 318) return 0;
                 if (cheatState.w3.jeweledcogs && index === 414) return 0;
 
                 // Clamp capped values on read to prevent cloud-loaded Infinity/NaN
@@ -235,6 +252,7 @@ export function setupGameAttributeProxies() {
                 if (cheatState.wide.eventspins && index === 325) return true;
 
                 if (cheatState.w6.emperor && index === 370) return true;
+                if (cheatState.w5.skillcaverns && index === 318) return true;
                 if (cheatState.w3.jeweledcogs && index === 414) return true;
 
                 // Credit/flurbo caps
