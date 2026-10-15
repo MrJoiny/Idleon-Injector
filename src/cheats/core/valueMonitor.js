@@ -1,4 +1,4 @@
-import { resolvePath } from "../utils/pathResolver.js";
+import { resolveWatchablePath } from "../utils/pathResolver.js";
 import { webPort } from "./state.js";
 
 /**
@@ -50,25 +50,10 @@ class ValueMonitor {
             return { error: "Already watching this ID" };
         }
 
-        const resolved = resolvePath(path);
+        const resolved = resolveWatchablePath(path);
         if (resolved.error) return resolved;
 
-        const { target, prop } = resolved;
-
-        // resolvePath only validates intermediate segments, so a path whose leaf
-        // disappeared (e.g. after a game update) still resolves. Reject it here
-        // instead of letting defineProperty create the missing property. The
-        // "Cannot resolve path segment" text routes it through the same
-        // transient-retry-then-park path as any not-yet-ready path.
-        if (!(prop in target)) {
-            return { error: `Cannot resolve path segment: ${prop}` };
-        }
-
-        const original = Object.getOwnPropertyDescriptor(target, prop);
-
-        if (original && original.configurable === false) {
-            return { error: "Property is not configurable" };
-        }
+        const { target, prop, original } = resolved;
 
         // Store the current value for simple data properties
         // For accessor properties, we delegate to the original getter/setter

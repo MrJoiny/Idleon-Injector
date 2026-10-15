@@ -81,3 +81,15 @@ Alternative: verify within the write evaluation or issue a separate read for eve
 Trade-off: verification still observes state after the write request. Batches remain non-atomic and report individual failures.
 
 Source: [UI game API](../src/ui/services/api.js), [state accessors](../src/cheats/api/stateAccessors.js).
+
+## Keep game-path policies explicit
+
+Decision: keep Account value operations, Monitor property checks, and raw Search traversal in the shared path module.
+
+Why: path interpretation and validation should have one owner while callers keep their distinct requirements.
+
+Alternative: merge every traversal into one behavior or leave checks spread across callers.
+
+Trade-off: raw Search paths remain explicit, value operations can address missing properties, and monitoring requires a watchable property. CLI inspection and cheat-state traversal retain their separate conventions.
+
+Source: [Game paths](../src/cheats/utils/pathResolver.js).

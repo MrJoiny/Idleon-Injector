@@ -7,7 +7,7 @@
 import { gga } from "../core/globals.js";
 import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
-import { parsePath } from "../utils/pathResolver.js";
+import { parsePath, readRawPath } from "../utils/pathResolver.js";
 
 // Hard cap keeps a single CDP returnByValue payload bounded and stops the walk
 // (and its getter invocations) once reached.
@@ -137,18 +137,6 @@ function formatValue(value) {
     return String(value);
 }
 
-function getValueAtPath(root, path) {
-    const parts = parsePath(path);
-    let cur = root;
-
-    for (const key of parts) {
-        if (cur === null || cur === undefined) return undefined;
-        cur = cur[key];
-    }
-
-    return cur;
-}
-
 function searchGgaWithinPaths(query, withinPaths, compare) {
     if (!Array.isArray(withinPaths) || withinPaths.length === 0) {
         return { results: [], totalCount: 0 };
@@ -166,7 +154,7 @@ function searchGgaWithinPaths(query, withinPaths, compare) {
         if (!topKey) continue;
         if (!(topKey in gga) || blacklist_gga.has(topKey)) continue;
 
-        const value = getValueAtPath(gga, fullPath);
+        const value = readRawPath(gga, fullPath);
         if (typeof value === "object" && value !== null) continue;
 
         if (predicate(value)) {
