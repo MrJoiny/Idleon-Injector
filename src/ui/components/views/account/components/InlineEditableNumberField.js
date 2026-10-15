@@ -6,9 +6,9 @@ import {
     largeFormatter,
     largeParser,
     resolveNumberInput,
-    useWriteStatus,
     writeVerified,
 } from "../accountShared.js";
+import { useNumericEditor } from "../useNumericEditor.js";
 
 const { div, span } = van.tags;
 
@@ -40,45 +40,25 @@ export const InlineEditableNumberField = ({
     labelClass = "account-field-metric__label",
     inputClass = "account-inline-number-field__input",
 }) => {
-    const inputValue = van.state(format(valueState.val));
-    const { status, run } = useWriteStatus();
-    let isFocused = false;
+    const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
+        valueState,
+        normalize,
+        write: typeof write === "function" ? write : (value) => writeVerified(path, value),
+        format,
+        disabled: inputProps.disabled,
+        onApplied,
+    });
 
     const renderLabel = () => {
         const content = typeof label === "function" ? label() : label;
         return Array.isArray(content) ? span({ class: labelClass }, ...content) : span({ class: labelClass }, content);
     };
 
-    const syncInputToCommitted = () => {
-        inputValue.val = format(valueState.val);
-    };
-
-    van.derive(() => {
-        valueState.val;
-        if (!isFocused) syncInputToCommitted();
-    });
-
     if (statusTarget) {
         van.derive(() => {
             statusTarget.val = status.val;
         });
     }
-
-    const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
-        const nextValue = normalize(rawValue);
-        if (nextValue === null || nextValue === undefined || Number.isNaN(nextValue)) return;
-
-        await run(async () => {
-            if (typeof write === "function") {
-                await write(nextValue);
-            } else {
-                await writeVerified(path, nextValue);
-            }
-            valueState.val = nextValue;
-            inputValue.val = format(nextValue);
-            if (typeof onApplied === "function") await onApplied(nextValue);
-        });
-    };
 
     return div(
         { class: rootClass },
@@ -87,22 +67,24 @@ export const InlineEditableNumberField = ({
             mode: inputMode,
             value: inputValue,
             ...inputProps,
+            disabled: isDisabled,
             onfocus: () => {
-                isFocused = true;
+                focus();
                 if (typeof inputProps.onfocus === "function") inputProps.onfocus();
             },
             onblur: () => {
-                isFocused = false;
-                syncInputToCommitted();
+                blur();
                 if (typeof inputProps.onblur === "function") inputProps.onblur();
             },
             onDecrement: () => {
+                if (isDisabled()) return;
                 inputValue.val = String(
                     adjust(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val)
                 );
                 if (typeof inputProps.onDecrement === "function") inputProps.onDecrement();
             },
             onIncrement: () => {
+                if (isDisabled()) return;
                 inputValue.val = String(adjust(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val));
                 if (typeof inputProps.onIncrement === "function") inputProps.onIncrement();
             },
@@ -110,11 +92,13 @@ export const InlineEditableNumberField = ({
         ActionButton({
             label: "SET",
             status,
+            disabled: isDisabled,
             className: inputClass,
             onClick: (e) => {
                 e.preventDefault();
                 void applyValue();
             },
-        })
+        }),
+        span({ class: "account-write-feedback", role: "status" }, statusMessage)
     );
 };

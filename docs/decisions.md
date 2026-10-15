@@ -46,6 +46,19 @@ Trade-off: stable rows require explicit value updates and collection reconciliat
 Source: [Account components](../src/ui/components/views/account/components/),
 [Account shared helpers](../src/ui/components/views/account/accountShared.js).
 
+## Share numeric editing state across layouts
+
+Decision: let one numeric editing module own drafts and write outcomes for standalone rows and inline fields.
+
+Why: focus preservation, cancellation, and verified commits need the same rules across both layouts.
+
+Alternative: maintain the editing lifecycle separately in each layout.
+
+Trade-off: layouts retain formatting and controls, while custom writers must return a verified value or cancellation.
+Completion callbacks run after the verified commit; their failure retains that value and reports an error.
+
+Source: [Numeric editing](../src/ui/components/views/account/useNumericEditor.js).
+
 ## Share Royal Guard behavior outside views
 
 Decision: keep Royal Guard unit rules and reset operations in a shared domain module.

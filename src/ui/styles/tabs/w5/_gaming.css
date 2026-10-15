@@ -184,7 +184,7 @@
 
 .rat-king-progress-fill {
     height: 100%;
-    width: 0%;
+    width: var(--rat-king-progress, 0%);
     background: linear-gradient(90deg, #d4af37, #ffd700);
     transition: width 0.3s ease;
 }
