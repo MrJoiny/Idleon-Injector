@@ -105,3 +105,15 @@ Alternative: keep save logic in the HTTP route.
 Trade-off: the save operation requires loaded configuration. Routes retain request validation and HTTP responses.
 
 Source: [Configuration manager](../src/modules/config/configManager.js).
+
+## Share the game-helper transport
+
+Decision: route server, CLI, and WebSocket helper calls through GameBridge.
+
+Why: argument encoding, context binding, and protocol result decoding should have one owner.
+
+Alternative: construct evaluation strings and decode CDP responses in every caller.
+
+Trade-off: callers still choose helper operations and own user-facing errors. The bridge accepts a runtime dependency so isolated fixtures can replace the live connection.
+
+Source: [GameBridge](../src/modules/game/gameBridge.js).

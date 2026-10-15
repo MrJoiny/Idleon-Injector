@@ -8,6 +8,7 @@ These terms distinguish concepts used throughout the project. Follow the linked 
 | CDP                 | Chrome DevTools Protocol, the debugging connection used to access the game runtime.                |
 | Injection           | Introducing the cheat runtime into the running game.                                               |
 | Game context        | The game-side environment where commands and hooks access game objects.                            |
+| GameBridge          | The Node module that encodes calls to injected game helpers and decodes their CDP results.         |
 | Cheat command       | A named action in the command registry. It may perform an action or toggle an ongoing effect.      |
 | Cheat state         | Whether a stateful cheat is enabled, distinct from its configured values.                          |
 | Cheat configuration | Values that customize cheat effects.                                                               |

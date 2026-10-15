@@ -1,3 +1,4 @@
+const { createGameBridge } = require("../game/gameBridge");
 /**
  * CLI Interface Module
  *
@@ -108,22 +109,18 @@ async function handleUpdateCommand(client, options) {
  */
 async function startCliInterface(context, client, options = {}) {
     const { cdpPort } = options;
-    const { Runtime } = client;
+    const gameBridge = createGameBridge(client.Runtime, context);
 
     log.info("CLI initialized. Type to filter, Enter to select. (Ctrl+Up/Down for history)");
 
-    const choicesResult = await Runtime.evaluate({
-        expression: `getAutoCompleteSuggestions()`,
-        awaitPromise: true,
-        returnByValue: true,
-    });
+    const choicesResult = await gameBridge.callHelper("getAutoCompleteSuggestions");
 
-    if (choicesResult.exceptionDetails) {
-        log.error("Error getting autocomplete suggestions:", choicesResult.exceptionDetails.text);
+    if (choicesResult.error) {
+        log.error("Error getting autocomplete suggestions:", choicesResult.error.text);
         return;
     }
 
-    const choices = (choicesResult.result.value || []).map((choice) => {
+    const choices = (choicesResult.value || []).map((choice) => {
         // Set name to value for Enquirer display/selection
         if (!choice.name) choice.name = choice.value;
         // Create display message: "value (description)" for CLI readability
@@ -219,15 +216,11 @@ async function startCliInterface(context, client, options = {}) {
                     }
                 });
             } else {
-                const cheatResponse = await Runtime.evaluate({
-                    expression: `cheat.call(${context}, '${action}')`,
-                    awaitPromise: true,
-                    allowUnsafeEvalBlockedByCSP: true,
-                });
-                if (cheatResponse.exceptionDetails) {
-                    log.error(`Error executing cheat '${action}':`, cheatResponse.exceptionDetails.text);
+                const cheatResponse = await gameBridge.executeCheat(action);
+                if (cheatResponse.error) {
+                    log.error(`Error executing cheat '${action}':`, cheatResponse.error.text);
                 } else {
-                    log.info(`${cheatResponse.result.value}`);
+                    log.info(`${cheatResponse.value}`);
                     await broadcastCheatStates();
                 }
             }

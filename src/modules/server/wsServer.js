@@ -1,3 +1,4 @@
+const { createGameBridge } = require("../game/gameBridge");
 /**
  * WebSocket Server Module
  *
@@ -37,11 +38,8 @@ const MONITOR_SEND_COALESCE_MS = 100;
 /** @type {Map<WebSocket, NodeJS.Timeout>} */
 const monitorSendTimers = new Map();
 
-/** @type {Object|null} CDP Runtime reference for fetching cheat states */
-let runtimeRef = null;
-
-/** @type {string|null} Game context expression */
-let contextRef = null;
+/** Shared game access for the currently attached runtime. */
+let gameBridge = null;
 
 /** @type {Map<WebSocket, Map<string, NodeJS.Timeout>>} */
 const monitorSubscribeRetryTimers = new Map();
@@ -197,20 +195,16 @@ function queueMonitorStateSend(ws) {
 }
 
 async function seedClientCurrentValue(ws, id, path) {
-    if (!runtimeRef || !contextRef) return;
+    if (!gameBridge) return;
 
     try {
-        const result = await runtimeRef.evaluate({
-            expression: `window.readGamePath(${JSON.stringify(path)})`,
-            awaitPromise: true,
-            returnByValue: true,
-        });
+        const result = await gameBridge.callHelper("window.readGamePath", [path]);
 
-        if (result.exceptionDetails) {
+        if (result.error) {
             return;
         }
 
-        const payload = result.result && result.result.value;
+        const payload = result.value;
         if (!payload || !Object.prototype.hasOwnProperty.call(payload, "value")) {
             return;
         }
@@ -237,15 +231,11 @@ async function releaseGlobalWatcher(path) {
     }
 
     watcher.releasePromise = (async () => {
-        if (runtimeRef && contextRef) {
+        if (gameBridge) {
             try {
-                const result = await runtimeRef.evaluate({
-                    expression: `window.monitorUnwrap(${JSON.stringify(watcher.id)})`,
-                    awaitPromise: true,
-                    returnByValue: true,
-                });
-                if (result.exceptionDetails) {
-                    log.error(`Error unsubscribing monitor ${watcher.id}:`, result.exceptionDetails.text);
+                const result = await gameBridge.callHelper("window.monitorUnwrap", [watcher.id]);
+                if (result.error) {
+                    log.error(`Error unsubscribing monitor ${watcher.id}:`, result.error.text);
                 }
             } catch (err) {
                 log.error(`Error unsubscribing monitor ${watcher.id}:`, err.message);
@@ -295,8 +285,7 @@ async function cleanupClientSubscriptions(ws) {
  * @param {string} context - JavaScript expression for game context
  */
 function initWebSocket(httpServer, runtime, context) {
-    runtimeRef = runtime;
-    contextRef = context;
+    gameBridge = runtime && context ? createGameBridge(runtime, context) : null;
 
     wss = new WebSocketServer({ server: httpServer });
 
@@ -417,18 +406,14 @@ async function ensureGlobalWatcher(path) {
     }
     if (watcher) return { ok: true };
 
-    const result = await runtimeRef.evaluate({
-        expression: `window.monitorWrap(${JSON.stringify(id)}, ${JSON.stringify(path)})`,
-        awaitPromise: true,
-        returnByValue: true,
-    });
+    const result = await gameBridge.callHelper("window.monitorWrap", [id, path]);
 
-    if (result.exceptionDetails) {
-        const errorText = result.exceptionDetails.text;
+    if (result.error) {
+        const errorText = result.error.text;
         return { ok: false, error: errorText, transient: isTransientMonitorSubscribeError(errorText) };
     }
 
-    const payload = result.result && result.result.value;
+    const payload = result.value;
     if (payload && payload.success) {
         globalWatchersByPath.set(path, { id });
         return { ok: true, value: payload.value };
@@ -451,7 +436,7 @@ async function ensureGlobalWatcher(path) {
  * @param {boolean} [forceAttempt] - Re-run the wrap even if a client entry already exists
  */
 async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt = false) {
-    if (!runtimeRef || !contextRef) return;
+    if (!gameBridge) return;
     if (typeof path !== "string" || !path.trim()) return;
 
     const normalizedPath = path.trim();
@@ -552,24 +537,20 @@ async function handleMonitorUnsubscribe(ws, id, path) {
  * @returns {Promise<Object>} Cheat states object
  */
 async function fetchCheatStates() {
-    if (!runtimeRef || !contextRef) {
+    if (!gameBridge) {
         log.debug("Cannot fetch cheat states - context not ready");
         return {};
     }
 
     try {
-        const statesResult = await runtimeRef.evaluate({
-            expression: `cheatStateList.call(${contextRef})`,
-            awaitPromise: true,
-            returnByValue: true,
-        });
+        const statesResult = await gameBridge.callHelper("cheatStateList", [], true);
 
-        if (statesResult.exceptionDetails) {
-            log.error("Failed to fetch cheat states:", statesResult.exceptionDetails.text);
+        if (statesResult.error) {
+            log.error("Failed to fetch cheat states:", statesResult.error.text);
             return {};
         }
 
-        return statesResult.result.value || {};
+        return statesResult.value || {};
     } catch (err) {
         log.error("Failed to fetch cheat states:", err.message);
         return {};
@@ -640,17 +621,13 @@ function closeWebSocket() {
     if (wss) {
         // Best-effort, non-blocking: awaiting a CDP evaluate during shutdown can
         // hang if the connection is already gone. We still inspect
-        // exceptionDetails so a game-context failure is logged rather than lost.
-        if (runtimeRef && contextRef) {
+        // game errors so a context failure is logged rather than lost.
+        if (gameBridge) {
             void (async () => {
                 try {
-                    const result = await runtimeRef.evaluate({
-                        expression: "window.monitorUnwrapAll()",
-                        awaitPromise: true,
-                        returnByValue: true,
-                    });
-                    if (result.exceptionDetails) {
-                        log.error("Error unwrapping all monitors during shutdown:", result.exceptionDetails.text);
+                    const result = await gameBridge.callHelper("window.monitorUnwrapAll");
+                    if (result.error) {
+                        log.error("Error unwrapping all monitors during shutdown:", result.error.text);
                     }
                 } catch (err) {
                     log.error("Error unwrapping all monitors during shutdown:", err.message);
