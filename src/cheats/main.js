@@ -21,6 +21,7 @@ import "./cheats/register.js";
 import {
     getcheatStateList,
     readPath,
+    readPaths,
     readEntries,
     readComputed,
     readComputedMany,
@@ -78,6 +79,7 @@ window.getGgaKeys = getGgaKeys;
 
 // Game Data API
 window.readGamePath = readPath;
+window.readGamePaths = readPaths;
 window.readGameEntries = readEntries;
 window.readComputedValue = readComputed;
 window.readComputedValues = readComputedMany;

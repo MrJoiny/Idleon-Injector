@@ -300,7 +300,7 @@ export async function deleteGga(path) {
 
 /**
  * Write many GGA paths in one backend/CDP round-trip, then verify from the UI
- * using follow-up reads so batch verification matches the single-write gga flow.
+ * using one follow-up batch read and the same typed comparison as single writes.
  *
  * @param {Array<{ path: string, value: any }>} writes
  * @returns {Promise<{ ok: boolean, results: Array<{ path: string, ok: boolean, actual?: any, error?: string }> }>}
@@ -325,44 +325,61 @@ export async function ggaMany(writes) {
     const writeByPath = new Map(
         Array.isArray(writeResult?.results) ? writeResult.results.map((entry) => [entry?.path, entry]) : []
     );
-    const results = await Promise.all(
-        normalizedWrites.map(async (entry, index) => {
-            const writeEntry = writeByPath.get(entry.path) ?? writeResult?.results?.[index];
-            if (!writeEntry?.ok) {
-                return {
-                    path: writeEntry?.path ?? entry.path,
-                    ok: false,
-                    error: writeEntry?.error ?? "Batch write failed",
-                };
-            }
-
-            try {
-                const verifiedData = await _request("/game/gga/read", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ path: entry.path }),
-                });
-                const actual = verifiedData.value;
-                const matches = matchesVerifiedValue(entry.value, actual);
-
-                if (!matches) {
-                    console.error(
-                        `[ggaMany] Write mismatch at ${entry.path}: expected ${JSON.stringify(entry.value)}, got ${JSON.stringify(actual)}`
-                    );
-                    return { path: entry.path, ok: false, actual, error: "Write mismatch" };
-                }
-
-                return { path: entry.path, ok: true, actual };
-            } catch (error) {
-                console.error(`[ggaMany] Verification failed at ${entry.path}:`, error);
-                return {
-                    path: entry.path,
-                    ok: false,
-                    error: error?.message ?? String(error),
-                };
-            }
-        })
+    const writeEntries = normalizedWrites.map(
+        (entry, index) => writeByPath.get(entry.path) ?? writeResult?.results?.[index]
     );
+    const paths = normalizedWrites.filter((_entry, index) => writeEntries[index]?.ok).map((entry) => entry.path);
+    let verificationResults = [];
+    let verificationError = null;
+    if (paths.length) {
+        try {
+            const data = await _request("/game/gga/read-many", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paths }),
+            });
+            verificationResults = data?.results;
+        } catch (error) {
+            verificationError = error?.message ?? String(error);
+        }
+    }
+
+    let verificationIndex = 0;
+    const results = normalizedWrites.map((entry, index) => {
+        const writeEntry = writeEntries[index];
+        if (!writeEntry?.ok) {
+            return {
+                path: writeEntry?.path ?? entry.path,
+                ok: false,
+                error: writeEntry?.error ?? "Batch write failed",
+            };
+        }
+
+        try {
+            const verifiedData = verificationResults?.[verificationIndex++];
+            if (verificationError) throw new Error(verificationError);
+            if (!verifiedData || verifiedData.path !== entry.path) throw new Error("Missing batch verification result");
+            if (!verifiedData.ok) throw new Error(verifiedData.error ?? "Batch verification failed");
+            const actual = verifiedData.value;
+            const matches = matchesVerifiedValue(entry.value, actual);
+
+            if (!matches) {
+                console.error(
+                    `[ggaMany] Write mismatch at ${entry.path}: expected ${JSON.stringify(entry.value)}, got ${JSON.stringify(actual)}`
+                );
+                return { path: entry.path, ok: false, actual, error: "Write mismatch" };
+            }
+
+            return { path: entry.path, ok: true, actual };
+        } catch (error) {
+            console.error(`[ggaMany] Verification failed at ${entry.path}:`, error);
+            return {
+                path: entry.path,
+                ok: false,
+                error: error?.message ?? String(error),
+            };
+        }
+    });
 
     return {
         ok: results.every((result) => result.ok),

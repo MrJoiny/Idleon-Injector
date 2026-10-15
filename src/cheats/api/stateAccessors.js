@@ -53,6 +53,27 @@ export function readPath(path) {
     }
 }
 
+/** Read multiple paths independently, preserving input order and per-path failures. */
+export function readPaths(paths) {
+    if (!Array.isArray(paths) || paths.length === 0) return { error: "paths must be a non-empty array" };
+    if (!paths.every((path) => typeof path === "string" && path.length > 0)) {
+        return { error: "paths must contain non-empty strings" };
+    }
+
+    const results = paths.map((path) => {
+        try {
+            const result = readPath(path);
+            if (result.error) return { path, ok: false, error: result.error };
+            // Keep a non-serializable value from failing the entire CDP response.
+            JSON.stringify(result.value);
+            return { path, ok: true, value: result.value };
+        } catch (error) {
+            return { path, ok: false, error: error?.message ?? String(error) };
+        }
+    });
+    return { results };
+}
+
 /**
  * Read selected entries from a root object path.
  * Optional field picking reads from entry.h first (Haxe objects), then falls back

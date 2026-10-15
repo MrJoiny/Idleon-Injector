@@ -69,3 +69,15 @@ Alternative: repeat the parsing in each caller or combine unrelated catalogs int
 Trade-off: callers still own presentation and command-specific mutations.
 
 Source: [Jar-gem catalog](../src/cheats/helpers/jarGems.js).
+
+## Batch bulk-write verification reads
+
+Decision: verify bulk writes with one separate batch read, using the existing typed comparison in the UI.
+
+Why: verification requests should not grow with the number of successful writes.
+
+Alternative: verify within the write evaluation or issue a separate read for every value.
+
+Trade-off: verification still observes state after the write request. Batches remain non-atomic and report individual failures.
+
+Source: [UI game API](../src/ui/services/api.js), [state accessors](../src/cheats/api/stateAccessors.js).

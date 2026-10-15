@@ -26,6 +26,15 @@ const { version } = require("../../../package.json");
 
 const log = createLogger("API");
 
+// CDP may serialize Haxe arrays as numeric-key objects. Preserve regular object maps.
+const normalizeReadValue = (value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        const keys = Object.keys(value);
+        if (keys.length > 0 && keys.every((key) => /^\d+$/.test(key))) return Object.assign([], value);
+    }
+    return value;
+};
+
 /**
  * Sets up all API routes for the web UI
  * @param {Object} app - TinyRouter application instance
@@ -551,22 +560,46 @@ exports.injectorConfig = ${new_injectorConfig};
             const data = result.result.value;
             if (data.error) return res.status(500).json({ error: data.error });
 
-            // CDP may serialize Haxe arrays as plain objects with numeric keys.
-            // Only normalize numeric-key maps so regular objects (e.g. .h maps)
-            // are preserved.
-            let value = data.value;
-            if (value && typeof value === "object" && !Array.isArray(value)) {
-                const keys = Object.keys(value);
-                const isNumericKeyMap = keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
-                if (isNumericKeyMap) {
-                    value = Object.assign([], value);
-                }
-            }
-
             log.debug(`Read path: ${path}`);
-            res.json({ value });
+            res.json({ value: normalizeReadValue(data.value) });
         } catch (err) {
             log.error("Error in /api/game/gga/read:", err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post("/api/game/gga/read-many", async (req, res) => {
+        const { paths } = await req.json();
+        if (!Array.isArray(paths) || paths.length === 0) {
+            return res.status(400).json({ error: "paths must be a non-empty array" });
+        }
+        if (!paths.every((path) => typeof path === "string" && path.length > 0)) {
+            return res.status(400).json({ error: "paths must contain non-empty strings" });
+        }
+
+        try {
+            const result = await Runtime.evaluate({
+                expression: `readGamePaths(${JSON.stringify(paths)})`,
+                returnByValue: true,
+            });
+            if (result.exceptionDetails) {
+                const ex = result.exceptionDetails;
+                return res
+                    .status(500)
+                    .json({ error: "Batch read failed", details: ex.exception?.description ?? ex.text });
+            }
+
+            const data = result.result.value;
+            if (!data || !Array.isArray(data.results)) {
+                return res.status(500).json({ error: data?.error ?? "Batch read returned no results" });
+            }
+            res.json({
+                results: data.results.map((entry) =>
+                    entry.ok ? { ...entry, value: normalizeReadValue(entry.value) } : entry
+                ),
+            });
+        } catch (err) {
+            log.error("Error in /api/game/gga/read-many:", err);
             res.status(500).json({ error: err.message });
         }
     });
