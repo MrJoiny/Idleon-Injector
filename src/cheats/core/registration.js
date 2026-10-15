@@ -9,8 +9,8 @@ import { cheatState, setupDone, cheatConfig } from "./state.js";
 
 /**
  * Registry of all cheat commands.
- * Keys are command strings (e.g., "godlike crit"), values are { fn, message, category }.
- * @type {Object<string, {fn: Function, message: string, category: string}>}
+ * Keys are command strings (e.g., "godlike crit"). Suggestions are evaluated after game readiness.
+ * @type {Object<string, {fn: Function, message: string, category: string, needsParam: boolean, suggestions?: Function}>}
  */
 export const cheats = {};
 
@@ -64,9 +64,11 @@ export function cheat(action, context) {
  * @param {string} cheatDef.message - Help message describing the cheat
  * @param {string} [cheatDef.category="general"] - Category for grouping in UI
  * @param {boolean} [cheatDef.needsParam=false] - Whether this cheat needs/accepts a parameter input
+ * @param {Function} [cheatDef.suggestions] - Returns CLI/WebUI choices using current game data
  */
-export function registerCheat({ name, fn, message, category = "general", needsParam = false }) {
+export function registerCheat({ name, fn, message, category = "general", needsParam = false, suggestions }) {
     cheats[name] = { fn, message, category, needsParam };
+    if (suggestions) cheats[name].suggestions = suggestions;
 }
 
 /**
@@ -84,6 +86,7 @@ export function registerCheat({ name, fn, message, category = "general", needsPa
  * @param {string} cheatMap.message - Help message
  * @param {string} [cheatMap.category] - Category for grouping (overrides inherited)
  * @param {Function} [cheatMap.fn] - Custom function (overrides default toggle behavior)
+ * @param {Function} [cheatMap.suggestions] - Returns CLI/WebUI choices using current game data
  * @param {object[]} [cheatMap.subcheats] - Array of subcheat definitions
  * @param {boolean} [cheatMap.configurable] - Configuration options (implies needsParam: true)
  * @param {boolean} [cheatMap.allowToggleChildren] - Allow mass toggle of all subcheats when parent is called with no args
@@ -171,7 +174,14 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
     const registerParent = cheatMap.registerParent ?? true;
 
     if (registerParent) {
-        registerCheat({ name: cmd, fn, message: cheatMap.message, category, needsParam });
+        registerCheat({
+            name: cmd,
+            fn,
+            message: cheatMap.message,
+            category,
+            needsParam,
+            suggestions: cheatMap.suggestions,
+        });
     }
 
     // Recursively register subcheats, passing category
@@ -182,7 +192,7 @@ export function registerCheats(cheatMap, higherKeys = [], parentCategory = null)
 
 /**
  * Get all registered cheats.
- * @returns {Object<string, {fn: Function, message: string, category: string}>}
+ * @returns {Object<string, {fn: Function, message: string, category: string, needsParam: boolean, suggestions?: Function}>}
  */
 export function getCheats() {
     return cheats;

@@ -15,6 +15,7 @@ import { registerCheats } from "../core/registration.js";
 import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
+import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 registerCheats({
     name: "w1",
@@ -131,6 +132,23 @@ registerCheats({
             name: "chips",
             message: "Adds to the amount of lab chips. Usage: w4 chips [chipname|all] [amount]",
             needsParam: true,
+            suggestions: () =>
+                cList.ChipDesc
+                    ? [
+                          {
+                              value: "w4 chips all",
+                              message: "Set amount for all lab chips",
+                              category: "w4",
+                              needsParam: true,
+                          },
+                          ...cList.ChipDesc.filter((chip) => chip[0]).map((chip) => ({
+                              value: `w4 chips ${chip[0].toLowerCase()}`,
+                              message: chip[1],
+                              category: "w4",
+                              needsParam: true,
+                          })),
+                      ]
+                    : [],
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -180,6 +198,22 @@ registerCheats({
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
             needsParam: true,
+            suggestions: () => [
+                {
+                    value: "w5 jargems all",
+                    message: "Set amount for all jar gems",
+                    category: "w5",
+                    needsParam: true,
+                },
+                ...getJarGemCatalog()
+                    .filter((gem) => gem.name)
+                    .map((gem) => ({
+                        value: `w5 jargems ${gem.commandName}`,
+                        message: gem.description || "",
+                        category: "w5",
+                        needsParam: true,
+                    })),
+            ],
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -190,8 +224,8 @@ registerCheats({
                 const holes = gga.Holes;
                 const gemCounts = holes[24];
 
-                const rawGems = cList.HolesInfo[67];
-                const gemNames = rawGems.map((g) => g.split("|")[0].toLowerCase());
+                const gems = getJarGemCatalog();
+                const gemNames = gems.map((gem) => gem.commandName);
 
                 if (target === "all") {
                     for (let i = 0; i < gemCounts.length && i < gemNames.length; i++) {
@@ -206,7 +240,7 @@ registerCheats({
                 }
 
                 gemCounts[index] += amount;
-                return `Added ${amount} to ${rawGems[index].split("|")[0]}.`;
+                return `Added ${amount} to ${gems[index].name}.`;
             },
         },
         {
@@ -258,6 +292,12 @@ registerCheats({
         {
             name: "sumunit",
             message: "Set summoning units to be always a certain type",
+            suggestions: () =>
+                Object.keys(summonUnits).map((unit) => ({
+                    value: `w6 sumunit ${unit}`,
+                    message: "",
+                    category: "w6",
+                })),
             fn: (params) => {
                 const unitName = params[1];
                 if (!unitName) {

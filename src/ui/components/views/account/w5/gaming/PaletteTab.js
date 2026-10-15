@@ -37,7 +37,7 @@ const buildPaletteEntries = (rawLevels, rawPalette) => {
             leading: () =>
                 span({
                     class: "gaming-palette-swatch",
-                    style: `background: rgb(${rgb.join(", ")});`,
+                    style: `--palette-color: rgb(${rgb.join(", ")});`,
                     title: rgb.join(", "),
                 }),
             formatted: false,

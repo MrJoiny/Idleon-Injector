@@ -310,6 +310,18 @@ registerCheat({
     category: "class",
     message: "!danger! Change character class. Usage: class [class_name]",
     needsParam: true,
+    suggestions: () => {
+        const choices = [];
+        for (const [id, name] of cList.ClassNames.slice(0, 41).entries()) {
+            if (!name || name.toLowerCase() === "blank") continue;
+            choices.push({
+                value: `class ${name.toLowerCase()}`,
+                message: `Change to ${name} (ID: ${id})`,
+                category: "class",
+            });
+        }
+        return choices;
+    },
     fn: (params) => {
         const className = params[0].toLowerCase();
         if (!className) {
@@ -412,6 +424,34 @@ registerCheat({
     category: "lvl",
     message: "Change the lvl of a skill or alchemy type to this value",
     needsParam: true,
+    suggestions: () => {
+        const choices = [
+            {
+                value: "lvl class",
+                message: "Change class level",
+                category: "lvl",
+                needsParam: true,
+            },
+        ];
+        for (const name of cList.SkillNames) {
+            if (!name || name === "Blank") continue;
+            choices.push({
+                value: `lvl ${name.toLowerCase()}`,
+                message: `Change ${name} level`,
+                category: "lvl",
+                needsParam: true,
+            });
+        }
+        for (const name of [...Object.keys(alchemyTypes), ...Object.keys(customLevelHandlers)]) {
+            choices.push({
+                value: `lvl ${name}`,
+                message: `Change all ${name} levels`,
+                category: "lvl",
+                needsParam: true,
+            });
+        }
+        return choices;
+    },
     fn: (params) => {
         const subcommand = params[0].toLowerCase();
         const value = parseInt(params[1]);

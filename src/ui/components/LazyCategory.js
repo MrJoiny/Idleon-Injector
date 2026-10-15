@@ -26,7 +26,7 @@ export const LazyCategory = ({ category, isOpen, cheats }) => {
         summary(category),
         () => {
             if (!isExpanded.val) {
-                return div({ class: "cheat-category-content", style: "display:none" });
+                return div({ class: "cheat-category-content hidden" });
             }
             return div(
                 { class: "cheat-category-content" },

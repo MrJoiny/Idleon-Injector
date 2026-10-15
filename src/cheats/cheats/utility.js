@@ -12,6 +12,7 @@ import { registerCheat, registerCheats, getCheats } from "../core/registration.j
 import { itemDefs, monsterDefs, cList, gga, gameContext } from "../core/globals.js";
 import { traverseAll, buildPath } from "../utils/traverse.js";
 import { blacklist_gga } from "../constants.js";
+import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 const formatText = (name) => name.replace(/_/g, " ").toLowerCase();
 
@@ -266,12 +267,10 @@ function createListFunction(params) {
 
         jargems: () => {
             results.push("Id, Name, Description");
-            const rawArr = cList.HolesInfo[67];
-            for (let i = 0; i < rawArr.length; i++) {
-                const parts = rawArr[i].split("|");
-                const name = formatText(parts[0]);
-                const desc = formatText(parts[3]);
-                results.push(`${i}, ${name}, ${desc}`);
+            for (const gem of getJarGemCatalog()) {
+                const name = formatText(gem.name);
+                const desc = formatText(gem.description);
+                results.push(`${gem.index}, ${name}, ${desc}`);
             }
         },
 

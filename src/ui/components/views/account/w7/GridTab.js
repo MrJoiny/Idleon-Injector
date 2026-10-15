@@ -46,11 +46,11 @@ const GridTile = ({ index, tileState, onSelect }) =>
             onclick: () => onSelect(index),
             title: () => tileState.name.val,
             type: "button",
-            style: () => `grid-column:${tileState.gridColumn.val}; grid-row:${tileState.gridRow.val};`,
+            style: () => `--research-column: ${tileState.gridColumn.val}; --research-row: ${tileState.gridRow.val};`,
         },
         div({
             class: "research-grid-tile__fill",
-            style: () => `height:${getTileFillPercent(tileState.level.val, tileState.maxLevel.val)}%;`,
+            style: () => `--research-fill: ${getTileFillPercent(tileState.level.val, tileState.maxLevel.val)}%;`,
         }),
         div(
             { class: "research-grid-tile__content" },
@@ -203,7 +203,7 @@ export const GridTab = () => {
                     : div(
                           {
                               class: "research-grid-board",
-                              style: `grid-template-columns: repeat(${visibleColumnCount.val}, 44px); grid-template-rows: repeat(${visibleRowCount.val}, 44px);`,
+                              style: `--research-columns: ${visibleColumnCount.val}; --research-rows: ${visibleRowCount.val};`,
                           },
                           ...visibleTileIndexes.val.map((index) =>
                               GridTile({
@@ -235,7 +235,7 @@ export const GridTab = () => {
                         { class: "research-grid-detail__preview" },
                         div({
                             class: "research-grid-detail__preview-fill",
-                            style: () => `height:${getTileFillPercent(tile.level.val, tile.maxLevel.val)}%;`,
+                            style: () => `--research-fill: ${getTileFillPercent(tile.level.val, tile.maxLevel.val)}%;`,
                         }),
                         div(
                             { class: "research-grid-detail__preview-content" },

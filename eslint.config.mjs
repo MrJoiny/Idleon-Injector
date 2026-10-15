@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import globals from "globals";
+import noStaticInlineStyles from "./scripts/eslint/no-static-inline-styles.mjs";
 
 const commonRules = {
     // Possible errors
@@ -51,6 +52,8 @@ export default [
     },
     {
         files: ["src/ui/**/*.js"],
+        plugins: { ui: { rules: { "no-static-inline-styles": noStaticInlineStyles } } },
+        rules: { "ui/no-static-inline-styles": "error" },
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",
@@ -82,7 +85,7 @@ export default [
         },
     },
     {
-        files: ["*.mjs"],
+        files: ["*.mjs", "scripts/**/*.mjs"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",

@@ -15,12 +15,6 @@ const RANK_WIDTH = 5;
 const RANK_HEIGHT = 4;
 const RANK_COUNT = RANK_WIDTH * RANK_HEIGHT;
 
-const getRankStyle = (index) => {
-    const column = (index % RANK_WIDTH) + 1;
-    const row = Math.floor(index / RANK_WIDTH) + 1;
-    return `grid-column:${column}; grid-row:${row};`;
-};
-
 const UnboundedRankRow = ({ entry, levelState }) =>
     SimpleNumberRow({
         entry: {
@@ -55,7 +49,7 @@ const RankTile = ({ entry, levelState }) =>
     div(
         {
             class: "farming-grid-tile feature-card",
-            style: getRankStyle(entry.index),
+            style: `--farming-column: ${(entry.index % RANK_WIDTH) + 1}; --farming-row: ${Math.floor(entry.index / RANK_WIDTH) + 1};`,
         },
         div(
             { class: "farming-grid-tile__header" },

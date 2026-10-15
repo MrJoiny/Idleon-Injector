@@ -396,9 +396,8 @@ export const WeeklyBossTab = () => {
                 span({ class: "account-row__name" }, player.name),
                 span(
                     {
-                        class: "write-status write-status--error",
+                        class: () => `write-status write-status--error${getPlayerWarning() ? "" : " hidden"}`,
                         role: "status",
-                        style: () => (getPlayerWarning() ? "" : "display: none;"),
                     },
                     getPlayerWarning
                 )
@@ -481,9 +480,8 @@ export const WeeklyBossTab = () => {
             { class: "scrollable-panel content-stack" },
             div(
                 {
-                    class: "write-status write-status--error",
+                    class: () => `write-status write-status--error${message.val ? "" : " hidden"}`,
                     role: "alert",
-                    style: () => (message.val ? "" : "display: none;"),
                 },
                 () => message.val
             ),

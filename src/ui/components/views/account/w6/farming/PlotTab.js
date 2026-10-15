@@ -14,13 +14,6 @@ const PLOT_WIDTH = 9;
 const PLOT_HEIGHT = 4;
 const PLOT_COUNT = PLOT_WIDTH * PLOT_HEIGHT;
 
-const getPlotStyle = (index) => {
-    const column = (index % PLOT_WIDTH) + 1;
-    const rowFromBottom = Math.floor(index / PLOT_WIDTH);
-    const row = PLOT_HEIGHT - rowFromBottom;
-    return `grid-column:${column}; grid-row:${row};`;
-};
-
 const PlotFieldRow = ({ label, valueState, writePath, float = false }) =>
     SimpleNumberRow({
         entry: {
@@ -40,7 +33,7 @@ const PlotTile = ({ entry, levelState, expState }) =>
     div(
         {
             class: "farming-grid-tile feature-card",
-            style: getPlotStyle(entry.index),
+            style: `--farming-column: ${(entry.index % PLOT_WIDTH) + 1}; --farming-row: ${PLOT_HEIGHT - Math.floor(entry.index / PLOT_WIDTH)};`,
         },
         div(
             { class: "farming-grid-tile__header" },

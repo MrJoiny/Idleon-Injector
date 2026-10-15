@@ -387,6 +387,18 @@ registerCheat({
     category: "keychain",
     message: "Generate a specific maxed keychain stat from Flurbo store",
     needsParam: true,
+    suggestions: () => [
+        {
+            value: "keychain reset",
+            message: "Reset keychain override",
+            category: "keychain",
+        },
+        ...Object.keys(keychainStatsMap).map((stat) => ({
+            value: `keychain ${stat}`,
+            message: "",
+            category: "keychain",
+        })),
+    ],
     fn: (params) => {
         const statName = params[0]?.toLowerCase();
         if (!statName || statName === "reset") {

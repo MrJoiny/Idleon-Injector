@@ -198,7 +198,6 @@ export const Cheats = () => {
                 SearchBar({
                     placeholder: "SEARCH_COMMANDS",
                     onInput: handleSearch,
-                    style: "flex: 1;",
                 }),
                 button(
                     {

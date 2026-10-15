@@ -165,7 +165,7 @@ export const SlabTab = () => {
         return div(
             {
                 "data-item-id": itemId,
-                style: () => (matches(itemId) || state.write.status.val ? "" : "display: none;"),
+                class: () => (matches(itemId) || state.write.status.val ? "" : "hidden"),
             },
             row
         );

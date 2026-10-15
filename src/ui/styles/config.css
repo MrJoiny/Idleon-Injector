@@ -57,6 +57,10 @@
 }
 
 /* --- FILTER BAR --- */
+.config-filter-contents {
+    display: contents;
+}
+
 .panel-section {
     display: flex;
     gap: 15px;

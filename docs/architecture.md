@@ -14,6 +14,9 @@ See the [glossary](glossary.md) for terminology and [decisions](decisions.md) fo
 The Node process connects to the game through CDP. The Web UI communicates with the Node server.
 Injected code runs in the game context; Node and UI code have separate environments.
 
+The Node server, CLI, and WebSocket handlers use [GameBridge](../src/modules/game/gameBridge.js)
+for calls into the injected helpers. Attachment and injection retain their setup-specific CDP operations.
+
 ## Find the relevant area
 
 | Task area                           | Source                                                                                               |

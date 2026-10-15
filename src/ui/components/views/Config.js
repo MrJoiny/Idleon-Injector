@@ -249,7 +249,7 @@ export const Config = () => {
                         }
 
                         return div(
-                            { style: "display: contents" },
+                            { class: "config-filter-contents" },
                             div(
                                 { class: "config-filter-group" },
                                 label({ class: "config-filter-label" }, "CATEGORY FILTER"),
