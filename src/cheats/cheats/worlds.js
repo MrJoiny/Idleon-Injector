@@ -132,6 +132,23 @@ registerCheats({
             name: "chips",
             message: "Adds to the amount of lab chips. Usage: w4 chips [chipname|all] [amount]",
             needsParam: true,
+            suggestions: () =>
+                cList.ChipDesc
+                    ? [
+                          {
+                              value: "w4 chips all",
+                              message: "Set amount for all lab chips",
+                              category: "w4",
+                              needsParam: true,
+                          },
+                          ...cList.ChipDesc.filter((chip) => chip[0]).map((chip) => ({
+                              value: `w4 chips ${chip[0].toLowerCase()}`,
+                              message: chip[1],
+                              category: "w4",
+                              needsParam: true,
+                          })),
+                      ]
+                    : [],
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -178,6 +195,22 @@ registerCheats({
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
             needsParam: true,
+            suggestions: () => [
+                {
+                    value: "w5 jargems all",
+                    message: "Set amount for all jar gems",
+                    category: "w5",
+                    needsParam: true,
+                },
+                ...getJarGemCatalog()
+                    .filter((gem) => gem.name)
+                    .map((gem) => ({
+                        value: `w5 jargems ${gem.commandName}`,
+                        message: gem.description || "",
+                        category: "w5",
+                        needsParam: true,
+                    })),
+            ],
             fn: (params) => {
                 const target = params[1]?.toLowerCase();
                 const amount = parseInt(params[2]);
@@ -247,6 +280,12 @@ registerCheats({
         {
             name: "sumunit",
             message: "Set summoning units to be always a certain type",
+            suggestions: () =>
+                Object.keys(summonUnits).map((unit) => ({
+                    value: `w6 sumunit ${unit}`,
+                    message: "",
+                    category: "w6",
+                })),
             fn: (params) => {
                 const unitName = params[1];
                 if (!unitName) {

@@ -117,3 +117,15 @@ Alternative: construct evaluation strings and decode CDP responses in every call
 Trade-off: callers still choose helper operations and own user-facing errors. The bridge accepts a runtime dependency so isolated fixtures can replace the live connection.
 
 Source: [GameBridge](../src/modules/game/gameBridge.js).
+
+## Move command suggestions incrementally
+
+Decision: allow command definitions to own suggestion providers, migrating command families incrementally.
+
+Why: the command and its suggested parameters should use the same domain knowledge.
+
+Alternative: keep every command's suggestion logic in the shared autocomplete builder or migrate all commands at once.
+
+Trade-off: the shared builder retains ordering for migrated groups alongside legacy groups. Provider presence does not imply that the bare command should be hidden.
+
+Source: [Command registration](../src/cheats/core/registration.js), [world commands](../src/cheats/cheats/worlds.js).
