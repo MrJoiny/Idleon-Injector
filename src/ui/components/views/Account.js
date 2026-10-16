@@ -12,6 +12,7 @@ import van from "../../vendor/van-1.6.0.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
+import { ClickerTab } from "./account/ClickerTab.js";
 import { MasterclassesTab } from "./account/MasterclassesTab.js";
 import { TasksTab } from "./account/TasksTab.js";
 import { UpgradeVaultTab } from "./account/UpgradeVaultTab.js";
@@ -37,6 +38,7 @@ const ACCOUNT_TABS = [
     { id: "cards", label: "CARDS", isWorld: false, component: CardsTab },
     { id: "bundles", label: "BUNDLES", isWorld: false, component: BundlesTab },
     { id: "masterclasses", label: "MASTERCLASSES", isWorld: false, component: MasterclassesTab },
+    { id: "clicker", label: "CLICKER", isWorld: false, component: ClickerTab },
     { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
     { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
     { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
