@@ -1,6 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { DivinityTab } from "./w5/DivinityTab.js";
 import { GamingTab } from "./w5/GamingTab.js";
+import { GreenstackTab } from "./w5/GreenstackTab.js";
 import { HoleTab } from "./w5/HoleTab.js";
 import { SailingTab } from "./w5/SailingTab.js";
 import { SlabTab } from "./w5/SlabTab.js";
@@ -14,6 +15,7 @@ const W5_SUBTABS = [
     { id: "gaming", label: "GAMING", component: GamingTab },
     { id: "hole", label: "HOLE", component: HoleTab },
     { id: "slab", label: "SLAB", component: SlabTab },
+    { id: "greenstack", label: "GREENSTACK", component: GreenstackTab },
 ];
 
 export const W5Tab = () => {
