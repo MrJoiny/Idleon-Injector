@@ -537,7 +537,7 @@ export const configDescriptions = {
     "cheatConfig.w7.clam.Clam_Mobs": "Clams: Mob spawns",
 
     // Coral Kid
-    "cheatConfig.w7.coralkid.CoralKidUpgCost": "Coral Kid: Upgrade costs. (lower is better)",
+    "cheatConfig.w7.coralkid.CoralKidUpgCost": "Coral Kid: Standard and Singularity upgrade costs. (lower is better)",
 
     // Big Fish
     "cheatConfig.w7.bigfish.BigFishCost": "Big Fish: Costs. (lower is better)",
