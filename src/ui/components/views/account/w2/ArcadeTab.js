@@ -5,18 +5,21 @@
  *   [74]  -> normal balls
  *   [75]  -> golden balls
  *   [324] -> cosmic balls
+ *   [625] -> Omega balls
+ *   [626] -> lifetime Omega ball drops
  *
  * Upgrade sources:
  *   cList.ArcadeShopInfo[i][0] -> upgrade name (BLANK rows skipped)
  *   ArcadeUpg[i]                        -> current upgrade level
  *
  * Level rules:
- *   Allowed range is 0-101.
- *   Level 101 is shown as COSMIC in the UI.
+ *   Allowed range is 0-102.
+ *   Level 101 is COSMIC; level 102 is OMEGA.
  *
  * Bulk actions:
  *   MAX ALL        -> set every ArcadeUpg[i] to 100
  *   MAX ALL COSMIC -> set every ArcadeUpg[i] to 101
+ *   MAX ALL OMEGA  -> set every ArcadeUpg[i] to 102
  *   RESET ALL      -> set every ArcadeUpg[i] to 0
  */
 
@@ -41,15 +44,20 @@ import {
 } from "../accountShared.js";
 
 const { div, span } = van.tags;
-const ARCADE_LEVEL_MAX = 101;
+const ARCADE_LEVEL_MAX = 102;
 const BALL_FIELDS = [
     { id: "normal", label: "Normal Balls", optionIndex: 74 },
     { id: "golden", label: "Golden Balls", optionIndex: 75 },
     { id: "cosmic", label: "Cosmic Balls", optionIndex: 324 },
+    { id: "omega", label: "Omega Balls", optionIndex: 625 },
+    { id: "omegaDropped", label: "Omega Balls Total Dropped", optionIndex: 626 },
 ];
 
 const ArcadeRow = ({ entry }) => {
-    const isCosmic = van.derive(() => Number(entry.levelState.val ?? 0) >= ARCADE_LEVEL_MAX);
+    const levelStatus = van.derive(() => {
+        const level = Number(entry.levelState.val ?? 0);
+        return level >= 102 ? "omega" : level >= 101 ? "cosmic" : "normal";
+    });
 
     return ClampedLevelRow({
         valueState: entry.levelState,
@@ -58,11 +66,18 @@ const ArcadeRow = ({ entry }) => {
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
             span({ class: "account-row__name" }, entry.name),
-            () => (isCosmic.val ? span({ class: "arcade-row__cosmic-badge" }, "COSMIC") : null),
+            () =>
+                levelStatus.val === "normal"
+                    ? null
+                    : span({ class: `arcade-row__${levelStatus.val}-badge` }, levelStatus.val.toUpperCase()),
         ],
-        renderBadge: (currentValue) => (isCosmic.val ? "COSMIC" : `LV ${currentValue ?? 0}`),
-        rowClass: () => (isCosmic.val ? "arcade-row arcade-row--cosmic" : "arcade-row"),
-        badgeClass: () => (isCosmic.val ? "arcade-row__badge arcade-row__badge--cosmic" : "arcade-row__badge"),
+        renderBadge: (currentValue) =>
+            levelStatus.val === "normal" ? `LV ${currentValue ?? 0}` : levelStatus.val.toUpperCase(),
+        rowClass: () => (levelStatus.val === "normal" ? "arcade-row" : `arcade-row arcade-row--${levelStatus.val}`),
+        badgeClass: () =>
+            levelStatus.val === "normal"
+                ? "arcade-row__badge"
+                : `arcade-row__badge arcade-row__badge--${levelStatus.val}`,
     });
 };
 
@@ -97,7 +112,7 @@ export const ArcadeTab = () => {
     const load = async () =>
         run(async () => {
             const [rawOptions, parsed] = await Promise.all([
-                readGgaEntries("OptionsListAccount", ["74", "75", "324"]),
+                readGgaEntries("OptionsListAccount", BALL_FIELDS.map((field) => String(field.optionIndex))),
                 readLevelDefinitions({
                     levelsPath: "ArcadeUpg",
                     definitionsPath: "ArcadeShopInfo",
@@ -159,7 +174,7 @@ export const ArcadeTab = () => {
         { class: "arcade-content scrollable-panel content-stack" },
         AccountSection({
             title: "BALL COUNTS",
-            note: "Normal, golden, and cosmic arcade balls",
+            note: "Normal, golden, cosmic, and Omega arcade balls, plus lifetime Omega drops",
             body: div(
                 { class: "account-list" },
                 ...BALL_FIELDS.map((field) => ArcadeBallRow({ field, valueState: ballStates.get(field.id) }))
@@ -167,7 +182,7 @@ export const ArcadeTab = () => {
         }),
         AccountSection({
             title: "BONUS UPGRADES",
-            note: "Arcade bonus levels (101 = cosmic)",
+            note: "Level 101 grants the cosmic bonus. Level 102 grants Omega status with a 6x bonus, or 12x with Companion 27.",
             body: () => {
                 return div({ class: "account-list" }, ...upgradeEntries.val.map((entry) => ArcadeRow({ entry })));
             },
@@ -192,6 +207,12 @@ export const ArcadeTab = () => {
                     status: bulkStatus,
                     tooltip: "Set every Arcade upgrade to 101",
                     onClick: () => doSetAll(101),
+                },
+                {
+                    label: "MAX ALL OMEGA",
+                    status: bulkStatus,
+                    tooltip: "Set every Arcade upgrade to 102",
+                    onClick: () => doSetAll(102),
                 },
                 {
                     label: "RESET ALL",

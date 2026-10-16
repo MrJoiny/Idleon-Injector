@@ -19,6 +19,12 @@
     box-shadow: inset 0 0 0 1px var(--c-arcade-cosmic-20);
 }
 
+.arcade-row--omega {
+    background: var(--c-arcade-omega-bg);
+    border-color: var(--c-arcade-omega);
+    box-shadow: inset 0 0 0 1px var(--c-arcade-omega-35);
+}
+
 .arcade-row__cosmic-badge {
     font-size: 0.875rem;
     font-weight: 700;
@@ -27,8 +33,22 @@
     letter-spacing: 0.03em;
 }
 
+.arcade-row__omega-badge {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--c-arcade-omega);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 .arcade-row__badge--cosmic {
     color: var(--c-ui-blue);
     border-color: var(--c-ui-blue);
     background: color-mix(in srgb, var(--c-ui-blue) 10%, var(--c-panel));
+}
+
+.arcade-row__badge--omega {
+    color: var(--c-arcade-omega);
+    border-color: var(--c-arcade-omega);
+    background: var(--c-arcade-omega-bg);
 }

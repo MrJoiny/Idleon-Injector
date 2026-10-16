@@ -113,6 +113,9 @@
     --c-arcade-cosmic-bg: rgba(43, 88, 118, 0.15);
     --c-arcade-cosmic-20: rgba(59, 130, 246, 0.2);
     --c-arcade-cosmic-40: rgba(59, 130, 246, 0.4);
+    --c-arcade-omega: #f252a3;
+    --c-arcade-omega-bg: rgba(242, 82, 163, 0.12);
+    --c-arcade-omega-35: rgba(242, 82, 163, 0.35);
     --c-postoffice-accent-green: var(--accent-green, #4caf50);
     --c-equinox-warning: #d47814;
     --c-equinox-warning-10: rgba(210, 120, 20, 0.1);
@@ -262,6 +265,8 @@
         --c-ui-yellow-45: color-mix(in oklch, var(--c-ui-yellow) 45%, transparent);
         --c-arcade-cosmic-20: color-mix(in oklch, var(--c-arcade-cosmic) 20%, transparent);
         --c-arcade-cosmic-40: color-mix(in oklch, var(--c-arcade-cosmic) 40%, transparent);
+        --c-arcade-omega-bg: color-mix(in oklch, var(--c-arcade-omega) 12%, transparent);
+        --c-arcade-omega-35: color-mix(in oklch, var(--c-arcade-omega) 35%, transparent);
         --c-equinox-warning: oklch(65.52% 0.1457 59.92);
         --c-equinox-warning-10: color-mix(in oklch, var(--c-equinox-warning) 10%, transparent);
         --c-refinery-polymer: oklch(53.09% 0.1436 304.63);
