@@ -73,6 +73,48 @@ function loadConfiguration() {
     }
 }
 
+/** Merge Session updates in place, then attempt game synchronization without writing to disk. */
+async function updateSessionConfiguration(
+    receivedFullConfig,
+    { cheatConfig, startupCheats, injectorConfig },
+    gameBridge
+) {
+    if (receivedFullConfig.cheatConfig) {
+        const parsedCheatConfig = parseConfigFromJson(receivedFullConfig.cheatConfig);
+        deepMerge(cheatConfig, parsedCheatConfig);
+    }
+
+    if (Array.isArray(receivedFullConfig.startupCheats)) {
+        startupCheats.length = 0;
+        startupCheats.push(...receivedFullConfig.startupCheats);
+        log.debug("Updated server-side startupCheats");
+    }
+
+    if (receivedFullConfig.injectorConfig) {
+        deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
+        log.debug("Updated server-side injectorConfig");
+    }
+
+    // Keep the submitted cheat values separate from shared live state during synchronization.
+    const gameCheatConfig = receivedFullConfig.cheatConfig
+        ? parseConfigFromJson(receivedFullConfig.cheatConfig)
+        : cheatConfig;
+    if (!(await gameBridge.isAttached())) {
+        log.error("Cheat context not found in iframe. Cannot update config in game");
+        return { gameApplied: false, contextLost: true };
+    }
+
+    const updateResult = await gameBridge.updateConfig(gameCheatConfig);
+    if (updateResult.error) {
+        log.error("Error updating config in game:", updateResult.error.text);
+        return { gameApplied: false, details: `Failed to apply in game: ${updateResult.error.text}` };
+    }
+
+    const details = updateResult.value;
+    log.debug(`In-game config update result: ${details}`);
+    return { gameApplied: !details.startsWith("Error:"), details };
+}
+
 /** Persist UI overrides, then update the loaded configuration only after the write succeeds. */
 async function saveConfiguration(receivedFullConfig) {
     const cheatConfig = getCheatConfig();
@@ -213,6 +255,7 @@ function getLinuxTimeout() {
 
 module.exports = {
     loadConfiguration,
+    updateSessionConfiguration,
     saveConfiguration,
     getInjectorConfig,
     getStartupCheats,

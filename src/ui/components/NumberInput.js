@@ -2,8 +2,15 @@ import van from "../vendor/van-1.6.0.js";
 
 const { div, input, button } = van.tags;
 const liveRawByState = new WeakMap();
+const focusedValueSetters = new WeakMap();
 
 export const getNumberInputLiveRaw = (state) => liveRawByState.get(state);
+
+/** Explicit commits and cancellations also replace browser-owned formatted drafts. */
+export const setNumberInputValue = (state, nextValue) => {
+    state.val = nextValue;
+    focusedValueSetters.get(state)?.(nextValue);
+};
 
 /**
  * Parse user input to a plain JS number. Handles:
@@ -97,6 +104,10 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
                 isFocused = true;
                 inputEl.value = formatter(value.val);
                 liveRawByState.set(value, inputEl.value);
+                focusedValueSetters.set(value, (nextValue) => {
+                    inputEl.value = formatter(nextValue);
+                    liveRawByState.set(value, inputEl.value);
+                });
                 if (userOnfocus) userOnfocus(e);
             },
 
@@ -119,6 +130,7 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
                     inputEl.value = formatter(value.val);
                 }
                 liveRawByState.delete(value);
+                focusedValueSetters.delete(value);
                 if (userOnblur) userOnblur(e);
             },
         });
@@ -135,8 +147,26 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
         return div(
             { class: "number-input-wrapper" },
             inputEl,
-            button({ type: "button", class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
-            button({ type: "button", class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
+            button(
+                {
+                    type: "button",
+                    class: "number-input-btn",
+                    disabled: restInputProps.disabled,
+                    onclick: onDecrement,
+                    tabindex: -1,
+                },
+                "−"
+            ),
+            button(
+                {
+                    type: "button",
+                    class: "number-input-btn",
+                    disabled: restInputProps.disabled,
+                    onclick: onIncrement,
+                    tabindex: -1,
+                },
+                "+"
+            )
         );
     }
 
@@ -169,8 +199,33 @@ export const NumberInput = ({ value, mode = "int", onDecrement, onIncrement, for
 
     return div(
         { class: "number-input-wrapper" },
-        input({ type: "text", value, oninput: handleInput, ...restInputProps }),
-        button({ type: "button", class: "number-input-btn", onclick: onDecrement, tabindex: -1 }, "−"),
-        button({ type: "button", class: "number-input-btn", onclick: onIncrement, tabindex: -1 }, "+")
+        input({
+            type: "text",
+            value,
+            oninput: handleInput,
+            onfocus: userOnfocus,
+            onblur: userOnblur,
+            ...restInputProps,
+        }),
+        button(
+            {
+                type: "button",
+                class: "number-input-btn",
+                disabled: restInputProps.disabled,
+                onclick: onDecrement,
+                tabindex: -1,
+            },
+            "−"
+        ),
+        button(
+            {
+                type: "button",
+                class: "number-input-btn",
+                disabled: restInputProps.disabled,
+                onclick: onIncrement,
+                tabindex: -1,
+            },
+            "+"
+        )
     );
 };

@@ -17,7 +17,7 @@ const { setupIntercept, createCheatContext } = require("./modules/game/cheatInje
 const { createWebServer, startServer } = require("./modules/server/webServer");
 const { setupApiRoutes } = require("./modules/server/apiRoutes");
 const { startCliInterface } = require("./modules/cli/cliInterface");
-const { checkForUpdates } = require("./modules/updateChecker");
+const { createUpdater } = require("./modules/updateService");
 const { createLogger } = require("./modules/utils/logger");
 const { version } = require("../package.json");
 
@@ -43,7 +43,7 @@ async function printHeader() {
     log.info("GitHub: https://github.com/MrJoiny/Idleon-Injector");
     log.info("");
 
-    const update = await checkForUpdates(version);
+    const update = await createUpdater().check();
     if (update && update.updateAvailable) {
         log.warn(`UPDATE AVAILABLE: v${update.latestVersion} - ${update.url}`);
         log.info("");

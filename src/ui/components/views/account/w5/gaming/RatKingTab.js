@@ -197,7 +197,7 @@ export const RatKingTab = () => {
                 { class: "rat-king-progress-bar" },
                 div({
                     class: "rat-king-progress-fill",
-                    style: () => `width: ${crownsSet.val.size}%;`,
+                    style: () => `--rat-king-progress: ${crownsSet.val.size}%;`,
                 })
             )
         );

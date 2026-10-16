@@ -46,6 +46,74 @@ Trade-off: stable rows require explicit value updates and collection reconciliat
 Source: [Account components](../src/ui/components/views/account/components/),
 [Account shared helpers](../src/ui/components/views/account/accountShared.js).
 
+## Share the lifecycle of simple Account lists
+
+Decision: use one page module for single-section numeric lists, while each Account page owns its game reads
+and entry definitions.
+
+Why: repeated load, reconciliation, and value-state coordination should have one owner.
+
+Alternative: repeat that coordination in each page or generalize every Account editor into one module.
+
+Trade-off: simple lists share a fixed layout and row lifecycle; custom layouts retain their own composition.
+
+Source: [Simple Account lists](../src/ui/components/views/account/components/SimpleAccountListPage.js).
+
+## Share staged editing state across layouts
+
+Decision: let one field editing module own drafts and write outcomes for scalar and multi-field editors.
+
+Why: focus preservation, cancellation, and verified commits need the same rules across layouts.
+
+Alternative: maintain the editing lifecycle separately in each layout.
+
+Trade-off: layouts retain formatting and controls, while custom writers must return every field's verified value
+or cancellation. Failed writes retain committed UI values until a refresh, including when a game batch partly
+succeeds. Completion callbacks run after the verified commit; their failure retains those values and reports an error.
+
+Source: [Field editing](../src/ui/components/views/account/useFieldEditor.js),
+[Numeric editing](../src/ui/components/views/account/useNumericEditor.js).
+
+## Give frontend Monitor subscriptions one owner
+
+Decision: let the frontend Monitor module own subscription bookkeeping, path identity, and runtime lookup.
+
+Why: Search actions and rendering should not coordinate transport identifiers or maintain a second subscription ledger.
+
+Alternative: repeat that coordination in Search, its render modules, and the store.
+
+Trade-off: Search retains saved snapshots and activation timing, while WebSocket connection replay stays with the transport.
+
+Source: [Frontend Monitors](../src/ui/state/liveMonitor.js).
+
+## Keep Search scan sessions outside rendering
+
+Decision: let a scan session module own scan transitions, request construction, scope, and comparison baselines.
+
+Why: consecutive scans should be testable without rendering the Search view. Editing displayed values must
+not change the baseline used by the next comparison.
+
+Alternative: keep scan coordination in the view alongside editing, filters, and saved results.
+
+Trade-off: the view supplies reactive output state and presents feedback. Pagination, saved results,
+and input controls remain view concerns.
+
+Source: [Search scan sessions](../src/ui/components/views/search/scanSession.js).
+
+## Give server Monitor lifecycle one owner
+
+Decision: let a server Monitor module own subscriptions, shared game hooks, retries, history, and cleanup.
+Keep socket messages and serialization in the WebSocket module.
+
+Why: lifecycle races should be testable without constructing sockets or emulating CDP expressions.
+
+Alternative: keep Monitor coordination inside the WebSocket module.
+
+Trade-off: the Monitor module accepts GameBridge, state delivery, and a clock. The existing lifecycle
+tests use controlled adapters without exercising socket transport.
+
+Source: [Server Monitors](../src/modules/server/monitor.js).
+
 ## Share Royal Guard behavior outside views
 
 Decision: keep Royal Guard unit rules and reset operations in a shared domain module.
@@ -106,6 +174,20 @@ Trade-off: the save operation requires loaded configuration. Routes retain reque
 
 Source: [Configuration manager](../src/modules/config/configManager.js).
 
+## Keep Session update rules outside HTTP handlers
+
+Decision: let the configuration module own Session update parsing, live-object merging, and game synchronization.
+Keep request validation and HTTP responses in the route.
+
+Why: game synchronization can fail after server state changes, so one module should own that partial success.
+
+Alternative: keep mutation and game synchronization coordinated by the HTTP route.
+
+Trade-off: live configuration references stay shared, and server changes survive failed game synchronization.
+Saved configuration remains a separate disk operation.
+
+Source: [Configuration manager](../src/modules/config/configManager.js).
+
 ## Share the game-helper transport
 
 Decision: route server, CLI, and WebSocket helper calls through GameBridge.
@@ -141,3 +223,17 @@ Alternative: keep one large registration function or add mounted sub-routers.
 Trade-off: registration spans multiple modules. They retain the existing request contracts, shared configuration references, and update response timing; splitting routes does not reduce game round trips.
 
 Source: [API setup](../src/modules/server/apiRoutes.js), [route modules](../src/modules/server/routes/).
+
+## Keep update orchestration outside callers
+
+Decision: let the updater module own cached checks and preparation coordination, using the existing
+release checker and archive preparation modules.
+
+Why: HTTP and CLI callers should not coordinate release checks with archive preparation themselves.
+
+Alternative: keep cached checks and preparation coordination in the update route.
+
+Trade-off: each updater owns its check cache. Startup and CLI checks use fresh instances; the HTTP
+route retains its instance and controls the response-before-exit handoff.
+
+Source: [Updater](../src/modules/updateService.js).

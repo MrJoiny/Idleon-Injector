@@ -13,12 +13,7 @@ import {
     isInputlessScanType,
     requiresSecondaryInput,
 } from "./scanUtils.js";
-import {
-    monitorPathForSearchResult,
-    formatDisplayValue,
-    getMonitorHistory,
-    resolveMonitorEntry,
-} from "./valueUtils.js";
+import { formatDisplayValue, getMonitorHistory } from "./valueUtils.js";
 import { createStaticRowReconciler } from "../account/accountShared.js";
 
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
@@ -303,7 +298,7 @@ export const SearchInputSection = ({ ui, handlers }) =>
                             class: "scan-type-select",
                             value: () => ui.scanTypeNew,
                             onchange: handlers.handleNewScanTypeChange,
-                            disabled: () => ui.scanSessionActive,
+                            disabled: () => ui.scan.active,
                         },
                         ...NEW_SCAN_TYPES.map((scanType) => option({ value: scanType }, getScanTypeLabel(scanType)))
                     )
@@ -316,14 +311,14 @@ export const SearchInputSection = ({ ui, handlers }) =>
                             class: "scan-type-select",
                             value: () => ui.scanTypeNext,
                             onchange: handlers.handleNextScanTypeChange,
-                            disabled: () => !ui.scanSessionActive,
+                            disabled: () => !ui.scan.active,
                         },
                         ...NEXT_SCAN_TYPES.map((scanType) => option({ value: scanType }, getScanTypeLabel(scanType)))
                     )
                 )
             ),
             () => {
-                const activeScanType = ui.scanSessionActive ? ui.scanTypeNext : ui.scanTypeNew;
+                const activeScanType = ui.scan.active ? ui.scanTypeNext : ui.scanTypeNew;
                 const showPrimaryInput = !isInputlessScanType(activeScanType);
                 const showSecondaryInput = requiresSecondaryInput(activeScanType);
 
@@ -360,26 +355,25 @@ export const SearchInputSection = ({ ui, handlers }) =>
                     div(
                         { class: "search-btn-group" },
                         SearchButton({
-                            isSearching: () => ui.isSearching,
-                            disabled: () => (ui.scanSessionActive ? false : ui.selectedKeys.length === 0),
-                            onClick: () =>
-                                ui.scanSessionActive ? handlers.startNewScan() : handlers.handleSearch("new"),
-                            label: () => (ui.scanSessionActive ? "NEW SCAN" : "FIRST"),
+                            isSearching: () => ui.scan.isSearching,
+                            disabled: () => (ui.scan.active ? false : ui.selectedKeys.length === 0),
+                            onClick: () => (ui.scan.active ? handlers.startNewScan() : handlers.handleSearch("new")),
+                            label: () => (ui.scan.active ? "NEW SCAN" : "FIRST"),
                             title: () =>
-                                ui.scanSessionActive
+                                ui.scan.active
                                     ? "Reset and prepare a fresh first scan"
                                     : "First scan (search all selected keys)",
-                            icon: () => (ui.scanSessionActive ? Icons.Refresh() : Icons.Search()),
+                            icon: () => (ui.scan.active ? Icons.Refresh() : Icons.Search()),
                         }),
                         SearchButton({
-                            isSearching: () => ui.isSearching,
-                            disabled: () => !ui.scanSessionActive || ui.scopePaths.length === 0,
+                            isSearching: () => ui.scan.isSearching,
+                            disabled: () => !ui.scan.active || ui.scan.scopeCount === 0,
                             onClick: () => handlers.handleSearch("next"),
                             label: "NEXT",
                             className: "next-search-btn",
                             title: () =>
-                                ui.scopePaths.length
-                                    ? `Next search (search inside ${ui.scopePaths.length} current results)`
+                                ui.scan.scopeCount
+                                    ? `Next search (search inside ${ui.scan.scopeCount} current results)`
                                     : "Next search (run a new search first)",
                             icon: Icons.ChevronRight,
                         })
@@ -387,7 +381,7 @@ export const SearchInputSection = ({ ui, handlers }) =>
                 );
             },
             div({ class: "search-type-hint" }, () => {
-                const activeScanType = ui.scanSessionActive ? ui.scanTypeNext : ui.scanTypeNew;
+                const activeScanType = ui.scan.active ? ui.scanTypeNext : ui.scanTypeNew;
 
                 if (isInputlessScanType(activeScanType)) {
                     if (activeScanType === "unknown_initial_value") {
@@ -434,18 +428,18 @@ export const ResultsSection = ({ ui, handlers }) =>
             button(
                 {
                     class: "btn-icon refresh-btn",
-                    onclick: () => handlers.handleSearch(ui.lastSearchMode),
+                    onclick: () => handlers.handleSearch(ui.scan.lastSearchMode),
                     disabled: () =>
-                        ui.isSearching ||
-                        !ui.hasSearched ||
-                        (ui.lastSearchMode === "next" ? ui.scopePaths.length === 0 : ui.selectedKeys.length === 0),
-                    title: () => (ui.lastSearchMode === "next" ? "Refresh NEXT search" : "Refresh NEW search"),
+                        ui.scan.isSearching ||
+                        !ui.scan.hasSearched ||
+                        (ui.scan.lastSearchMode === "next" ? ui.scan.scopeCount === 0 : ui.selectedKeys.length === 0),
+                    title: () => (ui.scan.lastSearchMode === "next" ? "Refresh NEXT search" : "Refresh NEW search"),
                 },
                 Icons.Refresh()
             ),
             span({ class: "results-scope-badge" }, () => {
                 const filteredCount = handlers.getFilteredResults().length;
-                const totalCount = ui.results.length;
+                const totalCount = ui.scan.results.length;
                 if (!ui.resultsFilterApplied) {
                     return `${totalCount} RESULT${totalCount === 1 ? "" : "S"}`;
                 }
@@ -462,7 +456,7 @@ export const ResultsSection = ({ ui, handlers }) =>
                     placeholder: "FILTER RESULTS (PATH OR VALUE)",
                     value: () => ui.resultsFilter,
                     oninput: handlers.handleResultsFilterInput,
-                    disabled: () => ui.isSearching || ui.results.length === 0,
+                    disabled: () => ui.scan.isSearching || ui.scan.results.length === 0,
                 }),
                 () =>
                     ui.resultsFilter
@@ -477,20 +471,20 @@ export const ResultsSection = ({ ui, handlers }) =>
                         : null
             ),
             () => {
-                if (ui.isSearching) {
+                if (ui.scan.isSearching) {
                     return Loader({ text: "Searching" });
                 }
 
-                if (ui.error) {
+                if (ui.scan.error || ui.error) {
                     return EmptyState({
                         icon: Icons.SearchX(),
                         title: "SEARCH ERROR",
-                        subtitle: ui.error,
+                        subtitle: ui.scan.error || ui.error,
                     });
                 }
 
-                if (ui.results.length === 0) {
-                    if (ui.hasSearched) {
+                if (ui.scan.results.length === 0) {
+                    if (ui.scan.hasSearched) {
                         return EmptyState({
                             icon: Icons.SearchX(),
                             title: "NO RESULTS",
@@ -551,8 +545,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
         setTimeout(() => (copyFeedback.val = null), 1500);
     };
 
-    const monitorPath = monitorPathForSearchResult(path);
-    const monitorData = () => resolveMonitorEntry(monitorPath, store.data.monitorValues || {}).entry;
+    const monitorData = () => store.monitors.get(path);
     const isMonitorEnabled = () => entryState.val.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);

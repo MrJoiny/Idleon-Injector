@@ -1,6 +1,8 @@
 const { execFileSync, spawn } = require("child_process");
 const { performUpdate } = require("./autoUpdater");
+const { checkForUpdates } = require("./updateChecker");
 const { createLogger } = require("./utils/logger");
+const { version } = require("../../package.json");
 
 const log = createLogger("UpdateService");
 
@@ -76,19 +78,44 @@ async function applyPreparedUpdateAndExit(client, options, preparedUpdate) {
     process.exit(0);
 }
 
-/**
- * Prepare an update, close runtime targets, launch updater, and exit.
- * @param {Object} client - CDP client instance
- * @param {Object} options - Runtime options
- * @param {Object} updateInfo - Release info from the update checker
- */
-async function prepareAndExitForUpdate(client, options, updateInfo) {
-    log.info("Preparing update...");
-    const preparedUpdate = await performUpdate(updateInfo);
-    await applyPreparedUpdateAndExit(client, options, preparedUpdate);
+/** Own cached checks and preparation; callers choose when a prepared update may exit. */
+function createUpdater({
+    checkRelease = () => checkForUpdates(version),
+    prepareRelease = performUpdate,
+    applyPrepared = applyPreparedUpdateAndExit,
+} = {}) {
+    let cachedUpdateInfo = null;
+    let updateCheckRequest = null;
+
+    const check = (force = false) => {
+        if (!force && cachedUpdateInfo) return cachedUpdateInfo;
+        if (!force && updateCheckRequest) return updateCheckRequest;
+
+        updateCheckRequest = checkRelease()
+            .then((updateInfo) => {
+                cachedUpdateInfo = updateInfo || { updateAvailable: false };
+                return cachedUpdateInfo;
+            })
+            .finally(() => {
+                updateCheckRequest = null;
+            });
+
+        return updateCheckRequest;
+    };
+
+    return {
+        check,
+        async prepare() {
+            const updateInfo = await check();
+            return updateInfo?.updateAvailable ? prepareRelease(updateInfo) : null;
+        },
+        applyPrepared,
+        async prepareAndExit(client, options, updateInfo) {
+            log.info("Preparing update...");
+            const preparedUpdate = await prepareRelease(updateInfo);
+            await applyPrepared(client, options, preparedUpdate);
+        },
+    };
 }
 
-module.exports = {
-    applyPreparedUpdateAndExit,
-    prepareAndExitForUpdate,
-};
+module.exports = { createUpdater };

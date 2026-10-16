@@ -95,35 +95,9 @@ export function formatDisplayValue(value) {
     return String(value);
 }
 
-/** The monitor bridge path for a search result path (adds the "gga." prefix). */
-export function monitorPathForSearchResult(path) {
-    return "gga." + path;
-}
-
-/**
- * Canonical UI encoder for a monitor subscription id. Must stay in sync with the
- * server-side encoder (they cannot share a module across the Node/browser split).
- * @param {string} path - The monitor bridge path (e.g. "gga.GemsOwned")
- * @returns {string}
- */
-export function monitorIdFromMonitorPath(path) {
-    return "mon:" + encodeURIComponent(path);
-}
-
 /** The history array for a monitor entry, or an empty array. */
 export function getMonitorHistory(monitorEntry) {
     return Array.isArray(monitorEntry?.history) ? monitorEntry.history : [];
-}
-
-/**
- * Resolve a monitor entry from the live monitor map by bridge path.
- * @param {string} path
- * @param {Object<string, {path:string, history:Array}>} monitorValues
- * @returns {{id:string, entry:object|null}}
- */
-export function resolveMonitorEntry(path, monitorValues = {}) {
-    const id = monitorIdFromMonitorPath(path);
-    return { id, entry: monitorValues[id] || null };
 }
 
 /** UI type tag for a raw value (null/undefined/string/number/boolean), else `fallback`. */

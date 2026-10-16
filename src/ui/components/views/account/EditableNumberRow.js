@@ -1,7 +1,8 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { getNumberInputLiveRaw, NumberInput } from "../../NumberInput.js";
 import { ActionButton } from "./components/ActionButton.js";
-import { resolveValue, toNodes, useWriteStatus } from "./accountShared.js";
+import { resolveValue, toNodes } from "./accountShared.js";
+import { useNumericEditor } from "./useNumericEditor.js";
 
 const { div, span } = van.tags;
 
@@ -49,37 +50,13 @@ export const EditableNumberRow = ({
     } = inputProps;
     const formatCommittedValue = (value) =>
         typeof formatter === "function" ? formatter(value ?? 0) : String(value ?? 0);
-    const inputValue = van.state(formatCommittedValue(valueState.val));
-    const { status, run } = useWriteStatus();
-    const isDisabled = () =>
-        Boolean(resolveValue(disabled)) || Boolean(resolveValue(inputDisabled));
-    let isInputFocused = false;
-
-    const syncInputToCommitted = () => {
-        inputValue.val = formatCommittedValue(valueState.val);
-    };
-
-    van.derive(() => {
-        valueState.val;
-        if (!isInputFocused) syncInputToCommitted();
+    const { inputValue, status, run, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
+        valueState,
+        normalize,
+        write,
+        format: formatCommittedValue,
+        disabled: () => Boolean(resolveValue(disabled)) || Boolean(resolveValue(inputDisabled)),
     });
-
-    const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
-        if (isDisabled() || status.val === "loading") return;
-        const next = normalize(rawValue);
-        if (next === null || next === undefined || Number.isNaN(next)) return;
-
-        await run(async () => {
-            const verified = await write(next);
-            if (verified?.cancelled) {
-                syncInputToCommitted();
-                return verified;
-            }
-            valueState.val = verified;
-            inputValue.val = formatCommittedValue(verified);
-            return verified;
-        });
-    };
 
     const applyButton = ActionButton({
         label: () => resolveValue(applyLabel),
@@ -165,25 +142,24 @@ export const EditableNumberRow = ({
                 value: inputValue,
                 formatter,
                 ...restInputProps,
-                disabled: () => isDisabled() || status.val === "loading",
+                disabled: isDisabled,
                 onfocus: () => {
-                    isInputFocused = true;
+                    focus();
                     if (typeof userOnfocus === "function") userOnfocus();
                 },
                 onblur: () => {
-                    isInputFocused = false;
-                    syncInputToCommitted();
+                    blur();
                     if (typeof userOnblur === "function") userOnblur();
                 },
                 onDecrement: () => {
-                    if (isDisabled() || status.val === "loading") return;
+                    if (isDisabled()) return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, -1, valueState.val ?? 0)
                     );
                     if (typeof userOnDecrement === "function") userOnDecrement();
                 },
                 onIncrement: () => {
-                    if (isDisabled() || status.val === "loading") return;
+                    if (isDisabled()) return;
                     inputValue.val = String(
                         adjustInput(getNumberInputLiveRaw(inputValue) ?? inputValue.val, 1, valueState.val ?? 0)
                     );
@@ -193,7 +169,8 @@ export const EditableNumberRow = ({
             wrappedApplyButton,
             ...toNodes(builtInMaxAction),
             ...toNodes(builtInResetAction),
-            ...extraActions
+            ...extraActions,
+            span({ class: "account-write-feedback", role: "status" }, statusMessage)
         )
     );
 };

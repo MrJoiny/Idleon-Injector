@@ -12,9 +12,7 @@ const Enquirer = require("enquirer");
 const { exec } = require("child_process");
 const { createLogger, setActivePrompt } = require("../utils/logger");
 const { broadcastCheatStates } = require("../server/wsServer");
-const { checkForUpdates } = require("../updateChecker");
-const { prepareAndExitForUpdate } = require("../updateService");
-const { version } = require("../../../package.json");
+const { createUpdater } = require("../updateService");
 
 const log = createLogger("CLI");
 
@@ -73,7 +71,8 @@ async function handleUpdateCommand(client, options) {
     }
 
     log.info("Checking for updates...");
-    const updateInfo = await checkForUpdates(version);
+    const updater = createUpdater();
+    const updateInfo = await updater.check();
 
     if (!updateInfo || !updateInfo.updateAvailable) {
         log.info("You are already on the latest version.");
@@ -93,7 +92,7 @@ async function handleUpdateCommand(client, options) {
     }
 
     try {
-        await prepareAndExitForUpdate(client, options, updateInfo);
+        await updater.prepareAndExit(client, options, updateInfo);
     } catch (updateError) {
         log.error("Update failed:", updateError.message);
     }
