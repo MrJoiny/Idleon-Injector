@@ -3421,80 +3421,80 @@
         "AI": true
     },
     "616": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Transmute Level",
+        "description": "Unlocks transmuting Divinity PTS into Singularity Spirals; boosts Divinity PTS gain",
         "type": "number",
         "AI": true
     },
     "617": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Transmute Base Value Level",
+        "description": "Multiplies base Singularity Spiral yield from Transmuting Divinity PTS",
         "type": "number",
         "AI": true
     },
     "618": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Divinity EXP Level",
+        "description": "Multiplies Divinity EXP gained across all characters",
         "type": "number",
         "AI": true
     },
     "619": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Universal Time Elapsed Level",
+        "description": "Allows non-Divinity AFK claims to accumulate Time Elapsed towards Coral Kid Transmute",
         "type": "number",
         "AI": true
     },
     "620": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Lumi Gain Level",
+        "description": "Multiplies hourly Lumi production in the Luminous Menagerie",
         "type": "number",
         "AI": true
     },
     "621": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity God Rank DMG Level",
+        "description": "Multiplies Total Damage for all characters per God Rank above 25",
         "type": "number",
         "AI": true
     },
     "622": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Upgrade Page Toggle",
+        "description": "Toggles Coral Kid UI page: 0 = Standard Divinity Upgrades (427-432), 1 = Singularity Upgrades (616-621)",
         "type": "number",
         "AI": true
     },
     "623": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Transmute Kills",
+        "description": "Active monster kills accumulated towards Singularity Spiral Transmutation yield multiplier",
         "type": "number",
         "AI": true
     },
     "624": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Coral Kid - Singularity Transmute Hours",
+        "description": "AFK hours accumulated towards Singularity Spiral Transmutation yield multiplier",
         "type": "number",
         "AI": true
     },
     "625": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Arcade - Omega Balls Owned",
+        "description": "Current count of Omega Arcade Balls available to upgrade Lv 101 Arcade bonuses to Lv 102",
         "type": "number",
         "AI": true
     },
     "626": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Arcade - Omega Balls Total Dropped",
+        "description": "Lifetime count of Omega Arcade Balls dropped; scales diminishing drop chance formula",
         "type": "number",
         "AI": true
     },
     "627": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Pet Arena - Territory Battle Mode Toggle",
+        "description": "Toggles Pet Arena UI between Standard Arena (0) and Territory Battle Mode (1)",
         "type": "number",
         "AI": true
     },
     "628": {
-        "name": "Unused",
-        "description": "No identifiable direct or computed reference in current build",
+        "name": "Pet Arena - Territory Battle Best Round Defeated",
+        "description": "Highest round cleared in Territory Battle mode; unlocks territory lab bonuses and arena crucible tiers",
         "type": "number",
         "AI": true
     },

@@ -225,6 +225,10 @@ export const knownBundles = [
     ["Armadillius Superius Pack", "ban_g"],
     ["Coral Guardian Pack", "ban_h"],
     ["Daydreamer Pack", "ban_i"],
+    ["Gelatinous Pack", "ban_j"],
+    ["Alpha Omega Pack", "ban_k"],
+    ["Imperial Power Pack", "ban_l"],
+    ["Pack of Magnificence", "ban_m"],
 ];
 
 // Item types to exclude from bulk commands (invalid or problematic types)
