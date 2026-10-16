@@ -46,6 +46,19 @@ Trade-off: stable rows require explicit value updates and collection reconciliat
 Source: [Account components](../src/ui/components/views/account/components/),
 [Account shared helpers](../src/ui/components/views/account/accountShared.js).
 
+## Share the lifecycle of simple Account lists
+
+Decision: use one page module for single-section numeric lists, while each Account page owns its game reads
+and entry definitions.
+
+Why: repeated load, reconciliation, and value-state coordination should have one owner.
+
+Alternative: repeat that coordination in each page or generalize every Account editor into one module.
+
+Trade-off: simple lists share a fixed layout and row lifecycle; custom layouts retain their own composition.
+
+Source: [Simple Account lists](../src/ui/components/views/account/components/SimpleAccountListPage.js).
+
 ## Share numeric editing state across layouts
 
 Decision: let one numeric editing module own drafts and write outcomes for standalone rows and inline fields.
