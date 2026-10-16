@@ -13,6 +13,7 @@ import { events } from "../core/globals.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
+    menagerie: { eventId: 189, method: "_customBlock_MenagerieStuff" },
     workbench: { eventId: 345, method: "_customBlock_WorkbenchStuff" },
     breeding: { eventId: 345, method: "_customBlock_Breeding" },
     alchemy: { eventId: 189, method: "_customBlock_cauldronp2wbonuses" },
