@@ -194,7 +194,7 @@ function queueMonitorStateSend(ws) {
     );
 }
 
-async function seedClientCurrentValue(ws, id, path) {
+async function seedClientCurrentValue(ws, id, path, entry) {
     if (!gameBridge) return;
 
     try {
@@ -209,9 +209,7 @@ async function seedClientCurrentValue(ws, id, path) {
             return;
         }
 
-        const monitorMap = clientMonitorState.get(ws);
-        const entry = monitorMap && monitorMap.get(id);
-        if (!entry) return;
+        if (clientMonitorState.get(ws)?.get(id) !== entry) return;
 
         pushHistory(entry, payload.value);
     } catch (err) {
@@ -457,6 +455,13 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
     try {
         const result = await ensureGlobalWatcher(normalizedPath);
 
+        const current = clientMonitorState.get(ws)?.get(id);
+        if (current !== entry) {
+            // A late result belongs to the old attempt, including its errors and retries.
+            if (!current && result.ok) await releaseGlobalWatcher(normalizedPath);
+            return;
+        }
+
         if (!result.ok) {
             if (result.transient) {
                 log.debug(`Monitor subscribe pending for ${id}: ${result.error}`);
@@ -469,23 +474,17 @@ async function handleMonitorSubscribe(ws, path, retryAttempt = 0, forceAttempt =
 
         clearMonitorSubscribeRetry(ws, id);
 
-        const current = clientMonitorState.get(ws)?.get(id);
-        if (!current) {
-            // Client unsubscribed (or disconnected) while the wrap was in flight.
-            await releaseGlobalWatcher(normalizedPath);
-            return;
-        }
-        if (current !== entry) return; // superseded by a newer subscribe
-
         if (entry.history.length === 0) {
             if (Object.prototype.hasOwnProperty.call(result, "value")) {
                 pushHistory(entry, result.value);
             } else {
-                await seedClientCurrentValue(ws, id, normalizedPath);
+                await seedClientCurrentValue(ws, id, normalizedPath, entry);
+                if (clientMonitorState.get(ws)?.get(id) !== entry) return;
             }
         }
         sendMonitorStateToClient(ws);
     } catch (err) {
+        if (clientMonitorState.get(ws)?.get(id) !== entry) return;
         if (isTransientMonitorSubscribeError(err.message)) {
             log.debug(`Monitor subscribe pending for ${id}: ${err.message}`);
             scheduleMonitorSubscribeRetry(ws, normalizedPath, id, retryAttempt);
