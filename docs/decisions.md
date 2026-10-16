@@ -59,18 +59,20 @@ Trade-off: simple lists share a fixed layout and row lifecycle; custom layouts r
 
 Source: [Simple Account lists](../src/ui/components/views/account/components/SimpleAccountListPage.js).
 
-## Share numeric editing state across layouts
+## Share staged editing state across layouts
 
-Decision: let one numeric editing module own drafts and write outcomes for standalone rows and inline fields.
+Decision: let one field editing module own drafts and write outcomes for scalar and multi-field editors.
 
-Why: focus preservation, cancellation, and verified commits need the same rules across both layouts.
+Why: focus preservation, cancellation, and verified commits need the same rules across layouts.
 
 Alternative: maintain the editing lifecycle separately in each layout.
 
-Trade-off: layouts retain formatting and controls, while custom writers must return a verified value or cancellation.
-Completion callbacks run after the verified commit; their failure retains that value and reports an error.
+Trade-off: layouts retain formatting and controls, while custom writers must return every field's verified value
+or cancellation. Failed writes retain committed UI values until a refresh, including when a game batch partly
+succeeds. Completion callbacks run after the verified commit; their failure retains those values and reports an error.
 
-Source: [Numeric editing](../src/ui/components/views/account/useNumericEditor.js).
+Source: [Field editing](../src/ui/components/views/account/useFieldEditor.js),
+[Numeric editing](../src/ui/components/views/account/useNumericEditor.js).
 
 ## Give frontend Monitor subscriptions one owner
 

@@ -1,55 +1,35 @@
-import van from "../../../vendor/van-1.6.0.js";
-import { getNumberInputLiveRaw, setNumberInputValue } from "../../NumberInput.js";
-import { resolveValue, useWriteStatus } from "./accountShared.js";
+import { useFieldEditor } from "./useFieldEditor.js";
 
 /** Own numeric drafts and commit only a writer's verified value or cancellation. */
 export const useNumericEditor = ({ valueState, normalize, write, format, disabled = null, onApplied = null }) => {
-    const inputValue = van.state(format(valueState.val));
-    const { status, run } = useWriteStatus();
-    let isFocused = false;
-
-    const syncInputToCommitted = () => {
-        setNumberInputValue(inputValue, format(valueState.val));
-    };
-
-    van.derive(() => {
-        valueState.val;
-        if (!isFocused) syncInputToCommitted();
+    const editor = useFieldEditor({
+        fields: [{ key: "value", valueState, toDraft: format }],
+        normalize: ({ value }) => {
+            const next = normalize(value);
+            return next === null || next === undefined || Number.isNaN(next) ? null : { value: next };
+        },
+        write: async ({ value }) => {
+            const verified = await write(value);
+            return verified?.cancelled ? verified : { value: verified };
+        },
+        disabled,
+        onApplied: typeof onApplied === "function" ? ({ value }) => onApplied(value) : null,
     });
 
-    const isDisabled = () => Boolean(resolveValue(disabled)) || status.val === "loading";
-
-    const applyValue = async (rawValue = getNumberInputLiveRaw(inputValue) ?? inputValue.val) => {
-        if (isDisabled()) return;
-        const next = normalize(rawValue);
-        if (next === null || next === undefined || Number.isNaN(next)) return;
-
-        return run(async () => {
-            const verified = await write(next);
-            if (verified?.cancelled) {
-                syncInputToCommitted();
-                return verified;
-            }
-            valueState.val = verified;
-            setNumberInputValue(inputValue, format(verified));
-            if (typeof onApplied === "function") await onApplied(verified);
-            return verified;
-        });
-    };
-
     return {
-        inputValue,
-        status,
-        run,
-        isDisabled,
-        applyValue,
-        focus: () => {
-            isFocused = true;
+        inputValue: editor.draftStates.value,
+        status: editor.status,
+        run: editor.run,
+        isDisabled: editor.isDisabled,
+        applyValue: async (rawValue) => {
+            const outcome = await editor.applyValue(rawValue === undefined ? undefined : { value: rawValue });
+            return outcome?.ok ? { ...outcome, result: outcome.result.value } : outcome;
         },
+        focus: () => editor.setFieldFocused("value", true),
         blur: () => {
-            isFocused = false;
-            syncInputToCommitted();
+            editor.setFieldFocused("value", false);
+            editor.resetDraft("value");
         },
-        statusMessage: () => ({ loading: "Saving", success: "Saved", error: "Action failed" })[status.val] ?? "",
+        statusMessage: editor.statusMessage,
     };
 };
