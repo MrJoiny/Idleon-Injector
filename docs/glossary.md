@@ -19,6 +19,7 @@ These terms distinguish concepts used throughout the project. Follow the linked 
 | Haxe wrapper        | An object representation whose data may be stored under an `.h` property.                          |
 | Account options     | The game's indexed `OptionsListAccount` values.                                                    |
 | Account page        | An editor for an account feature or world system. The raw Account Options editor is one such page. |
+| Greenstack          | A recorded ten-million-unit storage milestone for an item, separate from its current quantity.     |
 | Monitor             | A subscription to observe a game value over time.                                                  |
 | Session update      | A configuration change applied to the running session.                                             |
 | Saved configuration | User overrides written to disk for later runs.                                                     |

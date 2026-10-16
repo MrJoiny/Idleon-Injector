@@ -1,10 +1,10 @@
-.slab-filters {
+.item-registration-filters {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
 
-.slab-search {
+.item-registration-search {
     flex: 1 1 240px;
     min-width: 0;
     padding: 7px 10px;
@@ -14,34 +14,45 @@
     font: inherit;
 }
 
-.slab-row .account-row__name {
+.item-registration-filters .select-base {
+    flex: 0 1 200px;
+    width: auto;
+    min-width: 0;
+}
+
+.item-registration-row .account-row__name {
     white-space: normal;
     overflow-wrap: anywhere;
 }
 
-.slab-summary {
+.item-registration-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.item-registration-summary {
     font-style: normal;
 }
 
 @media (max-width: 600px) {
-    .slab-tab .account-header {
+    .item-registration-tab .account-header {
         flex-wrap: wrap;
     }
 
-    .slab-tab .account-header__actions {
+    .item-registration-tab .account-header__actions {
         margin-left: 0;
-        flex-wrap: wrap;
     }
 
-    .slab-row {
+    .item-registration-row {
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .slab-row .account-row__info {
+    .item-registration-row .account-row__info {
         grid-column: 1 / -1;
     }
 
-    .slab-row .account-row__controls {
+    .item-registration-row .account-row__controls {
         justify-content: flex-end;
     }
 }
