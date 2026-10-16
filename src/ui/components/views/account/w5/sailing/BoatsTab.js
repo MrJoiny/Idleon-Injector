@@ -22,12 +22,13 @@ const { div, option, select, span } = van.tags;
 
 const BOATS_PATH = "Boats";
 const CAPTAINS_PATH = "Captains";
+const RECRUITMENT_CAPTAIN_START = 30;
 const BOAT_FIELDS = [
     { key: "loot", label: "Loot Value", index: 3 },
     { key: "speed", label: "Speed", index: 5 },
 ];
 const CAPTAIN_NUMBER_FIELDS = [
-    { key: "rarity", label: "Rarity", index: 0, max: 6 },
+    { key: "rarity", label: "Rarity", index: 0, min: -1, max: 6 },
     { key: "level", label: "Level", index: 3 },
     { key: "xp", label: "XP", index: 4, formatted: true, float: true },
 ];
@@ -63,7 +64,7 @@ const resolveInput = (rawValue, field, range = null) =>
     resolveNumberInput(rawValue, {
         formatted: field.formatted,
         float: field.float,
-        min: range?.min ?? 0,
+        min: range?.min ?? field.min ?? 0,
         max: range?.max ?? field.max ?? Infinity,
         fallback: null,
     });
@@ -71,7 +72,7 @@ const resolveInput = (rawValue, field, range = null) =>
 const fieldValue = (rawValues, index, field, range = null) =>
     field.formatted
         ? resolveNumberInput(rawValues[index], { formatted: true, float: field.float, min: 0, fallback: 0 })
-        : Math.min(range?.max ?? field.max ?? Infinity, toInt(rawValues[index], { min: range?.min ?? 0 }));
+        : Math.min(range?.max ?? field.max ?? Infinity, toInt(rawValues[index], { min: range?.min ?? field.min ?? 0 }));
 
 const BoatRow = ({ entry, valueStates }) =>
     AccountRow({
@@ -137,7 +138,7 @@ const CaptainRow = ({ entry, valueStates, bonusTypes }) => {
 
     const getDraftBonusRange = (getDraftValue, bonusTypeKey) =>
         getCaptainBonusRange(
-            toInt(getDraftValue(fieldByKey.rarity.key), { min: 0 }),
+            toInt(getDraftValue(fieldByKey.rarity.key), { min: fieldByKey.rarity.min }),
             toInt(getDraftValue(fieldByKey[bonusTypeKey].key), { min: 0 })
         );
 
@@ -316,12 +317,15 @@ export const BoatsTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Sailing Boats" });
     const boatEntries = van.state([]);
     const captainEntries = van.state([]);
+    const recruitmentEntries = van.state([]);
     const bonusTypes = van.state([]);
     const valueStates = new Map();
     const boatListNode = div({ class: "account-item-stack" });
     const captainListNode = div({ class: "account-item-stack" });
+    const recruitmentListNode = div({ class: "account-item-stack" });
     const reconcileBoatRows = createStaticRowReconciler(boatListNode);
     const reconcileCaptainRows = createStaticRowReconciler(captainListNode);
+    const reconcileRecruitmentRows = createStaticRowReconciler(recruitmentListNode);
 
     const updateFieldStates = (entries) => {
         for (const entry of entries) {
@@ -335,12 +339,17 @@ export const BoatsTab = () => {
         reconcileBoatRows(boatEntries.val.map((entry) => entry.key).join("|"), () =>
             boatEntries.val.map((entry) => BoatRow({ entry, valueStates }))
         );
-        reconcileCaptainRows(
-            `${bonusTypes.val.map((bonus) => `${bonus.index}:${bonus.effect}`).join("|")}::${captainEntries.val
-                .map((entry) => entry.key)
-                .join("|")}`,
-            () => captainEntries.val.map((entry) => CaptainRow({ entry, valueStates, bonusTypes: bonusTypes.val }))
-        );
+        for (const [entries, reconcile] of [
+            [captainEntries.val, reconcileCaptainRows],
+            [recruitmentEntries.val, reconcileRecruitmentRows],
+        ]) {
+            reconcile(
+                `${bonusTypes.val.map((bonus) => `${bonus.index}:${bonus.effect}`).join("|")}::${entries
+                    .map((entry) => entry.key)
+                    .join("|")}`,
+                () => entries.map((entry) => CaptainRow({ entry, valueStates, bonusTypes: bonusTypes.val }))
+            );
+        }
     };
 
     const load = async () =>
@@ -353,9 +362,11 @@ export const BoatsTab = () => {
 
             bonusTypes.val = buildBonusTypes(rawCaptainBonuses);
             boatEntries.val = buildBoatEntries(rawBoats);
-            captainEntries.val = buildCaptainEntries(rawCaptains, bonusTypes.val);
+            const captains = buildCaptainEntries(rawCaptains, bonusTypes.val);
+            captainEntries.val = captains.slice(0, RECRUITMENT_CAPTAIN_START);
+            recruitmentEntries.val = captains.slice(RECRUITMENT_CAPTAIN_START);
             reconcileRows();
-            updateFieldStates([...boatEntries.val, ...captainEntries.val]);
+            updateFieldStates([...boatEntries.val, ...captainEntries.val, ...recruitmentEntries.val]);
         });
 
     load();
@@ -371,13 +382,18 @@ export const BoatsTab = () => {
             title: "CAPTAINS",
             note: () => `${captainEntries.val.length} CAPTAINS`,
             body: captainListNode,
+        }),
+        AccountSection({
+            title: "RECRUITMENT SHOP",
+            note: () => `${recruitmentEntries.val.length} CAPTAINS`,
+            body: recruitmentListNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "BOATS",
         description:
-            "Edit Sailing boat loot/speed levels and captain fields. Captain bonus labels come from CaptainBonuses.",
+            "Edit Sailing boat loot/speed levels and captain fields. Set a captain's rarity to -1 to remove them. Slots 31–34 are recruitment shop offers.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
