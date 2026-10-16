@@ -193,3 +193,17 @@ Alternative: keep one large registration function or add mounted sub-routers.
 Trade-off: registration spans multiple modules. They retain the existing request contracts, shared configuration references, and update response timing; splitting routes does not reduce game round trips.
 
 Source: [API setup](../src/modules/server/apiRoutes.js), [route modules](../src/modules/server/routes/).
+
+## Keep update orchestration outside callers
+
+Decision: let the updater module own cached checks and preparation coordination, using the existing
+release checker and archive preparation modules.
+
+Why: HTTP and CLI callers should not coordinate release checks with archive preparation themselves.
+
+Alternative: keep cached checks and preparation coordination in the update route.
+
+Trade-off: each updater owns its check cache. Startup and CLI checks use fresh instances; the HTTP
+route retains its instance and controls the response-before-exit handoff.
+
+Source: [Updater](../src/modules/updateService.js).

@@ -1,35 +1,16 @@
-const { checkForUpdates } = require("../../updateChecker");
-const { performUpdate } = require("../../autoUpdater");
-const { applyPreparedUpdateAndExit } = require("../../updateService");
+const { createUpdater } = require("../../updateService");
 const { version } = require("../../../../package.json");
 const { createLogger } = require("../../utils/logger");
 
 const log = createLogger("API");
 
 function setupUpdateRoutes(app, client, injectorConfig) {
-    let cachedUpdateInfo = null;
-    let updateCheckRequest = null;
-
-    const getUpdateInfo = (force = false) => {
-        if (!force && cachedUpdateInfo) return cachedUpdateInfo;
-        if (!force && updateCheckRequest) return updateCheckRequest;
-
-        updateCheckRequest = checkForUpdates(version)
-            .then((updateInfo) => {
-                cachedUpdateInfo = updateInfo || { updateAvailable: false };
-                return cachedUpdateInfo;
-            })
-            .finally(() => {
-                updateCheckRequest = null;
-            });
-
-        return updateCheckRequest;
-    };
+    const updater = createUpdater();
 
     app.get("/api/update/check", async (req, res) => {
         try {
             const url = new URL(req.url, `http://${req.headers.host}`);
-            const updateInfo = await getUpdateInfo(url.searchParams.get("force") === "1");
+            const updateInfo = await updater.check(url.searchParams.get("force") === "1");
             res.json({
                 currentVersion: version,
                 canApplyUpdate: !!process.pkg,
@@ -61,19 +42,18 @@ function setupUpdateRoutes(app, client, injectorConfig) {
         }
 
         try {
-            const updateInfo = await getUpdateInfo();
-            if (!updateInfo?.updateAvailable) {
+            const preparedUpdate = await updater.prepare();
+            if (!preparedUpdate) {
                 return res.status(409).json({ error: "No update is available." });
             }
 
-            const preparedUpdate = await performUpdate(updateInfo);
             res.json({
                 message: "Update prepared. The app and game will close now. Restart manually after it exits.",
                 updatedFileNames: preparedUpdate.updatedFileNames,
             });
 
             setTimeout(() => {
-                applyPreparedUpdateAndExit(client, { injectorConfig }, preparedUpdate).catch((error) => {
+                updater.applyPrepared(client, { injectorConfig }, preparedUpdate).catch((error) => {
                     log.error("Failed to apply prepared update:", error);
                     process.exit(1);
                 });

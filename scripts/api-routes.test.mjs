@@ -6,6 +6,7 @@ import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
 const TinyRouter = require("../src/modules/server/tinyRouter");
+const { createUpdater } = require("../src/modules/updateService");
 const { setupApiRoutes } = require("../src/modules/server/apiRoutes");
 const { setupGameRoutes } = require("../src/modules/server/routes/game");
 const { setupConfigRoutes } = require("../src/modules/server/routes/config");
@@ -190,26 +191,25 @@ function updateFixture() {
     const updateInfo = { updateAvailable: true, latestVersion: "99.0.0" };
     let checks = 0;
     const dependencies = {
-        "../../updateChecker": {
-            checkForUpdates: async () => {
-                checks++;
-                return updateInfo;
-            },
-        },
-        "../../autoUpdater": {
-            performUpdate: async (info) => {
-                assert.equal(info, updateInfo);
-                events.push("prepare");
-                return prepared;
-            },
-        },
         "../../updateService": {
-            applyPreparedUpdateAndExit: async (...args) => {
-                events.push("apply");
-                assert.equal(args[0], client);
-                assert.equal(args[1].injectorConfig, injectorConfig);
-                assert.equal(args[2], prepared);
-            },
+            createUpdater: () =>
+                createUpdater({
+                    checkRelease: async () => {
+                        checks++;
+                        return updateInfo;
+                    },
+                    prepareRelease: async (info) => {
+                        assert.equal(info, updateInfo);
+                        events.push("prepare");
+                        return prepared;
+                    },
+                    applyPrepared: async (...args) => {
+                        events.push("apply");
+                        assert.equal(args[0], client);
+                        assert.equal(args[1].injectorConfig, injectorConfig);
+                        assert.equal(args[2], prepared);
+                    },
+                }),
         },
         "../../../../package.json": { version: "1.0.0" },
         "../../utils/logger": { createLogger: () => ({ error() {} }) },
