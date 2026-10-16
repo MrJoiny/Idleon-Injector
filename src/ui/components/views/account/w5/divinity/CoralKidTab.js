@@ -26,7 +26,14 @@ const CORAL_KID_FIELDS = [
     { index: 431, name: "Divinity Pts Coral Reef Bonus Level", descriptionIndex: 4 },
     { index: 432, name: "Daily Coral Reef Bonus Level", descriptionIndex: 5 },
 ];
-
+const SINGULARITY_FIELDS = [
+    { index: 616, name: "Singularity Transmute Level", description: "Boosts Divinity PTS gain." },
+    { index: 617, name: "Transmute Base Value Level", description: "Base value for transmuting Divinity PTS into Singularity Spirals." },
+    { index: 618, name: "Divinity EXP Multiplier", description: "Divinity EXP gain multiplier." },
+    { index: 619, name: "Universal Time Elapsed Efficiency", description: "Universal Time Elapsed efficiency." },
+    { index: 620, name: "Lumi Gain Rate Multiplier", description: "+5% Lumi gain rate per level." },
+    { index: 621, name: "God Rank Damage Multiplier", description: "Increases God Rank damage." },
+];
 const UnlockRow = ({ unlockedState }) => {
     const writeToggle = async (enabled) => {
         const nextValue = enabled ? 1 : 0;
@@ -70,17 +77,34 @@ const buildCoralKidEntries = (rawOptions, rawDescriptions) =>
         };
     });
 
+const buildSingularityEntries = (rawOptions) =>
+    SINGULARITY_FIELDS.map((field) => ({
+        ...field,
+        key: String(field.index),
+        path: `OptionsListAccount[${field.index}]`,
+        subLabel: field.description,
+        badge: (currentValue) => `LV ${currentValue ?? 0}`,
+        level: toInt(rawOptions[String(field.index)] ?? 0, { min: 0 }),
+    }));
+
 export const CoralKidTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Coral Kid" });
     const entries = van.state([]);
     const unlockedState = van.state(0);
     const levelStates = new Map();
+    const singularityLevelStates = new Map();
     const listNode = div({ class: "account-item-stack" });
+    const singularityListNode = div({ class: "account-item-stack" });
     const reconcileRows = createStaticRowReconciler(listNode);
+    const reconcileSingularityRows = createStaticRowReconciler(singularityListNode);
 
     const load = async () =>
         run(async () => {
-            const optionKeys = [...UNLOCK_OPTION_KEYS, ...CORAL_KID_FIELDS.map((field) => field.index)].map(String);
+            const optionKeys = [
+                ...UNLOCK_OPTION_KEYS,
+                ...CORAL_KID_FIELDS.map((field) => field.index),
+                ...SINGULARITY_FIELDS.map((field) => field.index),
+            ].map(String);
             const [rawOptions, rawDescriptions] = await Promise.all([
                 readGgaEntries("OptionsListAccount", optionKeys),
                 readCList("Spelunky[25]"),
@@ -89,6 +113,7 @@ export const CoralKidTab = () => {
                 ? 1
                 : 0;
             entries.val = buildCoralKidEntries(rawOptions, toIndexedArray(rawDescriptions ?? []));
+            const singularityEntries = buildSingularityEntries(rawOptions);
             reconcileRows(entries.val.map((entry) => entry.key).join("|"), () =>
                 entries.val.map((entry) =>
                     CoralKidLevelRow({
@@ -100,6 +125,18 @@ export const CoralKidTab = () => {
 
             for (const entry of entries.val) {
                 getOrCreateState(levelStates, entry.index).val = entry.level;
+            }
+
+            reconcileSingularityRows(singularityEntries.map((entry) => entry.key).join("|"), () =>
+                singularityEntries.map((entry) =>
+                    CoralKidLevelRow({
+                        entry,
+                        levelState: getOrCreateState(singularityLevelStates, entry.index),
+                    })
+                )
+            );
+            for (const entry of singularityEntries) {
+                getOrCreateState(singularityLevelStates, entry.index).val = entry.level;
             }
         });
 
@@ -116,6 +153,11 @@ export const CoralKidTab = () => {
             title: "UPGRADES",
             note: "OptionsListAccount[427-432]",
             body: listNode,
+        }),
+        AccountSection({
+            title: "SINGULARITY UPGRADES",
+            note: "OptionsListAccount[616-621] · currency: Singularity Spirals (CKsing)",
+            body: singularityListNode,
         })
     );
 
