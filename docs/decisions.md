@@ -158,6 +158,20 @@ Trade-off: the save operation requires loaded configuration. Routes retain reque
 
 Source: [Configuration manager](../src/modules/config/configManager.js).
 
+## Keep Session update rules outside HTTP handlers
+
+Decision: let the configuration module own Session update parsing, live-object merging, and game synchronization.
+Keep request validation and HTTP responses in the route.
+
+Why: game synchronization can fail after server state changes, so one module should own that partial success.
+
+Alternative: keep mutation and game synchronization coordinated by the HTTP route.
+
+Trade-off: live configuration references stay shared, and server changes survive failed game synchronization.
+Saved configuration remains a separate disk operation.
+
+Source: [Configuration manager](../src/modules/config/configManager.js).
+
 ## Share the game-helper transport
 
 Decision: route server, CLI, and WebSocket helper calls through GameBridge.

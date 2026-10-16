@@ -1,6 +1,5 @@
-const { deepMerge } = require("../../utils/objectUtils");
-const { prepareConfigForJson, parseConfigFromJson } = require("../../utils/helpers");
-const { saveConfiguration } = require("../../config/configManager");
+const { prepareConfigForJson } = require("../../utils/helpers");
+const { saveConfiguration, updateSessionConfiguration } = require("../../config/configManager");
 const { createLogger } = require("../../utils/logger");
 
 const log = createLogger("API");
@@ -40,57 +39,21 @@ function setupConfigRoutes(app, gameBridge, config) {
         }
 
         try {
-            if (receivedFullConfig.cheatConfig) {
-                const receivedCheatConfig = receivedFullConfig.cheatConfig;
-                const parsedCheatConfig = parseConfigFromJson(receivedCheatConfig);
-
-                deepMerge(cheatConfig, parsedCheatConfig);
-            }
-
-            if (Array.isArray(receivedFullConfig.startupCheats)) {
-                startupCheats.length = 0;
-                startupCheats.push(...receivedFullConfig.startupCheats);
-                log.debug("Updated server-side startupCheats");
-            }
-
-            if (receivedFullConfig.injectorConfig) {
-                deepMerge(injectorConfig, receivedFullConfig.injectorConfig);
-                log.debug("Updated server-side injectorConfig");
-            }
-
-            const parsedCheatConfig = receivedFullConfig.cheatConfig
-                ? parseConfigFromJson(receivedFullConfig.cheatConfig)
-                : cheatConfig;
-            const contextExistsResult = await gameBridge.isAttached();
-            if (!contextExistsResult) {
-                log.error("Cheat context not found in iframe. Cannot update config in game");
+            const result = await updateSessionConfiguration(receivedFullConfig, config, gameBridge);
+            if (result.contextLost) {
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game (context lost)",
                 });
             }
 
-            const updateResult = await gameBridge.updateConfig(parsedCheatConfig);
-
-            let gameUpdateDetails = "N/A";
-            if (updateResult.error) {
-                log.error("Error updating config in game:", updateResult.error.text);
-                gameUpdateDetails = `Failed to apply in game: ${updateResult.error.text}`;
+            if (!result.gameApplied) {
                 return res.status(200).json({
                     message: "Configuration updated on server, but failed to apply in game",
-                    details: gameUpdateDetails,
+                    details: result.details,
                 });
-            } else {
-                gameUpdateDetails = updateResult.value;
-                log.debug(`In-game config update result: ${gameUpdateDetails}`);
-                if (gameUpdateDetails.startsWith("Error:")) {
-                    return res.status(200).json({
-                        message: "Configuration updated on server, but failed to apply in game",
-                        details: gameUpdateDetails,
-                    });
-                }
             }
 
-            res.json({ message: "Configuration updated successfully", details: gameUpdateDetails });
+            res.json({ message: "Configuration updated successfully", details: result.details });
         } catch (apiError) {
             log.error("Error in /api/config/update:", apiError);
             res.status(500).json({
