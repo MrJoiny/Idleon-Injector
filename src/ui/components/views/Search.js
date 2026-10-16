@@ -3,16 +3,7 @@ import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
 import { detectQueryType } from "../../utils/index.js";
 import { FAVORITE_KEYS } from "../../state/constants.js";
-import {
-    NEW_SCAN_TYPES,
-    NEXT_SCAN_TYPES,
-    isInputlessScanType,
-    requiresSecondaryInput,
-    requiresNumericInput,
-    needsPreviousSnapshot,
-    buildSnapshotFromResults,
-    filterResultsByScanType,
-} from "./search/scanUtils.js";
+import { createScanSession } from "./search/scanSession.js";
 import {
     seedEditValue,
     expectedUiType,
@@ -58,28 +49,24 @@ export const Search = () => {
         resultsFilterApplied: "",
         savedFilterApplied: "",
         detectedType: detectQueryType(initialSearchQuery),
+        scan: {},
         scanTypeNew: "exact_value",
         scanTypeNext: "exact_value",
-        scanSessionActive: false,
-        previousSnapshot: {},
         isLoading: false,
-        isSearching: false,
-        results: [],
         displayLimit: 50,
         error: null,
         allKeysExpanded: false,
         allKeysFilter: "",
-        scopePaths: [],
-        lastSearchMode: "new",
         edit: { path: null, draft: "", type: "" },
         isSettingValue: false,
-        hasSearched: false,
         savedResults: Array.isArray(restoredWorkspace.savedResults)
             ? restoredWorkspace.savedResults.map(normalizeSavedEntry).filter(Boolean)
             : [],
         savedEdit: { path: null, draft: "", type: "" },
         isRefreshingSavedResults: false,
     });
+
+    const scanSession = createScanSession({ search: store.searchGga, state: ui.scan });
 
     const getValidFavorites = () => uniqueStrings(ui.favoriteKeys).filter((k) => ui.allKeys.includes(k));
 
@@ -116,7 +103,7 @@ export const Search = () => {
     const updateValueInUi = (path, payload) => {
         const hasPayloadValue = payload && Object.prototype.hasOwnProperty.call(payload, "value");
 
-        ui.results = ui.results.map((r) =>
+        ui.scan.results = ui.scan.results.map((r) =>
             r.path === path
                 ? {
                       ...r,
@@ -194,7 +181,7 @@ export const Search = () => {
         return values;
     };
 
-    const getFilteredResults = () => getFilteredList(ui.results, ui.resultsFilterApplied, filterCache.results);
+    const getFilteredResults = () => getFilteredList(ui.scan.results, ui.resultsFilterApplied, filterCache.results);
     const getFilteredSavedResults = () => getFilteredList(ui.savedResults, ui.savedFilterApplied, filterCache.saved);
 
     const handlers = {
@@ -275,14 +262,9 @@ export const Search = () => {
         },
 
         startNewScan: () => {
-            ui.scanSessionActive = false;
-            ui.lastSearchMode = "new";
-            ui.scopePaths = [];
-            ui.previousSnapshot = {};
-            ui.results = [];
+            scanSession.reset();
             ui.displayLimit = 50;
             ui.error = null;
-            ui.hasSearched = false;
             handlers.cancelEdit();
             handlers.cancelSavedEdit();
             store.notify("Scan reset. Ready for first scan.", "success");
@@ -306,8 +288,8 @@ export const Search = () => {
         },
 
         handleKeyDown: (e) => {
-            if (e.key === "Enter" && !ui.isSearching) {
-                handlers.handleSearch(ui.scanSessionActive ? "next" : "new");
+            if (e.key === "Enter" && !ui.scan.isSearching) {
+                handlers.handleSearch(ui.scan.active ? "next" : "new");
             }
         },
 
@@ -471,135 +453,26 @@ export const Search = () => {
         saveEdit: () => commitEdit(ui.edit, handlers.cancelEdit),
 
         handleSearch: async (mode = "new") => {
-            if (ui.isSearching) return;
+            if (ui.scan.isSearching) return;
 
             handlers.cancelEdit();
             handlers.cancelSavedEdit();
 
-            const isNext = mode === "next";
-            const scanType = isNext ? ui.scanTypeNext : ui.scanTypeNew;
-            const allowedScanTypes = isNext ? NEXT_SCAN_TYPES : NEW_SCAN_TYPES;
-
-            if (!allowedScanTypes.includes(scanType)) {
-                store.notify(
-                    isNext
-                        ? "This scan type is only available for NEW scans"
-                        : "This scan type is only available for NEXT scans",
-                    "error"
-                );
-                return;
+            const pending = scanSession.run({
+                mode,
+                scanType: mode === "next" ? ui.scanTypeNext : ui.scanTypeNew,
+                query: ui.searchQuery,
+                query2: ui.searchQuery2,
+                keys: ui.selectedKeys,
+            });
+            if (ui.scan.isSearching) {
+                ui.error = null;
+                ui.displayLimit = 50;
             }
-
-            if (isNext) {
-                if (!ui.scopePaths || ui.scopePaths.length === 0) {
-                    store.notify("Run a NEW search first to build a list for NEXT search", "error");
-                    return;
-                }
-            } else if (ui.selectedKeys.length === 0) {
-                store.notify("Select at least one key to search in", "error");
-                return;
-            }
-
-            const query = String(ui.searchQuery ?? "");
-            const queryTrimmed = query.trim();
-            const query2 = String(ui.searchQuery2 ?? "");
-            const query2Trimmed = query2.trim();
-            const inputless = isInputlessScanType(scanType);
-            const hasSecondaryInput = requiresSecondaryInput(scanType);
-
-            if (scanType === "exact_value" && queryTrimmed === "") {
-                store.notify("Enter a value for FIND VALUE, or choose UNKNOWN INITIAL VALUE", "error");
-                return;
-            }
-
-            if (!inputless && scanType !== "exact_value" && queryTrimmed === "") {
-                store.notify("Enter a value for this scan type", "error");
-                return;
-            }
-
-            if (requiresNumericInput(scanType) && (queryTrimmed === "" || Number.isNaN(Number(queryTrimmed)))) {
-                store.notify("This scan type requires a numeric value", "error");
-                return;
-            }
-
-            if (hasSecondaryInput) {
-                if (queryTrimmed === "" || query2Trimmed === "") {
-                    store.notify("Enter both values for VALUE BETWEEN", "error");
-                    return;
-                }
-
-                if (Number.isNaN(Number(queryTrimmed)) || Number.isNaN(Number(query2Trimmed))) {
-                    store.notify("VALUE BETWEEN requires numeric bounds", "error");
-                    return;
-                }
-            }
-
-            if (isNext && needsPreviousSnapshot(scanType) && Object.keys(ui.previousSnapshot || {}).length === 0) {
-                store.notify("This NEXT scan type needs a previous result baseline", "error");
-                return;
-            }
-
-            ui.hasSearched = true;
-            ui.isSearching = true;
-            ui.error = null;
-            ui.displayLimit = 50;
-            ui.lastSearchMode = mode;
-
-            // Translate the scan type into the game search query/compare protocol.
-            // Absolute predicates (exact/bigger/smaller/between) match game-side so
-            // the result cap keeps matching values; comparison types need the
-            // previous snapshot and are filtered client-side.
-            const qNum = Number(queryTrimmed);
-            const q2Num = Number(query2Trimmed);
-
-            let effectiveQuery = "";
-            let compare = null;
-            if (scanType === "exact_value") {
-                effectiveQuery = query;
-            } else if (scanType === "bigger_than") {
-                compare = { op: "gt", value: qNum };
-            } else if (scanType === "smaller_than") {
-                compare = { op: "lt", value: qNum };
-            } else if (scanType === "value_between") {
-                effectiveQuery = `${Math.min(qNum, q2Num)}-${Math.max(qNum, q2Num)}`;
-            }
-
-            const options = {};
-            if (isNext) options.withinPaths = [...ui.scopePaths];
-            if (compare) options.compare = compare;
-            const requestOptions = Object.keys(options).length > 0 ? options : null;
-
-            const clientFiltered = needsPreviousSnapshot(scanType);
-
-            try {
-                const baseData = await store.searchGga(effectiveQuery, ui.selectedKeys, requestOptions);
-
-                const filteredResults = clientFiltered
-                    ? filterResultsByScanType(baseData.results || [], {
-                          scanType,
-                          query: inputless ? "" : query,
-                          previousSnapshot: ui.previousSnapshot,
-                      })
-                    : baseData.results || [];
-
-                ui.results = filteredResults;
-                ui.scopePaths = filteredResults.map((r) => r.path);
-                ui.previousSnapshot = buildSnapshotFromResults(filteredResults);
-                ui.scanSessionActive = true;
-
-                if (baseData.truncated) {
-                    store.notify("Result cap reached — scan is partial. Narrow your keys or query.", "error");
-                }
-            } catch (err) {
-                ui.error = err.message || "Search failed";
-                if (!isNext) {
-                    ui.results = [];
-                    ui.scopePaths = [];
-                    ui.previousSnapshot = {};
-                    ui.scanSessionActive = false;
-                }
-            } finally {
-                ui.isSearching = false;
+            const feedback = await pending;
+            if (feedback?.validationError) store.notify(feedback.validationError, "error");
+            if (feedback?.truncated) {
+                store.notify("Result cap reached — scan is partial. Narrow your keys or query.", "error");
             }
         },
     };

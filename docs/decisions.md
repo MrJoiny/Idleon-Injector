@@ -84,6 +84,20 @@ Trade-off: Search retains saved snapshots and activation timing, while WebSocket
 
 Source: [Frontend Monitors](../src/ui/state/liveMonitor.js).
 
+## Keep Search scan sessions outside rendering
+
+Decision: let a scan session module own scan transitions, request construction, scope, and comparison baselines.
+
+Why: consecutive scans should be testable without rendering the Search view. Editing displayed values must
+not change the baseline used by the next comparison.
+
+Alternative: keep scan coordination in the view alongside editing, filters, and saved results.
+
+Trade-off: the view supplies reactive output state and presents feedback. Pagination, saved results,
+and input controls remain view concerns.
+
+Source: [Search scan sessions](../src/ui/components/views/search/scanSession.js).
+
 ## Give server Monitor lifecycle one owner
 
 Decision: let a server Monitor module own subscriptions, shared game hooks, retries, history, and cleanup.
