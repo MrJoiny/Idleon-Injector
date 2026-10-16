@@ -71,6 +71,20 @@ Trade-off: Search retains saved snapshots and activation timing, while WebSocket
 
 Source: [Frontend Monitors](../src/ui/state/liveMonitor.js).
 
+## Give server Monitor lifecycle one owner
+
+Decision: let a server Monitor module own subscriptions, shared game hooks, retries, history, and cleanup.
+Keep socket messages and serialization in the WebSocket module.
+
+Why: lifecycle races should be testable without constructing sockets or emulating CDP expressions.
+
+Alternative: keep Monitor coordination inside the WebSocket module.
+
+Trade-off: the Monitor module accepts GameBridge, state delivery, and a clock. The existing lifecycle
+tests use controlled adapters without exercising socket transport.
+
+Source: [Server Monitors](../src/modules/server/monitor.js).
+
 ## Share Royal Guard behavior outside views
 
 Decision: keep Royal Guard unit rules and reset operations in a shared domain module.
