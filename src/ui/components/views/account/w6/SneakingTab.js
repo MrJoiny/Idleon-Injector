@@ -2,6 +2,7 @@ import van from "../../../../vendor/van-1.6.0.js";
 import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../tabShared.js";
 import { CharmsTab } from "./sneaking/CharmsTab.js";
 import { JadeTab } from "./sneaking/JadeTab.js";
+import { OmniJadeTab } from "./sneaking/OmniJadeTab.js";
 import { UpgradesTab } from "./sneaking/UpgradesTab.js";
 
 const { div } = van.tags;
@@ -9,6 +10,7 @@ const { div } = van.tags;
 const SNEAKING_SUBTABS = [
     { id: "upgrades", label: "UPGRADES", component: UpgradesTab },
     { id: "jade", label: "JADE", component: JadeTab },
+    { id: "omni-jade", label: "OMNI JADE", component: OmniJadeTab },
     { id: "charms", label: "CHARMS", component: CharmsTab },
 ];
 

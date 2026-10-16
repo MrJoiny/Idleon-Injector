@@ -7,6 +7,7 @@
  * - chipBonuses (chip bonus modifications)
  * - MealBonus (meal bonus modifications)
  * - JellyOperation (Jelly Operator dispatch overrides)
+ * - MenagerieStuff (Luminous Menagerie dispatch overrides)
  */
 
 import { cheatConfig, cheatState } from "../core/state.js";
@@ -59,6 +60,9 @@ export function setupEvents189Proxies() {
 
     // Meal bonuses
     createConfigLookupProxy(ActorEvents189, "_customBlock_MealBonus", [{ state: "w4.meals" }]);
+
+    // Menagerie dispatch; identity defaults preserve every game result.
+    createConfigLookupProxy(ActorEvents189, "_customBlock_MenagerieStuff", [{ state: "w7.menagerie" }]);
 
     // Jelly Operator dispatch; the original method must run before any configured override.
     createConfigLookupProxy(ActorEvents189, "_customBlock_JellyOperation", [{ state: "w7.jelly" }]);

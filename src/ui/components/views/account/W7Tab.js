@@ -7,6 +7,7 @@ import { GalleryTab } from "./w7/GalleryTab.js";
 import { GlimboTab } from "./w7/GlimboTab.js";
 import { JellyTab } from "./w7/JellyTab.js";
 import { LegendTalentTab } from "./w7/LegendTalentTab.js";
+import { MenagerieTab } from "./w7/MenagerieTab.js";
 import { MineheadTab } from "./w7/MineheadTab.js";
 import { ResearchTab } from "./w7/ResearchTab.js";
 import { SpelunkingTab } from "./w7/SpelunkingTab.js";
@@ -19,6 +20,7 @@ const { div } = van.tags;
 const W7_SUBTABS = [
     { id: "spelunking", label: "SPELUNKING", component: SpelunkingTab },
     { id: "research", label: "RESEARCH", component: ResearchTab },
+    { id: "menagerie", label: "MENAGERIE", component: MenagerieTab },
     { id: "jelly", label: "JELLY OPERATOR", component: JellyTab },
     { id: "gallery", label: "GALLERY", component: GalleryTab },
     { id: "legend-talent", label: "LEGEND TALENT", component: LegendTalentTab },
