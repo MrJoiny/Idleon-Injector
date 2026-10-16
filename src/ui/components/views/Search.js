@@ -17,11 +17,8 @@ import {
     seedEditValue,
     expectedUiType,
     validateEditDraft,
-    monitorPathForSearchResult,
-    monitorIdFromMonitorPath,
     formatDisplayValue,
     getMonitorHistory,
-    resolveMonitorEntry,
     getUiTypeFromRawValue,
     getDraftFromRawValue,
     getResultValue,
@@ -109,48 +106,11 @@ export const Search = () => {
         }
     };
 
-    const getResolvedMonitorEntry = (path) => {
-        return resolveMonitorEntry(path, store.data.monitorValues || {});
-    };
-
     let resultsFilterTimer = null;
     let savedFilterTimer = null;
-    const subscribedMonitorPaths = new Set();
     const filterCache = {
         results: { source: null, query: "", values: [] },
         saved: { source: null, query: "", values: [] },
-    };
-
-    const reconcileMonitorSubscriptions = () => {
-        const desiredPaths = new Set();
-
-        for (const entry of ui.savedResults) {
-            if (!entry?.path) continue;
-
-            if (entry.monitorEnabled === false) continue;
-
-            desiredPaths.add(entry.path);
-        }
-
-        for (const path of desiredPaths) {
-            const monitorPath = monitorPathForSearchResult(path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-
-            if (subscribedMonitorPaths.has(path) && !resolvedMonitor.entry) {
-                subscribedMonitorPaths.delete(path);
-            }
-
-            if (subscribedMonitorPaths.has(path)) continue;
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(path);
-        }
-
-        for (const path of [...subscribedMonitorPaths]) {
-            if (desiredPaths.has(path)) continue;
-
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
-        }
     };
 
     const updateValueInUi = (path, payload) => {
@@ -216,9 +176,9 @@ export const Search = () => {
     });
 
     van.derive(() => {
-        ui.savedResults;
-        store.data.monitorValues;
-        reconcileMonitorSubscriptions();
+        store.monitors.reconcile(
+            ui.savedResults.filter((entry) => entry?.path && entry.monitorEnabled !== false).map((entry) => entry.path)
+        );
     });
 
     const getFilteredList = (source, appliedFilter, cache) => {
@@ -359,9 +319,7 @@ export const Search = () => {
                 return;
             }
 
-            const monitorPath = monitorPathForSearchResult(result.path);
-            const resolvedMonitor = getResolvedMonitorEntry(monitorPath);
-            const initialHistory = getMonitorHistory(resolvedMonitor.entry).slice(0, 10);
+            const initialHistory = getMonitorHistory(store.monitors.get(result.path)).slice(0, 10);
             const seededHistory =
                 initialHistory.length > 0 ? initialHistory : [{ value: getResultValue(result), ts: Date.now() }];
 
@@ -376,15 +334,13 @@ export const Search = () => {
 
             ui.savedResults = [...ui.savedResults, entry];
 
-            store.subscribeMonitor(monitorPath);
-            subscribedMonitorPaths.add(result.path);
+            store.monitors.subscribe(result.path);
 
             store.notify(`Added ${result.path} to saved list and enabled watcher`, "success");
         },
 
         toggleSavedMonitor: (path, enabled) => {
-            const monitorPath = monitorPathForSearchResult(path);
-            const currentHistory = getMonitorHistory(getResolvedMonitorEntry(monitorPath).entry);
+            const currentHistory = getMonitorHistory(store.monitors.get(path));
             const hasCurrentLive = currentHistory.length > 0;
             const currentLiveRaw = hasCurrentLive ? currentHistory[0].value : undefined;
 
@@ -408,20 +364,17 @@ export const Search = () => {
             });
 
             if (enabled) {
-                store.subscribeMonitor(monitorPath);
-                subscribedMonitorPaths.add(path);
+                store.monitors.subscribe(path);
                 store.notify("Enabled watcher for " + path);
                 return;
             }
 
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPath));
-            subscribedMonitorPaths.delete(path);
+            store.monitors.unsubscribe(path);
             store.notify("Stopped watcher for " + path);
         },
 
         removeSavedResult: (path) => {
-            store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(path)));
-            subscribedMonitorPaths.delete(path);
+            store.monitors.unsubscribe(path);
 
             ui.savedResults = ui.savedResults.filter((entry) => entry.path !== path);
             if (ui.savedEdit.path === path) handlers.cancelSavedEdit();
@@ -432,8 +385,7 @@ export const Search = () => {
             if (ui.savedResults.length === 0) return;
 
             for (const entry of ui.savedResults) {
-                store.unsubscribeMonitor(monitorIdFromMonitorPath(monitorPathForSearchResult(entry.path)));
-                subscribedMonitorPaths.delete(entry.path);
+                store.monitors.unsubscribe(entry.path);
             }
 
             ui.savedResults = [];
@@ -478,10 +430,7 @@ export const Search = () => {
             ui.savedEdit.path = entry.path;
 
             // Prefer the freshest raw value: live monitor > cached history > stored entry value.
-            const monitorPath = monitorPathForSearchResult(entry.path);
-            const liveHistory = entry.monitorEnabled
-                ? getMonitorHistory(getResolvedMonitorEntry(monitorPath).entry)
-                : [];
+            const liveHistory = entry.monitorEnabled ? getMonitorHistory(store.monitors.get(entry.path)) : [];
             const cachedHistory = Array.isArray(entry.lastHistory) ? entry.lastHistory : [];
             const newest = liveHistory[0] ?? cachedHistory[0];
 

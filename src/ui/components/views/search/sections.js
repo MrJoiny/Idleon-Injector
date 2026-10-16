@@ -13,12 +13,7 @@ import {
     isInputlessScanType,
     requiresSecondaryInput,
 } from "./scanUtils.js";
-import {
-    monitorPathForSearchResult,
-    formatDisplayValue,
-    getMonitorHistory,
-    resolveMonitorEntry,
-} from "./valueUtils.js";
+import { formatDisplayValue, getMonitorHistory } from "./valueUtils.js";
 import { createStaticRowReconciler } from "../account/accountShared.js";
 
 const { div, input, button, span, label, details, summary, select, option } = van.tags;
@@ -551,8 +546,7 @@ const SavedResultItem = ({ entry: initialEntry, ui, handlers }) => {
         setTimeout(() => (copyFeedback.val = null), 1500);
     };
 
-    const monitorPath = monitorPathForSearchResult(path);
-    const monitorData = () => resolveMonitorEntry(monitorPath, store.data.monitorValues || {}).entry;
+    const monitorData = () => store.monitors.get(path);
     const isMonitorEnabled = () => entryState.val.monitorEnabled === true;
     const isMonitored = () => isMonitorEnabled() && !!monitorData();
     const monitorError = () => (isMonitorEnabled() ? monitorData()?.error || null : null);

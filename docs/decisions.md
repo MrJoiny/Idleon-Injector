@@ -59,6 +59,18 @@ Completion callbacks run after the verified commit; their failure retains that v
 
 Source: [Numeric editing](../src/ui/components/views/account/useNumericEditor.js).
 
+## Give frontend Monitor subscriptions one owner
+
+Decision: let the frontend Monitor module own subscription bookkeeping, path identity, and runtime lookup.
+
+Why: Search actions and rendering should not coordinate transport identifiers or maintain a second subscription ledger.
+
+Alternative: repeat that coordination in Search, its render modules, and the store.
+
+Trade-off: Search retains saved snapshots and activation timing, while WebSocket connection replay stays with the transport.
+
+Source: [Frontend Monitors](../src/ui/state/liveMonitor.js).
+
 ## Share Royal Guard behavior outside views
 
 Decision: keep Royal Guard unit rules and reset operations in a shared domain module.
