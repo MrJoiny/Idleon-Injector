@@ -7,15 +7,17 @@ import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from ".
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
+import { PaletteStarButton, usePaletteStars } from "./PaletteStars.js";
 
 const { div, span } = van.tags;
 
 const PALETTE_LEVELS_PATH = "Spelunk[9]";
 
-const PaletteRow = ({ entry, levelState }) =>
+const PaletteRow = ({ entry, levelState, stars }) =>
     SimpleNumberRow({
         entry,
         valueState: levelState,
+        renderExtraActions: () => PaletteStarButton({ stars, entry }),
     });
 
 const buildPaletteEntries = (rawLevels, rawPalette) => {
@@ -49,6 +51,7 @@ const buildPaletteEntries = (rawLevels, rawPalette) => {
 
 export const PaletteTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Gaming Palette" });
+    const stars = usePaletteStars(loading);
     const entries = van.state([]);
     const levelStates = new Map();
     const listNode = div({ class: "account-item-stack" });
@@ -56,13 +59,18 @@ export const PaletteTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawLevels, rawPalette] = await Promise.all([gga(PALETTE_LEVELS_PATH), readCList("GamingPalette")]);
+            const [rawLevels, rawPalette] = await Promise.all([
+                gga(PALETTE_LEVELS_PATH),
+                readCList("GamingPalette"),
+                stars.load(),
+            ]);
             entries.val = buildPaletteEntries(rawLevels, rawPalette);
             reconcileRows(entries.val.map((entry) => entry.rawName).join("|"), () =>
                 entries.val.map((entry) =>
                     PaletteRow({
                         entry,
                         levelState: getOrCreateState(levelStates, entry.index),
+                        stars,
                     })
                 )
             );
@@ -78,17 +86,17 @@ export const PaletteTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "PALETTE",
-            note: () => `${entries.val.length} COLORS FROM Spelunk[9]`,
+            note: () => `${entries.val.length} COLORS · LEVELS & BLACK STARS`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "PALETTE",
-        description: "Edit Gaming Palette upgrade levels from Spelunk[9]. Names and colors come from GamingPalette.",
+        description: "Edit Gaming Palette levels and Black Stars. Names and colors come from GamingPalette.",
         actions: RefreshButton({
             onRefresh: load,
-            disabled: () => loading.val,
+            disabled: () => loading.val || stars.status.val === "loading",
         }),
         state: { loading, error },
         loadingText: "READING GAMING PALETTE",
