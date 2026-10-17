@@ -1,5 +1,5 @@
 import van from "../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../services/api.js";
+import { gga, readCList, readComputed } from "../../../../services/api.js";
 import { toIndexedArray } from "../../../../utils/index.js";
 import { ClampedLevelRow } from "../ClampedLevelRow.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
@@ -13,6 +13,7 @@ const { div, span } = van.tags;
 const CORAL_LEVELS_PATH = "Spelunk[13]";
 const CORAL_FIELDS = [
     { index: 0, name: "Brain Coral" },
+    { index: 1, name: "Carnation Coral" },
     { index: 2, name: "Anemone Coral" },
     { index: 3, name: "Pillar Coral" },
     { index: 4, name: "Paragorgia Coral" },
@@ -26,10 +27,7 @@ const CoralRow = ({ entry, levelState }) =>
         integerMode: "round",
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${entry.index}`),
-            div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, entry.name)
-            ),
+            div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, entry.name)),
         ],
         rowClass: "account-row--wide-controls",
         controlsClass: "account-row__controls--xl",
@@ -43,21 +41,23 @@ export const CoralTab = () => {
     const listNode = div({ class: "account-item-stack" });
     const reconcileRows = createStaticRowReconciler(listNode);
 
-    const buildEntries = (rawDefinitions) => {
+    const buildEntries = (rawDefinitions, pillarUpgradeOwned) => {
         const definitions = toIndexedArray(rawDefinitions ?? []);
 
         return CORAL_FIELDS.map((field) => {
             const definition = toIndexedArray(definitions[field.index] ?? []);
+            const baseMax = toInt(definition[1], { min: 0 });
 
             return {
                 ...field,
-                maxLevel: toInt(definition[1], { min: 0 }),
+                // The game updates this definition only when opening its coral menu.
+                maxLevel: field.index === 3 && Number(pillarUpgradeOwned) === 1 && baseMax === 12 ? 15 : baseMax,
             };
         });
     };
 
     const reconcileCoralRows = () => {
-        reconcileRows(entriesState.val.map((entry) => entry.index).join("|"), () =>
+        reconcileRows(entriesState.val.map((entry) => `${entry.index}:${entry.maxLevel}`).join("|"), () =>
             entriesState.val.map((entry) =>
                 CoralRow({
                     entry,
@@ -69,7 +69,11 @@ export const CoralTab = () => {
 
     const load = async () =>
         run(async () => {
-            entriesState.val = buildEntries(await readCList("CoralReef"));
+            const [definitions, pillarUpgradeOwned] = await Promise.all([
+                readCList("CoralReef"),
+                readComputed("menagerie", "UnlockOwned", [9, 0]),
+            ]);
+            entriesState.val = buildEntries(definitions, pillarUpgradeOwned);
             reconcileCoralRows();
 
             const levels = toIndexedArray((await gga(CORAL_LEVELS_PATH)) ?? []);
@@ -94,7 +98,7 @@ export const CoralTab = () => {
 
     return PersistentAccountListPage({
         title: "CORAL REEF",
-        description: "Set W7 Coral Reef levels from Spelunk[13]. Max levels come from CoralReef definitions.",
+        description: "Set W7 Coral Reef levels from Spelunk[13]. Max levels include Menagerie upgrades.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

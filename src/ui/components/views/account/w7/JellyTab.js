@@ -15,6 +15,7 @@ import {
     writeVerified,
 } from "../accountShared.js";
 import { renderTabNav } from "../tabShared.js";
+import { UpgradeDoublerButton, useUpgradeDoublers } from "./UpgradeDoublers.js";
 
 const { div, span } = van.tags;
 const CELL_NAMES = ["Amoeba", "Plasmid", "Ribosome", "Organelle", "Immunoid", "Virus", "Mitochondria", "Gigacyst"];
@@ -42,6 +43,8 @@ const LevelRow = ({
     locked = false,
     statusLabel = null,
     note = null,
+    renderExtraActions = null,
+    rowClass = "account-row--wide-controls jelly-level-row",
 }) => {
     const writeError = van.state("");
     return EditableNumberRow({
@@ -72,14 +75,19 @@ const LevelRow = ({
         },
         adjustInput: (raw, delta, current) =>
             Math.max(0, Math.min(max, (validLevel(raw, max) ?? current ?? 0) + delta)),
-        rowClass: "account-row--wide-controls jelly-level-row",
+        rowClass,
         controlsClass: "account-row__controls--xl",
+        renderExtraActions,
     });
 };
 
 /** Jelly Operator account editor backed by current Research and JellyUPG definitions. */
 export const JellyTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Jelly Operator" });
+    const doublers = useUpgradeDoublers(
+        { path: "Spelunk[53]", ownedMethod: "JellyOpDoublersOwned", eligiblePath: "Research[61]" },
+        loading
+    );
     const activePane = van.state("upgrades");
     const bloodcells = van.state(0);
     const operationsLeft = van.state(0);
@@ -98,6 +106,7 @@ export const JellyTab = () => {
                 readCList("Research[44]"),
                 gga("Research"),
                 gga("Lv0[20]"),
+                doublers.load(),
             ]);
             const definitions = toIndexedArray(rawDefinitions);
             const order = toIndexedArray(rawOrder);
@@ -152,7 +161,14 @@ export const JellyTab = () => {
                     entries.map((entry) =>
                         LevelRow({
                             ...entry,
+                            rowClass: "account-row--wide-controls jelly-level-row minigame-upgrade-row",
                             valueState: getOrCreateState(upgradeStates, entry.id),
+                            renderExtraActions: () =>
+                                UpgradeDoublerButton({
+                                    doublers,
+                                    index: entry.id,
+                                    name: entry.name,
+                                }),
                             write: async (next) => {
                                 await writeVerified(`Research[17][${entry.id}]`, next);
                                 if (entry.id === 8 || entry.id === 9) await deleteGga("DNSM.h.JellySlotz");
@@ -232,7 +248,12 @@ export const JellyTab = () => {
         }),
         div(
             { class: () => (activePane.val === "upgrades" ? "" : "is-hidden-until-ready") },
-            AccountSection({ title: "UPGRADES", note: () => `${upgradeCount.val} upgrades`, body: upgradeList })
+            AccountSection({
+                title: "UPGRADES",
+                note: () =>
+                    `${upgradeCount.val} upgrades · ${doublers.selected.val.length}/${doublers.capacity.val} doubled`,
+                body: upgradeList,
+            })
         ),
         div(
             { class: () => (activePane.val === "cells" ? "" : "is-hidden-until-ready") },
@@ -241,7 +262,7 @@ export const JellyTab = () => {
     );
     return PersistentAccountListPage({
         title: "JELLY OPERATOR",
-        description: "Set Bloodcells, operations left, upgrade levels, and cell levels.",
+        description: "Set Bloodcells, operations left, upgrade levels, and cell levels; choose doubled upgrades.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
         subNav: renderTabNav({
             tabs: PANES,
