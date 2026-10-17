@@ -15,6 +15,13 @@
     width: 18px;
 }
 
+.gaming-palette-row .account-row__sub-label {
+    font-family: var(--font-primary);
+    font-size: 0.78rem;
+    line-height: 1.25;
+    white-space: normal;
+}
+
 .gaming-raw-value {
     color: var(--c-text-muted);
     font-family: var(--font-mono);

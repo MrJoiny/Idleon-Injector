@@ -13,6 +13,12 @@ const { div, span } = van.tags;
 
 const PALETTE_LEVELS_PATH = "Spelunk[9]";
 
+const formatPaletteEffect = (rawEffect) => {
+    const effect = String(rawEffect ?? "").trim();
+    if (!effect || effect === "Nothing_yet...") return "";
+    return effect.replace(/}x/gi, "X×").replace(/[{}#]/g, "X").replace(/_/g, " ");
+};
+
 const PaletteRow = ({ entry, levelState, stars }) =>
     SimpleNumberRow({
         entry,
@@ -35,6 +41,8 @@ const buildPaletteEntries = (rawLevels, rawPalette) => {
             path: `${PALETTE_LEVELS_PATH}[${index}]`,
             rawName: String(definition[3] ?? `Palette_${index}`).trim(),
             name: cleanName(definition[3], `Palette ${index + 1}`),
+            subLabel: formatPaletteEffect(definition[10]),
+            rowClass: "account-row--wide-controls gaming-palette-row",
             rgb,
             leading: () =>
                 span({
