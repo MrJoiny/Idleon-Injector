@@ -15,7 +15,7 @@ const PALETTE_LEVELS_PATH = "Spelunk[9]";
 
 const formatPaletteEffect = (rawEffect) => {
     const effect = String(rawEffect ?? "").trim();
-    if (!effect || effect === "Nothing_yet...") return "";
+    if (!effect) return "";
     return effect.replace(/}x/gi, "X×").replace(/[{}#]/g, "X").replace(/_/g, " ");
 };
 
