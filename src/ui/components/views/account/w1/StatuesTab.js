@@ -5,7 +5,7 @@
  *   cList.StatueInfo[i]  -> [name, bonusDesc, ...]
  *   gga.StatueLevels[i]  -> [level, deposited]
  *   gga.StatueG[i]       -> tier: 0=Stone, 1=Gold, 2=Onyx, 3=Zenith
- *   gga.RoyalG[22][i]   -> Statue Flair level: 0..3
+ *   gga.RoyalG[22][i]   -> Statue Flair level: 0..4
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -36,7 +36,7 @@ const TIERS = [
 
 const TIER_ROW_CLASSES = ["", "tier--gold", "tier--onyx", "tier--zenith"];
 const TIER_BADGE_CLASSES = ["stone", "gold", "onyx", "zenith"];
-const FLAIR_MAX_LEVEL = 3;
+const FLAIR_MAX_LEVEL = 4;
 const FLAIR_UNLOCK_PATH = "RoyalG[2][78]";
 
 const StatueRow = ({ index, nameState, levelState, depositedState, tierState, flairState }) =>
@@ -272,7 +272,7 @@ export const StatuesTab = () => {
                 ),
                 div(() =>
                     flairUnlocked.val
-                        ? "Statue Flair is unlocked. Flair levels range from 0 to 3."
+                        ? `Statue Flair is unlocked. Flair levels range from 0 to ${FLAIR_MAX_LEVEL}.`
                         : "Statue Flair is locked. Use the Flair toggle to unlock the in-game menu."
                 ),
                 div("Turning Flair off keeps saved Flair levels and their bonuses."),

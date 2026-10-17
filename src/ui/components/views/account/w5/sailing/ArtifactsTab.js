@@ -27,11 +27,11 @@ const buildArtifactEntries = (rawLevels, rawArtifactInfo) => {
             path: `${ARTIFACT_LEVELS_PATH}[${index}]`,
             rawName: String(artifact[0] ?? `Artifact_${index}`).trim(),
             name: cleanName(artifact[0], `Artifact ${index + 1}`),
-            max: 6,
+            max: 7,
             formatted: false,
-            badge: (currentValue) => `LV ${currentValue ?? 0} / 6`,
-            maxAction: { value: 6, label: "MAX" },
-            level: Math.min(6, toInt(levels[index], { min: 0 })),
+            badge: (currentValue) => `LV ${currentValue ?? 0} / 7`,
+            maxAction: { value: 7, label: "MAX" },
+            level: Math.min(7, toInt(levels[index], { min: 0 })),
         };
     });
 };
