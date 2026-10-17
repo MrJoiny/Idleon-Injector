@@ -22,6 +22,7 @@ const BREEDING_EGGS_PATH = "Breeding[0]";
 const BREEDING_UPGRADES_PATH = "Breeding[2]";
 const PET_UPGRADE_DNA_PATH = "Breeding[3][8]";
 const ARENA_ROUND_PATH = "OptionsListAccount[89]";
+const ARENA_CRUCIBLE_ROUND_PATH = "OptionsListAccount[628]";
 const SPICE_CLAIM_PATH = "OptionsListAccount[100]";
 const EGG_MAX_RARITY = 11;
 const spacedActionGroup = (...actions) => div({ class: "account-header__actions" }, ...actions);
@@ -83,6 +84,7 @@ export const GeneralTab = () => {
     const upgradeEntries = van.state([]);
     const petUpgradeDnaState = van.state(0);
     const arenaRoundState = van.state(0);
+    const arenaCrucibleRoundState = van.state(0);
     const spiceClaimState = van.state(0);
     const getEggState = createIndexedStateGetter(0);
     const getUpgradeState = createIndexedStateGetter(0);
@@ -128,7 +130,7 @@ export const GeneralTab = () => {
         run(async () => {
             const [rawEggs, rawOptions, eggCapacity, upgrades, petUpgradeDna] = await Promise.all([
                 gga(BREEDING_EGGS_PATH),
-                readGgaEntries("OptionsListAccount", ["89", "100"]),
+                readGgaEntries("OptionsListAccount", ["89", "100", "628"]),
                 readComputed("breeding", "TotalEggCapacity", []),
                 readUpgradeEntries(),
                 gga(PET_UPGRADE_DNA_PATH),
@@ -138,6 +140,7 @@ export const GeneralTab = () => {
             upgradeEntries.val = upgrades;
             petUpgradeDnaState.val = toInt(petUpgradeDna, { min: 0 });
             arenaRoundState.val = toInt(rawOptions["89"], { min: 0 });
+            arenaCrucibleRoundState.val = toInt(rawOptions["628"], { min: 0 });
             spiceClaimState.val = toInt(rawOptions["100"], { min: 0 });
             reconcileRows();
 
@@ -181,7 +184,7 @@ export const GeneralTab = () => {
         }),
         AccountSection({
             title: "ARENA",
-            note: "OptionsListAccount[89]",
+            note: "OptionsListAccount[89] + [628]",
             body: div(
                 { class: "account-item-stack" },
                 SimpleNumberRow({
@@ -193,6 +196,16 @@ export const GeneralTab = () => {
                         badge: (currentValue) => `ROUND ${currentValue ?? 0}`,
                     },
                     valueState: arenaRoundState,
+                }),
+                SimpleNumberRow({
+                    entry: {
+                        index: 628,
+                        name: "Highest Pet Arena Crucible Round",
+                        path: ARENA_CRUCIBLE_ROUND_PATH,
+                        formatted: false,
+                        badge: (currentValue) => `ROUND ${currentValue ?? 0}`,
+                    },
+                    valueState: arenaCrucibleRoundState,
                 })
             ),
         }),
@@ -218,7 +231,8 @@ export const GeneralTab = () => {
 
     return PersistentAccountListPage({
         title: "BREEDING GENERAL",
-        description: "Edit W4 Breeding egg rarity, pet upgrades, highest Pet Arena round, and spice claim counter.",
+        description:
+            "Edit W4 Breeding egg rarity, pet upgrades, highest Pet Arena and Crucible rounds, and spice claim counter.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
