@@ -34,6 +34,8 @@ function loadConfiguration() {
         const customConfigPath = getRuntimePath("config.custom.js");
 
         config = require(configPath);
+        // Experimental branch setting; keep the shipped config.js untouched.
+        config.cheatConfig.sushiTools = false;
 
         defaultConfig = deepClone(config);
 

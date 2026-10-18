@@ -8,6 +8,7 @@ const { setupCheatRoutes } = require("./routes/cheats");
 const { setupSearchRoutes } = require("./routes/search");
 const { setupConfigRoutes } = require("./routes/config");
 const { setupUpdateRoutes } = require("./routes/updates");
+const { setupSushiRoutes } = require("./routes/sushi");
 
 const log = createLogger("API");
 
@@ -31,6 +32,7 @@ function setupApiRoutes(app, context, client, config) {
     setupGameRoutes(app, gameBridge);
     setupSearchRoutes(app, gameBridge);
     setupConfigRoutes(app, gameBridge, config);
+    setupSushiRoutes(app, gameBridge, client);
 
     app.get("/api/heartbeat", (req, res) => {
         res.json({ status: "online", timestamp: Date.now() });

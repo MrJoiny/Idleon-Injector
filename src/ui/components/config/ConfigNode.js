@@ -65,6 +65,13 @@ export const ConfigNode = ({
 }) => {
     const source = template || data;
     const keys = Object.keys(source);
+    if (path === "cheatConfig" && keys.includes("sushiTools")) {
+        keys.splice(keys.indexOf("sushiTools"), 1);
+        const firstCategory = keys.findIndex(
+            (key) => source[key] !== null && typeof source[key] === "object" && !Array.isArray(source[key])
+        );
+        keys.splice(firstCategory < 0 ? keys.length : firstCategory, 0, "sushiTools");
+    }
     const termLower = searchTerm.toLowerCase();
 
     return keys.map((key) => {

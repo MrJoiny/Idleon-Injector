@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Sushi tools</title>
+        <link rel="stylesheet" href="/styles/sushi-tools.css" />
+        <script type="module" src="/entry/sushi-tools.js"></script>
+    </head>
+    <body>
+        <main>
+            <div class="purchase-settings">
+                <label for="purchase-mode">Buy mode</label>
+                <select id="purchase-mode">
+                    <option value="manual">Manual</option>
+                    <option value="wind">East Wind</option>
+                </select>
+                <label for="purchase-tier">Manual tier</label>
+                <input id="purchase-tier" type="number" min="1" step="1" value="1" />
+            </div>
+            <p id="purchase-hint">Loading purchase limits…</p>
+            <div class="actions">
+                <button id="sort" type="button" disabled>Sort</button>
+                <button id="play" type="button" disabled title="Buy, sort and merge until 40 capped sushi">
+                    Auto Play
+                </button>
+            </div>
+            <p id="fuel-guide"></p>
+            <p id="status" role="status" aria-live="polite">Connecting…</p>
+        </main>
+    </body>
+</html>
