@@ -27,6 +27,11 @@ function refreshStation(actor) {
 }
 
 export function sushiTools(action, expected = null, options = {}) {
+    if (action === "settings")
+        return {
+            maxTier: Number(events(579)._customBlock_SushiStuff("MaxTier", 0, 0)),
+            maxPurchaseTier: Number(events(579)._customBlock_SushiStuff("MaxCookTier", 0, 0)) + 1,
+        };
     const actor = station();
     const board = gga.Sushi[0];
     const plates = gga.Sushi[1];
@@ -40,7 +45,9 @@ export function sushiTools(action, expected = null, options = {}) {
         const maxPurchaseTier = Number(rules._customBlock_SushiStuff("MaxCookTier", 0, 0)) + 1;
         const eastWindTier =
             rules._customBlock_SushiStuff("UpgradeQTY", 29, 0) >= 1
-                ? Math.max(0, Number(rules._customBlock_SushiStuff("UniqueSushi", 0, 0)) - 6)
+                ? options.higherTier
+                    ? maxTier
+                    : Math.max(0, Number(rules._customBlock_SushiStuff("UniqueSushi", 0, 0)) - 6)
                 : 0;
         if (
             !Number.isInteger(maxPurchaseTier) ||
@@ -83,6 +90,7 @@ export function sushiTools(action, expected = null, options = {}) {
             !limits.working.includes(source) ||
             !limits.working.includes(target) ||
             tier < 0 ||
+            tier >= maxTier ||
             tier >= limits.targetTier ||
             board[source] !== tier ||
             board[target] !== tier

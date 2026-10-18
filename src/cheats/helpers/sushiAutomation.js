@@ -1,3 +1,4 @@
+import { configureSushiWind } from "./sushiWind.js";
 import { configureSushiButtons } from "../ui/sushiButtons.js";
 import { gga } from "../core/globals.js";
 import { sushiTools } from "./sushiTools.js";
@@ -150,6 +151,7 @@ export function sushiAutomation(params = []) {
             const state =
                 !busy && params.length > 3
                     ? sushiTools("status", null, {
+                          ...options,
                           targetCount: Number(params[3]),
                           targetTier: Number(params[4]),
                           reserveSlots: Number(params[5]),
@@ -157,7 +159,17 @@ export function sushiAutomation(params = []) {
                     : call("status");
             return { ...state, options, busy, running, stopping, message, merges, cycles };
         } catch (error) {
-            return { busy, running, stopping, message, error: error.message, merges, cycles };
+            return {
+                ...sushiTools("settings"),
+                options,
+                busy,
+                running,
+                stopping,
+                message,
+                error: error.message,
+                merges,
+                cycles,
+            };
         }
     }
     if (!["start", "sort", "configure"].includes(action))
@@ -167,11 +179,24 @@ export function sushiAutomation(params = []) {
         targetCount: params[3] === undefined ? 40 : Number(params[3]),
         targetTier: params[4] === undefined ? undefined : Number(params[4]),
         reserveSlots: params[5] === undefined ? 2 : Number(params[5]),
+        extendChain: params[8] === undefined ? Boolean(options.extendChain) : params[8] === "true",
+        higherTier: params[9] === undefined ? Boolean(options.higherTier) : params[9] === "true",
     };
-    const initial = sushiTools("status", null, requested);
+    const initial = sushiTools(action === "configure" ? "settings" : "status", null, requested);
+    if (
+        !Number.isInteger(requested.reserveSlots) ||
+        requested.reserveSlots < 0 ||
+        requested.reserveSlots >= 120 ||
+        (requested.targetTier !== undefined &&
+            (!Number.isInteger(requested.targetTier) ||
+                requested.targetTier < 1 ||
+                requested.targetTier > initial.maxTier + 1))
+    )
+        throw new Error("Choose a valid target tier and 0–119 reserved slots.");
     if (
         !Number.isInteger(requested.targetCount) ||
         requested.targetCount < 1 ||
+        requested.targetCount > 120 ||
         (action === "start" && requested.targetCount > initial.working.length)
     )
         throw new Error("Target quantity must fit the usable board slots.");
@@ -186,6 +211,7 @@ export function sushiAutomation(params = []) {
             (mode === "manual" && tier > initial.maxPurchaseTier))
     )
         throw new Error("Choose an unlocked whole-number tier.");
+    configureSushiWind(requested.extendChain, requested.higherTier);
     options = requested;
     purchaseMode = mode;
     purchaseTier = tier;

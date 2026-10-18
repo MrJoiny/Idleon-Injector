@@ -105,18 +105,92 @@
 }
 
 .sushi-automation-controls {
-    padding: 12px;
+    padding: 18px;
     border: 1px solid var(--c-border);
     background: var(--c-panel-dim);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
-
+.sushi-automation-header,
+.sushi-automation-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+.sushi-automation-controls h3 {
+    margin: 0 0 8px;
+    color: var(--c-accent);
+    font-size: 0.9rem;
+}
+.sushi-automation-controls p {
+    margin: 4px 0;
+}
+.sushi-automation-header p,
+.sushi-setting__help {
+    font-size: 0.85rem;
+    color: var(--c-text-muted);
+    line-height: 1.5;
+}
 .sushi-automation-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
+    gap: 10px;
 }
-
-.sushi-automation-actions input[type="number"] {
-    width: 80px;
+.sushi-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+.sushi-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sushi-setting__title {
+    display: block;
+    font-weight: 600;
+}
+.sushi-setting input,
+.sushi-setting select {
+    width: 100%;
+    min-height: 38px;
+    box-sizing: border-box;
+}
+.sushi-settings-section {
+    border-top: 1px solid var(--c-border);
+    padding-top: 16px;
+}
+.sushi-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+.sushi-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+}
+.sushi-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    margin: 2px 0 0;
+}
+.sushi-automation-footer > p {
+    flex: 1;
+    min-width: 220px;
+}
+.sushi-automation-info {
+    border-top: 1px solid var(--c-border);
+    padding-top: 12px;
+}
+.sushi-automation-status {
+    color: var(--c-text);
+    font-weight: 600;
 }
