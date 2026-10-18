@@ -7,12 +7,13 @@ import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
 import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
+import { UpgradeDoublerButton, useUpgradeDoublers } from "../UpgradeDoublers.js";
 
 const { div, span } = van.tags;
 
 const SUSHI_SHOP_PATH = "Sushi[2]";
 
-const ShopUpgradeRow = ({ entry, levelState }) =>
+const ShopUpgradeRow = ({ entry, levelState, doublers }) =>
     ClampedLevelRow({
         valueState: levelState,
         writePath: `${SUSHI_SHOP_PATH}[${entry.index}]`,
@@ -25,9 +26,11 @@ const ShopUpgradeRow = ({ entry, levelState }) =>
                 span({ class: "account-row__name" }, entry.name)
             ),
         ],
-        rowClass: "account-row--wide-controls",
+        rowClass: "account-row--wide-controls minigame-upgrade-row",
         controlsClass: "account-row__controls--xl",
         maxAction: true,
+        renderExtraActions: () =>
+            UpgradeDoublerButton({ doublers, index: entry.index, name: entry.name }),
     });
 
 const getOrderKey = (rawOrderEntry) => {
@@ -65,6 +68,10 @@ const buildShopEntries = (rawDefinitions, rawOrder) => {
 
 export function SushiShopTab() {
     const { loading, error, run } = useAccountLoad({ label: "Sushi Shop" });
+    const doublers = useUpgradeDoublers(
+        { path: "Spelunk[52]", ownedMethod: "SushiDoublersOwned", eligiblePath: "Research[60]" },
+        loading
+    );
     const upgradeEntries = van.state([]);
     const levelStates = new Map();
     const shopListNode = div({ class: "account-item-stack" });
@@ -75,6 +82,7 @@ export function SushiShopTab() {
             upgradeEntries.val.map((entry) =>
                 ShopUpgradeRow({
                     entry,
+                    doublers,
                     levelState: getOrCreateState(levelStates, entry.index),
                 })
             )
@@ -83,7 +91,11 @@ export function SushiShopTab() {
 
     const load = async () =>
         run(async () => {
-            const [rawDefinitions, rawOrder] = await Promise.all([readCList("SushiUPG"), readCList("Research[32]")]);
+            const [rawDefinitions, rawOrder] = await Promise.all([
+                readCList("SushiUPG"),
+                readCList("Research[32]"),
+                doublers.load(),
+            ]);
             upgradeEntries.val = buildShopEntries(rawDefinitions, rawOrder);
             reconcileRows();
 
@@ -102,14 +114,15 @@ export function SushiShopTab() {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "SHOP UPGRADES",
-            note: () => `${upgradeEntries.val.length} UPGRADES`,
+            note: () =>
+                `${upgradeEntries.val.length} UPGRADES · ${doublers.selected.val.length}/${doublers.capacity.val} DOUBLED`,
             body: shopListNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "SUSHI SHOP",
-        description: "Set Sushi shop upgrade levels from Sushi[2]. Max levels come from SushiUPG.",
+        description: "Set Sushi shop upgrade levels and choose which upgrades are doubled.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

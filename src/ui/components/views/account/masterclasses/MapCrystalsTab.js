@@ -69,7 +69,7 @@ const MapCrystalRow = ({ map, states, talentCap }) => {
     const fields = [
         {
             key: "purple",
-            label: "Purple (DMG)",
+            label: "Purple (Drop Rate)",
             valueState: purpleState,
             formatted: true,
             rootClass: "account-stacked-field",
@@ -77,7 +77,7 @@ const MapCrystalRow = ({ map, states, talentCap }) => {
         },
         {
             key: "yellow",
-            label: "Yellow (Drop)",
+            label: "Yellow (EXP)",
             valueState: yellowState,
             formatted: true,
             rootClass: "account-stacked-field",
@@ -118,7 +118,7 @@ const MapCrystalRow = ({ map, states, talentCap }) => {
         }
 
         const cappedSuffix = anyCapped ? " (Capped)" : "";
-        return `${pMult}x DMG · ${yMult}x DROP · ${bMult}x AFK${cappedSuffix}`;
+        return `${pMult}x DROP · ${yMult}x EXP · ${bMult}x AFK${cappedSuffix}`;
     };
 
     return EditableFieldsRow({
@@ -363,7 +363,7 @@ export const MapCrystalsTab = () => {
         title: "MAP CRYSTALS",
         description: () => {
             const base =
-                "Edit Arcane Cultist crystal kill progression (Purple: DMG, Yellow: Drop, Blue: AFK). In-game displays values as a total multiplier.";
+                "Edit Arcane Cultist crystal kill progression (Purple: Drop Rate, Yellow: EXP, Blue: AFK). In-game displays values as a total multiplier.";
             if (talentCap.val !== null && talentCap.val > 0) {
                 const capMult = (Math.floor(1000 * (1 + talentCap.val / 100)) / 1000).toFixed(3);
                 return `${base} Talent 589 cap: ${capMult}x (+${talentCap.val}%).`;

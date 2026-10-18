@@ -15,6 +15,7 @@ import {
 import { ActionButton } from "../../components/ActionButton.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
+import { PaletteStarButton, usePaletteStars } from "./PaletteStars.js";
 
 const { div } = van.tags;
 
@@ -48,7 +49,7 @@ const sliceRows = (entries) => {
     });
 };
 
-const PaletteHex = ({ entry, levelState }) => {
+const PaletteHex = ({ entry, levelState, stars }) => {
     const inputValue = van.state(String(levelState.val ?? 0));
     const { status, run } = useWriteStatus();
     let isInputFocused = false;
@@ -79,6 +80,8 @@ const PaletteHex = ({ entry, levelState }) => {
     return div(
         {
             class: "gaming-palette-hex",
+            role: "group",
+            "aria-label": entry.name,
             style: `--hex-bg: rgb(${entry.rgb.join(", ")}); --hex-fg: ${getTextColor(entry.rgb)};`,
             title: `${entry.name} (${entry.rgb.join(", ")})`,
         },
@@ -107,13 +110,15 @@ const PaletteHex = ({ entry, levelState }) => {
                     e.preventDefault();
                     void applyValue();
                 },
-            })
+            }),
+            PaletteStarButton({ stars, entry })
         )
     );
 };
 
 export const PaletteHexTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Gaming Palette Hex" });
+    const stars = usePaletteStars(loading);
     const entries = van.state([]);
     const levelStates = new Map();
     const gridNode = div({ class: "gaming-palette-hex-grid" });
@@ -121,7 +126,11 @@ export const PaletteHexTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawLevels, rawPalette] = await Promise.all([gga(PALETTE_LEVELS_PATH), readCList("GamingPalette")]);
+            const [rawLevels, rawPalette] = await Promise.all([
+                gga(PALETTE_LEVELS_PATH),
+                readCList("GamingPalette"),
+                stars.load(),
+            ]);
             entries.val = buildPaletteEntries(rawLevels, rawPalette);
             reconcileGrid(entries.val.map((entry) => `${entry.index}:${entry.name}`).join("|"), () =>
                 sliceRows(entries.val).map((row) =>
@@ -131,6 +140,7 @@ export const PaletteHexTab = () => {
                             PaletteHex({
                                 entry,
                                 levelState: getOrCreateState(levelStates, entry.index),
+                                stars,
                             })
                         )
                     )
@@ -148,10 +158,11 @@ export const PaletteHexTab = () => {
 
     return PersistentAccountListPage({
         title: "PALETTE HEX",
-        description: "Edit Gaming Palette levels in the in-game hex layout. Order follows GamingPalette rows.",
+        description:
+            "Edit Gaming Palette levels and Black Stars in the in-game hex layout. Order follows GamingPalette rows.",
         actions: RefreshButton({
             onRefresh: load,
-            disabled: () => loading.val,
+            disabled: () => loading.val || stars.status.val === "loading",
         }),
         state: { loading, error },
         loadingText: "READING GAMING PALETTE HEX",

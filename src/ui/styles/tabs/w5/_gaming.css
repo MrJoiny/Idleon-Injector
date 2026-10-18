@@ -1,5 +1,10 @@
 /* W5 Gaming */
 
+.gaming-palette-star-button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .gaming-palette-swatch {
     background: var(--palette-color);
     border: 1px solid var(--c-border);
@@ -8,6 +13,13 @@
     flex: 0 0 auto;
     height: 18px;
     width: 18px;
+}
+
+.gaming-palette-row .account-row__sub-label {
+    font-family: var(--font-primary);
+    font-size: 0.78rem;
+    line-height: 1.25;
+    white-space: normal;
 }
 
 .gaming-raw-value {
@@ -24,7 +36,7 @@
     align-items: center;
     background: #111820;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 100%;
     overflow: auto;
     padding: 24px 16px 34px;
@@ -34,6 +46,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+    margin: auto;
     min-width: max-content;
 }
 
@@ -49,7 +62,6 @@
 
 .gaming-palette-hex {
     align-items: center;
-    aspect-ratio: 0.88 / 1;
     background: var(--hex-bg);
     border: 2px solid rgba(255, 255, 255, 0.78);
     clip-path: polygon(50% 0, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
@@ -58,6 +70,7 @@
     flex: 0 0 116px;
     flex-direction: column;
     font-family: var(--font-primary);
+    height: 146px;
     justify-content: center;
     margin: 0 3px;
     text-align: center;
@@ -97,6 +110,7 @@
 @media (max-width: 900px) {
     .gaming-palette-hex {
         flex-basis: 96px;
+        height: 134px;
     }
 
     .gaming-palette-hex-row {

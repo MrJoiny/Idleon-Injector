@@ -23,9 +23,11 @@ export const ActionButton = ({
     onClick,
     preventMouseDown = true,
     type = "button",
+    buttonProps = {},
 }) => {
     const buttonNode = button(
         {
+            ...buttonProps,
             type,
             onmousedown: preventMouseDown ? (e) => e.preventDefault() : null,
             class: () => {

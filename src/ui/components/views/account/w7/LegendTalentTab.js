@@ -17,6 +17,7 @@ const SECTION_DEFS = [
     { id: "red", title: "RED TALENTS", sliceStart: 10 },
     { id: "brown", title: "BROWN TALENTS", sliceStart: 20 },
     { id: "green", title: "GREEN TALENTS", sliceStart: 30 },
+    { id: "white", title: "WHITE TALENTS", sliceStart: 40 },
 ];
 
 const buildTalentRows = (rawDefinitions, rawOrder, rawLevels, rawMaxResults) => {
@@ -166,7 +167,7 @@ export const LegendTalentTab = () => {
     return PersistentAccountListPage({
         title: "LEGEND TALENTS",
         description:
-            "Set W7 Legend Talent levels from Spelunk[18]. Display order comes from Spelunky[26], split into four color sections.",
+            "Set W7 Legend Talent levels from Spelunk[18]. Display order comes from Spelunky[26], split into five color sections.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
