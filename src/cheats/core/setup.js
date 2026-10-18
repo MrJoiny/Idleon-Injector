@@ -11,7 +11,6 @@ import { cheat } from "./registration.js";
 // Imports for setup logic
 import { setupAllProxies } from "../proxies/setup.js";
 import { injectWebUI } from "../ui/overlay.js";
-import { setupSushiOverlay } from "../ui/sushiOverlay.js";
 import { monitor } from "./valueMonitor.js";
 
 /**
@@ -37,7 +36,6 @@ export async function setup() {
         setupAllProxies();
 
         monitor.init();
-        setupSushiOverlay();
 
         const rtn = [
             "--------------------",

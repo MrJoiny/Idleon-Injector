@@ -11,44 +11,62 @@ export function validateBoard(board, plates) {
     });
 }
 
-export function boardLimits(board, plates, maxTier = 63) {
+export function boardLimits(board, plates, maxTier = 63, options = {}) {
     validateBoard(board, plates);
     if (!Number.isInteger(maxTier) || maxTier < 1 || board.some((tier) => tier > maxTier))
         throw new Error("Unexpected maximum Sushi tier.");
     const unlocked = plates.map((plate, index) => (plate >= 0 ? index : -1)).filter((index) => index >= 0);
-    const reserved = unlocked.slice(-2);
-    const working = unlocked.slice(0, -2);
+    const reserveSlots = options.reserveSlots ?? 2;
+    const targetTier = options.targetTier === undefined ? maxTier : options.targetTier - 1;
+    if (
+        !Number.isInteger(reserveSlots) ||
+        reserveSlots < 0 ||
+        reserveSlots >= unlocked.length ||
+        !Number.isInteger(targetTier) ||
+        targetTier < 0 ||
+        targetTier > maxTier
+    )
+        throw new Error("Invalid target tier or reserved slot count.");
+    const reserved = reserveSlots ? unlocked.slice(-reserveSlots) : [];
+    const working = unlocked.slice(0, unlocked.length - reserveSlots);
     if (board.filter((tier) => tier >= 0).length > working.length)
-        throw new Error("Clear two slots before starting; no sushi will be deleted.");
-    return { reserved, working, maxTier, capped: board.filter((tier) => tier === maxTier).length };
+        throw new Error(`Clear ${reserveSlots} slots before starting; no sushi will be deleted.`);
+    return {
+        reserved,
+        working,
+        maxTier,
+        targetTier,
+        reserveSlots,
+        capped: board.filter((tier) => tier >= targetTier).length,
+    };
 }
 
-export function findPairMove(board, plates, maxTier = 63) {
-    const { working } = boardLimits(board, plates, maxTier);
+export function findPairMove(board, plates, maxTier = 63, options = {}) {
+    const { working, targetTier } = boardLimits(board, plates, maxTier, options);
     const first = new Map();
     for (const index of working) {
         const tier = board[index];
-        if (tier < 0 || tier >= maxTier) continue;
+        if (tier < 0 || tier >= targetTier) continue;
         if (first.has(tier)) return { source: first.get(tier), target: index, kind: "pair" };
         first.set(tier, index);
     }
     return null;
 }
 
-export function sortBoard(board, plates, maxTier = 63) {
-    boardLimits(board, plates, maxTier);
+export function sortBoard(board, plates, maxTier = 63, options = {}) {
+    boardLimits(board, plates, maxTier, options);
     const values = board.filter((_, index) => plates[index] >= 0).sort((a, b) => b - a);
     let next = 0;
     return board.map((tier, index) => (plates[index] >= 0 ? values[next++] : tier));
 }
 
-export function findStartMove(board, plates, maxTier = 63) {
+export function findStartMove(board, plates, maxTier = 63, options = {}) {
     validateBoard(board, plates);
-    const { working } = boardLimits(board, plates, maxTier);
+    const { working, targetTier } = boardLimits(board, plates, maxTier, options);
     for (let index = 1; index < board.length - 1; index++) {
         if (
             working.includes(index + 1) &&
-            board[index] < maxTier &&
+            board[index] < targetTier &&
             board[index] >= 0 &&
             board[index - 1] === board[index] + 1 &&
             board[index + 1] === board[index]
@@ -60,13 +78,13 @@ export function findStartMove(board, plates, maxTier = 63) {
 }
 
 /** Follow the active gap, never a different pair elsewhere on the board. */
-export function findContinuationMove(board, plates, landing, maxTier = 63) {
+export function findContinuationMove(board, plates, landing, maxTier = 63, options = {}) {
     validateBoard(board, plates);
     if (!Number.isInteger(landing) || landing < 1 || landing >= board.length - 1) return null;
-    const { working } = boardLimits(board, plates, maxTier);
+    const { working, targetTier } = boardLimits(board, plates, maxTier, options);
     if (!working.includes(landing + 1)) return null;
     const tier = board[landing];
-    if (tier < 0 || tier >= maxTier || board[landing + 1] !== tier || board[landing - 1] !== -1) return null;
+    if (tier < 0 || tier >= targetTier || board[landing + 1] !== tier || board[landing - 1] !== -1) return null;
     let left = landing - 1;
     while (left >= 0 && board[left] === -1) {
         if (plates[left] < 0) return null;
@@ -77,11 +95,11 @@ export function findContinuationMove(board, plates, landing, maxTier = 63) {
 }
 
 /** Prefer a matching gap; otherwise finish an interrupted chain's adjacent tail. */
-export function findResumeMove(board, plates, maxTier = 63) {
+export function findResumeMove(board, plates, maxTier = 63, options = {}) {
     validateBoard(board, plates);
     let finalPair = null;
     for (let landing = 1; landing < board.length - 1; landing++) {
-        const move = findContinuationMove(board, plates, landing, maxTier);
+        const move = findContinuationMove(board, plates, landing, maxTier, options);
         if (move?.kind === "gap") return move;
         if (move?.kind === "final" && !finalPair) finalPair = move;
     }

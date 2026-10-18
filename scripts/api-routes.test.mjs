@@ -48,7 +48,6 @@ test("API setup retains every endpoint and does not evaluate the game during reg
             "GET /api/game/bundles",
             "GET /api/heartbeat",
             "GET /api/search/keys",
-            "GET /api/sushi/status",
             "GET /api/update/check",
             "POST /api/config/save",
             "POST /api/config/update",
@@ -62,7 +61,6 @@ test("API setup retains every endpoint and does not evaluate the game during reg
             "POST /api/game/gga/write-many",
             "POST /api/open-url",
             "POST /api/search",
-            "POST /api/sushi/action",
             "POST /api/toggle",
             "POST /api/update/apply",
         ].sort()

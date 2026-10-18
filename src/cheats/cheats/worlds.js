@@ -11,10 +11,11 @@
  * - W7: spelunk, gallery, sushi, reef, clam, zenith, spelunkmana, spelunkdepth, etc.
  */
 
-import { registerCheats } from "../core/registration.js";
+import { registerCheat, registerCheats } from "../core/registration.js";
 import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
+import { sushiAutomation } from "../helpers/sushiAutomation.js";
 import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 registerCheats({
@@ -192,8 +193,8 @@ registerCheats({
         { name: "collider", message: "collider cheats" },
         { name: "holes", message: "holes cheats" },
         { name: "lantern", message: "no daily limit on Blinding Lantern uses" },
-        { name: "skillcaverns", message: "no daily limit on skilling cavern nodes" },      
-      
+        { name: "skillcaverns", message: "no daily limit on skilling cavern nodes" },
+
         {
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",
@@ -347,4 +348,12 @@ registerCheats({
             configurable: true,
         },
     ],
+});
+
+registerCheat({
+    name: "w7 sushitools",
+    category: "w7",
+    needsParam: true,
+    message: "Sushi automation: status, sort, stop, start manual <tier>, start wind. Keep Sushi Station open.",
+    fn: (params) => JSON.stringify(sushiAutomation(params)),
 });

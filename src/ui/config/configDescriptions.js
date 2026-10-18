@@ -7,7 +7,6 @@ export const configDescriptions = {
     // CHEAT CONFIG - Top Level
     "cheatConfig.unban": "Prevents accounts from being banned. May not work due to multiple ban methods",
     "cheatConfig.ingameUI": "Enables the in-game UI overlay",
-    "cheatConfig.sushiTools": "Show Sort and Auto Play inside Sushi Station. Choose a manual buy tier or East Wind preset in the in-game panel. Auto Play sorts after refilling, follows chains and equal pairs, waits for East Wind, sorts and repeats until 40 capped sushi. Keeps the last two slots empty and never merges capped sushi. Stop finishes the current drag and chain. Save to retain this setting.",
     "cheatConfig.steamachieve": "Allows unlocking Steam achievements",
     "cheatConfig.chng_enabled": "⚠ DANGER: If true, 'chng' command becomes available. ONLY enable if you know what you are doing!",
 

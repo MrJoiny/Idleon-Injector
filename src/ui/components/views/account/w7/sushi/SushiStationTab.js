@@ -1,3 +1,4 @@
+import { SushiAutomationControls } from "./SushiAutomationControls.js";
 import van from "../../../../../vendor/van-1.6.0.js";
 import { gga, readCList } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
@@ -31,7 +32,7 @@ const fromDisplayTier = (rawValue, maxTier) => {
     return normalizeStationValue(toInt(rawValue, { min: 1 }) - 1, maxTier);
 };
 
-const SushiSlotTile = ({ index, tileState, maxTierState }) => {
+const SushiSlotTile = ({ index, tileState, maxTierState, automationBusy }) => {
     const inputValue = van.state(toDisplayTier(tileState.value.val));
     const { status, run } = useWriteStatus({ successMs: 700, errorMs: 1100 });
     let isFocused = false;
@@ -46,6 +47,7 @@ const SushiSlotTile = ({ index, tileState, maxTierState }) => {
     });
 
     const applyValue = async () => {
+        if (automationBusy.val) return;
         const nextValue = fromDisplayTier(inputValue.val, maxTierState.val);
         if (nextValue === tileState.value.val) {
             syncInput();
@@ -63,7 +65,7 @@ const SushiSlotTile = ({ index, tileState, maxTierState }) => {
         class: "sushi-station-tile__input",
         type: "text",
         inputmode: "numeric",
-        disabled: () => tileState.plateType.val === -1,
+        disabled: () => automationBusy.val || tileState.plateType.val === -1,
         onfocus: () => {
             isFocused = true;
         },
@@ -106,6 +108,7 @@ const SushiSlotTile = ({ index, tileState, maxTierState }) => {
 };
 
 export function SushiStationTab() {
+    const automationBusy = van.state(false);
     const { loading, error, run } = useAccountLoad({ label: "Sushi Station" });
     const tileStates = Array.from({ length: STATION_SLOT_COUNT }, () => ({
         value: van.state(-1),
@@ -144,6 +147,7 @@ export function SushiStationTab() {
 
     const body = div(
         { class: "sushi-station-shell scrollable-panel" },
+        SushiAutomationControls(automationBusy),
         div(
             { class: "sushi-station-board-wrap" },
             div(
@@ -151,7 +155,9 @@ export function SushiStationTab() {
                     class: "sushi-station-board",
                     style: `--sushi-station-width: ${STATION_WIDTH};`,
                 },
-                ...tileStates.map((tileState, index) => SushiSlotTile({ index, tileState, maxTierState })),
+                ...tileStates.map((tileState, index) =>
+                    SushiSlotTile({ index, tileState, maxTierState, automationBusy })
+                ),
                 ...fireplaceStates.map((fireplaceState, column) =>
                     div(
                         {

@@ -34,7 +34,6 @@ import { searchGga, getGgaKeys } from "./api/search.js";
 import { getBundleCatalog } from "./helpers/bundles.js";
 import { monitor } from "./core/valueMonitor.js";
 import { setupStorageEarlyHooks } from "./proxies/storageEarlyHooks.js";
-import { sushiTools } from "./helpers/sushiTools.js";
 
 // Sets the config, startup and webport from glob to internal state
 setCheatConfig(cheatConfig);
@@ -68,7 +67,6 @@ async function setup() {
 window.cheat = cheat;
 window.setup = setup;
 window.updateCheatConfig = updateCheatConfig;
-window.sushiTools = sushiTools;
 
 // WebUI API
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;

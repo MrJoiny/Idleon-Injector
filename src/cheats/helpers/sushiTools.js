@@ -1,6 +1,4 @@
-import { gga, behavior, events } from "../core/globals.js";
-import { cheatConfig } from "../core/state.js";
-import { isUIExpanded } from "../ui/overlay.js";
+import { gga, events } from "../core/globals.js";
 import {
     validateBoard,
     fuelTierSuggestions,
@@ -13,77 +11,28 @@ import {
 } from "./sushiBoard.js";
 
 function station() {
-    if (!cheatConfig.sushiTools) throw new Error("Enable Sushi tools in Settings first.");
-    if (Number(gga.MenuType2) !== 102 || isUIExpanded())
-        throw new Error("Open the in-game Sushi board and close Cheats.");
+    if (Number(gga.MenuType2) !== 102) throw new Error("Keep the in-game Sushi board open.");
     const actor = gga.PixelHelperActor[27].behaviors.getBehavior("ActorEvents_741");
+    if (actor._UIinventory17On[64] !== 1) throw new Error("Sushi board is not ready.");
     if (Number(actor._GenINFO[142]) !== 0) throw new Error("Select the Sushi board tab.");
     if (Number(actor._GenINFO[150]) !== 0) throw new Error("Switch from plate movement to sushi movement.");
     return actor;
 }
 
-export function sushiViewport() {
-    const canvases = [];
-    // Steam hosts the game in a same-origin iframe beneath its title bar.
-    // Convert nested viewport coordinates into the top-level CDP viewport.
-    const collect = (doc, left, top, sx, sy, depth) => {
-        for (const canvas of doc.querySelectorAll("canvas")) {
-            const rect = canvas.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                canvases.push({
-                    left: left + rect.left * sx,
-                    top: top + rect.top * sy,
-                    width: rect.width * sx,
-                    height: rect.height * sy,
-                });
-            }
-        }
-        if (depth >= 4) return;
-        for (const frame of doc.querySelectorAll("iframe")) {
-            let child;
-            try {
-                child = frame.contentDocument;
-            } catch {
-                continue;
-            }
-            const rect = frame.getBoundingClientRect();
-            if (!child || frame.hidden || !frame.offsetWidth || !frame.offsetHeight || !rect.width || !rect.height)
-                continue;
-            const scaleX = (sx * rect.width) / frame.offsetWidth;
-            const scaleY = (sy * rect.height) / frame.offsetHeight;
-            collect(
-                child,
-                left + rect.left * sx + frame.clientLeft * scaleX,
-                top + rect.top * sy + frame.clientTop * scaleY,
-                scaleX,
-                scaleY,
-                depth + 1
-            );
-        }
-    };
-    collect(document, 0, 0, 1, 1, 0);
-    if (canvases.length !== 1) throw new Error("Cannot identify a unique game canvas.");
-    const rect = canvases[0];
-    const width = behavior.getScreenWidth();
-    const height = behavior.getScreenHeight();
-    if (!(width > 0 && height > 0)) throw new Error("Game dimensions unavailable.");
-    return { left: rect.left, top: rect.top, sx: rect.width / width, sy: rect.height / height };
+function refreshStation(actor) {
+    actor._DN7 = events(579)._customBlock_SushiStuff("CurrencyperHR", -1, 0);
+    actor._DN7 = events(579)._customBlock_SushiStuff("OrangeFireSum", -1, 0);
+    actor._TRIGGEREDtext = "m";
+    actor._customEvent_sushistuff();
 }
 
-function point(index, viewport) {
-    return {
-        x: viewport.left + (49.5 + 47 * (index % 15)) * viewport.sx,
-        y: viewport.top + (53.5 + 47 * Math.floor(index / 15)) * viewport.sy,
-    };
-}
-
-export function sushiTools(action, expected = null) {
+export function sushiTools(action, expected = null, options = {}) {
     const actor = station();
     const board = gga.Sushi[0];
     const plates = gga.Sushi[1];
     validateBoard(board, plates);
     const maxTier = Number(events(579)._customBlock_SushiStuff("MaxTier", 0, 0));
-    const limits = boardLimits(board, plates, maxTier);
+    const limits = boardLimits(board, plates, maxTier, options);
     const pending = actor._GenINFO[157].length;
     const dragging = Number(actor._GenINFO[151]);
     if (action === "status") {
@@ -123,24 +72,45 @@ export function sushiTools(action, expected = null) {
             plates: plates.slice(),
         };
     }
-    if (action === "check") {
-        const viewport = sushiViewport();
-        return {
-            pending,
-            dragging,
-            board: board.slice(),
-            plates: plates.slice(),
-            viewport,
-            mouseX: behavior.getMouseX(),
-            mouseY: behavior.getMouseY(),
-        };
-    }
     if (pending > 0) throw new Error("Wait for the current East Wind chain to finish.");
-    if (dragging >= 0 || behavior.isMouseDown()) throw new Error("Release the mouse before using Sushi tools.");
+    if (dragging >= 0) throw new Error("Release the mouse before using Sushi tools.");
+    if (action === "merge") {
+        if (!expected || JSON.stringify([board, plates]) !== JSON.stringify([expected.board, expected.plates]))
+            throw new Error("Board changed before merge; stopped.");
+        const { source, target, tier } = expected;
+        if (
+            source === target ||
+            !limits.working.includes(source) ||
+            !limits.working.includes(target) ||
+            tier < 0 ||
+            tier >= limits.targetTier ||
+            board[source] !== tier ||
+            board[target] !== tier
+        )
+            throw new Error("Invalid native merge plan.");
+        if (actor._GenINFO[158] !== 0) throw new Error("Native upgrade is still busy.");
+        const count = board.filter((value) => value >= 0).length;
+        const trigger = actor._TRIGGEREDtext;
+        try {
+            // The game's normal upgrade handler applies XP, bonuses and East Wind.
+            // Consume exactly one matching source; never retry a partially completed merge.
+            board[source] = -1;
+            actor._TRIGGEREDtext = "i" + target;
+            actor._customEvent_sushistuff();
+            actor._TRIGGEREDtext = "h" + source;
+            actor._customEvent_sushistuff();
+            refreshStation(actor);
+        } finally {
+            actor._TRIGGEREDtext = trigger;
+        }
+        if (board[source] !== -1 || board[target] <= tier || board.filter((value) => value >= 0).length !== count - 1)
+            throw new Error("Native merge read-back mismatch; stopped without retry.");
+        return true;
+    }
     if (action === "buy") {
         if (!expected || JSON.stringify([board, plates]) !== JSON.stringify([expected.board, expected.plates]))
             throw new Error("Board changed before purchase; stopped.");
-        if (limits.capped >= 40) return { bought: false };
+        if (limits.capped >= (options.targetCount ?? 40)) return { bought: false };
         if (limits.reserved.some((index) => board[index] >= 0))
             throw new Error("Sort to clear the reserved slots first.");
         const destination = limits.working.find((index) => board[index] === -1);
@@ -167,6 +137,7 @@ export function sushiTools(action, expected = null) {
             if (Number(gga.Sushi[4][4]) !== storedTier) throw new Error(`Could not select tier ${purchaseTier}.`);
             actor._TRIGGEREDtext = "A";
             actor._customEvent_sushistuff2();
+            refreshStation(actor);
         } finally {
             actor._TRIGGEREDtext = trigger;
         }
@@ -177,7 +148,7 @@ export function sushiTools(action, expected = null) {
     if (action === "sort") {
         if (!expected || JSON.stringify(board) !== JSON.stringify(expected))
             throw new Error("Board changed; click Sort again.");
-        const sorted = sortBoard(board, plates, maxTier);
+        const sorted = sortBoard(board, plates, maxTier, options);
         const changed = sorted.reduce((count, value, index) => count + Number(value !== board[index]), 0);
         // Keep the Haxe array identity and all plate/fireplace data intact.
         sorted.forEach((value, index) => {
@@ -189,6 +160,7 @@ export function sushiTools(action, expected = null) {
                 actor._TRIGGEREDtext = `h${index}`;
                 actor._customEvent_sushistuff();
             }
+            refreshStation(actor);
         } finally {
             actor._TRIGGEREDtext = trigger;
         }
@@ -200,17 +172,13 @@ export function sushiTools(action, expected = null) {
             throw new Error("Board changed after settling; stopped.");
         const move =
             expected.mode === "continue"
-                ? findContinuationMove(board, plates, expected.landing, maxTier)
+                ? findContinuationMove(board, plates, expected.landing, maxTier, options)
                 : expected.mode === "resume"
-                  ? findResumeMove(board, plates, maxTier) || findStartMove(board, plates, maxTier)
-                  : findStartMove(board, plates, maxTier) || findPairMove(board, plates, maxTier);
+                  ? findResumeMove(board, plates, maxTier, options) || findStartMove(board, plates, maxTier, options)
+                  : findStartMove(board, plates, maxTier, options) || findPairMove(board, plates, maxTier, options);
         if (!move) return null;
-        const viewport = sushiViewport();
         return {
             ...move,
-            from: point(move.source, viewport),
-            to: point(move.target, viewport),
-            viewport,
             board: board.slice(),
             plates: plates.slice(),
             tier: board[move.source],

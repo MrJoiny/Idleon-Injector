@@ -103,3 +103,20 @@
     font-family: var(--font-mono);
     font-size: 0.815rem;
 }
+
+.sushi-automation-controls {
+    padding: 12px;
+    border: 1px solid var(--c-border);
+    background: var(--c-panel-dim);
+}
+
+.sushi-automation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.sushi-automation-actions input[type="number"] {
+    width: 80px;
+}
