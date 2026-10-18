@@ -17,7 +17,7 @@ const { div, span } = van.tags;
  * @param {{ entry: object, valueState: object }} props
  * @returns {HTMLElement}
  */
-export const SimpleNumberRow = ({ entry, valueState }) => {
+export const SimpleNumberRow = ({ entry, valueState, renderExtraActions = null }) => {
     const formatted = entry.formatted ?? true;
     const min = entry.min ?? 0;
     const max = entry.max ?? Infinity;
@@ -68,6 +68,7 @@ export const SimpleNumberRow = ({ entry, valueState }) => {
                   ),
         maxAction: entry.maxAction ?? null,
         resetAction: entry.resetAction ?? null,
+        renderExtraActions,
         rowClass: entry.rowClass ?? "account-row--wide-controls",
         badgeClass: entry.badgeClass ?? "",
         controlsClass: entry.controlsClass ?? "account-row__controls--xl",
