@@ -73,6 +73,7 @@ const COG_MAP_FIELD_META = {
 const isMainSlot = (index) => index >= 0 && index < MAIN_SLOT_COUNT;
 const isSideSlot = (index) => index >= MAIN_SLOT_COUNT && index < TOTAL_SLOT_COUNT;
 const TINY_COG_TYPES = new Set(["_", "a", "b"]);
+const TINY_COG_MAX_TIER = 11;
 const renderCogSvg = (id, className) => {
     const SvgCog = Cogs[id];
     if (typeof SvgCog !== "function") return new Text("");
@@ -99,7 +100,7 @@ const getTinyTypeCode = (cogId) => {
     return id.startsWith("CogSm") ? id.charAt(5) || null : null;
 };
 
-const clampTinyTier = (value) => Math.max(0, Math.min(9, toNum(value)));
+const clampTinyTier = (value) => Math.max(0, Math.min(TINY_COG_MAX_TIER - 1, Math.round(toNum(value))));
 
 const cloneCogMapStats = (entry) => {
     if (!entry || typeof entry !== "object" || !entry.h || typeof entry.h !== "object") return {};
@@ -206,7 +207,7 @@ export const CogsTab = () => {
     const cogNameCache = new Map();
     let activeCogNameRequestId = 0;
     const tinyTypeInput = van.state("_");
-    const tinyTierInput = van.state("0");
+    const tinyTierInput = van.state("1");
     const activeCogMapField = van.state(null);
     const activeTinyField = van.state(null);
 
@@ -222,7 +223,7 @@ export const CogsTab = () => {
         const cogId = getSlotCogId(index);
         const typeCode = getTinyTypeCode(cogId);
         tinyTypeInput.val = TINY_COG_TYPES.has(typeCode) ? typeCode : "_";
-        tinyTierInput.val = String(clampTinyTier(getTinyTier(cogId)));
+        tinyTierInput.val = String(clampTinyTier(getTinyTier(cogId)) + 1);
     };
 
     const resolveCogName = async (cogId) => {
@@ -343,7 +344,7 @@ export const CogsTab = () => {
             const normalizedType = String(tinyTypeInput.val ?? "")
                 .trim()
                 .slice(0, 1);
-            const normalizedTier = clampTinyTier(tinyTierInput.val);
+            const normalizedTier = clampTinyTier(toNum(tinyTierInput.val) - 1);
             if (!TINY_COG_TYPES.has(normalizedType)) {
                 throw new Error('Tiny cog type must be "_", "a", or "b".');
             }
@@ -353,7 +354,7 @@ export const CogsTab = () => {
             await writeVerified(cogOrderPath, newId);
             cogOrders[index].val = newId;
             tinyTypeInput.val = normalizedType;
-            tinyTierInput.val = String(normalizedTier);
+            tinyTierInput.val = String(normalizedTier + 1);
             void refreshActiveCogName(index);
         });
     };
@@ -392,12 +393,12 @@ export const CogsTab = () => {
             CogsEditorRow({
                 code: "lvl",
                 name: "Tiny Tier",
-                meaning: "Range: 0 to 9",
+                meaning: `Range: 1 to ${TINY_COG_MAX_TIER}`,
                 inputNode: input({
                     type: "number",
                     class: "cogs-cog-stat-input",
-                    min: "0",
-                    max: "9",
+                    min: "1",
+                    max: String(TINY_COG_MAX_TIER),
                     step: "1",
                     value: () => tinyTierInput.val,
                     oninput: (e) => {

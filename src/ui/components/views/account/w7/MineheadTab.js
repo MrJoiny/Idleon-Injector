@@ -8,6 +8,7 @@ import { RefreshButton } from "../components/AccountPageChrome.js";
 import { AccountSection } from "../components/AccountSection.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../accountShared.js";
+import { UpgradeDoublerButton, useUpgradeDoublers } from "./UpgradeDoublers.js";
 
 const { div, span } = van.tags;
 
@@ -34,7 +35,7 @@ const MineheadStatRow = ({ stat, valueState }) => {
     });
 };
 
-const MineheadUpgradeRow = ({ entry, levelState }) =>
+const MineheadUpgradeRow = ({ entry, levelState, doublers }) =>
     ClampedLevelRow({
         valueState: levelState,
         writePath: `${MINEHEAD_UPGRADES_PATH}[${entry.index}]`,
@@ -47,13 +48,19 @@ const MineheadUpgradeRow = ({ entry, levelState }) =>
                 span({ class: "account-row__name" }, entry.name)
             ),
         ],
-        rowClass: "account-row--wide-controls",
+        rowClass: "account-row--wide-controls minigame-upgrade-row",
         controlsClass: "account-row__controls--xl",
         maxAction: true,
+        renderExtraActions: () =>
+            UpgradeDoublerButton({ doublers, index: entry.index, name: entry.name }),
     });
 
 export const MineheadTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Minehead" });
+    const doublers = useUpgradeDoublers(
+        { path: "Spelunk[51]", ownedMethod: "MineheadDoublersOwned", eligiblePath: "Research[59]" },
+        loading
+    );
     const statStates = new Map(MINEHEAD_STATS.map((stat) => [stat.id, van.state(0)]));
     const upgradeEntries = van.state([]);
     const upgradeStates = new Map();
@@ -81,6 +88,7 @@ export const MineheadTab = () => {
             upgradeEntries.val.map((entry) =>
                 MineheadUpgradeRow({
                     entry,
+                    doublers,
                     levelState: getOrCreateState(upgradeStates, entry.index),
                 })
             )
@@ -92,7 +100,11 @@ export const MineheadTab = () => {
             upgradeEntries.val = buildUpgradeEntries(await readCList("MineheadUPG"));
             reconcileUpgradeRows();
 
-            const [rawStats, rawLevels] = await Promise.all([gga(MINEHEAD_STATS_PATH), gga(MINEHEAD_UPGRADES_PATH)]);
+            const [rawStats, rawLevels] = await Promise.all([
+                gga(MINEHEAD_STATS_PATH),
+                gga(MINEHEAD_UPGRADES_PATH),
+                doublers.load(),
+            ]);
             const stats = toIndexedArray(rawStats ?? []);
             const levels = toIndexedArray(rawLevels ?? []);
 
@@ -128,14 +140,15 @@ export const MineheadTab = () => {
         }),
         AccountSection({
             title: "MINEHEAD UPGRADES",
-            note: () => `${upgradeEntries.val.length} UPGRADES`,
+            note: () =>
+                `${upgradeEntries.val.length} UPGRADES · ${doublers.selected.val.length}/${doublers.capacity.val} DOUBLED`,
             body: upgradeListNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "MINEHEAD",
-        description: "Set Minehead stats from Research[7] and upgrade levels from Research[8].",
+        description: "Set Minehead stats and upgrade levels, and choose which upgrades are doubled.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,

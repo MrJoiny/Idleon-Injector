@@ -4074,6 +4074,66 @@ export const Cogs = {
             { "aria-hidden": "true", ...props }
         ),
 
+    CogSm_10: (props) =>
+        SvgBase(
+            [
+                defs([
+                    rect({ id: "bridge-bar-sm10", x: "60", y: "110", width: "136", height: "36", rx: "10" }),
+                    g({ id: "all-bridges-sm10" }, [
+                        use({ href: "#bridge-bar-sm10" }),
+                        use({ href: "#bridge-bar-sm10", transform: "rotate(90 128 128)" }),
+                        use({ href: "#bridge-bar-sm10", transform: "rotate(45 128 128)" }),
+                        use({ href: "#bridge-bar-sm10", transform: "rotate(135 128 128)" }),
+                    ]),
+                    rect({
+                        id: "diamond-cutout-small-sm10",
+                        x: "108",
+                        y: "108",
+                        width: "40",
+                        height: "40",
+                        transform: "rotate(45 128 128)",
+                    }),
+                    g({ id: "ring-with-ears-sm10" }, [
+                        circle({ cx: "128", cy: "128", r: "90" }),
+                        circle({ cx: "70", cy: "70", r: "28" }),
+                        circle({ cx: "186", cy: "70", r: "28" }),
+                        circle({ cx: "70", cy: "186", r: "28" }),
+                        circle({ cx: "186", cy: "186", r: "28" }),
+                        circle({ cx: "128", cy: "48", r: "24" }),
+                        circle({ cx: "208", cy: "128", r: "24" }),
+                        circle({ cx: "128", cy: "208", r: "24" }),
+                        circle({ cx: "48", cy: "128", r: "24" }),
+                        use({ href: "#all-bridges-sm10" }),
+                    ]),
+                    mask({ id: "ring-mask-sm10" }, [
+                        rect({ width: "256", height: "256", fill: "white" }),
+                        circle({ cx: "128", cy: "128", r: "64", fill: "black" }),
+                        use({ href: "#all-bridges-sm10", fill: "white" }),
+                        use({ href: "#diamond-cutout-small-sm10", fill: "black" }),
+                    ]),
+                    clipPath({ id: "left-half-sm10" }, [rect({ x: "0", y: "0", width: "128", height: "256" })]),
+                    clipPath({ id: "right-half-sm10" }, [rect({ x: "128", y: "0", width: "128", height: "256" })]),
+                ]),
+                g({ mask: "url(#ring-mask-sm10)" }, [
+                    use({ href: "#ring-with-ears-sm10", fill: "#E67E22", "clip-path": "url(#left-half-sm10)" }),
+                    use({ href: "#ring-with-ears-sm10", fill: "#D35400", "clip-path": "url(#right-half-sm10)" }),
+                ]),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#E67E22", "clip-path": "url(#left-half-sm10)" }),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#D35400", "clip-path": "url(#right-half-sm10)" }),
+                circle({
+                    cx: "128",
+                    cy: "128",
+                    r: "64",
+                    stroke: "#F39C12",
+                    "stroke-width": "2",
+                    fill: "none",
+                    opacity: "0.4",
+                    mask: "url(#ring-mask-sm10)",
+                }),
+            ],
+            { "aria-hidden": "true", ...props }
+        ),
+
     CogSma0: (props) =>
         SvgBase(
             [
@@ -4470,6 +4530,66 @@ export const Cogs = {
             { "aria-hidden": "true", ...props }
         ),
 
+    CogSma10: (props) =>
+        SvgBase(
+            [
+                defs([
+                    rect({ id: "bridge-bar-sma10", x: "60", y: "110", width: "136", height: "36", rx: "10" }),
+                    g({ id: "all-bridges-sma10" }, [
+                        use({ href: "#bridge-bar-sma10" }),
+                        use({ href: "#bridge-bar-sma10", transform: "rotate(90 128 128)" }),
+                        use({ href: "#bridge-bar-sma10", transform: "rotate(45 128 128)" }),
+                        use({ href: "#bridge-bar-sma10", transform: "rotate(135 128 128)" }),
+                    ]),
+                    rect({
+                        id: "diamond-cutout-small-sma10",
+                        x: "108",
+                        y: "108",
+                        width: "40",
+                        height: "40",
+                        transform: "rotate(45 128 128)",
+                    }),
+                    g({ id: "ring-with-ears-sma10" }, [
+                        circle({ cx: "128", cy: "128", r: "90" }),
+                        circle({ cx: "70", cy: "70", r: "28" }),
+                        circle({ cx: "186", cy: "70", r: "28" }),
+                        circle({ cx: "70", cy: "186", r: "28" }),
+                        circle({ cx: "186", cy: "186", r: "28" }),
+                        circle({ cx: "128", cy: "48", r: "24" }),
+                        circle({ cx: "208", cy: "128", r: "24" }),
+                        circle({ cx: "128", cy: "208", r: "24" }),
+                        circle({ cx: "48", cy: "128", r: "24" }),
+                        use({ href: "#all-bridges-sma10" }),
+                    ]),
+                    mask({ id: "ring-mask-sma10" }, [
+                        rect({ width: "256", height: "256", fill: "white" }),
+                        circle({ cx: "128", cy: "128", r: "64", fill: "black" }),
+                        use({ href: "#all-bridges-sma10", fill: "white" }),
+                        use({ href: "#diamond-cutout-small-sma10", fill: "black" }),
+                    ]),
+                    clipPath({ id: "left-half-sma10" }, [rect({ x: "0", y: "0", width: "128", height: "256" })]),
+                    clipPath({ id: "right-half-sma10" }, [rect({ x: "128", y: "0", width: "128", height: "256" })]),
+                ]),
+                g({ mask: "url(#ring-mask-sma10)" }, [
+                    use({ href: "#ring-with-ears-sma10", fill: "#BBBBBB", "clip-path": "url(#left-half-sma10)" }),
+                    use({ href: "#ring-with-ears-sma10", fill: "#898989", "clip-path": "url(#right-half-sma10)" }),
+                ]),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#BBBBBB", "clip-path": "url(#left-half-sma10)" }),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#898989", "clip-path": "url(#right-half-sma10)" }),
+                circle({
+                    cx: "128",
+                    cy: "128",
+                    r: "64",
+                    stroke: "#D3D3D3",
+                    "stroke-width": "2",
+                    fill: "none",
+                    opacity: "0.4",
+                    mask: "url(#ring-mask-sma10)",
+                }),
+            ],
+            { "aria-hidden": "true", ...props }
+        ),
+
     CogSmb0: (props) =>
         SvgBase(
             [
@@ -4861,6 +4981,66 @@ export const Cogs = {
                     fill: "none",
                     opacity: "0.4",
                     mask: "url(#ring-mask-smb9)",
+                }),
+            ],
+            { "aria-hidden": "true", ...props }
+        ),
+
+    CogSmb10: (props) =>
+        SvgBase(
+            [
+                defs([
+                    rect({ id: "bridge-bar-smb10", x: "60", y: "110", width: "136", height: "36", rx: "10" }),
+                    g({ id: "all-bridges-smb10" }, [
+                        use({ href: "#bridge-bar-smb10" }),
+                        use({ href: "#bridge-bar-smb10", transform: "rotate(90 128 128)" }),
+                        use({ href: "#bridge-bar-smb10", transform: "rotate(45 128 128)" }),
+                        use({ href: "#bridge-bar-smb10", transform: "rotate(135 128 128)" }),
+                    ]),
+                    rect({
+                        id: "diamond-cutout-small-smb10",
+                        x: "108",
+                        y: "108",
+                        width: "40",
+                        height: "40",
+                        transform: "rotate(45 128 128)",
+                    }),
+                    g({ id: "ring-with-ears-smb10" }, [
+                        circle({ cx: "128", cy: "128", r: "90" }),
+                        circle({ cx: "70", cy: "70", r: "28" }),
+                        circle({ cx: "186", cy: "70", r: "28" }),
+                        circle({ cx: "70", cy: "186", r: "28" }),
+                        circle({ cx: "186", cy: "186", r: "28" }),
+                        circle({ cx: "128", cy: "48", r: "24" }),
+                        circle({ cx: "208", cy: "128", r: "24" }),
+                        circle({ cx: "128", cy: "208", r: "24" }),
+                        circle({ cx: "48", cy: "128", r: "24" }),
+                        use({ href: "#all-bridges-smb10" }),
+                    ]),
+                    mask({ id: "ring-mask-smb10" }, [
+                        rect({ width: "256", height: "256", fill: "white" }),
+                        circle({ cx: "128", cy: "128", r: "64", fill: "black" }),
+                        use({ href: "#all-bridges-smb10", fill: "white" }),
+                        use({ href: "#diamond-cutout-small-smb10", fill: "black" }),
+                    ]),
+                    clipPath({ id: "left-half-smb10" }, [rect({ x: "0", y: "0", width: "128", height: "256" })]),
+                    clipPath({ id: "right-half-smb10" }, [rect({ x: "128", y: "0", width: "128", height: "256" })]),
+                ]),
+                g({ mask: "url(#ring-mask-smb10)" }, [
+                    use({ href: "#ring-with-ears-smb10", fill: "#FFE082", "clip-path": "url(#left-half-smb10)" }),
+                    use({ href: "#ring-with-ears-smb10", fill: "#FFD54F", "clip-path": "url(#right-half-smb10)" }),
+                ]),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#FFE082", "clip-path": "url(#left-half-smb10)" }),
+                circle({ cx: "128", cy: "128", r: "12", fill: "#FFD54F", "clip-path": "url(#right-half-smb10)" }),
+                circle({
+                    cx: "128",
+                    cy: "128",
+                    r: "64",
+                    stroke: "#FFECB3",
+                    "stroke-width": "2",
+                    fill: "none",
+                    opacity: "0.4",
+                    mask: "url(#ring-mask-smb10)",
                 }),
             ],
             { "aria-hidden": "true", ...props }
