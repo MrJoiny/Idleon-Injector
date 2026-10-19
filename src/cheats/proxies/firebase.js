@@ -45,16 +45,15 @@ export function setupFirebaseStorageProxy() {
 
     // A configured list names the pets to fake-own, it does not describe the whole
     // collection: the player's real companions are merged back in, entries the config
-    // mentions winning on id. Without this, listing one pet silently deletes every pet
-    // actually owned, which the W1 Pets tab hits every time it marks a single pet.
-    const mergeWithOwnedCompanions = (entries, self, args) => {
-        const owned = Reflect.apply(getCompanionInfoMe, self, args) || [];
+    // mentions winning on id. Partial lists must preserve unrelated owned pets.
+    const mergeWithOwnedCompanions = (entries, owned) => {
         const byId = new Map(owned.map((entry) => [companionEntryId(entry), entry]));
         entries.forEach((entry) => byId.set(companionEntryId(entry), entry));
         return [...byId.values()];
     };
 
     firebase.getCompanionInfoMe = function (...args) {
+        const base = Reflect.apply(getCompanionInfoMe, this, args);
         if (cheatState.w1.companion) {
             if (!cheatConfig.w1.companion.companions) {
                 return Array.from({ length: cList.CompanionDB.length }, (_, index) => `${index},0,0,0,1`).filter(
@@ -65,10 +64,11 @@ export function setupFirebaseStorageProxy() {
             if (typeof companions === "string") {
                 const entries = companions
                     .split(",")
-                    .map((id) => parseInt(id.trim()))
-                    .filter((id) => !isNaN(id))
-                    .map((id) => `${id},0,0,0,1`);
-                return mergeWithOwnedCompanions(entries, this, args);
+                    .map((entry) => entry.trim().split(":"))
+                    .filter(([id]) => /^\d+$/.test(id))
+                    // Bare IDs retain the legacy Pets+ tier; :0 requests the normal tier.
+                    .map(([id, tier]) => `${Number(id)},0,0,0,${tier === "0" ? "0" : "1"}`);
+                return mergeWithOwnedCompanions(entries, base || []);
             }
             if (Array.isArray(companions)) {
                 const entries = companions.map((entry) => {
@@ -76,11 +76,11 @@ export function setupFirebaseStorageProxy() {
                     if (typeof entry === "string" && !entry.includes(",")) return `${entry},0,0,0,1`;
                     return entry;
                 });
-                return mergeWithOwnedCompanions(entries, this, args);
+                return mergeWithOwnedCompanions(entries, base || []);
             }
             return companions;
         }
-        return Reflect.apply(getCompanionInfoMe, this, args);
+        return base;
     };
 
     const getCurrentCompanion = firebase.getCurrentCompanion;

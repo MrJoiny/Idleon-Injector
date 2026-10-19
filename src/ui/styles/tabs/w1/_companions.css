@@ -32,7 +32,6 @@
     gap: 10px;
 }
 
-/* The card is a button, so the + control sits beside it and is positioned over it. */
 .companion-card-wrap {
     position: relative;
     display: flex;
@@ -55,10 +54,6 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     appearance: none;
-    transition:
-        border-color 0.15s,
-        background 0.15s,
-        color 0.15s;
 }
 
 .companion-plus:hover {
@@ -108,6 +103,12 @@
     outline-offset: 2px;
 }
 
+.companion-card:disabled,
+.companion-plus:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 .companion-card--enabled {
     border-color: var(--c-success);
     background: var(--c-success-10);
@@ -115,10 +116,23 @@
 
 .companion-card--plus {
     border-color: var(--c-accent);
+    background: var(--c-panel-hover);
 }
 
-/* The + control overlaps the buff text, which is the tallest thing in the card. */
-.companion-card__effect {
+.companion-card__tier {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--c-text-muted);
+}
+
+.companion-card--plus .companion-card__tier {
+    color: var(--c-accent);
+}
+
+.companion-card__warning {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--c-warning);
     padding-right: 26px;
 }
 
@@ -148,6 +162,7 @@
 }
 
 .companion-card__effect {
+    padding-right: 26px;
     min-height: 2.7em;
     font-size: 0.75rem;
     color: var(--c-text-dim);
