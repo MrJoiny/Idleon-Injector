@@ -132,10 +132,12 @@ async function saveConfiguration(receivedFullConfig) {
         parsedUiCheatConfig = filterByTemplate(parsedUiCheatConfig, defaultConfig.cheatConfig) || {};
     }
 
-    let filteredInjectorConfig = uiInjectorConfig;
-    if (defaultConfig?.injectorConfig) {
-        filteredInjectorConfig = filterByTemplate(uiInjectorConfig, defaultConfig.injectorConfig) || {};
-    }
+    // Keep loaded custom-only fields when a UI save omits them.
+    const injectorTemplate = { ...defaultConfig?.injectorConfig, gameExePath: "", devtoolsBrowserPath: "" };
+    const filteredInjectorConfig = deepMerge(
+        deepClone(injectorConfig),
+        filterByTemplate(uiInjectorConfig, injectorTemplate) || {}
+    );
 
     const cheatConfigDiff = getDeepDiff(parsedUiCheatConfig, defaultConfig?.cheatConfig) || {};
     const injectorConfigDiff = getDeepDiff(filteredInjectorConfig, defaultConfig?.injectorConfig) || {};
