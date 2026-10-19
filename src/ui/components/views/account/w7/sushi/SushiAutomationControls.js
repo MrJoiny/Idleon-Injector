@@ -14,6 +14,8 @@ export function SushiAutomationControls(busy) {
     const showPlay = van.state(false);
     const extendChain = van.state(false);
     const higherTier = van.state(false);
+    const knowledgeTier = van.state("1");
+    const knowledgeQuantity = van.state("1");
     const feedback = van.state("");
     try {
         const saved = JSON.parse(localStorage.getItem("sushi-purchase-settings"));
@@ -247,6 +249,37 @@ export function SushiAutomationControls(busy) {
                     showPlay,
                     "Start or stop without reopening the cheat menu. Both locations control the same run."
                 )
+            )
+        ),
+        div(
+            { class: "sushi-settings-section" },
+            h3("KNOWLEDGE SIMULATION"),
+            p(
+                { class: "sushi-setting__help" },
+                "Add the Knowledge XP for crafting a quantity of sushi from tier 1. Tier 3 counts four tier-1 creations, two tier-2 creations and one tier-3 creation per item."
+            ),
+            div(
+                { class: "sushi-settings-grid" },
+                numberField("Simulation tier", knowledgeTier, 1, "Final tier of the simulated crafting tree."),
+                numberField(
+                    "Simulation quantity",
+                    knowledgeQuantity,
+                    1,
+                    "How many final sushi to simulate. Each click adds XP again."
+                )
+            ),
+            p(
+                { class: "sushi-setting__help" },
+                "Always includes your current pink XP fireplace multiplier and global Knowledge XP bonuses for the whole batch, regardless of fireplace placement. No East Wind, fuel spending, discoveries or board changes. Knowledge must be unlocked. Very large totals use the game's floating-point precision."
+            ),
+            button(
+                {
+                    type: "button",
+                    class: "account-btn account-btn--apply",
+                    disabled: locked,
+                    onclick: () => run("knowledge " + knowledgeTier.val + " " + knowledgeQuantity.val),
+                },
+                "Add Knowledge XP"
             )
         ),
         div(

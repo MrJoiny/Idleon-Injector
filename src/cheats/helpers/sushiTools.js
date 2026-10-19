@@ -3,7 +3,6 @@ import {
     validateBoard,
     fuelTierSuggestions,
     boardLimits,
-    findPairMove,
     sortBoard,
     findStartMove,
     findContinuationMove,
@@ -183,7 +182,7 @@ export function sushiTools(action, expected = null, options = {}) {
                 ? findContinuationMove(board, plates, expected.landing, maxTier, options)
                 : expected.mode === "resume"
                   ? findResumeMove(board, plates, maxTier, options) || findStartMove(board, plates, maxTier, options)
-                  : findStartMove(board, plates, maxTier, options) || findPairMove(board, plates, maxTier, options);
+                  : findStartMove(board, plates, maxTier, options);
         if (!move) return null;
         return {
             ...move,

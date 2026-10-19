@@ -1,3 +1,4 @@
+import { simulateSushiKnowledge } from "./sushiKnowledge.js";
 import { configureSushiWind } from "./sushiWind.js";
 import { configureSushiButtons } from "../ui/sushiButtons.js";
 import { gga } from "../core/globals.js";
@@ -85,8 +86,6 @@ const playLoop = async () => {
         state = await settle();
         if (!state || stopping) return;
     }
-    state = await refill(state);
-    if (!state || stopping) return;
     let mode = "resume";
     let landing = null;
     while (!stopping) {
@@ -139,6 +138,11 @@ const playLoop = async () => {
 
 export function sushiAutomation(params = []) {
     const action = params[0] || "status";
+    if (action === "knowledge") {
+        if (busy) throw new Error("Stop automation before adding Knowledge XP.");
+        message = simulateSushiKnowledge(Number(params[1]), Number(params[2]));
+        return { busy, message };
+    }
     if (action === "stop") {
         if (busy) {
             stopping = true;

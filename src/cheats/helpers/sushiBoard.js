@@ -60,50 +60,59 @@ export function sortBoard(board, plates, maxTier = 63, options = {}) {
     return board.map((tier, index) => (plates[index] >= 0 ? values[next++] : tier));
 }
 
+/** Ignore empty cells within an unlocked run, but never cross a locked plate. */
+function occupiedRuns(board, plates, working) {
+    const runs = [[]];
+    for (let i = 0; i < board.length; i++) {
+        if (!working.includes(i) || plates[i] < 0) {
+            if (runs[runs.length - 1].length) runs.push([]);
+        } else if (board[i] >= 0) runs[runs.length - 1].push(i);
+    }
+    return runs;
+}
 export function findStartMove(board, plates, maxTier = 63, options = {}) {
-    validateBoard(board, plates);
     const { working, targetTier } = boardLimits(board, plates, maxTier, options);
-    for (let index = 1; index < board.length - 1; index++) {
-        if (
-            working.includes(index + 1) &&
-            board[index] < targetTier &&
-            board[index] >= 0 &&
-            board[index - 1] === board[index] + 1 &&
-            board[index + 1] === board[index]
-        ) {
-            return { source: index, target: index + 1, kind: "start" };
+    for (const run of occupiedRuns(board, plates, working)) {
+        for (let i = 0; i + 2 < run.length; i++) {
+            const [a, b, c] = run.slice(i, i + 3);
+            if (board[b] >= targetTier || board[b] !== board[c]) continue;
+            if (board[a] === board[b] + 1) return { source: b, target: c, kind: "start" };
+            if (board[a] === board[b]) return { source: a, target: b, kind: "triple" };
         }
     }
     return null;
 }
-
-/** Follow the active gap, never a different pair elsewhere on the board. */
 export function findContinuationMove(board, plates, landing, maxTier = 63, options = {}) {
-    validateBoard(board, plates);
-    if (!Number.isInteger(landing) || landing < 1 || landing >= board.length - 1) return null;
     const { working, targetTier } = boardLimits(board, plates, maxTier, options);
-    if (!working.includes(landing + 1)) return null;
-    const tier = board[landing];
-    if (tier < 0 || tier >= targetTier || board[landing + 1] !== tier || board[landing - 1] !== -1) return null;
-    let left = landing - 1;
-    while (left >= 0 && board[left] === -1) {
-        if (plates[left] < 0) return null;
-        left--;
+    for (const run of occupiedRuns(board, plates, working)) {
+        const at = run.indexOf(landing);
+        if (at < 0 || board[landing] >= targetTier) continue;
+        const left = run[at - 1],
+            right = run[at + 1];
+        if (
+            left !== undefined &&
+            right !== undefined &&
+            board[left] === board[landing] &&
+            board[right] === board[landing]
+        )
+            return { source: left, target: landing, kind: "gap" };
+        if (
+            right !== undefined &&
+            board[right] === board[landing] &&
+            ((landing > 0 && plates[landing - 1] >= 0 && board[landing - 1] === -1) || right > landing + 1)
+        )
+            return { source: landing, target: right, kind: "final" };
     }
-    if (left >= 0 && board[left] === tier) return { source: left, target: landing, kind: "gap" };
-    return { source: landing, target: landing + 1, kind: "final" };
+    return null;
 }
-
-/** Prefer a matching gap; otherwise finish an interrupted chain's adjacent tail. */
 export function findResumeMove(board, plates, maxTier = 63, options = {}) {
-    validateBoard(board, plates);
-    let finalPair = null;
-    for (let landing = 1; landing < board.length - 1; landing++) {
+    const start = findStartMove(board, plates, maxTier, options);
+    let first = start;
+    for (let landing = 0; landing < board.length; landing++) {
         const move = findContinuationMove(board, plates, landing, maxTier, options);
-        if (move?.kind === "gap") return move;
-        if (move?.kind === "final" && !finalPair) finalPair = move;
+        if (move && (!first || move.source < first.source)) first = move;
     }
-    return finalPair;
+    return first;
 }
 
 /** Advisory only: budget 85% of generated fuel for a full refill of non-capped slots. */
