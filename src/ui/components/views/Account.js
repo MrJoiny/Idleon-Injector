@@ -10,6 +10,7 @@
 
 import van from "../../vendor/van-1.6.0.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
+import { PlayerTab } from "./account/PlayerTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
 import { ClickerTab } from "./account/ClickerTab.js";
@@ -33,6 +34,7 @@ const { div, span } = van.tags;
  */
 const ACCOUNT_TABS = [
     { id: "account-options", label: "ACCOUNT OPTIONS", isWorld: false, component: AccountOptionsTab },
+    { id: "player", label: "PLAYER", isWorld: false, component: PlayerTab },
     { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
     { id: "tasks", label: "TASKS", isWorld: false, component: TasksTab },
     { id: "cards", label: "CARDS", isWorld: false, component: CardsTab },
@@ -61,7 +63,9 @@ export const Account = () => {
             navClass: "account-sub-nav",
             buttonClass: (tab) => {
                 if (tab.isWorld) return `account-top-tab-btn world-tab-btn w${tab.worldNum}-world-tab`;
-                const compactClass = ["tasks", "cards", "bundles"].includes(tab.id) ? "account-compact-tab-btn" : "";
+                const compactClass = ["player", "tasks", "cards", "bundles"].includes(tab.id)
+                    ? "account-compact-tab-btn"
+                    : "";
                 return `account-top-tab-btn account-options-btn ${compactClass}`;
             },
             renderLabel: (tab) => (tab.isWorld ? span({ class: "world-tab-btn-num" }, `W${tab.worldNum}`) : tab.label),

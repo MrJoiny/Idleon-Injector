@@ -6,7 +6,9 @@ import { EditableNumberRow } from "../EditableNumberRow.js";
 import { BulkActionBar } from "../BulkActionBar.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { ActionButton } from "../components/ActionButton.js";
+import { AccountSection } from "../components/AccountSection.js";
 import { WarningBanner } from "../components/AccountPageChrome.js";
+import { createCharacterSelector } from "../components/CharacterSelector.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
 import {
     cleanName,
@@ -19,7 +21,7 @@ import {
     writeVerified,
 } from "../accountShared.js";
 
-const { div, span, select, option, label } = van.tags;
+const { div, span } = van.tags;
 
 export const savedPath = (name, slot) => `PlayerDATABASE.h[${name}].h.Prayers[${slot}]`;
 
@@ -61,9 +63,7 @@ export const levelPlan = (state, id, requested) => {
     if (!definition) throw new Error("Prayer metadata changed. Refresh and try again.");
     const next = Math.max(0, Math.min(Number(definition.data[9]), requested));
     const affected =
-        next === 0
-            ? state.players.filter((player) => player.prayers.includes(id) || player.saved.includes(id))
-            : [];
+        next === 0 ? state.players.filter((player) => player.prayers.includes(id) || player.saved.includes(id)) : [];
     return {
         equipment: next === 0 ? affected.flatMap((player) => equipmentPlan(state, player, [id])) : [],
         levels: state.levels[id] !== next ? [{ path: `PrayersUnlocked[${id}]`, value: next }] : [],
@@ -87,16 +87,20 @@ export const PrayersTab = () => {
     const bulkStatus = useWriteStatus();
     const rows = div({ class: "account-list" });
     const reconcileRows = createStaticRowReconciler(rows);
-    const selector = select({
-        class: "select-base",
+    const characterSelector = createCharacterSelector({
         id: "prayers-character",
-        value: selected,
+        selected,
         disabled: () => busy.val || loading.val || Boolean(error.val),
-        onchange: (event) => {
+        onChange: (event) => {
             if (!busy.val) selected.val = event.target.value;
         },
+        info: () => {
+            if (!snapshot.val) return "";
+            const player = snapshot.val.players.find((entry) => entry.name === selected.val);
+            if (!player) return "";
+            return `${player.prayers.filter((id) => id !== -1).length}/${snapshot.val.capacity} slots used`;
+        },
     });
-    const reconcileNames = createStaticRowReconciler(selector);
     const unavailable = () => busy.val || loading.val || Boolean(error.val) || !snapshot.val;
 
     const readSnapshot = async () => {
@@ -179,10 +183,7 @@ export const PrayersTab = () => {
     const applySnapshot = (next) => {
         if (!next.players.some((player) => player.name === selected.val)) selected.val = next.current;
         snapshot.val = next;
-        reconcileNames(next.players.map((player) => player.name).join("|"), () =>
-            next.players.map((player) => option({ value: player.name }, player.name))
-        );
-        selector.value = selected.val;
+        characterSelector.setCharacters(next.players.map((player) => player.name));
         next.definitions.forEach(({ id, data }) => {
             getOrCreateState(levelStates, id).val = next.levels[id];
             getOrCreateState(metadataStates, id, data).val = data;
@@ -325,9 +326,7 @@ export const PrayersTab = () => {
                 if (mode === "unequip") {
                     const player = state.players.find((entry) => entry.name === selected.val);
                     if (!player) throw new Error("Selected character no longer exists.");
-                    const ids = state.definitions
-                        .map((entry) => entry.id)
-                        .filter((id) => player.prayers.includes(id));
+                    const ids = state.definitions.map((entry) => entry.id).filter((id) => player.prayers.includes(id));
                     if (!ids.length) {
                         message.val = `No prayers equipped on ${player.name}.`;
                         return { equipment: [], levels: [], cancelled: true };
@@ -437,17 +436,7 @@ export const PrayersTab = () => {
         topNotices: WarningBanner("Setting a prayer to level 0 removes it from every character before locking it."),
         body: div(
             { class: "scrollable-panel content-stack" },
-            div(
-                { class: "account-setall-row" },
-                label({ for: "prayers-character", class: "account-setall-row__label" }, "CHARACTER"),
-                selector,
-                span(() => {
-                    if (!snapshot.val) return "";
-                    const player = snapshot.val.players.find((entry) => entry.name === selected.val);
-                    if (!player) return "";
-                    return `${player.prayers.filter((id) => id !== -1).length}/${snapshot.val.capacity} slots used`;
-                })
-            ),
+            characterSelector.node,
             () => {
                 if (!snapshot.val || !snapshot.val.gamingPercent) return div();
                 const player = snapshot.val.players.find((entry) => entry.name === selected.val);
@@ -460,7 +449,7 @@ export const PrayersTab = () => {
                 );
             },
             div({ class: "write-status", role: "status", "aria-live": "polite" }, message),
-            rows
+            AccountSection({ title: "PRAYERS", body: rows })
         ),
         initialWrapperClass: "scrollable-panel",
         loadingText: "READING PRAYERS",

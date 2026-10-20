@@ -725,6 +725,16 @@
     white-space: nowrap;
 }
 
+.account-character-selector .select-base {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-character-selector__info {
+    font-size: 0.875rem;
+    color: var(--c-text-muted);
+}
+
 .account-setall-row__input .number-input-wrapper {
     width: 150px;
 }
