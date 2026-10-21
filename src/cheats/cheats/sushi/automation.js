@@ -26,7 +26,7 @@ function call(action, expected) {
             session.actor.behaviors.getBehavior("ActorEvents_741") !== session.ui)
     )
         throw new Error("Game session changed; stopped.");
-    return sushiTools(action, expected, options);
+    return sushiTools(action, expected, busy ? session.options : options);
 }
 
 async function settle(plan = null) {
@@ -135,11 +135,10 @@ const playLoop = async () => {
     }
 };
 
-export function sushiAutomation(params = []) {
-    const action = params[0] || "status";
+export function sushiAutomation(action = "status", settings = {}) {
     if (action === "knowledge") {
         if (busy) throw new Error("Stop automation before adding Knowledge XP.");
-        message = simulateSushiKnowledge(Number(params[1]), Number(params[2]));
+        message = simulateSushiKnowledge(settings.tier, settings.quantity);
         return { busy, message };
     }
     if (action === "stop") {
@@ -151,15 +150,7 @@ export function sushiAutomation(params = []) {
     }
     if (action === "status") {
         try {
-            const state =
-                !busy && params.length > 3
-                    ? sushiTools("status", null, {
-                          ...options,
-                          targetCount: Number(params[3]),
-                          targetTier: Number(params[4]),
-                          reserveSlots: Number(params[5]),
-                      })
-                    : call("status");
+            const state = !busy ? sushiTools("status", null, { ...options, ...settings }) : call("status");
             return { ...state, options, busy, running, stopping, message, merges, cycles };
         } catch (error) {
             return {
@@ -178,52 +169,68 @@ export function sushiAutomation(params = []) {
     if (!["start", "sort", "configure"].includes(action))
         throw new Error("Use status, sort, stop, start manual <tier>, or start wind.");
     if (busy) throw new Error("Sushi automation is already running.");
-    const requested = {
-        targetCount: params[3] === undefined ? 40 : Number(params[3]),
-        targetTier: params[4] === undefined ? undefined : Number(params[4]),
-        reserveSlots: params[5] === undefined ? 2 : Number(params[5]),
-        extendChain: params[6] === undefined ? Boolean(options.extendChain) : params[6] === "true",
-        higherTier: params[7] === undefined ? Boolean(options.higherTier) : params[7] === "true",
-    };
+    const {
+        mode = "manual",
+        tier = 1,
+        targetCount = 40,
+        targetTier,
+        reserveSlots = 2,
+        extendChain = Boolean(options.extendChain),
+        higherTier = Boolean(options.higherTier),
+    } = settings;
+    const requested =
+        action === "sort"
+            ? { reserveSlots: 0 }
+            : {
+                  targetCount,
+                  targetTier,
+                  reserveSlots,
+                  extendChain,
+                  higherTier,
+              };
     const initial = sushiTools(action === "configure" ? "settings" : "status", null, requested);
-    if (
-        !Number.isInteger(requested.reserveSlots) ||
-        requested.reserveSlots < 0 ||
-        requested.reserveSlots >= 120 ||
-        (requested.targetTier !== undefined &&
-            (!Number.isInteger(requested.targetTier) ||
-                requested.targetTier < 1 ||
-                requested.targetTier > initial.maxTier + 1))
-    )
-        throw new Error("Choose a valid target tier and 0–119 reserved slots.");
-    if (
-        !Number.isInteger(requested.targetCount) ||
-        requested.targetCount < 1 ||
-        requested.targetCount > 120 ||
-        (action === "start" && requested.targetCount > initial.working.length)
-    )
-        throw new Error("Target quantity must fit the usable board slots.");
     if (initial.dragging >= 0) throw new Error("Release the sushi before starting.");
-    const mode = params[1] || "manual";
-    const tier = params[2] === undefined ? 1 : Number(params[2]);
-    if (
-        action !== "sort" &&
-        (!["manual", "wind"].includes(mode) ||
+    if (action !== "sort") {
+        if (
+            !Number.isInteger(requested.reserveSlots) ||
+            requested.reserveSlots < 0 ||
+            requested.reserveSlots >= 120 ||
+            (requested.targetTier !== undefined &&
+                (!Number.isInteger(requested.targetTier) ||
+                    requested.targetTier < 1 ||
+                    requested.targetTier > initial.maxTier + 1))
+        )
+            throw new Error("Choose a valid target tier and 0–119 reserved slots.");
+        if (
+            !Number.isInteger(requested.targetCount) ||
+            requested.targetCount < 1 ||
+            requested.targetCount > 120 ||
+            (action === "start" && requested.targetCount > initial.working.length)
+        )
+            throw new Error("Target quantity must fit the usable board slots.");
+        if (action === "start" && initial.board.filter((value) => value >= 0).length > initial.working.length)
+            throw new Error(`Clear ${reserveSlots} slots before starting; no sushi will be deleted.`);
+        if (typeof extendChain !== "boolean" || typeof higherTier !== "boolean")
+            throw new Error("East Wind overrides must be boolean values.");
+        if (
+            !["manual", "wind"].includes(mode) ||
             !Number.isInteger(tier) ||
             tier < 1 ||
-            (mode === "manual" && tier > initial.maxPurchaseTier))
-    )
-        throw new Error("Choose an unlocked whole-number tier.");
-    configureSushiWind(requested.extendChain, requested.higherTier);
-    options = requested;
-    purchaseMode = mode;
-    purchaseTier = tier;
-    if (action === "configure") {
-        message = "Settings applied.";
-        return { busy, running, stopping, message };
+            (mode === "manual" && tier > initial.maxPurchaseTier)
+        )
+            throw new Error("Choose an unlocked whole-number tier.");
+        configureSushiWind(requested.extendChain, requested.higherTier);
+        options = requested;
+        purchaseMode = mode;
+        purchaseTier = tier;
+        if (action === "configure") {
+            message = "Settings applied.";
+            return { busy, running, stopping, message };
+        }
     }
     const actor = gga.PixelHelperActor[27];
     session = {
+        options: requested,
         game: gga,
         data: gga.Sushi,
         board: gga.Sushi[0],

@@ -1,6 +1,7 @@
 import van from "../../../../../vendor/van-1.6.0.js";
 import { executeCheatAction } from "../../../../../services/api.js";
 import { AccountTabHeader } from "../../components/AccountTabHeader.js";
+import { RefreshButton } from "../../components/AccountPageChrome.js";
 const { div, label, select, option, input, button, p, h3, span } = van.tags;
 
 export function SushiToolsTab() {
@@ -49,8 +50,10 @@ export function SushiToolsTab() {
             /* Optional local preference. */
         }
     }
-    async function command(action) {
-        const response = await executeCheatAction("w7 sushitools " + action);
+    async function command(action, settings) {
+        const response = await executeCheatAction(
+            "w7 sushitools " + action + (settings ? " " + JSON.stringify(settings) : "")
+        );
         if (typeof response.result !== "string" || response.result.startsWith("Error:"))
             throw new Error(
                 String(response.result || "Sushi command failed.")
@@ -61,14 +64,21 @@ export function SushiToolsTab() {
     }
     async function update() {
         try {
-            state.val = await command(`status manual 1 ${targetCount.val} ${targetTier.val} ${reserveSlots.val}`);
+            state.val = await command("status", {
+                targetCount: Number(targetCount.val),
+                targetTier: Number(targetTier.val),
+                reserveSlots: Number(reserveSlots.val),
+            });
             busy.val = Boolean(state.val.busy);
+            feedback.val = "";
+            return state.val;
         } catch (error) {
             feedback.val = error.message;
+            return null;
         }
     }
-    async function run(action) {
-        if (action === "sort" || action === "configure" || action.startsWith("start")) {
+    async function run(action, settings) {
+        if (action === "configure" || action === "start") {
             if (
                 ![targetCount.val, targetTier.val, reserveSlots.val].every(
                     (value) => value.trim() !== "" && Number.isInteger(Number(value))
@@ -77,18 +87,23 @@ export function SushiToolsTab() {
                 feedback.val = "Enter whole numbers for the target and reserved slots.";
                 return;
             }
-            const configuring = action === "configure";
-            if (action === "sort") action = "sort manual 1";
-            if (configuring) action = "configure " + mode.val + " " + (mode.val === "wind" ? "1" : tier.val);
-            action += ` ${targetCount.val} ${targetTier.val} ${reserveSlots.val}`;
-            action += ` ${extendChain.val} ${higherTier.val}`;
+            settings = {
+                mode: mode.val,
+                tier: mode.val === "wind" ? 1 : Number(tier.val),
+                targetCount: Number(targetCount.val),
+                targetTier: Number(targetTier.val),
+                reserveSlots: Number(reserveSlots.val),
+                extendChain: extendChain.val,
+                higherTier: higherTier.val,
+            };
         }
         pending.val = true;
         try {
-            const result = await command(action);
+            const result = await command(action, settings);
             feedback.val = "";
             busy.val = Boolean(result.busy);
-            await update();
+            const updated = await update();
+            if (updated && !result.busy) feedback.val = result.message || "";
         } catch (error) {
             feedback.val = error.message;
         } finally {
@@ -150,8 +165,7 @@ export function SushiToolsTab() {
                         type: "button",
                         class: () => "account-btn " + (busy.val ? "account-btn--danger" : "account-btn--apply"),
                         disabled: () => pending.val || state.val.stopping,
-                        onclick: () =>
-                            run(busy.val ? "stop" : mode.val === "wind" ? "start wind 1" : "start manual " + tier.val),
+                        onclick: () => run(busy.val ? "stop" : "start"),
                     },
                     () => (busy.val ? (state.val.stopping ? "Stopping…" : "Stop") : "Auto Play")
                 )
@@ -203,10 +217,7 @@ export function SushiToolsTab() {
                 },
                 () => (pending.val ? "Working…" : "Apply settings")
             ),
-            p(
-                { class: "sushi-setting__help" },
-                "Apply again after restarting. Sort and Auto Play also apply these settings."
-            )
+            p({ class: "sushi-setting__help" }, "Apply again after restarting. Auto Play also applies these settings.")
         ),
         div(
             { class: "sushi-settings-section" },
@@ -229,7 +240,11 @@ export function SushiToolsTab() {
                     type: "button",
                     class: "account-btn account-btn--apply",
                     disabled: locked,
-                    onclick: () => run("knowledge " + knowledgeTier.val + " " + knowledgeQuantity.val),
+                    onclick: () =>
+                        run("knowledge", {
+                            tier: Number(knowledgeTier.val),
+                            quantity: Number(knowledgeQuantity.val),
+                        }),
                 },
                 "Add Knowledge XP"
             )
@@ -267,22 +282,17 @@ export function SushiToolsTab() {
                 );
             }),
             p({ role: "status", "aria-live": "polite", class: "sushi-automation-status" }, () =>
-                pending.val ? "Working…" : feedback.val || state.val.message || state.val.error || "Connecting…"
+                pending.val ? "Working…" : feedback.val || state.val.error || state.val.message || "Connecting…"
             )
         )
     );
-    // Poll only while this view remains mounted; the automation itself lives in the game.
-    async function poll() {
-        if (!controls.isConnected) return;
-        if (!pending.val) await update();
-        setTimeout(poll, 1000);
-    }
-    setTimeout(poll, 100);
+    update();
     return div(
         { class: "tab-container" },
         AccountTabHeader({
             title: "SUSHI TOOLS",
             description: "Keep the in-game Sushi board open in sushi-move mode for Sort and Auto Play.",
+            actions: RefreshButton({ onRefresh: update, disabled: () => pending.val }),
         }),
         controls
     );

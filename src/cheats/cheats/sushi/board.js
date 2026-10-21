@@ -21,7 +21,7 @@ export function boardLimits(board, plates, maxTier = 63, options = {}) {
     if (
         !Number.isInteger(reserveSlots) ||
         reserveSlots < 0 ||
-        reserveSlots >= unlocked.length ||
+        reserveSlots > unlocked.length ||
         !Number.isInteger(targetTier) ||
         targetTier < 0 ||
         targetTier > maxTier
@@ -29,8 +29,6 @@ export function boardLimits(board, plates, maxTier = 63, options = {}) {
         throw new Error("Invalid target tier or reserved slot count.");
     const reserved = reserveSlots ? unlocked.slice(-reserveSlots) : [];
     const working = unlocked.slice(0, unlocked.length - reserveSlots);
-    if (board.filter((tier) => tier >= 0).length > working.length)
-        throw new Error(`Clear ${reserveSlots} slots before starting; no sushi will be deleted.`);
     return {
         reserved,
         working,
@@ -53,8 +51,8 @@ export function findPairMove(board, plates, maxTier = 63, options = {}) {
     return null;
 }
 
-export function sortBoard(board, plates, maxTier = 63, options = {}) {
-    boardLimits(board, plates, maxTier, options);
+export function sortBoard(board, plates, maxTier = 63) {
+    boardLimits(board, plates, maxTier, { reserveSlots: 0 });
     const values = board.filter((_, index) => plates[index] >= 0).sort((a, b) => b - a);
     let next = 0;
     return board.map((tier, index) => (plates[index] >= 0 ? values[next++] : tier));

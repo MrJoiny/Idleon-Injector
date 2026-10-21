@@ -155,7 +155,7 @@ export function sushiTools(action, expected = null, options = {}) {
     if (action === "sort") {
         if (!expected || JSON.stringify(board) !== JSON.stringify(expected))
             throw new Error("Board changed; click Sort again.");
-        const sorted = sortBoard(board, plates, maxTier, options);
+        const sorted = sortBoard(board, plates, maxTier);
         const changed = sorted.reduce((count, value, index) => count + Number(value !== board[index]), 0);
         // Keep the Haxe array identity and all plate/fireplace data intact.
         sorted.forEach((value, index) => {
