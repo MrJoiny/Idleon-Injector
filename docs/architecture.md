@@ -34,12 +34,3 @@ for calls into the injected helpers. Attachment and injection retain their setup
 | Bundling and packaging            | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
 
 See the [Account page guide](account-pages.md) and [cheats guide](cheats.md) for those areas.
-
-## Sushi automation
-
-Sushi automation is owned by the injected cheats layer. Its asynchronous loop stays
-with the game session and stops if the session, station, or board mode changes.
-The Account Sushi Station controls use the existing cheat command bridge; there
-is no automation-specific server route or input injection. Optional in-game DOM buttons call the same runner without an iframe.
-Native Sushi events apply upgrades and purchases; the planner only chooses pairs
-and preserves board contents when sorting.

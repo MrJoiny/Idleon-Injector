@@ -11,11 +11,10 @@
  * - W7: spelunk, gallery, sushi, reef, clam, zenith, spelunkmana, spelunkdepth, etc.
  */
 
-import { registerCheat, registerCheats } from "../core/registration.js";
+import { registerCheats } from "../core/registration.js";
 import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
-import { sushiAutomation } from "../helpers/sushiAutomation.js";
 import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 registerCheats({
@@ -348,12 +347,4 @@ registerCheats({
             configurable: true,
         },
     ],
-});
-
-registerCheat({
-    name: "w7 sushitools",
-    category: "w7",
-    needsParam: true,
-    message: "Sushi automation: status, sort, stop, start manual <tier>, start wind. Keep Sushi Station open.",
-    fn: (params) => JSON.stringify(sushiAutomation(params)),
 });

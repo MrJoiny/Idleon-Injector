@@ -1,8 +1,7 @@
-import { simulateSushiKnowledge } from "./sushiKnowledge.js";
-import { configureSushiWind } from "./sushiWind.js";
-import { configureSushiButtons } from "../ui/sushiButtons.js";
-import { gga } from "../core/globals.js";
-import { sushiTools } from "./sushiTools.js";
+import { simulateSushiKnowledge } from "./knowledge.js";
+import { configureSushiWind } from "../../proxies/sushiWind.js";
+import { gga } from "../../core/globals.js";
+import { sushiTools } from "./station.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let busy = false;
@@ -183,8 +182,8 @@ export function sushiAutomation(params = []) {
         targetCount: params[3] === undefined ? 40 : Number(params[3]),
         targetTier: params[4] === undefined ? undefined : Number(params[4]),
         reserveSlots: params[5] === undefined ? 2 : Number(params[5]),
-        extendChain: params[8] === undefined ? Boolean(options.extendChain) : params[8] === "true",
-        higherTier: params[9] === undefined ? Boolean(options.higherTier) : params[9] === "true",
+        extendChain: params[6] === undefined ? Boolean(options.extendChain) : params[6] === "true",
+        higherTier: params[7] === undefined ? Boolean(options.higherTier) : params[7] === "true",
     };
     const initial = sushiTools(action === "configure" ? "settings" : "status", null, requested);
     if (
@@ -220,22 +219,6 @@ export function sushiAutomation(params = []) {
     purchaseMode = mode;
     purchaseTier = tier;
     if (action === "configure") {
-        const showSort = params[6] === "true";
-        const showPlay = params[7] === "true";
-        configureSushiButtons(
-            showSort,
-            showPlay,
-            (action) =>
-                sushiAutomation([
-                    action,
-                    purchaseMode,
-                    String(purchaseTier),
-                    String(options.targetCount),
-                    String(options.targetTier ?? initial.maxTier + 1),
-                    String(options.reserveSlots),
-                ]),
-            () => sushiAutomation(["status"])
-        );
         message = "Settings applied.";
         return { busy, running, stopping, message };
     }

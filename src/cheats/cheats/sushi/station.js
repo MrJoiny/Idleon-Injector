@@ -1,4 +1,4 @@
-import { gga, events } from "../core/globals.js";
+import { gga, events } from "../../core/globals.js";
 import {
     validateBoard,
     fuelTierSuggestions,
@@ -7,7 +7,7 @@ import {
     findStartMove,
     findContinuationMove,
     findResumeMove,
-} from "./sushiBoard.js";
+} from "./board.js";
 
 function station() {
     if (Number(gga.MenuType2) !== 102) throw new Error("Keep the in-game Sushi board open.");

@@ -128,7 +128,6 @@
 .sushi-automation-controls p {
     margin: 4px 0;
 }
-.sushi-automation-header p,
 .sushi-setting__help {
     font-size: 0.85rem;
     color: var(--c-text-muted);
@@ -191,6 +190,6 @@
     padding-top: 12px;
 }
 .sushi-automation-status {
-    color: var(--c-text);
+    color: var(--c-text-main);
     font-weight: 600;
 }

@@ -1,4 +1,4 @@
-import { gga, events } from "../core/globals.js";
+import { gga, events } from "../../core/globals.js";
 
 /** Aggregate a binary crafting tree; no board, fuel or discovery changes. */
 export function simulateSushiKnowledge(tier, quantity) {
