@@ -1,7 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { gga, readCList, readComputed, readGgaEntries } from "../../../services/api.js";
 import { toIndexedArray } from "../../../utils/index.js";
-import { parseNumber } from "../../../utils/numberFormat.js";
+import { formattedStep, parseNumber } from "../../../utils/numberFormat.js";
 import { EditableNumberRow } from "./EditableNumberRow.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
 import {
@@ -93,11 +93,24 @@ export const PlayerTab = () => {
                     : null;
             },
             write: (next) => setValue(name, index, next),
-            renderInfo: () => span({ class: "account-row__name" }, title),
+            renderInfo: () =>
+                div(
+                    { class: "account-row__name-group" },
+                    span({ class: "account-row__name" }, title),
+                    index === 0
+                        ? span({ class: "option-warning" }, "Warning: changing the main level up will shadowban you.")
+                        : null
+                ),
             renderBadge: (value) => (money ? `${largeFormatter(value)} COPPER` : `LV ${value}`),
             inputMode: money ? "float" : "int",
-            inputProps: { "aria-label": title, ...(money ? { formatter: String, parser: largeParser } : {}) },
-            rowClass: "account-row--wide-controls",
+            inputProps: { "aria-label": title, ...(money ? { formatter: largeFormatter, parser: largeParser } : {}) },
+            adjustInput: money
+                ? (raw, delta, current) => {
+                    const base = parseNumber(String(raw)) ?? current;
+                    return Math.max(0, base + delta * formattedStep(base));
+                }
+                : undefined,
+            rowClass: `account-row--wide-controls${index === 0 ? " has-warning" : ""}`,
             controlsClass: "account-row__controls--xl",
         });
     };
@@ -162,7 +175,7 @@ export const PlayerTab = () => {
     return PersistentAccountListPage({
         title: "PLAYER",
         description:
-            "Edit each character's main level, skill levels, and carried money. Money is in copper; K, M, B and scientific notation are accepted. Level changes reset that level's XP progress and update its XP requirement. Talent points are unchanged.",
+            "Edit levels and money. Level edits reset XP and leave talent points unchanged.",
         actions: RefreshButton({ onRefresh: load, disabled: () => loading.val || busy.val }),
         state: { loading, error },
         loadingText: "READING PLAYER",
