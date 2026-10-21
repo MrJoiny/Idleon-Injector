@@ -1,13 +1,5 @@
 import { gga, events } from "../../core/globals.js";
-import {
-    validateBoard,
-    fuelTierSuggestions,
-    boardLimits,
-    sortBoard,
-    findStartMove,
-    findContinuationMove,
-    findResumeMove,
-} from "./board.js";
+import { validateBoard, boardLimits, sortBoard, findStartMove, findContinuationMove, findResumeMove } from "./board.js";
 
 function station() {
     if (Number(gga.MenuType2) !== 102) throw new Error("Keep the in-game Sushi board open.");
@@ -56,19 +48,8 @@ export function sushiTools(action, expected = null, options = {}) {
         )
             throw new Error("Unexpected Sushi purchase limits.");
         const suggestedTier = Math.min(maxPurchaseTier, Math.max(1, eastWindTier - 26));
-        const fuelPerSecond = Number(rules._customBlock_SushiStuff("FuelGen", 0, 0)) / 3600;
-        const refillSlots = Math.max(0, limits.working.length - limits.capped);
-        const fuelCosts = Array.from({ length: maxPurchaseTier }, (_, index) =>
-            Number(rules._customBlock_SushiStuff("FuelCost", index, 0))
-        );
-        const fuelGuide = {
-            perSecond: Number.isFinite(fuelPerSecond) ? fuelPerSecond : null,
-            slots: refillSlots,
-            suggestions: fuelTierSuggestions(fuelPerSecond, fuelCosts, refillSlots),
-        };
         return {
             ...limits,
-            fuelGuide,
             maxPurchaseTier,
             eastWindTier,
             suggestedTier,
@@ -181,7 +162,7 @@ export function sushiTools(action, expected = null, options = {}) {
             expected.mode === "continue"
                 ? findContinuationMove(board, plates, expected.landing, maxTier, options)
                 : expected.mode === "resume"
-                  ? findResumeMove(board, plates, maxTier, options) || findStartMove(board, plates, maxTier, options)
+                  ? findResumeMove(board, plates, maxTier, options)
                   : findStartMove(board, plates, maxTier, options);
         if (!move) return null;
         return {

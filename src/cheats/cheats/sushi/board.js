@@ -39,18 +39,6 @@ export function boardLimits(board, plates, maxTier = 63, options = {}) {
     };
 }
 
-export function findPairMove(board, plates, maxTier = 63, options = {}) {
-    const { working, targetTier } = boardLimits(board, plates, maxTier, options);
-    const first = new Map();
-    for (const index of working) {
-        const tier = board[index];
-        if (tier < 0 || tier >= targetTier) continue;
-        if (first.has(tier)) return { source: first.get(tier), target: index, kind: "pair" };
-        first.set(tier, index);
-    }
-    return null;
-}
-
 export function sortBoard(board, plates, maxTier = 63) {
     boardLimits(board, plates, maxTier, { reserveSlots: 0 });
     const values = board.filter((_, index) => plates[index] >= 0).sort((a, b) => b - a);
@@ -111,26 +99,4 @@ export function findResumeMove(board, plates, maxTier = 63, options = {}) {
         if (move && (!first || move.source < first.source)) first = move;
     }
     return first;
-}
-
-/** Advisory only: budget 85% of generated fuel for a full refill of non-capped slots. */
-export function fuelTierSuggestions(perSecond, costs, slots) {
-    if (
-        !Number.isFinite(perSecond) ||
-        perSecond < 0 ||
-        !Number.isInteger(slots) ||
-        slots <= 0 ||
-        !Array.isArray(costs) ||
-        !costs.length ||
-        costs.some((cost) => !Number.isFinite(cost) || cost <= 0)
-    )
-        return [];
-    return [120, 180, 300].map((seconds) => {
-        const budget = perSecond * seconds * 0.85;
-        let tier = null;
-        costs.forEach((cost, index) => {
-            if (cost * slots <= budget) tier = index + 1;
-        });
-        return { seconds, tier };
-    });
 }

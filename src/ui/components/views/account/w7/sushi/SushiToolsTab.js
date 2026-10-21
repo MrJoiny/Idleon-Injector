@@ -259,28 +259,6 @@ export function SushiToolsTab() {
                         ? ". East Wind preset: tier " + state.val.suggestedTier + "."
                         : ".")
             ),
-            p(() => {
-                const guide = state.val.fuelGuide;
-                if (!guide || guide.perSecond === null || !guide.suggestions.length)
-                    return "Open the Sushi board for fuel estimates.";
-                const rate = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 2 }).format(
-                    guide.perSecond
-                );
-                return (
-                    "Fuel: " +
-                    rate +
-                    "/s. " +
-                    guide.suggestions
-                        .map(
-                            (item) =>
-                                item.seconds / 60 +
-                                " min: " +
-                                (item.tier === null ? "below tier 1 budget" : "up to tier " + item.tier)
-                        )
-                        .join(" · ") +
-                    ". Includes a 15% margin."
-                );
-            }),
             p({ role: "status", "aria-live": "polite", class: "sushi-automation-status" }, () =>
                 pending.val ? "Working…" : feedback.val || state.val.error || state.val.message || "Connecting…"
             )
