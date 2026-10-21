@@ -65,6 +65,10 @@ export async function fetchConfig() {
     return _request("/config");
 }
 
+export async function fetchSushiToolsStatus() {
+    return _request("/game/sushi-tools/status");
+}
+
 export async function fetchAppInfo() {
     return _request("/app-info");
 }

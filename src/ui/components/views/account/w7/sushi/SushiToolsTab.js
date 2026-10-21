@@ -1,8 +1,17 @@
 import van from "../../../../../vendor/van-1.6.0.js";
-import { executeCheatAction, fetchConfig, updateSessionConfig, saveConfigFile } from "../../../../../services/api.js";
+import {
+    executeCheatAction,
+    fetchConfig,
+    updateSessionConfig,
+    saveConfigFile,
+    fetchSushiToolsStatus,
+} from "../../../../../services/api.js";
 import { AccountTabHeader } from "../../components/AccountTabHeader.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
-const { div, label, select, option, input, button, p, h3, span } = van.tags;
+import { AccountSection } from "../../components/AccountSection.js";
+import { AccountRow } from "../../components/AccountRow.js";
+import { ActionButton } from "../../components/ActionButton.js";
+const { div, label, select, option, input, p, h3, span } = van.tags;
 
 export function SushiToolsTab() {
     const busy = van.state(false);
@@ -21,7 +30,18 @@ export function SushiToolsTab() {
     const knowledgeTier = van.state("1");
     const knowledgeQuantity = van.state("1");
     const feedback = van.state("");
+    let statusTimer = null;
+    let statusRequest = 0;
+    function scheduleStatus() {
+        clearTimeout(statusTimer);
+        if (busy.val)
+            statusTimer = setTimeout(() => {
+                if (root.isConnected) return update();
+            }, 1000);
+    }
     async function refresh() {
+        ++statusRequest;
+        clearTimeout(statusTimer);
         pending.val = true;
         try {
             const config = await fetchConfig();
@@ -33,6 +53,7 @@ export function SushiToolsTab() {
             feedback.val = error.message;
         } finally {
             pending.val = false;
+            scheduleStatus();
         }
     }
     async function saveSettings() {
@@ -76,17 +97,25 @@ export function SushiToolsTab() {
         return JSON.parse(response.result);
     }
     async function update() {
+        const request = ++statusRequest;
+        clearTimeout(statusTimer);
         try {
-            state.val = await command("status");
+            const result = await fetchSushiToolsStatus();
+            if (request !== statusRequest) return null;
+            state.val = result;
             busy.val = Boolean(state.val.busy);
             feedback.val = "";
             return state.val;
         } catch (error) {
-            feedback.val = error.message;
+            if (request === statusRequest) feedback.val = error.message;
             return null;
+        } finally {
+            if (request === statusRequest) scheduleStatus();
         }
     }
     async function run(action) {
+        ++statusRequest;
+        clearTimeout(statusTimer);
         pending.val = true;
         try {
             if (action === "save" || (action === "" && !busy.val)) await saveSettings();
@@ -103,6 +132,7 @@ export function SushiToolsTab() {
             feedback.val = error.message;
         } finally {
             pending.val = false;
+            scheduleStatus();
         }
     }
     const locked = () => busy.val || pending.val || !settingsLoaded.val;
@@ -124,120 +154,143 @@ export function SushiToolsTab() {
         );
     const toggle = (title, value) =>
         label(
-            { class: "sushi-toggle" },
+            { class: "toggle-switch sushi-toggle" },
             input({
                 type: "checkbox",
+                role: "switch",
                 checked: value,
                 disabled: locked,
                 onchange: (e) => {
                     value.val = e.target.checked;
                 },
             }),
-            span(title)
+            span({ class: "slider", "aria-hidden": "true" }),
+            span({ class: "label" }, title)
         );
     const controls = div(
-        { class: "sushi-automation-controls scrollable-panel", "aria-busy": () => pending.val },
+        { class: "scrollable-panel", "aria-busy": () => pending.val },
         div(
-            { class: "sushi-automation-header" },
-            h3("AUTOMATION"),
+            { class: "sushi-tools-layout" },
+            AccountSection({
+                title: "AUTOMATION SETTINGS",
+                rootClass: "sushi-automation-controls",
+                body: [
+                    div(
+                        { class: "content-stack" },
+                        div(
+                            { class: "sushi-settings-section" },
+                            h3("PURCHASE"),
+                            div(
+                                { class: "sushi-settings-grid" },
+                                label(
+                                    { class: "sushi-setting" },
+                                    span({ class: "sushi-setting__title" }, "Buy mode"),
+                                    select(
+                                        {
+                                            "aria-label": "Buy mode",
+                                            value: settings.mode,
+                                            disabled: locked,
+                                            onchange: (e) => {
+                                                settings.mode.val = e.target.value;
+                                            },
+                                        },
+                                        option({ value: "manual" }, "Manual tier"),
+                                        option({ value: "wind" }, "East Wind preset")
+                                    )
+                                ),
+                                numberField(
+                                    "Manual tier",
+                                    settings.tier,
+                                    1,
+                                    () => locked() || settings.mode.val === "wind"
+                                )
+                            )
+                        ),
+                        div(
+                            { class: "sushi-settings-section" },
+                            h3("GOAL & BOARD"),
+                            div(
+                                { class: "sushi-settings-grid" },
+                                numberField("Target tier", settings.targetTier),
+                                numberField("Target quantity", settings.targetCount),
+                                numberField("Empty slots", settings.reserveSlots, 0)
+                            )
+                        ),
+                        div(
+                            { class: "sushi-settings-section" },
+                            h3("EAST WIND"),
+                            div(
+                                { class: "account-item-stack" },
+                                toggle("Extended East Wind chain", settings.extendChain),
+                                toggle("Higher East Wind tier limit", settings.higherTier)
+                            )
+                        )
+                    ),
+                    div(
+                        { class: "sushi-automation-footer" },
+                        p({ class: "sushi-setting__help" }, "Auto Play also saves these settings."),
+                        ActionButton({
+                            label: () => (pending.val ? "Working…" : "Save settings"),
+                            disabled: locked,
+                            onClick: () => run("save"),
+                        })
+                    ),
+                ],
+            }),
             div(
-                { class: "sushi-automation-actions" },
-                button(
-                    {
-                        type: "button",
-                        class: "account-btn account-btn--apply",
-                        disabled: locked,
-                        onclick: () => run("sort"),
-                    },
-                    "Sort"
-                ),
-                button(
-                    {
-                        type: "button",
-                        class: () => "account-btn " + (busy.val ? "account-btn--danger" : "account-btn--apply"),
-                        disabled: () => pending.val || state.val.stopping || (!busy.val && !settingsLoaded.val),
-                        onclick: () => run(""),
-                    },
-                    () => (busy.val ? (state.val.stopping ? "Stopping…" : "Stop") : "Auto Play")
-                )
-            )
-        ),
-        div(
-            { class: "sushi-settings-grid" },
-            label(
-                { class: "sushi-setting" },
-                span({ class: "sushi-setting__title" }, "Buy mode"),
-                select(
-                    {
-                        "aria-label": "Buy mode",
-                        value: settings.mode,
-                        disabled: locked,
-                        onchange: (e) => {
-                            settings.mode.val = e.target.value;
-                        },
-                    },
-                    option({ value: "manual" }, "Manual tier"),
-                    option({ value: "wind" }, "East Wind preset")
-                )
-            ),
-            numberField("Manual tier", settings.tier, 1, () => locked() || settings.mode.val === "wind"),
-            numberField("Target tier", settings.targetTier),
-            numberField("Target quantity", settings.targetCount),
-            numberField("Empty slots", settings.reserveSlots, 0)
-        ),
-        div(
-            { class: "sushi-toggle-grid" },
-            toggle("Extended East Wind chain", settings.extendChain),
-            toggle("Higher East Wind tier limit", settings.higherTier)
-        ),
-        div(
-            { class: "sushi-automation-footer" },
-            button(
-                {
-                    type: "button",
-                    class: "account-btn account-btn--apply",
-                    disabled: locked,
-                    onclick: () => run("save"),
-                },
-                () => (pending.val ? "Working…" : "Save settings")
-            ),
-            p({ class: "sushi-setting__help" }, "Auto Play also saves these settings.")
-        ),
-        div(
-            { class: "sushi-settings-section" },
-            h3("KNOWLEDGE SIMULATION"),
-            p(
-                { class: "sushi-setting__help" },
-                "Add XP for crafting from tier 1, including current XP bonuses and the pink fireplace bonus."
-            ),
-            div(
-                { class: "sushi-settings-grid" },
-                numberField("Simulation tier", knowledgeTier),
-                numberField("Simulation quantity", knowledgeQuantity)
-            ),
-            p(
-                { class: "sushi-setting__help" },
-                "Requires Knowledge. Each click adds XP again; fuel and board contents stay unchanged."
-            ),
-            button(
-                {
-                    type: "button",
-                    class: "account-btn account-btn--apply",
-                    disabled: locked,
-                    onclick: () => run("knowledge " + knowledgeTier.val + " " + knowledgeQuantity.val),
-                },
-                "Add Knowledge XP"
-            )
-        ),
-        div(
-            { class: "sushi-automation-info" },
-            p({ role: "status", "aria-live": "polite", class: "sushi-automation-status" }, () =>
-                pending.val ? "Working…" : feedback.val || state.val.error || state.val.message || "Connecting…"
+                { class: "content-stack" },
+                AccountSection({
+                    title: "AUTOMATION",
+                    rootClass: "sushi-automation-controls",
+                    body: [
+                        AccountRow({
+                            info: "Target",
+                            badge: () => `${settings.targetCount.val || "…"} × tier ${settings.targetTier.val || "…"}+`,
+                        }),
+                        p({ class: "sushi-setting__help" }, "Keep the target tier and higher."),
+                        div(
+                            { class: "account-item-stack" },
+                            ActionButton({
+                                label: () => (busy.val ? (state.val.stopping ? "Stopping…" : "Stop") : "Auto Play"),
+                                variant: "account-btn",
+                                className: () => (busy.val ? "account-btn--danger" : "account-btn--apply"),
+                                disabled: () => pending.val || state.val.stopping || (!busy.val && !settingsLoaded.val),
+                                onClick: () => run(""),
+                            }),
+                            ActionButton({ label: "Sort", disabled: locked, onClick: () => run("sort") })
+                        ),
+                        div(
+                            { class: "sushi-automation-info" },
+                            p({ role: "status", "aria-live": "polite", class: "sushi-automation-status" }, () =>
+                                pending.val
+                                    ? "Working…"
+                                    : feedback.val || state.val.error || state.val.message || "Connecting…"
+                            )
+                        ),
+                    ],
+                }),
+                AccountSection({
+                    title: "KNOWLEDGE XP",
+                    rootClass: "sushi-automation-controls",
+                    body: [
+                        p({ class: "sushi-setting__help" }, "Requires Knowledge. Adds crafting-tree XP only."),
+                        div(
+                            { class: "sushi-settings-grid" },
+                            numberField("Simulation tier", knowledgeTier),
+                            numberField("Simulation quantity", knowledgeQuantity)
+                        ),
+                        p({ class: "sushi-setting__help" }, "Each click adds XP again; board and fuel stay unchanged."),
+                        ActionButton({
+                            label: "Add Knowledge XP",
+                            disabled: locked,
+                            onClick: () => run("knowledge " + knowledgeTier.val + " " + knowledgeQuantity.val),
+                        }),
+                    ],
+                })
             )
         )
     );
-    refresh();
-    return div(
+    const root = div(
         { class: "tab-container" },
         AccountTabHeader({
             title: "SUSHI TOOLS",
@@ -246,4 +299,6 @@ export function SushiToolsTab() {
         }),
         controls
     );
+    refresh();
+    return root;
 }

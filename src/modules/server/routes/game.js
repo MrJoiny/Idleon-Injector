@@ -12,6 +12,19 @@ const normalizeReadValue = (value) => {
 };
 
 function setupGameRoutes(app, gameBridge) {
+    app.get("/api/game/sushi-tools/status", async (req, res) => {
+        try {
+            const result = await gameBridge.callHelper("getSushiToolsStatus");
+            if (result.error) {
+                return res.status(500).json({ error: "Failed to read Sushi status", details: result.error.details });
+            }
+            res.json(result.value);
+        } catch (error) {
+            log.error("Error reading Sushi status:", error);
+            res.status(500).json({ error: "Failed to read Sushi status", details: error.message });
+        }
+    });
+
     app.get("/api/game/bundles", async (req, res) => {
         try {
             const catalogResult = await gameBridge.callHelper("getBundleCatalog");
