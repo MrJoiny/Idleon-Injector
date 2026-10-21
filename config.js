@@ -862,6 +862,15 @@ exports.cheatConfig = {
             // UniqueSushi: (t) => t,
             // RoG_BonusQTY: (t) => t,
         },
+        sushitools: {
+            mode: "manual",
+            tier: 1,
+            targetCount: 40,
+            targetTier: 64,
+            reserveSlots: 2,
+            extendChain: false,
+            higherTier: false,
+        },
         reef: {
             ReefCost: (t) => 0,
         },

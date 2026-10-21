@@ -1,19 +1,17 @@
-import { simulateSushiKnowledge } from "./knowledge.js";
-import { configureSushiWind } from "../../proxies/sushiWind.js";
 import { gga } from "../../core/globals.js";
+import { cheatConfig } from "../../core/state.js";
+import { configureSushiWind } from "../../proxies/sushiWind.js";
 import { sushiTools } from "./station.js";
+import { readSushiSettings } from "./settings.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-let busy = false;
+export let busy = false;
 let running = false;
 let stopping = false;
 let message = "Ready. Keep Sushi Station open in the game.";
 let merges = 0;
 let cycles = 0;
-let purchaseMode = "manual";
-let purchaseTier = 1;
 let session = null;
-let options = { targetCount: 40, reserveSlots: 2 };
 
 function call(action, expected) {
     if (
@@ -26,7 +24,7 @@ function call(action, expected) {
             session.actor.behaviors.getBehavior("ActorEvents_741") !== session.ui)
     )
         throw new Error("Game session changed; stopped.");
-    return sushiTools(action, expected, busy ? session.options : options);
+    return sushiTools(action, expected, busy ? session.options : cheatConfig.w7.sushitools);
 }
 
 async function settle(plan = null) {
@@ -53,8 +51,9 @@ async function sort(state) {
 }
 
 const refill = async (state) => {
+    const options = session.options;
     while (!stopping && state.capped < options.targetCount && state.working.some((index) => state.board[index] < 0)) {
-        const tier = purchaseMode === "wind" ? state.suggestedTier : purchaseTier;
+        const tier = options.mode === "wind" ? state.suggestedTier : options.tier;
         message = `Buying tier ${tier} sushi. Capped: ${state.capped}/${options.targetCount}.`;
         const result = await call("buy", { board: state.board, plates: state.plates, purchaseTier: tier });
         if (!result.bought) break;
@@ -78,6 +77,7 @@ const refill = async (state) => {
 };
 
 const playLoop = async () => {
+    const options = session.options;
     let state = await settle();
     if (!state || stopping) return;
     if (state.reserved.some((index) => state.board[index] >= 0)) {
@@ -135,102 +135,55 @@ const playLoop = async () => {
     }
 };
 
-export function sushiAutomation(action = "status", settings = {}) {
-    if (action === "knowledge") {
-        if (busy) throw new Error("Stop automation before adding Knowledge XP.");
-        message = simulateSushiKnowledge(settings.tier, settings.quantity);
-        return { busy, message };
+export function getSushiStatus() {
+    const state = { busy, running, stopping, message, merges, cycles };
+    try {
+        return { ...call("status"), ...state };
+    } catch (error) {
+        return { ...sushiTools("settings"), ...state, error: error.message };
     }
-    if (action === "stop") {
-        if (busy) {
-            stopping = true;
-            message = "Stopping after current native effects finish…";
-        }
-        return { busy, running, stopping, message };
+}
+
+export function stopSushi() {
+    if (busy) {
+        stopping = true;
+        message = "Stopping after current native effects finish…";
     }
-    if (action === "status") {
-        try {
-            const state = !busy ? sushiTools("status", null, { ...options, ...settings }) : call("status");
-            return { ...state, options, busy, running, stopping, message, merges, cycles };
-        } catch (error) {
-            return {
-                ...sushiTools("settings"),
-                options,
-                busy,
-                running,
-                stopping,
-                message,
-                error: error.message,
-                merges,
-                cycles,
-            };
-        }
-    }
-    if (!["start", "sort", "configure"].includes(action))
-        throw new Error("Use status, sort, stop, start manual <tier>, or start wind.");
+    return { busy, running, stopping, message };
+}
+
+export function startSushi() {
     if (busy) throw new Error("Sushi automation is already running.");
-    const {
-        mode = "manual",
-        tier = 1,
-        targetCount = 40,
-        targetTier,
-        reserveSlots = 2,
-        extendChain = Boolean(options.extendChain),
-        higherTier = Boolean(options.higherTier),
-    } = settings;
-    const requested =
-        action === "sort"
-            ? { reserveSlots: 0 }
-            : {
-                  targetCount,
-                  targetTier,
-                  reserveSlots,
-                  extendChain,
-                  higherTier,
-              };
-    const initial = sushiTools(action === "configure" ? "settings" : "status", null, requested);
+    const options = readSushiSettings();
+    const initial = sushiTools("status", null, options);
     if (initial.dragging >= 0) throw new Error("Release the sushi before starting.");
-    if (action !== "sort") {
-        if (
-            !Number.isInteger(requested.reserveSlots) ||
-            requested.reserveSlots < 0 ||
-            requested.reserveSlots >= 120 ||
-            (requested.targetTier !== undefined &&
-                (!Number.isInteger(requested.targetTier) ||
-                    requested.targetTier < 1 ||
-                    requested.targetTier > initial.maxTier + 1))
-        )
-            throw new Error("Choose a valid target tier and 0–119 reserved slots.");
-        if (
-            !Number.isInteger(requested.targetCount) ||
-            requested.targetCount < 1 ||
-            requested.targetCount > 120 ||
-            (action === "start" && requested.targetCount > initial.working.length)
-        )
-            throw new Error("Target quantity must fit the usable board slots.");
-        if (action === "start" && initial.board.filter((value) => value >= 0).length > initial.working.length)
-            throw new Error(`Clear ${reserveSlots} slots before starting; no sushi will be deleted.`);
-        if (typeof extendChain !== "boolean" || typeof higherTier !== "boolean")
-            throw new Error("East Wind overrides must be boolean values.");
-        if (
-            !["manual", "wind"].includes(mode) ||
-            !Number.isInteger(tier) ||
-            tier < 1 ||
-            (mode === "manual" && tier > initial.maxPurchaseTier)
-        )
-            throw new Error("Choose an unlocked whole-number tier.");
-        configureSushiWind(requested.extendChain, requested.higherTier);
-        options = requested;
-        purchaseMode = mode;
-        purchaseTier = tier;
-        if (action === "configure") {
-            message = "Settings applied.";
-            return { busy, running, stopping, message };
-        }
-    }
+    if (options.targetCount > initial.working.length)
+        throw new Error("Target quantity must fit the usable board slots.");
+    if (initial.board.filter((value) => value >= 0).length > initial.working.length)
+        throw new Error("Clear " + options.reserveSlots + " slots before starting; no sushi will be deleted.");
+    configureSushiWind(options.extendChain, options.higherTier);
+    return beginRun(playLoop, options, true);
+}
+
+export function sortSushi() {
+    if (busy) throw new Error("Sushi automation is already running.");
+    const options = { reserveSlots: 0 };
+    const initial = sushiTools("status", null, options);
+    if (initial.dragging >= 0) throw new Error("Release the sushi before sorting.");
+    return beginRun(
+        async () => {
+            const state = await settle();
+            if (state && !stopping) message = (await sort(state)).message;
+        },
+        options,
+        false
+    );
+}
+
+function beginRun(task, options, autoPlay) {
     const actor = gga.PixelHelperActor[27];
     session = {
-        options: requested,
+        options,
         game: gga,
         data: gga.Sushi,
         board: gga.Sushi[0],
@@ -239,24 +192,17 @@ export function sushiAutomation(action = "status", settings = {}) {
         ui: actor.behaviors.getBehavior("ActorEvents_741"),
     };
     busy = true;
-    running = action === "start";
+    running = autoPlay;
     stopping = false;
     merges = 0;
     cycles = 0;
     message = "Waiting for the board…";
-    const task =
-        action === "start"
-            ? playLoop()
-            : (async () => {
-                  const state = await settle();
-                  if (state && !stopping) message = (await sort(state)).message;
-              })();
-    void task
+    void task()
         .then(() => {
-            if (stopping) message = `Stopped after ${merges} merges.`;
+            if (stopping) message = "Stopped after " + merges + " merges.";
         })
         .catch((error) => {
-            message = `Stopped: ${error.message}`;
+            message = "Stopped: " + error.message;
         })
         .finally(() => {
             busy = false;
