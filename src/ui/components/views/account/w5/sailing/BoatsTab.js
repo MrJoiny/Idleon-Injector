@@ -50,13 +50,10 @@ const getCaptainBonusRange = (captTier, bonusIndex) => {
     const values = CAPTAIN_BONUS_TABLE[key];
     if (!values || captTier < 0 || captTier > 6) return null;
 
-    const minStatBonus = values[0];
-    const maxStatBonus = values[captTier + 1];
-    const scaledMax = maxStatBonus * (0.5 + 0.8 * captTier);
-
     return {
-        min: Math.floor(0.15 * minStatBonus),
-        max: Math.floor(0.15 * scaledMax),
+        min: 0,
+        // The table already contains the game's final rolled bonus maxima.
+        max: values[captTier + 1],
     };
 };
 
