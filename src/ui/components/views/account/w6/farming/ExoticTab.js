@@ -6,22 +6,19 @@ import { useAccountLoad } from "../../accountLoadPolicy.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { PersistentAccountListPage } from "../../components/PersistentAccountListPage.js";
-import {
-    cleanName,
-    createStaticRowReconciler,
-    getOrCreateState,
-    toInt,
-} from "../../accountShared.js";
+import { OrganicLabelButton, useOrganicLabels } from "./OrganicLabels.js";
+import { cleanName, createStaticRowReconciler, getOrCreateState, toInt } from "../../accountShared.js";
 
 const { div } = van.tags;
 
 const FARM_UPG_PATH = "FarmUpg";
 const EXOTIC_OFFSET = 20;
 
-const ExoticUpgradeRow = ({ entry, levelState }) =>
+const ExoticUpgradeRow = ({ entry, levelState, labels }) =>
     SimpleNumberRow({
         entry,
         valueState: levelState,
+        renderExtraActions: () => OrganicLabelButton({ labels, entry }),
     });
 
 const buildExoticEntries = (rawDefinitions, rawLevels) => {
@@ -32,6 +29,7 @@ const buildExoticEntries = (rawDefinitions, rawLevels) => {
         return {
             index: pathIndex,
             pathIndex,
+            organicIndex: index,
             path: `${FARM_UPG_PATH}[${pathIndex}]`,
             rawName: String(definition[0] ?? `NAME_MAGNI_${index}`).trim(),
             name: cleanName(definition[0], `NAME MAGNI ${index + 1}`),
@@ -45,6 +43,7 @@ const buildExoticEntries = (rawDefinitions, rawLevels) => {
 export const ExoticTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Farming Exotic Market" });
     const entries = van.state([]);
+    const labels = useOrganicLabels(loading, entries);
     const levelStates = new Map();
     const listNode = div({ class: "account-item-stack" });
     const reconcileRows = createStaticRowReconciler(listNode);
@@ -53,10 +52,12 @@ export const ExoticTab = () => {
         run(async () => {
             const [rawLevels, rawDefinitions] = await Promise.all([gga(FARM_UPG_PATH), readCList("MarketExoticInfo")]);
             entries.val = buildExoticEntries(rawDefinitions, rawLevels);
+            await labels.load();
             reconcileRows(entries.val.map((entry) => entry.rawName).join("|"), () =>
                 entries.val.map((entry) =>
                     ExoticUpgradeRow({
                         entry,
+                        labels,
                         levelState: getOrCreateState(levelStates, entry.pathIndex),
                     })
                 )
@@ -73,17 +74,18 @@ export const ExoticTab = () => {
         { class: "scrollable-panel content-stack" },
         AccountSection({
             title: "EXOTIC MARKET UPGRADES",
-            note: () => `${entries.val.length} UPGRADES FROM FarmUpg[20+]`,
+            note: () => `${labels.selected.val.length} ORGANIC LABELS APPLIED · ${labels.capacity.val} OWNED IN GAME`,
             body: listNode,
         })
     );
 
     return PersistentAccountListPage({
         title: "EXOTIC",
-        description: "Set Exotic Market upgrade levels from FarmUpg[20+] with names from MarketExoticInfo.",
+        description:
+            "Set Exotic Market levels and toggle Organic Labels for 2× bonuses and 1.5× purchase levels. Labels are permanent in game; this editor can add or remove them without limits.",
         actions: RefreshButton({
             onRefresh: load,
-            disabled: () => loading.val,
+            disabled: () => loading.val || labels.status.val === "loading",
         }),
         state: { loading, error },
         loadingText: "READING EXOTIC MARKET",
