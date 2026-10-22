@@ -5,7 +5,7 @@ import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
 import { AccountRow } from "../../components/AccountRow.js";
 import { ActionButton } from "../../components/ActionButton.js";
-const { div, label, select, option, input, p, h3, span } = van.tags;
+const { div, label, input, p, h3, span } = van.tags;
 
 export function SushiToolsTab() {
     const enabled = van.state(false);
@@ -13,7 +13,6 @@ export function SushiToolsTab() {
     const pending = van.state(false);
     const settingsLoaded = van.state(false);
     const settings = {
-        mode: van.state(""),
         tier: van.state(""),
         targetCount: van.state(""),
         targetTier: van.state(""),
@@ -48,9 +47,8 @@ export function SushiToolsTab() {
             draft[key] = Number(draft[key]);
         }
         if (
-            !["manual", "wind"].includes(draft.mode) ||
             draft.tier < 1 ||
-            (draft.mode === "manual" && draft.tier > state.val.maxPurchaseTier) ||
+            draft.tier > state.val.maxPurchaseTier ||
             draft.targetTier < 1 ||
             draft.targetTier > state.val.maxTier + 1 ||
             draft.targetCount < 1 ||
@@ -99,7 +97,7 @@ export function SushiToolsTab() {
         }
     }
     const locked = () => enabled.val || pending.val || !settingsLoaded.val;
-    const numberField = (title, value, min = 1, disabled = locked) =>
+    const numberField = (title, value, min = 1) =>
         label(
             { class: "sushi-setting" },
             span({ class: "sushi-setting__title" }, title),
@@ -109,7 +107,7 @@ export function SushiToolsTab() {
                 min,
                 step: 1,
                 value,
-                disabled,
+                disabled: locked,
                 oninput: (e) => {
                     value.val = e.target.value;
                 },
@@ -145,28 +143,7 @@ export function SushiToolsTab() {
                             h3("PURCHASE"),
                             div(
                                 { class: "sushi-settings-grid" },
-                                label(
-                                    { class: "sushi-setting" },
-                                    span({ class: "sushi-setting__title" }, "Buy mode"),
-                                    select(
-                                        {
-                                            "aria-label": "Buy mode",
-                                            value: settings.mode,
-                                            disabled: locked,
-                                            onchange: (e) => {
-                                                settings.mode.val = e.target.value;
-                                            },
-                                        },
-                                        option({ value: "manual" }, "Manual tier"),
-                                        option({ value: "wind" }, "East Wind preset")
-                                    )
-                                ),
-                                numberField(
-                                    "Manual tier",
-                                    settings.tier,
-                                    1,
-                                    () => locked() || settings.mode.val === "wind"
-                                )
+                                numberField("Purchase tier", settings.tier)
                             )
                         ),
                         div(

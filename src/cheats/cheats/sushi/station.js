@@ -1,5 +1,5 @@
 import { gga, events } from "../../core/globals.js";
-import { validateBoard, boardLimits, sortBoard, findStartMove, findContinuationMove, findResumeMove } from "./board.js";
+import { validateBoard, boardLimits, sortBoard, findMergeMove } from "./board.js";
 
 function station() {
     if (Number(gga.MenuType2) !== 102) throw new Error("Keep the in-game Sushi board open.");
@@ -34,25 +34,11 @@ export function sushiTools(action, expected = null, options = {}) {
     if (action === "status") {
         const rules = events(579);
         const maxPurchaseTier = Number(rules._customBlock_SushiStuff("MaxCookTier", 0, 0)) + 1;
-        const eastWindTier =
-            rules._customBlock_SushiStuff("UpgradeQTY", 29, 0) >= 1
-                ? options.higherTier
-                    ? maxTier
-                    : Math.max(0, Number(rules._customBlock_SushiStuff("UniqueSushi", 0, 0)) - 6)
-                : 0;
-        if (
-            !Number.isInteger(maxPurchaseTier) ||
-            maxPurchaseTier < 1 ||
-            maxPurchaseTier > maxTier + 1 ||
-            !Number.isInteger(eastWindTier)
-        )
-            throw new Error("Unexpected Sushi purchase limits.");
-        const suggestedTier = Math.min(maxPurchaseTier, Math.max(1, eastWindTier - 26));
+        if (!Number.isInteger(maxPurchaseTier) || maxPurchaseTier < 1 || maxPurchaseTier > maxTier + 1)
+            throw new Error("Unexpected Sushi purchase limit.");
         return {
             ...limits,
             maxPurchaseTier,
-            eastWindTier,
-            suggestedTier,
             pending,
             dragging,
             board: board.slice(),
@@ -64,7 +50,8 @@ export function sushiTools(action, expected = null, options = {}) {
     if (action === "merge") {
         if (!expected || JSON.stringify([board, plates]) !== JSON.stringify([expected.board, expected.plates]))
             throw new Error("Board changed before merge; stopped.");
-        const { source, target, tier } = expected;
+        const { source, target, tier, layout } = expected;
+        validateBoard(layout, plates);
         if (
             source === target ||
             !limits.working.includes(source) ||
@@ -72,14 +59,26 @@ export function sushiTools(action, expected = null, options = {}) {
             tier < 0 ||
             tier >= maxTier ||
             tier >= limits.targetTier ||
-            board[source] !== tier ||
-            board[target] !== tier
+            layout[source] !== tier ||
+            layout[target] !== tier ||
+            layout.some((value, index) => !limits.working.includes(index) && value !== board[index]) ||
+            JSON.stringify(layout.slice().sort((a, b) => a - b)) !== JSON.stringify(board.slice().sort((a, b) => a - b))
         )
             throw new Error("Invalid native merge plan.");
         if (actor._GenINFO[158] !== 0) throw new Error("Native upgrade is still busy.");
         const count = board.filter((value) => value >= 0).length;
+        const changed = layout.flatMap((value, index) => (value !== board[index] ? [index] : []));
         const trigger = actor._TRIGGEREDtext;
         try {
+            layout.forEach((value, index) => {
+                board[index] = value;
+            });
+            for (const index of changed) {
+                if (index !== source && index !== target) {
+                    actor._TRIGGEREDtext = "h" + index;
+                    actor._customEvent_sushistuff();
+                }
+            }
             // The game's normal upgrade handler applies XP, bonuses and East Wind.
             // Consume exactly one matching source; never retry a partially completed merge.
             board[source] = -1;
@@ -137,39 +136,44 @@ export function sushiTools(action, expected = null, options = {}) {
         if (!expected || JSON.stringify(board) !== JSON.stringify(expected))
             throw new Error("Board changed; click Sort again.");
         const sorted = sortBoard(board, plates, maxTier);
-        const changed = sorted.reduce((count, value, index) => count + Number(value !== board[index]), 0);
+        const changed = sorted.flatMap((value, index) => (value !== board[index] ? [index] : []));
         // Keep the Haxe array identity and all plate/fireplace data intact.
         sorted.forEach((value, index) => {
             board[index] = value;
         });
         const trigger = actor._TRIGGEREDtext;
         try {
-            for (let index = 0; index < board.length; index++) {
+            for (const index of changed) {
                 actor._TRIGGEREDtext = `h${index}`;
                 actor._customEvent_sushistuff();
             }
-            refreshStation(actor);
+            if (changed.length) refreshStation(actor);
         } finally {
             actor._TRIGGEREDtext = trigger;
         }
         if (board.some((value, index) => value !== sorted[index])) throw new Error("Sort read-back mismatch.");
-        return { message: changed ? `Sorted ${changed} slots.` : "Board already sorted.", board: board.slice() };
+        return {
+            message: changed.length ? `Sorted ${changed.length} slots.` : "Board already sorted.",
+            board: board.slice(),
+        };
     }
     if (action === "plan") {
         if (!expected || JSON.stringify(board) !== JSON.stringify(expected.board))
             throw new Error("Board changed after settling; stopped.");
-        const move =
-            expected.mode === "continue"
-                ? findContinuationMove(board, plates, expected.landing, maxTier, options)
-                : expected.mode === "resume"
-                  ? findResumeMove(board, plates, maxTier, options)
-                  : findStartMove(board, plates, maxTier, options);
+        const rules = events(579);
+        const move = findMergeMove(board, plates, maxTier, options, {
+            wind: rules._customBlock_SushiStuff("UpgradeQTY", 29, 0) >= 1,
+            limit: options.higherTier ? maxTier + 1 : Number(rules._customBlock_SushiStuff("UniqueSushi", 0, 0)) - 5,
+            chainLimit: options.extendChain ? limits.working.length - 1 : 25,
+            blueChance: Math.max(0, Math.min(1, Number(rules._customBlock_SushiStuff("FireplaceEffect", 2, 0)) / 100)),
+            fireplaces: gga.Sushi[3],
+            discovered: gga.Sushi[5],
+        });
         if (!move) return null;
         return {
             ...move,
             board: board.slice(),
             plates: plates.slice(),
-            tier: board[move.source],
         };
     }
     throw new Error("Unknown Sushi action.");

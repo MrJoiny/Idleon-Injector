@@ -3,7 +3,7 @@ import { sushiTools } from "./station.js";
 
 export function readSushiSettings() {
     const settings = { ...cheatConfig.w7.sushitools };
-    const { mode, tier, targetCount, targetTier, reserveSlots, extendChain, higherTier } = settings;
+    const { tier, targetCount, targetTier, reserveSlots, extendChain, higherTier } = settings;
     const { maxTier, maxPurchaseTier } = sushiTools("settings");
     if (
         !Number.isInteger(reserveSlots) ||
@@ -18,12 +18,7 @@ export function readSushiSettings() {
         throw new Error("Target quantity must fit the usable board slots.");
     if (typeof extendChain !== "boolean" || typeof higherTier !== "boolean")
         throw new Error("East Wind overrides must be boolean values.");
-    if (
-        !["manual", "wind"].includes(mode) ||
-        !Number.isInteger(tier) ||
-        tier < 1 ||
-        (mode === "manual" && tier > maxPurchaseTier)
-    )
+    if (!Number.isInteger(tier) || tier < 1 || tier > maxPurchaseTier)
         throw new Error("Choose an unlocked whole-number tier.");
     return settings;
 }

@@ -46,57 +46,60 @@ export function sortBoard(board, plates, maxTier = 63) {
     return board.map((tier, index) => (plates[index] >= 0 ? values[next++] : tier));
 }
 
-/** Ignore empty cells within an unlocked run, but never cross a locked plate. */
-function occupiedRuns(board, plates, working) {
-    const runs = [[]];
-    for (let i = 0; i < board.length; i++) {
-        if (!working.includes(i) || plates[i] < 0) {
-            if (runs[runs.length - 1].length) runs.push([]);
-        } else if (board[i] >= 0) runs[runs.length - 1].push(i);
-    }
-    return runs;
-}
-export function findStartMove(board, plates, maxTier = 63, options = {}) {
+/** Prefer immediate free upgrades, then higher merge tiers. This is a greedy score. */
+export function findMergeMove(board, plates, maxTier, options, effects) {
     const { working, targetTier } = boardLimits(board, plates, maxTier, options);
-    for (const run of occupiedRuns(board, plates, working)) {
-        for (let i = 0; i + 2 < run.length; i++) {
-            const [a, b, c] = run.slice(i, i + 3);
-            if (board[b] >= targetTier || board[b] !== board[c]) continue;
-            if (board[a] === board[b] + 1) return { source: b, target: c, kind: "start" };
-            if (board[a] === board[b]) return { source: a, target: b, kind: "triple" };
+    const usable = new Set(working);
+    const counts = Array(maxTier + 1).fill(0);
+    for (const index of working) if (board[index] >= 0) counts[board[index]]++;
+    const { wind, limit, chainLimit, blueChance, fireplaces, discovered } = effects;
+    let best = null;
+    for (let tier = 0; tier < targetTier; tier++) {
+        if (counts[tier] < 2) continue;
+        const lower = [];
+        for (let t = tier; t >= 0; t--) {
+            if (counts[t] - (t === tier ? 2 : 0) > 0) lower.push(t);
+        }
+        for (const target of working) {
+            const bonus =
+                fireplaces[target % 15] === 2 && discovered[tier + 1] !== -1 && tier + 1 < maxTier ? blueChance : 0;
+            const chainChance = wind && tier + 1 < limit ? (tier + 2 < limit ? 1 : 1 - bonus) : 0;
+            const tail = [];
+            if (chainChance > 0) {
+                for (let j = 0; j < Math.min(chainLimit, lower.length); j++) {
+                    if (!usable.has(target + j + 1)) break;
+                    tail.push(lower[j]);
+                }
+            }
+            let tailBonus = 0;
+            for (let j = 0; j < tail.length; j++) {
+                if (fireplaces[(target + j + 1) % 15] === 2 && (discovered[tail[j] + 1] !== -1 || tail[j] === tier))
+                    tailBonus += blueChance;
+            }
+            const score = bonus + chainChance * (tail.length + tailBonus);
+            if (!best || score > best.score || (score === best.score && tier > best.tier))
+                best = { tier, target, tail, score };
         }
     }
-    return null;
-}
-export function findContinuationMove(board, plates, landing, maxTier = 63, options = {}) {
-    const { working, targetTier } = boardLimits(board, plates, maxTier, options);
-    for (const run of occupiedRuns(board, plates, working)) {
-        const at = run.indexOf(landing);
-        if (at < 0 || board[landing] >= targetTier) continue;
-        const left = run[at - 1],
-            right = run[at + 1];
-        if (
-            left !== undefined &&
-            right !== undefined &&
-            board[left] === board[landing] &&
-            board[right] === board[landing]
-        )
-            return { source: left, target: landing, kind: "gap" };
-        if (
-            right !== undefined &&
-            board[right] === board[landing] &&
-            ((landing > 0 && plates[landing - 1] >= 0 && board[landing - 1] === -1) || right > landing + 1)
-        )
-            return { source: landing, target: right, kind: "final" };
+    if (!best) return null;
+    const layout = board.slice();
+    const fixed = new Set();
+    for (const [offset, tier] of [best.tier, ...best.tail].entries()) {
+        const slot = best.target + offset;
+        if (layout[slot] !== tier) {
+            const from = working.find((index) => !fixed.has(index) && layout[index] === tier);
+            if (from === undefined) throw new Error("Planned sushi is missing; stopped.");
+            [layout[slot], layout[from]] = [layout[from], layout[slot]];
+        }
+        fixed.add(slot);
     }
-    return null;
-}
-export function findResumeMove(board, plates, maxTier = 63, options = {}) {
-    const start = findStartMove(board, plates, maxTier, options);
-    let first = start;
-    for (let landing = 0; landing < board.length; landing++) {
-        const move = findContinuationMove(board, plates, landing, maxTier, options);
-        if (move && (!first || move.source < first.source)) first = move;
+    let source = working.find((index) => !fixed.has(index) && layout[index] === best.tier);
+    if (source === undefined) throw new Error("Matching sushi is missing; stopped.");
+    // Leave an empty cell after the tail so native Wind cannot reach unplanned sushi.
+    const end = best.target + best.tail.length + 1;
+    if (usable.has(end)) {
+        [layout[source], layout[end]] = [layout[end], layout[source]];
+        source = end;
     }
-    return first;
+    return { ...best, source, layout };
 }

@@ -28,51 +28,33 @@ function call(action, expected) {
 
 async function settle() {
     const deadline = Date.now() + 60000;
-    let last = "";
-    let quiet = 0;
     while (Date.now() < deadline) {
+        await sleep(50);
         if (!enabled) return null;
         const state = call("status");
         if (state.dragging >= 0) throw new Error("Dragging detected; stopped.");
-        const snapshot = JSON.stringify([state.board, state.plates]);
-        if (state.pending || snapshot !== last) quiet = 0;
-        else if (!quiet) quiet = Date.now();
-        last = snapshot;
-        if (quiet && Date.now() - quiet >= 750) return state;
-        await sleep(100);
+        if (!state.pending) return state;
     }
     throw new Error("East Wind did not settle within 60 seconds.");
-}
-
-async function sort(state) {
-    if (!enabled) return null;
-    return call("sort", state.board);
 }
 
 const refill = async (state) => {
     const options = session.options;
     while (enabled && state.capped < options.targetCount && state.working.some((index) => state.board[index] < 0)) {
-        const tier = options.mode === "wind" ? state.suggestedTier : options.tier;
-        message = `Buying tier ${tier} sushi. Capped: ${state.capped}/${options.targetCount}.`;
-        const result = await call("buy", { board: state.board, plates: state.plates, purchaseTier: tier });
+        message = `Buying tier ${options.tier} sushi. Capped: ${state.capped}/${options.targetCount}.`;
+        const result = call("buy", { board: state.board, plates: state.plates, purchaseTier: options.tier });
         if (!result.bought) break;
-        // Native purchases are synchronous and verified by the helper. Yield
-        // between them for Stop, then read fresh state instead of waiting for Wind.
+        // Yield for Disable, then read back the native purchase.
         await sleep(50);
         if (!enabled) return null;
-        state = await call("status");
+        state = call("status");
         if (state.dragging >= 0) throw new Error("A sushi is being dragged; purchasing stopped.");
         if (state.pending) state = await settle();
         if (!state) return null;
     }
-    // Keep the full stability check once before returning to native merges.
     if (!enabled) return null;
-    state = await settle();
-    if (!state || !enabled) return null;
-    message = "Refill complete. Sorting before merging…";
-    if (!(await sort(state))) return null;
     cycles++;
-    return await settle();
+    return state;
 };
 
 const playLoop = async () => {
@@ -80,57 +62,32 @@ const playLoop = async () => {
     let state = await settle();
     if (!state || !enabled) return;
     if (state.reserved.some((index) => state.board[index] >= 0)) {
-        if (!(await sort(state))) return;
+        call("sort", state.board);
         state = await settle();
         if (!state || !enabled) return;
     }
-    let mode = "resume";
-    let landing = null;
     while (enabled) {
         if (state.capped >= options.targetCount) {
-            if (!(await sort(state))) return;
+            call("sort", state.board);
             message = `Finished: ${state.capped}/${options.targetCount} tier ${state.targetTier + 1}+ sushi.`;
             return;
         }
-        const plan = await call("plan", { mode, landing, board: state.board });
+        const plan = call("plan", { board: state.board });
         if (!plan) {
-            if (mode === "start") {
-                if (!state.working.some((index) => state.board[index] < 0))
-                    throw new Error("Working slots are full and no legal merge remains.");
-                state = await refill(state);
-                if (!state || !enabled) return;
-                mode = "resume";
-                continue;
-            }
-            message = "Chain complete. Sorting before the next start…";
-            if (!enabled || !(await sort(state))) return;
-            cycles++;
-            state = await settle();
+            if (!state.working.some((index) => state.board[index] < 0))
+                throw new Error("Working slots are full and no legal merge remains.");
+            state = await refill(state);
             if (!state || !enabled) return;
-            mode = "start";
-            landing = null;
             continue;
         }
         if (plan.tier >= state.targetTier) throw new Error("Capped sushi cannot be merged.");
         if (!enabled) return;
-        message = `${plan.kind === "final" ? "Final pair" : plan.kind === "gap" ? "Across gap" : "Starting chain"}: tier ${plan.tier + 1}, slot ${plan.source + 1} → ${plan.target + 1}.`;
+        message = `Merging tier ${plan.tier + 1} with ${plan.tail.length} planned Wind upgrades.`;
         call("merge", plan);
-        message = `Waiting for East Wind after merge ${merges + 1}…`;
-        state = await settle();
         merges++;
-        if (!enabled) return;
-        if (plan.kind === "final") {
-            message = "Final pair complete. Sorting…";
-            if (!(await sort(state))) return;
-            cycles++;
-            state = await settle();
-            if (!state || !enabled) return;
-            mode = "start";
-            landing = null;
-        } else {
-            mode = "continue";
-            landing = plan.target;
-        }
+        message = `Waiting for East Wind after merge ${merges}…`;
+        state = await settle();
+        if (!state || !enabled) return;
     }
 };
 

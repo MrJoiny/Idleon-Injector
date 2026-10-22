@@ -863,7 +863,6 @@ exports.cheatConfig = {
             // RoG_BonusQTY: (t) => t,
         },
         sushitools: {
-            mode: "manual",
             tier: 1,
             targetCount: 40,
             targetTier: 64,
