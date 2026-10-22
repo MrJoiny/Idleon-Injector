@@ -27,10 +27,6 @@
         align-items: stretch;
     }
 
-    .prayers-page .account-setall-row {
-        flex-wrap: wrap;
-    }
-
     .prayer-row {
         grid-template-columns: minmax(0, 1fr);
     }

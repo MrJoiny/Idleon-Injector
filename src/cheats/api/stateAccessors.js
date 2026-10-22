@@ -10,6 +10,7 @@
 
 import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
+import { getPlayerExpRequired } from "../helpers/player.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
@@ -47,6 +48,14 @@ export function readComputed(namespace, name, args = []) {
     if (!namespace || typeof namespace !== "string") return { error: "Missing or invalid namespace" };
     if (!name || typeof name !== "string") return { error: "Missing or invalid name" };
     if (!Array.isArray(args)) return { error: "args must be an array" };
+
+    if (namespace === "player" && name === "expRequired") {
+        try {
+            return { value: getPlayerExpRequired(...args) };
+        } catch (error) {
+            return { error: error.message };
+        }
+    }
 
     const source = COMPUTED_SOURCES[namespace];
     if (!source) return { error: `Unsupported computed namespace: ${namespace}` };

@@ -19,6 +19,7 @@ import { AccountSection } from "../components/AccountSection.js";
 import { ActionButton } from "../components/ActionButton.js";
 import { getNumberInputLiveRaw, NumberInput } from "../../../NumberInput.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
+import { createCharacterSelector } from "../components/CharacterSelector.js";
 
 const { div, span, select, option } = van.tags;
 
@@ -37,18 +38,18 @@ export const PrinterTab = () => {
     const panels = new Map();
     const panelsNode = div();
     const isBusy = () => loading.val || busy.val;
-    const characterSelect = select({
-        class: "select-base printer-character-select",
-        "aria-label": "Printer character",
+    const characterSelector = createCharacterSelector({
+        id: "printer-character",
         disabled: () => isBusy() || !snapshot.val,
-        value: selected,
-        onchange: (event) => {
+        selected,
+        getValue: (_name, index) => index,
+        onChange: (event) => {
             if (isBusy()) return;
             selected.val = Number(event.target.value);
             showCharacter();
         },
+        info: "Inspect and edit 3D printer for this character",
     });
-    const reconcileCharacters = createStaticRowReconciler(characterSelect);
     let accountIdentity = "";
     let cachedCatalogue = null;
 
@@ -442,8 +443,7 @@ export const PrinterTab = () => {
                     selected.val = currentIdx >= 0 ? currentIdx : 0;
                 }
                 accountIdentity = identity;
-                reconcileCharacters(identity, () => next.names.map((name, index) => option({ value: index }, name)));
-                characterSelect.value = String(selected.val);
+                characterSelector.setCharacters(next.names);
                 syncSnapshot(next, true);
             });
         } finally {
@@ -461,19 +461,6 @@ export const PrinterTab = () => {
         loadingText: "READING PRINTER",
         errorTitle: "PRINTER READ FAILED",
         initialWrapperClass: "scrollable-panel",
-        body: div(
-            { class: "scrollable-panel content-stack" },
-            AccountSection({
-                title: "CHARACTER",
-                body: AccountRow({
-                    info: [
-                        span({ class: "account-row__name" }, "Selected Character"),
-                        span({ class: "account-row__sub-label" }, "Inspect and edit 3D printer for this character"),
-                    ],
-                    controls: characterSelect,
-                }),
-            }),
-            panelsNode
-        ),
+        body: div({ class: "scrollable-panel content-stack" }, characterSelector.node, panelsNode),
     });
 };
