@@ -6,9 +6,7 @@
  *   cList.CompanionSetsInfo
  *   MonsterDefinitionsGET.h[monsterKey].Name
  *
- * Selection is the pet-bonus token list in OptionsListAccount[606]: a CSV of
- * CompanionDB indices. Toggling a pet writes that list live, which activates the
- * pet's account-wide bonus regardless of how many tokens are actually owned.
+ * Tier selections use the W1 Companion cheat and only apply while it is running.
  */
 
 import van from "../../../../vendor/van-1.6.0.js";
@@ -16,7 +14,6 @@ import {
     executeCheatAction,
     fetchCheatStates,
     fetchConfig,
-    gga,
     readCList,
     readGgaEntries,
     saveConfigFile,
@@ -30,18 +27,25 @@ import { toIndexedArray } from "../../../../utils/index.js";
 import { RefreshButton, WarningBanner } from "../components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "../components/PersistentAccountListPage.js";
 import { useAccountLoad } from "../accountLoadPolicy.js";
-import { cleanName, cleanNameEffect, useWriteStatus, writeVerified } from "../accountShared.js";
+import { cleanName, cleanNameEffect, useWriteStatus } from "../accountShared.js";
 
 const { div, button, span, label, input } = van.tags;
 
-const TOKEN_PATH = "OptionsListAccount[606]";
+const PLUS_WARNINGS = {
+    27: "Pets+ breaks the Gold Ball Shop bonus: it drops to 1x instead of 2x. Keep this pet normal to retain the bonus.",
+    30: "Pets+ breaks remote chest access and infinite teleports unless another pet, such as Ram, provides them. Keep this pet normal to retain these perks.",
+    88: "Pets+ can prevent the Prisma multiplier and extra Prisma Bubble unlock from activating. Keep this pet normal until the game fixes its tier checks.",
+};
 
-// Pets+ rides on the existing W1 Companion cheat: `cheatConfig.w1.companion.companions`
-// is a comma-separated id list, and the cheat reports every listed pet to the game as
-// owned at the upgraded tier. An EMPTY list is the shipped default and means "every pet",
-// so "no Pets+ pets" is expressed by clearing the list and turning the cheat off.
+// Empty config means all Pets+. Bare IDs and legacy arrays keep their existing tiers.
 const parsePlusIds = (value) => {
-    if (!Array.isArray(value)) return parseIdList(value);
+    if (!Array.isArray(value)) {
+        return String(value ?? "")
+            .split(",")
+            .filter((entry) => entry.trim().split(":")[1] !== "0")
+            .map((entry) => Number.parseInt(entry, 10))
+            .filter((id) => Number.isFinite(id));
+    }
     // Hand-written array form: "<id>,a,b,c,<tier>" - only tier 1 counts as Pets+.
     return value
         .map((entry) => {
@@ -52,7 +56,10 @@ const parsePlusIds = (value) => {
         .filter((id) => Number.isFinite(id));
 };
 
-const normalizeSearchText = (value) => String(value ?? "").trim().toLowerCase();
+const normalizeSearchText = (value) =>
+    String(value ?? "")
+        .trim()
+        .toLowerCase();
 
 const isUnusedPetText = (value) => {
     const text = normalizeSearchText(value);
@@ -64,8 +71,6 @@ const parseIdList = (value) =>
         .split(",")
         .map((part) => Number.parseInt(part.trim(), 10))
         .filter((id) => Number.isFinite(id));
-
-const serializeIds = (idSet) => [...idSet].sort((a, b) => a - b).join(",");
 
 const expandRange = (start, end) => {
     if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return [];
@@ -135,9 +140,7 @@ const buildSections = (pets, rawSetsInfo) => {
     return sections;
 };
 
-// The "+" control is a sibling of the card rather than a child, because the card is
-// itself a button and buttons cannot nest.
-const CompanionCard = ({ companion, enabledIds, isPlus, onToggle, onTogglePlus }) =>
+const CompanionCard = ({ companion, normalIds, isPlus, isBusy, onToggle, onTogglePlus }) =>
     div(
         { class: "companion-card-wrap" },
         button(
@@ -146,36 +149,43 @@ const CompanionCard = ({ companion, enabledIds, isPlus, onToggle, onTogglePlus }
                 class: () =>
                     [
                         "companion-card",
-                        enabledIds.val.has(companion.id) && "companion-card--enabled",
+                        normalIds.val.has(companion.id) && "companion-card--enabled",
                         isPlus(companion.id) && "companion-card--plus",
                     ]
                         .filter(Boolean)
                         .join(" "),
-                "aria-pressed": () => enabledIds.val.has(companion.id),
+                "aria-pressed": () => normalIds.val.has(companion.id),
+                disabled: () => isBusy(),
                 onclick: () => onToggle(companion.id),
-                title: "Click: toggle this pet's account bonus (pet token).",
+                title: "Toggle this pet's normal bonus.",
             },
             div(
                 { class: "companion-card__top" },
                 div({ class: "companion-card__name" }, companion.name),
                 span({ class: "companion-card__id" }, `ID ${companion.id}`)
             ),
+            span({ class: "companion-card__tier" }, () =>
+                isPlus(companion.id) ? "PETS+" : normalIds.val.has(companion.id) ? "NORMAL" : "NOT SELECTED"
+            ),
             div({ class: "companion-card__effect" }, () =>
                 isPlus(companion.id) ? companion.plusEffect : companion.effect
-            )
+            ),
+            PLUS_WARNINGS[companion.id] ? div({ class: "companion-card__warning" }, PLUS_WARNINGS[companion.id]) : null
         ),
         withTooltip(
             button(
                 {
                     type: "button",
-                    class: () => ["companion-plus", isPlus(companion.id) && "companion-plus--on"].filter(Boolean).join(" "),
+                    class: () =>
+                        ["companion-plus", isPlus(companion.id) && "companion-plus--on"].filter(Boolean).join(" "),
                     "aria-pressed": () => isPlus(companion.id),
                     "aria-label": `Pets+ tier for ${companion.name}`,
+                    disabled: () => isBusy(),
                     onclick: () => onTogglePlus(companion.id),
                 },
                 "+"
             ),
-            "Pets+ tier. Only while the injector runs, and it clears this pet's pet token."
+            "Toggle this pet's Pets+ bonus."
         )
     );
 
@@ -185,17 +195,14 @@ export const CompanionsTab = () => {
 
     const companions = van.state([]);
     const sections = van.state([]);
-    const enabledIds = van.state(new Set());
+    const normalIds = van.state(new Set());
     const plusIds = van.state(new Set());
-    // True when the W1 Companion cheat is on with an empty list, which the game reads as
-    // "every pet, upgraded". The cards have to show that, not an empty selection.
-    const plusAll = van.state(false);
+    const cheatEnabled = van.state(false);
+    const writeError = van.state("");
     const hideUnused = van.state(false);
     const searchQuery = van.state("");
 
-    const isPlus = (id) => plusAll.val || plusIds.val.has(id);
-
-    const eligibleIds = () => companions.val.filter((companion) => !companion.isUnused).map((companion) => companion.id);
+    const isPlus = (id) => plusIds.val.has(id);
 
     const load = () =>
         runLoad(async () => {
@@ -204,7 +211,11 @@ export const CompanionsTab = () => {
                 readCList("CompanionSetsInfo"),
             ]);
             const monsterKeys = [
-                ...new Set(toIndexedArray(rawCompanionDb).map((entry) => toIndexedArray(entry)[0]).filter(Boolean)),
+                ...new Set(
+                    toIndexedArray(rawCompanionDb)
+                        .map((entry) => toIndexedArray(entry)[0])
+                        .filter(Boolean)
+                ),
             ];
             const monsterDefs = monsterKeys.length
                 ? await readGgaEntries("MonsterDefinitionsGET.h", monsterKeys, ["Name"])
@@ -216,22 +227,20 @@ export const CompanionsTab = () => {
             companions.val = nextCompanions;
             sections.val = buildSections(nextCompanions, rawSetsInfo);
 
-            const tokenValue = await gga(TOKEN_PATH);
-            enabledIds.val = new Set(parseIdList(tokenValue).filter((id) => validIdSet.has(id)));
-
             const [config, cheatStates] = await Promise.all([fetchConfig(), fetchCheatStates()]);
-            const cheatOn = !!cheatStates?.data?.w1?.companion;
+            cheatEnabled.val = !!cheatStates?.data?.w1?.companion;
             const configured = config?.cheatConfig?.w1?.companion?.companions ?? "";
-            plusAll.val = cheatOn && !configured;
-            plusIds.val = cheatOn
-                ? new Set(parsePlusIds(configured).filter((id) => validIdSet.has(id)))
-                : new Set();
-        });
-
-    const writeTokens = (idSet) =>
-        runWrite(async () => {
-            await writeVerified(TOKEN_PATH, serializeIds(idSet));
-            enabledIds.val = idSet;
+            plusIds.val = new Set(
+                (cheatEnabled.val ? (configured ? parsePlusIds(configured) : [...validIdSet]) : []).filter((id) =>
+                    validIdSet.has(id)
+                )
+            );
+            const selectedIds = Array.isArray(configured)
+                ? configured.map((entry) => Number.parseInt(String(entry), 10))
+                : parseIdList(configured);
+            normalIds.val = new Set(
+                cheatEnabled.val ? selectedIds.filter((id) => validIdSet.has(id) && !plusIds.val.has(id)) : []
+            );
         });
 
     // /api/toggle flips a cheat rather than setting it, so acting on the state this tab
@@ -255,65 +264,54 @@ export const CompanionsTab = () => {
         });
     };
 
-    const writePlus = (idSet) =>
-        runWrite(async () => {
-            const ids = [...idSet].sort((a, b) => a - b);
-            await updateSessionConfig({ cheatConfig: { w1: { companion: { companions: ids.join(",") } } } });
-            await setCompanionCheat(ids.length > 0);
-            await persistConfig();
-            plusIds.val = idSet;
-            plusAll.val = false;
-        });
+    const writeSelection = (normal, plus) =>
+        runWrite(
+            async () => {
+                writeError.val = "";
+                if (error.val || !companions.val.length) throw new Error("Refresh pet data before changing tiers");
+                const entries = companions.val
+                    .filter(({ id }) => normal.has(id) || plus.has(id))
+                    .map(({ id }) => `${id}:${plus.has(id) ? 1 : 0}`);
+                const result = await updateSessionConfig({
+                    cheatConfig: { w1: { companion: { companions: entries.join(",") } } },
+                });
+                if (result.message !== "Configuration updated successfully") {
+                    throw new Error(result.details || result.message || "Could not apply pet tiers in game");
+                }
+                await setCompanionCheat(entries.length > 0);
+                cheatEnabled.val = entries.length > 0;
+                normalIds.val = normal;
+                plusIds.val = plus;
+                await persistConfig();
+            },
+            {
+                onError: (error) => {
+                    writeError.val = error.message;
+                },
+            }
+        );
 
     const isBusy = () => loading.val || writeStatus.val === "loading";
 
-    // A pet in the token list has its bonus overwritten with the base value by the game,
-    // even when the cheat marks it upgraded - measured. So the two sets must stay disjoint.
-    const currentPlusSet = () => (plusAll.val ? new Set(eligibleIds()) : new Set(plusIds.val));
-
     const handleToggle = async (companionId) => {
         if (isBusy()) return;
-
-        const next = new Set(enabledIds.val);
-        if (next.has(companionId)) next.delete(companionId);
-        else next.add(companionId);
-
-        if (next.has(companionId) && isPlus(companionId)) {
-            const plus = currentPlusSet();
-            plus.delete(companionId);
-            await writePlus(plus);
-        }
-        await writeTokens(next);
+        const normal = new Set(normalIds.val);
+        const plus = new Set(plusIds.val);
+        if (normal.has(companionId)) normal.delete(companionId);
+        else normal.add(companionId);
+        plus.delete(companionId);
+        await writeSelection(normal, plus);
     };
 
     const handleTogglePlus = async (companionId) => {
         if (isBusy()) return;
 
-        const next = currentPlusSet();
+        const next = new Set(plusIds.val);
         if (next.has(companionId)) next.delete(companionId);
         else next.add(companionId);
-
-        if (next.has(companionId) && enabledIds.val.has(companionId)) {
-            const tokens = new Set(enabledIds.val);
-            tokens.delete(companionId);
-            await writeTokens(tokens);
-        }
-        await writePlus(next);
-    };
-
-    const handleBulkWrite = async (ids) => {
-        if (isBusy()) return;
-        await writeTokens(new Set(ids.filter((id) => !isPlus(id))));
-    };
-
-    // The token list is a saved account value the game and other devices also write, so an
-    // overlap can appear without this tab doing anything. Surface it rather than claim it
-    // cannot happen.
-    const overlapIds = () => [...enabledIds.val].filter((id) => isPlus(id));
-
-    const handleFixOverlap = async () => {
-        if (isBusy()) return;
-        await writeTokens(new Set([...enabledIds.val].filter((id) => !isPlus(id))));
+        const normal = new Set(normalIds.val);
+        normal.delete(companionId);
+        await writeSelection(normal, next);
     };
 
     load();
@@ -357,8 +355,9 @@ export const CompanionsTab = () => {
                         ...section.companions.map((companion) =>
                             CompanionCard({
                                 companion,
-                                enabledIds,
+                                normalIds,
                                 isPlus,
+                                isBusy,
                                 onToggle: handleToggle,
                                 onTogglePlus: handleTogglePlus,
                             })
@@ -390,65 +389,87 @@ export const CompanionsTab = () => {
         ),
         withTooltip(
             button(
-                { class: "btn-secondary", onclick: () => handleBulkWrite(eligibleIds()), disabled: () => isBusy() },
+                {
+                    class: "btn-secondary",
+                    disabled: () => isBusy(),
+                    onclick: () =>
+                        writeSelection(
+                            new Set(
+                                companions.val.filter((pet) => !pet.isUnused && !isPlus(pet.id)).map((pet) => pet.id)
+                            ),
+                            new Set(plusIds.val)
+                        ),
+                },
                 "UNLOCK ALL"
             ),
-            "Activate the bonus of every available pet."
-        ),
-        withTooltip(
-            button({ class: "btn-secondary", onclick: () => handleBulkWrite([]), disabled: () => isBusy() }, "CLEAR ALL"),
-            "Deactivate all pet bonuses."
+            "Select all available pets at their normal tier, keeping existing Pets+ choices."
         ),
         withTooltip(
             button(
-                { class: "btn-secondary", onclick: () => writePlus(new Set()), disabled: () => isBusy() },
+                {
+                    class: "btn-secondary",
+                    disabled: () => isBusy(),
+                    onclick: () =>
+                        writeSelection(
+                            new Set(),
+                            new Set(companions.val.filter((pet) => !pet.isUnused).map((pet) => pet.id))
+                        ),
+                },
+                "UNLOCK ALL PETS+"
+            ),
+            "Select all available pets at Pets+, including pets with warnings about broken perks."
+        ),
+        withTooltip(
+            button(
+                {
+                    class: "btn-secondary",
+                    disabled: () => isBusy(),
+                    onclick: () => writeSelection(new Set(), new Set()),
+                },
+                "CLEAR ALL"
+            ),
+            "Clear all injector pet selections and turn the W1 Companion cheat off."
+        ),
+        withTooltip(
+            button(
+                {
+                    class: "btn-secondary",
+                    onclick: () => writeSelection(new Set(normalIds.val), new Set()),
+                    disabled: () => isBusy(),
+                },
                 "CLEAR PETS+"
             ),
-            "Drop every pet back to its normal tier and turn the W1 Companion cheat off."
+            "Clear Pets+ selections, keeping normal selections."
         )
     );
-
-    const renderNotices = () => {
-        const overlap = overlapIds();
-        if (!plusAll.val && !overlap.length) return null;
-        return div(
-            plusAll.val
-                ? WarningBanner(
-                      "Every pet is on the Pets+ tier: the W1 Companion cheat is on with an empty pet list. " +
-                          "Click + on a pet to switch to picking them individually."
-                  )
-                : null,
-            overlap.length
-                ? WarningBanner(
-                      `${overlap.length} pet${overlap.length === 1 ? " is" : "s are"} in both the pet-token list and Pets+. ` +
-                          "The game overwrites Pets+ with the normal bonus for those, so they are not actually upgraded.",
-                      button(
-                          {
-                              type: "button",
-                              class: "btn-secondary",
-                              onclick: handleFixOverlap,
-                              disabled: () => isBusy(),
-                          },
-                          "REMOVE THEIR TOKENS"
-                      )
-                  )
-                : null
-        );
-    };
 
     return PersistentAccountListPage({
         rootClass: "tab-container",
         title: "PETS",
-        description:
-            "Left click toggles a pet's account-wide bonus (pet token) - saved to your account, works without the injector. " +
-            "The + button puts a pet on the Pets+ tier instead: that runs through the W1 Companion cheat, so it only lasts " +
-            "while the injector is running, it changes your active follower, and a pet cannot be on a token and on Pets+ at once.",
-        actions: RefreshButton({ onRefresh: load, tooltip: "Re-read live companion data from the running game." }),
-        topNotices: () => renderNotices(),
+        description: "Click a card for Normal or + for Pets+. Click again to deselect.",
+        actions: RefreshButton({
+            onRefresh: load,
+            disabled: isBusy,
+            tooltip: "Re-read live companion data from the running game.",
+        }),
+        topNotices: () =>
+            div(
+                WarningBanner(
+                    "Since the latest game update, pets unlocked here are only available while the injector is running. " +
+                        "Pets you own remain available."
+                ),
+                writeError.val ? WarningBanner(span({ role: "alert" }, writeError.val)) : null,
+                !loading.val && !error.val && !cheatEnabled.val
+                    ? WarningBanner("The W1 Companion cheat is off. Select a pet's normal or Pets+ bonus to enable it.")
+                    : null
+            ),
         subNav,
         state: { loading, error },
         loadingText: "READING PETS",
         errorTitle: "PET READ FAILED",
-        body: div({ class: "scrollable-panel companions-scroll" }, () => renderSearchResults()),
+        body: div(
+            { class: "scrollable-panel companions-scroll", "aria-busy": () => writeStatus.val === "loading" },
+            () => renderSearchResults()
+        ),
     });
 };
