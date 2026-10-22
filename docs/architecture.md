@@ -19,18 +19,18 @@ for calls into the injected helpers. Attachment and injection retain their setup
 
 ## Find the relevant area
 
-| Task area                           | Source                                                                                               |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Platform attachment and injection   | [game modules](../src/modules/game/)                                                                 |
-| Configuration loading               | [configManager.js](../src/modules/config/configManager.js)                                           |
-| HTTP and WebSocket contracts        | [apiRoutes.js](../src/modules/server/apiRoutes.js), [wsServer.js](../src/modules/server/wsServer.js) |
-| Server Monitor lifecycle            | [monitor.js](../src/modules/server/monitor.js)                                                        |
-| Console interaction                 | [cliInterface.js](../src/modules/cli/cliInterface.js)                                                |
-| Command registration and state      | [cheats/core](../src/cheats/core/)                                                                   |
-| Commands and game hooks             | [cheats/cheats](../src/cheats/cheats/), [proxies](../src/cheats/proxies/)                            |
-| UI views and shared components      | [views](../src/ui/components/views/), [components](../src/ui/components/)                            |
-| UI state and communication          | [state](../src/ui/state/), [services](../src/ui/services/)                                           |
-| Styles                              | [style.css](../src/ui/entry/style.css), [styles](../src/ui/styles/)                                  |
-| Bundling and packaging              | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
+| Task area                         | Source                                                                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Platform attachment and injection | [game modules](../src/modules/game/)                                                                 |
+| Configuration loading             | [configManager.js](../src/modules/config/configManager.js)                                           |
+| HTTP and WebSocket contracts      | [apiRoutes.js](../src/modules/server/apiRoutes.js), [wsServer.js](../src/modules/server/wsServer.js) |
+| Server Monitor lifecycle          | [monitor.js](../src/modules/server/monitor.js)                                                       |
+| Console interaction               | [cliInterface.js](../src/modules/cli/cliInterface.js)                                                |
+| Command registration and state    | [cheats/core](../src/cheats/core/)                                                                   |
+| Commands and game hooks           | [cheats/cheats](../src/cheats/cheats/), [proxies](../src/cheats/proxies/)                            |
+| UI views and shared components    | [views](../src/ui/components/views/), [components](../src/ui/components/)                            |
+| UI state and communication        | [state](../src/ui/state/), [services](../src/ui/services/)                                           |
+| Styles                            | [style.css](../src/ui/entry/style.css), [styles](../src/ui/styles/)                                  |
+| Bundling and packaging            | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
 
 See the [Account page guide](account-pages.md) and [cheats guide](cheats.md) for those areas.

@@ -192,8 +192,8 @@ registerCheats({
         { name: "collider", message: "collider cheats" },
         { name: "holes", message: "holes cheats" },
         { name: "lantern", message: "no daily limit on Blinding Lantern uses" },
-        { name: "skillcaverns", message: "no daily limit on skilling cavern nodes" },      
-      
+        { name: "skillcaverns", message: "no daily limit on skilling cavern nodes" },
+
         {
             name: "jargems",
             message: "Adds to the amount of jar gems. Usage: w5 jargems [jargem_name|all] [amount]",

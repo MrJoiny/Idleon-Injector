@@ -9,6 +9,7 @@ import "./standalone.js";
 import "./minigame.js";
 import "./wide.js";
 import "./worlds.js";
+import "./sushi.js";
 import "./godlike.js";
 import "./multiply.js";
 import "./dangerous.js";

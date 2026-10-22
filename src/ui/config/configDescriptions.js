@@ -523,6 +523,13 @@ export const configDescriptions = {
     "cheatConfig.w7.sushi.CurrencyperHR": "Sushi: Money generation per hour",
     "cheatConfig.w7.sushi.KnowledgeXP_req": "Sushi: Knowledge XP requirements per level. (lower is better)",
     "cheatConfig.w7.sushi.KnowledgeXP_multi": "Sushi: Knowledge XP gain multiplier",
+    "cheatConfig.w7.sushitools.ingameButtons": "Sushi tools: Show native Start/Stop and Sort buttons on the in-game board tab.",
+    "cheatConfig.w7.sushitools.tier": "Sushi tools: Unlocked purchase tier, starting at 1.",
+    "cheatConfig.w7.sushitools.targetCount": "Sushi tools: Stop at this quantity of target-tier sushi or higher. Must fit the working slots.",
+    "cheatConfig.w7.sushitools.targetTier": "Sushi tools: Keep this tier and higher; never merge them. Tiers start at 1.",
+    "cheatConfig.w7.sushitools.reserveSlots": "Sushi tools: Empty slots to reserve after sorting and refilling, from 0 to 119.",
+    "cheatConfig.w7.sushitools.extendChain": "Sushi tools: Remove the East Wind 25-tile chain limit. Requires East Wind.",
+    "cheatConfig.w7.sushitools.higherTier": "Sushi tools: Allow East Wind up to one tier below the game maximum. Requires East Wind.",
 
     // Reef
     "cheatConfig.w7.reef.ReefCost": "Reef: Costs. (lower is better)",

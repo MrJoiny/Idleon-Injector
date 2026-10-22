@@ -3,6 +3,7 @@ import { createComingSoonPlaceholder, renderLazyPanes, renderTabNav } from "../t
 import { SushiGeneralTab } from "./sushi/SushiGeneralTab.js";
 import { SushiShopTab } from "./sushi/SushiShopTab.js";
 import { SushiStationTab } from "./sushi/SushiStationTab.js";
+import { SushiToolsTab } from "./sushi/SushiToolsTab.js";
 
 const { div } = van.tags;
 
@@ -10,6 +11,7 @@ const SUSHI_SUBTABS = [
     { id: "general", label: "GENERAL", component: SushiGeneralTab },
     { id: "station", label: "STATION", component: SushiStationTab },
     { id: "shop", label: "SHOP", component: SushiShopTab },
+    { id: "tools", label: "TOOLS", component: SushiToolsTab },
 ];
 
 export const SushiTab = () => {
