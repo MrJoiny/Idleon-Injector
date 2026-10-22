@@ -34,6 +34,7 @@ import { createStaticRowReconciler, getOrCreateState, runBulkSet, toNum, useWrit
 const { div, span } = van.tags;
 
 const LIBRARY_CLASS_PARENT_OFFSETS = [null, 0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 7];
+const SPECIAL_TALENT_ORDER_START = 615;
 
 /**
  * Returns the Library class-page IDs available to the active character.
@@ -66,9 +67,10 @@ const getBlockedLibraryTalentIds = (rawBlockedList) => {
     return out;
 };
 
-const TalentBadge = ({ curState, maxState }) => span({}, () => `${curState.val} / ${maxState.val}`);
+const TalentBadge = ({ curState, maxState }) =>
+    span({}, () => (maxState.val === -1 ? "LOCKED" : `${curState.val} / ${maxState.val}`));
 
-const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, isBookAvailable }) => {
+const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, isBookAvailable, isSpecial }) => {
     if (!isBookAvailable) {
         return AccountRow({
             rowClass: "talent-row talent-row--unavailable",
@@ -87,7 +89,8 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, i
     return ClampedLevelRow({
         valueState: maxState,
         writePath: `SkillLevelsMAX[${talentId}]`,
-        max: () => maxBookLvState.val,
+        max: isSpecial ? Infinity : () => maxBookLvState.val,
+        integerMode: isSpecial ? "floor" : null,
         renderInfo: () => [
             span({ class: "account-row__index" }, `#${talentId}`),
             div({ class: "talent-row__text" }, span({ class: "account-row__name" }, talentName)),
@@ -100,18 +103,21 @@ const TalentRow = ({ talentId, talentName, curState, maxState, maxBookLvState, i
 };
 
 const buildStaticMeta = async () => {
-    const [rawTalentOrder, rawTalentIconNames, rawClassNames, rawBlockedLibraryTalents] = await Promise.all([
-        readCList("TalentOrder"),
-        readCList("TalentIconNames"),
-        readCList("ClassNames"),
-        readCList("RANDOlist[16]"),
-    ]);
+    const [rawTalentOrder, rawTalentIconNames, rawClassNames, rawBlockedLibraryTalents, rawTalentDescriptions] =
+        await Promise.all([
+            readCList("TalentOrder"),
+            readCList("TalentIconNames"),
+            readCList("ClassNames"),
+            readCList("RANDOlist[16]"),
+            readCList("TalentDescriptions"),
+        ]);
 
     return {
         talentOrder: toIndexedArray(rawTalentOrder ?? []),
         talentIconNames: toIndexedArray(rawTalentIconNames ?? []),
         classNames: toIndexedArray(rawClassNames ?? []),
         blockedLibraryTalentIds: getBlockedLibraryTalentIds(rawBlockedLibraryTalents),
+        talentDescriptions: toIndexedArray(rawTalentDescriptions ?? []),
     };
 };
 
@@ -175,11 +181,16 @@ export const LibraryTab = () => {
                 ...groups.map((group) =>
                     AccountSection({
                         title: group.className,
-                        meta: span(
-                            { class: "library-section-points" },
-                            () => getAvailablePointsState(group.classId).val.toLocaleString(),
-                            span({ class: "library-section-points__label" }, " pts")
-                        ),
+                        note: group.isSpecial
+                            ? "Individual maximums only. Excluded from MAX BOOKS and the Library book cap."
+                            : null,
+                        meta: group.isSpecial
+                            ? null
+                            : span(
+                                  { class: "library-section-points" },
+                                  () => getAvailablePointsState(group.classId).val.toLocaleString(),
+                                  span({ class: "library-section-points__label" }, " pts")
+                              ),
                         body: div(
                             { class: "content-stack" },
                             ...group.talents.map((talent) =>
@@ -190,6 +201,7 @@ export const LibraryTab = () => {
                                     maxState: getMaxState(talent.talentId),
                                     maxBookLvState,
                                     isBookAvailable: talent.isBookAvailable,
+                                    isSpecial: group.isSpecial,
                                 })
                             )
                         ),
@@ -255,6 +267,23 @@ export const LibraryTab = () => {
                 })
                 .filter((group) => group.talents.length > 0);
 
+            const specialTalents = staticMeta.talentOrder
+                .slice(SPECIAL_TALENT_ORDER_START)
+                .filter((talentId) => staticMeta.talentDescriptions[talentId][0][0] !== "_")
+                .map((talentId) => {
+                    getCurState(talentId).val = toNum(skillLevels[talentId]);
+                    getMaxState(talentId).val = toNum(skillLevelsMAX[talentId]);
+                    return { talentId, talentName: getTalentName(talentId), isBookAvailable: true };
+                });
+            if (specialTalents.length) {
+                groups.push({
+                    classId: "special",
+                    className: "SPECIAL TALENTS",
+                    isSpecial: true,
+                    talents: specialTalents,
+                });
+            }
+
             reconcileRows({ activeClassName, maxBookLv, groups, availableTalentIds });
         });
 
@@ -277,7 +306,7 @@ export const LibraryTab = () => {
             ),
             actions: [
                 {
-                    label: "MAX ALL",
+                    label: "MAX BOOKS",
                     status: bulkStatus,
                     disabled: () => loading.val || availableTalentCount.val <= 0,
                     tooltip: "Set all available Library books to the current max book level",
