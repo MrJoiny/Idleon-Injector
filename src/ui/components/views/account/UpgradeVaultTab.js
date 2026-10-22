@@ -7,16 +7,14 @@
  *   cList.UpgradeVault[i][0] = name (underscores + 製 stripped)
  *   cList.UpgradeVault[i][4] = base max level (soft cap)
  *   VaultUpgMaxLV via readComputedMany("summoning", "VaultUpgMaxLV", [[i, 0], ...])
- *                 = real max level (includes Glimbo trade bonuses)
- *   gga.BundlesReceived.h.bon_u
- *                 = Pot Of Gold bundle flag (0 or 1) for +0/+10 max bonus
+ *                 = real max level (includes applicable trade, bundle, research, and event bonuses)
  *   gga.UpgVault[i]                = current level
  *
  * Write: gga.UpgVault[XX] = YY
  */
 
 import van from "../../../vendor/van-1.6.0.js";
-import { gga, readComputedMany } from "../../../services/api.js";
+import { readComputedMany } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
 import { ClampedLevelRow } from "./ClampedLevelRow.js";
 import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
@@ -51,21 +49,16 @@ export const UpgradeVaultTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [upgradeRows, rawBonU] = await Promise.all([
-                readLevelDefinitions({
-                    levelsPath: "UpgVault",
-                    definitionsPath: "UpgradeVault",
-                    mapEntry: ({ definition, rawLevel, index }) => {
-                        const name = cleanName(definition[0], "", { stripMarker: true });
-                        const baseMax = toNum(definition[4]);
-                        if (!name || baseMax <= 0) return null;
-                        return { index, name, baseMax, level: toNum(rawLevel) };
-                    },
-                }),
-                gga("BundlesReceived.h.bon_u"),
-            ]);
-            const bonU = Number(rawBonU);
-            const bundleBonus = bonU === 1 ? 10 : 0;
+            const upgradeRows = await readLevelDefinitions({
+                levelsPath: "UpgVault",
+                definitionsPath: "UpgradeVault",
+                mapEntry: ({ definition, rawLevel, index }) => {
+                    const name = cleanName(definition[0], "", { stripMarker: true });
+                    const baseMax = toNum(definition[4]);
+                    if (!name || baseMax <= 0) return null;
+                    return { index, name, baseMax, level: toNum(rawLevel) };
+                },
+            });
 
             const argSets = upgradeRows.map((upgrade) => [upgrade.index, 0]);
             const computedResults = await readComputedMany("summoning", "VaultUpgMaxLV", argSets);
@@ -83,7 +76,7 @@ export const UpgradeVaultTab = () => {
                 name: upgrade.name,
                 baseMax: upgrade.baseMax,
                 level: upgrade.level,
-                realMax: realMaxes[i] + bundleBonus,
+                realMax: realMaxes[i],
             }));
 
             upgrades.forEach((upgrade) => {
@@ -113,13 +106,13 @@ export const UpgradeVaultTab = () => {
     return PersistentAccountListPage({
         title: "UPGRADE VAULT",
         description:
-            "Set levels for all vault upgrades. Real max includes Glimbo trade bonuses and the Pot Of Gold bundle bonus.",
+            "Set levels for all vault upgrades. Real max includes applicable trade, bundle, research, and event bonuses.",
         actions: RefreshButton({
             onRefresh: load,
             tooltip: "Re-read vault levels from game memory",
         }),
         topNotices: WarningBanner(
-            " Max level is sourced from VaultUpgMaxLV formula plus Pot Of Gold bundle bonus (0 or +10). " +
+            " Max level is sourced from the game's VaultUpgMaxLV formula. " +
                 "SET accepts any value >= 0; no hard upper limit is enforced."
         ),
         state: { loading, error },
