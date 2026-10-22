@@ -25,12 +25,13 @@ export function SushiToolsTab() {
     const feedback = van.state("");
     async function refresh() {
         pending.val = true;
+        settingsLoaded.val = false;
         try {
             const config = await fetchConfig();
             const saved = config.cheatConfig.w7.sushitools;
             for (const [key, value] of Object.entries(settings)) value.val = saved[key];
-            settingsLoaded.val = true;
             state.val = await command("status");
+            settingsLoaded.val = true;
             enabled.val = state.val.enabled;
             feedback.val = "";
         } catch (error) {
