@@ -16,13 +16,21 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { readComputedMany } from "../../../services/api.js";
 import { withTooltip } from "../../Tooltip.js";
+import { BulkActionBar } from "./BulkActionBar.js";
 import { ClampedLevelRow } from "./ClampedLevelRow.js";
-import { RefreshButton, WarningBanner } from "./components/AccountPageChrome.js";
+import { WarningBanner } from "./components/AccountPageChrome.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
-import { cleanName, createIndexedStateGetter, readLevelDefinitions, toNum } from "./accountShared.js";
+import {
+    cleanName,
+    createIndexedStateGetter,
+    readLevelDefinitions,
+    runBulkSet,
+    toNum,
+    useWriteStatus,
+} from "./accountShared.js";
 
-const { div } = van.tags;
+const { div, span } = van.tags;
 
 const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
     const maxLabel = realMax !== baseMax ? `${realMax} (base ${baseMax})` : String(realMax);
@@ -45,6 +53,7 @@ const VaultRow = ({ index, name, baseMax, realMax, levelState }) => {
 export const UpgradeVaultTab = () => {
     const data = van.state(null);
     const { loading, error, run } = useAccountLoad({ label: "Upgrade Vault" });
+    const { status: maxAllStatus, run: runMaxAll } = useWriteStatus();
     const getLevelState = createIndexedStateGetter();
 
     const load = async () =>
@@ -86,6 +95,18 @@ export const UpgradeVaultTab = () => {
             data.val = { upgrades };
         });
 
+    const doMaxAll = async () => {
+        if (loading.val || error.val || !data.val?.upgrades.length) return;
+        await runMaxAll(async () => {
+            await runBulkSet({
+                entries: data.val.upgrades,
+                getTargetValue: (upgrade) => upgrade.realMax,
+                getValueState: (upgrade) => getLevelState(upgrade.index),
+                getPath: (upgrade) => `UpgVault[${upgrade.index}]`,
+            });
+        });
+    };
+
     load();
 
     const renderBody = (resolved) => {
@@ -107,9 +128,28 @@ export const UpgradeVaultTab = () => {
         title: "UPGRADE VAULT",
         description:
             "Set levels for all vault upgrades. Real max includes applicable trade, bundle, research, and event bonuses.",
-        actions: RefreshButton({
-            onRefresh: load,
-            tooltip: "Re-read vault levels from game memory",
+        wrapActions: false,
+        actions: BulkActionBar({
+            leading: span({ class: "account-write-feedback", role: "status" }, () => {
+                if (maxAllStatus.val === "loading") return "Saving all vault upgrades";
+                if (maxAllStatus.val === "success") return "All vault upgrades saved";
+                if (maxAllStatus.val === "error") return "Failed to save all vault upgrades";
+                return "";
+            }),
+            actions: [
+                {
+                    label: "MAX ALL",
+                    status: maxAllStatus,
+                    disabled: () => loading.val || Boolean(error.val) || !data.val?.upgrades.length,
+                    tooltip: "Set all vault upgrades to their real max levels",
+                    onClick: doMaxAll,
+                },
+            ],
+            refresh: {
+                onClick: load,
+                tooltip: "Re-read vault levels from game memory",
+                disabled: () => maxAllStatus.val === "loading",
+            },
         }),
         topNotices: WarningBanner(
             " Max level is sourced from the game's VaultUpgMaxLV formula. " +
