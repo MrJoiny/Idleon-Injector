@@ -2,6 +2,23 @@
     min-height: 0;
 }
 
+.farming-organic-label {
+    display: inline-flex;
+}
+
+.account-btn.farming-organic-button {
+    min-width: 96px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-muted);
+}
+
+.farming-organic-button[aria-pressed="true"] {
+    border-color: var(--c-success);
+    background: var(--c-success);
+    color: var(--c-black);
+}
+
 .farming-grid-scroll {
     overflow-x: auto;
 }
