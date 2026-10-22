@@ -9,7 +9,8 @@ const { createGameBridge } = require("../game/gameBridge");
  */
 
 const Enquirer = require("enquirer");
-const { exec } = require("child_process");
+const { exec, execFile } = require("child_process");
+const { getInjectorConfig } = require("../config/configManager");
 const { createLogger, setActivePrompt } = require("../utils/logger");
 const { broadcastCheatStates } = require("../server/wsServer");
 const { createUpdater } = require("../updateService");
@@ -205,15 +206,18 @@ async function startCliInterface(context, client, options = {}) {
             } else if (action === "chromedebug") {
                 const response = await client.Target.getTargetInfo();
                 const url = `http://localhost:${cdpPort}/devtools/inspector.html?experiment=true&ws=localhost:${cdpPort}/devtools/page/${response.targetInfo.targetId}`;
-                const getCommand = platformOpenCommands[process.platform] || ((u) => `xdg-open "${u}"`);
-
-                exec(getCommand(url), (error) => {
-                    if (error) {
-                        log.error("Failed to open chrome debugger in default browser:", error);
-                    } else {
-                        log.info("Opened idleon chrome debugger in default browser");
-                    }
-                });
+                const browserPath = getInjectorConfig().devtoolsBrowserPath;
+                const onOpened = (error) => {
+                    if (error) log.error("Failed to open chrome debugger:", error);
+                    else log.info("Opened idleon chrome debugger in " + (browserPath || "default browser"));
+                };
+                if (browserPath) {
+                    // Pass the URL as one argument; executable paths are not shell commands.
+                    execFile(browserPath, [url], { windowsHide: true }, onOpened);
+                } else {
+                    const getCommand = platformOpenCommands[process.platform] || ((u) => `xdg-open "${u}"`);
+                    exec(getCommand(url), onOpened);
+                }
             } else {
                 const cheatResponse = await gameBridge.executeCheat(action);
                 if (cheatResponse.error) {
