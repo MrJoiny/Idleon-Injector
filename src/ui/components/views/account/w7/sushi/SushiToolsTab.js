@@ -1,11 +1,5 @@
 import van from "../../../../../vendor/van-1.6.0.js";
-import {
-    executeCheatAction,
-    fetchConfig,
-    updateSessionConfig,
-    saveConfigFile,
-    fetchSushiToolsStatus,
-} from "../../../../../services/api.js";
+import { executeCheatAction, fetchConfig, updateSessionConfig, saveConfigFile } from "../../../../../services/api.js";
 import { AccountTabHeader } from "../../components/AccountTabHeader.js";
 import { RefreshButton } from "../../components/AccountPageChrome.js";
 import { AccountSection } from "../../components/AccountSection.js";
@@ -14,7 +8,7 @@ import { ActionButton } from "../../components/ActionButton.js";
 const { div, label, select, option, input, p, h3, span } = van.tags;
 
 export function SushiToolsTab() {
-    const busy = van.state(false);
+    const enabled = van.state(false);
     const state = van.state({});
     const pending = van.state(false);
     const settingsLoaded = van.state(false);
@@ -30,30 +24,20 @@ export function SushiToolsTab() {
     const knowledgeTier = van.state("1");
     const knowledgeQuantity = van.state("1");
     const feedback = van.state("");
-    let statusTimer = null;
-    let statusRequest = 0;
-    function scheduleStatus() {
-        clearTimeout(statusTimer);
-        if (busy.val)
-            statusTimer = setTimeout(() => {
-                if (root.isConnected) return update();
-            }, 1000);
-    }
     async function refresh() {
-        ++statusRequest;
-        clearTimeout(statusTimer);
         pending.val = true;
         try {
             const config = await fetchConfig();
             const saved = config.cheatConfig.w7.sushitools;
             for (const [key, value] of Object.entries(settings)) value.val = saved[key];
             settingsLoaded.val = true;
-            await update();
+            state.val = await command("status");
+            enabled.val = state.val.enabled;
+            feedback.val = "";
         } catch (error) {
             feedback.val = error.message;
         } finally {
             pending.val = false;
-            scheduleStatus();
         }
     }
     async function saveSettings() {
@@ -96,46 +80,25 @@ export function SushiToolsTab() {
             );
         return JSON.parse(response.result);
     }
-    async function update() {
-        const request = ++statusRequest;
-        clearTimeout(statusTimer);
-        try {
-            const result = await fetchSushiToolsStatus();
-            if (request !== statusRequest) return null;
-            state.val = result;
-            busy.val = Boolean(state.val.busy);
-            feedback.val = "";
-            return state.val;
-        } catch (error) {
-            if (request === statusRequest) feedback.val = error.message;
-            return null;
-        } finally {
-            if (request === statusRequest) scheduleStatus();
-        }
-    }
     async function run(action) {
-        ++statusRequest;
-        clearTimeout(statusTimer);
         pending.val = true;
         try {
-            if (action === "save" || (action === "" && !busy.val)) await saveSettings();
+            if (action === "save" || (action === "" && !enabled.val)) await saveSettings();
             if (action === "save") {
                 feedback.val = "Settings saved.";
                 return;
             }
             const result = await command(action);
-            feedback.val = "";
-            busy.val = Boolean(result.busy);
-            const updated = await update();
-            if (updated && !result.busy) feedback.val = result.message || "";
+            enabled.val = result.enabled;
+            state.val = { ...state.val, error: null };
+            feedback.val = result.message;
         } catch (error) {
             feedback.val = error.message;
         } finally {
             pending.val = false;
-            scheduleStatus();
         }
     }
-    const locked = () => busy.val || pending.val || !settingsLoaded.val;
+    const locked = () => enabled.val || pending.val || !settingsLoaded.val;
     const numberField = (title, value, min = 1, disabled = locked) =>
         label(
             { class: "sushi-setting" },
@@ -247,14 +210,14 @@ export function SushiToolsTab() {
                             info: "Target",
                             badge: () => `${settings.targetCount.val || "…"} × tier ${settings.targetTier.val || "…"}+`,
                         }),
-                        p({ class: "sushi-setting__help" }, "Keep the target tier and higher."),
+                        p({ class: "sushi-setting__help" }, "Idles at the goal. Disable and enable to run again."),
                         div(
                             { class: "account-item-stack" },
                             ActionButton({
-                                label: () => (busy.val ? (state.val.stopping ? "Stopping…" : "Stop") : "Auto Play"),
+                                label: () => (enabled.val ? "Disable Auto Play" : "Enable Auto Play"),
                                 variant: "account-btn",
-                                className: () => (busy.val ? "account-btn--danger" : "account-btn--apply"),
-                                disabled: () => pending.val || state.val.stopping || (!busy.val && !settingsLoaded.val),
+                                className: () => (enabled.val ? "account-btn--danger" : "account-btn--apply"),
+                                disabled: () => pending.val || (!enabled.val && !settingsLoaded.val),
                                 onClick: () => run(""),
                             }),
                             ActionButton({ label: "Sort", disabled: locked, onClick: () => run("sort") })

@@ -32,7 +32,6 @@ import {
 import { getAutoCompleteSuggestions } from "./api/suggestions.js";
 import { searchGga, getGgaKeys } from "./api/search.js";
 import { getBundleCatalog } from "./helpers/bundles.js";
-import { getSushiStatus } from "./cheats/sushi/automation.js";
 import { monitor } from "./core/valueMonitor.js";
 import { setupStorageEarlyHooks } from "./proxies/storageEarlyHooks.js";
 
@@ -73,7 +72,6 @@ window.updateCheatConfig = updateCheatConfig;
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;
 window.cheatStateList = getcheatStateList;
 window.getBundleCatalog = getBundleCatalog;
-window.getSushiToolsStatus = getSushiStatus;
 
 // Search API
 window.searchGga = searchGga;

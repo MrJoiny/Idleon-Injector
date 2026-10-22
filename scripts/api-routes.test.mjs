@@ -46,7 +46,6 @@ test("API setup retains every endpoint and does not evaluate the game during reg
             "GET /api/config",
             "GET /api/devtools-url",
             "GET /api/game/bundles",
-            "GET /api/game/sushi-tools/status",
             "GET /api/heartbeat",
             "GET /api/search/keys",
             "GET /api/update/check",
