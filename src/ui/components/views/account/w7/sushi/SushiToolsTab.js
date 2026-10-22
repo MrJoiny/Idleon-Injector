@@ -19,6 +19,7 @@ export function SushiToolsTab() {
         reserveSlots: van.state(""),
         extendChain: van.state(false),
         higherTier: van.state(false),
+        ingameButtons: van.state(false),
     };
     const knowledgeTier = van.state("1");
     const knowledgeQuantity = van.state("1");
@@ -200,6 +201,7 @@ export function SushiToolsTab() {
                             }),
                             ActionButton({ label: "Sort", disabled: locked, onClick: () => run("sort") })
                         ),
+                        toggle("Show in-game buttons", settings.ingameButtons),
                         div(
                             { class: "sushi-automation-info" },
                             p({ role: "status", "aria-live": "polite", class: "sushi-automation-status" }, () =>
