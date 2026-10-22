@@ -1,5 +1,5 @@
 import van from "../../../../../vendor/van-1.6.0.js";
-import { gga, readCList } from "../../../../../services/api.js";
+import { gga, readCList, readComputed } from "../../../../../services/api.js";
 import { toIndexedArray } from "../../../../../utils/index.js";
 import { formatNumber, parseNumber } from "../../../../../utils/numberFormat.js";
 import { EditableNumberRow } from "../../EditableNumberRow.js";
@@ -20,6 +20,7 @@ const { div, span, label, input } = van.tags;
 export const OmniJadeTab = () => {
     const { loading, error, run } = useAccountLoad({ label: "Omni Jade" });
     const saving = van.state(false);
+    const dailyLevels = van.state(null);
     const states = new Map();
     const state = (path) => getOrCreateState(states, path);
     const disabled = () => loading.val || saving.val;
@@ -28,10 +29,11 @@ export const OmniJadeTab = () => {
 
     const load = async () =>
         run(async () => {
-            const [rawToggles, rawLevels, rawDefinitions] = await Promise.all([
+            const [rawToggles, rawLevels, rawDefinitions, dailyGain] = await Promise.all([
                 gga("Menagerie[6]"),
                 gga("Menagerie[7]"),
                 readCList("NinjaUpg"),
+                readComputed("menagerie", "OmniJadeDailyLVs", [0, 0]),
             ]);
             const toggles = toIndexedArray(rawToggles);
             const levels = toIndexedArray(rawLevels);
@@ -39,6 +41,7 @@ export const OmniJadeTab = () => {
             if (toggles.length < 17 || levels.length < 17 || definitions.length < 17) {
                 throw new Error("Omni Jade data is not initialized.");
             }
+            dailyLevels.val = dailyGain;
             for (let i = 0; i < 17; i++) {
                 state(`Menagerie[6][${i}]`).val = Number(toggles[i]);
                 state(`Menagerie[7][${i}]`).val = Number(levels[i]);
@@ -137,7 +140,8 @@ export const OmniJadeTab = () => {
     load();
     return PersistentAccountListPage({
         title: "OMNI JADE",
-        description: "Selected Sneaking upgrades gain +1 bonus level per day without raising their purchase cost.",
+        description: () =>
+            `Daily bonus levels per selected Sneaking upgrade: ${dailyLevels.val === null ? "…" : `+${dailyLevels.val}`}. Purchase costs stay the same.`,
         actions: RefreshButton({ onRefresh: load, disabled }),
         state: { loading, error },
         loadingText: "READING OMNI JADE",
