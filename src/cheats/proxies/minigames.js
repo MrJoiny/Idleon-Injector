@@ -19,6 +19,7 @@
  * - Minehead (ActorEvents_741) - In-game mine tile reveal
  * - Gold Pot Rush (ActorEvents_670) - Instant finish minigame
  * - Event Card Game (ActorEvents_670) - Keep guesses alive
+ * - Event Wheel (ActorEvents_670) - Land on the bonus line, then the bonus wheel jackpot
  */
 
 import { cheatState, cheatConfig } from "../core/state.js";
@@ -206,6 +207,20 @@ function setupEvents670Minigames() {
     const CARD_TOP_REWARD_DEALT = 35;
     const CARD_MAX_LIVES = 2;
 
+    // Event Wheel state
+    const WHEEL_GAME_ID = 0;
+    const WHEEL_ANGLE_IDX = 144;
+    const WHEEL_TARGET_IDX = 145;
+    const WHEEL_SPIN_IDX = 147;
+    const WHEEL_TIER_IDX = 241;
+    const WHEEL_TARGET_BANDS = [
+        [188.4, 194],
+        [0, 51.7],
+        [0, 20.7],
+    ];
+    const WHEEL_JACKPOT_START = 359.1;
+    const WHEEL_JACKPOT_END = 1.2;
+
     // Wisdom Monument state
     const WISDOM_HOLE_ID = 12;
     const WISDOM_PHASE_IDX = 55;
@@ -234,6 +249,25 @@ function setupEvents670Minigames() {
         if (deck.length >= CARD_TOP_REWARD_DEALT) return;
 
         instance._GenINFO[CARD_LIVES_IDX] = CARD_MAX_LIVES;
+    }
+
+    // Retarget the spin so the wheel stops inside the tier's band. 
+    function steerEventWheel(instance) {
+        const info = instance._GenINFO;
+        if (!cheatState.minigame.wheel || info[EVENT_GAME_IDX] !== WHEEL_GAME_ID || info[WHEEL_SPIN_IDX] !== 1) return;
+
+        const tier = info[WHEEL_TIER_IDX];
+        const band = WHEEL_TARGET_BANDS[tier];
+        if (!band) return;
+
+        const target = info[WHEEL_TARGET_IDX];
+        const landing = target - 360 * Math.floor(target / 360);
+        if (landing >= band[0] && landing < band[1]) return;
+        if (tier === 0 && (landing >= WHEEL_JACKPOT_START || landing < WHEEL_JACKPOT_END)) return;
+
+        let nextTarget = target - landing + (band[0] + band[1]) / 2;
+        if (nextTarget <= info[WHEEL_ANGLE_IDX]) nextTarget += 360;
+        info[WHEEL_TARGET_IDX] = nextTarget;
     }
 
     // _GenINFO proxy hooks for Scratch and Wisdom Monument
@@ -322,6 +356,12 @@ function setupEvents670Minigames() {
 
         return base;
     };
+
+    // Event Wheel cheat
+    createMethodProxy(ActorEvents670.prototype, "_event_Events", function (base) {
+        steerEventWheel(this);
+        return base;
+    });
 
     // Gold Pot Rush cheat
     createMethodProxy(ActorEvents670.prototype, "_event_7", function (base) {
