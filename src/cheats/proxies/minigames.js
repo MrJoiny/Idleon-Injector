@@ -360,6 +360,10 @@ function setupEvents670Minigames() {
     // Event Wheel cheat
     createMethodProxy(ActorEvents670.prototype, "_event_Events", function (base) {
         steerEventWheel(this);
+        const info = this._GenINFO;
+        if (cheatState.minigame.instawheel && info[EVENT_GAME_IDX] === WHEEL_GAME_ID && info[WHEEL_SPIN_IDX] === 1) {
+            info[WHEEL_ANGLE_IDX] = info[WHEEL_TARGET_IDX];
+        }
         return base;
     });
 

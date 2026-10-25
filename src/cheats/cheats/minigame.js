@@ -31,5 +31,6 @@ registerCheats({
         { name: "goldrush", message: "gold pot rush ball drop speed cheat" },
         { name: "card", message: "event card game cheat" },
         { name: "wheel", message: "event wheel always lands on the bonus" },
+        { name: "instawheel", message: "instant event wheel spins without changing the odds" },
     ],
 });
