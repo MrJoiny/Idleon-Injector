@@ -21,6 +21,7 @@ These terms distinguish concepts used throughout the project. Follow the linked 
 | Account page        | An editor for an account feature or world system. The raw Account Options editor is one such page. |
 | Greenstack          | A recorded ten-million-unit storage milestone for an item, separate from its current quantity.     |
 | Black Star          | An allocation that multiplies a Gaming Palette color's bonus; each color can hold up to two.       |
+| Pet token           | A saved Normal-tier pet bonus, capped by owned token sources, that works without the injector.     |
 | Monitor             | A subscription to observe a game value over time.                                                  |
 | Session update      | A configuration change applied to the running session.                                             |
 | Saved configuration | User overrides written to disk for later runs.                                                     |

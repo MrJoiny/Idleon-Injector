@@ -58,6 +58,7 @@
     --c-tier-gold-35: rgba(255, 183, 0, 0.35);
     --c-tier-onyx-35: rgba(176, 106, 255, 0.35);
     --c-tier-zenith-35: rgba(0, 229, 255, 0.35);
+    --c-tier-zenith-10: rgba(0, 229, 255, 0.1);
     --c-sign-a: #4fc3f7;
     --c-sign-b: #a5d6a7;
     --c-sign-c: #ffb74d;
@@ -231,6 +232,7 @@
         --c-tier-gold-35: oklch(82.53% 0.1709 80.01 / 0.35);
         --c-tier-onyx-35: oklch(67.86% 0.1798 310.11 / 0.35);
         --c-tier-zenith-35: oklch(85.98% 0.1143 219.1 / 0.35);
+        --c-tier-zenith-10: oklch(85.98% 0.1143 219.1 / 0.1);
         --c-cauldron-orange: oklch(70.51% 0.1603 62.63);
         --c-cauldron-green: oklch(71.65% 0.145 143.71);
         --c-cauldron-purple: oklch(62.39% 0.2053 308.67);

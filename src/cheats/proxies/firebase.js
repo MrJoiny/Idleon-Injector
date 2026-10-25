@@ -16,6 +16,11 @@ import { setupCListProxy } from "./clist.js";
 import { setupGameAttributeProxies } from "./gameAttributes.js";
 import { setupItemProxies } from "./items.js";
 
+let getCompanionInfoMe;
+
+/** The player's real companion entries, bypassing the W1 Companion spoof. */
+export const getOwnedCompanions = () => Reflect.apply(getCompanionInfoMe, firebase, []) || [];
+
 /**
  * Setup Firebase storage proxy (companion, party, unban).
  */
@@ -40,7 +45,7 @@ export function setupFirebaseStorageProxy() {
         return Reflect.apply(setCompanionFollower, this, args);
     };
 
-    const getCompanionInfoMe = firebase.getCompanionInfoMe;
+    getCompanionInfoMe = firebase.getCompanionInfoMe;
     const companionEntryId = (entry) => parseInt(String(entry).split(",")[0]);
 
     // A configured list names the pets to fake-own, it does not describe the whole
@@ -55,9 +60,13 @@ export function setupFirebaseStorageProxy() {
     firebase.getCompanionInfoMe = function (...args) {
         const base = Reflect.apply(getCompanionInfoMe, this, args);
         if (cheatState.w1.companion) {
+            // Pet-token picks (OptionsListAccount[606]) stay out of the fake list: the game
+            // refunds a token whose pet looks owned, which would drop it from the save.
+            const tokenIds = gga.OptionsListAccount[606] ? String(gga.OptionsListAccount[606]).split(",") : [];
+            const isNotToken = (entry) => !tokenIds.includes(String(companionEntryId(entry)));
             if (!cheatConfig.w1.companion.companions) {
                 return Array.from({ length: cList.CompanionDB.length }, (_, index) => `${index},0,0,0,1`).filter(
-                    (entry) => monsterDefs[cList.CompanionDB[parseInt(entry)][0]]?.h.Name
+                    (entry) => monsterDefs[cList.CompanionDB[parseInt(entry)][0]]?.h.Name && isNotToken(entry)
                 );
             }
             const companions = cheatConfig.w1.companion.companions;
@@ -68,7 +77,7 @@ export function setupFirebaseStorageProxy() {
                     .filter(([id]) => /^\d+$/.test(id))
                     // Bare IDs retain the legacy Pets+ tier; :0 requests the normal tier.
                     .map(([id, tier]) => `${Number(id)},0,0,0,${tier === "0" ? "0" : "1"}`);
-                return mergeWithOwnedCompanions(entries, base || []);
+                return mergeWithOwnedCompanions(entries.filter(isNotToken), base || []);
             }
             if (Array.isArray(companions)) {
                 const entries = companions.map((entry) => {
@@ -76,7 +85,7 @@ export function setupFirebaseStorageProxy() {
                     if (typeof entry === "string" && !entry.includes(",")) return `${entry},0,0,0,1`;
                     return entry;
                 });
-                return mergeWithOwnedCompanions(entries, base || []);
+                return mergeWithOwnedCompanions(entries.filter(isNotToken), base || []);
             }
             return companions;
         }

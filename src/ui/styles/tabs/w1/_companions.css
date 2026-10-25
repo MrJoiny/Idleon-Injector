@@ -133,7 +133,7 @@
     font-size: 0.75rem;
     line-height: 1.45;
     color: var(--c-warning);
-    padding-right: 26px;
+    padding-right: 54px;
 }
 
 .companion-card__top {
@@ -162,9 +162,144 @@
 }
 
 .companion-card__effect {
-    padding-right: 26px;
+    padding-right: 54px;
     min-height: 2.7em;
     font-size: 0.75rem;
     color: var(--c-text-dim);
     line-height: 1.45;
+}
+
+/* Pet tokens: saved in the game, so they get the zenith hue instead of the spoof accents. */
+
+.companion-card--token {
+    border-color: var(--c-tier-zenith);
+    background: var(--c-tier-zenith-10);
+}
+
+.companion-card--token .companion-card__tier {
+    color: var(--c-tier-zenith);
+}
+
+.companion-card--owned .companion-card__tier {
+    color: var(--c-text-main);
+}
+
+.companion-card__tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.companion-token {
+    right: 36px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+}
+
+.companion-token:hover {
+    border-color: var(--c-tier-zenith);
+}
+
+.companion-token.companion-plus--on {
+    border-color: var(--c-tier-zenith);
+    background: var(--c-tier-zenith);
+    color: var(--c-panel);
+}
+
+.companion-token[aria-disabled="true"] {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.companion-token[aria-disabled="true"]:hover {
+    border-color: var(--c-border);
+    color: var(--c-text-muted);
+}
+
+.pets-token-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--c-tier-zenith-35);
+    background: var(--c-tier-zenith-10);
+    color: var(--c-tier-zenith);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.pets-token-meter__count {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--c-text-main);
+}
+
+.pets-token-pips {
+    display: inline-flex;
+    gap: 3px;
+}
+
+.pets-token-pip {
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--c-tier-zenith);
+    border-radius: 1px;
+}
+
+.pets-token-pip--used {
+    background: var(--c-tier-zenith);
+}
+
+.pets-token-pip--locked {
+    border-style: dashed;
+    border-color: var(--c-text-muted);
+    opacity: 0.6;
+}
+
+.btn-token {
+    border-color: var(--c-tier-zenith);
+    color: var(--c-tier-zenith);
+}
+
+.btn-token:hover:not(:disabled) {
+    border-color: var(--c-tier-zenith);
+    background: var(--c-tier-zenith-10);
+}
+
+.pets-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    margin-top: 6px;
+}
+
+.pets-legend__key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.pets-legend__key--live {
+    color: var(--c-text-main);
+}
+
+.pets-legend__key--live .icon-base {
+    color: var(--c-accent);
+}
+
+.pets-legend__key--token {
+    color: var(--c-tier-zenith);
+}
+
+.pets-legend__dim {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--c-text-muted);
 }
