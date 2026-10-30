@@ -14,6 +14,7 @@ import { cheatState } from "../core/state.js";
 import { behavior, firebase, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
+import { perfectEquipped } from "../helpers/perfectEquipment.js";
 
 // Wide (account-wide) cheats
 registerCheats({
@@ -66,6 +67,12 @@ registerCheats({
                     cheatState.wide.perfectobols ? "Activated" : "Deactivated"
                 } Perfect obol rolls. Family and inventory obols update on character change.`;
             },
+        },
+        {
+            name: "perfectequipped",
+            message:
+                "Perfect Equipped: permanently rebuild current gear for your class with VII stones; increase food stacks. Skips keychains, premium hat, trophy, nametag and Arcane/Tempest gear. Apply once per click.",
+            fn: perfectEquipped,
         },
         {
             name: "cardcopy",
