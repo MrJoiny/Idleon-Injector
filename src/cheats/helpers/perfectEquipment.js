@@ -1,4 +1,5 @@
 import { cList, events, gga, itemDefs } from "../core/globals.js";
+import { equippedSpecialRolls } from "./specialEquipment.js";
 
 const protectedSlots = new Set([8, 9, 10, 11, 14]);
 const modifierKeys = [
@@ -24,7 +25,7 @@ function nonnegativeInteger(value, label) {
 }
 
 /** Build the whole update before writing anything. Equipment maps contain deltas, not base stats. */
-export function planPerfectEquipment(attributes, definitions, lists, craftingBonus, foodCapacity) {
+export function planPerfectEquipment(attributes, definitions, lists, craftingBonus, foodCapacity, specialRolls = {}) {
     const characterClass = nonnegativeInteger(Number(attributes.CharacterClass), "character class");
     const primaryStat = characterClass < 7 ? "LUK" : characterClass < 19 ? "STR" : characterClass < 31 ? "AGI" : "WIS";
     nonnegativeInteger(craftingBonus, "crafting bonus");
@@ -39,25 +40,34 @@ export function planPerfectEquipment(attributes, definitions, lists, craftingBon
             const current = attributes.EquipmentMap[group][slot]?.h;
             if (!definition || !current) throw new Error(`Missing equipment data for ${item}. Nothing changed.`);
             const type = definition.typeGen;
+            const special = group === 0 && [1, 5, 7].includes(slot) ? specialRolls[item] : null;
             // These items have separate quality/rune rules, or protected cosmetic properties.
             if (
-                /Tempest|EquipmentWandsArc|EquipmentRingsArc/.test(item) ||
+                (/Tempest|EquipmentWandsArc|EquipmentRingsArc/.test(item) && !special) ||
                 Number(current.Premiumified) === 1 ||
                 ["aKeychain", "aHelmetMTX", "aTrophy", "aNametag"].includes(type)
             ) {
                 skipped.push(item);
                 return;
             }
-            const stoneId =
-                type === "aChatRingMTX"
-                    ? `StonePrem${primaryStat}`
-                    : type === "aWeapon"
-                      ? "StoneW9"
-                      : lists.EquiptypeGens[0].includes(type)
-                        ? "StoneA8"
-                        : lists.EquiptypeGens[1].includes(type)
-                          ? "StoneT8"
-                          : null;
+            const stats = { ...current };
+            for (const key of modifierKeys) stats[key] = 0;
+            if (special) Object.assign(stats, special.stats);
+            if (special && !special.stone) {
+                equipment.push({ group, slot, item, stats });
+                return;
+            }
+            const stoneId = special
+                ? special.stone
+                : type === "aChatRingMTX"
+                  ? `StonePrem${primaryStat}`
+                  : type === "aWeapon"
+                    ? "StoneW9"
+                    : lists.EquiptypeGens[0].includes(type)
+                      ? "StoneA8"
+                      : lists.EquiptypeGens[1].includes(type)
+                        ? "StoneT8"
+                        : null;
             if (!stoneId || Number(definition.Upgrade_Slots_Left) === 0) {
                 skipped.push(item);
                 return;
@@ -65,10 +75,8 @@ export function planPerfectEquipment(attributes, definitions, lists, craftingBon
             const baseSlots = nonnegativeInteger(Number(definition.Upgrade_Slots_Left), `${item} slots`);
             const stone = definitions[stoneId]?.h;
             if (!stone || Number(stone.Trigger) !== 1) throw new Error(`Unsupported ${stoneId}. Nothing changed.`);
-            const isCraftable = craftable.has(item);
+            const isCraftable = !special && craftable.has(item);
             const uses = baseSlots + (isCraftable ? 1 : 0);
-            const stats = { ...current };
-            for (const key of modifierKeys) stats[key] = 0;
             if (isCraftable) stats[primaryStat] = craftingBonus;
             for (const effect of stone.Effect.split(".")) {
                 const [effectKey, amountText] = effect.split(",");
@@ -120,7 +128,8 @@ export function perfectEquipped() {
         itemDefs,
         cList,
         Math.floor(4 + 8 * events(189)._customBlock_GetBribeBonus("28")),
-        0
+        0,
+        equippedSpecialRolls()
     );
     if (!gga.DNSM.h.TotStatMAP?.h) throw new Error("Equipment stat cache is unavailable. Nothing changed.");
     const before = plan.equipment.map(({ group, slot }) => gga.EquipmentMap[group][slot].h);
@@ -141,6 +150,6 @@ export function perfectEquipped() {
     for (const { slot, quantity } of plan.food) gga.EquipmentQuantity[2][slot] = quantity;
     return (
         `Perfect Equipped: rebuilt ${plan.equipment.length} items for ${plan.primaryStat}; increased ${plan.food.length} food stacks. ` +
-        `Protected slots and keychains unchanged; skipped ${plan.skipped.length} special or non-upgradeable items.`
+        `Protected slots and keychains unchanged; skipped ${plan.skipped.length} ineligible or non-upgradeable items.`
     );
 }

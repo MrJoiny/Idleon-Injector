@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = readFileSync(new URL("../src/cheats/helpers/perfectEquipment.js", import.meta.url), "utf8");
 const { planPerfectEquipment, perfectEquipped, bindFixture } = await import(
-    `data:text/javascript,${encodeURIComponent(source.replace(/^import .*;\r?\n/, "let cList, events, gga, itemDefs; export function bindFixture(f) { ({cList, events, gga, itemDefs} = f); }"))}`
+    `data:text/javascript,${encodeURIComponent(source.replace(/^import .*;\r?$/gm, "") + "\nlet cList, events, gga, itemDefs; const equippedSpecialRolls = () => ({}); export function bindFixture(f) { ({cList, events, gga, itemDefs} = f); }")}`
 );
 
 function fixture() {
@@ -215,4 +215,120 @@ test("one-shot runtime uses updated native capacity, preserves protected maps an
     assert.throws(() => perfectEquipped(), /rolled back/);
     assert.deepEqual(f.attributes.EquipmentMap, before);
     assert.equal(f.attributes.EquipmentQuantity[2][0], 2000);
+});
+
+const specialSource = readFileSync(new URL("../src/cheats/helpers/specialEquipment.js", import.meta.url), "utf8");
+const { arcaneRoll, tempestRoll, highestTempestDropWorld, equippedSpecialRolls, bindSpecial } = await import(
+    `data:text/javascript,${encodeURIComponent(specialSource.replace(/^import .*;\r?$/gm, "") + "\nlet cList, events, gga; export function bindSpecial(f) { ({cList, events, gga} = f); }")}`
+);
+
+test("AC maxima use separate native quality values, speed cap, and no stones", () => {
+    assert.deepEqual(arcaneRoll("EquipmentWandsArc0", 1500), {
+        Speed: 6,
+        Weapon_Power: 75,
+        UQ1val: 125,
+        UQ2val: 130,
+        AwesomeStats: 1,
+    });
+    assert.equal(arcaneRoll("EquipmentWandsArc0", 299).Speed, 2);
+    assert.equal(arcaneRoll("EquipmentWandsArc0", 300).Speed, 3);
+    assert.deepEqual(arcaneRoll("EquipmentRingsArc0", 1500), { UQ1val: 140, UQ2val: 180, AwesomeStats: 1 });
+    assert.throws(() => arcaneRoll("EquipmentWandsArc0", NaN));
+    assert.throws(() => arcaneRoll("EquipmentWandsArc0", 0));
+    const f = fixture();
+    f.equip(0, 1, "EquipmentWandsArc0");
+    f.definitions.EquipmentWandsArc0 = { h: { typeGen: "aWeapon", Upgrade_Slots_Left: 0 } };
+    const special = { EquipmentWandsArc0: { stats: arcaneRoll("EquipmentWandsArc0", 1500), stone: null } };
+    const plan = planPerfectEquipment(f.attributes, f.definitions, f.lists, 12, 0, special);
+    assert.equal(plan.equipment[0].stats.WIS, 0);
+    assert.equal(plan.equipment[0].stats.Weapon_Power, 75);
+    assert.equal(plan.equipment[0].stats.Upgrade_Slots_Left, 0);
+});
+
+test("Tempest maximum rolls plus 10% stones use base slot counts, including Punchies", () => {
+    for (const [item, slots, stone, wp, uq] of [
+        ["EquipmentBowsTempest0", 5, "StoneTempestB2", 120, 280],
+        ["EquipmentRingsTempest6", 3, "StoneTempestR2", 9, 100],
+        ["EquipmentRingsTempest8", 1, "StoneTempestR2", 3, 50],
+    ]) {
+        const f = fixture();
+        f.equip(0, 1, item);
+        f.definitions[item] = { h: { typeGen: "aWeapon", Upgrade_Slots_Left: slots, UQ1val: 20 } };
+        f.definitions[stone] = {
+            h: {
+                Trigger: 1,
+                Effect: stone === "StoneTempestB2" ? "Weapon_Power,12.Misc_Bonus,50" : "Weapon_Power,3.Misc_Bonus,25",
+            },
+        };
+        f.lists.ItemToCraftNAME[0].push(item); // Even bad recipe membership must not grant special gear a crafting slot.
+        const special = { [item]: { stats: tempestRoll(item, 5), stone } };
+        const plan = planPerfectEquipment(f.attributes, f.definitions, f.lists, 12, 0, special);
+        assert.equal(plan.equipment[0].stats.Weapon_Power, wp);
+        assert.equal(plan.equipment[0].stats.UQ1val, uq);
+        assert.equal(plan.equipment[0].stats.AGI, 0);
+        assert.equal(plan.equipment[0].stats.Upgrade_Slots_Left, -slots);
+        f.attributes.EquipmentMap[0][1].h = plan.equipment[0].stats;
+        assert.deepEqual(planPerfectEquipment(f.attributes, f.definitions, f.lists, 12, 0, special), plan);
+    }
+});
+
+test("highest Tempest world respects variant drops, Titan gates, and optional normal gates", () => {
+    const attrs = {
+        MonsterDefinitionsGET: {
+            h: {
+                low: { h: { AFKtype: "FIGHTING" } },
+                high: { h: { AFKtype: "FIGHTING" } },
+                later: { h: { AFKtype: "FIGHTING" } },
+                fish: { h: { AFKtype: "FISHING" } },
+            },
+        },
+        OptionsListAccount: [],
+        KillsLeft2Advance: Array.from({ length: 251 }, () => [0]),
+        CustomMaps: {
+            h: { MonsterDrops: { h: { low: [["COIN", 1, 0]], high: [["COIN", 1, 1]], later: [["COIN", 1, 2]] } } },
+        },
+    };
+    const lists = { MapAFKtarget: Array(351).fill("Z"), MapAFKtargetSide: [] };
+    lists.MapAFKtarget[1] = "low";
+    lists.MapAFKtarget[201] = "high";
+    lists.MapAFKtarget[251] = "later";
+    lists.MapAFKtarget[301] = "low"; // W7 cannot be counted as a Tempest world.
+    attrs.CustomMaps.h.MonsterDrops.h.fish = [["COIN", 1, 0]];
+    lists.MapAFKtarget[252] = "fish"; // Some skilling definitions also have a COIN entry.
+    let titans = 30;
+    const wind = (key, n) =>
+        key === "TotalTitansKilled" ? titans : key === "TitanKillReqTown" ? [3, 8, 17, 25, 30][n / 50] : n;
+    assert.equal(highestTempestDropWorld(attrs, lists, wind, "EquipmentBowsTempest0"), 0);
+    assert.equal(highestTempestDropWorld(attrs, lists, wind, "EquipmentBowsTempest1"), 4);
+    assert.equal(highestTempestDropWorld(attrs, lists, wind, "EquipmentBowsTempest2"), 5);
+    titans = 25;
+    assert.equal(highestTempestDropWorld(attrs, lists, wind, "EquipmentBowsTempest2"), -1);
+    attrs.OptionsListAccount[387] = 1;
+    attrs.KillsLeft2Advance[150][0] = 1;
+    assert.equal(highestTempestDropWorld(attrs, lists, wind, "EquipmentBowsTempest1"), -1);
+});
+
+test("special runtime is current-class-only and reads each AC quality from native accessors", () => {
+    const gga = { CharacterClass: 40, EquipmentOrder: [Array(16).fill("Blank")] };
+    gga.EquipmentOrder[0][1] = "EquipmentWandsArc0";
+    gga.EquipmentOrder[0][5] = "EquipmentRingsArc0";
+    const calls = [];
+    bindSpecial({
+        gga,
+        cList: {},
+        events: (id) => {
+            assert.equal(id, 579);
+            return {
+                _customBlock_ArcaneType: (key) => {
+                    calls.push(key);
+                    return key === "WepDropQuality" ? 1500 : 300;
+                },
+            };
+        },
+    });
+    const rolls = equippedSpecialRolls();
+    assert.deepEqual(calls, ["WepDropQuality", "RingDropQuality"]);
+    assert.equal(rolls.EquipmentRingsArc0.stats.UQ1val, 60);
+    gga.CharacterClass = 29;
+    assert.deepEqual(equippedSpecialRolls(), {});
 });

@@ -70,8 +70,7 @@ registerCheats({
         },
         {
             name: "perfectequipped",
-            message:
-                "Perfect Equipped: permanently rebuild current gear for your class with VII stones; increase food stacks. Skips keychains, premium hat, trophy, nametag and Arcane/Tempest gear. Apply once per click.",
+            message: "Permanently rebuild current gear for your class; increase food stacks.",
             fn: perfectEquipped,
         },
         {
