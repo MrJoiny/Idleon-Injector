@@ -133,6 +133,33 @@ test("repeated application does not stack bonuses", () => {
     assert.deepEqual(f.plan(), first);
 });
 
+test("premium chat rings use their three premium stones for each class and remain repeatable", () => {
+    for (const [characterClass, stat] of [
+        [5, "LUK"],
+        [16, "STR"],
+        [29, "AGI"],
+        [40, "WIS"],
+    ]) {
+        const f = fixture();
+        f.attributes.CharacterClass = characterClass;
+        f.definitions.EquipmentRingsChat11 = { h: { typeGen: "aChatRingMTX", Upgrade_Slots_Left: 3, UQ1val: 10 } };
+        f.definitions[`StonePrem${stat}`] = { h: { Trigger: 1, Effect: `${stat},5` } };
+        f.equip(0, 13, "EquipmentRingsChat11");
+        // Slot protection takes priority even if an item has an upgradeable definition.
+        for (const slot of [8, 10, 14]) f.equip(0, slot, "EquipmentRingsChat11");
+        const plan = f.plan();
+        assert.equal(plan.equipment.length, 1);
+        const result = plan.equipment[0];
+        assert.equal(result.slot, 13);
+        assert.equal(result.stats[stat], 15);
+        assert.equal(result.stats.Upgrade_Slots_Left, -3);
+        assert.equal(result.stats.Weapon_Power, 0);
+        assert.equal(result.stats.UQ1val, 0);
+        f.attributes.EquipmentMap[0][13].h = result.stats;
+        assert.deepEqual(f.plan(), plan);
+    }
+});
+
 test("invalid later entries fail before any earlier item can be modified", () => {
     const f = fixture();
     f.equip(0, 0, "Hat");

@@ -49,13 +49,15 @@ export function planPerfectEquipment(attributes, definitions, lists, craftingBon
                 return;
             }
             const stoneId =
-                type === "aWeapon"
-                    ? "StoneW9"
-                    : lists.EquiptypeGens[0].includes(type)
-                      ? "StoneA8"
-                      : lists.EquiptypeGens[1].includes(type)
-                        ? "StoneT8"
-                        : null;
+                type === "aChatRingMTX"
+                    ? `StonePrem${primaryStat}`
+                    : type === "aWeapon"
+                      ? "StoneW9"
+                      : lists.EquiptypeGens[0].includes(type)
+                        ? "StoneA8"
+                        : lists.EquiptypeGens[1].includes(type)
+                          ? "StoneT8"
+                          : null;
             if (!stoneId || Number(definition.Upgrade_Slots_Left) === 0) {
                 skipped.push(item);
                 return;
