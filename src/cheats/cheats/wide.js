@@ -14,6 +14,7 @@ import { cheatState } from "../core/state.js";
 import { behavior, firebase, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
+import { wardrobeCommand } from "../helpers/wardrobe.js";
 import { perfectEquipped } from "../helpers/perfectEquipment.js";
 
 // Wide (account-wide) cheats
@@ -72,6 +73,12 @@ registerCheats({
             name: "perfectequipped",
             message: "Permanently rebuild current gear for your class; increase food stacks.",
             fn: perfectEquipped,
+        },
+        {
+            name: "wardrobe",
+            message: "Preview and apply class-specific loadouts in Account > Wardrobe.",
+            needsParam: true,
+            fn: wardrobeCommand,
         },
         {
             name: "cardcopy",

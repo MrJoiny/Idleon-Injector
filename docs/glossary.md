@@ -31,3 +31,5 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [cheat state](../src/cheats/core/state.js),
 [account schema](../src/ui/config/optionsAccountSchema.json),
 [configuration loading](../src/modules/config/configManager.js).
+
+**Wardrobe:** A permanent, confirmed application of a class-compatible loadout across equipment and supporting systems. Keep retains the existing slot; Empty clears it.

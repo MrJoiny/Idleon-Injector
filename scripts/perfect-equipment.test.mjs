@@ -2,14 +2,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+const stoneSource = readFileSync(new URL("../src/cheats/helpers/equipmentStones.js", import.meta.url), "utf8");
 const source = readFileSync(new URL("../src/cheats/helpers/perfectEquipment.js", import.meta.url), "utf8");
 const { planPerfectEquipment, perfectEquipped, bindFixture } = await import(
-    `data:text/javascript,${encodeURIComponent(source.replace(/^import .*;\r?$/gm, "") + "\nlet cList, events, gga, itemDefs; const equippedSpecialRolls = () => ({}); export function bindFixture(f) { ({cList, events, gga, itemDefs} = f); }")}`
+    `data:text/javascript,${encodeURIComponent(stoneSource + "\n" + source.replace(/^import .*;\r?$/gm, "") + "\nlet cList, events, gga, itemDefs; const equippedSpecialRolls = () => ({}); export function bindFixture(f) { ({cList, events, gga, itemDefs} = f); }")}`
 );
 
 function fixture() {
     const attributes = {
         CharacterClass: 19,
+        KillsLeft2Advance: Array.from({ length: 301 }, () => [0]),
         FoodSlotsOwned: 6,
         EquipmentOrder: Array.from({ length: 3 }, () => Array(16).fill("Blank")),
         EquipmentMap: Array.from({ length: 3 }, () => Array.from({ length: 16 }, () => ({ h: {} }))),

@@ -1,0 +1,43 @@
+.wardrobe-page .account-section > .content-stack {
+    padding: 12px;
+    align-items: flex-start;
+}
+
+.wardrobe-page p {
+    margin: 0;
+    max-width: 90ch;
+    line-height: 1.5;
+}
+
+.wardrobe-page .select-base {
+    width: 100%;
+    max-width: 360px;
+}
+
+.wardrobe-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.wardrobe-review {
+    grid-column: 1 / -1;
+}
+
+.wardrobe-preview ol {
+    list-style: none;
+    margin: 0;
+    padding: 12px;
+}
+
+.wardrobe-preview li {
+    padding: 5px 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.wardrobe-preview strong {
+    color: var(--c-text-muted);
+    font-weight: normal;
+}
