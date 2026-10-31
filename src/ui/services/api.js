@@ -421,3 +421,14 @@ export async function readComputedMany(namespace, name, argSets = []) {
     });
     return data.value || [];
 }
+
+export function fetchWardrobeLoadouts() {
+    return _request("/wardrobe/loadouts");
+}
+export function saveWardrobeLoadout(id, loadout) {
+    return _request("/wardrobe/loadouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, loadout }),
+    });
+}

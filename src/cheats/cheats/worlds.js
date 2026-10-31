@@ -15,6 +15,7 @@ import { registerCheats } from "../core/registration.js";
 import { cList, events, gga } from "../core/globals.js";
 import { summonUnits } from "../constants.js";
 import { cheatConfig, cheatState } from "../core/state.js";
+import { setupWardrobePrayerSync } from "../helpers/wardrobe.js";
 import { getJarGemCatalog } from "../helpers/jarGems.js";
 
 registerCheats({
@@ -348,3 +349,5 @@ registerCheats({
         },
     ],
 });
+
+setupWardrobePrayerSync();

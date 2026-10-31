@@ -62,26 +62,30 @@ export function highestTempestDropWorld(attributes, lists, windwalker, item) {
     return found;
 }
 
-export function equippedSpecialRolls() {
+export function equippedSpecialRolls(equipment = gga.EquipmentOrder[0], skipUnavailable = false) {
     const rolls = {};
     const characterClass = Number(gga.CharacterClass);
     for (const slot of [1, 5, 7]) {
-        const item = gga.EquipmentOrder[0][slot];
-        if (characterClass === 40 && (item === "EquipmentWandsArc0" || item === "EquipmentRingsArc0")) {
-            const quality = events(579)._customBlock_ArcaneType(
-                item === "EquipmentWandsArc0" ? "WepDropQuality" : "RingDropQuality",
-                0,
-                0
-            );
-            rolls[item] = { stats: arcaneRoll(item, Number(quality)), stone: null };
-        } else if (characterClass === 29 && /^Equipment(BowsTempest[0-4]|RingsTempest[0-8])$/.test(item)) {
-            const windwalker = (...args) => events(579)._customBlock_Windwalker(...args);
-            const world = highestTempestDropWorld(gga, cList, windwalker, item);
-            if (world < 0) continue;
-            rolls[item] = {
-                stats: tempestRoll(item, world),
-                stone: item.startsWith("EquipmentBows") ? "StoneTempestB2" : "StoneTempestR2",
-            };
+        try {
+            const item = equipment[slot];
+            if (characterClass === 40 && (item === "EquipmentWandsArc0" || item === "EquipmentRingsArc0")) {
+                const quality = events(579)._customBlock_ArcaneType(
+                    item === "EquipmentWandsArc0" ? "WepDropQuality" : "RingDropQuality",
+                    0,
+                    0
+                );
+                rolls[item] = { stats: arcaneRoll(item, Number(quality)), stone: null };
+            } else if (characterClass === 29 && /^Equipment(BowsTempest[0-4]|RingsTempest[0-8])$/.test(item)) {
+                const windwalker = (...args) => events(579)._customBlock_Windwalker(...args);
+                const world = highestTempestDropWorld(gga, cList, windwalker, item);
+                if (world < 0) continue;
+                rolls[item] = {
+                    stats: tempestRoll(item, world),
+                    stone: item.startsWith("EquipmentBows") ? "StoneTempestB2" : "StoneTempestR2",
+                };
+            }
+        } catch (error) {
+            if (!skipUnavailable) throw error;
         }
     }
     return rolls;

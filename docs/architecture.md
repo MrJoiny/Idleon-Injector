@@ -34,3 +34,7 @@ for calls into the injected helpers. Attachment and injection retain their setup
 | Bundling and packaging            | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
 
 See the [Account page guide](account-pages.md) and [cheats guide](cheats.md) for those areas.
+
+## Wardrobe persistence boundary
+
+The injected helper captures and validates loadout choices; the Node configuration manager owns their durable storage alongside custom configuration. The browser presents predefined and player-made choices separately and obtains confirmation before game writes. Configuration saves are serialized and replace the file only after a successful temporary write.

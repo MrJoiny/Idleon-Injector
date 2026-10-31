@@ -20,6 +20,8 @@ let defaultConfig = null;
 let injectorConfig = null;
 let startupCheats = null;
 let cheatConfig = null;
+let wardrobeLoadouts = {};
+let saveQueue = Promise.resolve();
 
 const CDP_PORT = 32123;
 const WEB_PORT = 8080;
@@ -33,6 +35,7 @@ function loadConfiguration() {
         const configPath = getRuntimePath("config.js");
         const customConfigPath = getRuntimePath("config.custom.js");
 
+        wardrobeLoadouts = {};
         config = require(configPath);
 
         defaultConfig = deepClone(config);
@@ -58,6 +61,7 @@ function loadConfiguration() {
                 config.cheatConfig = deepMerge(config.cheatConfig, customConfig.cheatConfig);
             }
 
+            wardrobeLoadouts = customConfig.wardrobeLoadouts || {};
             log.debug("Loaded custom config overrides");
         } catch {
             log.info("No config.custom.js found - using defaults");
@@ -116,14 +120,39 @@ async function updateSessionConfiguration(
 }
 
 /** Persist UI overrides, then update the loaded configuration only after the write succeeds. */
-async function saveConfiguration(receivedFullConfig) {
+function saveConfiguration(receivedFullConfig) {
+    const save = saveQueue.then(() => persistConfiguration(receivedFullConfig));
+    saveQueue = save.catch(() => {});
+    return save;
+}
+
+async function persistConfiguration(receivedFullConfig) {
+    let nextWardrobe = wardrobeLoadouts;
+    if (receivedFullConfig.wardrobeChange) {
+        const { id, loadout } = receivedFullConfig.wardrobeChange;
+        if (
+            !/^saved-[a-z0-9-]{1,80}$/.test(id) ||
+            (loadout &&
+                (loadout.id !== id ||
+                    loadout.version !== 1 ||
+                    typeof loadout.name !== "string" ||
+                    !loadout.name.trim() ||
+                    loadout.name.length > 80 ||
+                    JSON.stringify(loadout).length > 50000))
+        )
+            throw new Error("Invalid saved loadout.");
+        nextWardrobe = { ...wardrobeLoadouts };
+        if (loadout) nextWardrobe[id] = JSON.parse(JSON.stringify(loadout));
+        else delete nextWardrobe[id];
+        if (Object.keys(nextWardrobe).length > 100) throw new Error("Maximum of 100 saved loadouts reached.");
+    }
     const cheatConfig = getCheatConfig();
     const startupCheats = getStartupCheats();
     const injectorConfig = getInjectorConfig();
     const defaultConfig = getDefaultConfig();
 
     const uiCheatConfigRaw = receivedFullConfig.cheatConfig || cheatConfig;
-    const uiStartupCheats = receivedFullConfig.startupCheats || startupCheats;
+    const uiStartupCheats = [...(receivedFullConfig.startupCheats || startupCheats)];
     const uiInjectorConfig = receivedFullConfig.injectorConfig || injectorConfig;
 
     let parsedUiCheatConfig = parseConfigFromJson(uiCheatConfigRaw);
@@ -158,10 +187,20 @@ exports.startupCheats = ${JSON.stringify(startupCheatsDiff, null, "\t")};
 exports.cheatConfig = ${objToString(cheatConfigDiff)};
 
 exports.injectorConfig = ${new_injectorConfig};
+
+exports.wardrobeLoadouts = ${JSON.stringify(nextWardrobe, null, "\t")};
 `;
     const savePath = getRuntimePath("config.custom.js");
 
-    await fs.writeFile(savePath, fileContentString.trim());
+    const temporaryPath = savePath + ".tmp";
+    try {
+        await fs.writeFile(temporaryPath, fileContentString.trim());
+        await fs.rename(temporaryPath, savePath);
+    } catch (error) {
+        await fs.unlink(temporaryPath).catch(() => {});
+        throw error;
+    }
+    wardrobeLoadouts = nextWardrobe;
     log.info(`Configuration saved to ${savePath}`);
 
     if (uiStartupCheats) {
@@ -256,6 +295,7 @@ function getLinuxTimeout() {
 }
 
 module.exports = {
+    getWardrobeLoadouts: () => JSON.parse(JSON.stringify(wardrobeLoadouts)),
     loadConfiguration,
     updateSessionConfiguration,
     saveConfiguration,

@@ -14,7 +14,7 @@ const api = await import(
     "data:text/javascript," +
         encodeURIComponent(
             code +
-                "\nlet gga,itemDefs,cList,events;const equippedSpecialRolls=()=>({});export function bind(f){({gga,itemDefs,cList,events}=f);}"
+                "\nlet gga,itemDefs,cList,events;const cheatState={w3:{prayer:false}};const equippedSpecialRolls=()=>({});export function bind(f){({gga,itemDefs,cList,events}=f);}export function prayerState(v){cheatState.w3.prayer=v;}"
         )
 );
 const {
@@ -184,7 +184,7 @@ test("all class weapons, preferred keychains, Keep/Empty, food growth and obol s
         assert.deepEqual(f.a.EquipmentMap[0][9].h, keychainRoll("EquipmentKeychain22", "STR"));
         assert.equal(f.a.EquipmentOrder[1][6], "Blank");
         assert.equal(f.a.EquipmentQuantity[2][0], 100);
-        assert.equal(f.a.EquipmentQuantity[2][5], 0);
+        assert.equal(f.a.EquipmentQuantity[2][5], 100);
         assert.equal(f.a.ObolEquippedOrder[1][0], "ObolLockedCircle");
         assert.equal(f.a.ObolEquippedOrder[0][3], "ObolKruk");
         assert.equal(f.a.Cards[2][0], "w7b7");
@@ -211,9 +211,8 @@ test("Relic15/10, class-specific Sushi and Spiritlord base bonuses", () => {
     assert.equal(keychainRoll("EquipmentKeychain16", "LUK").UQ1val, 12);
     assert.equal(keychainRoll("EquipmentKeychain19", "LUK").UQ2val, 5);
 });
-test("missing data/unlocks and invalid class presets reject before writes", () => {
+test("unavailable unlocks are omitted without rejecting eligible equipment", () => {
     for (const mutate of [
-        (f) => delete f.defs.ObolKruk,
         (f) => (f.a.PrayersUnlocked[4] = 0),
         (f) => (f.a.Cards[0].h.w7b7 = 0),
         (f) => (f.a.Lv0[12] = 74),
@@ -224,8 +223,16 @@ test("missing data/unlocks and invalid class presets reject before writes", () =
         const f = fixture();
         mutate(f);
         const before = structuredClone(f.a);
-        assert.throws(f.plan);
+        const plan = f.plan();
+        assert(plan.notes.length > 0);
         assert.deepEqual(f.a, before);
+        applyWardrobePlan(
+            plan,
+            f.a,
+            () => {},
+            () => 100
+        );
+        assert.equal(f.a.EquipmentOrder[0][0], preset.equipment[0]);
     }
     const f = fixture();
     assert.throws(() => planWardrobe(f.a, f.defs, f.lists, { ...preset, classes: ["Mage"] }, 12, () => 5), /not valid/);
@@ -289,7 +296,7 @@ test("commands require fresh one-use confirmation; stale character, replay and c
     assert.throws(() => command("apply", "rare-drops", preview.token));
 });
 
-test("equipment level gates use native skill indices and reject without writes", () => {
+test("equipment level gates use native skill indices and skip without planning writes to that slot", () => {
     for (const [type, index] of [
         ["aHelmet", 0],
         ["aPick", 1],
@@ -304,7 +311,9 @@ test("equipment level gates use native skill indices and reject without writes",
         Object.assign(f.defs[id].h, { typeGen: type, lvReqToEquip: 100 });
         f.a.Lv0[index] = 99;
         const before = JSON.stringify(f.a);
-        assert.throws(f.plan, /requires .* level 100; current level is 99/);
+        const plan = f.plan();
+        assert(plan.notes.some((note) => /requires .* level 100; current level is 99/.test(note)));
+        assert(!plan.entries.some((entry) => entry.target === f.a.EquipmentOrder[1] && entry.key === 0));
         assert.equal(JSON.stringify(f.a), before);
         f.a.Lv0[index] = 100;
         assert.doesNotThrow(f.plan);
@@ -312,4 +321,129 @@ test("equipment level gates use native skill indices and reject without writes",
     const f = fixture();
     delete f.defs[preset.equipment[0]].h.lvReqToEquip;
     assert.throws(f.plan, /requirement is unavailable/);
+});
+
+test("capture is read-only; saved choices recreate perfect gear and preserve sparse sections", () => {
+    const f = fixture();
+    applyWardrobePlan(
+        f.plan(),
+        f.a,
+        () => {},
+        () => 100
+    );
+    f.a.Cards[2][2] = "B";
+    f.a.PrayersActive[1] = -1;
+    f.a.Lab[1][3] = -1;
+    f.a.ObolEquippedOrder[0][2] = "Blank";
+    f.a.EquipmentMap[0][0].h.STR = 99999;
+    const before = JSON.stringify(f.a);
+    const captured = api.captureWardrobe(f.a, f.lists);
+    assert.equal(JSON.stringify(f.a), before);
+    assert.equal(captured.equipment[8], "Keep");
+    assert.equal(captured.cards[2], "B");
+    assert.equal(captured.chips[3], -1);
+    assert.equal(captured.obolSlots[1][0], "Keep");
+    const plan = planWardrobe(f.a, f.defs, f.lists, captured, 12, () => 5);
+    applyWardrobePlan(
+        plan,
+        f.a,
+        () => {},
+        () => 100
+    );
+    assert.notEqual(f.a.EquipmentMap[0][0].h.STR, 99999);
+    assert.equal(f.a.ObolEquippedOrder[0][2], "Blank");
+    assert.equal(f.a.Cards[2][2], "B");
+    assert.equal(f.a.Lab[1][3], -1);
+});
+
+test("saved empty loadout can clear choices without requiring owned cards, chips or prayers", () => {
+    const f = fixture();
+    f.a.ObolEquippedOrder[1][0] = "Blank";
+    f.a.Cards[3].h = {};
+    const captured = api.captureWardrobe(f.a, f.lists);
+    const plan = planWardrobe(f.a, f.defs, f.lists, captured, 12, () => 0);
+    applyWardrobePlan(
+        plan,
+        f.a,
+        () => {},
+        () => 100
+    );
+    assert.deepEqual(f.a.Cards[3].h, {});
+});
+
+test("saved data validates protected slots, shapes and special-class requirements before writes", () => {
+    const f = fixture();
+    f.a.Cards[3].h = {};
+    const captured = api.captureWardrobe(f.a, f.lists);
+    assert.throws(
+        () => api.validateSavedWardrobe({ ...captured, equipment: Array(16).fill("Blank") }),
+        /Invalid saved/
+    );
+    assert.throws(() => api.validateSavedWardrobe({ ...captured, id: "__proto__" }), /Invalid saved/);
+    assert.throws(() => api.validateSavedWardrobe({ ...captured, cards: [] }), /Invalid saved/);
+    assert.throws(
+        () => planWardrobe(f.a, f.defs, f.lists, { ...captured, characterClass: 15 }, 12, () => 0),
+        /original character class/
+    );
+    captured.obolSlots[0].pop();
+    assert.throws(() => planWardrobe(f.a, f.defs, f.lists, captured, 12, () => 0), /obol layout/);
+});
+
+test("best tools respect their own skill and DNA character level; portal rings follow current world", () => {
+    const f = fixture();
+    f.defs.DNAgun1 = { h: { typeGen: "aDNAgun", Class: "ALL", lvReqToEquip: 90, Weapon_Power: 50 } };
+    f.defs.DNAgun3 = { h: { typeGen: "aDNAgun", Class: "ALL", lvReqToEquip: 180, Weapon_Power: 150 } };
+    assert.equal(api.bestWardrobeTool(f.a, f.defs, 6), "DNAgun1");
+    f.a.Lv0[0] = 180;
+    assert.equal(api.bestWardrobeTool(f.a, f.defs, 6), "DNAgun3");
+    f.a.Lv0[0] = 1;
+    assert.equal(api.bestWardrobeTool(f.a, f.defs, 6), "Blank");
+    const portal = { ...preset, equipment: preset.equipment.map((id, i) => (i === 5 || i === 7 ? "PortalRing" : id)) };
+    for (const [map, id] of [
+        [0, "Keep"],
+        [50, "EquipmentRings33"],
+        [100, "EquipmentRings31"],
+        [150, "EquipmentRings32"],
+        [200, "EquipmentRings34"],
+        [250, "EquipmentRings37"],
+        [300, "Keep"],
+    ]) {
+        if (id !== "Keep") f.defs[id] = f.defs.EquipmentRings35;
+        f.a.CurrentMap = map;
+        const plan = planWardrobe(f.a, f.defs, f.lists, portal, 12, () => 5);
+        const entry = plan.entries.find((e) => e.target === f.a.EquipmentOrder[0] && e.key === 5);
+        if (id === "Keep") assert.equal(entry, undefined);
+        else assert.equal(entry.value, id);
+    }
+});
+
+test("prayer variants preview correctly and switching cheat off restores both active and saved prayers", () => {
+    const f = fixture();
+    f.a.GemItemsPurchased[114] = 12;
+    f.a.PixelHelperActor = Array(7).fill(null);
+    f.a.PixelHelperActor[6] = {
+        behaviors: { getBehavior: () => ({ _GenINFO: Array.from({ length: 46 }, () => ({ h: {} })) }) },
+    };
+    api.bind({
+        gga: f.a,
+        itemDefs: f.defs,
+        cList: f.lists,
+        events: () => ({
+            _customBlock_GetBribeBonus: () => 1,
+            _customBlock_RunCodeOfTypeXforThingY: () => 5,
+            _customBlock_MaxCapacity: () => 100,
+            _customBlock_ActionBlock: () => {},
+            _customBlock_TalentCalc: () => {},
+            _customBlock_TotalStats: () => {},
+        }),
+    });
+    api.setupWardrobePrayerSync();
+    api.prayerState(true);
+    const preview = JSON.parse(wardrobeCommand(["wardrobe", "preview", "rare-drops"]));
+    wardrobeCommand(["wardrobe", "apply", "rare-drops", preview.token]);
+    assert.deepEqual(f.a.PrayersActive, preset.prayersWithCheat);
+    api.prayerState(false);
+    assert.deepEqual(f.a.PrayersActive, preset.prayers);
+    assert.deepEqual(f.a.PlayerDATABASE.h.Test.h.Prayers, preset.prayers);
+    assert.equal(preview.sections.find((s) => s.title.includes("obols")).labels[0], "Sparkle obol");
 });
