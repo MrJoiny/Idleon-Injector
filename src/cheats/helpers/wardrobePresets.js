@@ -717,8 +717,8 @@ export const wardrobePresets = [
     },
     {
         id: "activeexp",
-        name: "Active Exp",
-        description: "Predefined Active Exp loadout.",
+        name: "Active Class EXP",
+        description: "Predefined Active Class EXP loadout.",
         classes: ["Beginner", "Warrior", "Archer", "Mage"],
         weapons: {
             Beginner: "EquipmentPunching7",
@@ -761,8 +761,8 @@ export const wardrobePresets = [
     },
     {
         id: "afkexp",
-        name: "AFK Exp",
-        description: "Predefined AFK Exp loadout.",
+        name: "AFK Class EXP",
+        description: "Predefined AFK Class EXP loadout.",
         classes: ["Beginner", "Warrior", "Archer", "Mage"],
         weapons: {
             Beginner: "EquipmentPunching7",

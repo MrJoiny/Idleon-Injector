@@ -135,7 +135,7 @@ export function planWardrobe(
                             return;
                         }
                         id = fallback;
-                        notes.push(reason + ". Equipped " + clean(definition(id).displayName) + " instead.");
+                        notes.push(reason + ". Equipping " + clean(definition(id).displayName) + " instead.");
                     }
                 }
             }
@@ -150,7 +150,13 @@ export function planWardrobe(
                       : 1;
             if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error("Invalid equipped quantity.");
             put(a.EquipmentQuantity[group], slot, quantity);
-            rows.push(id === "Blank" ? "Empty" : clean(definition(id).displayName));
+            rows.push(
+                id === "Blank"
+                    ? group === 1 && preset.tools[slot] === "BestTool"
+                        ? "No eligible tool at your current skill level"
+                        : "Empty"
+                    : clean(definition(id).displayName)
+            );
         });
         sections.push({ title: names[group], items: rows });
     });
