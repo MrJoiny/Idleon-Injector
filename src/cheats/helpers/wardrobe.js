@@ -68,7 +68,40 @@ export function planWardrobe(a, definitions, lists, preset, craftingBonus, cardL
             }
             // Empty template food beyond the player's unlocked slots does not unlock or clear them.
             if (group === 2 && slot >= Number(a.FoodSlotsOwned)) return;
-            if (id !== "Blank") definition(id);
+            if (id !== "Blank") {
+                const d = definition(id);
+                if (group < 2) {
+                    // Native equipment eligibility uses the tool's skill, otherwise character level.
+                    const skills = {
+                        aPick: [1, "Mining"],
+                        aHatchet: [3, "Chopping"],
+                        aFishingRod: [4, "Fishing"],
+                        aBugNet: [6, "Catching"],
+                        aTrap: [7, "Trapping"],
+                        aSkull: [9, "Worship"],
+                    };
+                    const [index, label] = skills[d.typeGen] || [0, "Character"];
+                    const required = Number(d.lvReqToEquip),
+                        current = Number(a.Lv0[index]);
+                    if (!Number.isFinite(required) || required < 0 || !Number.isFinite(current))
+                        throw new Error(
+                            "Equipment level requirement is unavailable for " +
+                                clean(d.displayName) +
+                                ". Nothing changed."
+                        );
+                    if (current < required)
+                        throw new Error(
+                            clean(d.displayName) +
+                                " requires " +
+                                label +
+                                " level " +
+                                required +
+                                "; current level is " +
+                                current +
+                                ". Nothing changed."
+                        );
+                }
+            }
             generated.EquipmentOrder[group][slot] = id;
             put(a.EquipmentOrder[group], slot, id);
             put(a.EquipmentMap[group][slot], "h", {});

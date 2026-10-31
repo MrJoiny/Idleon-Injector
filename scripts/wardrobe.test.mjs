@@ -79,6 +79,7 @@ function fixture(classId = 16) {
         (defs[id] = {
             h: {
                 displayName: id,
+                lvReqToEquip: 1,
                 typeGen: type,
                 Upgrade_Slots_Left: slots,
                 UQ1val: 0,
@@ -286,4 +287,29 @@ test("commands require fresh one-use confirmation; stale character, replay and c
     preview = command("preview", "rare-drops");
     assert.match(command("apply", "rare-drops", preview.token).message, /applied permanently/);
     assert.throws(() => command("apply", "rare-drops", preview.token));
+});
+
+test("equipment level gates use native skill indices and reject without writes", () => {
+    for (const [type, index] of [
+        ["aHelmet", 0],
+        ["aPick", 1],
+        ["aHatchet", 3],
+        ["aFishingRod", 4],
+        ["aBugNet", 6],
+        ["aTrap", 7],
+        ["aSkull", 9],
+    ]) {
+        const f = fixture();
+        const id = preset.tools[0];
+        Object.assign(f.defs[id].h, { typeGen: type, lvReqToEquip: 100 });
+        f.a.Lv0[index] = 99;
+        const before = JSON.stringify(f.a);
+        assert.throws(f.plan, /requires .* level 100; current level is 99/);
+        assert.equal(JSON.stringify(f.a), before);
+        f.a.Lv0[index] = 100;
+        assert.doesNotThrow(f.plan);
+    }
+    const f = fixture();
+    delete f.defs[preset.equipment[0]].h.lvReqToEquip;
+    assert.throws(f.plan, /requirement is unavailable/);
 });
