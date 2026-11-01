@@ -54,8 +54,8 @@ export const wardrobePresets = [
     },
     {
         id: "choppingmage",
-        name: "Chopping (Mage)",
-        description: "Predefined Chopping (Mage) loadout.",
+        name: "Chopping Sampling",
+        description: "Predefined Chopping Sampling loadout.",
         classes: ["Mage"],
         weapons: {
             Mage: "EquipmentWands14",
@@ -103,8 +103,8 @@ export const wardrobePresets = [
     },
     {
         id: "lab",
-        name: "Lab",
-        description: "Predefined Lab loadout.",
+        name: "Laboratory",
+        description: "Predefined Laboratory loadout.",
         classes: ["Mage"],
         classIds: [31, 33, 36, 40],
         weapons: {
@@ -145,8 +145,8 @@ export const wardrobePresets = [
     },
     {
         id: "miningwarrior",
-        name: "Mining (Warrior)",
-        description: "Predefined Mining (Warrior) loadout.",
+        name: "Mining Sampling",
+        description: "Predefined Mining Sampling loadout.",
         classes: ["Warrior"],
         weapons: {
             Warrior: "EquipmentSword10",
@@ -186,8 +186,8 @@ export const wardrobePresets = [
     },
     {
         id: "fishingwarrior",
-        name: "Fishing (Warrior)",
-        description: "Predefined Fishing (Warrior) loadout.",
+        name: "Fishing Sampling",
+        description: "Predefined Fishing Sampling loadout.",
         classes: ["Warrior"],
         classIds: [7, 8, 10, 14],
         weapons: {
@@ -228,8 +228,8 @@ export const wardrobePresets = [
     },
     {
         id: "candyclickingmonstermatsdb",
-        name: "Candy Clicking Monster Mats (DB)",
-        description: "Predefined Candy Clicking Monster Mats (DB) loadout.",
+        name: "Candy Clicking Monster Mats",
+        description: "Predefined Candy Clicking Monster Mats loadout.",
         classes: ["Warrior"],
         classIds: [7, 8, 10, 14],
         weapons: {
@@ -278,8 +278,8 @@ export const wardrobePresets = [
     },
     {
         id: "ladle",
-        name: "Ladle",
-        description: "Predefined Ladle loadout.",
+        name: "Cooking Ladles",
+        description: "Predefined Cooking Ladles loadout.",
         classes: ["Warrior"],
         classIds: [7, 8, 10, 14],
         weapons: {
@@ -320,8 +320,8 @@ export const wardrobePresets = [
     },
     {
         id: "crystaldkrg",
-        name: "Crystal DK RG",
-        description: "Predefined Crystal DK RG loadout.",
+        name: "Crystal Farming",
+        description: "Predefined Crystal Farming loadout.",
         classes: ["Warrior"],
         classIds: [7, 9, 12, 16],
         weapons: {
@@ -370,8 +370,8 @@ export const wardrobePresets = [
     },
     {
         id: "moneydkrg",
-        name: "Money DK RG",
-        description: "Predefined Money DK RG loadout.",
+        name: "Money Farming",
+        description: "Predefined Money Farming loadout.",
         classes: ["Warrior"],
         classIds: [7, 9, 12, 16],
         weapons: {
@@ -412,8 +412,8 @@ export const wardrobePresets = [
     },
     {
         id: "dkrgfrogs",
-        name: "DK RG Frogs",
-        description: "Predefined DK RG Frogs loadout.",
+        name: "Active GMush Farming",
+        description: "Predefined Active GMush Farming loadout.",
         classes: ["Warrior"],
         classIds: [7, 9, 12, 16],
         weapons: {
@@ -462,8 +462,8 @@ export const wardrobePresets = [
     },
     {
         id: "catchingranger",
-        name: "Catching (Ranger)",
-        description: "Predefined Catching (Ranger) loadout.",
+        name: "Catching Sampling",
+        description: "Predefined Catching Sampling loadout.",
         classes: ["Archer"],
         classIds: [19, 20, 22],
         weapons: {
@@ -504,8 +504,8 @@ export const wardrobePresets = [
     },
     {
         id: "trappingefficiencybm",
-        name: "Trapping Efficiency BM",
-        description: "Predefined Trapping Efficiency BM loadout.",
+        name: "Trapping Sampling",
+        description: "Predefined Trapping Sampling loadout.",
         classes: ["Archer"],
         classIds: [19, 21, 25, 29],
         weapons: {
@@ -547,8 +547,8 @@ export const wardrobePresets = [
     {
         id: "trappingxpvman",
         keychainPrimaryStat: "AGI",
-        name: "Trapping XP VMan",
-        description: "Predefined Trapping XP VMan loadout.",
+        name: "Trapping EXP",
+        description: "Predefined Trapping EXP loadout.",
         classes: ["Beginner"],
         classIds: [1, 2, 3, 4],
         weapons: {
@@ -589,8 +589,8 @@ export const wardrobePresets = [
     },
     {
         id: "vmanportal",
-        name: "Vman Portal",
-        description: "Predefined Vman Portal loadout.",
+        name: "Portal Running",
+        description: "Predefined Portal Running loadout.",
         classes: ["Beginner"],
         classIds: [1, 2, 3, 4],
         weapons: {
@@ -631,8 +631,8 @@ export const wardrobePresets = [
     },
     {
         id: "vmangmush",
-        name: "VMan GMush",
-        description: "Predefined VMan GMush loadout.",
+        name: "Active GMush Farming",
+        description: "Predefined Active GMush Farming loadout.",
         classes: ["Beginner"],
         classIds: [1, 2, 3, 4],
         weapons: {
@@ -673,8 +673,8 @@ export const wardrobePresets = [
     },
     {
         id: "afkfightgmushdb",
-        name: "AFK Fight/GMush DB",
-        description: "Predefined AFK Fight/GMush DB loadout.",
+        name: "AFK GMush",
+        description: "Primarily Death Bringer; usable by any class.",
         classes: ["Beginner", "Warrior", "Archer", "Mage"],
         weapons: {
             Beginner: "EquipmentPunching7",
