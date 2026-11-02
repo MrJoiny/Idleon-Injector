@@ -447,3 +447,24 @@ test("prayer variants preview correctly and switching cheat off restores both ac
     assert.deepEqual(f.a.PlayerDATABASE.h.Test.h.Prayers, preset.prayers);
     assert.equal(preview.sections.find((s) => s.title.includes("obols")).labels[0], "Sparkle obol");
 });
+
+test("all presets and saved loadouts preserve the equipped cape, including older saved choices", () => {
+    assert.ok(wardrobePresets.every((preset) => preset.equipment[12] === "Keep"));
+    const f = fixture();
+    f.a.Cards[3].h = {};
+    const originalId = f.a.EquipmentOrder[0][12];
+    const originalStats = JSON.stringify(f.a.EquipmentMap[0][12].h);
+    const captured = api.captureWardrobe(f.a, f.lists);
+    assert.equal(captured.equipment[12], "Keep");
+    captured.equipment[12] = "Blank";
+    const plan = planWardrobe(f.a, f.defs, f.lists, captured, 12, () => 0);
+    assert.equal(plan.sections[0].items[12], "Keep current item");
+    applyWardrobePlan(
+        plan,
+        f.a,
+        () => {},
+        () => 100
+    );
+    assert.equal(f.a.EquipmentOrder[0][12], originalId);
+    assert.equal(JSON.stringify(f.a.EquipmentMap[0][12].h), originalStats);
+});

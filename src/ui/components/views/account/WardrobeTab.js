@@ -139,7 +139,7 @@ export function WardrobeTab() {
                 body: div(
                     { class: "content-stack" },
                     p(
-                        "Save this character's current gear, food choices, cards, prayers, chips and personal/family obols to My Loadouts in config.custom.js. Applying rebuilds gear with Perfect Equipped bonuses; premium hat, trophy and nametag stay unchanged. Unmapped keychains retain their saved rolls."
+                        "Save this character's current gear, food choices, cards, prayers, chips and personal/family obols to My Loadouts in config.custom.js. Applying rebuilds gear with Perfect Equipped bonuses; premium hat, trophy, cape and nametag stay unchanged. Unmapped keychains retain their saved rolls."
                     ),
                     label({ for: "wardrobe-name" }, "Loadout name"),
                     input({

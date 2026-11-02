@@ -64,8 +64,14 @@ export function planWardrobe(
     };
     const names = ["Equipment & specials", "Tools", "Food"];
     const requested = [
-        preset.equipment.map((id) =>
-            id === "Weapon" ? preset.weapons[baseClass] : id === "PortalRing" ? portalRing(a) : id
+        preset.equipment.map((id, slot) =>
+            slot === 12
+                ? "Keep"
+                : id === "Weapon"
+                  ? preset.weapons[baseClass]
+                  : id === "PortalRing"
+                    ? portalRing(a)
+                    : id
         ),
         preset.tools.map((id, slot) => (id === "BestTool" ? bestWardrobeTool(a, definitions, slot) : id)),
         preset.food,
@@ -74,7 +80,7 @@ export function planWardrobe(
     requested.forEach((items, group) => {
         const rows = [];
         items.forEach((id, slot) => {
-            if (group === 0 && [8, 10, 14].includes(slot) && id !== "Keep")
+            if (group === 0 && [8, 10, 12, 14].includes(slot) && id !== "Keep")
                 throw new Error("Protected cosmetic slot in loadout.");
             if (id === "Keep") {
                 rows.push("Keep current item");
@@ -468,7 +474,7 @@ export function captureWardrobe(a, lists) {
     const player = a.GetPlayersUsernames.indexOf(a.UserInfo[0]);
     if (player < 0) throw new Error("Select a character before saving a loadout.");
     const equipment = a.EquipmentOrder[0].slice(0, 16);
-    for (const slot of [8, 10, 14]) equipment[slot] = "Keep";
+    for (const slot of [8, 10, 12, 14]) equipment[slot] = "Keep";
     const setKeys = Object.keys(a.Cards[3].h);
     const cardSet = setKeys.length ? lists.CardSets.findIndex((row) => row[0] === setKeys[0]) : -1;
     if (setKeys.length && cardSet < 0) throw new Error("Current card set is unknown; nothing saved.");
