@@ -1,0 +1,45 @@
+.attire-rack {
+    padding: 16px;
+    overflow: auto;
+}
+
+.attire-rack__actions,
+.attire-rack__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.attire-rack__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.attire-rack__card {
+    padding: 16px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+}
+
+.attire-rack__heading,
+.attire-rack__worn {
+    color: var(--c-accent);
+}
+
+.attire-rack__actions {
+    justify-content: flex-start;
+}
+
+.attire-rack__actions > [role="status"] {
+    margin-left: auto;
+}
+
+.attire-rack__heading [aria-checked="true"] {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+    background: var(--c-accent-dim);
+}

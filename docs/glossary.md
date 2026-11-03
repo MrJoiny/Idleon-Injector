@@ -31,3 +31,5 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [cheat state](../src/cheats/core/state.js),
 [account schema](../src/ui/config/optionsAccountSchema.json),
 [configuration loading](../src/modules/config/configManager.js).
+
+**Attire Rack:** An injector-only selection of outfit bonuses. Each selected outfit contributes once; an outfit already worn retains its native contribution instead of receiving a second one.

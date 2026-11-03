@@ -30,6 +30,7 @@ import { setupActorProxies } from "./actor.js";
 import { setupAbilityProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 import { setupItemProxies } from "./items.js";
 import { setupMinigameProxies } from "./minigames.js";
+import { setupAttireRackProxy } from "./attireRack.js";
 import { setupSushiButtonProxy } from "./sushiButton.js";
 
 /**
@@ -57,6 +58,7 @@ export function setupAllProxies() {
     setupCListProxy();
 
     // ActorEvents proxies by event number
+    setupAttireRackProxy();
     setupEvents012Proxies();
     setupEvents020Proxies();
     setupAutoLootProxy();

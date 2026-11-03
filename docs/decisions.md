@@ -237,3 +237,9 @@ Trade-off: each updater owns its check cache. Startup and CLI checks use fresh i
 route retains its instance and controls the response-before-exit handoff.
 
 Source: [Updater](../src/modules/updateService.js).
+
+## Attire Rack uses the native equipment calculation
+
+Attire Rack presents selected outfit base stats only during synchronous native equipment-stat reads. Outside that calculation, equipment and definitions expose their original values. Miscellaneous bonuses join the native bonus map with the same Research multiplier used for worn attire. The worn outfit remains native and is excluded from extra contributions. Dungeon calculations retain native equipment rules.
+
+Selections are ordinary startup commands, saved through the existing configuration flow. This keeps the feature independent of Wardrobe and avoids another saved-game collection or custom configuration schema.
