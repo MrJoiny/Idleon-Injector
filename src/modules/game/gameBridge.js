@@ -34,6 +34,7 @@ function createGameBridge(runtime, context) {
         executeCheat(action) {
             return evaluate(`cheat.call(${context}, ${JSON.stringify(String(action))})`, {
                 awaitPromise: true,
+                returnByValue: true,
                 allowUnsafeEvalBlockedByCSP: true,
             });
         },
