@@ -33,3 +33,5 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [configuration loading](../src/modules/config/configManager.js).
 
 **Attire Rack:** An injector-only selection of outfit bonuses. Each selected outfit contributes once; an outfit already worn retains its native contribution instead of receiving a second one.
+
+**Character appearance:** The outfit stored in a character's attire equipment slot. Changing it replaces that item; Attire Rack's independent bonus selections still deduplicate the worn outfit.

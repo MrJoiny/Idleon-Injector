@@ -1,5 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { executeCheatAction, fetchConfig, saveConfigFile } from "../../../services/api.js";
+import { createAttireAppearancePanel } from "./AttireAppearancePanel.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
@@ -20,6 +21,7 @@ export const AttireRackTab = () => {
         data.val = response.result;
         if (JSON.stringify(catalog.val) !== JSON.stringify(response.result.outfits))
             catalog.val = response.result.outfits;
+        appearance.sync(response.result);
     };
     const load = () => runLoad(read);
     const select = (ids) =>
@@ -55,6 +57,7 @@ export const AttireRackTab = () => {
         else ids.add(id);
         return select([...ids]);
     };
+    const appearance = createAttireAppearancePanel({ catalog, busy, runWrite, read });
     load();
     return PersistentAccountListPage({
         title: "ATTIRE RACK",
@@ -67,6 +70,7 @@ export const AttireRackTab = () => {
             p(
                 "Selected outfits grant their full base stats and miscellaneous bonuses while the injector is running. Your worn outfit always keeps its normal bonuses and is counted once. Lava's robes are excluded. Bonuses are inactive in dungeons."
             ),
+            appearance.node,
             p(() =>
                 data.val ? `Research attire bonus: +${data.val.research}%. Applied to miscellaneous bonuses.` : ""
             ),

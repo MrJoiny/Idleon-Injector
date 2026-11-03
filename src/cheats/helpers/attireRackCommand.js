@@ -1,5 +1,6 @@
 import { gga, events } from "../core/globals.js";
 import { cheatState } from "../core/state.js";
+import { characterAttire, applyCharacterAttire } from "./attireAppearance.js";
 import { attireCatalog } from "./attireRack.js";
 
 let selectedOutfits = null;
@@ -18,8 +19,17 @@ export function attireRackCommand(params) {
             equipped: gga.EquipmentOrder[0][15],
             research: events(579)._customBlock_ResearchStuff("Grid_Bonus", 172, 0),
             outfits: catalog,
+            current: gga.UserInfo[0],
+            characters: characterAttire(gga),
         };
-    if (![undefined, "on", "off", "set"].includes(action)) throw new Error("Use wide attire [on|off|set IDs|status].");
+    if (action === "wear") {
+        return applyCharacterAttire(gga, JSON.parse(decodeURIComponent(list)), () => {
+            gga.DNSM.h.TotStatMAP.h = {};
+            events(12)._customBlock_TotalStats("calcEtcBonuses");
+        });
+    }
+    if (![undefined, "on", "off", "set"].includes(action))
+        throw new Error("Use wide attire [on|off|set IDs|wear request|status].");
     if (action === "set") {
         const ids = list ? [...new Set(list.split(","))] : [];
         if (ids.some((id) => !catalog.some((item) => item.id === id)))
