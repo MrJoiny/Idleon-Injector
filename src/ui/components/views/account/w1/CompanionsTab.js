@@ -277,6 +277,22 @@ export const CompanionsTab = () => {
         return null;
     };
 
+    const readSelection = async () => {
+        const [config, cheatStates] = await Promise.all([fetchConfig(), fetchCheatStates()]);
+        const validIdSet = new Set(companions.val.map((companion) => companion.id));
+        cheatEnabled.val = !!cheatStates?.data?.w1?.companion;
+        const configured = config?.cheatConfig?.w1?.companion?.companions ?? "";
+        // A saved list stays selected while the cheat is off, so the next click can't replace it.
+        const allPlus = cheatEnabled.val ? [...validIdSet] : [];
+        plusIds.val = new Set(
+            (configured ? parsePlusIds(configured) : allPlus).filter((id) => validIdSet.has(id) && !isToken(id))
+        );
+        const selectedIds = Array.isArray(configured)
+            ? configured.map((entry) => Number.parseInt(String(entry), 10))
+            : parseIdList(configured);
+        normalIds.val = new Set(selectedIds.filter((id) => validIdSet.has(id) && !plusIds.val.has(id) && !isToken(id)));
+    };
+
     const load = () =>
         runLoad(async () => {
             const [rawCompanionDb, rawSetsInfo] = await Promise.all([
@@ -295,32 +311,12 @@ export const CompanionsTab = () => {
                 : {};
 
             const nextCompanions = buildCompanionRows(rawCompanionDb, monsterDefs);
-            const validIdSet = new Set(nextCompanions.map((companion) => companion.id));
 
             companions.val = nextCompanions;
             sections.val = buildSections(nextCompanions, rawSetsInfo);
 
-            const [config, cheatStates, tokenState] = await Promise.all([
-                fetchConfig(),
-                fetchCheatStates(),
-                readComputed("companions", "petTokens"),
-            ]);
-            tokens.val = tokenState;
-            cheatEnabled.val = !!cheatStates?.data?.w1?.companion;
-            const configured = config?.cheatConfig?.w1?.companion?.companions ?? "";
-            plusIds.val = new Set(
-                (cheatEnabled.val ? (configured ? parsePlusIds(configured) : [...validIdSet]) : []).filter(
-                    (id) => validIdSet.has(id) && !isToken(id)
-                )
-            );
-            const selectedIds = Array.isArray(configured)
-                ? configured.map((entry) => Number.parseInt(String(entry), 10))
-                : parseIdList(configured);
-            normalIds.val = new Set(
-                cheatEnabled.val
-                    ? selectedIds.filter((id) => validIdSet.has(id) && !plusIds.val.has(id) && !isToken(id))
-                    : []
-            );
+            tokens.val = await readComputed("companions", "petTokens");
+            await readSelection();
         });
 
     // /api/toggle flips a cheat rather than setting it, so acting on the state this tab
@@ -344,11 +340,14 @@ export const CompanionsTab = () => {
         });
     };
 
-    const writeSelection = (normal, plus, picks = tokens.val.picks) =>
+    // The change is built after the re-read so a list saved from the Config tab isn't overwritten.
+    const writeSelection = (getChange) =>
         runWrite(
             async () => {
                 writeError.val = "";
                 if (error.val || !companions.val.length) throw new Error("Refresh pet data before changing tiers");
+                await readSelection();
+                const { normal, plus, picks = tokens.val.picks } = getChange();
                 if (picks !== tokens.val.picks) {
                     if (!(await gga(TOKEN_PATH, picks.join(",")))) throw new Error("Could not save pet token picks");
                     tokens.val = { ...tokens.val, picks };
@@ -357,7 +356,8 @@ export const CompanionsTab = () => {
                     .filter(({ id }) => normal.has(id) || plus.has(id))
                     .map(({ id }) => `${id}:${plus.has(id) ? 1 : 0}`);
                 const result = await updateSessionConfig({
-                    cheatConfig: { w1: { companion: { companions: entries.join(",") } } },
+                    // An empty list would mean every pet at Pets+ once the startup cheat runs again.
+                    cheatConfig: { w1: { companion: { companions: entries.join(",") || "none" } } },
                 });
                 if (result.message !== "Configuration updated successfully") {
                     throw new Error(result.details || result.message || "Could not apply pet tiers in game");
@@ -381,35 +381,41 @@ export const CompanionsTab = () => {
 
     const handleToggle = async (companionId) => {
         if (isBusy()) return;
-        const normal = new Set(normalIds.val);
-        const plus = new Set(plusIds.val);
-        // Token pets already show as Normal, so clicking one deselects it.
-        if (isToken(companionId)) return writeSelection(normal, plus, withoutToken(companionId));
-        if (normal.has(companionId)) normal.delete(companionId);
-        else normal.add(companionId);
-        plus.delete(companionId);
-        await writeSelection(normal, plus);
+        await writeSelection(() => {
+            const normal = new Set(normalIds.val);
+            const plus = new Set(plusIds.val);
+            // Token pets already show as Normal, so clicking one deselects it.
+            if (isToken(companionId)) return { normal, plus, picks: withoutToken(companionId) };
+            if (normal.has(companionId)) normal.delete(companionId);
+            else normal.add(companionId);
+            plus.delete(companionId);
+            return { normal, plus };
+        });
     };
 
     const handleTogglePlus = async (companionId) => {
         if (isBusy()) return;
 
-        const next = new Set(plusIds.val);
-        if (next.has(companionId)) next.delete(companionId);
-        else next.add(companionId);
-        const normal = new Set(normalIds.val);
-        normal.delete(companionId);
-        await writeSelection(normal, next, isToken(companionId) ? withoutToken(companionId) : tokens.val.picks);
+        await writeSelection(() => {
+            const plus = new Set(plusIds.val);
+            if (plus.has(companionId)) plus.delete(companionId);
+            else plus.add(companionId);
+            const normal = new Set(normalIds.val);
+            normal.delete(companionId);
+            return { normal, plus, picks: isToken(companionId) ? withoutToken(companionId) : tokens.val.picks };
+        });
     };
 
     const handleToken = async (companionId) => {
         if (isBusy() || tokenBlock(companionId)) return;
-        const normal = new Set(normalIds.val);
-        const plus = new Set(plusIds.val);
-        normal.delete(companionId);
-        plus.delete(companionId);
-        const picks = isToken(companionId) ? withoutToken(companionId) : [...tokens.val.picks, companionId];
-        await writeSelection(normal, plus, picks);
+        await writeSelection(() => {
+            const normal = new Set(normalIds.val);
+            const plus = new Set(plusIds.val);
+            normal.delete(companionId);
+            plus.delete(companionId);
+            const picks = isToken(companionId) ? withoutToken(companionId) : [...tokens.val.picks, companionId];
+            return { normal, plus, picks };
+        });
     };
 
     const grantTokens = () =>
@@ -512,14 +518,14 @@ export const CompanionsTab = () => {
                     class: "btn-secondary",
                     disabled: () => isBusy(),
                     onclick: () =>
-                        writeSelection(
-                            new Set(
+                        writeSelection(() => ({
+                            normal: new Set(
                                 companions.val
                                     .filter((pet) => !pet.isUnused && !isPlus(pet.id) && !isToken(pet.id))
                                     .map((pet) => pet.id)
                             ),
-                            new Set(plusIds.val)
-                        ),
+                            plus: new Set(plusIds.val),
+                        })),
                 },
                 "UNLOCK ALL"
             ),
@@ -531,12 +537,12 @@ export const CompanionsTab = () => {
                     class: "btn-secondary",
                     disabled: () => isBusy(),
                     onclick: () =>
-                        writeSelection(
-                            new Set(),
-                            new Set(
+                        writeSelection(() => ({
+                            normal: new Set(),
+                            plus: new Set(
                                 companions.val.filter((pet) => !pet.isUnused && !isToken(pet.id)).map((pet) => pet.id)
-                            )
-                        ),
+                            ),
+                        })),
                 },
                 "UNLOCK ALL PETS+"
             ),
@@ -547,7 +553,7 @@ export const CompanionsTab = () => {
                 {
                     class: "btn-secondary",
                     disabled: () => isBusy(),
-                    onclick: () => writeSelection(new Set(), new Set()),
+                    onclick: () => writeSelection(() => ({ normal: new Set(), plus: new Set() })),
                 },
                 "CLEAR ALL"
             ),
@@ -557,7 +563,7 @@ export const CompanionsTab = () => {
             button(
                 {
                     class: "btn-secondary",
-                    onclick: () => writeSelection(new Set(normalIds.val), new Set()),
+                    onclick: () => writeSelection(() => ({ normal: new Set(normalIds.val), plus: new Set() })),
                     disabled: () => isBusy(),
                 },
                 "CLEAR PETS+"

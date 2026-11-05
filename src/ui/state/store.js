@@ -326,8 +326,10 @@ const ConfigService = {
                 : await API.updateSessionConfig(cleanConfig);
 
             Actions.notify(result.message || (isPersistent ? "SAVED TO DISK" : "RAM UPDATED"));
+            return true;
         } catch (e) {
             Actions.notify(e.message, "error");
+            return false;
         }
     },
 };

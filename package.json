@@ -13,6 +13,7 @@
         "validate:ui-imports": "node scripts/validate-ui-imports.mjs",
         "test:ui-imports": "node --test scripts/validate-ui-imports.test.mjs",
         "test:api-routes": "node --test scripts/api-routes.test.mjs",
+        "test:config-edits": "node --test scripts/config-edits.test.mjs",
         "test:ui-styles": "node --test scripts/eslint/no-static-inline-styles.test.mjs",
         "lint:css": "stylelint \"src/ui/**/*.css\" --max-warnings 0",
         "format:check:css": "prettier --check \"src/ui/**/*.css\"",
