@@ -468,3 +468,44 @@ test("all presets and saved loadouts preserve the equipped cape, including older
     assert.equal(f.a.EquipmentOrder[0][12], originalId);
     assert.equal(JSON.stringify(f.a.EquipmentMap[0][12].h), originalStats);
 });
+
+
+test("food swaps inherit the highest old equipped stack or the new capacity, whichever is higher", () => {
+    for (const capacity of [100, 600, 900]) {
+        const f = fixture();
+        f.a.EquipmentOrder[2][0] = "OldFoodA";
+        f.a.EquipmentOrder[2][1] = "OldFoodB";
+        f.a.EquipmentQuantity[2][0] = 200;
+        f.a.EquipmentQuantity[2][1] = 600;
+        // Ignore stale quantities in an empty slot and in a locked slot.
+        f.a.EquipmentQuantity[2][2] = 999999;
+        f.a.EquipmentOrder[2][6] = "LockedFood";
+        f.a.EquipmentQuantity[2][6] = 999999;
+        const before = structuredClone(f.a);
+        const plan = f.plan();
+        assert.deepEqual(f.a, before, "preview does not change food");
+        let recalcs = 0;
+        applyWardrobePlan(plan, f.a, () => recalcs++, () => {
+            assert.equal(recalcs, 1, "capacity is read after the new gear is recalculated");
+            return capacity;
+        });
+        assert.notEqual(f.a.EquipmentOrder[2][0], "OldFoodA");
+        assert.deepEqual(f.a.EquipmentQuantity[2].slice(0, 6), Array(6).fill(Math.max(600, capacity)));
+        assert.equal(f.a.EquipmentQuantity[2][6], 999999, "locked slot untouched");
+    }
+});
+
+test("food stack inheritance preserves empty slots and rolls back invalid new capacity", () => {
+    const f = fixture();
+    f.a.EquipmentOrder[2][0] = "OldFood";
+    f.a.EquipmentQuantity[2][0] = 600;
+    const before = structuredClone(f.a);
+    for (const capacity of [-1, NaN, Infinity]) {
+        assert.throws(() => applyWardrobePlan(f.plan(), f.a, () => {}, () => capacity), /rolled back/);
+        assert.deepEqual(f.a, before);
+    }
+    const empty = planWardrobe(f.a, f.defs, f.lists, { ...preset, food: Array(6).fill("Blank") }, 12, () => 5);
+    applyWardrobePlan(empty, f.a, () => {}, () => 100);
+    assert.deepEqual(f.a.EquipmentOrder[2].slice(0, 6), Array(6).fill("Blank"));
+    assert.deepEqual(f.a.EquipmentQuantity[2].slice(0, 6), Array(6).fill(0));
+});

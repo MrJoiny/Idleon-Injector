@@ -336,9 +336,18 @@ export function applyWardrobePlan(plan, attributes, recalculate, foodCapacity) {
         target[key] = value;
     };
     try {
+        // Capture the old loadout before replacement resets food quantities.
+        planFoodStacks(attributes, 0);
+        let previousFoodStack = 0;
+        for (let slot = 0; slot < Number(attributes.FoodSlotsOwned); slot++) {
+            if (attributes.EquipmentOrder[2][slot] !== "Blank")
+                previousFoodStack = Math.max(previousFoodStack, Number(attributes.EquipmentQuantity[2][slot]));
+        }
         for (const { target, key, value } of plan.entries) assign(target, key, value);
         recalculate();
-        for (const { slot, quantity } of planFoodStacks(attributes, foodCapacity()))
+        const capacity = foodCapacity();
+        if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("Invalid food capacity.");
+        for (const { slot, quantity } of planFoodStacks(attributes, Math.max(capacity, previousFoodStack)))
             assign(attributes.EquipmentQuantity[2], slot, quantity);
         recalculate();
         for (const { target, key, value } of plan.entries) {
