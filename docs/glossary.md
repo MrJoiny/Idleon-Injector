@@ -22,6 +22,8 @@ These terms distinguish concepts used throughout the project. Follow the linked 
 | Greenstack          | A recorded ten-million-unit storage milestone for an item, separate from its current quantity.     |
 | Black Star          | An allocation that multiplies a Gaming Palette color's bonus; each color can hold up to two.       |
 | Pet token           | A saved Normal-tier pet bonus, capped by owned token sources, that works without the injector.     |
+| Cape vine           | Cathie's W4 display of deposited capes; every cape on it adds a passive bonus.                     |
+| Golden Vine         | One of the first cape vine slots; a cape there gives its full bonus instead of a quarter.          |
 | Monitor             | A subscription to observe a game value over time.                                                  |
 | Session update      | A configuration change applied to the running session.                                             |
 | Saved configuration | User overrides written to disk for later runs.                                                     |
