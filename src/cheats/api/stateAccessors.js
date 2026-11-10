@@ -12,7 +12,7 @@ import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 import { getPlayerExpRequired } from "../helpers/player.js";
 import { getPetTokens } from "../helpers/petTokens.js";
-import { getAutobuyShops } from "../helpers/autobuy.js";
+import { getAutobuyOrion, getAutobuyShops } from "../helpers/autobuy.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
@@ -67,9 +67,9 @@ export function readComputed(namespace, name, args = []) {
         }
     }
 
-    if (namespace === "autobuy" && name === "shops") {
+    if (namespace === "autobuy" && (name === "shops" || name === "orion")) {
         try {
-            return { value: getAutobuyShops() };
+            return { value: name === "shops" ? getAutobuyShops() : getAutobuyOrion() };
         } catch (error) {
             return { error: error.message };
         }

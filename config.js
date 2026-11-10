@@ -988,7 +988,15 @@ exports.cheatConfig = {
         },
     },
     autobuy: {
-        items: [], // town shop items bought into the chest with chest coins whenever in stock, e.g. ["0:FoodHealth1"] (shop index:item)
+        // Per item: { id, on, stopAt, priority }. Priority 1-3 is bought first, everything else stays Balanced (cheapest first).
+        shops: [], // town shop items, id "shop index:item", bought into the chest with chest coins; stopAt = chest count
+        orion: {
+            saving: 10, // while saving for a priority upgrade, Balanced upgrades may cost up to this % of it
+            items: [
+                { id: 8, on: false, priority: 1 }, // The Great Mega Reset
+                { id: 4, on: false, priority: 2 }, // Feather Restart
+            ],
+        },
     },
 };
 
