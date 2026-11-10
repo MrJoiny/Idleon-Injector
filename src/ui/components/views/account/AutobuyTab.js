@@ -20,11 +20,11 @@ import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 
 const { div, option, select, span } = van.tags;
 
+// Saved as priority 1 (High) and 2 (Low); Balanced has none.
 const PRIORITIES = [
+    { value: 1, label: "High" },
+    { value: 2, label: "Low" },
     { value: 0, label: "Balanced" },
-    { value: 1, label: "Priority 1" },
-    { value: 2, label: "Priority 2" },
-    { value: 3, label: "Priority 3" },
 ];
 
 /** Per-item config states keyed by config id; a missing entry means off, Balanced, no stop-at. */
@@ -46,7 +46,7 @@ const createItemStates = () => {
             const entry = byKey.get(key);
             item.on.val = Boolean(entry?.on);
             item.stopAt.val = entry?.stopAt ?? null;
-            item.priority.val = entry?.priority || 0;
+            item.priority.val = entry?.priority === 1 || entry?.priority === 2 ? entry.priority : 0;
         }
     };
 
@@ -244,7 +244,7 @@ const SavingRow = ({ autobuy }) => {
                 onDecrement: () => !isDisabled() && stepDraft(inputValue, -1, 100),
                 onIncrement: () => !isDisabled() && stepDraft(inputValue, 1, 100),
             }),
-            span({ class: "autobuy-saving-row__text" }, "% of the next priority buy while saving for it"),
+            span({ class: "autobuy-saving-row__text" }, "% of what it's saving for"),
         ],
         controls: [
             ActionButton({
@@ -265,6 +265,7 @@ const OrionAutobuy = ({ autobuy }) => {
     const { loading, error, run } = useAccountLoad({ label: "Orion Autobuy" });
     const feathers = van.state(0);
     const rate = van.state(0);
+    const goal = van.state(null);
     const upgradeStates = new Map();
     const listNode = div({ class: "account-item-stack" });
     const reconcileUpgrades = createStaticRowReconciler(listNode);
@@ -305,6 +306,7 @@ const OrionAutobuy = ({ autobuy }) => {
             autobuy.sync(config.cheatConfig.autobuy, "orion");
             feathers.val = orion.feathers;
             rate.val = orion.rate;
+            goal.val = orion.goal && { name: cleanName(orion.upgrades[orion.goal.id].name), cost: orion.goal.cost };
 
             reconcileUpgrades(orion.upgrades.map(({ id }) => id).join("|"), () =>
                 orion.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name) }))
@@ -317,7 +319,7 @@ const OrionAutobuy = ({ autobuy }) => {
     return PersistentAccountListPage({
         title: "ORION",
         description:
-            "Switched-on upgrades are bought with feathers, cheapest first. Priority upgrades are saved for and bought first. Buying stops at the stop-at level; leave it empty for no limit.",
+            "Switched-on upgrades are bought with feathers. It saves for the cheapest High or Low upgrade (High first when both are affordable) and buys Balanced ones cheapest first. Buying stops at the stop-at level; leave it empty for no limit.",
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
@@ -336,7 +338,16 @@ const OrionAutobuy = ({ autobuy }) => {
                     " · ",
                     span(() => `${formatNumber(rate.val)} per second`)
                 ),
-                body: SavingRow({ autobuy }),
+                body: [
+                    AccountRow({
+                        info: span({ class: "account-row__name" }, () => {
+                            if (goal.val) return `Saving for ${goal.val.name} (${formatNumber(goal.val.cost)})`;
+                            const anyOn = [0, 1, 2, 3, 4, 5, 6, 7, 8].some((id) => autobuy.orion.get(id).on.val);
+                            return anyOn ? "Buying cheapest first" : "Nothing switched on";
+                        }),
+                    }),
+                    SavingRow({ autobuy }),
+                ],
             }),
             AccountSection({ title: "UPGRADES", body: listNode })
         ),

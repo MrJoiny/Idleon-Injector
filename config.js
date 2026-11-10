@@ -988,13 +988,13 @@ exports.cheatConfig = {
         },
     },
     autobuy: {
-        // Per item: { id, on, stopAt, priority }. Priority 1-3 is bought first, everything else stays Balanced (cheapest first).
+        // Per item: { id, on, stopAt, priority }. Priority 1 = High, 2 = Low, none = Balanced: it saves for the cheapest High/Low item (High first when affordable) and buys Balanced items cheapest first.
         shops: [], // town shop items, id "shop index:item", bought into the chest with chest coins; stopAt = chest count
         orion: {
-            saving: 10, // while saving for a priority upgrade, Balanced upgrades may cost up to this % of it
+            saving: 10, // while saving for a High/Low upgrade, Balanced upgrades may cost up to this % of it
             items: [
-                { id: 8, on: false, priority: 1 }, // The Great Mega Reset
-                { id: 4, on: false, priority: 2 }, // Feather Restart
+                { id: 8, on: false, priority: 1 }, // The Great Mega Reset: High
+                { id: 4, on: false, priority: 2 }, // Feather Restart: Low
             ],
         },
     },
