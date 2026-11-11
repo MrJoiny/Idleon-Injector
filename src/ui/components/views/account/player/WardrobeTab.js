@@ -45,10 +45,17 @@ export function WardrobeTab() {
                 p.classes?.includes(state.val?.baseClass) &&
                 (p.characterClass === undefined || p.characterClass === state.val?.characterClass)
         );
+    const isSaved = () =>
+        selected.val.startsWith("saved-") && Object.prototype.hasOwnProperty.call(saved.val, selected.val);
+    const formatStack = (value) => Number(value).toLocaleString("en-US");
     const read = async () => {
         preview.val = null;
-        state.val = await command("status");
-        saved.val = (await fetchConfig()).wardrobeLoadouts;
+        const config = await fetchConfig();
+        state.val = await command("status", { goldenFoodHistory: config.wardrobeFoodMaxima || {} });
+        saved.val = config.wardrobeLoadouts;
+        const { character, foodLimits } = state.val;
+        if (foodLimits.golden > (config.wardrobeFoodMaxima?.[character] || 0))
+            await saveConfigFile({ ...config, wardrobeFoodMaximum: { character, quantity: foodLimits.golden } });
         if (![...state.val.presets, ...choices()].some((p) => p.id === selected.val))
             selected.val = state.val.presets[0]?.id || choices()[0]?.id || "";
     };
@@ -109,7 +116,9 @@ export function WardrobeTab() {
             {
                 class: danger ? "btn-danger" : "btn-secondary",
                 disabled: () => busy.val || disabled(),
-                onclick: click,
+                onclick: () => {
+                    if (!busy.val && !disabled()) return click();
+                },
             },
             text
         );
@@ -122,92 +131,105 @@ export function WardrobeTab() {
         div(
             { class: "scrollable-panel content-stack" },
             WarningBanner(warning),
-            AccountSection({
-                title: "LOADOUT",
-                body: div(
-                    { class: "content-stack" },
-                    p(() => (state.val ? state.val.character + " · " + state.val.baseClass : "Reading character…")),
-                    () =>
-                        select(
-                            {
-                                class: "select-base",
-                                "aria-label": "Loadout",
-                                disabled: () => busy.val || !state.val,
-                                onchange: (event) => {
-                                    selected.val = event.target.value;
-                                    preview.val = null;
-                                },
-                            },
-                            ...[
-                                ["Predefined", state.val?.presets || []],
-                                ["My Loadouts", choices()],
-                            ].map(([title, items]) =>
-                                optgroup(
-                                    { label: title },
-                                    items.map((p) => option({ value: p.id, selected: selected.val === p.id }, p.name))
-                                )
-                            )
+            div(
+                { class: "wardrobe-selectors" },
+                AccountSection({
+                    title: "LOADOUT",
+                    body: div(
+                        { class: "content-stack" },
+                        p(() => (state.val ? state.val.character + " · " + state.val.baseClass : "Reading character…")),
+                        p({ class: "wardrobe-stack-counts" }, () =>
+                            state.val
+                                ? "Food stacks — Golden: " +
+                                  formatStack(state.val.foodLimits.golden) +
+                                  " · Other: " +
+                                  formatStack(state.val.foodLimits.regular)
+                                : ""
                         ),
-                    div(
-                        { class: "wardrobe-actions" },
-                        action(
-                            "PREVIEW",
-                            () =>
-                                run(async () => {
-                                    preview.val = await command("preview", {
-                                        id: selected.val,
-                                        loadout: saved.val[selected.val],
-                                    });
-                                }),
-                            () => !selected.val
-                        ),
-                        action(
-                            "DELETE SAVED",
-                            () =>
-                                run(async () => {
-                                    const id = selected.val;
-                                    if (!(await confirm("DELETE LOADOUT?", "Delete " + saved.val[id].name + "?")))
-                                        return;
-                                    await save(id, null);
-                                    await read();
-                                    message.val = "Loadout deleted.";
-                                }),
-                            () => !saved.val[selected.val],
-                            true
-                        )
-                    )
-                ),
-            }),
-            AccountSection({
-                title: "SAVE CURRENT",
-                body: div(
-                    { class: "wardrobe-actions" },
-                    label(
-                        "Name",
-                        input({
-                            class: "input-base",
-                            value: name,
-                            maxlength: 80,
-                            "aria-label": "Loadout name",
-                            oninput: (event) => (name.val = event.target.value),
-                        })
-                    ),
-                    action(
-                        "SAVE",
                         () =>
-                            run(async () => {
-                                const loadout = await command("capture");
-                                loadout.name = name.val.trim();
-                                await save(loadout.id, loadout);
-                                await read();
-                                selected.val = loadout.id;
-                                name.val = "";
-                                message.val = "Loadout saved.";
-                            }),
-                        () => !name.val.trim() || !state.val
-                    )
-                ),
-            }),
+                            select(
+                                {
+                                    class: "select-base",
+                                    "aria-label": "Loadout",
+                                    disabled: () => busy.val || !state.val,
+                                    onchange: (event) => {
+                                        selected.val = event.target.value;
+                                        preview.val = null;
+                                    },
+                                },
+                                ...[
+                                    ["Predefined", state.val?.presets || []],
+                                    ["My Loadouts", choices()],
+                                ].map(([title, items]) =>
+                                    optgroup(
+                                        { label: title },
+                                        items.map((p) =>
+                                            option({ value: p.id, selected: selected.val === p.id }, p.name)
+                                        )
+                                    )
+                                )
+                            ),
+                        div(
+                            { class: "wardrobe-actions" },
+                            action(
+                                "PREVIEW",
+                                () =>
+                                    run(async () => {
+                                        preview.val = await command("preview", {
+                                            id: selected.val,
+                                            loadout: saved.val[selected.val],
+                                        });
+                                    }),
+                                () => !selected.val
+                            ),
+                            action(
+                                "DELETE SAVED",
+                                () =>
+                                    run(async () => {
+                                        const id = selected.val;
+                                        if (!(await confirm("DELETE LOADOUT?", "Delete " + saved.val[id].name + "?")))
+                                            return;
+                                        await save(id, null);
+                                        await read();
+                                        message.val = "Loadout deleted.";
+                                    }),
+                                () => !isSaved(),
+                                true
+                            )
+                        )
+                    ),
+                }),
+                AccountSection({
+                    title: "SAVE CURRENT",
+                    body: div(
+                        { class: "wardrobe-actions" },
+                        label(
+                            "Name",
+                            input({
+                                class: "input-base",
+                                value: name,
+                                maxlength: 80,
+                                "aria-label": "Loadout name",
+                                oninput: (event) => (name.val = event.target.value),
+                            })
+                        ),
+                        action(
+                            "SAVE",
+                            () =>
+                                run(async () => {
+                                    const loadout = await command("capture");
+                                    loadout.name = name.val.trim();
+                                    await save(loadout.id, loadout);
+                                    await read();
+                                    selected.val = loadout.id;
+                                    name.val = "";
+                                    message.val = "Loadout saved.";
+                                }),
+                            () => !name.val.trim() || !state.val
+                        )
+                    ),
+                })
+            ),
             div({ role: "status", "aria-live": "polite" }, () => (busy.val ? "Working…" : message.val)),
             () => (notes.val.length ? ul(notes.val.map((note) => li(note))) : div()),
             () =>
@@ -225,14 +247,24 @@ export function WardrobeTab() {
                           ...preview.val.sections.map((section) =>
                               AccountSection({
                                   title: section.title,
-                                  body: ul(
-                                      section.items.map((item, slot) =>
-                                          li(
-                                              (section.labels?.[slot] ||
-                                                  labels[section.title]?.[slot] ||
-                                                  "Slot " + (slot + 1)) +
-                                                  ": " +
-                                                  item
+                                  body: div(
+                                      section.set ? p({ class: "wardrobe-set" }, "Set: " + section.set) : div(),
+                                      section.title === "Food"
+                                          ? p({ class: "wardrobe-set" }, "Current stack sizes; recalculated on apply.")
+                                          : div(),
+                                      ul(
+                                          section.items.map((item, slot) =>
+                                              li(
+                                                  (section.labels?.[slot] ||
+                                                      labels[section.title]?.[slot] ||
+                                                      "Slot " + (slot + 1)) +
+                                                      ": " +
+                                                      item +
+                                                      (section.quantities?.[slot] === null ||
+                                                      section.quantities?.[slot] === undefined
+                                                          ? ""
+                                                          : " × " + formatStack(section.quantities[slot]))
+                                              )
                                           )
                                       )
                                   ),

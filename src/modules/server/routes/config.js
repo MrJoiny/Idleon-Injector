@@ -1,5 +1,10 @@
 const { prepareConfigForJson } = require("../../utils/helpers");
-const { saveConfiguration, updateSessionConfiguration, getWardrobeLoadouts } = require("../../config/configManager");
+const {
+    saveConfiguration,
+    updateSessionConfiguration,
+    getWardrobeLoadouts,
+    getWardrobeFoodMaxima,
+} = require("../../config/configManager");
 const { createLogger } = require("../../utils/logger");
 
 const log = createLogger("API");
@@ -22,6 +27,7 @@ function setupConfigRoutes(app, gameBridge, config) {
                 injectorConfig: injectorConfig,
                 defaultConfig: serializableDefaultConfig,
                 wardrobeLoadouts: getWardrobeLoadouts(),
+                wardrobeFoodMaxima: getWardrobeFoodMaxima(),
             };
             res.json(fullConfigResponse);
         } catch (error) {

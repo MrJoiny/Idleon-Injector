@@ -266,7 +266,8 @@ export function planWardrobe(
     put(a.Cards[3], "h", setMap);
     put(saved.CSetEq, "h", { ...setMap });
     sections.push({
-        title: "Cards - " + (preset.cardSetName || "Saved set"),
+        title: "Cards",
+        set: preset.cardSetName || (preset.cardSet === -1 ? "None" : "Saved set"),
         items: cards.slice(0, 8).map((id) => (id === "B" ? "Empty" : clean(a.MonsterDefinitionsGET.h[id].h.Name))),
     });
     for (let group = 0; group < 2; group++) {
@@ -319,32 +320,41 @@ export function planWardrobe(
     };
 }
 
-export function applyWardrobePlan(plan, attributes, recalculate, foodCapacity) {
+export function foodStackLimits(attributes, capacity, goldenMaximum = 0) {
+    planFoodStacks(attributes, 0);
+    if (!Number.isSafeInteger(capacity) || capacity < 0 || !Number.isSafeInteger(goldenMaximum) || goldenMaximum < 0)
+        throw new Error("Invalid food capacity.");
+    let golden = Math.max(capacity, goldenMaximum);
+    for (let slot = 0; slot < Number(attributes.FoodSlotsOwned); slot++) {
+        if (/^FoodG[0-9]+$/.test(attributes.EquipmentOrder[2][slot]))
+            golden = Math.max(golden, Number(attributes.EquipmentQuantity[2][slot]));
+    }
+    return { golden, regular: capacity };
+}
+
+export function applyWardrobePlan(plan, attributes, recalculate, foodCapacity, goldenMaximum = 0) {
     const applied = [];
     const assign = (target, key, value) => {
         applied.push({ target, key, before: target[key] });
         target[key] = value;
     };
     try {
-        // Capture the old loadout before replacement resets food quantities.
-        planFoodStacks(attributes, 0);
-        let previousFoodStack = 0;
-        for (let slot = 0; slot < Number(attributes.FoodSlotsOwned); slot++) {
-            if (attributes.EquipmentOrder[2][slot] !== "Blank")
-                previousFoodStack = Math.max(previousFoodStack, Number(attributes.EquipmentQuantity[2][slot]));
-        }
+        const previousGolden = foodStackLimits(attributes, 0, goldenMaximum).golden;
         for (const { target, key, value } of plan.entries) assign(target, key, value);
         recalculate();
-        const capacity = foodCapacity();
-        if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("Invalid food capacity.");
-        for (const { slot, quantity } of planFoodStacks(attributes, Math.max(capacity, previousFoodStack)))
-            assign(attributes.EquipmentQuantity[2], slot, quantity);
+        const limits = foodStackLimits(attributes, foodCapacity(), previousGolden);
+        for (let slot = 0; slot < Number(attributes.FoodSlotsOwned); slot++) {
+            const id = attributes.EquipmentOrder[2][slot];
+            if (id !== "Blank")
+                assign(attributes.EquipmentQuantity[2], slot, /^FoodG[0-9]+$/.test(id) ? limits.golden : limits.regular);
+        }
         recalculate();
         for (const { target, key, value } of plan.entries) {
             // Food quantities can legitimately be raised after the plan is applied.
             if (target === attributes.EquipmentQuantity[2]) continue;
             if (JSON.stringify(target[key]) !== JSON.stringify(value)) throw new Error("Loadout verification failed.");
         }
+        return limits;
     } catch (error) {
         for (const { target, key, before } of applied.reverse()) target[key] = before;
         let rollbackError = "";

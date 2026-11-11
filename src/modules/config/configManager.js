@@ -21,6 +21,7 @@ let injectorConfig = null;
 let startupCheats = null;
 let cheatConfig = null;
 let wardrobeLoadouts = {};
+let wardrobeFoodMaxima = {};
 let saveQueue = Promise.resolve();
 
 const CDP_PORT = 32123;
@@ -36,6 +37,7 @@ function loadConfiguration() {
         const customConfigPath = getRuntimePath("config.custom.js");
 
         wardrobeLoadouts = {};
+        wardrobeFoodMaxima = {};
         config = require(configPath);
 
         defaultConfig = deepClone(config);
@@ -62,6 +64,7 @@ function loadConfiguration() {
             }
 
             wardrobeLoadouts = customConfig.wardrobeLoadouts || {};
+            wardrobeFoodMaxima = customConfig.wardrobeFoodMaxima || {};
             log.debug("Loaded custom config overrides");
         } catch {
             log.info("No config.custom.js found - using defaults");
@@ -127,6 +130,22 @@ function saveConfiguration(receivedFullConfig) {
 }
 
 async function persistConfiguration(receivedFullConfig) {
+    let nextFoodMaxima = wardrobeFoodMaxima;
+    if (receivedFullConfig.wardrobeFoodMaximum) {
+        const { character, quantity } = receivedFullConfig.wardrobeFoodMaximum;
+        if (
+            typeof character !== "string" ||
+            !character ||
+            character.length > 100 ||
+            !Number.isSafeInteger(quantity) ||
+            quantity < 0
+        )
+            throw new Error("Invalid food maximum.");
+        nextFoodMaxima = {
+            ...wardrobeFoodMaxima,
+            [character]: Math.max(Number(wardrobeFoodMaxima[character]) || 0, quantity),
+        };
+    }
     let nextWardrobe = wardrobeLoadouts;
     if (receivedFullConfig.wardrobeChange) {
         const { id, loadout } = receivedFullConfig.wardrobeChange;
@@ -189,6 +208,8 @@ exports.cheatConfig = ${objToString(cheatConfigDiff)};
 exports.injectorConfig = ${new_injectorConfig};
 
 exports.wardrobeLoadouts = ${JSON.stringify(nextWardrobe, null, "\t")};
+
+exports.wardrobeFoodMaxima = ${JSON.stringify(nextFoodMaxima, null, "\t")};
 `;
     const savePath = getRuntimePath("config.custom.js");
 
@@ -201,6 +222,7 @@ exports.wardrobeLoadouts = ${JSON.stringify(nextWardrobe, null, "\t")};
         throw error;
     }
     wardrobeLoadouts = nextWardrobe;
+    wardrobeFoodMaxima = nextFoodMaxima;
     log.info(`Configuration saved to ${savePath}`);
 
     if (uiStartupCheats) {
@@ -295,6 +317,7 @@ function getLinuxTimeout() {
 }
 
 module.exports = {
+    getWardrobeFoodMaxima: () => ({ ...wardrobeFoodMaxima }),
     getWardrobeLoadouts: () => JSON.parse(JSON.stringify(wardrobeLoadouts)),
     loadConfiguration,
     updateSessionConfiguration,

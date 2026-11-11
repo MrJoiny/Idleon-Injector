@@ -54,3 +54,30 @@
     align-items: flex-end;
     gap: 12px;
 }
+
+.wardrobe-selectors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.wardrobe-page button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.wardrobe-stack-counts {
+    color: var(--c-text-muted);
+    font-size: 0.85rem;
+}
+
+.wardrobe-set {
+    padding: 12px 12px 0;
+}
+
+@media (max-width: 900px) {
+    .wardrobe-selectors {
+        grid-template-columns: 1fr;
+    }
+}

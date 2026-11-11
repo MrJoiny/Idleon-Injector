@@ -3,10 +3,11 @@ import { cheatState } from "../../core/state.js";
 import { craftingBonuses } from "../../helpers/perfectEquipment.js";
 import { equippedSpecialRolls } from "../../helpers/specialEquipment.js";
 import { equipmentWorld } from "../../helpers/equipmentStones.js";
-import { planWardrobe, applyWardrobePlan, keychainRoll } from "./planner.js";
+import { planWardrobe, applyWardrobePlan, keychainRoll, foodStackLimits } from "./planner.js";
 import { wardrobeClass, wardrobePresets, primaryStats } from "./presets.js";
 
 let pending = null;
+const goldenFoodMaxima = new Map();
 function createPlan(id, custom = null) {
     const preset = custom || wardrobePresets.find((p) => p.id === id);
     if (!preset) throw new Error("Unknown wardrobe loadout.");
@@ -43,12 +44,20 @@ function recalculate() {
     gga.DNSM.h.TotStatMAP.h = {};
     events(12)._customBlock_TotalStats("calcEtcBonuses");
 }
-export function wardrobeAction(action = "status", { id, token, loadout } = {}) {
+export function wardrobeAction(action = "status", { id, token, loadout, goldenFoodHistory = {} } = {}) {
     if (typeof gga.UserInfo[0] !== "string" || !gga.GetPlayersUsernames.includes(gga.UserInfo[0])) {
         pending = null;
         throw new Error("Select a character in the game before using Wardrobe.");
     }
     if (action === "status") {
+        const character = gga.UserInfo[0];
+        const recorded = goldenFoodHistory[character] || 0;
+        const foodLimits = foodStackLimits(
+            gga,
+            Math.floor(events(12)._customBlock_MaxCapacity("cFood")),
+            Math.max(recorded, goldenFoodMaxima.get(character) || 0)
+        );
+        goldenFoodMaxima.set(character, foodLimits.golden);
         const baseClass = wardrobeClass(Number(gga.CharacterClass));
         return {
             character: gga.UserInfo[0],
@@ -56,6 +65,7 @@ export function wardrobeAction(action = "status", { id, token, loadout } = {}) {
             baseClass,
             world: equipmentWorld(gga),
             prayerCheat: Boolean(cheatState.w3.prayer),
+            foodLimits,
             presets: wardrobePresets
                 .filter(
                     (p) =>
@@ -75,6 +85,19 @@ export function wardrobeAction(action = "status", { id, token, loadout } = {}) {
         const custom = loadout ? validateSavedWardrobe(loadout) : null;
         const loadoutId = custom ? custom.id : id;
         const plan = createPlan(loadoutId, custom);
+        const foodLimits = foodStackLimits(
+            gga,
+            Math.floor(events(12)._customBlock_MaxCapacity("cFood")),
+            goldenFoodMaxima.get(plan.character) || 0
+        );
+        const food = plan.sections.find((section) => section.title === "Food");
+        food.quantities = food.items.map((_, slot) => {
+            if (slot >= Number(gga.FoodSlotsOwned)) return null;
+            const id =
+                plan.entries.find((entry) => entry.target === gga.EquipmentOrder[2] && entry.key === slot)?.value ||
+                gga.EquipmentOrder[2][slot];
+            return id === "Blank" ? null : /^FoodG[0-9]+$/.test(id) ? foodLimits.golden : foodLimits.regular;
+        });
         const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
         pending = { id: loadoutId, custom, token, fingerprint: fingerprint(plan), expires: Date.now() + 120000 };
         return {
@@ -84,6 +107,7 @@ export function wardrobeAction(action = "status", { id, token, loadout } = {}) {
             baseClass: plan.baseClass,
             world: plan.world,
             sections: plan.sections,
+            foodLimits,
             notes: plan.notes,
         };
     }
@@ -100,12 +124,20 @@ export function wardrobeAction(action = "status", { id, token, loadout } = {}) {
             !gga.PixelHelperActor[6].behaviors.getBehavior("ActorEvents_312")._GenINFO[45]?.h
         )
             throw new Error("Game stat caches are not ready. Open Cards once, close it, and try again.");
-        applyWardrobePlan(plan, gga, recalculate, () => Math.floor(events(12)._customBlock_MaxCapacity("cFood")));
+        const foodLimits = applyWardrobePlan(
+            plan,
+            gga,
+            recalculate,
+            () => Math.floor(events(12)._customBlock_MaxCapacity("cFood")),
+            goldenFoodMaxima.get(plan.character) || 0
+        );
+        goldenFoodMaxima.set(plan.character, foodLimits.golden);
         if (plan.expandedPrayers)
             appliedPrayerLoadouts.set(plan.character, { vanilla: plan.vanillaPrayers, expanded: plan.expandedPrayers });
         else appliedPrayerLoadouts.delete(plan.character);
         return {
             notes: plan.notes,
+            foodLimits,
             message: plan.name + " applied to " + plan.character + ".",
         };
     }
