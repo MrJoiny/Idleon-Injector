@@ -1,5 +1,4 @@
 export const primaryStats = { Beginner: "LUK", Warrior: "STR", Archer: "AGI", Mage: "WIS" };
-/** Verified against Loadout Templates, 2026-10-31, and installed game definitions. */
 export const wardrobePresets = [
     {
         id: "rare-drops",
