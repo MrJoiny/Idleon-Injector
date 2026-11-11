@@ -49,9 +49,9 @@ test("API setup retains every endpoint and does not evaluate the game during reg
             "GET /api/heartbeat",
             "GET /api/search/keys",
             "GET /api/update/check",
-            "GET /api/wardrobe/loadouts",
             "POST /api/config/save",
             "POST /api/config/update",
+            "POST /api/game/action",
             "POST /api/game/computed/read",
             "POST /api/game/computed/read-many",
             "POST /api/game/gga/delete",
@@ -64,7 +64,6 @@ test("API setup retains every endpoint and does not evaluate the game during reg
             "POST /api/search",
             "POST /api/toggle",
             "POST /api/update/apply",
-            "POST /api/wardrobe/loadouts",
         ].sort()
     );
 });

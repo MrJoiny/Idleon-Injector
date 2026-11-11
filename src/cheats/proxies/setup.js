@@ -30,6 +30,7 @@ import { setupActorProxies } from "./actor.js";
 import { setupAbilityProxy, setupQuestProxy, setupSmithProxy } from "./misc.js";
 import { setupItemProxies } from "./items.js";
 import { setupMinigameProxies } from "./minigames.js";
+import { setupWardrobePrayerSync } from "../features/wardrobe/index.js";
 import { setupSushiButtonProxy } from "./sushiButton.js";
 
 /**
@@ -39,6 +40,7 @@ import { setupSushiButtonProxy } from "./sushiButton.js";
  * Call this after the game is ready and common variables are registered.
  */
 export function setupAllProxies() {
+    setupWardrobePrayerSync();
     // Behavior script proxies (RNG, timing, no damage)
     setupBehaviorScriptProxies();
 

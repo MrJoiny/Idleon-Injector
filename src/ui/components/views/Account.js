@@ -10,7 +10,6 @@
 
 import van from "../../vendor/van-1.6.0.js";
 import { AccountOptionsTab } from "./account/AccountOptionsTab.js";
-import { WardrobeTab } from "./account/WardrobeTab.js";
 import { PlayerTab } from "./account/PlayerTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
@@ -36,7 +35,6 @@ const { div, span } = van.tags;
 const ACCOUNT_TABS = [
     { id: "account-options", label: "ACCOUNT OPTIONS", isWorld: false, component: AccountOptionsTab },
     { id: "player", label: "PLAYER", isWorld: false, component: PlayerTab },
-    { id: "wardrobe", label: "WARDROBE", isWorld: false, component: WardrobeTab },
     { id: "upgrade-vault", label: "UPGRADE VAULT", isWorld: false, component: UpgradeVaultTab },
     { id: "tasks", label: "TASKS", isWorld: false, component: TasksTab },
     { id: "cards", label: "CARDS", isWorld: false, component: CardsTab },

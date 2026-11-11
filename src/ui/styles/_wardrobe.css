@@ -1,4 +1,5 @@
-.wardrobe-page .account-section > .content-stack {
+.wardrobe-page .account-section > .content-stack,
+.wardrobe-page .account-section > .wardrobe-actions {
     padding: 12px;
     align-items: flex-start;
 }
@@ -25,7 +26,7 @@
     grid-column: 1 / -1;
 }
 
-.wardrobe-preview ol {
+.wardrobe-preview ul {
     list-style: none;
     margin: 0;
     padding: 12px;
@@ -37,11 +38,6 @@
     overflow-wrap: anywhere;
 }
 
-.wardrobe-preview strong {
-    color: var(--c-text-muted);
-    font-weight: normal;
-}
-
 .wardrobe-page .input-base {
     width: 100%;
     max-width: 360px;
@@ -50,4 +46,11 @@
 .wardrobe-dialog .modal-box {
     max-height: 90vh;
     overflow-y: auto;
+}
+
+.wardrobe-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
 }

@@ -237,9 +237,3 @@ Trade-off: each updater owns its check cache. Startup and CLI checks use fresh i
 route retains its instance and controls the response-before-exit handoff.
 
 Source: [Updater](../src/modules/updateService.js).
-
-## Wardrobe applies permanent loadouts
-
-Wardrobe shares equipment calculations with Perfect Equipped and is a separate Account tab. It prepares the complete preset before writing, requires explicit confirmation for the active character, and restores affected values if application fails. It does not move originals to storage or run at startup; users store items they want to retain before confirming. Equipment upgrades use numbered stones from accessible town shops, while special gear retains its own rules.
-
-Wardrobe skips unavailable selections and reports them in the in-page confirmation/results flow. Eligible selections still apply; unexpected write or recalculation failures retain rollback. Saved loadouts store choices rather than ordinary gear stats, so applying them uses current Perfect Equipped calculations. Prayer-cheat fallback tracking lasts for the current injected session and respects later manual prayer changes.

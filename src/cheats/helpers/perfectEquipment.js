@@ -21,6 +21,12 @@ const modifierKeys = [
     "Upgrade_Slots_Left",
 ];
 
+export function craftingBonuses() {
+    const chance = Number(events(12)._customBlock_SkillStats("SmithingSpecCraftPCT"));
+    const extraSlot = Number(gga.DNSM.h.BoxRewards.h.OneSlot) > 0.4;
+    return { extraSlot, statBonus: chance > 0 ? Math.floor(4 + 8 * events(189)._customBlock_GetBribeBonus("28")) : 0 };
+}
+
 function nonnegativeInteger(value, label) {
     if (!Number.isSafeInteger(value) || value < 0) throw new Error(`Invalid ${label}. Nothing changed.`);
     return value;
@@ -31,14 +37,14 @@ export function planPerfectEquipment(
     attributes,
     definitions,
     lists,
-    craftingBonus,
+    craftingBonuses,
     foodCapacity,
     specialRolls = {},
     world = equipmentWorld(attributes)
 ) {
     const characterClass = nonnegativeInteger(Number(attributes.CharacterClass), "character class");
     const primaryStat = characterClass < 7 ? "LUK" : characterClass < 19 ? "STR" : characterClass < 31 ? "AGI" : "WIS";
-    nonnegativeInteger(craftingBonus, "crafting bonus");
+    nonnegativeInteger(craftingBonuses.statBonus, "crafting bonus");
     const stones = equipmentStones(world);
     const craftable = new Set(lists.ItemToCraftNAME.flat());
     const equipment = [];
@@ -87,8 +93,8 @@ export function planPerfectEquipment(
             const stone = definitions[stoneId]?.h;
             if (!stone || Number(stone.Trigger) !== 1) throw new Error(`Unsupported ${stoneId}. Nothing changed.`);
             const isCraftable = !special && craftable.has(item);
-            const uses = baseSlots + (isCraftable ? 1 : 0);
-            if (isCraftable) stats[primaryStat] = craftingBonus;
+            const uses = baseSlots + (isCraftable && craftingBonuses.extraSlot ? 1 : 0);
+            if (isCraftable) stats[primaryStat] = craftingBonuses.statBonus;
             for (const effect of stone.Effect.split(".")) {
                 const [effectKey, amountText] = effect.split(",");
                 let key = effectKey;
@@ -138,7 +144,7 @@ export function perfectEquipped() {
         gga,
         itemDefs,
         cList,
-        Math.floor(4 + 8 * events(189)._customBlock_GetBribeBonus("28")),
+        craftingBonuses(),
         0,
         equippedSpecialRolls(),
         equipmentWorld(gga)
@@ -157,7 +163,13 @@ export function perfectEquipped() {
             gga.EquipmentMap[group][slot].h = before[index];
         });
         gga.DNSM.h.TotStatMAP.h = {};
-        throw new Error(`Equipment changes rolled back; food unchanged. ${error.message}`);
+        let rollbackError = "";
+        try {
+            actor12._customBlock_TotalStats("calcEtcBonuses");
+        } catch (caught) {
+            rollbackError = " Rollback recalculation failed: " + caught.message;
+        }
+        throw new Error(`Equipment changes rolled back; food unchanged. ${error.message}${rollbackError}`);
     }
     for (const { slot, quantity } of plan.food) gga.EquipmentQuantity[2][slot] = quantity;
     return (

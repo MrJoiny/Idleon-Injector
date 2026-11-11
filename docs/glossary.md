@@ -32,8 +32,4 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [account schema](../src/ui/config/optionsAccountSchema.json),
 [configuration loading](../src/modules/config/configManager.js).
 
-**Wardrobe:** A permanent, confirmed application of a class-compatible loadout across equipment and supporting systems. Keep retains the existing slot; Empty clears it.
-
-**Player-made loadout:** Saved choices captured from a character and reapplied using current equipment upgrade calculations.
-
-**Stat stick:** An eligible tool selected to contribute stats when a predefined loadout does not require a particular tool.
+**Wardrobe:** Class-compatible equipment and supporting-system loadouts, including player-saved choices.

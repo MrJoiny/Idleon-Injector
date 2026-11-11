@@ -7,18 +7,6 @@ const log = createLogger("API");
 function setupConfigRoutes(app, gameBridge, config) {
     const { cheatConfig, defaultConfig, startupCheats, injectorConfig } = config;
 
-    app.get("/api/wardrobe/loadouts", (req, res) => res.json({ loadouts: getWardrobeLoadouts() }));
-    app.post("/api/wardrobe/loadouts", async (req, res) => {
-        try {
-            const change = await req.json();
-            if (!change || typeof change.id !== "string" || !("loadout" in change))
-                return res.status(400).json({ error: "Invalid loadout change." });
-            await saveConfiguration({ wardrobeChange: change });
-            res.json({ loadouts: getWardrobeLoadouts() });
-        } catch (error) {
-            res.status(400).json({ error: error.message });
-        }
-    });
     app.get("/api/config", (req, res) => {
         try {
             const serializableCheatConfig = prepareConfigForJson(cheatConfig);
@@ -33,6 +21,7 @@ function setupConfigRoutes(app, gameBridge, config) {
                 cheatConfig: serializableCheatConfig,
                 injectorConfig: injectorConfig,
                 defaultConfig: serializableDefaultConfig,
+                wardrobeLoadouts: getWardrobeLoadouts(),
             };
             res.json(fullConfigResponse);
         } catch (error) {
