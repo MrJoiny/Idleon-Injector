@@ -1,15 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
-const helpers = ["attireRack", "attireAppearance"]
-    .map((file) =>
-        readFileSync(new URL(`../src/cheats/helpers/${file}.js`, import.meta.url), "utf8").replace(
-            /^import .*;\r?$/gm,
-            ""
-        )
-    )
-    .join("\n");
-const { characterAttire, applyCharacterAttire } = await import("data:text/javascript," + encodeURIComponent(helpers));
+import { characterAttire, applyCharacterAttire } from "../src/cheats/helpers/attireAppearance.js";
 function equipment(id) {
     return {
         EquipmentOrder: [Array.from({ length: 16 }, (_, i) => (i === 15 ? id : "KeepItem" + i))],

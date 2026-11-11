@@ -421,3 +421,8 @@ export async function readComputedMany(namespace, name, argSets = []) {
     });
     return data.value || [];
 }
+
+export async function performGameAction(feature, action, args = {}) {
+    const result = await _request("/game/action", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({feature, action, args})});
+    return result.value;
+}

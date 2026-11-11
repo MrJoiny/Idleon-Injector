@@ -1,49 +1,32 @@
 import van from "../../../vendor/van-1.6.0.js";
-import { executeCheatAction, fetchConfig, saveConfigFile } from "../../../services/api.js";
+import store from "../../../state/store.js";
+import { executeCheatAction, performGameAction } from "../../../services/api.js";
 import { createAttireAppearancePanel } from "./AttireAppearancePanel.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
 import { useWriteStatus } from "./accountShared.js";
-
 const { div, button, span, p } = van.tags;
 export const AttireRackTab = () => {
     const { loading, error, run: runLoad } = useAccountLoad({ label: "Attire Rack" });
     const { status, run: runWrite } = useWriteStatus();
-    const data = van.state(null);
-    const catalog = van.state([]);
-    const feedback = van.state("");
+    const data = van.state(null),
+        catalog = van.state([]),
+        feedback = van.state("");
     const busy = () => loading.val || status.val === "loading";
     const read = async () => {
-        const response = await executeCheatAction("wide attire status");
-        if (!response.result || !Array.isArray(response.result.outfits))
-            throw new Error(response.result || "Attire data unavailable.");
-        data.val = response.result;
-        if (JSON.stringify(catalog.val) !== JSON.stringify(response.result.outfits))
-            catalog.val = response.result.outfits;
-        appearance.sync(response.result);
+        const result = await performGameAction("attire", "status");
+        if (!result || !Array.isArray(result.outfits)) throw new Error("Attire data unavailable.");
+        data.val = result;
+        if (JSON.stringify(catalog.val) !== JSON.stringify(result.outfits)) catalog.val = result.outfits;
+        appearance.sync(result);
     };
     const load = () => runLoad(read);
-    const select = (ids) =>
+    const toggle = () =>
         runWrite(
             async () => {
-                feedback.val = "";
-                const response = await executeCheatAction(`wide attire set ${ids.join(",")}`);
-                if (!response.result || !Array.isArray(response.result.selected))
-                    throw new Error(response.result || "Could not change attire.");
+                await executeCheatAction("wide attire");
                 await read();
-                const config = await fetchConfig();
-                if (!config.cheatConfig) throw new Error("Bonuses applied, but settings could not be read for saving.");
-                const startupCheats = (config.startupCheats ?? []).filter(
-                    (command) => !/^wide attire(?: |$)/.test(command)
-                );
-                if (ids.length) startupCheats.push(`wide attire set ${ids.join(",")}`);
-                try {
-                    await saveConfigFile({ ...config, startupCheats });
-                } catch (caught) {
-                    throw new Error(`Bonuses updated, but selection could not be saved: ${caught.message}`);
-                }
-                feedback.val = "Selection saved. Bonuses updated.";
             },
             {
                 onError: (caught) => {
@@ -51,45 +34,37 @@ export const AttireRackTab = () => {
                 },
             }
         );
-    const toggle = (id) => {
-        const ids = new Set(data.val.selected);
-        if (ids.has(id)) ids.delete(id);
-        else ids.add(id);
-        return select([...ids]);
-    };
     const appearance = createAttireAppearancePanel({ catalog, busy, runWrite, read });
     load();
     return PersistentAccountListPage({
         title: "ATTIRE RACK",
-        description: "Enable outfit bonuses individually, regardless of which outfit you wear.",
+        description: "Outfit bonuses and character appearance.",
         actions: RefreshButton({ onRefresh: load, disabled: busy }),
         state: { loading, error },
         loadingText: "READING ATTIRE",
         body: div(
-            { class: "attire-rack" },
-            p(
-                "Selected outfits grant their full base stats and miscellaneous bonuses while the injector is running. Your worn outfit always keeps its normal bonuses and is counted once. Lava's robes are excluded. Bonuses are inactive in dungeons."
-            ),
-            appearance.node,
-            p(() =>
-                data.val ? `Research attire bonus: +${data.val.research}%. Applied to miscellaneous bonuses.` : ""
-            ),
+            { class: "attire-rack scrollable-panel content-stack" },
             div(
                 { class: "attire-rack__actions" },
+                button({ class: "btn-secondary", disabled: busy, onclick: toggle }, () =>
+                    data.val?.enabled ? "DISABLE BONUSES" : "ENABLE BONUSES"
+                ),
                 button(
                     {
                         class: "btn-secondary",
                         disabled: busy,
-                        onclick: () => select(data.val.outfits.map(({ id }) => id)),
+                        onclick: () => store.navigateToCheatConfig("wide attire"),
                     },
-                    "ALL ON"
+                    "CONFIGURE BONUSES"
                 ),
-                button({ class: "btn-secondary", disabled: busy, onclick: () => select([]) }, "ALL OFF"),
                 span({ role: "status", "aria-live": "polite" }, () =>
-                    status.val === "loading" ? "SAVING..." : feedback.val
+                    status.val === "loading" ? "WORKING..." : feedback.val
                 )
             ),
-            div({ class: "attire-rack__grid", "aria-busy": () => status.val === "loading" }, () =>
+            p(
+                "Choose outfits in Config, then apply to the session or save. All includes future outfits. Worn attire is counted once; rack bonuses are inactive in dungeons."
+            ),
+            div({ class: "attire-rack__grid" }, () =>
                 div(
                     { class: "attire-rack__cards" },
                     ...catalog.val.map((outfit) =>
@@ -98,33 +73,23 @@ export const AttireRackTab = () => {
                             div(
                                 { class: "attire-rack__heading" },
                                 span(outfit.name),
-                                button(
-                                    {
-                                        class: "btn-secondary",
-                                        role: "switch",
-                                        "aria-label": `Enable ${outfit.name} bonuses`,
-                                        "aria-checked": () =>
-                                            data.val.selected.includes(outfit.id) ? "true" : "false",
-                                        disabled: busy,
-                                        onclick: () => toggle(outfit.id),
-                                    },
-                                    () => (data.val.selected.includes(outfit.id) ? "ON" : "OFF")
-                                )
+                                span(() => (data.val.selected.includes(outfit.id) ? "SELECTED" : "OFF"))
                             ),
                             p(
                                 Object.entries(outfit.stats)
                                     .filter(([, value]) => value)
-                                    .map(([key, value]) => `+${value} ${key.replace(/_/g, " ")}`)
+                                    .map(([key, value]) => "+" + value + " " + key.replace(/_/g, " "))
                                     .join(" · ")
                             ),
-                            ...outfit.bonuses.map(({ key, value }) => p(`+${value}${key.replace(/_/g, " ")}`)),
+                            ...outfit.bonuses.map(({ key, value }) => p("+" + value + key.replace(/_/g, " "))),
                             span({ class: "attire-rack__worn" }, () =>
-                                data.val.equipped === outfit.id ? "CURRENTLY WORN — counted once" : ""
+                                data.val.equipped === outfit.id ? "CURRENTLY WORN" : ""
                             )
                         )
                     )
                 )
-            )
+            ),
+            appearance.node
         ),
     });
 };

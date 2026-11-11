@@ -76,8 +76,10 @@ export function applyCharacterAttire(attributes, request, recalculate) {
         if (activeChanged) {
             try {
                 recalculate();
-            } catch {
-                /* Keep the original failure after restoring the slots. */
+            } catch (rollbackError) {
+                throw new Error(
+                    `${error.message} Slots restored, but bonus recalculation failed: ${rollbackError.message}`
+                );
             }
         }
         throw error;

@@ -34,7 +34,3 @@ for calls into the injected helpers. Attachment and injection retain their setup
 | Bundling and packaging            | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
 
 See the [Account page guide](account-pages.md) and [cheats guide](cheats.md) for those areas.
-
-Attire Rack scopes a virtual equipment view to native stat calculation calls. Original equipment and definitions remain visible to inventory, appearance and persistence readers outside that scope; selection persistence uses the existing startup-command boundary.
-
-The Attire Rack appearance editor uses the existing game-command bridge to update active and saved character equipment records. It validates and confirms replacements before writing; the game's normal save path persists those records.

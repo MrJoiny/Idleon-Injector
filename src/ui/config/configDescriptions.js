@@ -39,6 +39,7 @@ export const configDescriptions = {
     "cheatConfig.multiply.shopstock": "Shop stock quantity multiplier",
 
     // WIDE - Miscellaneous Wide Cheats
+    "cheatConfig.wide.attire.outfits": "Outfits contributing while wide attire is enabled. Use all to include current and future outfits, comma-separated EquipmentGown IDs for a selection, or an empty string for none.",
     "cheatConfig.wide.autoloot.itemstochest": "Automatically sends looted items to the chest",
     "cheatConfig.wide.autoloot.moneytochest": "Automatically sends looted money to the chest",
     "cheatConfig.wide.autoloot.zenithfarm": "Zenith farming drops are excluded from autoloot and drop normally",

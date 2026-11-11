@@ -238,12 +238,6 @@ route retains its instance and controls the response-before-exit handoff.
 
 Source: [Updater](../src/modules/updateService.js).
 
-## Attire Rack uses the native equipment calculation
+## Attire Rack uses native equipment calculations
 
-Attire Rack presents selected outfit base stats only during synchronous native equipment-stat reads. Outside that calculation, equipment and definitions expose their original values. Miscellaneous bonuses join the native bonus map with the same Research multiplier used for worn attire. The worn outfit remains native and is excluded from extra contributions. Dungeon calculations retain native equipment rules.
-
-Selections are ordinary startup commands, saved through the existing configuration flow. This keeps the feature independent of Wardrobe and avoids another saved-game collection or custom configuration schema.
-
-## Character appearance is an explicit equipment edit
-
-The optional Attire Rack appearance editor writes only the attire slot for selected characters, including the active character's live and saved equipment records. It replaces the previous outfit rather than transferring it to inventory. An in-page confirmation repeats that consequence and lists the proposed replacements. The complete batch is validated before writing; stale character or slot snapshots are rejected, and recalculation failures restore affected values. Appearance edits use the game's normal save path rather than startup commands. Bonus toggles remain independent.
+Native calculations retain class rules, equipment modifiers and rounding without maintaining a second stat formula.

@@ -34,6 +34,7 @@ function loadConfiguration() {
         const customConfigPath = getRuntimePath("config.custom.js");
 
         config = require(configPath);
+        config.cheatConfig.wide.attire ??= { outfits: "all" };
 
         defaultConfig = deepClone(config);
 
@@ -63,6 +64,15 @@ function loadConfiguration() {
             log.info("No config.custom.js found - using defaults");
         }
 
+        // Convert the previous selection command once; appearance is never replayed.
+        config.startupCheats = config.startupCheats.flatMap((command) => {
+            const legacy = /^wide attire set(?: (.*))?$/.exec(command);
+            if (legacy) {
+                config.cheatConfig.wide.attire.outfits = legacy[1] || "";
+                return legacy[1] ? ["wide attire"] : [];
+            }
+            return /^wide attire (?:status|wear)(?: |$)/.test(command) ? [] : [command];
+        });
         injectorConfig = config.injectorConfig;
         startupCheats = config.startupCheats;
         cheatConfig = config.cheatConfig;

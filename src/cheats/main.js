@@ -1,3 +1,4 @@
+import { attireAction } from "./helpers/attireActions.js";
 /**
  * Cheats Module - Main Entry Point
  *
@@ -72,6 +73,7 @@ window.updateCheatConfig = updateCheatConfig;
 window.getAutoCompleteSuggestions = getAutoCompleteSuggestions;
 window.cheatStateList = getcheatStateList;
 window.getBundleCatalog = getBundleCatalog;
+window.attireAction = attireAction;
 
 // Search API
 window.searchGga = searchGga;

@@ -10,7 +10,7 @@ function runtime(cheat) {
     return {
         async evaluate(options) {
             try {
-                const value = await runInNewContext(options.expression, { window: {}, cheat });
+                const value = await runInNewContext(options.expression, { window: {}, cheat, attireAction: cheat });
                 if (value !== null && typeof value === "object" && !options.returnByValue)
                     return { result: { type: "object", objectId: "remote-handle" } };
                 return { result: { value: value === undefined ? undefined : JSON.parse(JSON.stringify(value)) } };
@@ -21,18 +21,18 @@ function runtime(cheat) {
     };
 }
 
-test("cheat actions deliver structured attire data across the CDP boundary", async () => {
+test("helper actions deliver structured attire data across the CDP boundary", async () => {
     const expected = { enabled: false, selected: [], outfits: [{ id: "EquipmentGown1", name: "Cobalt Robe" }] };
     const bridge = createGameBridge(
         runtime(() => expected),
         "window"
     );
-    assert.deepEqual(await bridge.executeCheat("wide attire status"), { value: expected, error: null });
+    assert.deepEqual(await bridge.callHelper("attireAction", ["status"]), { value: expected, error: null });
 });
 
 test("cheat actions preserve primitive results and safely encode command text", async () => {
     let seen;
-    const action = 'wide attire set "quoted"\\value';
+    const action = 'drop "quoted"\\value';
     const bridge = createGameBridge(
         runtime((text) => {
             seen = text;
@@ -51,6 +51,6 @@ test("native evaluation failures retain their error details", async () => {
         }),
         "window"
     );
-    const result = await bridge.executeCheat("wide attire status");
+    const result = await bridge.callHelper("attireAction", ["status"]);
     assert.equal(result.error.details, "Native failure");
 });

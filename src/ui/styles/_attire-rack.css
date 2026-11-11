@@ -51,7 +51,7 @@
     background: var(--c-panel);
 }
 
-.attire-appearance summary {
+.attire-appearance h3 {
     color: var(--c-accent);
     cursor: pointer;
     font-weight: 700;

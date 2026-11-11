@@ -1,7 +1,7 @@
 import van from "../../../vendor/van-1.6.0.js";
-import { executeCheatAction } from "../../../services/api.js";
+import { performGameAction } from "../../../services/api.js";
 import { createStaticRowReconciler } from "./accountShared.js";
-const { div, p, span, select, option, button, details, summary, h3, ul, li } = van.tags;
+const { div, p, span, select, option, button, h3, ul, li } = van.tags;
 
 export function createAttireAppearancePanel({ catalog, busy, runWrite, read }) {
     const states = new Map();
@@ -48,12 +48,12 @@ export function createAttireAppearancePanel({ catalog, busy, runWrite, read }) {
                 const pending = changes();
                 if (!pending.length) return { cancelled: true };
                 if (!(await confirm(pending))) return { cancelled: true };
-                const request = encodeURIComponent(JSON.stringify({ active: current.val, changes: pending }));
-                const response = await executeCheatAction(`wide attire wear ${request}`);
-                if (!response.result || !Array.isArray(response.result.changed))
-                    throw new Error(response.result || "Could not apply character attire.");
+                const request = { active: current.val, changes: pending };
+                const result = await performGameAction("attire", "wear", request);
+                if (!result || !Array.isArray(result.changed))
+                    throw new Error(result || "Could not apply character attire.");
                 await read();
-                message.val = response.result.message;
+                message.val = result.message;
             },
             {
                 onError: (caught) => {
@@ -61,13 +61,9 @@ export function createAttireAppearancePanel({ catalog, busy, runWrite, read }) {
                 },
             }
         );
-    const node = details(
+    const node = div(
         { class: "attire-appearance" },
-        summary("CHARACTER APPEARANCE"),
-        p("Choose what each character wears, then apply your changes together. Changes use normal game saving."),
-        p(
-            "A worn outfit still grants its normal bonuses even if its rack switch is off. Selected outfits are counted once."
-        ),
+        h3("CHARACTER APPEARANCE"),
         div(
             { class: "attire-appearance__bulk" },
             select(

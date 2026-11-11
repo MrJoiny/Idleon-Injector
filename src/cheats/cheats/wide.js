@@ -13,7 +13,6 @@ import { registerCheats } from "../core/registration.js";
 import { cheatState } from "../core/state.js";
 import { behavior, firebase, gga } from "../core/globals.js";
 import { deepCopy } from "../utils/deepCopy.js";
-import { attireRackCommand } from "../helpers/attireRackCommand.js";
 import { rollAllObols } from "../helpers/obolRolling.js";
 
 // Wide (account-wide) cheats
@@ -24,9 +23,7 @@ registerCheats({
     subcheats: [
         {
             name: "attire",
-            message: "Attire Rack: selected outfit bonuses, counted once. Account > Attire Rack.",
-            needsParam: true,
-            fn: attireRackCommand,
+            message: "Enable configured outfit bonuses. Account > Player > Attire Rack.",
         },
         { name: "storagecap", message: "uncapped storage stacks; pauses Atom Collider conversion" },
         { name: "gembuylimit", message: "set max gem item purchases", configurable: true },
