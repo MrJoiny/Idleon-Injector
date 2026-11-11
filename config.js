@@ -997,6 +997,9 @@ exports.cheatConfig = {
                 { id: 4, on: false, priority: 2 }, // Feather Restart: Low
             ],
         },
+        poppy: { saving: 10, items: [] }, // bought only while Poppy's menu is open (fish only land then)
+        tarpit: { saving: 10, items: [] }, // Poppy's Tar Pit, tartar fish, same open-menu rule
+        bubba: { saving: 10, items: [] }, // waits until the run's gift is picked
     },
 };
 

@@ -21,6 +21,8 @@ import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 const { div, option, select, span } = van.tags;
 
 // Saved as priority 1 (High) and 2 (Low); Balanced has none.
+const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba"];
+
 const PRIORITIES = [
     { value: 1, label: "High" },
     { value: 2, label: "Low" },
@@ -217,13 +219,13 @@ const WorldShops = ({ world, autobuy }) => {
     });
 };
 
-const SavingRow = ({ autobuy }) => {
+const SavingRow = ({ autobuy, group }) => {
     const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
-        valueState: autobuy.saving,
+        valueState: autobuy.saving[group],
         normalize: (raw) => String(raw ?? ""),
         write: async (raw) => {
             const next = parseWholeNumber(raw, { max: 100, message: "Saving must be a whole number from 0 to 100" });
-            await autobuy.setSaving(next);
+            await autobuy.setSaving(group, next);
             return next;
         },
         format: (value) => String(value),
@@ -261,101 +263,156 @@ const SavingRow = ({ autobuy }) => {
     });
 };
 
-const OrionAutobuy = ({ autobuy }) => {
-    const { loading, error, run } = useAccountLoad({ label: "Orion Autobuy" });
-    const feathers = van.state(0);
-    const rate = van.state(0);
-    const goal = van.state(null);
+/** One clicker group: its currency section (status + saving) and its upgrade list. */
+const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) => {
+    const money = van.state(0);
+    const rate = van.state(null);
+    const status = van.state("");
     const upgradeStates = new Map();
     const listNode = div({ class: "account-item-stack" });
     const reconcileUpgrades = createStaticRowReconciler(listNode);
 
     const UpgradeRow = ({ id, name }) => {
-        const item = autobuy.orion.get(id);
+        const item = autobuy[group].get(id);
         const upgrade = getOrCreateState(upgradeStates, id, {});
-        const stopAt = StopAtField({ item, name, write: (stopAt) => autobuy.setItem("orion", id, { stopAt }) });
+        const stopAt = StopAtField({ item, name, write: (stopAt) => autobuy.setItem(group, id, { stopAt }) });
         const priority = PrioritySelect({
             item,
             name,
-            write: (next) => autobuy.setItem("orion", id, { priority: next }),
+            write: (next) => autobuy.setItem(group, id, { priority: next }),
         });
 
         return AccountToggleRow({
             info: div(
                 { class: "account-row__name-group" },
                 span({ class: "account-row__name" }, name),
-                span({ class: "account-row__sub-label" }, () =>
-                    upgrade.val.unlocked
-                        ? `Next level ${formatNumber(upgrade.val.cost)} feathers`
-                        : `Unlocks at ${formatNumber(upgrade.val.unlockAt)} produced`
-                )
+                span({ class: "account-row__sub-label" }, () => {
+                    if (upgrade.val.maxed) return "Max level";
+                    if (!upgrade.val.unlocked) return lockedText(upgrade.val);
+                    return `Next level ${formatNumber(upgrade.val.cost)} ${currency}`;
+                })
             ),
             badge: () => `LV ${upgrade.val.level ?? 0}`,
             checked: () => item.on.val,
             title: "Toggle auto-buy",
-            write: (on) => autobuy.setItem("orion", id, { on }),
+            write: (on) => autobuy.setItem(group, id, { on }),
             rowClass: "account-row--wide-controls autobuy-row",
             controls: [stopAt.node, priority.node],
             status: () => stopAt.status.val ?? priority.status.val,
         });
     };
 
+    const apply = (data) => {
+        money.val = data.money;
+        rate.val = data.rate;
+        const anyOn = data.upgrades.some(({ id }) => autobuy[group].get(id).on.val);
+        if (data.waiting) status.val = data.waiting;
+        else if (data.goal)
+            status.val = `Saving for ${cleanName(data.upgrades[data.goal.id].name)} (${formatNumber(data.goal.cost)})`;
+        else status.val = anyOn ? "Buying cheapest first" : "Nothing switched on";
+
+        reconcileUpgrades(data.upgrades.map(({ id }) => id).join("|"), () =>
+            data.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name) }))
+        );
+        for (const upgrade of data.upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
+    };
+
+    const nodes = [
+        AccountSection({
+            title: currency.toUpperCase(),
+            meta: span(
+                { class: "account-row__sub-label autobuy-feathers" },
+                span(() => `${formatNumber(money.val)} owned`),
+                span(() => (rate.val === null ? "" : ` · ${formatNumber(rate.val)} per second`))
+            ),
+            body: [
+                AccountRow({ info: span({ class: "account-row__name" }, () => status.val) }),
+                SavingRow({ autobuy, group }),
+            ],
+        }),
+        AccountSection({ title: upgradesTitle, body: listNode }),
+    ];
+
+    return { group, apply, nodes };
+};
+
+const RULE =
+    "It saves for the cheapest High or Low upgrade (High first when both are affordable) and buys Balanced ones cheapest first. Buying stops at the stop-at level; leave it empty for no limit.";
+
+const ClickerPage = ({ autobuy, title, description, groups }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Autobuy` });
+    const parts = groups.map((group) => ClickerGroup({ autobuy, ...group }));
+
     const load = async () =>
         run(async () => {
-            const [orion, config] = await Promise.all([readComputed("autobuy", "orion"), fetchConfig()]);
-            autobuy.sync(config.cheatConfig.autobuy, "orion");
-            feathers.val = orion.feathers;
-            rate.val = orion.rate;
-            goal.val = orion.goal && { name: cleanName(orion.upgrades[orion.goal.id].name), cost: orion.goal.cost };
-
-            reconcileUpgrades(orion.upgrades.map(({ id }) => id).join("|"), () =>
-                orion.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name) }))
-            );
-            for (const upgrade of orion.upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
+            const [config, ...data] = await Promise.all([
+                fetchConfig(),
+                ...parts.map(({ group }) => readComputed("autobuy", group)),
+            ]);
+            parts.forEach(({ group, apply }, index) => {
+                autobuy.sync(config.cheatConfig.autobuy, group);
+                apply(data[index]);
+            });
         });
 
     load();
 
     return PersistentAccountListPage({
-        title: "ORION",
-        description:
-            "Switched-on upgrades are bought with feathers. It saves for the cheapest High or Low upgrade (High first when both are affordable) and buys Balanced ones cheapest first. Buying stops at the stop-at level; leave it empty for no limit.",
+        title,
+        description: `${description} ${RULE}`,
         actions: RefreshButton({
             onRefresh: load,
             disabled: () => loading.val,
         }),
         state: { loading, error },
-        loadingText: "READING ORION",
-        errorTitle: "ORION READ FAILED",
+        loadingText: `READING ${title}`,
+        errorTitle: `${title} READ FAILED`,
         initialWrapperClass: "scrollable-panel",
-        body: div(
-            { class: "scrollable-panel content-stack" },
-            AccountSection({
-                title: "FEATHERS",
-                meta: span(
-                    { class: "account-row__sub-label autobuy-feathers" },
-                    span(() => `${formatNumber(feathers.val)} owned`),
-                    " · ",
-                    span(() => `${formatNumber(rate.val)} per second`)
-                ),
-                body: [
-                    AccountRow({
-                        info: span({ class: "account-row__name" }, () => {
-                            if (goal.val) return `Saving for ${goal.val.name} (${formatNumber(goal.val.cost)})`;
-                            const anyOn = [0, 1, 2, 3, 4, 5, 6, 7, 8].some((id) => autobuy.orion.get(id).on.val);
-                            return anyOn ? "Buying cheapest first" : "Nothing switched on";
-                        }),
-                    }),
-                    SavingRow({ autobuy }),
-                ],
-            }),
-            AccountSection({ title: "UPGRADES", body: listNode })
-        ),
+        body: div({ class: "scrollable-panel content-stack" }, ...parts.flatMap(({ nodes }) => nodes)),
     });
 };
 
+const producedText = (unit) => (upgrade) => `Unlocks at ${formatNumber(upgrade.unlockAt)} ${unit}`;
+
+const CLICKER_TABS = [
+    {
+        id: "orion",
+        label: "ORION",
+        title: "ORION",
+        description: "Switched-on upgrades are bought with feathers.",
+        groups: [
+            { group: "orion", currency: "feathers", upgradesTitle: "UPGRADES", lockedText: producedText("produced") },
+        ],
+    },
+    {
+        id: "poppy",
+        label: "POPPY",
+        title: "POPPY",
+        description:
+            "Switched-on upgrades are bought while Poppy's menu is open, because her fish only land then. The reset spiral and shiny catching stay manual.",
+        groups: [
+            { group: "poppy", currency: "fish", upgradesTitle: "UPGRADES", lockedText: producedText("caught") },
+            {
+                group: "tarpit",
+                currency: "tartar fish",
+                upgradesTitle: "TAR PIT",
+                lockedText: () => "Needs more megafish",
+            },
+        ],
+    },
+    {
+        id: "bubba",
+        label: "BUBBA",
+        title: "BUBBA",
+        description:
+            "Switched-on upgrades are bought with meat once the run's gift is picked. Pats and charisma stay manual.",
+        groups: [
+            { group: "bubba", currency: "meat", upgradesTitle: "UPGRADES", lockedText: producedText("meat made") },
+        ],
+    },
+];
+
 const SHOP_TABS = [1, 2, 3, 4, 5, 6, 7].map((world) => ({ id: `w${world}`, label: `W${world}`, world }));
-const CLICKER_TABS = [{ id: "orion", label: "ORION", component: OrionAutobuy }];
 
 const NestedTabs = ({ tabs, renderContent }) => {
     const activeId = van.state(tabs[0].id);
@@ -392,23 +449,24 @@ const SECTION_TABS = [
     {
         id: "clickers",
         label: "CLICKERS",
-        render: (autobuy) => NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => tab.component({ autobuy }) }),
+        render: (autobuy) =>
+            NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => ClickerPage({ autobuy, ...tab }) }),
     },
 ];
 
 /** Shared config state for every autobuy page, so each save carries the whole group. */
 const createAutobuyConfig = () => {
-    const groups = { shops: createItemStates(), orion: createItemStates() };
-    const saving = van.state(10);
-    const toPatch = {
-        shops: () => ({ shops: groups.shops.toConfig() }),
-        orion: () => ({ orion: { saving: saving.val, items: groups.orion.toConfig() } }),
-    };
+    const groups = Object.fromEntries(["shops", ...CLICKER_GROUPS].map((group) => [group, createItemStates()]));
+    const saving = Object.fromEntries(CLICKER_GROUPS.map((group) => [group, van.state(10)]));
+    const toPatch = (group) =>
+        group === "shops"
+            ? { shops: groups.shops.toConfig() }
+            : { [group]: { saving: saving[group].val, items: groups[group].toConfig() } };
     let queue = Promise.resolve();
     let pendingSaves = 0;
 
     const persist = async (group) => {
-        const result = await updateSessionConfig({ cheatConfig: { autobuy: toPatch[group]() } });
+        const result = await updateSessionConfig({ cheatConfig: { autobuy: toPatch(group) } });
         if (result.message !== "Configuration updated successfully") {
             throw new Error(result.details || result.message || "Could not apply auto-buy in game");
         }
@@ -447,26 +505,27 @@ const createAutobuyConfig = () => {
         );
     };
 
-    const setSaving = (next) => {
-        const previous = saving.val;
+    const setSaving = (group, next) => {
+        const previous = saving[group].val;
         return change(
-            "orion",
-            () => (saving.val = next),
-            () => (saving.val = previous)
+            group,
+            () => (saving[group].val = next),
+            () => (saving[group].val = previous)
         );
     };
 
     // A load that lands while a save is queued would undo the newest edits, so keep the local values then.
     const sync = (config, group) => {
         if (pendingSaves) return;
-        if (group === "shops") groups.shops.sync(config.shops);
-        else {
-            groups.orion.sync(config.orion.items);
-            saving.val = config.orion.saving;
+        if (group === "shops") {
+            groups.shops.sync(config.shops);
+            return;
         }
+        groups[group].sync(config[group].items);
+        saving[group].val = config[group].saving;
     };
 
-    return { shops: groups.shops, orion: groups.orion, saving, setItem, setSaving, sync };
+    return { ...groups, saving, setItem, setSaving, sync };
 };
 
 export const AutobuyTab = () => {
