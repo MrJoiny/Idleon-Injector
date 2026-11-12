@@ -48,9 +48,13 @@ export const Config = () => {
         return merged;
     };
 
+    // Run syncs and saves one at a time so an older fetch cannot land after a newer save
+    let queue = Promise.resolve();
+    const queued = (task) => (queue = queue.then(task, task));
+
     van.derive(() => {
         const isOpen = store.app.activeTab === VIEWS.CONFIG.id || store.app.configDrawerOpen;
-        if (isOpen && draftReady.val) syncDraft().catch((e) => store.notify(e.message, "error"));
+        if (isOpen && draftReady.val) queued(syncDraft).catch((e) => store.notify(e.message, "error"));
     });
 
     // Handle forced config path navigation from Cheats tab
@@ -89,18 +93,20 @@ export const Config = () => {
         store.clearForcedConfigPath();
     };
 
-    const save = async (isPersistent) => {
+    const save = (isPersistent) => {
         if (!draft) return;
 
-        try {
-            const merged = await syncDraft();
-            const toSave = toPlain(merged);
-            delete toSave.defaultConfig;
+        return queued(async () => {
+            try {
+                const merged = await syncDraft();
+                const toSave = toPlain(merged);
+                delete toSave.defaultConfig;
 
-            if (await store.saveConfig(toSave, isPersistent)) baseline = merged;
-        } catch (e) {
-            store.notify(e.message, "error");
-        }
+                if (await store.saveConfig(toSave, isPersistent)) baseline = merged;
+            } catch (e) {
+                store.notify(e.message, "error");
+            }
+        });
     };
 
     const handleAddCheat = (val) => {
