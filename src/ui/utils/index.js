@@ -3,6 +3,27 @@
  * Common functions used across multiple UI files
  */
 
+const isPlainObject = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Apply the fields that differ between base and edited onto latest.
+ * Everything the user did not touch keeps its value from latest.
+ * @param {object} latest - Current settings; mutated and returned
+ * @param {object} base - Settings the edits started from
+ * @param {object} edited - Settings including the user's edits
+ * @returns {object} latest with the edits applied
+ */
+export function applyConfigEdits(latest, base, edited) {
+    for (const [key, value] of Object.entries(edited)) {
+        if (isPlainObject(value) && isPlainObject(latest[key])) {
+            applyConfigEdits(latest[key], base?.[key], value);
+        } else if (JSON.stringify(value) !== JSON.stringify(base?.[key])) {
+            latest[key] = value;
+        }
+    }
+    return latest;
+}
+
 /**
  * Debounce a function call
  * @param {Function} func - The function to debounce

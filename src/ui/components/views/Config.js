@@ -1,6 +1,9 @@
 import van from "../../vendor/van-1.6.0.js";
 import vanX from "../../vendor/van-x-0.6.3.js";
 import store from "../../state/store.js";
+import { VIEWS } from "../../state/constants.js";
+import { fetchConfig } from "../../services/api.js";
+import { applyConfigEdits } from "../../utils/index.js";
 import { Loader } from "../Loader.js";
 import { EmptyState } from "../EmptyState.js";
 import { ConfigNode } from "../config/ConfigNode.js";
@@ -11,6 +14,8 @@ import { withTooltip } from "../Tooltip.js";
 
 const { div, button, select, option, label, span } = van.tags;
 
+const toPlain = (value) => JSON.parse(JSON.stringify(value));
+
 export const Config = () => {
     const activeSubTab = van.state("cheatconfig");
     const categoryFilter = van.state("all");
@@ -20,15 +25,36 @@ export const Config = () => {
 
     // Draft will be a vanX.reactive object, but we store it in a regular variable to avoid reactivity cascade
     let draft = null;
+    // Settings the draft was last synced with; what differs from it is the user's unsaved edits
+    let baseline = null;
     let addCheatFn = null;
 
     if (!store.app.config) store.loadConfig();
 
     van.derive(() => {
         if (store.app.config && !draft) {
-            draft = vanX.reactive(JSON.parse(JSON.stringify(store.app.config)));
+            baseline = toPlain(store.app.config);
+            draft = vanX.reactive(toPlain(baseline));
             draftReady.val = true;
         }
+    });
+
+    // Other tabs save config too, so pull in their changes while keeping unsaved edits
+    const syncDraft = async () => {
+        const latest = await fetchConfig();
+        const merged = applyConfigEdits(toPlain(latest), baseline, toPlain(draft));
+        vanX.replace(draft, merged);
+        baseline = latest;
+        return merged;
+    };
+
+    // Run syncs and saves one at a time so an older fetch cannot land after a newer save
+    let queue = Promise.resolve();
+    const queued = (task) => (queue = queue.then(task, task));
+
+    van.derive(() => {
+        const isOpen = store.app.activeTab === VIEWS.CONFIG.id || store.app.configDrawerOpen;
+        if (isOpen && draftReady.val) queued(syncDraft).catch((e) => store.notify(e.message, "error"));
     });
 
     // Handle forced config path navigation from Cheats tab
@@ -70,10 +96,17 @@ export const Config = () => {
     const save = (isPersistent) => {
         if (!draft) return;
 
-        const toSave = JSON.parse(JSON.stringify(draft));
-        delete toSave.defaultConfig;
+        return queued(async () => {
+            try {
+                const merged = await syncDraft();
+                const toSave = toPlain(merged);
+                delete toSave.defaultConfig;
 
-        store.saveConfig(toSave, isPersistent);
+                if (await store.saveConfig(toSave, isPersistent)) baseline = merged;
+            } catch (e) {
+                store.notify(e.message, "error");
+            }
+        });
     };
 
     const handleAddCheat = (val) => {
