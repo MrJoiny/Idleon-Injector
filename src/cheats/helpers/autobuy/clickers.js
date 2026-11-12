@@ -95,6 +95,31 @@ const CLICKERS = {
             return bubbastuff("DoWeNeedToSelectGift", 0, 0) ? "Waiting for you to pick a gift" : null;
         },
     },
+    // Death Bringer masterclass. Each upgrade costs one bone type: OLA[330 + GrimoireUpg[i][3]]; levels in Grimoire[i].
+    // Rows 52-54 are "Ripped_Page" placeholders. Unlocks follow the total of all levels (GrimoireUpg[i][6]).
+    grimoire: {
+        rows: () => cList.GrimoireUpg.slice(0, 52),
+        currencies: ["femur", "ribcage", "cranium", "bovinae"],
+        currencyOf: (row) => Number(row[3]),
+        money: (currency) => ola()[330 + currency],
+        level: (i) => gga.Grimoire[i],
+        cost: (i) => summoning("GrimoireUpgCost", i, 0),
+        unlockAt: (i, row) => Number(row[6]),
+        isUnlocked: (i) => i < summoning("GrimoireUpgUNLOCKED", 0, 0),
+        max: (row) => Number(row[4]),
+        // The game has no Grimoire buy event; its menu click buys inline. These are that click's steps.
+        buy: (i) => {
+            const bones = 330 + Number(cList.GrimoireUpg[i][3]);
+            const cost = summoning("GrimoireUpgCost", i, 0);
+            if (!(ola()[bones] >= cost)) return;
+            ola()[bones] -= cost;
+            gga.Grimoire[i] = Math.round(gga.Grimoire[i] + 1);
+            ola()[480] += 1;
+            if (ola()[bones] < 0.1) ola()[bones] = 0.1;
+            delete gga.DNSM.h.GrimoireTotLV;
+        },
+        waiting: () => null,
+    },
 };
 
 export const CLICKER_KEYS = Object.keys(CLICKERS);
@@ -104,10 +129,14 @@ function unlocked(clicker, i, row) {
     return clicker.progress() >= clicker.unlockAt(i, row);
 }
 
-function buyableUpgrades(key) {
+// Groups with several currencies (Grimoire bones) save and buy per currency; the others have one.
+const currencyCount = (clicker) => clicker.currencies?.length ?? 1;
+
+function buyableUpgrades(key, currency) {
     const clicker = CLICKERS[key];
     const settings = settingsById(cheatConfig.autobuy[key].items);
     return clicker.rows().flatMap((row, i) => {
+        if (clicker.currencyOf && clicker.currencyOf(row) !== currency) return [];
         const entry = settings.get(String(i));
         const level = clicker.level(i);
         if (!entry?.on || !unlocked(clicker, i, row) || level >= (entry.stopAt ?? Infinity)) return [];
@@ -116,19 +145,25 @@ function buyableUpgrades(key) {
     });
 }
 
-/** One clicker's currency, upgrades and current goal for the Account > Autobuy > Clickers tab. */
+/** One clicker's currencies, upgrades and current goals for the Account > Autobuy tab. */
 export function getAutobuyClicker(key) {
     const clicker = CLICKERS[key];
     const waiting = clicker.waiting();
-    const goal = waiting ? null : nextGoal(buyableUpgrades(key));
     return {
-        money: clicker.money(),
         rate: clicker.rate?.() ?? null,
         waiting,
-        goal: goal && { id: goal.id, cost: goal.cost },
+        currencies: Array.from({ length: currencyCount(clicker) }, (_, currency) => {
+            const goal = waiting ? null : nextGoal(buyableUpgrades(key, currency));
+            return {
+                name: clicker.currencies?.[currency] ?? null,
+                money: clicker.money(currency),
+                goal: goal && { id: goal.id, cost: goal.cost },
+            };
+        }),
         upgrades: clicker.rows().map((row, i) => ({
             id: i,
             name: row[0],
+            currency: clicker.currencyOf ? clicker.currencies[clicker.currencyOf(row)] : null,
             level: clicker.level(i),
             cost: clicker.cost(i),
             unlockAt: clicker.unlockAt(i, row),
@@ -142,6 +177,12 @@ export function runClickers() {
     for (const key of CLICKER_KEYS) {
         const clicker = CLICKERS[key];
         if (!cheatConfig.autobuy[key].items.some((entry) => entry.on) || clicker.waiting()) continue;
-        buyCheapestFirst(() => buyableUpgrades(key), clicker.money, cheatConfig.autobuy[key].saving);
+        for (let currency = 0; currency < currencyCount(clicker); currency++) {
+            buyCheapestFirst(
+                () => buyableUpgrades(key, currency),
+                () => clicker.money(currency),
+                cheatConfig.autobuy[key].saving
+            );
+        }
     }
 }

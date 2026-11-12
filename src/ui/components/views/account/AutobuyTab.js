@@ -21,7 +21,7 @@ import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 const { div, option, select, span } = van.tags;
 
 // Saved as priority 1 (High) and 2 (Low); Balanced has none.
-const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba"];
+const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire"];
 
 const PRIORITIES = [
     { value: 1, label: "High" },
@@ -265,9 +265,9 @@ const SavingRow = ({ autobuy, group }) => {
 
 /** One clicker group: its currency section (status + saving) and its upgrade list. */
 const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) => {
-    const money = van.state(0);
+    const owned = van.state("");
     const rate = van.state(null);
-    const status = van.state("");
+    const status = van.state([]);
     const upgradeStates = new Map();
     const listNode = div({ class: "account-item-stack" });
     const reconcileUpgrades = createStaticRowReconciler(listNode);
@@ -289,7 +289,7 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
                 span({ class: "account-row__sub-label" }, () => {
                     if (upgrade.val.maxed) return "Max level";
                     if (!upgrade.val.unlocked) return lockedText(upgrade.val);
-                    return `Next level ${formatNumber(upgrade.val.cost)} ${currency}`;
+                    return `Next level ${formatNumber(upgrade.val.cost)} ${upgrade.val.currency ?? currency}`;
                 })
             ),
             badge: () => `LV ${upgrade.val.level ?? 0}`,
@@ -303,16 +303,25 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
     };
 
     const apply = (data) => {
-        money.val = data.money;
+        // Grimoire has one currency per bone type; each gets its own owned count and status line.
+        const several = data.currencies.length > 1;
+        owned.val = several
+            ? data.currencies.map(({ name, money }) => `${formatNumber(money)} ${name}`).join(" · ")
+            : `${formatNumber(data.currencies[0].money)} owned`;
         rate.val = data.rate;
         const anyOn = data.upgrades.some(({ id }) => autobuy[group].get(id).on.val);
-        if (data.waiting) status.val = data.waiting;
-        else if (data.goal)
-            status.val = `Saving for ${cleanName(data.upgrades[data.goal.id].name)} (${formatNumber(data.goal.cost)})`;
-        else status.val = anyOn ? "Buying cheapest first" : "Nothing switched on";
+        if (data.waiting) status.val = [data.waiting];
+        else if (!anyOn) status.val = ["Nothing switched on"];
+        else
+            status.val = data.currencies.map(({ name, goal }) => {
+                const text = goal
+                    ? `Saving for ${cleanName(data.upgrades[goal.id].name, "", { stripMarker: true })} (${formatNumber(goal.cost)})`
+                    : "Buying cheapest first";
+                return several ? `${name[0].toUpperCase()}${name.slice(1)}: ${text}` : text;
+            });
 
         reconcileUpgrades(data.upgrades.map(({ id }) => id).join("|"), () =>
-            data.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name) }))
+            data.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name, "", { stripMarker: true }) }))
         );
         for (const upgrade of data.upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
     };
@@ -322,11 +331,17 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
             title: currency.toUpperCase(),
             meta: span(
                 { class: "account-row__sub-label autobuy-feathers" },
-                span(() => `${formatNumber(money.val)} owned`),
+                span(() => owned.val),
                 span(() => (rate.val === null ? "" : ` · ${formatNumber(rate.val)} per second`))
             ),
             body: [
-                AccountRow({ info: span({ class: "account-row__name" }, () => status.val) }),
+                AccountRow({
+                    info: () =>
+                        div(
+                            { class: "account-row__name-group" },
+                            ...status.val.map((line) => span({ class: "account-row__name" }, line))
+                        ),
+                }),
                 SavingRow({ autobuy, group }),
             ],
         }),
@@ -439,6 +454,24 @@ const NestedTabs = ({ tabs, renderContent }) => {
     );
 };
 
+const MASTERCLASS_TABS = [
+    {
+        id: "grimoire",
+        label: "GRIMOIRE",
+        title: "GRIMOIRE",
+        description:
+            "Switched-on upgrades are bought with bones, each bone type on its own. Bones only drop while your Death Bringer plays; buying works on any character.",
+        groups: [
+            {
+                group: "grimoire",
+                currency: "bones",
+                upgradesTitle: "UPGRADES",
+                lockedText: (upgrade) => `Unlocks at ${formatNumber(upgrade.unlockAt)} total levels`,
+            },
+        ],
+    },
+];
+
 const SECTION_TABS = [
     {
         id: "shops",
@@ -451,6 +484,12 @@ const SECTION_TABS = [
         label: "CLICKERS",
         render: (autobuy) =>
             NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => ClickerPage({ autobuy, ...tab }) }),
+    },
+    {
+        id: "masterclasses",
+        label: "MASTERCLASSES",
+        render: (autobuy) =>
+            NestedTabs({ tabs: MASTERCLASS_TABS, renderContent: (tab) => ClickerPage({ autobuy, ...tab }) }),
     },
 ];
 
