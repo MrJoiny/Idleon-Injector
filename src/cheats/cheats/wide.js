@@ -21,6 +21,10 @@ registerCheats({
     message: "all account-wide cheats",
     allowToggleChildren: true,
     subcheats: [
+        {
+            name: "attire",
+            message: "Enable configured outfit bonuses. Account > Player > Attire Rack.",
+        },
         { name: "storagecap", message: "uncapped storage stacks; pauses Atom Collider conversion" },
         { name: "gembuylimit", message: "set max gem item purchases", configurable: true },
         { name: "mtx", message: "gem shop cost nullification" },

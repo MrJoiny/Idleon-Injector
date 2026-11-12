@@ -12,6 +12,24 @@ const normalizeReadValue = (value) => {
 };
 
 function setupGameRoutes(app, gameBridge) {
+    app.post("/api/game/action", async (req, res) => {
+        const { feature, action, args = {} } = await req.json();
+        if (
+            feature !== "attire" ||
+            !["status", "wear"].includes(action) ||
+            !args ||
+            typeof args !== "object" ||
+            Array.isArray(args)
+        )
+            return res.status(400).json({ error: "Invalid game action." });
+        try {
+            const result = await gameBridge.callHelper("attireAction", [action, args]);
+            if (result.error) return res.status(400).json({ error: result.error.details });
+            res.json({ value: result.value });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app.get("/api/game/bundles", async (req, res) => {
         try {
             const catalogResult = await gameBridge.callHelper("getBundleCatalog");

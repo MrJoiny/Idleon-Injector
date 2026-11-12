@@ -237,3 +237,7 @@ Trade-off: each updater owns its check cache. Startup and CLI checks use fresh i
 route retains its instance and controls the response-before-exit handoff.
 
 Source: [Updater](../src/modules/updateService.js).
+
+## Attire Rack uses native equipment calculations
+
+Native calculations retain class rules, equipment modifiers and rounding without maintaining a second stat formula.

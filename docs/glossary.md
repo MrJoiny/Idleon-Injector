@@ -33,3 +33,7 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [cheat state](../src/cheats/core/state.js),
 [account schema](../src/ui/config/optionsAccountSchema.json),
 [configuration loading](../src/modules/config/configManager.js).
+
+**Attire Rack:** A configurable collection of outfit bonuses.
+
+**Character appearance:** The attire worn by a character.
