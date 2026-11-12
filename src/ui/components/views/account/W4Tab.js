@@ -1,5 +1,6 @@
 import van from "../../../vendor/van-1.6.0.js";
 import { BreedingTab } from "./w4/BreedingTab.js";
+import { CapeVineTab } from "./w4/CapeVineTab.js";
 import { CookingTab } from "./w4/CookingTab.js";
 import { LabTab } from "./w4/LabTab.js";
 import { RiftTab } from "./w4/RiftTab.js";
@@ -14,6 +15,7 @@ const W4_SUBTABS = [
     { id: "lab", label: "LAB", component: LabTab },
     { id: "rift", label: "RIFT", component: RiftTab },
     { id: "tome", label: "TOME", component: TomeTab },
+    { id: "cape-vine", label: "CAPE VINE", component: CapeVineTab },
 ];
 
 export const W4Tab = () => {

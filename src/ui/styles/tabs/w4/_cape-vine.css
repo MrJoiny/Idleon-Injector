@@ -1,0 +1,30 @@
+/* Cape Vine tab */
+/* .account-row / __name / __badge → _account-pages.css */
+/* .account-item-stack--dense      → _account-pages.css */
+
+/* Keep the badge slot so ADD and REMOVE buttons stay aligned across rows. */
+.cape-vine-row .account-row__badge:empty {
+    visibility: hidden;
+}
+
+@media (max-width: 600px) {
+    .cape-vine-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .cape-vine-row .account-row__info {
+        grid-column: 1 / -1;
+    }
+
+    .cape-vine-row .account-row__badge {
+        justify-self: start;
+    }
+
+    .cape-vine-row .account-row__controls {
+        justify-content: flex-end;
+    }
+}
+
+.account-row__sub-label.cape-vine-range--error {
+    color: var(--c-danger);
+}
