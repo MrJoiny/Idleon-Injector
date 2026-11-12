@@ -33,3 +33,5 @@ Source entry points: [game globals](../src/cheats/core/globals.js),
 [cheat state](../src/cheats/core/state.js),
 [account schema](../src/ui/config/optionsAccountSchema.json),
 [configuration loading](../src/modules/config/configManager.js).
+
+**Wardrobe:** Class-compatible equipment and supporting-system loadouts, including player-saved choices.

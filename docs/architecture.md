@@ -34,3 +34,5 @@ for calls into the injected helpers. Attachment and injection retain their setup
 | Bundling and packaging            | [rollup.config.mjs](../rollup.config.mjs), [package.json](../package.json)                           |
 
 See the [Account page guide](account-pages.md) and [cheats guide](cheats.md) for those areas.
+
+Wardrobe lives in `src/cheats/features/wardrobe`, accessed through the game bridge by Player UI; shared equipment calculations remain in helpers.
