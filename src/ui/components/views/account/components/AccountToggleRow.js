@@ -1,13 +1,24 @@
 import van from "../../../../vendor/van-1.6.0.js";
-import { useWriteStatus } from "../accountShared.js";
+import { resolveValue, toNodes, useWriteStatus } from "../accountShared.js";
 import { AccountRow } from "./AccountRow.js";
 
 const { input, label, span } = van.tags;
 
 /**
  * Shared toggle row that keeps native checkbox state aligned with committed data.
+ * `controls` sit before the switch; `status` lets those controls flash the row too.
  */
-export const AccountToggleRow = ({ info, badge, checked, rowClass = "", title, write, controlsClass = "" }) => {
+export const AccountToggleRow = ({
+    info,
+    badge,
+    checked,
+    rowClass = "",
+    title,
+    write,
+    controlsClass = "",
+    controls = null,
+    status: controlsStatus = null,
+}) => {
     const { status, run } = useWriteStatus();
     const isChecked = () => Boolean(typeof checked === "function" ? checked() : checked.val);
     let checkboxNode = null;
@@ -38,8 +49,11 @@ export const AccountToggleRow = ({ info, badge, checked, rowClass = "", title, w
         info,
         badge,
         rowClass,
-        status,
+        status: () => status.val ?? resolveValue(controlsStatus),
         controlsClass,
-        controls: label({ class: "toggle-switch", title }, checkboxNode, span({ class: "slider" })),
+        controls: [
+            ...toNodes(controls),
+            label({ class: "toggle-switch", title }, checkboxNode, span({ class: "slider" })),
+        ],
     });
 };

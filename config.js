@@ -987,6 +987,20 @@ exports.cheatConfig = {
             skipWhale: true, // turn on/off for megalodon farming
         },
     },
+    autobuy: {
+        // Per item: { id, on, stopAt, priority }. Priority 1 = High, 2 = Low, none = Balanced: it saves for the cheapest High/Low item (High first when affordable) and buys Balanced items cheapest first.
+        shops: [], // town shop items, id "shop index:item", bought into the chest with chest coins; stopAt = chest count
+        orion: {
+            saving: 10, // while saving for a High/Low upgrade, Balanced upgrades may cost up to this % of it
+            items: [
+                { id: 8, on: false, priority: 1 }, // The Great Mega Reset: High
+                { id: 4, on: false, priority: 2 }, // Feather Restart: Low
+            ],
+        },
+        poppy: { saving: 10, items: [] }, // bought only while Poppy's menu is open (fish only land then)
+        tarpit: { saving: 10, items: [] }, // Poppy's Tar Pit, tartar fish, same open-menu rule
+        bubba: { saving: 10, items: [] }, // waits until the run's gift is picked
+    },
 };
 
 exports.injectorConfig = {
