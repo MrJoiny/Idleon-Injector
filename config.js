@@ -987,6 +987,9 @@ exports.cheatConfig = {
             skipWhale: true, // turn on/off for megalodon farming
         },
     },
+    autobuy: {
+        items: [], // town shop items bought into the chest with chest coins whenever in stock, e.g. ["0:FoodHealth1"] (shop index:item)
+    },
 };
 
 exports.injectorConfig = {
