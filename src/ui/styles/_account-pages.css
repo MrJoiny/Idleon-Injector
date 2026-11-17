@@ -495,6 +495,103 @@
     width: var(--account-stacked-field-input-width, 180px);
 }
 
+.automation-row .account-row__controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.automation-stop-at {
+    --account-stacked-field-label-width: auto;
+    --account-stacked-field-input-width: 150px;
+}
+
+.automation-stop-at .account-stacked-field__label {
+    white-space: nowrap;
+}
+
+.automation-stop-at input::placeholder {
+    color: var(--c-text-muted);
+    opacity: 0.6;
+}
+
+.automation-priority {
+    width: 132px;
+    height: 30px;
+    padding: 0 6px;
+}
+
+.automation-saving-row .number-input-wrapper {
+    width: 110px;
+}
+
+.automation-saving-row__text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+}
+
+.automation-feathers {
+    white-space: normal;
+}
+
+.automation-feathers > span {
+    white-space: nowrap;
+}
+
+.automation-bonus {
+    white-space: normal;
+}
+
+/* Phone width: the name gets the first line, badge and switch the second, and each edit control a full line. */
+@media (max-width: 760px) {
+    .account-row.automation-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .automation-row .account-row__controls {
+        display: contents;
+    }
+
+    .automation-row .account-row__info {
+        grid-row: 1;
+        grid-column: 1 / -1;
+    }
+
+    .automation-row .account-row__badge {
+        grid-row: 2;
+        grid-column: 1;
+        justify-self: start;
+    }
+
+    .automation-row .toggle-switch {
+        grid-row: 2;
+        grid-column: 2;
+    }
+
+    .automation-row .account-row__sub-label {
+        white-space: normal;
+    }
+
+    .automation-stop-at,
+    .automation-priority {
+        grid-column: 1 / -1;
+    }
+
+    .automation-stop-at .number-input-wrapper {
+        flex: 1;
+        width: auto;
+    }
+
+    .automation-stop-at .number-input-btn {
+        display: none;
+    }
+
+    .automation-priority {
+        width: 100%;
+    }
+}
+
 @media (max-width: 1180px) {
     .account-row--wide-controls {
         grid-template-columns: minmax(0, 1fr) auto;

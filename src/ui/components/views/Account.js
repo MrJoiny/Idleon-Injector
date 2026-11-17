@@ -14,6 +14,7 @@ import { PlayerTab } from "./account/PlayerTab.js";
 import { BundlesTab } from "./account/BundlesTab.js";
 import { CardsTab } from "./account/CardsTab.js";
 import { ClickerTab } from "./account/ClickerTab.js";
+import { AutomationTab } from "./account/AutomationTab.js";
 import { MasterclassesTab } from "./account/MasterclassesTab.js";
 import { TasksTab } from "./account/TasksTab.js";
 import { UpgradeVaultTab } from "./account/UpgradeVaultTab.js";
@@ -41,6 +42,7 @@ const ACCOUNT_TABS = [
     { id: "bundles", label: "BUNDLES", isWorld: false, component: BundlesTab },
     { id: "masterclasses", label: "MASTERCLASSES", isWorld: false, component: MasterclassesTab },
     { id: "clicker", label: "CLICKER", isWorld: false, component: ClickerTab },
+    { id: "automation", label: "AUTOMATION", isWorld: false, component: AutomationTab },
     { id: "w1", label: "BLUNDER HILLS", isWorld: true, worldNum: 1, component: W1Tab },
     { id: "w2", label: "YUM-YUM DESERT", isWorld: true, worldNum: 2, component: W2Tab },
     { id: "w3", label: "FROSTBITE TUNDRA", isWorld: true, worldNum: 3, component: W3Tab },
