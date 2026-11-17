@@ -1,5 +1,5 @@
 /**
- * Autobuy Tab
+ * Automation Tab
  * Town shop items bought into the chest with chest coins, and clicker upgrades bought with their own currency.
  */
 
@@ -99,7 +99,7 @@ const StopAtField = ({ item, name, write }) => {
     return {
         status,
         node: div(
-            { class: "account-stacked-field autobuy-stop-at" },
+            { class: "account-stacked-field automation-stop-at" },
             span({ class: "account-stacked-field__label" }, "Stop at"),
             NumberInput({
                 mode: "int",
@@ -133,7 +133,7 @@ const PrioritySelect = ({ item, name, write }) => {
         status,
         node: select(
             {
-                class: "select-base autobuy-priority",
+                class: "select-base automation-priority",
                 "aria-label": `${name} priority`,
                 disabled: () => status.val === "loading",
                 onchange: (e) => {
@@ -150,24 +150,24 @@ const PrioritySelect = ({ item, name, write }) => {
     };
 };
 
-const WorldShops = ({ world, autobuy }) => {
-    const { loading, error, run } = useAccountLoad({ label: `W${world} Autobuy` });
+const WorldShops = ({ world, automation }) => {
+    const { loading, error, run } = useAccountLoad({ label: `W${world} Automation` });
     const stockStates = new Map();
     const listNode = div({ class: "scrollable-panel content-stack" });
     const reconcileShops = createStaticRowReconciler(listNode);
 
     const ShopRow = ({ key, name }) => {
-        const item = autobuy.shops.get(key);
+        const item = automation.shops.get(key);
         const stock = getOrCreateState(stockStates, key);
-        const stopAt = StopAtField({ item, name, write: (stopAt) => autobuy.setItem("shops", key, { stopAt }) });
+        const stopAt = StopAtField({ item, name, write: (stopAt) => automation.setItem("shops", key, { stopAt }) });
 
         return AccountToggleRow({
             info: div({ class: "account-row__name-group" }, span({ class: "account-row__name" }, name)),
             badge: () => `LEFT ${formatNumber(stock.val)}`,
             checked: () => item.on.val,
             title: "Toggle auto-buy",
-            write: (on) => autobuy.setItem("shops", key, { on }),
-            rowClass: "account-row--wide-controls autobuy-row",
+            write: (on) => automation.setItem("shops", key, { on }),
+            rowClass: "account-row--wide-controls automation-row",
             controls: stopAt.node,
             status: stopAt.status,
         });
@@ -175,8 +175,8 @@ const WorldShops = ({ world, autobuy }) => {
 
     const load = async () =>
         run(async () => {
-            const [shops, config] = await Promise.all([readComputed("autobuy", "shops"), fetchConfig()]);
-            autobuy.sync(config.cheatConfig.autobuy, "shops");
+            const [shops, config] = await Promise.all([readComputed("automation", "shops"), fetchConfig()]);
+            automation.sync(config.cheatConfig.automation, "shops");
             const worldShops = shops.filter((shop) => shop.world === world);
 
             reconcileShops(
@@ -219,23 +219,23 @@ const WorldShops = ({ world, autobuy }) => {
     });
 };
 
-const SavingRow = ({ autobuy, group }) => {
+const SavingRow = ({ automation, group }) => {
     const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
-        valueState: autobuy.saving[group],
+        valueState: automation.saving[group],
         normalize: (raw) => String(raw ?? ""),
         write: async (raw) => {
             const next = parseWholeNumber(raw, { max: 100, message: "Saving must be a whole number from 0 to 100" });
-            await autobuy.setSaving(group, next);
+            await automation.setSaving(group, next);
             return next;
         },
         format: (value) => String(value),
     });
 
     return AccountRow({
-        rowClass: "autobuy-saving-row",
+        rowClass: "automation-saving-row",
         status,
         info: [
-            span({ class: "autobuy-saving-row__text" }, "Balanced can spend up to"),
+            span({ class: "automation-saving-row__text" }, "Balanced can spend up to"),
             NumberInput({
                 mode: "int",
                 value: inputValue,
@@ -246,7 +246,7 @@ const SavingRow = ({ autobuy, group }) => {
                 onDecrement: () => !isDisabled() && stepDraft(inputValue, -1, 100),
                 onIncrement: () => !isDisabled() && stepDraft(inputValue, 1, 100),
             }),
-            span({ class: "autobuy-saving-row__text" }, "% of what it's saving for"),
+            span({ class: "automation-saving-row__text" }, "% of what it's saving for"),
         ],
         controls: [
             ActionButton({
@@ -264,7 +264,7 @@ const SavingRow = ({ autobuy, group }) => {
 };
 
 /** One clicker group: its currency section (status + saving) and its upgrade list. */
-const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) => {
+const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }) => {
     const owned = van.state("");
     const rate = van.state(null);
     const status = van.state([]);
@@ -273,13 +273,13 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
     const reconcileUpgrades = createStaticRowReconciler(listNode);
 
     const UpgradeRow = ({ id, name }) => {
-        const item = autobuy[group].get(id);
+        const item = automation[group].get(id);
         const upgrade = getOrCreateState(upgradeStates, id, {});
-        const stopAt = StopAtField({ item, name, write: (stopAt) => autobuy.setItem(group, id, { stopAt }) });
+        const stopAt = StopAtField({ item, name, write: (stopAt) => automation.setItem(group, id, { stopAt }) });
         const priority = PrioritySelect({
             item,
             name,
-            write: (next) => autobuy.setItem(group, id, { priority: next }),
+            write: (next) => automation.setItem(group, id, { priority: next }),
         });
 
         return AccountToggleRow({
@@ -295,8 +295,8 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
             badge: () => `LV ${upgrade.val.level ?? 0}`,
             checked: () => item.on.val,
             title: "Toggle auto-buy",
-            write: (on) => autobuy.setItem(group, id, { on }),
-            rowClass: "account-row--wide-controls autobuy-row",
+            write: (on) => automation.setItem(group, id, { on }),
+            rowClass: "account-row--wide-controls automation-row",
             controls: [stopAt.node, priority.node],
             status: () => stopAt.status.val ?? priority.status.val,
         });
@@ -309,7 +309,7 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
             ? data.currencies.map(({ name, money }) => `${formatNumber(money)} ${name}`).join(" · ")
             : `${formatNumber(data.currencies[0].money)} owned`;
         rate.val = data.rate;
-        const anyOn = data.upgrades.some(({ id }) => autobuy[group].get(id).on.val);
+        const anyOn = data.upgrades.some(({ id }) => automation[group].get(id).on.val);
         if (data.waiting) status.val = [data.waiting];
         else if (!anyOn) status.val = ["Nothing switched on"];
         else
@@ -330,7 +330,7 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
         AccountSection({
             title: currency.toUpperCase(),
             meta: span(
-                { class: "account-row__sub-label autobuy-feathers" },
+                { class: "account-row__sub-label automation-feathers" },
                 span(() => owned.val),
                 span(() => (rate.val === null ? "" : ` · ${formatNumber(rate.val)} per second`))
             ),
@@ -342,7 +342,7 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
                             ...status.val.map((line) => span({ class: "account-row__name" }, line))
                         ),
                 }),
-                SavingRow({ autobuy, group }),
+                SavingRow({ automation, group }),
             ],
         }),
         AccountSection({ title: upgradesTitle, body: listNode }),
@@ -354,18 +354,18 @@ const ClickerGroup = ({ autobuy, group, currency, upgradesTitle, lockedText }) =
 const RULE =
     "It saves for the cheapest High or Low upgrade (High first when both are affordable) and buys Balanced ones cheapest first. Buying stops at the stop-at level; leave it empty for no limit.";
 
-const ClickerPage = ({ autobuy, title, description, groups }) => {
-    const { loading, error, run } = useAccountLoad({ label: `${title} Autobuy` });
-    const parts = groups.map((group) => ClickerGroup({ autobuy, ...group }));
+const ClickerPage = ({ automation, title, description, groups }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
+    const parts = groups.map((group) => ClickerGroup({ automation, ...group }));
 
     const load = async () =>
         run(async () => {
             const [config, ...data] = await Promise.all([
                 fetchConfig(),
-                ...parts.map(({ group }) => readComputed("autobuy", group)),
+                ...parts.map(({ group }) => readComputed("automation", group)),
             ]);
             parts.forEach(({ group, apply }, index) => {
-                autobuy.sync(config.cheatConfig.autobuy, group);
+                automation.sync(config.cheatConfig.automation, group);
                 apply(data[index]);
             });
         });
@@ -447,7 +447,7 @@ const NestedTabs = ({ tabs, renderContent }) => {
                 activeId,
                 paneClass: "account-nested-pane",
                 activeClass: "account-nested-pane--active",
-                dataAttr: "data-autobuy",
+                dataAttr: "data-automation",
                 renderContent,
             })
         )
@@ -476,25 +476,25 @@ const SECTION_TABS = [
     {
         id: "shops",
         label: "SHOPS",
-        render: (autobuy) =>
-            NestedTabs({ tabs: SHOP_TABS, renderContent: (tab) => WorldShops({ world: tab.world, autobuy }) }),
+        render: (automation) =>
+            NestedTabs({ tabs: SHOP_TABS, renderContent: (tab) => WorldShops({ world: tab.world, automation }) }),
     },
     {
         id: "clickers",
         label: "CLICKERS",
-        render: (autobuy) =>
-            NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => ClickerPage({ autobuy, ...tab }) }),
+        render: (automation) =>
+            NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => ClickerPage({ automation, ...tab }) }),
     },
     {
         id: "masterclasses",
         label: "MASTERCLASSES",
-        render: (autobuy) =>
-            NestedTabs({ tabs: MASTERCLASS_TABS, renderContent: (tab) => ClickerPage({ autobuy, ...tab }) }),
+        render: (automation) =>
+            NestedTabs({ tabs: MASTERCLASS_TABS, renderContent: (tab) => ClickerPage({ automation, ...tab }) }),
     },
 ];
 
-/** Shared config state for every autobuy page, so each save carries the whole group. */
-const createAutobuyConfig = () => {
+/** Shared config state for every automation page, so each save carries the whole group. */
+const createAutomationConfig = () => {
     const groups = Object.fromEntries(["shops", ...CLICKER_GROUPS].map((group) => [group, createItemStates()]));
     const saving = Object.fromEntries(CLICKER_GROUPS.map((group) => [group, van.state(10)]));
     const toPatch = (group) =>
@@ -505,7 +505,7 @@ const createAutobuyConfig = () => {
     let pendingSaves = 0;
 
     const persist = async (group) => {
-        const result = await updateSessionConfig({ cheatConfig: { autobuy: toPatch(group) } });
+        const result = await updateSessionConfig({ cheatConfig: { automation: toPatch(group) } });
         if (result.message !== "Configuration updated successfully") {
             throw new Error(result.details || result.message || "Could not apply auto-buy in game");
         }
@@ -567,8 +567,8 @@ const createAutobuyConfig = () => {
     return { ...groups, saving, setItem, setSaving, sync };
 };
 
-export const AutobuyTab = () => {
-    const autobuy = createAutobuyConfig();
+export const AutomationTab = () => {
+    const automation = createAutomationConfig();
     const activeSubTab = van.state(SECTION_TABS[0].id);
 
     return div(
@@ -586,7 +586,7 @@ export const AutobuyTab = () => {
                 activeId: activeSubTab,
                 paneClass: "world-sub-pane",
                 dataAttr: "data-subtab",
-                renderContent: (tab) => tab.render(autobuy),
+                renderContent: (tab) => tab.render(automation),
             })
         )
     );

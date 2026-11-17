@@ -134,7 +134,7 @@ const currencyCount = (clicker) => clicker.currencies?.length ?? 1;
 
 function buyableUpgrades(key, currency) {
     const clicker = CLICKERS[key];
-    const settings = settingsById(cheatConfig.autobuy[key].items);
+    const settings = settingsById(cheatConfig.automation[key].items);
     return clicker.rows().flatMap((row, i) => {
         if (clicker.currencyOf && clicker.currencyOf(row) !== currency) return [];
         const entry = settings.get(String(i));
@@ -145,8 +145,8 @@ function buyableUpgrades(key, currency) {
     });
 }
 
-/** One clicker's currencies, upgrades and current goals for the Account > Autobuy tab. */
-export function getAutobuyClicker(key) {
+/** One clicker's currencies, upgrades and current goals for the Account > Automation tab. */
+export function getAutomationClicker(key) {
     const clicker = CLICKERS[key];
     const waiting = clicker.waiting();
     return {
@@ -176,12 +176,12 @@ export function getAutobuyClicker(key) {
 export function runClickers() {
     for (const key of CLICKER_KEYS) {
         const clicker = CLICKERS[key];
-        if (!cheatConfig.autobuy[key].items.some((entry) => entry.on) || clicker.waiting()) continue;
+        if (!cheatConfig.automation[key].items.some((entry) => entry.on) || clicker.waiting()) continue;
         for (let currency = 0; currency < currencyCount(clicker); currency++) {
             buyCheapestFirst(
                 () => buyableUpgrades(key, currency),
                 () => clicker.money(currency),
-                cheatConfig.autobuy[key].saving
+                cheatConfig.automation[key].saving
             );
         }
     }

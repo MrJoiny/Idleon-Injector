@@ -12,7 +12,7 @@ import { cheat } from "./registration.js";
 import { setupAllProxies } from "../proxies/setup.js";
 import { injectWebUI } from "../ui/overlay.js";
 import { monitor } from "./valueMonitor.js";
-import { runAutobuy } from "../helpers/autobuy.js";
+import { runAutomation } from "../helpers/automation.js";
 
 /**
  * Main setup function - initializes all cheats and proxies.
@@ -38,7 +38,7 @@ export async function setup() {
 
         monitor.init();
 
-        setInterval(runAutobuy, 1000);
+        setInterval(runAutomation, 1000);
 
         const rtn = [
             "--------------------",

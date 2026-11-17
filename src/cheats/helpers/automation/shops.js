@@ -3,10 +3,10 @@ import { cheatConfig, cheatState } from "../../core/state.js";
 import { buyCheapestFirst } from "./engine.js";
 
 /**
- * Town shops with today's stock, grouped by world for the Account > Autobuy tab.
+ * Town shops with today's stock, grouped by world for the Account > Automation tab.
  * Shop i sells cList.ShopNames[i] in the town map cList.ShopLocations[i]; maps 0-49 are W1, 50-99 W2, ...
  */
-export function getAutobuyShops() {
+export function getAutomationShops() {
     return cList.ShopNames.map((items, shop) => {
         const map = Number(cList.ShopLocations[shop]);
         return {
@@ -35,7 +35,7 @@ function shopItems() {
     const owned = gga.ChestOrder.slice(0, gga.ChestSlotsOwned);
     const blanks = owned.filter((name) => name === "Blank").length;
 
-    return cheatConfig.autobuy.shops.flatMap(({ id, on, stopAt }) => {
+    return cheatConfig.automation.shops.flatMap(({ id, on, stopAt }) => {
         if (!on) return [];
         const [shop, item] = id.split(":");
         const slot = cList.ShopNames[shop]?.indexOf(item) ?? -1;

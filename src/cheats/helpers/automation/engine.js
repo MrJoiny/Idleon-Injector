@@ -1,5 +1,5 @@
 /**
- * Shared buying rule for every Autobuy group.
+ * Shared buying rule for every Automation group.
  *
  * A group hands in the items that may be bought right now (switched on, unlocked, below their stop-at),
  * each as { cost, priority, buy }. Priority 1 is High, 2 is Low, anything else Balanced.
