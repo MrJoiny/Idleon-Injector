@@ -12,6 +12,7 @@ import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 import { getPlayerExpRequired } from "../helpers/player.js";
 import { getPetTokens } from "../helpers/petTokens.js";
+import { CLICKER_KEYS, getAutobuyClicker, getAutobuyShops } from "../helpers/autobuy.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
@@ -61,6 +62,14 @@ export function readComputed(namespace, name, args = []) {
     if (namespace === "companions" && name === "petTokens") {
         try {
             return { value: getPetTokens() };
+        } catch (error) {
+            return { error: error.message };
+        }
+    }
+
+    if (namespace === "autobuy" && (name === "shops" || CLICKER_KEYS.includes(name))) {
+        try {
+            return { value: name === "shops" ? getAutobuyShops() : getAutobuyClicker(name) };
         } catch (error) {
             return { error: error.message };
         }

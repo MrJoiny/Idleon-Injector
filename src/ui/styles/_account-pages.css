@@ -495,6 +495,99 @@
     width: var(--account-stacked-field-input-width, 180px);
 }
 
+.autobuy-row .account-row__controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.autobuy-stop-at {
+    --account-stacked-field-label-width: auto;
+    --account-stacked-field-input-width: 150px;
+}
+
+.autobuy-stop-at .account-stacked-field__label {
+    white-space: nowrap;
+}
+
+.autobuy-stop-at input::placeholder {
+    color: var(--c-text-muted);
+    opacity: 0.6;
+}
+
+.autobuy-priority {
+    width: 132px;
+    height: 30px;
+    padding: 0 6px;
+}
+
+.autobuy-saving-row .number-input-wrapper {
+    width: 110px;
+}
+
+.autobuy-saving-row__text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+}
+
+.autobuy-feathers {
+    white-space: normal;
+}
+
+.autobuy-feathers > span {
+    white-space: nowrap;
+}
+
+/* Phone width: the name gets the first line, badge and switch the second, and each edit control a full line. */
+@media (max-width: 760px) {
+    .account-row.autobuy-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .autobuy-row .account-row__controls {
+        display: contents;
+    }
+
+    .autobuy-row .account-row__info {
+        grid-row: 1;
+        grid-column: 1 / -1;
+    }
+
+    .autobuy-row .account-row__badge {
+        grid-row: 2;
+        grid-column: 1;
+        justify-self: start;
+    }
+
+    .autobuy-row .toggle-switch {
+        grid-row: 2;
+        grid-column: 2;
+    }
+
+    .autobuy-row .account-row__sub-label {
+        white-space: normal;
+    }
+
+    .autobuy-stop-at,
+    .autobuy-priority {
+        grid-column: 1 / -1;
+    }
+
+    .autobuy-stop-at .number-input-wrapper {
+        flex: 1;
+        width: auto;
+    }
+
+    .autobuy-stop-at .number-input-btn {
+        display: none;
+    }
+
+    .autobuy-priority {
+        width: 100%;
+    }
+}
+
 @media (max-width: 1180px) {
     .account-row--wide-controls {
         grid-template-columns: minmax(0, 1fr) auto;
