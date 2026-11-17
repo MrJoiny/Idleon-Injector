@@ -1003,6 +1003,9 @@ exports.cheatConfig = {
         sneaking: { saving: 10, items: [] }, // W6 Ninja Knowledge, bought with jade; no max level, so set a stop-at
         summoning: { saving: [10, 10, 10, 10, 10, 10, 10, 10], items: [] }, // W6 board; one saving % per essence colour, white to teal
         grimoire: { saving: 10, items: [] }, // Death Bringer masterclass; each bone type saves and buys on its own
+        // W2 alchemy bubbles, id "cauldron:bubble", pay "particles" or materials (default). Decay bubbles rise to target %
+        // of their max; others need a stopAt. The bubble furthest from its goal buys first; paused while Bargain Tags are held.
+        bubbles: { target: 90, items: [] },
     },
 };
 

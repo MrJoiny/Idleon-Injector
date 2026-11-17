@@ -12,7 +12,7 @@ import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 import { getPlayerExpRequired } from "../helpers/player.js";
 import { getPetTokens } from "../helpers/petTokens.js";
-import { CLICKER_KEYS, getAutomationClicker, getAutomationShops } from "../helpers/automation.js";
+import { CLICKER_KEYS, getAutomationBubbles, getAutomationClicker, getAutomationShops } from "../helpers/automation.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
@@ -67,8 +67,9 @@ export function readComputed(namespace, name, args = []) {
         }
     }
 
-    if (namespace === "automation" && (name === "shops" || CLICKER_KEYS.includes(name))) {
+    if (namespace === "automation" && (name === "shops" || name === "bubbles" || CLICKER_KEYS.includes(name))) {
         try {
+            if (name === "bubbles") return { value: getAutomationBubbles() };
             return { value: name === "shops" ? getAutomationShops() : getAutomationClicker(name) };
         } catch (error) {
             return { error: error.message };

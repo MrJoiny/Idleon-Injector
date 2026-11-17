@@ -32,14 +32,26 @@ const PRIORITIES = [
     { value: 0, label: "Balanced" },
 ];
 
-/** Per-item config states keyed by config id; a missing entry means off, Balanced, no stop-at. */
+// Bubbles: what a row pays with; Materials is the default and isn't saved.
+const PAY_CHOICES = [
+    { value: "materials", label: "Materials" },
+    { value: "particles", label: "Particles" },
+];
+
+/** Per-item config states keyed by config id; a missing entry means off, Balanced, no stop-at, pays with materials. */
 const createItemStates = () => {
     const items = new Map();
 
     const get = (id) => {
         const key = String(id);
         if (!items.has(key)) {
-            items.set(key, { id, on: van.state(false), stopAt: van.state(null), priority: van.state(0) });
+            items.set(key, {
+                id,
+                on: van.state(false),
+                stopAt: van.state(null),
+                priority: van.state(0),
+                pay: van.state("materials"),
+            });
         }
         return items.get(key);
     };
@@ -52,18 +64,22 @@ const createItemStates = () => {
             item.on.val = Boolean(entry?.on);
             item.stopAt.val = entry?.stopAt ?? null;
             item.priority.val = entry?.priority === 1 || entry?.priority === 2 ? entry.priority : 0;
+            item.pay.val = entry?.pay === "particles" ? "particles" : "materials";
         }
     };
 
-    // Switched-off entries stay while they still carry a stop-at or priority, so those survive.
+    // Switched-off entries stay while they still carry a stop-at, priority or pay choice, so those survive.
     const toConfig = () =>
         [...items.values()]
-            .filter((item) => item.on.val || item.stopAt.val !== null || item.priority.val)
+            .filter(
+                (item) => item.on.val || item.stopAt.val !== null || item.priority.val || item.pay.val !== "materials"
+            )
             .map((item) => ({
                 id: item.id,
                 on: item.on.val,
                 ...(item.stopAt.val !== null ? { stopAt: item.stopAt.val } : {}),
                 ...(item.priority.val ? { priority: item.priority.val } : {}),
+                ...(item.pay.val !== "materials" ? { pay: item.pay.val } : {}),
             }));
 
     return { get, sync, toConfig };
@@ -129,7 +145,8 @@ const StopAtField = ({ item, name, write }) => {
     };
 };
 
-const PrioritySelect = ({ item, name, write }) => {
+/** A row's dropdown setting (priority, pay with), saved on change and reset to the saved value after. */
+const ChoiceSelect = ({ state, choices, label, write }) => {
     const { status, run } = useWriteStatus();
 
     return {
@@ -137,17 +154,18 @@ const PrioritySelect = ({ item, name, write }) => {
         node: select(
             {
                 class: "select-base automation-priority",
-                "aria-label": `${name} priority`,
+                "aria-label": label,
                 disabled: () => status.val === "loading",
                 onchange: (e) => {
                     const target = e.target;
-                    void run(() => write(Number(target.value))).then(() => {
-                        target.value = String(item.priority.val);
+                    const choice = choices.find((entry) => String(entry.value) === target.value);
+                    void run(() => write(choice.value)).then(() => {
+                        target.value = String(state.val);
                     });
                 },
             },
-            ...PRIORITIES.map((entry) =>
-                option({ value: entry.value, selected: () => item.priority.val === entry.value }, entry.label)
+            ...choices.map((entry) =>
+                option({ value: entry.value, selected: () => state.val === entry.value }, entry.label)
             )
         ),
     };
@@ -222,13 +240,14 @@ const WorldShops = ({ world, automation }) => {
     });
 };
 
-const SavingRow = ({ automation, group, currencyIndex }) => {
+/** A page-wide % setting: text, a number box, more text and SET. */
+const PercentRow = ({ valueState, write, max, message, before, after, label }) => {
     const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
-        valueState: currencyIndex === undefined ? automation.saving[group] : automation.saving[group][currencyIndex],
+        valueState,
         normalize: (raw) => String(raw ?? ""),
         write: async (raw) => {
-            const next = parseWholeNumber(raw, { max: 100, message: "Saving must be a whole number from 0 to 100" });
-            await automation.setSaving(group, next, currencyIndex);
+            const next = parseWholeNumber(raw, { max, message });
+            await write(next);
             return next;
         },
         format: (value) => String(value),
@@ -238,18 +257,18 @@ const SavingRow = ({ automation, group, currencyIndex }) => {
         rowClass: "automation-saving-row",
         status,
         info: [
-            span({ class: "automation-saving-row__text" }, "Balanced can spend up to"),
+            span({ class: "automation-saving-row__text" }, before),
             NumberInput({
                 mode: "int",
                 value: inputValue,
-                "aria-label": "Balanced spending limit while saving, in percent",
+                "aria-label": label,
                 disabled: isDisabled,
                 onfocus: focus,
                 onblur: blur,
-                onDecrement: () => !isDisabled() && stepDraft(inputValue, -1, 100),
-                onIncrement: () => !isDisabled() && stepDraft(inputValue, 1, 100),
+                onDecrement: () => !isDisabled() && stepDraft(inputValue, -1, max),
+                onIncrement: () => !isDisabled() && stepDraft(inputValue, 1, max),
             }),
-            span({ class: "automation-saving-row__text" }, "% of what it's saving for"),
+            span({ class: "automation-saving-row__text" }, after),
         ],
         controls: [
             ActionButton({
@@ -282,9 +301,10 @@ const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitl
         const item = automation[group].get(id);
         const upgrade = getOrCreateState(upgradeStates, id, {});
         const stopAt = StopAtField({ item, name, write: (stopAt) => automation.setItem(group, id, { stopAt }) });
-        const priority = PrioritySelect({
-            item,
-            name,
+        const priority = ChoiceSelect({
+            state: item.priority,
+            choices: PRIORITIES,
+            label: `${name} priority`,
             write: (next) => automation.setItem(group, id, { priority: next }),
         });
 
@@ -352,7 +372,16 @@ const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitl
                     ...status.val.map((line) => span({ class: "account-row__name" }, line))
                 ),
         }),
-        SavingRow({ automation, group, currencyIndex }),
+        PercentRow({
+            valueState:
+                currencyIndex === undefined ? automation.saving[group] : automation.saving[group][currencyIndex],
+            write: (next) => automation.setSaving(group, next, currencyIndex),
+            max: 100,
+            message: "Saving must be a whole number from 0 to 100",
+            before: "Balanced can spend up to",
+            after: "% of what it's saving for",
+            label: "Balanced spending limit while saving, in percent",
+        }),
     ];
     const currencySection = (body) =>
         AccountSection({
@@ -492,6 +521,140 @@ const MASTERCLASS_TABS = [
     },
 ];
 
+// A bubble's next cost: every slot, or the particle buy for a Particles row.
+const bubbleCostText = (bubble, pay) => {
+    if (pay === "particles") {
+        if (bubble.particle.waiting) return bubble.particle.waiting;
+        const liquids = bubble.costs.filter(({ liquid }) => liquid);
+        return `Next level ${[
+            `${formatNumber(bubble.particle.cost)} particles`,
+            "1 charge",
+            ...liquids.map(({ cost, name }) => `${formatNumber(cost)} ${name}`),
+        ].join(", ")}`;
+    }
+    const short = bubble.costs.filter((slot) => slot.short).map(({ name }) => name);
+    const costs = bubble.costs.map(({ cost, name }) => `${formatNumber(cost)} ${cleanName(name)}`).join(", ");
+    return `Next level ${costs}${short.length ? ` · not enough ${cleanName(short.join(", "))}` : ""}`;
+};
+
+/** SKILLS > BUBBLES: one target % for every decay bubble, one section per cauldron, a row per bubble. */
+const BubblesPage = ({ automation, title, description }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
+    const waiting = van.state(null);
+    const particles = van.state(null);
+    const ids = van.state([]);
+    const bubbleStates = new Map();
+    const listNode = div({ class: "content-stack" });
+    const reconcileCauldrons = createStaticRowReconciler(listNode);
+
+    const BubbleRow = ({ id, name }) => {
+        const item = automation.bubbles.get(id);
+        const bubble = getOrCreateState(bubbleStates, id, {});
+        const write = (patch) => automation.setItem("bubbles", id, patch);
+        const stopAt = StopAtField({ item, name, write: (next) => write({ stopAt: next }) });
+        const pay = ChoiceSelect({
+            state: item.pay,
+            choices: PAY_CHOICES,
+            label: `${name} pay with`,
+            write: (next) => write({ pay: next }),
+        });
+
+        return AccountToggleRow({
+            info: div(
+                { class: "account-row__name-group" },
+                span({ class: "account-row__name" }, name),
+                span({ class: "account-row__sub-label automation-bonus" }, () => cleanName(bubble.val.bonus)),
+                span({ class: "account-row__sub-label" }, () => {
+                    if (!bubble.val.costs) return "";
+                    if (!(bubble.val.level > 0)) return "Not discovered yet";
+                    if (bubble.val.percent === null && item.stopAt.val === null)
+                        return "No max level: set a stop-at to raise it";
+                    return bubbleCostText(bubble.val, item.pay.val);
+                })
+            ),
+            badge: () => {
+                const { level = 0, percent = null } = bubble.val;
+                return `LV ${level} · ${percent === null ? "no max" : `${(Math.floor(10 * percent) / 10).toFixed(1)}%`}`;
+            },
+            checked: () => item.on.val,
+            title: "Toggle auto-buy",
+            write: (on) => write({ on }),
+            rowClass: "account-row--wide-controls automation-row",
+            controls: [stopAt.node, pay.node],
+            status: () => stopAt.status.val ?? pay.status.val,
+        });
+    };
+
+    const load = async () =>
+        run(async () => {
+            const [data, config] = await Promise.all([readComputed("automation", "bubbles"), fetchConfig()]);
+            automation.sync(config.cheatConfig.automation, "bubbles");
+            waiting.val = data.waiting;
+            particles.val = data.atoms ? { owned: data.particles, charges: data.charges } : null;
+            const bubbles = data.cauldrons.flatMap((cauldron) => cauldron.bubbles);
+            ids.val = bubbles.map(({ id }) => id);
+
+            reconcileCauldrons(bubbles.map(({ id }) => id).join("|"), () =>
+                data.cauldrons.map((cauldron) =>
+                    AccountSection({
+                        title: cauldron.name,
+                        body: div(
+                            { class: "account-item-stack" },
+                            cauldron.bubbles.map(({ id, name }) => BubbleRow({ id, name: cleanName(name) }))
+                        ),
+                    })
+                )
+            );
+            for (const bubble of bubbles) getOrCreateState(bubbleStates, bubble.id, {}).val = bubble;
+        });
+
+    load();
+
+    const head = AccountSection({
+        title: "BUBBLES",
+        meta: span({ class: "account-row__sub-label automation-feathers" }, () =>
+            particles.val
+                ? `${formatNumber(particles.val.owned)} particles · ${formatNumber(particles.val.charges)} particle charges`
+                : ""
+        ),
+        body: [
+            AccountRow({
+                info: () =>
+                    span(
+                        { class: "account-row__name" },
+                        waiting.val ??
+                            (ids.val.some((id) => automation.bubbles.get(id).on.val)
+                                ? `Raising bubbles to ${automation.bubbleTarget.val}%`
+                                : "Nothing switched on")
+                    ),
+            }),
+            PercentRow({
+                valueState: automation.bubbleTarget,
+                write: (next) => automation.setBubbleTarget(next),
+                max: 99,
+                message: "Target must be a whole number from 0 to 99",
+                before: "Raise bubbles to",
+                after: "% of their max",
+                label: "Bubble target, in percent of max",
+            }),
+        ],
+    });
+
+    return PersistentAccountListPage({
+        title,
+        description,
+        actions: RefreshButton({
+            onRefresh: load,
+            disabled: () => loading.val,
+        }),
+        state: { loading, error },
+        loadingText: `READING ${title}`,
+        errorTitle: `${title} READ FAILED`,
+        initialWrapperClass: "scrollable-panel",
+        body: div({ class: "scrollable-panel content-stack" }, head, listNode),
+    });
+};
+
 const SKILL_TABS = [
     {
         id: "sneaking",
@@ -511,6 +674,14 @@ const SKILL_TABS = [
                 },
             },
         ],
+    },
+    {
+        id: "bubbles",
+        label: "BUBBLES",
+        title: "BUBBLES",
+        description:
+            "Switched-on W2 alchemy bubbles are raised to the target % of their max, the one furthest behind first; if it can't be afforded, the next one buys. Bubbles without a max need a stop-at, and a stop-at also caps any bubble. A Particles row waits until the particle buy opens for it (Atom Collider, a first cost of 100M or more, a charge). Buying pauses while you hold Bargain Tags, since any bubble buy uses them all, and while the alchemy menu is open. Free extra levels can pass the stop-at.",
+        render: BubblesPage,
     },
     {
         id: "summoning",
@@ -547,7 +718,10 @@ const SECTION_TABS = [
         id: "skills",
         label: "SKILLS",
         render: (automation) =>
-            NestedTabs({ tabs: SKILL_TABS, renderContent: (tab) => ClickerPage({ automation, ...tab }) }),
+            NestedTabs({
+                tabs: SKILL_TABS,
+                renderContent: (tab) => (tab.render ?? ClickerPage)({ automation, ...tab }),
+            }),
     },
     {
         id: "masterclasses",
@@ -559,7 +733,10 @@ const SECTION_TABS = [
 
 /** Shared config state for every automation page, so each save carries the whole group. */
 const createAutomationConfig = () => {
-    const groups = Object.fromEntries(["shops", ...CLICKER_GROUPS].map((group) => [group, createItemStates()]));
+    const groups = Object.fromEntries(
+        ["shops", "bubbles", ...CLICKER_GROUPS].map((group) => [group, createItemStates()])
+    );
+    const bubbleTarget = van.state(90);
     // Summoning saves one % per essence colour.
     const saving = Object.fromEntries(
         CLICKER_GROUPS.map((group) => [
@@ -569,10 +746,11 @@ const createAutomationConfig = () => {
     );
     const savingValue = (group) =>
         Array.isArray(saving[group]) ? saving[group].map((state) => state.val) : saving[group].val;
-    const toPatch = (group) =>
-        group === "shops"
-            ? { shops: groups.shops.toConfig() }
-            : { [group]: { saving: savingValue(group), items: groups[group].toConfig() } };
+    const toPatch = (group) => {
+        if (group === "shops") return { shops: groups.shops.toConfig() };
+        if (group === "bubbles") return { bubbles: { target: bubbleTarget.val, items: groups.bubbles.toConfig() } };
+        return { [group]: { saving: savingValue(group), items: groups[group].toConfig() } };
+    };
     let queue = Promise.resolve();
     let pendingSaves = 0;
 
@@ -626,6 +804,15 @@ const createAutomationConfig = () => {
         );
     };
 
+    const setBubbleTarget = (next) => {
+        const previous = bubbleTarget.val;
+        return change(
+            "bubbles",
+            () => (bubbleTarget.val = next),
+            () => (bubbleTarget.val = previous)
+        );
+    };
+
     // A load that lands while a save is queued would undo the newest edits, so keep the local values then.
     const sync = (config, group) => {
         if (pendingSaves) return;
@@ -633,12 +820,17 @@ const createAutomationConfig = () => {
             groups.shops.sync(config.shops);
             return;
         }
+        if (group === "bubbles") {
+            groups.bubbles.sync(config.bubbles.items);
+            bubbleTarget.val = config.bubbles.target;
+            return;
+        }
         groups[group].sync(config[group].items);
         if (Array.isArray(saving[group])) saving[group].forEach((state, i) => (state.val = config[group].saving[i]));
         else saving[group].val = config[group].saving;
     };
 
-    return { ...groups, saving, setItem, setSaving, sync };
+    return { ...groups, saving, bubbleTarget, setItem, setSaving, setBubbleTarget, sync };
 };
 
 export const AutomationTab = () => {
