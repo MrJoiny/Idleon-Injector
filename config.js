@@ -520,7 +520,7 @@ exports.cheatConfig = {
             StatueUpgOdds: (t) => t * 2, // double the odds of statue upgrade
             Statue_CanAfford: (t) => 1, // free statue upgrades
             StatueBon: (t) => t * 2, // double statue bonus
-            ArmoryUpgCost: (t) => t / 2, // half cost armory upgrades 
+            ArmoryUpgCost: (t) => t / 2, // half cost armory upgrades
             RatDMG: (t) => t * 2, // double rat dmg
             ParchmentDrop: (t) => t * 2, // double parchment drop
             MarbleDrop: (t) => t * 2, // double marble drop
@@ -986,6 +986,32 @@ exports.cheatConfig = {
         fishing: {
             skipWhale: true, // turn on/off for megalodon farming
         },
+    },
+    automation: {
+        // Per item: { id, on, stopAt, priority }. Priority 1 = High, 2 = Low, none = Balanced: it saves for the cheapest High/Low item (High first when affordable) and buys Balanced items cheapest first.
+        shops: [], // town shop items, id "shop index:item", bought into the chest with chest coins; stopAt = chest count
+        orion: {
+            saving: 10, // while saving for a High/Low upgrade, Balanced upgrades may cost up to this % of it
+            items: [
+                { id: 8, on: false, priority: 1 }, // The Great Mega Reset: High
+                { id: 4, on: false, priority: 2 }, // Feather Restart: Low
+            ],
+        },
+        poppy: { saving: 10, items: [] }, // bought only while Poppy's menu is open (fish only land then)
+        tarpit: { saving: 10, items: [] }, // Poppy's Tar Pit, tartar fish, same open-menu rule
+        bubba: { saving: 10, items: [] }, // waits until the run's gift is picked
+        sneaking: { saving: 10, items: [] }, // W6 Ninja Knowledge, bought with jade; no max level, so set a stop-at
+        summoning: { saving: [10, 10, 10, 10, 10, 10, 10, 10], items: [] }, // W6 board; one saving % per essence colour, white to teal
+        grimoire: { saving: 10, items: [] }, // Death Bringer masterclass; each bone type saves and buys on its own
+        // W2 alchemy bubbles, id "cauldron:bubble", pay "particles" or materials (default). Decay bubbles rise to target %
+        // of their max; others need a stopAt. The bubble furthest from its goal buys first; paused while Bargain Tags are held.
+        bubbles: { target: 90, items: [] },
+        // W4 kitchen Speed/Fire/Luck, id 3 * kitchen + slot (0 Speed, 1 Fire, 2 Luck). Each spice saves and buys on
+        // its own, one saving % per spice (21 spices pay for the 10 kitchens). No max level, so set a stop-at.
+        kitchens: { saving: Array(21).fill(10), items: [] },
+        // W4 meals, id = meal index, { id, on, stopAt }. Each pays with its own quantity, up to the shared max level;
+        // while Food Lust stacks are held the priciest affordable meal buys first, since any level-up spends them.
+        meals: { items: [] },
     },
 };
 
