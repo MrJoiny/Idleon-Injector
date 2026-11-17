@@ -320,7 +320,7 @@ const UpgradeRow = ({ automation, group, id, name, label = name, upgrade, curren
                 return `Next level ${formatNumber(upgrade.val.cost)} ${upgrade.val.currency ?? currency}`;
             })
         ),
-        badge: () => `LV ${upgrade.val.level ?? 0}`,
+        badge: () => `LV ${upgrade.val.level ?? 0}${upgrade.val.max ? ` / ${upgrade.val.max}` : ""}`,
         checked: () => item.on.val,
         title: "Toggle auto-buy",
         write: (on) => automation.setItem(group, id, { on }),
@@ -879,6 +879,111 @@ const COOKING_TABS = [
     },
 ];
 
+// The construction menu's three rows.
+const CONSTRUCTION_SECTIONS = ["BUILDINGS", "TOWERS", "SHRINES"];
+
+const timeLeft = (hours) => {
+    const minutes = Math.ceil(hours * 60);
+    const days = Math.floor(minutes / 1440);
+    const rest = minutes % 1440;
+    if (days) return `${days}d ${Math.floor(rest / 60)}h`;
+    return rest >= 60 ? `${Math.floor(rest / 60)}h ${rest % 60}m` : `${rest}m`;
+};
+
+// Where a building is in its build: in a slot with its % and time left, built and unpaid, or part-built.
+const buildState = (building) => {
+    if (building.awaiting) return "Built, waiting for salt";
+    const percent = `${Math.floor(building.percent)}%`;
+    if (building.slot >= 0) {
+        const left = building.hoursLeft === null ? [] : [`${timeLeft(building.hoursLeft)} left`];
+        return [`In slot ${building.slot + 1}`, percent, ...left].join(" · ");
+    }
+    return building.percent > 0 && !building.maxed ? `Not in a slot · ${percent}` : null;
+};
+
+/** SKILLS > CONSTRUCTION: the queue's state, then a section per menu row with a row per building. */
+const ConstructionPage = ({ automation, title, description }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
+    const queue = van.state(null);
+    const ids = van.state([]);
+    const buildingStates = new Map();
+    const listNode = div({ class: "content-stack" });
+    const reconcileSections = createStaticRowReconciler(listNode);
+
+    const load = async () =>
+        run(async () => {
+            const [data, config] = await Promise.all([readComputed("automation", "construction"), fetchConfig()]);
+            automation.sync(config.cheatConfig.automation, "construction");
+            queue.val = data;
+            ids.val = data.buildings.map(({ id }) => id);
+            reconcileSections(ids.val.join("|"), () =>
+                CONSTRUCTION_SECTIONS.map((section, n) =>
+                    AccountSection({
+                        title: section,
+                        body: div(
+                            { class: "account-item-stack" },
+                            data.buildings.slice(9 * n, 9 * n + 9).map(({ id, name }) =>
+                                UpgradeRow({
+                                    automation,
+                                    group: "construction",
+                                    id,
+                                    name: cleanName(name),
+                                    upgrade: getOrCreateState(buildingStates, id, {}),
+                                    lockedText: ({ previous }) => `Locked: build ${cleanName(previous)} first`,
+                                })
+                            )
+                        ),
+                    })
+                )
+            );
+            for (const building of data.buildings)
+                getOrCreateState(buildingStates, building.id, {}).val = {
+                    ...building,
+                    currency: cleanName(building.currency),
+                    note: buildState(building),
+                };
+        });
+
+    load();
+
+    const head = AccountSection({
+        title: "CONSTRUCTION",
+        body: AccountRow({
+            info: () => {
+                const data = queue.val;
+                if (!data) return span();
+                let status = "Nothing switched on";
+                if (data.busy) status = "Completing and paying wait while the game is busy";
+                else if (ids.val.some((id) => automation.construction.get(id).on.val))
+                    status = "Filling free slots, completing and paying as soon as possible";
+                return div(
+                    { class: "account-row__name-group" },
+                    span(
+                        { class: "account-row__name" },
+                        [
+                            `${data.building} of ${data.slots} slots building`,
+                            ...(data.jelly ? ["slot 8 kept free for jelly"] : []),
+                            `${formatNumber(data.rate)} build/hr`,
+                        ].join(" · ")
+                    ),
+                    span({ class: "account-row__name" }, status)
+                );
+            },
+        }),
+    });
+
+    return PersistentAccountListPage({
+        title,
+        description,
+        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        state: { loading, error },
+        loadingText: `READING ${title}`,
+        errorTitle: `${title} READ FAILED`,
+        initialWrapperClass: "scrollable-panel",
+        body: div({ class: "scrollable-panel content-stack" }, head, listNode),
+    });
+};
+
 const SKILL_TABS = [
     {
         id: "sneaking",
@@ -929,6 +1034,14 @@ const SKILL_TABS = [
         render: ({ automation }) =>
             NestedTabs({ tabs: COOKING_TABS, renderContent: (tab) => tab.render({ automation, ...tab }) }),
     },
+    {
+        id: "construction",
+        label: "CONSTRUCTION",
+        title: "CONSTRUCTION",
+        description:
+            "Switched-on W3 buildings are built the way the construction menu does it: an empty slot takes a High, then Low, then Balanced building, the one closest to done first; a finished build is completed at once, and paid as soon as its salt is in the inventory, refinery storage or chest (High, Low, Balanced, cheapest first on a shared salt). Buildings you queue yourself stay in their slot and are completed and paid the same way. Once the 8th slot feeds the Menagerie jelly it stays free. Queueing stops at the stop-at level; leave it empty for the max.",
+        render: ConstructionPage,
+    },
 ];
 
 const SECTION_TABS = [
@@ -964,7 +1077,7 @@ const SECTION_TABS = [
 /** Shared config state for every automation page, so each save carries the whole group. */
 const createAutomationConfig = () => {
     const groups = Object.fromEntries(
-        ["shops", "bubbles", "meals", ...CLICKER_GROUPS].map((group) => [group, createItemStates()])
+        ["shops", "bubbles", "meals", "construction", ...CLICKER_GROUPS].map((group) => [group, createItemStates()])
     );
     const bubbleTarget = van.state(90);
     // Summoning saves one % per essence colour, kitchens one per spice.
@@ -983,7 +1096,7 @@ const createAutomationConfig = () => {
     const toPatch = (group) => {
         if (group === "shops") return { shops: groups.shops.toConfig() };
         if (group === "bubbles") return { bubbles: { target: bubbleTarget.val, items: groups.bubbles.toConfig() } };
-        if (group === "meals") return { meals: { items: groups.meals.toConfig() } };
+        if (group === "meals" || group === "construction") return { [group]: { items: groups[group].toConfig() } };
         return { [group]: { saving: savingValue(group), items: groups[group].toConfig() } };
     };
     let queue = Promise.resolve();
@@ -1060,8 +1173,8 @@ const createAutomationConfig = () => {
             bubbleTarget.val = config.bubbles.target;
             return;
         }
-        if (group === "meals") {
-            groups.meals.sync(config.meals.items);
+        if (group === "meals" || group === "construction") {
+            groups[group].sync(config[group].items);
             return;
         }
         groups[group].sync(config[group].items);

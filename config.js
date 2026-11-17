@@ -1012,6 +1012,10 @@ exports.cheatConfig = {
         // W4 meals, id = meal index, { id, on, stopAt }. Each pays with its own quantity, up to the shared max level;
         // while Food Lust stacks are held the priciest affordable meal buys first, since any level-up spends them.
         meals: { items: [] },
+        // W3 construction, id = building index (0-8 buildings, 9-17 towers, 18-26 shrines), { id, on, stopAt, priority }.
+        // Empty slots take High, Low, then Balanced buildings, the closest to done first; slot 8 stays free once it
+        // feeds the Menagerie jelly. Finished builds are completed at once and paid as soon as their salt is there.
+        construction: { items: [] },
     },
 };
 

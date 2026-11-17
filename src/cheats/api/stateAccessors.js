@@ -16,6 +16,7 @@ import {
     CLICKER_KEYS,
     getAutomationBubbles,
     getAutomationClicker,
+    getAutomationConstruction,
     getAutomationMeals,
     getAutomationShops,
 } from "../helpers/automation.js";
@@ -73,10 +74,14 @@ export function readComputed(namespace, name, args = []) {
         }
     }
 
-    if (namespace === "automation" && (["shops", "bubbles", "meals"].includes(name) || CLICKER_KEYS.includes(name))) {
+    if (
+        namespace === "automation" &&
+        (["shops", "bubbles", "meals", "construction"].includes(name) || CLICKER_KEYS.includes(name))
+    ) {
         try {
             if (name === "bubbles") return { value: getAutomationBubbles() };
             if (name === "meals") return { value: getAutomationMeals() };
+            if (name === "construction") return { value: getAutomationConstruction() };
             return { value: name === "shops" ? getAutomationShops() : getAutomationClicker(name) };
         } catch (error) {
             return { error: error.message };
