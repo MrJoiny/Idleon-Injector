@@ -21,7 +21,10 @@ import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 const { div, option, select, span } = van.tags;
 
 // Saved as priority 1 (High) and 2 (Low); Balanced has none.
-const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire", "sneaking"];
+const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire", "sneaking", "summoning"];
+
+// Summoning essence colours in the game's order; each gets its own section and saving %.
+const ESSENCES = ["white", "green", "yellow", "blue", "purple", "red", "cyan", "teal"];
 
 const PRIORITIES = [
     { value: 1, label: "High" },
@@ -219,13 +222,13 @@ const WorldShops = ({ world, automation }) => {
     });
 };
 
-const SavingRow = ({ automation, group }) => {
+const SavingRow = ({ automation, group, currencyIndex }) => {
     const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
-        valueState: automation.saving[group],
+        valueState: currencyIndex === undefined ? automation.saving[group] : automation.saving[group][currencyIndex],
         normalize: (raw) => String(raw ?? ""),
         write: async (raw) => {
             const next = parseWholeNumber(raw, { max: 100, message: "Saving must be a whole number from 0 to 100" });
-            await automation.setSaving(group, next);
+            await automation.setSaving(group, next, currencyIndex);
             return next;
         },
         format: (value) => String(value),
@@ -263,8 +266,11 @@ const SavingRow = ({ automation, group }) => {
     });
 };
 
-/** One clicker group: its currency section (status + saving) and its upgrade list. */
-const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }) => {
+/**
+ * One clicker group: its currency section (status + saving) and its upgrade list.
+ * With currencyIndex it shows only that currency's upgrades, all in one section (Summoning colours).
+ */
+const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitle, lockedText }) => {
     const owned = van.state("");
     const rate = van.state(null);
     const status = van.state([]);
@@ -289,6 +295,10 @@ const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }
                 span({ class: "account-row__sub-label automation-bonus", hidden: () => !upgrade.val.bonus }, () =>
                     cleanName(upgrade.val.bonus)
                 ),
+                span(
+                    { class: "account-row__sub-label", hidden: () => !upgrade.val.note },
+                    () => upgrade.val.note ?? ""
+                ),
                 span({ class: "account-row__sub-label" }, () => {
                     if (upgrade.val.maxed) return "Max level";
                     if (!upgrade.val.unlocked) return lockedText(upgrade.val);
@@ -306,30 +316,45 @@ const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }
     };
 
     const apply = (data) => {
+        const currencies = currencyIndex === undefined ? data.currencies : [data.currencies[currencyIndex]];
+        const upgrades =
+            currencyIndex === undefined
+                ? data.upgrades
+                : data.upgrades.filter((upgrade) => upgrade.currency === currencies[0].name);
         // Grimoire has one currency per bone type; each gets its own owned count and status line.
-        const several = data.currencies.length > 1;
+        const several = currencies.length > 1;
         owned.val = several
-            ? data.currencies.map(({ name, money }) => `${formatNumber(money)} ${name}`).join(" · ")
-            : `${formatNumber(data.currencies[0].money)} owned`;
+            ? currencies.map(({ name, money }) => `${formatNumber(money)} ${name}`).join(" · ")
+            : `${formatNumber(currencies[0].money)} owned`;
         rate.val = data.rate;
-        const anyOn = data.upgrades.some(({ id }) => automation[group].get(id).on.val);
+        const anyOn = upgrades.some(({ id }) => automation[group].get(id).on.val);
         if (data.waiting) status.val = [data.waiting];
         else if (!anyOn) status.val = ["Nothing switched on"];
         else
-            status.val = data.currencies.map(({ name, goal }) => {
+            status.val = currencies.map(({ name, goal }) => {
                 const text = goal
-                    ? `Saving for ${cleanName(data.upgrades.find(({ id }) => id === goal.id).name, "", { stripMarker: true })} (${formatNumber(goal.cost)})`
+                    ? `Saving for ${cleanName(upgrades.find(({ id }) => id === goal.id).name, "", { stripMarker: true })} (${formatNumber(goal.cost)})`
                     : "Buying cheapest first";
                 return several ? `${name[0].toUpperCase()}${name.slice(1)}: ${text}` : text;
             });
 
-        reconcileUpgrades(data.upgrades.map(({ id }) => id).join("|"), () =>
-            data.upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name, "", { stripMarker: true }) }))
+        reconcileUpgrades(upgrades.map(({ id }) => id).join("|"), () =>
+            upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name, "", { stripMarker: true }) }))
         );
-        for (const upgrade of data.upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
+        for (const upgrade of upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
     };
 
-    const nodes = [
+    const head = [
+        AccountRow({
+            info: () =>
+                div(
+                    { class: "account-row__name-group" },
+                    ...status.val.map((line) => span({ class: "account-row__name" }, line))
+                ),
+        }),
+        SavingRow({ automation, group, currencyIndex }),
+    ];
+    const currencySection = (body) =>
         AccountSection({
             title: currency.toUpperCase(),
             meta: span(
@@ -337,19 +362,11 @@ const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }
                 span(() => owned.val),
                 span(() => (rate.val === null ? "" : ` · ${formatNumber(rate.val)} per second`))
             ),
-            body: [
-                AccountRow({
-                    info: () =>
-                        div(
-                            { class: "account-row__name-group" },
-                            ...status.val.map((line) => span({ class: "account-row__name" }, line))
-                        ),
-                }),
-                SavingRow({ automation, group }),
-            ],
-        }),
-        AccountSection({ title: upgradesTitle, body: listNode }),
-    ];
+            body,
+        });
+    const nodes = upgradesTitle
+        ? [currencySection(head), AccountSection({ title: upgradesTitle, body: listNode })]
+        : [currencySection([...head, listNode])];
 
     return { group, apply, nodes };
 };
@@ -363,14 +380,14 @@ const ClickerPage = ({ automation, title, description, groups }) => {
 
     const load = async () =>
         run(async () => {
+            // Summoning's colour sections share one group, so read each group once.
+            const names = [...new Set(parts.map(({ group }) => group))];
             const [config, ...data] = await Promise.all([
                 fetchConfig(),
-                ...parts.map(({ group }) => readComputed("automation", group)),
+                ...names.map((group) => readComputed("automation", group)),
             ]);
-            parts.forEach(({ group, apply }, index) => {
-                automation.sync(config.cheatConfig.automation, group);
-                apply(data[index]);
-            });
+            names.forEach((group) => automation.sync(config.cheatConfig.automation, group));
+            parts.forEach(({ group, apply }) => apply(data[names.indexOf(group)]));
         });
 
     load();
@@ -495,6 +512,22 @@ const SKILL_TABS = [
             },
         ],
     },
+    {
+        id: "summoning",
+        label: "SUMMONING",
+        title: "SUMMONING",
+        description:
+            "Switched-on summoning board upgrades are bought with essence, each colour saving and buying on its own. Buying pauses while the board is open. Doubler slots stay manual.",
+        groups: ESSENCES.map((colour, currencyIndex) => ({
+            group: "summoning",
+            currency: `${colour} essence`,
+            currencyIndex,
+            lockedText: ({ unlockAt: { parent, lore } = {} }) =>
+                lore
+                    ? "Unlocks once Spelunking's Lore Boss 5 is beaten"
+                    : `Unlocks once ${cleanName(parent)} has a level`,
+        })),
+    },
 ];
 
 const SECTION_TABS = [
@@ -527,11 +560,19 @@ const SECTION_TABS = [
 /** Shared config state for every automation page, so each save carries the whole group. */
 const createAutomationConfig = () => {
     const groups = Object.fromEntries(["shops", ...CLICKER_GROUPS].map((group) => [group, createItemStates()]));
-    const saving = Object.fromEntries(CLICKER_GROUPS.map((group) => [group, van.state(10)]));
+    // Summoning saves one % per essence colour.
+    const saving = Object.fromEntries(
+        CLICKER_GROUPS.map((group) => [
+            group,
+            group === "summoning" ? ESSENCES.map(() => van.state(10)) : van.state(10),
+        ])
+    );
+    const savingValue = (group) =>
+        Array.isArray(saving[group]) ? saving[group].map((state) => state.val) : saving[group].val;
     const toPatch = (group) =>
         group === "shops"
             ? { shops: groups.shops.toConfig() }
-            : { [group]: { saving: saving[group].val, items: groups[group].toConfig() } };
+            : { [group]: { saving: savingValue(group), items: groups[group].toConfig() } };
     let queue = Promise.resolve();
     let pendingSaves = 0;
 
@@ -575,12 +616,13 @@ const createAutomationConfig = () => {
         );
     };
 
-    const setSaving = (group, next) => {
-        const previous = saving[group].val;
+    const setSaving = (group, next, currencyIndex) => {
+        const state = currencyIndex === undefined ? saving[group] : saving[group][currencyIndex];
+        const previous = state.val;
         return change(
             group,
-            () => (saving[group].val = next),
-            () => (saving[group].val = previous)
+            () => (state.val = next),
+            () => (state.val = previous)
         );
     };
 
@@ -592,7 +634,8 @@ const createAutomationConfig = () => {
             return;
         }
         groups[group].sync(config[group].items);
-        saving[group].val = config[group].saving;
+        if (Array.isArray(saving[group])) saving[group].forEach((state, i) => (state.val = config[group].saving[i]));
+        else saving[group].val = config[group].saving;
     };
 
     return { ...groups, saving, setItem, setSaving, sync };

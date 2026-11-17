@@ -1001,6 +1001,7 @@ exports.cheatConfig = {
         tarpit: { saving: 10, items: [] }, // Poppy's Tar Pit, tartar fish, same open-menu rule
         bubba: { saving: 10, items: [] }, // waits until the run's gift is picked
         sneaking: { saving: 10, items: [] }, // W6 Ninja Knowledge, bought with jade; no max level, so set a stop-at
+        summoning: { saving: [10, 10, 10, 10, 10, 10, 10, 10], items: [] }, // W6 board; one saving % per essence colour, white to teal
         grimoire: { saving: 10, items: [] }, // Death Bringer masterclass; each bone type saves and buys on its own
     },
 };

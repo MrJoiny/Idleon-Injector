@@ -9,6 +9,8 @@ const ninja = (...args) => events(579)._customBlock_Ninja(...args);
 // The clickers' own buy events: Orion and Poppy share the owl behavior, Bubba has his own.
 const owl = () => gga.PixelHelperActor[25].behaviors.getBehavior("ActorEvents_670");
 const seal = () => gga.PixelHelperActor[26].behaviors.getBehavior("ActorEvents_713");
+// The summoning board's behavior; _GenINFO[170] is its cached total level / 100.
+const board = () => gga.PixelHelperActor[24].behaviors.getBehavior("ActorEvents_623");
 const trigger = (target, event, text) => {
     target._TRIGGEREDtext = text;
     target[event]();
@@ -31,6 +33,41 @@ const clearSealArt = () => {
             shown[slot] = 0;
         }
     }
+};
+
+// Summoning essence colours (Summon[2] order), and familiar tiers (Summon[4]) named after their units.
+const ESSENCES = ["white", "green", "yellow", "blue", "purple", "red", "cyan", "teal"];
+const FAMILIARS = ["Slime", "Vrumbi", "Bloomy", "Tonka", "Regalis", "Sparkie", "Guardio", "Muddah"];
+// Board rows whose "}" total multiplies the bonus by that colour's wins, or by the character's Summoning level.
+const SUMMON_VICTORY_ROWS = [0, 11, 18, 27, 38, 46, 54, 73];
+const SUMMON_LEVEL_ROWS = [65, 66, 67, 30, 40, 52, 58, 80];
+
+// The Familiar row's extra roll after its level is bought, as the board click does it.
+const summonFamiliar = () => {
+    const familiars = gga.Summon[4];
+    const add = (tier) => (familiars[tier] = Math.min(30, Math.round(Number(familiars[tier]) + 1)));
+    // Free familiar: the level comes back, the essence stays spent.
+    if (behavior.randomFloat() < Math.min(0.8, events(579)._customBlock_Thingies("LegendPTS_bonus", 4, 0) / 100))
+        gga.Summon[0][2] = Math.round(Math.max(0, gga.Summon[0][2] - 1));
+    const skipping = summoning("SummUpgBonus", 39, 0);
+    let tier = 0;
+    if (skipping > 0.5) {
+        if (behavior.randomFloat() < 0.125 * (1 + skipping / 100)) tier = 1;
+        else if (behavior.randomFloat() < 0.02 * (1 + skipping / 100)) tier = 2;
+    }
+    add(tier);
+    if (behavior.randomFloat() < events(345)._customBlock_getbonus2(2, 596, -1) / 100) add(tier);
+    // Familiar_Merging: 3 + t of tier t become one of the next tier.
+    if (summoning("SummUpgBonus", 6, 0) > 0) {
+        for (let t = 0; t < 7; t++) {
+            if (familiars[t] >= 3 + t) {
+                familiars[t] = Math.round(familiars[t] - (3 + t));
+                familiars[t + 1] = Math.round(Number(familiars[t + 1]) + 1);
+            }
+        }
+    }
+    // The sprite redraw this skips also flags the "have a Regalis" quest step.
+    if (gga.QuestComplete.h.Sussy_Gene3 === 0 && familiars[4] >= 1) gga.QuestStatus.h.Sussy_Gene3[0] = 1;
 };
 
 /**
@@ -161,6 +198,79 @@ const CLICKERS = {
         },
         waiting: () => null,
     },
+    // W6 Summoning upgrade board. Summon[2][colour] essence, Summon[0][i] levels, SummonUPG[i][8] max (9999 = none).
+    summoning: {
+        rows: () => cList.SummonUPG,
+        name: (row) => row[3],
+        currencies: ESSENCES.map((colour) => `${colour} essence`),
+        currencyOf: (row) => Number(row[2]),
+        money: (colour) => gga.Summon[2][colour],
+        level: (i) => gga.Summon[0][i],
+        cost: (i) => summoning("UpgCost", i, 0),
+        // The board shows a row once its parent (SummonUPG[i][9]) has a level; Muddah (71) is its own parent and
+        // shows with Spelunking's lore flag 4 instead. Row 0 has no parent.
+        unlockAt: (i, row) => (i === 71 ? { lore: true } : { parent: cList.SummonUPG[row[9]]?.[3] ?? null }),
+        isUnlocked: (i) => {
+            const parent = Number(cList.SummonUPG[i][9]);
+            return (
+                parent === -1 ||
+                gga.Summon[0][parent] >= 1 ||
+                (i === 71 && events(579)._customBlock_Spelunk("DoWeHaveLoreN1", 4, 0) === 1)
+            );
+        },
+        max: (row) => Number(row[8]),
+        // The board's own text: { the bonus, > its multiplier, | the familiar cost reset, } a per-row total, @ a line break.
+        bonus: (i, row) => {
+            const comma = events(189)._customBlock_CommaNotation;
+            const value = summoning("SummUpgBonus", i, 0);
+            const boardLevel = Math.max(0, board()._GenINFO[170]);
+            const shrink = (x) => Math.round(1e4 * (1 - 1 / (1 + x / 100))) / 100;
+            const victories = SUMMON_VICTORY_ROWS.indexOf(i);
+            let total = null;
+            if (victories >= 0) total = comma(value * summoning("SummVictories", victories, 0));
+            else if (SUMMON_LEVEL_ROWS.includes(i)) total = comma(value * gga.Lv0[18]);
+            else if (i === 49 || i === 57 || i === 72) total = shrink(value);
+            else if (i === 60 || i === 61) total = comma(Math.round(value * boardLevel));
+            else if (i === 62 || i === 63 || i === 64) total = comma(Math.round(value * ola()[319]));
+            else if (i === 68) total = comma(summoning("UnitDMG", -1, 0) * (value / 100));
+            else if (i === 75) total = shrink(value * boardLevel);
+            const restock = events(266)._customBlock_timeDisp2(gga.TimeAway.h.ShopRestock + 86400 * gga.Summon[3][3]);
+            const text = String(row[11])
+                .split("{")
+                .join(comma(value))
+                .split(">")
+                .join(String(Math.round(100 + value) / 100))
+                .split("|")
+                .join(restock)
+                .split("@")
+                .join("");
+            return total === null ? text : text.split("}").join(String(total));
+        },
+        note: (i) => {
+            if (i !== 2) return null;
+            const owned = FAMILIARS.flatMap((name, tier) =>
+                gga.Summon[4][tier] > 0 ? `${gga.Summon[4][tier]} ${name}` : []
+            );
+            return owned.length ? `Familiars: ${owned.join(", ")}` : "No familiars yet";
+        },
+        // No buy event: the board's click buys inline. These are its steps, minus the art it draws
+        // ("ehz" on a first level, "v" familiar sprites) and the FREE_FAMILIAR! popup.
+        buy: (i) => {
+            const row = cList.SummonUPG[i];
+            const colour = Number(row[2]);
+            const cost = summoning("UpgCost", i, 0);
+            if (!(gga.Summon[2][colour] >= cost && gga.Summon[0][i] < Number(row[8]))) return;
+            gga.Summon[2][colour] -= cost;
+            gga.Summon[0][i] = Math.round(gga.Summon[0][i] + 1);
+            if (gga.QuestComplete.h.Lafu_Shi6 === 0)
+                gga.QuestStatus.h.Lafu_Shi6[0] = Number(gga.QuestStatus.h.Lafu_Shi6[0]) + 1;
+            if (i === 2) summonFamiliar();
+            const total = gga.Summon[0].reduce((sum, level) => sum + Number(level), 0);
+            gga.DNSM.h.CalcTalentMAP.h[595] = total;
+            board()._GenINFO[170] = Math.floor(total / 100);
+        },
+        waiting: () => (gga.MenuType2 === 60 ? "Paused while the summoning board is open" : null),
+    },
 };
 
 export const CLICKER_KEYS = Object.keys(CLICKERS);
@@ -207,6 +317,7 @@ export function getAutomationClicker(key) {
                 id: i,
                 name: clicker.name?.(row) ?? row[0],
                 bonus: clicker.bonus?.(i, row) ?? null,
+                note: clicker.note?.(i) ?? null,
                 currency: clicker.currencyOf ? clicker.currencies[clicker.currencyOf(row)] : null,
                 level: clicker.level(i),
                 cost: clicker.cost(i),
@@ -222,11 +333,13 @@ export function runClickers() {
     for (const key of CLICKER_KEYS) {
         const clicker = CLICKERS[key];
         if (!cheatConfig.automation[key].items.some((entry) => entry.on) || clicker.waiting()) continue;
+        // Summoning keeps one saving % per essence colour; the others share one.
+        const { saving } = cheatConfig.automation[key];
         for (let currency = 0; currency < currencyCount(clicker); currency++) {
             buyCheapestFirst(
                 () => buyableUpgrades(key, currency),
                 () => clicker.money(currency),
-                cheatConfig.automation[key].saving
+                Array.isArray(saving) ? saving[currency] : saving
             );
         }
     }
