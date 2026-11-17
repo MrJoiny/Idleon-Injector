@@ -96,7 +96,10 @@ const stepDraft = (inputValue, delta, max = Infinity) => {
     const text = String(inputValue.val ?? "").trim();
     if (text === "" && delta < 0) return;
     const current = Number(text);
-    inputValue.val = String(Math.min(max, Math.max(0, (Number.isFinite(current) ? current : 0) + delta)));
+    // Rounded to one decimal so stepping a decimal target (99.5) doesn't drift.
+    inputValue.val = String(
+        Math.round(Math.min(max, Math.max(0, (Number.isFinite(current) ? current : 0) + delta)) * 10) / 10
+    );
 };
 
 /** Inline stop-at box; empty means no limit. */
@@ -241,12 +244,14 @@ const WorldShops = ({ world, automation }) => {
 };
 
 /** A page-wide % setting: text, a number box, more text and SET. */
-const PercentRow = ({ valueState, write, max, message, before, after, label }) => {
+const PercentRow = ({ valueState, write, max, message, before, after, label, decimal = false }) => {
     const { inputValue, status, isDisabled, applyValue, focus, blur, statusMessage } = useNumericEditor({
         valueState,
         normalize: (raw) => String(raw ?? ""),
         write: async (raw) => {
-            const next = parseWholeNumber(raw, { max, message });
+            const text = String(raw ?? "").trim();
+            if (!(decimal ? /^\d+(\.\d)?$/ : /^\d+$/).test(text) || Number(text) > max) throw new Error(message);
+            const next = Number(text);
             await write(next);
             return next;
         },
@@ -259,7 +264,7 @@ const PercentRow = ({ valueState, write, max, message, before, after, label }) =
         info: [
             span({ class: "automation-saving-row__text" }, before),
             NumberInput({
-                mode: "int",
+                mode: decimal ? "float" : "int",
                 value: inputValue,
                 "aria-label": label,
                 disabled: isDisabled,
@@ -631,8 +636,9 @@ const BubblesPage = ({ automation, title, description }) => {
             PercentRow({
                 valueState: automation.bubbleTarget,
                 write: (next) => automation.setBubbleTarget(next),
-                max: 99,
-                message: "Target must be a whole number from 0 to 99",
+                max: 99.9,
+                decimal: true,
+                message: "Target must be a number from 0 to 99.9, with at most one decimal",
                 before: "Raise bubbles to",
                 after: "% of their max",
                 label: "Bubble target, in percent of max",
