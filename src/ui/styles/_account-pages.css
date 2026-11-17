@@ -539,6 +539,10 @@
     white-space: nowrap;
 }
 
+.automation-bonus {
+    white-space: normal;
+}
+
 /* Phone width: the name gets the first line, badge and switch the second, and each edit control a full line. */
 @media (max-width: 760px) {
     .account-row.automation-row {

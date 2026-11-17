@@ -5,6 +5,7 @@ import { buyCheapestFirst, nextGoal, settingsById } from "./engine.js";
 const ola = () => gga.OptionsListAccount;
 const summoning = (...args) => events(579)._customBlock_Summoning(...args);
 const bubbastuff = (...args) => events(579)._customBlock_Bubbastuff(...args);
+const ninja = (...args) => events(579)._customBlock_Ninja(...args);
 // The clickers' own buy events: Orion and Poppy share the owl behavior, Bubba has his own.
 const owl = () => gga.PixelHelperActor[25].behaviors.getBehavior("ActorEvents_670");
 const seal = () => gga.PixelHelperActor[26].behaviors.getBehavior("ActorEvents_713");
@@ -120,6 +121,46 @@ const CLICKERS = {
         },
         waiting: () => null,
     },
+    // W6 Sneaking, Ninja Knowledge. Ninja[102][1] jade, Ninja[103][i] levels, no max. NinjaUpg row 9 is a placeholder.
+    sneaking: {
+        rows: () => cList.NinjaUpg,
+        skip: (i) => i === 9,
+        name: (row) => row[4],
+        money: () => gga.Ninja[102][1],
+        level: (i) => gga.Ninja[103][i],
+        cost: (i) => ninja("JadeUpgCost", i, 0),
+        // Rows 0-16 need their parent (NinjaUpg[i][9], patched at load by mastery; row 0 is its own parent until then).
+        // Later rows need a Coral Reef level.
+        unlockAt: (i, row) =>
+            i < 17 ? { parent: Number(row[9]) === i ? null : cList.NinjaUpg[row[9]][4] } : { reef: i - 16 },
+        // Spelunk[13][3] is the W7 Coral Reef upgrade that adds these "mini" Knowledge rows.
+        isUnlocked: (i) =>
+            i < 17 ? i === 13 || gga.Ninja[103][cList.NinjaUpg[i][9]] >= 1 : gga.Spelunk[13][3] > i - 17,
+        // The Knowledge panel's own text: { is the bonus, } the multiplier, # dropped (Menagerie omni levels count on 0-16).
+        bonus: (i, row) => {
+            const notate = events(124)._customBlock_NotateNumber;
+            const value = (gga.Ninja[103][i] + (i < 17 ? gga.Menagerie[7][i] : 0)) * row[5];
+            return String(row[6])
+                .split("{")
+                .join(notate(value, "Big"))
+                .split("}")
+                .join(notate(1 + value / 100, "MultiplierInfo"))
+                .split("#")
+                .join("");
+        },
+        // No buy event either; these are the Knowledge menu click's steps, minus its "i" tree redraw (draws art).
+        buy: (i) => {
+            const cost = ninja("JadeUpgCost", i, 0);
+            if (!(gga.Ninja[102][1] >= cost)) return;
+            gga.Ninja[102][1] -= cost;
+            gga.Ninja[103][i] = Math.round(gga.Ninja[103][i] + 1);
+            const talents = gga.DNSM.h.CalcTalentMAP;
+            talents.h[430] = (Number(talents.h[430]) || 0) + 1;
+            if (i === 16) gga.Ninja[102][8] = ninja("NLbonuses", 16, 0);
+            if (i === 14 && gga.QuestComplete.h.Lafu_Shi3 === 0) gga.QuestStatus.h.Lafu_Shi3[1] = 1;
+        },
+        waiting: () => null,
+    },
 };
 
 export const CLICKER_KEYS = Object.keys(CLICKERS);
@@ -136,7 +177,7 @@ function buyableUpgrades(key, currency) {
     const clicker = CLICKERS[key];
     const settings = settingsById(cheatConfig.automation[key].items);
     return clicker.rows().flatMap((row, i) => {
-        if (clicker.currencyOf && clicker.currencyOf(row) !== currency) return [];
+        if (clicker.skip?.(i) || (clicker.currencyOf && clicker.currencyOf(row) !== currency)) return [];
         const entry = settings.get(String(i));
         const level = clicker.level(i);
         if (!entry?.on || !unlocked(clicker, i, row) || level >= (entry.stopAt ?? Infinity)) return [];
@@ -160,16 +201,20 @@ export function getAutomationClicker(key) {
                 goal: goal && { id: goal.id, cost: goal.cost },
             };
         }),
-        upgrades: clicker.rows().map((row, i) => ({
-            id: i,
-            name: row[0],
-            currency: clicker.currencyOf ? clicker.currencies[clicker.currencyOf(row)] : null,
-            level: clicker.level(i),
-            cost: clicker.cost(i),
-            unlockAt: clicker.unlockAt(i, row),
-            unlocked: unlocked(clicker, i, row),
-            maxed: clicker.level(i) >= (clicker.max?.(row) ?? Infinity),
-        })),
+        upgrades: clicker
+            .rows()
+            .map((row, i) => ({
+                id: i,
+                name: clicker.name?.(row) ?? row[0],
+                bonus: clicker.bonus?.(i, row) ?? null,
+                currency: clicker.currencyOf ? clicker.currencies[clicker.currencyOf(row)] : null,
+                level: clicker.level(i),
+                cost: clicker.cost(i),
+                unlockAt: clicker.unlockAt(i, row),
+                unlocked: unlocked(clicker, i, row),
+                maxed: clicker.level(i) >= (clicker.max?.(row) ?? Infinity),
+            }))
+            .filter(({ id }) => !clicker.skip?.(id)),
     };
 }
 

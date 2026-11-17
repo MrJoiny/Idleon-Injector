@@ -21,7 +21,7 @@ import { renderLazyPanes, renderTabNav } from "./tabShared.js";
 const { div, option, select, span } = van.tags;
 
 // Saved as priority 1 (High) and 2 (Low); Balanced has none.
-const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire"];
+const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire", "sneaking"];
 
 const PRIORITIES = [
     { value: 1, label: "High" },
@@ -286,6 +286,9 @@ const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }
             info: div(
                 { class: "account-row__name-group" },
                 span({ class: "account-row__name" }, name),
+                span({ class: "account-row__sub-label automation-bonus", hidden: () => !upgrade.val.bonus }, () =>
+                    cleanName(upgrade.val.bonus)
+                ),
                 span({ class: "account-row__sub-label" }, () => {
                     if (upgrade.val.maxed) return "Max level";
                     if (!upgrade.val.unlocked) return lockedText(upgrade.val);
@@ -315,7 +318,7 @@ const ClickerGroup = ({ automation, group, currency, upgradesTitle, lockedText }
         else
             status.val = data.currencies.map(({ name, goal }) => {
                 const text = goal
-                    ? `Saving for ${cleanName(data.upgrades[goal.id].name, "", { stripMarker: true })} (${formatNumber(goal.cost)})`
+                    ? `Saving for ${cleanName(data.upgrades.find(({ id }) => id === goal.id).name, "", { stripMarker: true })} (${formatNumber(goal.cost)})`
                     : "Buying cheapest first";
                 return several ? `${name[0].toUpperCase()}${name.slice(1)}: ${text}` : text;
             });
@@ -472,6 +475,28 @@ const MASTERCLASS_TABS = [
     },
 ];
 
+const SKILL_TABS = [
+    {
+        id: "sneaking",
+        label: "SNEAKING",
+        title: "SNEAKING",
+        description:
+            "Switched-on Ninja Knowledge upgrades are bought with jade coins. They have no max level, so give each a stop-at unless it should take all your jade.",
+        groups: [
+            {
+                group: "sneaking",
+                currency: "jade",
+                upgradesTitle: "NINJA KNOWLEDGE",
+                // The row's first render runs before its data lands, so unlockAt may be missing.
+                lockedText: ({ unlockAt: { parent, reef } = {} }) => {
+                    if (reef) return `Unlocks at level ${reef} of W7 Coral Reef's Ninja Knowledge upgrade`;
+                    return parent ? `Unlocks once ${cleanName(parent)} has a level` : "Unlocks with Sneaking mastery";
+                },
+            },
+        ],
+    },
+];
+
 const SECTION_TABS = [
     {
         id: "shops",
@@ -484,6 +509,12 @@ const SECTION_TABS = [
         label: "CLICKERS",
         render: (automation) =>
             NestedTabs({ tabs: CLICKER_TABS, renderContent: (tab) => ClickerPage({ automation, ...tab }) }),
+    },
+    {
+        id: "skills",
+        label: "SKILLS",
+        render: (automation) =>
+            NestedTabs({ tabs: SKILL_TABS, renderContent: (tab) => ClickerPage({ automation, ...tab }) }),
     },
     {
         id: "masterclasses",
