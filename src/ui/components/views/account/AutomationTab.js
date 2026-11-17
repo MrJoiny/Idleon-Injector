@@ -17,14 +17,19 @@ import { AccountSection } from "./components/AccountSection.js";
 import { AccountToggleRow } from "./components/AccountToggleRow.js";
 import { PersistentAccountListPage } from "./components/PersistentAccountListPage.js";
 import { renderLazyPanes, renderTabNav } from "./tabShared.js";
+import { SPICE_NAMES } from "./w4/cooking/SpicesTab.js";
 
 const { div, option, select, span } = van.tags;
 
 // Saved as priority 1 (High) and 2 (Low); Balanced has none.
-const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire", "sneaking", "summoning"];
+const CLICKER_GROUPS = ["orion", "poppy", "tarpit", "bubba", "grimoire", "sneaking", "summoning", "kitchens"];
 
 // Summoning essence colours in the game's order; each gets its own section and saving %.
 const ESSENCES = ["white", "green", "yellow", "blue", "purple", "red", "cyan", "teal"];
+
+// Kitchen k's upgrades are rows 3k + slot; spices 0-20 pay for the 10 kitchens, each with its own saving %.
+const KITCHEN_SLOTS = ["Speed", "Fire", "Luck"];
+const KITCHEN_SPICES = 21;
 
 const PRIORITIES = [
     { value: 1, label: "High" },
@@ -290,6 +295,41 @@ const PercentRow = ({ valueState, write, max, message, before, after, label, dec
     });
 };
 
+/** A clicker upgrade row: its bonus, cost or lock note, level, stop-at and priority. `label` names it for screen readers. */
+const UpgradeRow = ({ automation, group, id, name, label = name, upgrade, currency, lockedText }) => {
+    const item = automation[group].get(id);
+    const stopAt = StopAtField({ item, name: label, write: (stopAt) => automation.setItem(group, id, { stopAt }) });
+    const priority = ChoiceSelect({
+        state: item.priority,
+        choices: PRIORITIES,
+        label: `${label} priority`,
+        write: (next) => automation.setItem(group, id, { priority: next }),
+    });
+
+    return AccountToggleRow({
+        info: div(
+            { class: "account-row__name-group" },
+            span({ class: "account-row__name" }, name),
+            span({ class: "account-row__sub-label automation-bonus", hidden: () => !upgrade.val.bonus }, () =>
+                cleanName(upgrade.val.bonus)
+            ),
+            span({ class: "account-row__sub-label", hidden: () => !upgrade.val.note }, () => upgrade.val.note ?? ""),
+            span({ class: "account-row__sub-label" }, () => {
+                if (upgrade.val.maxed) return "Max level";
+                if (!upgrade.val.unlocked) return lockedText(upgrade.val);
+                return `Next level ${formatNumber(upgrade.val.cost)} ${upgrade.val.currency ?? currency}`;
+            })
+        ),
+        badge: () => `LV ${upgrade.val.level ?? 0}`,
+        checked: () => item.on.val,
+        title: "Toggle auto-buy",
+        write: (on) => automation.setItem(group, id, { on }),
+        rowClass: "account-row--wide-controls automation-row",
+        controls: [stopAt.node, priority.node],
+        status: () => stopAt.status.val ?? priority.status.val,
+    });
+};
+
 /**
  * One clicker group: its currency section (status + saving) and its upgrade list.
  * With currencyIndex it shows only that currency's upgrades, all in one section (Summoning colours).
@@ -301,44 +341,6 @@ const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitl
     const upgradeStates = new Map();
     const listNode = div({ class: "account-item-stack" });
     const reconcileUpgrades = createStaticRowReconciler(listNode);
-
-    const UpgradeRow = ({ id, name }) => {
-        const item = automation[group].get(id);
-        const upgrade = getOrCreateState(upgradeStates, id, {});
-        const stopAt = StopAtField({ item, name, write: (stopAt) => automation.setItem(group, id, { stopAt }) });
-        const priority = ChoiceSelect({
-            state: item.priority,
-            choices: PRIORITIES,
-            label: `${name} priority`,
-            write: (next) => automation.setItem(group, id, { priority: next }),
-        });
-
-        return AccountToggleRow({
-            info: div(
-                { class: "account-row__name-group" },
-                span({ class: "account-row__name" }, name),
-                span({ class: "account-row__sub-label automation-bonus", hidden: () => !upgrade.val.bonus }, () =>
-                    cleanName(upgrade.val.bonus)
-                ),
-                span(
-                    { class: "account-row__sub-label", hidden: () => !upgrade.val.note },
-                    () => upgrade.val.note ?? ""
-                ),
-                span({ class: "account-row__sub-label" }, () => {
-                    if (upgrade.val.maxed) return "Max level";
-                    if (!upgrade.val.unlocked) return lockedText(upgrade.val);
-                    return `Next level ${formatNumber(upgrade.val.cost)} ${upgrade.val.currency ?? currency}`;
-                })
-            ),
-            badge: () => `LV ${upgrade.val.level ?? 0}`,
-            checked: () => item.on.val,
-            title: "Toggle auto-buy",
-            write: (on) => automation.setItem(group, id, { on }),
-            rowClass: "account-row--wide-controls automation-row",
-            controls: [stopAt.node, priority.node],
-            status: () => stopAt.status.val ?? priority.status.val,
-        });
-    };
 
     const apply = (data) => {
         const currencies = currencyIndex === undefined ? data.currencies : [data.currencies[currencyIndex]];
@@ -364,7 +366,17 @@ const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitl
             });
 
         reconcileUpgrades(upgrades.map(({ id }) => id).join("|"), () =>
-            upgrades.map(({ id, name }) => UpgradeRow({ id, name: cleanName(name, "", { stripMarker: true }) }))
+            upgrades.map(({ id, name }) =>
+                UpgradeRow({
+                    automation,
+                    group,
+                    id,
+                    name: cleanName(name, "", { stripMarker: true }),
+                    upgrade: getOrCreateState(upgradeStates, id, {}),
+                    currency,
+                    lockedText,
+                })
+            )
         );
         for (const upgrade of upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
     };
@@ -661,6 +673,212 @@ const BubblesPage = ({ automation, title, description }) => {
     });
 };
 
+/** COOKING > KITCHENS: a status and saving % per spice in use, then one section per kitchen (Speed, Fire, Luck). */
+const KitchensPage = ({ automation, title, description }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
+    // Per spice index: { owned, goal text, ids of the rows it pays for }.
+    const spices = van.state([]);
+    const upgradeStates = new Map();
+    const listNode = div({ class: "content-stack" });
+    const reconcileKitchens = createStaticRowReconciler(listNode);
+    const isOn = (id) => automation.kitchens.get(id).on.val;
+    const rowName = (id) => `Kitchen ${Math.floor(id / 3) + 1} ${KITCHEN_SLOTS[id % 3]}`;
+
+    const spiceRows = automation.saving.kitchens.map((saving, n) =>
+        div(
+            { class: "account-item-stack automation-spice", hidden: () => !spices.val[n]?.ids.some(isOn) },
+            AccountRow({
+                info: div(
+                    { class: "account-row__name-group" },
+                    span({ class: "account-row__name" }, SPICE_NAMES[n]),
+                    span({ class: "account-row__sub-label" }, () => {
+                        const spice = spices.val[n];
+                        return spice ? `${formatNumber(spice.owned)} owned · ${spice.goal}` : "";
+                    })
+                ),
+            }),
+            PercentRow({
+                valueState: saving,
+                write: (next) => automation.setSaving("kitchens", next, n),
+                max: 100,
+                message: "Saving must be a whole number from 0 to 100",
+                before: "Balanced can spend up to",
+                after: "% of what it's saving for",
+                label: `${SPICE_NAMES[n]} Balanced spending limit while saving, in percent`,
+            })
+        )
+    );
+
+    const load = async () =>
+        run(async () => {
+            const [data, config] = await Promise.all([readComputed("automation", "kitchens"), fetchConfig()]);
+            automation.sync(config.cheatConfig.automation, "kitchens");
+            // The game draws spices as icons only; the names are the Spices tab's. Like the kitchen panel, small
+            // amounts show whole: owned rounded down, costs up.
+            const whole = (value, round) => (value < 1e5 ? round(value) : value);
+            const spiceOf = (upgrade) => data.currencies.findIndex(({ name }) => name === upgrade.currency);
+            spices.val = data.currencies.map(({ money, goal }, n) => ({
+                owned: whole(Math.max(0, money), Math.floor),
+                goal: goal
+                    ? `Saving for ${rowName(goal.id)} (${formatNumber(whole(goal.cost, Math.ceil))})`
+                    : "Buying cheapest first",
+                ids: data.upgrades.filter((upgrade) => spiceOf(upgrade) === n).map(({ id }) => id),
+            }));
+            const kitchens = Array.from({ length: data.upgrades.length / 3 }, (_, k) =>
+                data.upgrades.slice(3 * k, 3 * k + 3)
+            );
+
+            reconcileKitchens(data.upgrades.map(({ id }) => id).join("|"), () =>
+                kitchens.map((upgrades, k) =>
+                    AccountSection({
+                        title: `KITCHEN ${k + 1}`,
+                        body: div(
+                            { class: "account-item-stack" },
+                            upgrades.map(({ id, name }) =>
+                                UpgradeRow({
+                                    automation,
+                                    group: "kitchens",
+                                    id,
+                                    name,
+                                    label: rowName(id),
+                                    upgrade: getOrCreateState(upgradeStates, id, {}),
+                                    lockedText: () => "Kitchen not bought yet",
+                                })
+                            )
+                        ),
+                    })
+                )
+            );
+            for (const upgrade of data.upgrades)
+                getOrCreateState(upgradeStates, upgrade.id, {}).val = {
+                    ...upgrade,
+                    cost: whole(upgrade.cost, Math.ceil),
+                    currency: SPICE_NAMES[spiceOf(upgrade)],
+                };
+        });
+
+    load();
+
+    const head = AccountSection({
+        title: "SPICES",
+        body: [
+            div(
+                { hidden: () => spices.val.some(({ ids }) => ids.some(isOn)) },
+                AccountRow({ info: span({ class: "account-row__name" }, "Nothing switched on") })
+            ),
+            ...spiceRows,
+        ],
+    });
+
+    return PersistentAccountListPage({
+        title,
+        description,
+        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        state: { loading, error },
+        loadingText: `READING ${title}`,
+        errorTitle: `${title} READ FAILED`,
+        initialWrapperClass: "scrollable-panel",
+        body: div({ class: "scrollable-panel content-stack" }, head, listNode),
+    });
+};
+
+/** COOKING > MEALS: a row per meal, each paid with its own quantity; Food Lust stacks pick the order. */
+const MealsPage = ({ automation, title, description }) => {
+    const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
+    const foodLust = van.state(0);
+    const max = van.state(null);
+    const ids = van.state([]);
+    const mealStates = new Map();
+    const listNode = div({ class: "account-item-stack" });
+    const reconcileMeals = createStaticRowReconciler(listNode);
+
+    const MealRow = ({ id, name }) => {
+        const item = automation.meals.get(id);
+        const meal = getOrCreateState(mealStates, id, {});
+        const stopAt = StopAtField({ item, name, write: (next) => automation.setItem("meals", id, { stopAt: next }) });
+
+        return AccountToggleRow({
+            info: div(
+                { class: "account-row__name-group" },
+                span({ class: "account-row__name" }, name),
+                span({ class: "account-row__sub-label automation-bonus", hidden: () => !(meal.val.level > 0) }, () =>
+                    cleanName(meal.val.bonus)
+                ),
+                span({ class: "account-row__sub-label" }, () => {
+                    if (!(meal.val.level > 0)) return "Not discovered yet";
+                    const owned = `${formatNumber(Math.max(0, meal.val.owned))} owned`;
+                    if (meal.val.level >= max.val) return `${owned} · Max level`;
+                    return `${owned} · Next level ${formatNumber(meal.val.cost)}`;
+                })
+            ),
+            badge: () => `LV ${meal.val.level ?? 0} / ${max.val ?? "?"}`,
+            checked: () => item.on.val,
+            title: "Toggle auto-buy",
+            write: (on) => automation.setItem("meals", id, { on }),
+            rowClass: "account-row--wide-controls automation-row",
+            controls: stopAt.node,
+            status: stopAt.status,
+        });
+    };
+
+    const load = async () =>
+        run(async () => {
+            const [data, config] = await Promise.all([readComputed("automation", "meals"), fetchConfig()]);
+            automation.sync(config.cheatConfig.automation, "meals");
+            foodLust.val = data.foodLust;
+            max.val = data.max;
+            ids.val = data.meals.map(({ id }) => id);
+            reconcileMeals(ids.val.join("|"), () =>
+                data.meals.map(({ id, name }) => MealRow({ id, name: cleanName(name) }))
+            );
+            for (const meal of data.meals) getOrCreateState(mealStates, meal.id, {}).val = meal;
+        });
+
+    load();
+
+    const head = AccountRow({
+        info: () =>
+            span({ class: "account-row__name" }, () => {
+                if (!ids.val.some((id) => automation.meals.get(id).on.val)) return "Nothing switched on";
+                if (foodLust.val > 0)
+                    return `${foodLust.val} Food Lust stack${foodLust.val === 1 ? "" : "s"}: next buy is the priciest meal`;
+                return "Buying every affordable meal";
+            }),
+    });
+
+    return PersistentAccountListPage({
+        title,
+        description,
+        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        state: { loading, error },
+        loadingText: `READING ${title}`,
+        errorTitle: `${title} READ FAILED`,
+        initialWrapperClass: "scrollable-panel",
+        body: div(
+            { class: "scrollable-panel content-stack" },
+            AccountSection({ title: "MEALS", body: [head, listNode] })
+        ),
+    });
+};
+
+const COOKING_TABS = [
+    {
+        id: "kitchens",
+        label: "KITCHENS",
+        title: "KITCHENS",
+        description: `Switched-on kitchen upgrades are bought with spices, each spice saving and buying on its own. Kitchens you haven't bought can be switched on ahead and start once bought. Upgrades have no max level, so give each a stop-at unless it should take all of that spice. ${RULE}`,
+        render: KitchensPage,
+    },
+    {
+        id: "meals",
+        label: "MEALS",
+        title: "MEALS",
+        description:
+            "Switched-on meals are levelled up with their own quantity, up to the max level or the stop-at. Undiscovered meals can be switched on ahead. Any level-up spends all Food Lust stacks, so while you hold some the priciest affordable meal buys first.",
+        render: MealsPage,
+    },
+];
+
 const SKILL_TABS = [
     {
         id: "sneaking",
@@ -705,6 +923,12 @@ const SKILL_TABS = [
                     : `Unlocks once ${cleanName(parent)} has a level`,
         })),
     },
+    {
+        id: "cooking",
+        label: "COOKING",
+        render: ({ automation }) =>
+            NestedTabs({ tabs: COOKING_TABS, renderContent: (tab) => tab.render({ automation, ...tab }) }),
+    },
 ];
 
 const SECTION_TABS = [
@@ -740,14 +964,18 @@ const SECTION_TABS = [
 /** Shared config state for every automation page, so each save carries the whole group. */
 const createAutomationConfig = () => {
     const groups = Object.fromEntries(
-        ["shops", "bubbles", ...CLICKER_GROUPS].map((group) => [group, createItemStates()])
+        ["shops", "bubbles", "meals", ...CLICKER_GROUPS].map((group) => [group, createItemStates()])
     );
     const bubbleTarget = van.state(90);
-    // Summoning saves one % per essence colour.
+    // Summoning saves one % per essence colour, kitchens one per spice.
     const saving = Object.fromEntries(
         CLICKER_GROUPS.map((group) => [
             group,
-            group === "summoning" ? ESSENCES.map(() => van.state(10)) : van.state(10),
+            group === "summoning"
+                ? ESSENCES.map(() => van.state(10))
+                : group === "kitchens"
+                  ? Array.from({ length: KITCHEN_SPICES }, () => van.state(10))
+                  : van.state(10),
         ])
     );
     const savingValue = (group) =>
@@ -755,6 +983,7 @@ const createAutomationConfig = () => {
     const toPatch = (group) => {
         if (group === "shops") return { shops: groups.shops.toConfig() };
         if (group === "bubbles") return { bubbles: { target: bubbleTarget.val, items: groups.bubbles.toConfig() } };
+        if (group === "meals") return { meals: { items: groups.meals.toConfig() } };
         return { [group]: { saving: savingValue(group), items: groups[group].toConfig() } };
     };
     let queue = Promise.resolve();
@@ -829,6 +1058,10 @@ const createAutomationConfig = () => {
         if (group === "bubbles") {
             groups.bubbles.sync(config.bubbles.items);
             bubbleTarget.val = config.bubbles.target;
+            return;
+        }
+        if (group === "meals") {
+            groups.meals.sync(config.meals.items);
             return;
         }
         groups[group].sync(config[group].items);

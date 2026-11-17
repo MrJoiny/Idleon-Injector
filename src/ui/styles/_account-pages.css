@@ -543,6 +543,11 @@
     white-space: normal;
 }
 
+/* A spice's status and saving rows, shown while a switched-on kitchen upgrade pays with it. */
+.automation-spice[hidden] {
+    display: none;
+}
+
 /* Phone width: the name gets the first line, badge and switch the second, and each edit control a full line. */
 @media (max-width: 760px) {
     .account-row.automation-row {

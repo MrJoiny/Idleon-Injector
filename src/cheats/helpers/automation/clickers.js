@@ -6,6 +6,7 @@ const ola = () => gga.OptionsListAccount;
 const summoning = (...args) => events(579)._customBlock_Summoning(...args);
 const bubbastuff = (...args) => events(579)._customBlock_Bubbastuff(...args);
 const ninja = (...args) => events(579)._customBlock_Ninja(...args);
+const cooking = (...args) => events(345)._customBlock_CookingR(...args);
 // The clickers' own buy events: Orion and Poppy share the owl behavior, Bubba has his own.
 const owl = () => gga.PixelHelperActor[25].behaviors.getBehavior("ActorEvents_670");
 const seal = () => gga.PixelHelperActor[26].behaviors.getBehavior("ActorEvents_713");
@@ -41,6 +42,8 @@ const FAMILIARS = ["Slime", "Vrumbi", "Bloomy", "Tonka", "Regalis", "Sparkie", "
 // Board rows whose "}" total multiplies the bonus by that colour's wins, or by the character's Summoning level.
 const SUMMON_VICTORY_ROWS = [0, 11, 18, 27, 38, 46, 54, 73];
 const SUMMON_LEVEL_ROWS = [65, 66, 67, 30, 40, 52, 58, 80];
+// A kitchen's three upgrades, Cooking[k][6..8].
+const KITCHEN_SLOTS = ["Speed", "Fire", "Luck"];
 
 // The Familiar row's extra roll after its level is bought, as the board click does it.
 const summonFamiliar = () => {
@@ -270,6 +273,41 @@ const CLICKERS = {
             board()._GenINFO[170] = Math.floor(total / 100);
         },
         waiting: () => (gga.MenuType2 === 60 ? "Paused while the summoning board is open" : null),
+    },
+    // W4 kitchen upgrades. Row 3k + slot is kitchen k's Speed, Fire or Luck: level Cooking[k][6 + slot], paid with
+    // spice Meals[3][2k + slot] (CookingUpgSpiceCostType), so neighbouring kitchens share a spice. No max level.
+    kitchens: {
+        rows: () => gga.Cooking.flatMap((_, k) => KITCHEN_SLOTS.map((name, slot) => [name, k, slot])),
+        // Every spice a kitchen upgrade can cost, up to 2k + 2 for the last kitchen's Luck. The game only draws
+        // spice icons, so they are numbered here.
+        get currencies() {
+            return Array.from({ length: 2 * gga.Cooking.length + 1 }, (_, n) => `spice ${n}`);
+        },
+        currencyOf: ([, k, slot]) => cooking("CookingUpgSpiceCostType", k, slot),
+        money: (spice) => gga.Meals[3][spice],
+        level: (i) => gga.Cooking[Math.floor(i / 3)][6 + (i % 3)],
+        cost: (i) => cooking("CookingUpgSpiceCostQty", Math.floor(i / 3), i % 3),
+        unlockAt: () => null,
+        // Cooking[k][0] is 0 until the kitchen is bought with coins.
+        isUnlocked: (i) => Number(gga.Cooking[Math.floor(i / 3)][0]) !== 0,
+        // The kitchen panel's own numbers.
+        bonus: (i, [, k, slot]) => {
+            if (slot === 2) return `${Math.round(100 * cooking("CookingLUCK", k, 0)) / 100}x`;
+            const value = cooking(slot === 0 ? "CookingSPEED" : "CookingFIRE", k, 0);
+            return `${events(124)._customBlock_NotateNumber(value, "Big")}/hr`;
+        },
+        // The upgrade click buys inline (Cooking2 "q", mouse-gated). These are its steps, minus the level bar art.
+        buy: (i) => {
+            const k = Math.floor(i / 3);
+            const slot = i % 3;
+            const spice = cooking("CookingUpgSpiceCostType", k, slot);
+            const cost = cooking("CookingUpgSpiceCostQty", k, slot);
+            if (!(gga.Meals[3][spice] >= cost)) return;
+            gga.Meals[3][spice] -= cost;
+            gga.Cooking[k][6 + slot] = Math.round(gga.Cooking[k][6 + slot] + 1);
+            if (gga.Cooking[k][6 + slot] >= 300) events(345)._customBlock_Reg_ach_add_status(226, 10);
+        },
+        waiting: () => null,
     },
 };
 

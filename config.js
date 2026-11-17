@@ -1006,6 +1006,12 @@ exports.cheatConfig = {
         // W2 alchemy bubbles, id "cauldron:bubble", pay "particles" or materials (default). Decay bubbles rise to target %
         // of their max; others need a stopAt. The bubble furthest from its goal buys first; paused while Bargain Tags are held.
         bubbles: { target: 90, items: [] },
+        // W4 kitchen Speed/Fire/Luck, id 3 * kitchen + slot (0 Speed, 1 Fire, 2 Luck). Each spice saves and buys on
+        // its own, one saving % per spice (21 spices pay for the 10 kitchens). No max level, so set a stop-at.
+        kitchens: { saving: Array(21).fill(10), items: [] },
+        // W4 meals, id = meal index, { id, on, stopAt }. Each pays with its own quantity, up to the shared max level;
+        // while Food Lust stacks are held the priciest affordable meal buys first, since any level-up spends them.
+        meals: { items: [] },
     },
 };
 
