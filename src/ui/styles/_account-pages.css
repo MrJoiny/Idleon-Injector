@@ -595,6 +595,12 @@
     .automation-priority {
         width: 100%;
     }
+
+    /* ENABLE ALL / DISABLE ALL / REFRESH go under the description instead of squeezing it. */
+    [data-automation] .account-tab-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 @media (max-width: 1180px) {

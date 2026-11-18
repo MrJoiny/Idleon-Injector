@@ -10,6 +10,7 @@ import { formatNumber } from "../../../utils/numberFormat.js";
 import { cleanName, createStaticRowReconciler, getOrCreateState, useWriteStatus } from "./accountShared.js";
 import { useAccountLoad } from "./accountLoadPolicy.js";
 import { useNumericEditor } from "./useNumericEditor.js";
+import { BulkActionBar } from "./BulkActionBar.js";
 import { ActionButton } from "./components/ActionButton.js";
 import { RefreshButton } from "./components/AccountPageChrome.js";
 import { AccountRow } from "./components/AccountRow.js";
@@ -177,6 +178,28 @@ const ChoiceSelect = ({ state, choices, label, write }) => {
             )
         ),
     };
+};
+
+/**
+ * A page's top bar: ENABLE ALL / DISABLE ALL switch every row on the page, then REFRESH.
+ * `targets` holds the page's [group, ids] pairs once it has loaded; the page reloads after so its status lines follow.
+ */
+const PageActions = ({ automation, targets, load, loading }) => {
+    const bulk = useWriteStatus();
+    const disabled = () => loading.val || bulk.status.val === "loading" || !targets.val.some(([, ids]) => ids.length);
+    const setAll = (on) =>
+        void bulk.run(async () => {
+            await automation.setAll(targets.val, on);
+            await load();
+        });
+
+    return BulkActionBar({
+        actions: [
+            { label: "ENABLE ALL", status: bulk.status, disabled, onClick: () => setAll(true) },
+            { label: "DISABLE ALL", status: bulk.status, disabled, onClick: () => setAll(false) },
+        ],
+        refresh: { onClick: load, disabled: () => loading.val },
+    });
 };
 
 const WorldShops = ({ world, automation }) => {
@@ -379,6 +402,7 @@ const ClickerGroup = ({ automation, group, currency, currencyIndex, upgradesTitl
             )
         );
         for (const upgrade of upgrades) getOrCreateState(upgradeStates, upgrade.id, {}).val = upgrade;
+        return upgrades.map(({ id }) => id);
     };
 
     const head = [
@@ -423,6 +447,7 @@ const RULE =
 const ClickerPage = ({ automation, title, description, groups }) => {
     const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
     const parts = groups.map((group) => ClickerGroup({ automation, ...group }));
+    const targets = van.state([]);
 
     const load = async () =>
         run(async () => {
@@ -433,7 +458,9 @@ const ClickerPage = ({ automation, title, description, groups }) => {
                 ...names.map((group) => readComputed("automation", group)),
             ]);
             names.forEach((group) => automation.sync(config.cheatConfig.automation, group));
-            parts.forEach(({ group, apply }) => apply(data[names.indexOf(group)]));
+            const ids = new Map(names.map((group) => [group, []]));
+            parts.forEach(({ group, apply }) => ids.get(group).push(...apply(data[names.indexOf(group)])));
+            targets.val = [...ids];
         });
 
     load();
@@ -441,10 +468,8 @@ const ClickerPage = ({ automation, title, description, groups }) => {
     return PersistentAccountListPage({
         title,
         description: `${description} ${RULE}`,
-        actions: RefreshButton({
-            onRefresh: load,
-            disabled: () => loading.val,
-        }),
+        actions: PageActions({ automation, targets, load, loading }),
+        wrapActions: false,
         state: { loading, error },
         loadingText: `READING ${title}`,
         errorTitle: `${title} READ FAILED`,
@@ -661,10 +686,8 @@ const BubblesPage = ({ automation, title, description }) => {
     return PersistentAccountListPage({
         title,
         description,
-        actions: RefreshButton({
-            onRefresh: load,
-            disabled: () => loading.val,
-        }),
+        actions: PageActions({ automation, targets: van.derive(() => [["bubbles", ids.val]]), load, loading }),
+        wrapActions: false,
         state: { loading, error },
         loadingText: `READING ${title}`,
         errorTitle: `${title} READ FAILED`,
@@ -678,6 +701,7 @@ const KitchensPage = ({ automation, title, description }) => {
     const { loading, error, run } = useAccountLoad({ label: `${title} Automation` });
     // Per spice index: { owned, goal text, ids of the rows it pays for }.
     const spices = van.state([]);
+    const ids = van.state([]);
     const upgradeStates = new Map();
     const listNode = div({ class: "content-stack" });
     const reconcileKitchens = createStaticRowReconciler(listNode);
@@ -724,6 +748,7 @@ const KitchensPage = ({ automation, title, description }) => {
                     : "Buying cheapest first",
                 ids: data.upgrades.filter((upgrade) => spiceOf(upgrade) === n).map(({ id }) => id),
             }));
+            ids.val = data.upgrades.map(({ id }) => id);
             const kitchens = Array.from({ length: data.upgrades.length / 3 }, (_, k) =>
                 data.upgrades.slice(3 * k, 3 * k + 3)
             );
@@ -773,7 +798,8 @@ const KitchensPage = ({ automation, title, description }) => {
     return PersistentAccountListPage({
         title,
         description,
-        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        actions: PageActions({ automation, targets: van.derive(() => [["kitchens", ids.val]]), load, loading }),
+        wrapActions: false,
         state: { loading, error },
         loadingText: `READING ${title}`,
         errorTitle: `${title} READ FAILED`,
@@ -849,7 +875,8 @@ const MealsPage = ({ automation, title, description }) => {
     return PersistentAccountListPage({
         title,
         description,
-        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        actions: PageActions({ automation, targets: van.derive(() => [["meals", ids.val]]), load, loading }),
+        wrapActions: false,
         state: { loading, error },
         loadingText: `READING ${title}`,
         errorTitle: `${title} READ FAILED`,
@@ -975,7 +1002,8 @@ const ConstructionPage = ({ automation, title, description }) => {
     return PersistentAccountListPage({
         title,
         description,
-        actions: RefreshButton({ onRefresh: load, disabled: () => loading.val }),
+        actions: PageActions({ automation, targets: van.derive(() => [["construction", ids.val]]), load, loading }),
+        wrapActions: false,
         state: { loading, error },
         loadingText: `READING ${title}`,
         errorTitle: `${title} READ FAILED`,
@@ -1142,6 +1170,20 @@ const createAutomationConfig = () => {
         );
     };
 
+    // ENABLE ALL / DISABLE ALL: `targets` is [group, ids] pairs; one save per group.
+    const setAll = (targets, on) =>
+        Promise.all(
+            targets.map(([group, ids]) => {
+                const items = ids.map((id) => groups[group].get(id));
+                const previous = items.map((item) => item.on.val);
+                return change(
+                    group,
+                    () => items.forEach((item) => (item.on.val = on)),
+                    () => items.forEach((item, i) => (item.on.val = previous[i]))
+                );
+            })
+        );
+
     const setSaving = (group, next, currencyIndex) => {
         const state = currencyIndex === undefined ? saving[group] : saving[group][currencyIndex];
         const previous = state.val;
@@ -1182,7 +1224,7 @@ const createAutomationConfig = () => {
         else saving[group].val = config[group].saving;
     };
 
-    return { ...groups, saving, bubbleTarget, setItem, setSaving, setBubbleTarget, sync };
+    return { ...groups, saving, bubbleTarget, setItem, setAll, setSaving, setBubbleTarget, sync };
 };
 
 export const AutomationTab = () => {
