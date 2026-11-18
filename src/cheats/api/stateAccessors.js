@@ -12,6 +12,14 @@ import { cheatState } from "../core/state.js";
 import { events } from "../core/globals.js";
 import { getPlayerExpRequired } from "../helpers/player.js";
 import { getPetTokens } from "../helpers/petTokens.js";
+import {
+    CLICKER_KEYS,
+    getAutomationBubbles,
+    getAutomationClicker,
+    getAutomationConstruction,
+    getAutomationMeals,
+    getAutomationShops,
+} from "../helpers/automation.js";
 export { readPath, readPaths, readEntries, deletePath, writePath, writePaths } from "../utils/pathResolver.js";
 
 const COMPUTED_SOURCES = {
@@ -61,6 +69,20 @@ export function readComputed(namespace, name, args = []) {
     if (namespace === "companions" && name === "petTokens") {
         try {
             return { value: getPetTokens() };
+        } catch (error) {
+            return { error: error.message };
+        }
+    }
+
+    if (
+        namespace === "automation" &&
+        (["shops", "bubbles", "meals", "construction"].includes(name) || CLICKER_KEYS.includes(name))
+    ) {
+        try {
+            if (name === "bubbles") return { value: getAutomationBubbles() };
+            if (name === "meals") return { value: getAutomationMeals() };
+            if (name === "construction") return { value: getAutomationConstruction() };
+            return { value: name === "shops" ? getAutomationShops() : getAutomationClicker(name) };
         } catch (error) {
             return { error: error.message };
         }

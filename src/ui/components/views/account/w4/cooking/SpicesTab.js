@@ -11,7 +11,7 @@ import { createStaticRowReconciler, getOrCreateState } from "../../accountShared
 const { div } = van.tags;
 
 const SPICE_AMOUNTS_PATH = "Meals[3]";
-const SPICE_NAMES = [
+export const SPICE_NAMES = [
     "Grasslands Spice",
     "Jungle Spice",
     "Encroaching Forest Spice",
